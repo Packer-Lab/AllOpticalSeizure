@@ -6,7 +6,7 @@ import numpy as np
 # import utils_funcs as uf
 # import funcs_pj as pjf
 import pickle
-from paq_utils import frames_discard, paq_read
+from utils.paq_utils import frames_discard, paq_read
 
 
 #%% functions for processing SPONT. IMAGING experiments, used only for making a bad_frames output to use during suite2p

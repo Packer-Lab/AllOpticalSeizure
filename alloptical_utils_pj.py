@@ -7,23 +7,15 @@
 import os
 import numpy as np
 import matplotlib.pyplot as plt
-import matplotlib
 import seaborn as sns
 
 import tifffile as tf
-import ntpath
-import time
-import math
-import csv
-import copy
 import re
 import glob
 import pandas as pd
 import itertools
 
-from random import randint
 # from scipy import stats
-from sklearn.decomposition import PCA
 import sys
 
 sys.path.append('/home/pshah/Documents/code/')
@@ -33,8 +25,8 @@ from suite2p.run_s2p import run_s2p
 
 import xml.etree.ElementTree as ET
 
-import funcs_pj as pjf
-from paq_utils import paq_read, frames_discard
+from utils import funcs_pj as pjf
+from utils.paq_utils import paq_read, frames_discard
 
 import pickle
 

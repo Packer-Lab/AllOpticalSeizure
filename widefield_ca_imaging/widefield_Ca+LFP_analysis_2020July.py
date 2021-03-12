@@ -4,7 +4,7 @@
 
 import sys; sys.path.append('/home/pshah/Documents/code/Vape/utils')
 import alloptical_utils_pj as ao
-import funcs_pj as pjf
+from utils import funcs_pj as pjf
 import numpy as np
 import matplotlib.pyplot as plt
 import scipy.signal as signal

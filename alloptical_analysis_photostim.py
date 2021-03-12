@@ -5,8 +5,7 @@ sys.path.append('/home/pshah/Documents/code/')
 # sys.path.append('/home/pshah/Documents/code/Vape/utils/')
 import alloptical_utils_pj as aoutils
 import alloptical_plotting as aoplot
-import Vape.utils.utils_funcs as uf  # from Vape
-import funcs_pj as pj
+from utils import funcs_pj as pj
 
 import pickle
 import numpy as np
@@ -16,8 +15,6 @@ import seaborn as sns
 
 from numba import njit
 from skimage import draw
-import math
-
 
 ###### IMPORT pkl file containing data in form of expobj
 trial = 't-009'
@@ -271,6 +268,8 @@ plt.clim(80, 120)
 plt.suptitle((experiment + '- avg. stim responses - Group %s' % group), y=1.00)
 plt.show()
 
+
+
 # %%
 # plot response over distance from photostim. target cell to non-target cell in proximity
 import math
@@ -305,6 +304,8 @@ df_dist_resp = pd.DataFrame(d)
 plt.figure()
 plt.scatter(x=df_dist_resp['distance'], y=df_dist_resp['response_of_non_target'])
 plt.show()
+
+
 
 # %%
 # TODO calculate probability of stimulation in 10x10um micron bins around targeted cell

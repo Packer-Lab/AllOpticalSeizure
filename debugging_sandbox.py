@@ -1,6 +1,3 @@
-import numpy as np
-import matplotlib.pyplot as plt
-
 # imports general modules, runs ipython magic commands
 # change path in this notebook to point to repo locally
 # n.b. sometimes need to run this cell twice to init the plotting paramters
@@ -10,11 +7,8 @@ import matplotlib.pyplot as plt
 
 # %run ./setup_notebook.ipynb
 # print(sys.path)
-import funcs_pj as pj
+from utils import funcs_pj as pj
 
-
-import alloptical_utils_pj as aoutils
-import alloptical_plotting as aoplot
 import pickle
 
 ###### IMPORT pkl file containing expobj

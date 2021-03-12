@@ -1,8 +1,7 @@
 
 sys.path.append('/Users/prajayshah/OneDrive - University of Toronto/PycharmProjects/Vape')
 sys.path.append('/Users/prajayshah/OneDrive - University of Toronto/PycharmProjects/utils_pj')
-import utils.utils_funcs as uf #from Vape
-import funcs_pj as pjf
+from utils import funcs_pj as pjf
 import numpy as np
 import matplotlib.pyplot as plt
 import scipy.signal as signal

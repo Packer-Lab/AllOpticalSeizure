@@ -7,7 +7,6 @@ import sys
 
 sys.path.append('/home/pshah/Documents/code/PackerLab_pycharm/')
 import alloptical_utils_pj as ao
-from paq_utils import frames_discard, paq_read
 
 
 # from Vape.utils.paq_utils import frames_discard, paq_read

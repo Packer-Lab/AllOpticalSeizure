@@ -1,9 +1,8 @@
-import alloptical_utils_pj as ao
 import sys; sys.path.append('/Users/prajayshah/OneDrive - University of Toronto/PycharmProjects/Vape')
 import sys; sys.path.append('/Users/prajayshah/OneDrive - University of Toronto/PycharmProjects/utils_pj')
 import utils.utils_funcs as uf #from Vape
 import matplotlib.pyplot as plt
-import funcs_pj as pjf
+from utils import funcs_pj as pjf
 
 ### import suite2p data
 s2p_path = '/Volumes/Extreme SSD/oxford-data/2020-03-19/suite2p/photostim-4ap-t-017/plane0'
