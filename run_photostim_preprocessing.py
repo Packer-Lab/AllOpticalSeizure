@@ -85,7 +85,7 @@ def rm_artifacts_tiffs(expobj, tiffs_loc, new_tiffs):
     del im_stack
 
 
-def run_photostim_processing(trial, exp_type, tiffs_loc_dir, tiffs_loc, naparms_loc, paqs_loc, pkl_path, seizure_comments,
+def run_photostim_processing(trial, exp_type, tiffs_loc_dir, tiffs_loc, naparms_loc, paqs_loc, pkl_path, metainfo,
                              new_tiffs, matlab_badframes_path=None, processed_tiffs=True, discard_all=False):
 
     print('\n-----Processing trial # %s-----' % trial)
@@ -94,9 +94,9 @@ def run_photostim_processing(trial, exp_type, tiffs_loc_dir, tiffs_loc, naparms_
     # print('tiffs_loc_dir, naparms_loc, paqs_loc paths:\n', paths)
 
     if 'post' in exp_type and '4ap' in exp_type:
-        expobj = ao.Post4ap(paths[0], stimtype='2pstim')
+        expobj = ao.Post4ap(paths[0], metainfo=metainfo, stimtype='2pstim')
     elif 'pre' in exp_type and '4ap' in exp_type:
-        expobj = ao.alloptical(paths[0], stimtype='2pstim')
+        expobj = ao.alloptical(paths[0], metainfo=metainfo, stimtype='2pstim')
     else:
         expobj = ao.twopimaging()
 
@@ -116,8 +116,7 @@ def run_photostim_processing(trial, exp_type, tiffs_loc_dir, tiffs_loc, naparms_
 
     # collect information about seizures
     if 'post' in exp_type and '4ap' in exp_type:
-        expobj.collect_seizures_info(seizures_info_array=matlab_badframes_path, seizure_comments=comments,
-                                     discard_all=discard_all)
+        expobj.collect_seizures_info(seizures_info_array=matlab_badframes_path, discard_all=discard_all)
 
     # if matlab_badframes_path is not None or discard_all is True:
     #     paq = paq_read(file_path=paqs_loc, plot=False)
@@ -162,20 +161,27 @@ date = '2020-12-18'
 # specify location of the naparm export for the trial(s) - ensure that this export was used for all trials, if # of trials > 1
 naparms_loc = '%s/photostim/2020-12-18_RL108_ps_008/' % data_path_base  # make sure to include '/' at the end to indicate the child directory
 
-exp_type = 'post 4ap'
+exp_type = 'post 4ap all optical trial'
 comments = '5 seizure events on LFP (trial starts during a seizure)'
 tiffs_loc_dir = '%s/%s_%s' % (data_path_base, date, trial)
 tiffs_loc = '%s/%s_%s_Cycle00001_Ch3.tif' % (tiffs_loc_dir, date, trial)
 pkl_path = '%s/%s_%s.pkl' % (tiffs_loc_dir, date, trial)  # specify path to save pkl object
-paqs_loc = '%s/%s_RL108_%s.paq' % (
-data_path_base, date, trial[2:])  # path to the .paq files for the selected trials
+paqs_loc = '%s/%s_RL108_%s.paq' % (data_path_base, date, trial[2:])  # path to the .paq files for the selected trials
 new_tiffs = tiffs_loc[:-19]  # where new tiffs from rm_artifacts_tiffs will be saved
 
 # choose matlab path if need to use or use None for no additional bad frames
 matlab_badframes_path = '%s/paired_measurements/2020-12-18_RL108_%s.mat' % (data_path_base, trial[2:])
 # matlab_badframes_path = None
 
-run_photostim_processing(trial, exp_type=exp_type, pkl_path=pkl_path, new_tiffs=new_tiffs, seizure_comments=comments,
+metainfo = {
+    'trial': trial,
+    'date': date,
+    'exptype': exp_type,
+    'data_path_base': data_path_base,
+    'comments': comments
+}
+
+run_photostim_processing(trial, exp_type=exp_type, pkl_path=pkl_path, new_tiffs=new_tiffs, metainfo=metainfo,
                          tiffs_loc_dir=tiffs_loc_dir, tiffs_loc=tiffs_loc, naparms_loc=naparms_loc,
                          paqs_loc=paqs_loc, matlab_badframes_path=matlab_badframes_path,
                          processed_tiffs=False, discard_all=True)

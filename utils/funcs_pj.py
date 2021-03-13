@@ -8,7 +8,7 @@ import itertools
 import matplotlib.pyplot as plt
 import random
 from sklearn.decomposition import PCA
-
+import tifffile as tf
 
 # plotting settings
 # fig = plt.figure()
@@ -470,6 +470,20 @@ def bar_with_points(data, title='', x_tick_labels=[], points=True, bar=True, col
     if len(x) > 1:
         plt.xticks(rotation=45)
         # plt.setp(ax.get_xticklabels(), rotation=45)
+    plt.show()
+
+
+def plot_single_tiff(tiff_path: str, title: str = None):
+    """
+    plots an image of a single tiff frame after reading using tifffile.
+    :param tiff_path: path to the tiff file
+    :param title: give a string to use as title (optional)
+    :return: imshow plot
+    """
+    stack = tf.imread(tiff_path, key=0)
+    plt.imshow(stack, cmap='gray')
+    if title is not None:
+        plt.suptitle(title)
     plt.show()
 
 

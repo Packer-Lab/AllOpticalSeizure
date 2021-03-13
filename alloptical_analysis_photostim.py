@@ -17,8 +17,8 @@ from numba import njit
 from skimage import draw
 
 ###### IMPORT pkl file containing data in form of expobj
-trial = 't-009'
-experiment = 'RL108: photostim-pre4ap-%s' % trial
+trial = 't-013'
+experiment = 'RL108: photostim-post4ap-%s' % trial
 date = '2020-12-18'
 pkl_path = "/home/pshah/mnt/qnap/Data/%s/%s_%s/%s_%s.pkl" % (date, date, trial, date, trial)
 # pkl_path = '/Users/prajayshah/Documents/data-to-process/2020-12-18/2020-12-18_t-009.pkl'
@@ -27,21 +27,68 @@ with open(pkl_path, 'rb') as f:
     expobj = pickle.load(f)
 print('imported expobj for "%s %s" from: %s' % (date, experiment, pkl_path))
 
-
 # %% ANALYSIS STEPS FOR SEIZURE TRIALS ONLY!!
 
-expobj.avg_sub_l, im_sub_l, im_diff_l = expobj.avg_seizure_images(baseline_tiff="/home/pshah/mnt/qnap/Data/2020-12-18/2020-12-18_t-005/2020-12-18_t-005_Cycle00001_Ch3.tif", frames_last=1000)
+expobj.avg_sub_l, im_sub_l, im_diff_l = expobj.avg_seizure_images(
+    baseline_tiff="/home/pshah/mnt/qnap/Data/2020-12-18/2020-12-18_t-005/2020-12-18_t-005_Cycle00001_Ch3.tif",
+    frames_last=1000)
 
 # counter = 0
 # for i in avg_sub_l:
 #     plt.imshow(i); plt.suptitle('%s' % counter); plt.show()
 #     counter += 1
 
-expobj.avg_seizure_stim_images(stim_timings=expobj.stim_start_frames[::6], to_plot=True)
+expobj.avg_stim_images(stim_timings=expobj.stim_start_frames[::4], to_plot=True, save_img=True)
 
 img = pj.rotate_img_avg(expobj.avg_sub_l[3], angle=90)
 # PCA decomposition of the avg_seizure images
 img_compressed = pj.pca_decomp_image(img, components=1, plot_quant=True)
+
+# %% classifying cells as in or out of the current seizure location in the FOV
+
+# draw boundary on the image in ImageJ and save results as CSV
+
+
+# import the CSV file in and classify cells by their location in or out of seizure
+
+
+def plot_cell_loc(expobj, cells: list, color: str = 'pink', show: bool = True):
+    """
+    plots an image of the FOV to show the locations of cells given in cells list.
+    :param expobj: alloptical or 2p imaging object
+    :param color: str to specify color of the scatter plot for cells
+    :param cells: list of cells to plot
+    :param show: if True, show the plot at the end of the function
+    """
+    black = np.zeros((expobj.frame_x, expobj.frame_x), dtype='uint16')
+    plt.imshow(black)
+
+    for cell in cells:
+        y, x = expobj.stat[cell]['med']
+        plt.scatter(x=x, y=y, edgecolors=color, facecolors='none', linewidths=0.8)
+
+    if show:
+        plt.show()
+# csv_path = "/home/pshah/mnt/qnap/Analysis/2020-12-18/2020-12-18_t-013/2020-12-18_t-013_post_border.csv"
+
+
+
+in_sz = []
+sz_border_path = "/home/pshah/mnt/qnap/Analysis/2020-12-18/2020-12-18_t-013/boundary_csv/2020-12-18_t-013_post 4ap all optical trial_stim-9222.tif_border.csv"
+for cell, s in enumerate(expobj.stat):
+    in_sz.append(expobj._InOutSz(cell_med=s['med'], sz_border_path=sz_border_path))
+
+xline = []
+yline = []
+with open(sz_border_path) as csv_file:
+    csv_file = csv.DictReader(csv_file, fieldnames=None, dialect='excel')
+    for row in csv_file:
+        xline.append(int(row['xcoords']))
+        yline.append(int(row['ycoords']))
+plot_cell_loc(expobj, cells=in_sz, show=False)
+plt.scatter(x=xline[0], y=yline[0])
+plt.scatter(x=xline[1], y=yline[1])
+plt.show()
 
 
 # %% photostim analysis - PLOT avg over all photstim. trials traces from PHOTOSTIM TARGETTED cells
@@ -51,19 +98,18 @@ x = np.asarray([i for i in expobj.targets_dfstdF_avg])
 # y_label = 'pct. dFF (normalized to prestim period)'
 y_label = 'dFstdF (normalized to prestim period)'
 
-
 aoplot.plot_photostim_avg(dff_array=x, expobj=expobj, stim_duration=expobj.duration_frames, pre_stim=expobj.pre_stim,
                           post_stim=expobj.post_stim,
                           title=(experiment + '- responses of all photostim targets'),
                           y_label=y_label, x_label='Time post-stimulation (seconds)')
 
-
 # %% plot entire trace of individual targeted cells as super clean subplots, with the same y-axis lims
 
 expobj.raw_targets = [expobj.raw[expobj.cell_id.index(i)] for i in expobj.good_photostim_cells_all]
 expobj.dff_targets = aoutils.normalize_dff(np.array(expobj.raw_targets))
-expobj.targets_dff_base = aoutils.normalize_dff_baseline(arr=expobj.raw_df.loc[[str(x) for x in expobj.s2p_cell_targets]],
-                                                         baseline_array=expobj.baseline_raw_df)
+expobj.targets_dff_base = aoutils.normalize_dff_baseline(
+    arr=expobj.raw_df.loc[[str(x) for x in expobj.s2p_cell_targets]],
+    baseline_array=expobj.baseline_raw_df)
 # plot_photostim_subplots(dff_array=dff_targets,
 #                 title=(experiment + '%s responses of responsive cells' % len(expobj.good_photostim_cells_stim_responses_dFF)))
 to_plot = expobj.dff_targets
@@ -74,7 +120,6 @@ aoplot.plot_photostim_overlap_plots(dff_array=to_plot, expobj=expobj,
 aoplot.plot_photostim_subplots(dff_array=to_plot, expobj=expobj, x_label='Frames',
                                y_label='Raw Flu',
                                title=(experiment + '-'))
-
 
 # # plot the photostim targeted cells as a heatmap
 # dff_array = expobj.dff_targets[:, :]
@@ -87,7 +132,6 @@ aoplot.plot_photostim_subplots(dff_array=to_plot, expobj=expobj, x_label='Frames
 # plt.show()
 
 
-
 # %%
 # measure, for each cell, the pct of trials in which the dFF > 20% post stim (normalized to pre-stim avgF for the trial and cell)
 # can plot this as a bar plot for now showing the distribution of the reliability measurement
@@ -96,13 +140,12 @@ expobj.reliability = aoutils.calculate_reliability(expobj=expobj, dfstdf_thresho
 pj.bar_with_points(data=[list(expobj.reliability.values())], x_tick_labels=['post-4ap'], ylims=[0, 100], bar=False,
                    title='reliability of stim responses', expand_size_x=2)
 
-
-
-#%%
+# %%
 pre_4ap_reliability = list(expobj.reliability.values())
 post_4ap_reliabilty = list(expobj.reliability.values())  # reimport another expobj for post4ap trial
 
-pj.bar_with_points(data=[pre_4ap_reliability, post_4ap_reliabilty], x_tick_labels=['pre-4ap', 'post-4ap'], ylims=[0, 100], bar=False, title='reliability of stim responses', expand_size=1.2)
+pj.bar_with_points(data=[pre_4ap_reliability, post_4ap_reliabilty], x_tick_labels=['pre-4ap', 'post-4ap'],
+                   ylims=[0, 100], bar=False, title='reliability of stim responses', expand_size=1.2)
 
 # %% plot response of ALL cells across whole trace in FOV after photostim - plotting not yet working properly
 # collect photostim timed average dff traces
@@ -111,10 +154,7 @@ title = 'All cells dFF'
 all_cells_dff = []
 good_std_cells = []
 
-
-
 # %% calculate and plot average response of cells in response to all stims as a bar graph
-
 
 
 # there's a bunch of very high dFF responses of cells
@@ -129,11 +169,14 @@ high_responders = expobj.average_responses_df[expobj.average_responses_df['Avg. 
 # remove cells with very high average response values from the dff dataframe
 
 ## using pj.bar_with_points() for a nice bar graph
-group1 = list(expobj.average_responses_dfstdf[expobj.average_responses_dfstdf['group'] == 'photostim target']['Avg. dF/stdF response'])
-group2 = list(expobj.average_responses_dfstdf[expobj.average_responses_dfstdf['group'] == 'non-target']['Avg. dF/stdF response'])
-pj.bar_with_points(data=[group1, group2], x_tick_labels=['photostim target', 'non-target'], xlims=[0, 0.6], ylims=[0, 1.5], bar=False,
-                   colors=['red', 'black'], title=experiment, y_label='Avg dF/stdF response', expand_size_y=1.3, expand_size_x=1.4)
-
+group1 = list(expobj.average_responses_dfstdf[expobj.average_responses_dfstdf['group'] == 'photostim target'][
+                  'Avg. dF/stdF response'])
+group2 = list(
+    expobj.average_responses_dfstdf[expobj.average_responses_dfstdf['group'] == 'non-target']['Avg. dF/stdF response'])
+pj.bar_with_points(data=[group1, group2], x_tick_labels=['photostim target', 'non-target'], xlims=[0, 0.6],
+                   ylims=[0, 1.5], bar=False,
+                   colors=['red', 'black'], title=experiment, y_label='Avg dF/stdF response', expand_size_y=1.3,
+                   expand_size_x=1.4)
 
 # %% plot heatmap of average of all stims. per cell for each stim. group
 # - need to find a way to sort these responses that similar cells are sorted together
@@ -150,9 +193,7 @@ plt.figure(figsize=(5, 15));
 sns.heatmap(df_, cmap='seismic', vmin=-5, vmax=5, cbar_kws={"shrink": 0.25});
 plt.show()
 
-
-
-# %% plot average response of cells in response to stim at XY location - what is the units of the response being plotted
+# %% plot imshow average response of cells in response to stim at the cell's XY location - what is the units of the response being plotted
 
 # TODO transfer this FOV cell location mapped response plot to the aoplot script
 
@@ -204,10 +245,6 @@ plt.suptitle((experiment + ' - avg. stim responses - targets in green'), y=0.95,
 plt.show()
 # plt.savefig(
 #     "/Users/prajayshah/OneDrive - University of Toronto/UTPhD/Proposal/2020/Figures/avg_pop_responses_%s.svg" % experiment)
-
-
-
-
 
 
 
@@ -268,8 +305,6 @@ plt.clim(80, 120)
 plt.suptitle((experiment + '- avg. stim responses - Group %s' % group), y=1.00)
 plt.show()
 
-
-
 # %%
 # plot response over distance from photostim. target cell to non-target cell in proximity
 import math
@@ -304,8 +339,6 @@ df_dist_resp = pd.DataFrame(d)
 plt.figure()
 plt.scatter(x=df_dist_resp['distance'], y=df_dist_resp['response_of_non_target'])
 plt.show()
-
-
 
 # %%
 # TODO calculate probability of stimulation in 10x10um micron bins around targeted cell
@@ -628,8 +661,10 @@ def _good_photostim_cells(expobj, groups_per_stim=1, std_thresh=1, dff_threshold
 # box plot with overlaid scatter plot with seaborn
 plt.rcParams['figure.figsize'] = (20, 7)
 sns.set_theme(style="ticks")
-sns.catplot(x='group', y='Avg. dF/stdF response', data=expobj.average_responses_dfstdf, alpha=0.8, aspect=0.75, height=3.5)
-ax = sns.boxplot(x='group', y='Avg. dF/stdF response', data=expobj.average_responses_dfstdf, color='white', fliersize=0, width=0.5)
+sns.catplot(x='group', y='Avg. dF/stdF response', data=expobj.average_responses_dfstdf, alpha=0.8, aspect=0.75,
+            height=3.5)
+ax = sns.boxplot(x='group', y='Avg. dF/stdF response', data=expobj.average_responses_dfstdf, color='white', fliersize=0,
+                 width=0.5)
 for i, box in enumerate(ax.artists):
     box.set_alpha(0.3)
     box.set_edgecolor('black')
@@ -641,7 +676,6 @@ for i, box in enumerate(ax.artists):
 plt.setp(ax.get_xticklabels(), rotation=45)
 plt.suptitle('%s' % experiment, fontsize=10)
 plt.show()
-
 
 
 def plot_flu_trace(expobj, idx, slm_group=None, to_plot='raw'):

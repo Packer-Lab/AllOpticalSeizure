@@ -10,12 +10,14 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 
 import tifffile as tf
+import csv
+import bisect
 import re
 import glob
 import pandas as pd
 import itertools
 
-# from scipy import stats
+from scipy import stats
 import sys
 
 sys.path.append('/home/pshah/Documents/code/')
@@ -44,7 +46,8 @@ def points_in_circle_np(radius, x0=0, y0=0, ):
 
 class alloptical():
 
-    def __init__(self, paths, stimtype):
+    def __init__(self, paths, metainfo, stimtype):
+        self.metainfo = metainfo
         self.tiff_path_dir = paths[0]
         self.tiff_path = paths[1]
         self.naparm_path = paths[2]
@@ -53,7 +56,7 @@ class alloptical():
         self._parsePVMetadata()
 
         self.stim_type = stimtype
-        print('\ninitialized all-optical expobj')
+        print('\ninitialized alloptical expobj of exptype and trial: \n', self.metainfo)
 
     def _getPVStateShard(self, path, key):
 
@@ -1049,6 +1052,61 @@ class alloptical():
             pickle.dump(self, f)
         print("pkl saved to %s" % pkl_path)
 
+    def avg_stim_images(self, peri_frames: int = 100, stim_timings: list = [], save_img=False, to_plot=False):
+        """
+        Outputs (either by saving or plotting, or both) images from raw t-series TIFF for a trial around each individual
+        stim timings.
+
+        :param peri_frames:
+        :param stim_timings:
+        :param save_img:
+        :param to_plot:
+        :return:
+        """
+
+        self.stim_images = {}
+        for stim in stim_timings:
+            if stim in self.stim_images.keys():
+                avg_sub = self.stim_images[stim]
+            else:
+                tiffs_loc = '%s/*Ch3.tif' % self.tiff_path_dir
+                tiff_path = glob.glob(tiffs_loc)[0]
+                print('loading up %s tiff from: ' % self.metainfo['trial'], tiff_path)
+                im_stack = tf.imread(tiff_path, key=range(self.n_frames))
+                print('Processing seizures from experiment tiff (wait for all seizure comparisons to be processed), \n '
+                      'total tiff shape: ', im_stack.shape)
+                im_sub = im_stack[stim - peri_frames: stim + peri_frames]
+                avg_sub = np.mean(im_sub, axis=0)
+                self.stim_images[stim] = avg_sub
+
+            if save_img:
+                # save in a subdirectory under the ANALYSIS folder path from whence t-series TIFF came from
+                save_path = self.tiff_path[:21] + 'Analysis/' + self.tiff_path_dir[26:] + '/avg_stim_images'
+                save_path_stim = save_path + '/%s_%s_stim-%s.tif' % (
+                    self.metainfo['date'], self.metainfo['trial'], stim)
+                if os.path.exists(save_path):
+                    print("saving as... %s" % save_path_stim)
+                    avg_sub8 = convert_to_8bit(avg_sub, np.uint8, 0, 255)
+                    tf.imwrite(save_path_stim,
+                               avg_sub8, photometric='minisblack')
+                else:
+                    print('made new directory for saving images at:', save_path)
+                    os.mkdir(save_path)
+                    print("saving as... %s" % save_path_stim)
+                    avg_sub8 = convert_to_8bit(avg_sub, np.uint8, 0, 255)
+                    tf.imwrite(save_path_stim,
+                               avg_sub, photometric='minisblack')
+
+            if to_plot:
+                plt.imshow(avg_sub, cmap='gray')
+                plt.suptitle('avg image from %s frames around stim_start_frame %s' % (peri_frames, stim))
+                plt.show()  # just plot for now to make sure that you are doing things correctly so far
+
+        if hasattr(self, 'pkl_path'):
+            self.save_pkl()
+        else:
+            print('note: pkl not saved yet...')
+
     # def _good_cells(self, min_radius_pix, max_radius_pix):
     #     '''
     #     This function filters each cell for two criteria. 1) at least 1 flu change greater than 2.5std above mean,
@@ -1301,20 +1359,18 @@ class twopimaging():
               )
 
 
-
 class Post4ap(alloptical):
     # TODO fix the superclass definitions and heirarchy which might require more rejigging of the code you are running later on as well
 
-    def __init__(self, paths, stimtype):
-        alloptical.__init__(self, paths, stimtype)
-        self.description = 'post 4ap alloptical trial'
-        print('initialized Post4ap expobj: %s' % self.description)
+    def __init__(self, paths, metainfo, stimtype):
+        alloptical.__init__(self, paths, metainfo, stimtype)
+        print('\ninitialized Post4ap expobj of exptype and trial: %s, %s, %s' % (self.metainfo['exptype'],
+                                                                                 self.metainfo['trial'],
+                                                                                 self.metainfo['date']))
 
-    ####### move these methods later into the Post4ap class ######
-    def collect_seizures_info(self, seizures_info_array=None, seizure_comments='', discard_all=True):
+    def collect_seizures_info(self, seizures_info_array=None, discard_all=True):
         print('\ncollecting information about seizures...')
         self.seizures_info_array = seizures_info_array  # path to the matlab array containing paired measurements of seizures onset and offsets
-        self.seizures_comments = seizure_comments
 
         # retrieve seizure onset and offset times from the seizures info array input
         paq = paq_read(file_path=self.paq_path, plot=False)
@@ -1340,6 +1396,61 @@ class Post4ap(alloptical):
                     self.bad_frames)  # save to npy file and remember to move npy file to tiff folder before running with suite2p
             print('***Saving a total of ', len(self.bad_frames),
                   'photostim + seizure/CSD frames +  additional bad frames to bad_frames.npy***')
+
+    def _InOutSz(self, cell_med: list, sz_border_path: str):
+        """
+        Returns True if the given cell's location is inside the seizure boundary which is defined as the coordinates
+        given in the .csv sheet.
+
+        :param cell_med: from stat['med'] of the cell
+        :param sz_border_path: path to the csv file generated by ImageJ macro for the seizure boundary
+        :return: bool
+
+        # examples
+        cell_med = expobj.stat[0]['med']
+        sz_border_path = "/home/pshah/mnt/qnap/Analysis/2020-12-18/2020-12-18_t-013/boundary_csv/2020-12-18_t-013_post 4ap all optical trial_stim-9222.tif_border.csv"
+        InOutSz(cell_med, sz_border_path)
+        """
+
+        y = cell_med[0]
+        x = cell_med[1]
+
+        # for path in os.listdir(sz_border_path):
+        #     if all(s in path for s in ['.csv', self.sheet_name]):
+        #         csv_path = os.path.join(sz_border_path, path)
+
+        xline = []
+        yline = []
+        with open(sz_border_path) as csv_file:
+            csv_file = csv.DictReader(csv_file, fieldnames=None, dialect='excel')
+            for row in csv_file:
+                xline.append(int(row['xcoords']))
+                yline.append(int(row['ycoords']))
+
+        # assumption = line is monotonic
+        line_argsort = np.argsort(yline)
+        xline = np.array(xline)[line_argsort]
+        yline = np.array(yline)[line_argsort]
+
+        i = bisect.bisect(yline, y)
+        if i >= len(yline):
+            i = len(yline) - 1
+        elif i == 0:
+            i = 1
+
+        frame_x = int(self.frame_x / 2)
+        half_frame_y = int(self.frame_y / 2)
+
+        d = (x - xline[i]) * (yline[i - 1] - yline[i]) - (y - yline[i]) * (xline[i - 1] - xline[i])
+        ds1 = (0 - xline[i]) * (yline[i - 1] - yline[i]) - (half_frame_y - yline[i]) * (xline[i - 1] - xline[i])
+        ds2 = (frame_x - xline[i]) * (yline[i - 1] - yline[i]) - (half_frame_y - yline[i]) * (xline[i - 1] - xline[i])
+
+        if np.sign(d) == np.sign(ds1):
+            return True
+        elif np.sign(d) == np.sign(ds2):
+            return False
+        else:
+            return False
 
     def find_closest_sz_frames(self):
         """finds time from the closest seizure onset on LFP (-ve values for forthcoming, +ve for past)
@@ -1421,55 +1532,19 @@ class Post4ap(alloptical):
 
         return avg_sub_l, im_sub_l, im_diff_l
 
-    def avg_seizure_stim_images(self, peri_frames: int = 100, stim_timings: list = [], to_plot=False):
+    def classify_cells_sz(self, input_img):
+        """
+        going to use Rob's suggestions to define boundary of the seizure in ImageJ and then read in the ImageJ output,
+        and use this to classify cells as in seizure or out of seizure in a particular image (which will relate to stim time).
 
-        self.stim_images = {}
-        x = [0 for stim in stim_timings if stim not in self.stim_images.keys()]
-        if 0 in x:
-            save = True
-            tiffs_loc = '%s/*Ch3.tif' % self.tiff_path_dir
-            tiff_path = glob.glob(tiffs_loc)[0]
-            print('loading up post4ap tiff from: ', tiff_path)
-            im_stack = tf.imread(tiff_path, key=range(self.n_frames))
-            print('Processing seizures from experiment tiff (wait for all seizure comparisons to be processed), \n '
-                  'total tiff shape: ', im_stack.shape)
-        else:
-            save = False
-
-        for stim in stim_timings:
-            if stim in self.stim_images.keys():
-                avg_sub = self.stim_images[stim]
-            else:
-                im_sub = im_stack[stim - peri_frames: stim + peri_frames]
-                avg_sub = np.mean(im_sub, axis=0)
-                self.stim_images[stim] = avg_sub
-
-            if to_plot:
-                plt.imshow(avg_sub, cmap='gray')
-                plt.suptitle('avg image from %s frames around stim_start_frame %s' % (peri_frames, stim))
-                plt.show()  # just plot for now to make sure that you are doing things correctly so far
-
-        if save:
-            if hasattr(self, 'pkl_path'):
-                self.save_pkl()
-            else:
-                print('note: pkl not saved yet...')
-
-    def locate_seizure_wavefront(self, input_img):
-        """images of the seizure wavefront propagation from various angle for a given seizure based on the input images.
-        then also calculate the percent of FOV recruitment in the given image.
-
-        the idea is the for each photostimulation timepoint, this will return some sense of the location of the seizure
-        just before the photostimulation occurs.
         :param input_img: ndarray; the images containing the seizure frames of interest
         :return sz_img = ndarray containing the defined
         """
 
         ## TODO putting this one on the back burner for now..proceed until you need to come back to this.
 
-        pass
 
-    ####### [close] move these methods later into the Post4ap class ######
+        pass
 
 
 ## Rob's functions for generating some important commonly used image types.
@@ -1633,6 +1708,8 @@ def s2pMaskStack(obj, pkl_list, s2p_path, parent_folder):
 
 # other functions written by me
 
+# TODO need to transfer alot of these functions to methods
+
 def save_pkl(expobj, pkl_path):
     with open(pkl_path, 'wb') as f:
         pickle.dump(expobj, f)
@@ -1707,7 +1784,6 @@ def get_targets_stim_traces_norm(expobj, normalize_to='', pre_stim=10, post_stim
             cell_idx = expobj.cell_id.index(cell)
             flu = [expobj.raw[cell_idx][stim - pre_stim: stim + post_stim] for stim in stim_timings if
                    stim not in expobj.seizure_frames]
-
 
             flu_dfstdF = []
             flu_dff = []
@@ -1792,7 +1868,8 @@ def _good_photostim_cells(expobj, std_thresh=1, dff_threshold=None, pre_stim=10,
                 idx = targeted_cells[:to_plot].index(cell)
                 axes[idx].plot(trace)
                 axes[idx].axhspan(mean_pre + 0 * std_pre, mean_pre + std_thresh * std_pre, facecolor='0.25')
-                axes[idx].axvspan(pre_stim + expobj.duration_frames, pre_stim + 3 * expobj.duration_frames, facecolor='0.25')
+                axes[idx].axvspan(pre_stim + expobj.duration_frames, pre_stim + 3 * expobj.duration_frames,
+                                  facecolor='0.25')
                 axes[idx].title.set_text('Average trace (%s) across all photostims - cell #%s' % (x_, cell))
 
         # post_stim_trace = trace[pre_stim + expobj.duration_frames:post_stim]
@@ -1820,7 +1897,8 @@ def _good_photostim_cells(expobj, std_thresh=1, dff_threshold=None, pre_stim=10,
     elif dff_threshold is None:
         print('[std threshold of %s std]' % std_thresh)
 
-    print('\n%s cells out of %s s2p target cells selected above threshold' % (len(good_photostim_cells), len(targeted_cells)))
+    print('\n%s cells out of %s s2p target cells selected above threshold' % (
+        len(good_photostim_cells), len(targeted_cells)))
     total += len(good_photostim_cells)
     total_considered += len(targeted_cells)
 
@@ -2246,6 +2324,23 @@ def plot_photostim_(dff_array, stim_duration, pre_stim=10, post_stim=200, title=
         ax.set_ylim([y_min, y_max])
     fig.suptitle(title, y=0.95)
     plt.show()
+
+
+## kept in utils.funcs_pj
+def plot_single_tiff(tiff_path: str, title: str = None):
+    """
+    plots an image of a single tiff frame after reading using tifffile.
+    :param tiff_path: path to the tiff file
+    :param title: give a string to use as title (optional)
+    :return: imshow plot
+    """
+    stack = tf.imread(tiff_path, key=0)
+    plt.imshow(stack, cmap='gray')
+    if title is not None:
+        plt.suptitle(title)
+    plt.show()
+
+
 
 #### archive
 
