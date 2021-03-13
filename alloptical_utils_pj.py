@@ -1064,17 +1064,23 @@ class alloptical():
         :return:
         """
 
-        self.stim_images = {}
+        if hasattr(self, 'stim_images'):
+            x = [0 for stim in stim_timings if stim not in self.stim_images.keys()]
+        else:
+            self.stim_images = {}
+            x = [0] * len(stim_timings)
+        if 0 in x:
+            tiffs_loc = '%s/*Ch3.tif' % self.tiff_path_dir
+            tiff_path = glob.glob(tiffs_loc)[0]
+            print('loading up %s tiff from: ' % self.metainfo['trial'], tiff_path)
+            im_stack = tf.imread(tiff_path, key=range(self.n_frames))
+            print('Processing seizures from experiment tiff (wait for all seizure comparisons to be processed), \n '
+                  'total tiff shape: ', im_stack.shape)
+
         for stim in stim_timings:
             if stim in self.stim_images.keys():
                 avg_sub = self.stim_images[stim]
             else:
-                tiffs_loc = '%s/*Ch3.tif' % self.tiff_path_dir
-                tiff_path = glob.glob(tiffs_loc)[0]
-                print('loading up %s tiff from: ' % self.metainfo['trial'], tiff_path)
-                im_stack = tf.imread(tiff_path, key=range(self.n_frames))
-                print('Processing seizures from experiment tiff (wait for all seizure comparisons to be processed), \n '
-                      'total tiff shape: ', im_stack.shape)
                 im_sub = im_stack[stim - peri_frames: stim + peri_frames]
                 avg_sub = np.mean(im_sub, axis=0)
                 self.stim_images[stim] = avg_sub
@@ -1085,7 +1091,7 @@ class alloptical():
                 save_path_stim = save_path + '/%s_%s_stim-%s.tif' % (
                     self.metainfo['date'], self.metainfo['trial'], stim)
                 if os.path.exists(save_path):
-                    print("saving as... %s" % save_path_stim)
+                    print("saving stim_img tiff to... %s" % save_path_stim)
                     avg_sub8 = convert_to_8bit(avg_sub, np.uint8, 0, 255)
                     tf.imwrite(save_path_stim,
                                avg_sub8, photometric='minisblack')
