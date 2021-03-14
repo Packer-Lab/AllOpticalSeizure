@@ -24,8 +24,9 @@ pkl_path = "/home/pshah/mnt/qnap/Analysis/%s/%s_%s/%s_%s.pkl" % (date, date, tri
 # pkl_path = '/Users/prajayshah/Documents/data-to-process/2020-12-18/2020-12-18_t-009.pkl'
 
 with open(pkl_path, 'rb') as f:
+    print('importing expobj for "%s %s" from: %s' % (date, experiment, pkl_path))
     expobj = pickle.load(f)
-print('imported expobj for "%s %s" from: %s' % (date, experiment, pkl_path))
+    print('DONE IMPORT.')
 
 if hasattr(expobj, 'paq_rate'):
     pass
@@ -52,14 +53,18 @@ for i in range(len(expobj.avg_sub_l)):
     # PCA decomposition of the avg_seizure images
     img_compressed = pj.pca_decomp_image(img, components=1, plot_quant=True)
 
-# %% classifying stims as in_sz or out_sz
+# %% classifying stims as in_sz or out_sz or before_sz or after_sz
 
 expobj.stims_in_sz = [stim for stim in expobj.stim_start_frames if stim in expobj.seizure_frames]
 expobj.stims_out_sz = [stim for stim in expobj.stim_start_frames if stim not in expobj.seizure_frames]
 expobj.stims_bf_sz = [stim for stim in expobj.stim_start_frames
                       for sz_start in expobj.seizure_lfp_onsets
-                      if abs(stim - sz_start) < 5 * expobj.fps]  # select stims that occur within 5 seconds of the sz onset
-print('\n|- stims_in_sz:', expobj.stims_in_sz, '\n|- stims_out_sz:', expobj.stims_out_sz, '\n|- stims_bf_sz:', expobj.stims_bf_sz)
+                      if 0 < (sz_start - stim) < 5 * expobj.fps]  # select stims that occur within 5 seconds before of the sz onset
+expobj.stims_af_sz = [stim for stim in expobj.stim_start_frames
+                      for sz_start in expobj.seizure_lfp_offsets
+                      if 0 < -1 * (sz_start - stim) < 5 * expobj.fps]  # select stims that occur within 5 seconds afterof the sz offset
+print('\n|- stims_in_sz:', expobj.stims_in_sz, '\n|- stims_out_sz:', expobj.stims_out_sz,
+      '\n|- stims_bf_sz:', expobj.stims_bf_sz, '\n|- stims_af_sz:', expobj.stims_af_sz)
 aoplot.plot_lfp_stims(expobj)
 
 

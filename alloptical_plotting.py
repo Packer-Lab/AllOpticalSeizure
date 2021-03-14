@@ -206,12 +206,15 @@ def plot_lfp_stims(expobj, title=None):
     if hasattr(expobj, 'stims_in_sz') and hasattr(expobj, 'stims_out_sz'):
         fig, ax = plt.subplots(figsize=[20, 3])
         x = [expobj.stim_times[np.where(expobj.stim_start_frames == stim)[0][0]] for stim in expobj.stims_in_sz]
-        x_out = [expobj.stim_times[np.where(expobj.stim_start_frames == stim)[0][0]] for stim in expobj.stims_out_sz]
+        x_out = [expobj.stim_times[np.where(expobj.stim_start_frames == stim)[0][0]] for stim in expobj.stims_out_sz
+                 if stim not in expobj.stims_bf_sz and stim not in expobj.stims_af_sz]
         x_bf = [expobj.stim_times[np.where(expobj.stim_start_frames == stim)[0][0]] for stim in expobj.stims_bf_sz]
+        x_af = [expobj.stim_times[np.where(expobj.stim_start_frames == stim)[0][0]] for stim in expobj.stims_af_sz]
         ax.plot(expobj.lfp_signal)
         ax.scatter(x=x, y=[0] * len(expobj.stims_in_sz), edgecolors='red', facecolors='white')
-        ax.scatter(x=x_out, y=[0] * len(expobj.stims_out_sz), edgecolors='green', facecolors='white')
-        ax.scatter(x=x_bf, y=[0] * len(expobj.stims_bf_sz), edgecolors='green', facecolors='yellow')
+        ax.scatter(x=x_out, y=[0] * len(x_out), edgecolors='grey', facecolors='white')
+        ax.scatter(x=x_bf, y=[0] * len(expobj.stims_bf_sz), edgecolors='grey', facecolors='deeppink')
+        ax.scatter(x=x_af, y=[0] * len(expobj.stims_af_sz), edgecolors='grey', facecolors='hotpink')
         # set x ticks at every 30 seconds
         labels = list(range(0, len(expobj.lfp_signal)//expobj.paq_rate, 30))
         plt.xticks(ticks=[(label * expobj.paq_rate) for label in labels], labels=labels)
@@ -228,7 +231,7 @@ def plot_lfp_stims(expobj, title=None):
             plt.suptitle(title)
         plt.show()
     else:
-        raise Exception('need to create stims_in_sz and stims_out_sz attributes first')
+        raise Exception('look, you need to create stims_in_sz and stims_out_sz attributes first (or rewrite this function)')
 
 
 ### below are plotting functions that I am still working on coding:
