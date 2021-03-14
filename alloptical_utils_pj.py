@@ -388,6 +388,7 @@ class alloptical():
         clock_voltage = paq['data'][clock_idx, :]
 
         frame_clock = pjf.threshold_detect(clock_voltage, 1)
+        self.frame_clock = frame_clock
         plt.figure(figsize=(10, 5))
         plt.plot(clock_voltage)
         plt.plot(frame_clock, np.ones(len(frame_clock)), '.')
@@ -399,6 +400,7 @@ class alloptical():
         stim_idx = paq['chan_names'].index(self.stim_channel)
         stim_volts = paq['data'][stim_idx, :]
         stim_times = pjf.threshold_detect(stim_volts, 1)
+        self.stim_times = stim_times
 
         # correct this based on txt file
         duration_ms = self.stim_dur
@@ -435,8 +437,6 @@ class alloptical():
         # find voltage channel and save as lfp_signal attribute
         voltage_idx = paq['chan_names'].index('voltage')
         self.lfp_signal = paq['data'][voltage_idx]
-
-
 
     def photostimProcessing(self):
 
@@ -1550,7 +1550,7 @@ class Post4ap(alloptical):
 
         return avg_sub_l, im_sub_l, im_diff_l
 
-    def classify_cells_sz(self, sz_border_path, to_plot = False):
+    def classify_cells_sz(self, sz_border_path, to_plot=False):
         """
         going to use Rob's suggestions to define boundary of the seizure in ImageJ and then read in the ImageJ output,
         and use this to classify cells as in seizure or out of seizure in a particular image (which will relate to stim time).
@@ -2115,9 +2115,11 @@ def calculate_reliability(expobj, dfstdf_threshold=None, dff_threshold=None, pre
                 cell_idx = expobj.cell_id.index(cell)
 
                 # going to start using the pandas photostim response df
-                stims_to_use = [str(stim) for stim in stim_timings if cell not in expobj.cells_sz_stim[stim]]  # select only the stim times where the cell IS NOT inside the sz boundary
+                stims_to_use = [str(stim) for stim in stim_timings if cell not in expobj.cells_sz_stim[
+                    stim]]  # select only the stim times where the cell IS NOT inside the sz boundary
                 counter = len(stims_to_use)
-                responses = df.loc[cell, stims_to_use]  # collect the appropriate responses for the current cell at the selected stim times
+                responses = df.loc[
+                    cell, stims_to_use]  # collect the appropriate responses for the current cell at the selected stim times
                 success = sum(i >= threshold for i in responses)
 
                 reliability[cell] = success / counter * 100.
@@ -2396,8 +2398,6 @@ def plot_single_tiff(tiff_path: str, title: str = None):
     if title is not None:
         plt.suptitle(title)
     plt.show()
-
-
 
 #### archive
 

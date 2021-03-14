@@ -200,4 +200,21 @@ def plot_flu_trace(expobj, cell, x_lims=None, slm_group=None, to_plot='raw', fig
     # plt.ylim(0, 300)
     plt.show()
 
+
+# make a plot with the paq file LFP signal to visualize these classifications
+def plot_lfp_stims(expobj, title=None):
+    if hasattr(expobj, 'stims_in_sz') and hasattr(expobj, 'stims_out_sz'):
+        plt.figure(figsize=[20, 3])
+        x = [expobj.stim_times[np.where(expobj.stim_start_frames == stim)[0][0]] for stim in expobj.stims_in_sz]
+        x_out = [expobj.stim_times[np.where(expobj.stim_start_frames == stim)[0][0]] for stim in expobj.stims_out_sz]
+        plt.plot(expobj.lfp_signal)
+        plt.scatter(x=x, y=[0] * len(expobj.stims_in_sz), edgecolors='red', facecolors='white')
+        plt.scatter(x=x_out, y=[0] * len(expobj.stims_out_sz), edgecolors='green', facecolors='white')
+        if title is not None:
+            plt.suptitle(title)
+        plt.show()
+    else:
+        raise Exception('need to create stims_in_sz and stims_out_sz attributes first')
+
+
 ### below are plotting functions that I am still working on coding:

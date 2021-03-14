@@ -50,10 +50,7 @@ for i in range(len(expobj.avg_sub_l)):
 
 expobj.stims_in_sz = [stim for stim in expobj.stim_start_frames if stim in expobj.seizure_frames]
 expobj.stims_out_sz = [stim for stim in expobj.stim_start_frames if stim not in expobj.seizure_frames]
-
-# make a plot with the paq file LFP signal to visualize these classifications
-plt.scatter(x = expobj.stims_in_sz, y = [5] * len(expobj.stims_in_sz))
-plt.plot()
+aoplot.plot_lfp_stims(expobj)
 
 # %% classifying cells as in or out of the current seizure location in the FOV
 
