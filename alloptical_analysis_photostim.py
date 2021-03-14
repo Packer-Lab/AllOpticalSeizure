@@ -38,7 +38,8 @@ expobj.avg_sub_l, im_sub_l, im_diff_l = expobj.avg_seizure_images(
 #     plt.imshow(i); plt.suptitle('%s' % counter); plt.show()
 #     counter += 1
 
-expobj.avg_stim_images(stim_timings=expobj.stim_start_frames[::4], to_plot=True, save_img=True)
+expobj.stim_images = {}
+expobj.avg_stim_images(stim_timings=expobj.stim_start_frames[::4], peri_frames=50, to_plot=True, save_img=True)
 
 img = pj.rotate_img_avg(expobj.avg_sub_l[3], angle=90)
 # PCA decomposition of the avg_seizure images
@@ -51,7 +52,7 @@ img_compressed = pj.pca_decomp_image(img, components=1, plot_quant=True)
 
 # import the CSV file in and classify cells by their location in or out of seizure
 
-
+# moved this to utils.funcs_pj
 def plot_cell_loc(expobj, cells: list, color: str = 'pink', show: bool = True):
     """
     plots an image of the FOV to show the locations of cells given in cells list.
@@ -71,24 +72,13 @@ def plot_cell_loc(expobj, cells: list, color: str = 'pink', show: bool = True):
         plt.show()
 # csv_path = "/home/pshah/mnt/qnap/Analysis/2020-12-18/2020-12-18_t-013/2020-12-18_t-013_post_border.csv"
 
+stims_of_interest = [9222]
 
-
-in_sz = []
-sz_border_path = "/home/pshah/mnt/qnap/Analysis/2020-12-18/2020-12-18_t-013/boundary_csv/2020-12-18_t-013_post 4ap all optical trial_stim-9222.tif_border.csv"
-for cell, s in enumerate(expobj.stat):
-    in_sz.append(expobj._InOutSz(cell_med=s['med'], sz_border_path=sz_border_path))
-
-xline = []
-yline = []
-with open(sz_border_path) as csv_file:
-    csv_file = csv.DictReader(csv_file, fieldnames=None, dialect='excel')
-    for row in csv_file:
-        xline.append(int(row['xcoords']))
-        yline.append(int(row['ycoords']))
-plot_cell_loc(expobj, cells=in_sz, show=False)
-plt.scatter(x=xline[0], y=yline[0])
-plt.scatter(x=xline[1], y=yline[1])
-plt.show()
+expobj.cells_sz_stim = {}
+for stim in stims_of_interest:
+    sz_border_path = "/home/pshah/mnt/qnap/Analysis/2020-12-18/2020-12-18_t-013/boundary_csv/2020-12-18_t-013_stim-%s.tif_border.csv" % stim
+    in_sz = expobj.classify_cells_sz(sz_border_path)
+    expobj.cells_sz_stim[stim] = in_sz  # for each stim, there will be a list of cells that will be classified as in seizure or out of seizure
 
 
 # %% photostim analysis - PLOT avg over all photstim. trials traces from PHOTOSTIM TARGETTED cells

@@ -235,6 +235,27 @@ def dff(flu, baseline=None):
     return flu_dff
 
 
+# simple plot of the location of the given cell(s) against a black FOV
+def plot_cell_loc(expobj, cells: list, color: str = 'pink', show: bool = True):
+    """
+    plots an image of the FOV to show the locations of cells given in cells list.
+    :param expobj: alloptical or 2p imaging object
+    :param color: str to specify color of the scatter plot for cells
+    :param cells: list of cells to plot
+    :param show: if True, show the plot at the end of the function
+    """
+    black = np.zeros((expobj.frame_x, expobj.frame_x), dtype='uint16')
+    plt.imshow(black)
+
+    for cell in cells:
+        y, x = expobj.stat[cell]['med']
+        plt.scatter(x=x, y=y, edgecolors=color, facecolors='none', linewidths=0.8)
+
+    if show:
+        plt.show()
+
+
+
 ############### GENERALLY USEFUL FUNCTIONS #############################################################################
 
 # reporting sizes of variables
