@@ -204,14 +204,26 @@ def plot_flu_trace(expobj, cell, x_lims=None, slm_group=None, to_plot='raw', fig
 # make a plot with the paq file LFP signal to visualize these classifications
 def plot_lfp_stims(expobj, title=None):
     if hasattr(expobj, 'stims_in_sz') and hasattr(expobj, 'stims_out_sz'):
-        plt.figure(figsize=[20, 3])
+        fig, ax = plt.subplots(figsize=[20, 3])
         x = [expobj.stim_times[np.where(expobj.stim_start_frames == stim)[0][0]] for stim in expobj.stims_in_sz]
         x_out = [expobj.stim_times[np.where(expobj.stim_start_frames == stim)[0][0]] for stim in expobj.stims_out_sz]
-        plt.plot(expobj.lfp_signal)
-        plt.scatter(x=x, y=[0] * len(expobj.stims_in_sz), edgecolors='red', facecolors='white')
-        plt.scatter(x=x_out, y=[0] * len(expobj.stims_out_sz), edgecolors='green', facecolors='white')
-        # TODO change the x axis scale to equal seconds
-        plt.xticks(range(len(expobj.lfp_signal)//expobj.paq_rate + 1))
+        x_bf = [expobj.stim_times[np.where(expobj.stim_start_frames == stim)[0][0]] for stim in expobj.stims_bf_sz]
+        ax.plot(expobj.lfp_signal)
+        ax.scatter(x=x, y=[0] * len(expobj.stims_in_sz), edgecolors='red', facecolors='white')
+        ax.scatter(x=x_out, y=[0] * len(expobj.stims_out_sz), edgecolors='green', facecolors='white')
+        ax.scatter(x=x_bf, y=[0] * len(expobj.stims_bf_sz), edgecolors='green', facecolors='yellow')
+        # set x ticks at every 30 seconds
+        labels = list(range(0, len(expobj.lfp_signal)//expobj.paq_rate, 30))
+        plt.xticks(ticks=[(label * expobj.paq_rate) for label in labels], labels=labels)
+        ax.tick_params(axis='both', which='both', length=3)
+        # ax.set_xticks([(label * expobj.paq_rate) for label in labels])#, labels=range(0, len(expobj.lfp_signal)//expobj.paq_rate, 30))
+        # ax.set_xticklabels(labels); plt.show()
+        #
+        ax.set_xlabel('Time (secs)')
+        ax.set_ylabel('LFP - voltage (mV)')
+
+
+
         if title is not None:
             plt.suptitle(title)
         plt.show()

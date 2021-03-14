@@ -31,7 +31,7 @@ if hasattr(expobj, 'paq_rate'):
     pass
 else:
     print('need to run paqProcessing to update paq attr.s in expobj')
-    expobj.paqProcessing()
+    expobj.paqProcessing(); expobj.save_pkl()
 
 # %% ANALYSIS STEPS FOR SEIZURE TRIALS ONLY!!
 
@@ -54,9 +54,12 @@ for i in range(len(expobj.avg_sub_l)):
 
 # %% classifying stims as in_sz or out_sz
 
-expobj.save_pkl()
 expobj.stims_in_sz = [stim for stim in expobj.stim_start_frames if stim in expobj.seizure_frames]
 expobj.stims_out_sz = [stim for stim in expobj.stim_start_frames if stim not in expobj.seizure_frames]
+expobj.stims_bf_sz = [stim for stim in expobj.stim_start_frames
+                      for sz_start in expobj.seizure_lfp_onsets
+                      if abs(stim - sz_start) < 5 * expobj.fps]  # select stims that occur within 5 seconds of the sz onset
+print('\n|- stims_in_sz:', expobj.stims_in_sz, '\n|- stims_out_sz:', expobj.stims_out_sz, '\n|- stims_bf_sz:', expobj.stims_bf_sz)
 aoplot.plot_lfp_stims(expobj)
 
 
@@ -154,7 +157,6 @@ pj.bar_with_points(data=[pre_4ap_reliability, post_4ap_reliabilty], x_tick_label
 
 # %% plot response of ALL cells across whole trace in FOV after photostim - plotting not yet working properly
 # collect photostim timed average dff traces
-stim_timings = expobj.stim_start_frames
 title = 'All cells dFF'
 all_cells_dff = []
 good_std_cells = []
@@ -186,7 +188,6 @@ pj.bar_with_points(data=[group1, group2], x_tick_labels=['photostim target', 'no
 # %% plot heatmap of average of all stims. per cell for each stim. group
 # - need to find a way to sort these responses that similar cells are sorted together
 
-average_responses = []
 stim_timings = [str(i) for i in expobj.stim_start_frames]  # need each stim start frame as a str type for pandas slicing
 average_responses = expobj.dfstdf_all_cells[stim_timings].mean(axis=1).tolist()
 
@@ -198,7 +199,7 @@ plt.figure(figsize=(5, 15));
 sns.heatmap(df_, cmap='seismic', vmin=-5, vmax=5, cbar_kws={"shrink": 0.25});
 plt.show()
 
-# %% plot imshow average response of cells in response to stim at the cell's XY location - what is the units of the response being plotted
+# %% plot imshow XY locations with average response of ALL cells in FOV
 
 # TODO transfer this FOV cell location mapped response plot to the aoplot script
 
@@ -250,6 +251,19 @@ plt.suptitle((experiment + ' - avg. stim responses - targets in green'), y=0.95,
 plt.show()
 # plt.savefig(
 #     "/Users/prajayshah/OneDrive - University of Toronto/UTPhD/Proposal/2020/Figures/avg_pop_responses_%s.svg" % experiment)
+
+
+
+
+
+
+#########################################################################################################################
+#### END OF CODE THAT HAS BEEN REVIEWEV SO FAR ##########################################################################
+#########################################################################################################################
+
+
+
+
 
 
 
