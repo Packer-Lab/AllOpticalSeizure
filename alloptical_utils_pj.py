@@ -2080,14 +2080,17 @@ def corrcoef_array(array):
 # calculate reliability of photostim responsiveness of all of the targeted cells (found in s2p output)
 def calculate_reliability(expobj, dfstdf_threshold=None, dff_threshold=None, pre_stim=10,
                           post_stim=200, filter_for_sz=False):
-    '''calculates the percentage of successful photoresponsive trials for each targeted cell, where success is post
-     stim response over the dff_threshold'''
+    """calculates the percentage of successful photoresponsive trials for each targeted cell, where success is post
+     stim response over the dff_threshold. the filter_for_sz argument is set to True when needing to filter out stim timings
+     that occured when the cell was classified as inside the sz boundary."""
+
     reliability = {}  # dict will be used to store the reliability results for each targeted cell
     targets_dff_all_stimtrials = {}  # dict will contain the peri-stim dFF for each cell by the cell_idx
     stim_timings = expobj.stim_start_frames
 
     if filter_for_sz:
-        assert list(stim_timings) == list(expobj.cells_sz_stim.keys())
+        # assert list(stim_timings) == list(expobj.cells_sz_stim.keys())  # dont really need this assertion because you wont necessarily always look at the sz boundary for all stims every trial
+        stim_timings = expobj.cells_sz_stim.keys()
         if dff_threshold:
             threshold = round(dff_threshold)
             df = expobj.dff_all_cells
@@ -2114,7 +2117,15 @@ def calculate_reliability(expobj, dfstdf_threshold=None, dff_threshold=None, pre
                 reliability[cell] = success / counter * 100.
 
     else:
-        # collect photostim timed average dff traces of photostim targets
+        # need to update code to utilize the main responses pandas df for the expobj
+        if dff_threshold:
+            threshold = round(dff_threshold)
+            dff = True
+        elif dfstdf_threshold:
+            threshold = dfstdf_threshold
+            dff = False
+        else:
+            raise Exception("need to specify either dff_threshold or dfstdf_threshold value to use")
         for cell in expobj.s2p_cell_targets:
             # print('considering cell # %s' % cell)
             if cell in expobj.cell_id:
@@ -2125,14 +2136,6 @@ def calculate_reliability(expobj, dfstdf_threshold=None, dff_threshold=None, pre
 
                 success = 0
                 counter = 0
-                if dff_threshold:
-                    threshold = round(dff_threshold)
-                    dff = True
-                elif dfstdf_threshold:
-                    threshold = dfstdf_threshold
-                    dff = False
-                else:
-                    raise Exception("need to specify either dff_threshold or dfstdf_threshold value to use")
                 for trace in flu_all_stims:
                     counter += 1
                     # calculate dFF (noramlized to pre-stim) for each trace
@@ -2151,7 +2154,7 @@ def calculate_reliability(expobj, dfstdf_threshold=None, dff_threshold=None, pre
 
                 reliability[cell] = success / counter * 100.
     print(reliability)
-    print("the average reliability is: %s (calc. over %s stims)" % (round(np.mean(list(reliability.values())), 2), counter))
+    print("avg reliability is: %s (calc. over %s stims)" % (round(np.mean(list(reliability.values())), 2), counter))
     return reliability
 
 

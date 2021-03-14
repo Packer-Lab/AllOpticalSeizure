@@ -39,7 +39,7 @@ expobj.avg_sub_l, im_sub_l, im_diff_l = expobj.avg_seizure_images(
 #     counter += 1
 
 expobj.stim_images = {}
-expobj.avg_stim_images(stim_timings=expobj.stim_start_frames[::4], peri_frames=50, to_plot=True, save_img=True)
+expobj.avg_stim_images(stim_timings=expobj.stim_start_frames, peri_frames=50, to_plot=True, save_img=True)
 
 img = pj.rotate_img_avg(expobj.avg_sub_l[3], angle=90)
 # PCA decomposition of the avg_seizure images
