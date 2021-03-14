@@ -17,10 +17,10 @@ from numba import njit
 from skimage import draw
 
 ###### IMPORT pkl file containing data in form of expobj
-trial = 't-013'
+trial = 't-011'
 experiment = 'RL108: photostim-post4ap-%s' % trial
 date = '2020-12-18'
-pkl_path = "/home/pshah/mnt/qnap/Data/%s/%s_%s/%s_%s.pkl" % (date, date, trial, date, trial)
+pkl_path = "/home/pshah/mnt/qnap/Analysis/%s/%s_%s/%s_%s.pkl" % (date, date, trial, date, trial)
 # pkl_path = '/Users/prajayshah/Documents/data-to-process/2020-12-18/2020-12-18_t-009.pkl'
 
 with open(pkl_path, 'rb') as f:
@@ -38,12 +38,22 @@ expobj.avg_sub_l, im_sub_l, im_diff_l = expobj.avg_seizure_images(
 #     plt.imshow(i); plt.suptitle('%s' % counter); plt.show()
 #     counter += 1
 
-expobj.stim_images = {}
-expobj.avg_stim_images(stim_timings=expobj.stim_start_frames, peri_frames=50, to_plot=True, save_img=True)
+# expobj.avg_stim_images(stim_timings=expobj.stim_start_frames, peri_frames=50, to_plot=False, save_img=True)
+expobj.save_pkl()
 
-img = pj.rotate_img_avg(expobj.avg_sub_l[3], angle=90)
-# PCA decomposition of the avg_seizure images
-img_compressed = pj.pca_decomp_image(img, components=1, plot_quant=True)
+for i in range(len(expobj.avg_sub_l)):
+    img = pj.rotate_img_avg(expobj.avg_sub_l[i], angle=90)
+    # PCA decomposition of the avg_seizure images
+    img_compressed = pj.pca_decomp_image(img, components=1, plot_quant=True)
+
+# %% classifying stims as in_sz or out_sz
+
+expobj.stims_in_sz = [stim for stim in expobj.stim_start_frames if stim in expobj.seizure_frames]
+expobj.stims_out_sz = [stim for stim in expobj.stim_start_frames if stim not in expobj.seizure_frames]
+
+# make a plot with the paq file LFP signal to visualize these classifications
+plt.scatter(x = expobj.stims_in_sz, y = [5] * len(expobj.stims_in_sz))
+plt.plot()
 
 # %% classifying cells as in or out of the current seizure location in the FOV
 

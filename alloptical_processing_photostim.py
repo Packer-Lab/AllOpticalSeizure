@@ -1,6 +1,7 @@
 ## this file is for processing the photostim-experiment alloptical expobj object AFTER suite2p has been run
 ## the end of the script will update the expobj that was in the original pkl path
 
+import os
 import pickle
 import alloptical_utils_pj as aoutils
 import alloptical_plotting as aoplot
@@ -9,10 +10,10 @@ import pandas as pd
 import numpy as np
 
 # %% ###### IMPORT pkl file containing expobj
-trial = 't-013'
+trial = 't-011'
 experiment = 'RL108: photostim-post4ap-%s' % trial
 date = '2020-12-18'
-pkl_path = "/home/pshah/mnt/qnap/Data/%s/%s_%s/%s_%s.pkl" % (date, date, trial, date, trial)
+pkl_path = "/home/pshah/mnt/qnap/Analysis/%s/%s_%s/%s_%s.pkl" % (date, date, trial, date, trial)
 
 
 # determine which frames to retrieve from the overall total s2p output
@@ -182,6 +183,16 @@ print('The avg. responses of photostim targets is: %s' % np.mean(
 
 
 # %% SAVE THE UPDATED expobj OBJECT IN THE ORIGINAL PKL PATH TO USE NEXT
+
+# make the necessary Analysis saving subfolder as well
+expobj.analysis_save_path = expobj.tiff_path[:21] + 'Analysis/' + expobj.tiff_path_dir[26:]
+if os.path.exists(expobj.analysis_save_path):
+    pass
+elif os.path.exists(expobj.analysis_save_path[:-17]):
+    os.mkdir(expobj.analysis_save_path)
+elif os.path.exists(expobj.analysis_save_path[:-27]):
+    os.mkdir(expobj.analysis_save_path[:-17])
+
 
 expobj.save_pkl(pkl_path=pkl_path)
 

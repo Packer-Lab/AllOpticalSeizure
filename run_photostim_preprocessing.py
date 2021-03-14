@@ -153,7 +153,7 @@ def run_photostim_processing(trial, exp_type, tiffs_loc_dir, tiffs_loc, naparms_
 
 
 # %% update the trial and photostim experiment files information below before running run_photostim_processing()
-trial = 't-013'  # note that %s magic command in the code below will be using these trials listed here
+trial = 't-011'  # note that %s magic command in the code below will be using these trials listed here
 
 data_path_base = '/home/pshah/mnt/qnap/Data/2020-12-18'
 date = '2020-12-18'
@@ -165,7 +165,7 @@ exp_type = 'post 4ap all optical trial'
 comments = '5 seizure events on LFP (trial starts during a seizure)'
 tiffs_loc_dir = '%s/%s_%s' % (data_path_base, date, trial)
 tiffs_loc = '%s/%s_%s_Cycle00001_Ch3.tif' % (tiffs_loc_dir, date, trial)
-pkl_path = '%s/%s_%s.pkl' % (tiffs_loc_dir, date, trial)  # specify path to save pkl object
+pkl_path = "/home/pshah/mnt/qnap/Analysis/%s/%s_%s/%s_%s.pkl" % (date, date, trial, date, trial)  # specify path in Analysis folder to save pkl object
 paqs_loc = '%s/%s_RL108_%s.paq' % (data_path_base, date, trial[2:])  # path to the .paq files for the selected trials
 new_tiffs = tiffs_loc[:-19]  # where new tiffs from rm_artifacts_tiffs will be saved
 

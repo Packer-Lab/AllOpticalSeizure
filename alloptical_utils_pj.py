@@ -432,6 +432,12 @@ class alloptical():
             # # sanity check
             # assert max(self.stim_start_frames[0]) < self.raw[plane].shape[1] * self.n_planes
 
+        # find voltage channel and save as lfp_signal attribute
+        voltage_idx = paq['chan_names'].index('voltage')
+        self.lfp_signal = paq['data'][voltage_idx]
+
+
+
     def photostimProcessing(self):
 
         '''
