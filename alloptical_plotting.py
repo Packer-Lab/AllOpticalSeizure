@@ -210,6 +210,8 @@ def plot_lfp_stims(expobj, title=None):
         plt.plot(expobj.lfp_signal)
         plt.scatter(x=x, y=[0] * len(expobj.stims_in_sz), edgecolors='red', facecolors='white')
         plt.scatter(x=x_out, y=[0] * len(expobj.stims_out_sz), edgecolors='green', facecolors='white')
+        # TODO change the x axis scale to equal seconds
+        plt.xticks(range(len(expobj.lfp_signal)//expobj.paq_rate + 1))
         if title is not None:
             plt.suptitle(title)
         plt.show()

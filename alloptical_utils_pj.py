@@ -381,6 +381,7 @@ class alloptical():
         print('\nloading', self.paq_path)
 
         paq, _ = paq_read(self.paq_path, plot=True)
+        self.paq_rate = paq['rate']
 
         # find frame times
 

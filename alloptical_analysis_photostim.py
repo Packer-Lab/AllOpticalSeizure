@@ -27,6 +27,12 @@ with open(pkl_path, 'rb') as f:
     expobj = pickle.load(f)
 print('imported expobj for "%s %s" from: %s' % (date, experiment, pkl_path))
 
+if hasattr(expobj, 'paq_rate'):
+    pass
+else:
+    print('need to run paqProcessing to update paq attr.s in expobj')
+    expobj.paqProcessing()
+
 # %% ANALYSIS STEPS FOR SEIZURE TRIALS ONLY!!
 
 expobj.avg_sub_l, im_sub_l, im_diff_l = expobj.avg_seizure_images(
@@ -48,9 +54,11 @@ for i in range(len(expobj.avg_sub_l)):
 
 # %% classifying stims as in_sz or out_sz
 
+expobj.save_pkl()
 expobj.stims_in_sz = [stim for stim in expobj.stim_start_frames if stim in expobj.seizure_frames]
 expobj.stims_out_sz = [stim for stim in expobj.stim_start_frames if stim not in expobj.seizure_frames]
 aoplot.plot_lfp_stims(expobj)
+
 
 # %% classifying cells as in or out of the current seizure location in the FOV
 
