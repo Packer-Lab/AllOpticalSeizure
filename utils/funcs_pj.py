@@ -10,6 +10,7 @@ import random
 from sklearn.decomposition import PCA
 import tifffile as tf
 
+
 # plotting settings
 # fig = plt.figure()
 # ax = fig.add_subplot(1, 1, 1)
@@ -37,6 +38,7 @@ def corrcoef_array(array):
 
     return corr, result
 
+
 # making a new class inherited from alloptical for post4ap functions and elements and variables and attributes
 def rotate_img_avg(input_img, angle):
     """this function will be used to rotate the input_img (ideally will be the avg seizure image) at the given angle.
@@ -48,6 +50,7 @@ def rotate_img_avg(input_img, angle):
     full_img_rot = ndimage.rotate(input_img, angle, reshape=True)
 
     return full_img_rot
+
 
 # PCA decomposition(/compression) of an image
 def pca_decomp_image(input_img, components: int = 3, plot_quant: bool = False):
@@ -83,7 +86,7 @@ def pca_decomp_image(input_img, components: int = 3, plot_quant: bool = False):
                 avg[i] = 0
 
         ax3.plot(avg)
-        ax3.set_xlim(20, len(img_t)-20)
+        ax3.set_xlim(20, len(img_t) - 20)
         ax3.title.set_text('average plot quantification of the input img')
         plt.show()
 
@@ -103,7 +106,7 @@ def pca_decomp_image(input_img, components: int = 3, plot_quant: bool = False):
                 avg[i] = 0
 
         ax3.plot(avg)
-        ax3.set_xlim(20, len(img_compressed.T)-20)
+        ax3.set_xlim(20, len(img_compressed.T) - 20)
         ax3.title.set_text('average plot quantification of the PCA compressed img - %s dimensions' % components)
 
         plt.show()
@@ -236,12 +239,13 @@ def dff(flu, baseline=None):
 
 
 # simple plot of the location of the given cell(s) against a black FOV
-def plot_cell_loc(expobj, cells: list, color: str = 'pink', show: bool = True):
+def plot_cell_loc(expobj, cells: list, color: str = 'pink', title=None, show: bool = True):
     """
     plots an image of the FOV to show the locations of cells given in cells list.
     :param expobj: alloptical or 2p imaging object
     :param color: str to specify color of the scatter plot for cells
     :param cells: list of cells to plot
+    :param title: str title for plot
     :param show: if True, show the plot at the end of the function
     """
     black = np.zeros((expobj.frame_x, expobj.frame_x), dtype='uint16')
@@ -251,9 +255,11 @@ def plot_cell_loc(expobj, cells: list, color: str = 'pink', show: bool = True):
         y, x = expobj.stat[cell]['med']
         plt.scatter(x=x, y=y, edgecolors=color, facecolors='none', linewidths=0.8)
 
+    if title is not None:
+        plt.suptitle(title)
+
     if show:
         plt.show()
-
 
 
 ############### GENERALLY USEFUL FUNCTIONS #############################################################################
@@ -266,6 +272,7 @@ def sizeof_fmt(num, suffix='B'):
             return "%3.1f %s%s" % (num, unit, suffix)
         num /= 1024.0
     return "%.1f %s%s" % (num, 'Yi', suffix)
+
 
 def print_size_vars():
     for name, size in sorted(((name, sys.getsizeof(value)) for name, value in locals().items()),
@@ -438,7 +445,7 @@ def bar_with_points(data, title='', x_tick_labels=[], points=True, bar=True, col
     if not bar:
         for i in x:
             # ax.plot(np.linspace(x[i] - w / 2, x[i] + w / 2, 3), [np.mean(yi) for yi in y] * 3, color=colors[i])
-            ax.plot(np.linspace(x[i]*w*2 - w / 2, x[i]*w*2 + w / 2, 3), [np.mean(y[i])] * 3, color='black')
+            ax.plot(np.linspace(x[i] * w * 2 - w / 2, x[i] * w * 2 + w / 2, 3), [np.mean(y[i])] * 3, color='black')
         lw = 0,
         edgecolor = None
     else:
@@ -446,7 +453,7 @@ def bar_with_points(data, title='', x_tick_labels=[], points=True, bar=True, col
         lw = 1
 
     # plot bar graph, or if no bar (when lw = 0 from above) then use it to plot the error bars
-    ax.bar([x*w*2 for x in x],
+    ax.bar([x * w * 2 for x in x],
            height=[np.mean(yi) for yi in y],
            yerr=[np.std(yi) for yi in y],  # error bars
            capsize=4.5,  # error bar cap width in points
@@ -456,7 +463,7 @@ def bar_with_points(data, title='', x_tick_labels=[], points=True, bar=True, col
            edgecolor=edgecolor,
            color=(0, 0, 0, 0),  # face color transparent
            )
-    ax.set_xticks([x*w*2 for x in x])
+    ax.set_xticks([x * w * 2 for x in x])
     ax.set_xticklabels(x_tick_labels)
 
     if xlims:
@@ -468,7 +475,7 @@ def bar_with_points(data, title='', x_tick_labels=[], points=True, bar=True, col
     if points:
         for i in x:
             # distribute scatter randomly across whole width of bar
-            ax.scatter(x[i]*w*2 + np.random.random(len(y[i])) * w - w / 2, y[i], color=colors[i], alpha=alpha)
+            ax.scatter(x[i] * w * 2 + np.random.random(len(y[i])) * w - w / 2, y[i], color=colors[i], alpha=alpha)
 
     if ylims:
         ax.set_ylim(ylims)
@@ -506,6 +513,5 @@ def plot_single_tiff(tiff_path: str, title: str = None):
     if title is not None:
         plt.suptitle(title)
     plt.show()
-
 
 #######

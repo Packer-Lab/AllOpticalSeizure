@@ -21,7 +21,8 @@ trial = 't-011'
 experiment = 'RL108: photostim-post4ap-%s' % trial
 date = '2020-12-18'
 pkl_path = "/home/pshah/mnt/qnap/Analysis/%s/%s_%s/%s_%s.pkl" % (date, date, trial, date, trial)
-# pkl_path = '/Users/prajayshah/Documents/data-to-process/2020-12-18/2020-12-18_t-009.pkl'
+# pkl_path = "/home/pshah/mnt/qnap/Data/%s/%s_%s/%s_%s.pkl" % (date, date, trial, date, trial)
+
 
 with open(pkl_path, 'rb') as f:
     print('importing expobj for "%s %s" from: %s' % (date, experiment, pkl_path))
@@ -66,7 +67,7 @@ expobj.stims_af_sz = [stim for stim in expobj.stim_start_frames
 print('\n|- stims_in_sz:', expobj.stims_in_sz, '\n|- stims_out_sz:', expobj.stims_out_sz,
       '\n|- stims_bf_sz:', expobj.stims_bf_sz, '\n|- stims_af_sz:', expobj.stims_af_sz)
 aoplot.plot_lfp_stims(expobj)
-
+expobj.save_pkl()
 
 # %% classifying cells as in or out of the current seizure location in the FOV
 
@@ -95,13 +96,20 @@ def plot_cell_loc(expobj, cells: list, color: str = 'pink', show: bool = True):
         plt.show()
 # csv_path = "/home/pshah/mnt/qnap/Analysis/2020-12-18/2020-12-18_t-013/2020-12-18_t-013_post_border.csv"
 
-stims_of_interest = [9222]
+stims_of_interest = [1424, 1572, 1720, 1868]
+flip_stims = [1424, 1572, 1720]
 
 expobj.cells_sz_stim = {}
 for stim in stims_of_interest:
-    sz_border_path = "/home/pshah/mnt/qnap/Analysis/2020-12-18/2020-12-18_t-013/boundary_csv/2020-12-18_t-013_stim-%s.tif_border.csv" % stim
-    in_sz = expobj.classify_cells_sz(sz_border_path)
+    sz_border_path = "%s/boundary_csv/2020-12-18_%s_stim-%s.tif_border.csv" % (expobj.analysis_save_path, trial, stim)
+    if stim in flip_stims:
+        flip = True
+    else:
+        flip = False
+
+    in_sz = expobj.classify_cells_sz(sz_border_path, to_plot=True, title='%s' % stim, flip=flip)
     expobj.cells_sz_stim[stim] = in_sz  # for each stim, there will be a list of cells that will be classified as in seizure or out of seizure
+
 
 
 # %% photostim analysis - PLOT avg over all photstim. trials traces from PHOTOSTIM TARGETTED cells
@@ -263,8 +271,14 @@ plt.show()
 
 
 #########################################################################################################################
-#### END OF CODE THAT HAS BEEN REVIEWEV SO FAR ##########################################################################
+#### END OF CODE THAT HAS BEEN REVIEWED SO FAR ##########################################################################
 #########################################################################################################################
+
+#%%
+
+
+
+
 
 
 

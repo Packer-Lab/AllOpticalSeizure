@@ -12,10 +12,10 @@ from utils import funcs_pj as pj
 import pickle
 
 ###### IMPORT pkl file containing expobj
-trial = 't-009'
-experiment = 'RL108: photostim-pre4ap-%s' % trial
+trial = 't-011'
+experiment = 'RL108: photostim-post4ap-%s' % trial
 date = '2020-12-18'
-pkl_path = "/home/pshah/mnt/qnap/Data/%s/%s_%s/%s_%s.pkl" % (date, date, trial, date, trial)
+pkl_path = "/home/pshah/mnt/qnap/Analysis/%s/%s_%s/%s_%s.pkl" % (date, date, trial, date, trial)
 
 with open(pkl_path, 'rb') as f:
     expobj = pickle.load(f)
@@ -23,8 +23,16 @@ print('imported expobj for "%s %s" from: %s' % (date, experiment, pkl_path))
 
 # %%
 
+stims_of_interest = [1424, 1572, 1720, 1868]
+flip_stims = [1424, 1572, 1720]
 
-group1 = list(expobj.average_responses_dfstdf[expobj.average_responses_dfstdf['group'] == 'photostim target']['Avg. dF/stdF response'])
-group2 = list(expobj.average_responses_dfstdf[expobj.average_responses_dfstdf['group'] == 'non-target']['Avg. dF/stdF response'])
-pj.bar_with_points(data=[group1, group2], x_tick_labels=['photostim target', 'non-target'], xlims=[0, 0.6], ylims=[0, 1.5], bar=False,
-                   colors=['red', 'black'], title=experiment, y_label='Avg dF/stdF response', expand_size_y=1.3, expand_size_x=1.5)
+expobj.cells_sz_stim = {}
+for stim in stims_of_interest:
+    sz_border_path = "%s/boundary_csv/2020-12-18_%s_stim-%s.tif_border.csv" % (expobj.analysis_save_path, trial, stim)
+    if stim in flip_stims:
+        flip = True
+    else:
+        flip = False
+    in_sz = expobj.classify_cells_sz(sz_border_path, to_plot=True, title='%s' % stim, flip=flip)
+    expobj.cells_sz_stim[stim] = in_sz  # for each stim, there will be a list of cells that will be classified as in seizure or out of seizure
+
