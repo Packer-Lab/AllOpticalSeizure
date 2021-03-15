@@ -102,7 +102,11 @@ def plot_cell_loc(expobj, cells: list, color: str = 'pink', show: bool = True):
         plt.show()
 # csv_path = "/home/pshah/mnt/qnap/Analysis/2020-12-18/2020-12-18_t-013/2020-12-18_t-013_post_border.csv"
 
-flip_stims = [1424, 1572, 1720, 7946, 8094, 8242, 11207, 11355, 11504, 11800]  # specify here the stims where the sz_wavefront is facing bottom right --> top left (northwest)
+# need to run this twice to correct for mis-assignment of cells (look at results and then find out which stims need to be flipped)
+flip_stims = [1424, 1572, 1720,
+              3944, 4092, 4240, 4388, 4537,
+              7650, 7798, 7946, 8094, 8242, 8391,
+              11059, 11207, 11355, 11504, 11652, 11800, 11948]  # specify here the stims where the flip=False leads to incorrect assignment
 
 print('working on classifying cells for stims start frames:')
 for on, off in zip(expobj.stims_bf_sz, expobj.stims_af_sz):
@@ -119,7 +123,6 @@ for on, off in zip(expobj.stims_bf_sz, expobj.stims_af_sz):
 
         in_sz = expobj.classify_cells_sz(sz_border_path, to_plot=True, title='%s' % stim, flip=flip)
         expobj.cells_sz_stim[stim] = in_sz  # for each stim, there will be a list of cells that will be classified as in seizure or out of seizure
-
 
 
 # %%

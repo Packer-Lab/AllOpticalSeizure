@@ -1410,9 +1410,11 @@ class Post4ap(alloptical):
 
         # subselect raw tiff movie over all seizures as marked by LFP onset and offsets
         for on, off in zip(onsets, offsets):
-            select_frames = (on, off); print('cropping sz frames', select_frames)
+            select_frames = (on, off);
+            print('cropping sz frames', select_frames)
             save_as = self.analysis_save_path + '/%s_%s_subselected_%s_%s.tif' % (self.metainfo['date'],
-                self.metainfo['trial'], select_frames[0], select_frames[1])
+                                                                                  self.metainfo['trial'],
+                                                                                  select_frames[0], select_frames[1])
             subselect_tiff(tiff_stack=stack, select_frames=select_frames, save_as=save_as)
         print('\ndone. saved to:', self.analysis_save_path)
 
@@ -1528,7 +1530,7 @@ class Post4ap(alloptical):
 
         return avg_sub_l, im_sub_l, im_diff_l
 
-    def _InOutSz(self, cell, cell_med: list, sz_border_path: str, flip=False, to_plot=False):
+    def _InOutSz(self, cell, cell_med: list, sz_border_path: str, to_plot=False):
         """
         Returns True if the given cell's location is inside the seizure boundary which is defined as the coordinates
         given in the .csv sheet.
@@ -1577,11 +1579,11 @@ class Post4ap(alloptical):
         ds1 = (0 - xline[i]) * (yline[i - 1] - yline[i]) - (half_frame_y - yline[i]) * (xline[i - 1] - xline[i])
         ds2 = (frame_x - xline[i]) * (yline[i - 1] - yline[i]) - (half_frame_y - yline[i]) * (xline[i - 1] - xline[i])
 
-        if to_plot:  # plot the sz boundary points
-            # pjf.plot_cell_loc(self, cells=[cell], show=False)
-            plt.scatter(x=xline[0], y=yline[0])
-            plt.scatter(x=xline[1], y=yline[1])
-            # plt.show()
+        # if to_plot:  # plot the sz boundary points
+        #     # pjf.plot_cell_loc(self, cells=[cell], show=False)
+        #     plt.scatter(x=xline[0], y=yline[0])
+        #     plt.scatter(x=xline[1], y=yline[1])
+        #     # plt.show()
 
         if np.sign(d) == np.sign(ds1):
             return True
@@ -1590,7 +1592,7 @@ class Post4ap(alloptical):
         else:
             return False
 
-    def classify_cells_sz(self, sz_border_path, to_plot=False, title=None, flip=False):
+    def classify_cells_sz(self, sz_border_path, to_plot=True, title=None, flip=False):
         """
         going to use Rob's suggestions to define boundary of the seizure in ImageJ and then read in the ImageJ output,
         and use this to classify cells as in seizure or out of seizure in a particular image (which will relate to stim time).
@@ -1605,12 +1607,33 @@ class Post4ap(alloptical):
         in_sz = []
         out_sz = []
         for cell, s in enumerate(self.stat):
-            if self._InOutSz(cell=cell, cell_med=s['med'], sz_border_path=sz_border_path, flip=False, to_plot=to_plot):
+            x = self._InOutSz(cell=cell, cell_med=s['med'], sz_border_path=sz_border_path, to_plot=to_plot)
+
+            if x is True:
                 in_sz.append(cell)
-            else:
+            elif x is False:
                 out_sz.append(cell)
 
+            if to_plot:  # plot the sz boundary points
+                xline = []
+                yline = []
+                with open(sz_border_path) as csv_file:
+                    csv_file = csv.DictReader(csv_file, fieldnames=None, dialect='excel')
+                    for row in csv_file:
+                        xline.append(int(float(row['xcoords'])))
+                        yline.append(int(float(row['ycoords'])))
+                # assumption = line is monotonic
+                line_argsort = np.argsort(yline)
+                xline = np.array(xline)[line_argsort]
+                yline = np.array(yline)[line_argsort]
+
+                # pjf.plot_cell_loc(self, cells=[cell], show=False)
+                plt.scatter(x=xline[0], y=yline[0])
+                plt.scatter(x=xline[1], y=yline[1])
+                # plt.show()
+
         if flip:
+            # pass
             in_sz_2 = in_sz
             in_sz = out_sz
             out_sz = in_sz_2
@@ -2122,7 +2145,6 @@ def downsample_tiff(tiff_path, save_as=None):
 
 
 def subselect_tiff(tiff_stack, select_frames, save_as):
-
     stack_cropped = tiff_stack[select_frames[0]:select_frames[1]]
 
     stack8 = convert_to_8bit(stack_cropped)
