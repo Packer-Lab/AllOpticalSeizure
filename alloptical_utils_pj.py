@@ -1069,6 +1069,9 @@ class alloptical():
             pickle.dump(self, f)
         print("pkl saved to %s" % pkl_path)
 
+    def save(self):
+        self.save_pkl()
+
     def avg_stim_images(self, peri_frames: int = 100, stim_timings: list = [], save_img=False, to_plot=False):
         """
         Outputs (either by saving or plotting, or both) images from raw t-series TIFF for a trial around each individual
@@ -1391,6 +1394,28 @@ class Post4ap(alloptical):
                                                                                  self.metainfo['trial'],
                                                                                  self.metainfo['date']))
 
+    def _subselect_sz_tiffs(self, onsets, offsets):
+        """subselect raw tiff movie over all seizures as marked by onset and offsets. save under analysis path for object.
+        Note that the onsets and offsets definitions may vary, so check exactly what was used in those args."""
+
+        print('\n-----Making raw sz movies by cropping original raw tiff')
+        if hasattr(self, 'analysis_save_path'):
+            pass
+        else:
+            raise ValueError(
+                'need to add the analysis_save_path attr before using this function -- this is where it will save to')
+
+        print('reading in seizure trial from: ', self.tiff_path, '\n')
+        stack = tf.imread(self.tiff_path)
+
+        # subselect raw tiff movie over all seizures as marked by LFP onset and offsets
+        for on, off in zip(onsets, offsets):
+            select_frames = (on, off); print('cropping sz frames', select_frames)
+            save_as = self.analysis_save_path + '/%s_%s_subselected_%s_%s.tif' % (self.metainfo['date'],
+                self.metainfo['trial'], select_frames[0], select_frames[1])
+            subselect_tiff(tiff_stack=stack, select_frames=select_frames, save_as=save_as)
+        print('\ndone. saved to:', self.analysis_save_path)
+
     def collect_seizures_info(self, seizures_info_array=None, discard_all=True):
         print('\ncollecting information about seizures...')
         self.seizures_info_array = seizures_info_array  # path to the matlab array containing paired measurements of seizures onset and offsets
@@ -1419,6 +1444,9 @@ class Post4ap(alloptical):
                     self.bad_frames)  # save to npy file and remember to move npy file to tiff folder before running with suite2p
             print('***Saving a total of ', len(self.bad_frames),
                   'photostim + seizure/CSD frames +  additional bad frames to bad_frames.npy***')
+
+        print('now creating raw movies for each sz as well (saved to the /Analysis folder')
+        self._subselect_sz_tiffs(onsets=self.seizure_lfp_onsets, offsets=self.seizure_lfp_offsets)
 
     def find_closest_sz_frames(self):
         """finds time from the closest seizure onset on LFP (-ve values for forthcoming, +ve for past)
@@ -1500,25 +1528,6 @@ class Post4ap(alloptical):
 
         return avg_sub_l, im_sub_l, im_diff_l
 
-    def _subselect_sz_tiffs(self):
-        """subselect raw tiff movie over all seizures as marked by LFP onset and offsets. save under analysis path for object"""
-
-        if hasattr(self, 'analysis_save_path'):
-            pass
-        else:
-            raise ValueError(
-                'need to add the analysis_save_path attr before using this function -- this is where it will save to')
-
-        print('reading in seizure trial from: ', self.tiff_path)
-        stack = tf.imread(self.tiff_path)
-
-        # subselect raw tiff movie over all seizures as marked by LFP onset and offsets
-        for on, off in zip(self.seizure_lfp_onsets, self.seizure_lfp_offsets):
-            select_frames = (on, off); print(select_frames)
-            save_as = self.analysis_save_path + '/%s_subselected_%s_%s.tif' % (
-                self.metainfo['trial'], select_frames[0], select_frames[1])
-            subselect_tiff(tiff_stack=stack, select_frames=select_frames, save_as=save_as)
-
     def _InOutSz(self, cell, cell_med: list, sz_border_path: str, flip=False, to_plot=False):
         """
         Returns True if the given cell's location is inside the seizure boundary which is defined as the coordinates
@@ -1547,8 +1556,8 @@ class Post4ap(alloptical):
         with open(sz_border_path) as csv_file:
             csv_file = csv.DictReader(csv_file, fieldnames=None, dialect='excel')
             for row in csv_file:
-                xline.append(int(row['xcoords']))
-                yline.append(int(row['ycoords']))
+                xline.append(int(float(row['xcoords'])))
+                yline.append(int(float(row['ycoords'])))
 
         # assumption = line is monotonic
         line_argsort = np.argsort(yline)
