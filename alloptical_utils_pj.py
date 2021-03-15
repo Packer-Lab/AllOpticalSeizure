@@ -56,6 +56,16 @@ class alloptical():
         self._parsePVMetadata()
 
         self.stim_type = stimtype
+
+        ## CREATE THE APPROPRIATE ANALYSIS SUBFOLDER TO USE FOR SAVING ANALYSIS RESULTS TO
+        self.analysis_save_path = self.tiff_path[:21] + 'Analysis/' + self.tiff_path_dir[26:]
+        if os.path.exists(self.analysis_save_path):
+            pass
+        elif os.path.exists(self.analysis_save_path[:-17]):
+            os.mkdir(self.analysis_save_path)
+        elif os.path.exists(self.analysis_save_path[:-27]):
+            os.mkdir(self.analysis_save_path[:-17])
+
         print('\ninitialized alloptical expobj of exptype and trial: \n', self.metainfo)
 
     def _getPVStateShard(self, path, key):
@@ -1490,6 +1500,25 @@ class Post4ap(alloptical):
 
         return avg_sub_l, im_sub_l, im_diff_l
 
+    def _subselect_sz_tiffs(self):
+        """subselect raw tiff movie over all seizures as marked by LFP onset and offsets. save under analysis path for object"""
+
+        if hasattr(self, 'analysis_save_path'):
+            pass
+        else:
+            raise ValueError(
+                'need to add the analysis_save_path attr before using this function -- this is where it will save to')
+
+        print('reading in seizure trial from: ', self.tiff_path)
+        stack = tf.imread(self.tiff_path)
+
+        # subselect raw tiff movie over all seizures as marked by LFP onset and offsets
+        for on, off in zip(self.seizure_lfp_onsets, self.seizure_lfp_offsets):
+            select_frames = (on, off); print(select_frames)
+            save_as = self.analysis_save_path + '/%s_subselected_%s_%s.tif' % (
+                self.metainfo['trial'], select_frames[0], select_frames[1])
+            subselect_tiff(tiff_stack=stack, select_frames=select_frames, save_as=save_as)
+
     def _InOutSz(self, cell, cell_med: list, sz_border_path: str, flip=False, to_plot=False):
         """
         Returns True if the given cell's location is inside the seizure boundary which is defined as the coordinates
@@ -2032,13 +2061,20 @@ def make_tiff_stack(tiff_paths, save_as=''):
             print(msg, end='\r')
 
 
-def convert_to_8bit(img, target_type, target_type_min=0, target_type_max=255):
+def convert_to_8bit(img, target_type_min=0, target_type_max=255):
+    """
+    :param img:
+    :param target_type:
+    :param target_type_min:
+    :param target_type_max:
+    :return:
+    """
     imin = img.min()
     imax = img.max()
 
     a = (target_type_max - target_type_min) / (imax - imin)
     b = target_type_max - a * imax
-    new_img = (a * img + b).astype(target_type)
+    new_img = (a * img + b).astype(np.uint8)
     return new_img
 
 
@@ -2074,6 +2110,15 @@ def downsample_tiff(tiff_path, save_as=None):
                avgd_stack, photometric='minisblack')
 
     return
+
+
+def subselect_tiff(tiff_stack, select_frames, save_as):
+
+    stack_cropped = tiff_stack[select_frames[0]:select_frames[1]]
+
+    stack8 = convert_to_8bit(stack_cropped)
+
+    tf.imwrite(save_as, stack8, photometric='minisblack')
 
 
 # STATISTICS AND OTHER ANALYSES FUNCTIONS

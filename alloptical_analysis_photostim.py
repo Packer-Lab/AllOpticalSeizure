@@ -15,9 +15,10 @@ import seaborn as sns
 
 from numba import njit
 from skimage import draw
+import tifffile as tf
 
 ###### IMPORT pkl file containing data in form of expobj
-trial = 't-011'
+trial = 't-013'
 experiment = 'RL108: photostim-post4ap-%s' % trial
 date = '2020-12-18'
 pkl_path = "/home/pshah/mnt/qnap/Analysis/%s/%s_%s/%s_%s.pkl" % (date, date, trial, date, trial)
@@ -53,6 +54,11 @@ for i in range(len(expobj.avg_sub_l)):
     img = pj.rotate_img_avg(expobj.avg_sub_l[i], angle=90)
     # PCA decomposition of the avg_seizure images
     img_compressed = pj.pca_decomp_image(img, components=1, plot_quant=True)
+
+
+# MAKE SUBSELECTED TIFFS OF INVIDUAL SEIZURES BASED ON THEIR START AND STOP FRAMES
+expobj._subselect_sz_tiffs()
+
 
 # %% classifying stims as in_sz or out_sz or before_sz or after_sz
 
@@ -110,6 +116,8 @@ for stim in stims_of_interest:
     in_sz = expobj.classify_cells_sz(sz_border_path, to_plot=True, title='%s' % stim, flip=flip)
     expobj.cells_sz_stim[stim] = in_sz  # for each stim, there will be a list of cells that will be classified as in seizure or out of seizure
 
+
+# %%
 
 
 # %% photostim analysis - PLOT avg over all photstim. trials traces from PHOTOSTIM TARGETTED cells
