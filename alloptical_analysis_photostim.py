@@ -34,10 +34,11 @@ else:
     expobj.paqProcessing(); expobj.save_pkl()
 
 
-# %% ###################################################################################################################
+#%%#####################################################################################################################
 
-# %% -------------------- ALL OPTICAL PHOTOSTIM AND ETC. ANALYSIS STEPS ################################################
+#### -------------------- ALL OPTICAL PHOTOSTIM AND ETC. ANALYSIS STEPS ################################################
 
+########################################################################################################################
 
 # %% PLOT AVG PHOTOSTIM PRE- POST- TRACE AVGed OVER ALL PHOTOSTIM. TRIALS - PHOTOSTIM TARGETTED cells
 
@@ -51,8 +52,6 @@ aoplot.plot_photostim_avg(dff_array=x, expobj=expobj, stim_duration=expobj.durat
                           post_stim=expobj.post_stim,
                           title=(experiment + '- responses of all photostim targets'),
                           y_label=y_label, x_label='Time post-stimulation (seconds)')
-
-
 
 
 # %% PLOT ENTIRE TRIAL - targeted cells plotted individually as subplots

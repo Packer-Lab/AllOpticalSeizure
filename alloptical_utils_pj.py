@@ -1647,8 +1647,11 @@ class Post4ap(alloptical):
     def is_cell_insz(self, cell, stim):
         """for a given cell and stim, return True if cell is inside the sz boundary."""
         if hasattr(self, 'cells_sz_stim'):
-            if cell in self.cells_sz_stim[stim]:
-                return True
+            if stim in self.cells_sz_stim.keys():
+                if cell in self.cells_sz_stim[stim]:
+                    return True
+                else:
+                    return False
             else:
                 return False
         else:
@@ -1923,13 +1926,13 @@ def get_targets_stim_traces_norm(expobj, normalize_to='', pre_stim=10, post_stim
                 TypeError('need to specify what to normalize to in get_targets_dFF (choose "baseline" or "pre-stim")')
 
             targets_dff.append(flu_dff)  # contains all individual dFF traces for all stim times
-            targets_dff_avg.append(np.mean(flu_dff, axis=0))  # contains the dFF trace averaged across all stim times
+            targets_dff_avg.append(np.nanmean(flu_dff, axis=0))  # contains the dFF trace averaged across all stim times
 
             targets_dfstdF.append(flu_dfstdF)
-            targets_dfstdF_avg.append(np.mean(flu_dfstdF, axis=0))
+            targets_dfstdF_avg.append(np.nanmean(flu_dfstdF, axis=0))
 
             targets_raw.append(flu)
-            targets_raw_avg.append(np.mean(flu, axis=0))
+            targets_raw_avg.append(np.nanmean(flu, axis=0))
 
     if normalize_to == 'baseline':
         return targets_dff, targets_dff_avg
@@ -2001,13 +2004,13 @@ def get_nontargets_stim_traces_norm(expobj, normalize_to='', pre_stim=10, post_s
                 TypeError('need to specify what to normalize to in get_targets_dFF (choose "baseline" or "pre-stim")')
 
             dff_traces.append(flu_dff)  # contains all individual dFF traces for all stim times
-            dff_traces_avg.append(np.mean(flu_dff, axis=0))  # contains the dFF trace averaged across all stim times
+            dff_traces_avg.append(np.nanmean(flu_dff, axis=0))  # contains the dFF trace averaged across all stim times
 
             dfstdF_traces.append(flu_dfstdF)
-            dfstdF_traces_avg.append(np.mean(flu_dfstdF, axis=0))
+            dfstdF_traces_avg.append(np.nanmean(flu_dfstdF, axis=0))
 
             raw_traces.append(flu)
-            raw_traces_avg.append(np.mean(flu, axis=0))
+            raw_traces_avg.append(np.nanmean(flu, axis=0))
 
     if normalize_to == 'baseline':
         print('\nCompleted collecting pre to post stim traces -- normalized to spont imaging as baseline -- for %s cells' % len(dff_traces_avg))
@@ -2098,7 +2101,7 @@ def _good_photostim_cells(expobj, std_thresh=1, dff_threshold=None, pre_stim=10,
     elif dff_threshold is None:
         print('[std threshold of %s std]' % std_thresh)
 
-    print('|- %s cells out of %s s2p target cells selected above threshold' % (
+    print('|- %s cells out of %s s2p target cells photostim. responses above threshold' % (
         len(good_photostim_cells), len(targeted_cells)))
     total += len(good_photostim_cells)
     total_considered += len(targeted_cells)
