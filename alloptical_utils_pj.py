@@ -1644,7 +1644,7 @@ class Post4ap(alloptical):
 
         return in_sz
 
-    def is_cell_in(self, cell, stim):
+    def is_cell_insz(self, cell, stim):
         """for a given cell and stim, return True if cell is inside the sz boundary."""
         if hasattr(self, 'cells_sz_stim'):
             if cell in self.cells_sz_stim[stim]:
@@ -1652,6 +1652,7 @@ class Post4ap(alloptical):
             else:
                 return False
         else:
+            # return False  # not all expobj will have the sz boundary classes attr so for those just assume no seizure
             raise Exception('cannot check for cell inside sz boundary because cell sz classification hasnot been performed yet')
 
 
@@ -1897,16 +1898,25 @@ def get_targets_stim_traces_norm(expobj, normalize_to='', pre_stim=10, post_stim
             flu_dff = []
             if normalize_to == 'baseline':
                 mean_spont_baseline = np.mean(expobj.baseline_raw[cell_idx])
-                for trace in flu:
-                    trace_dff = ((trace - mean_spont_baseline) / mean_spont_baseline) * 100
+                for i in range(len(flu)):
+                    trace_dff = ((flu[i] - mean_spont_baseline) / mean_spont_baseline) * 100
+                    # add nan if cell is inside sz boundary for this stim
+                    if hasattr(expobj, 'is_cell_insz'):
+                        if expobj.is_cell_insz(cell=cell, stim=stim_timings[i]):
+                            trace_dff = [np.nan] * len(flu[i])
                     flu_dff.append(trace_dff)
             elif normalize_to == 'pre-stim':
-                for trace in flu:
+                for i in range(len(flu)):
+                    trace = flu[i]
                     mean_pre = np.mean(trace[0:pre_stim])
                     trace_dff = ((trace - mean_pre) / mean_pre) * 100
-
                     std_pre = np.std(trace[0:pre_stim])
                     dFstdF = (trace - mean_pre) / std_pre  # make dF divided by std of pre-stim F trace
+                    # add nan if cell is inside sz boundary for this stim
+                    if hasattr(expobj, 'is_cell_insz'):
+                        if expobj.is_cell_insz(cell=cell, stim=stim_timings[i]):
+                            trace_dff = [np.nan] * len(trace)
+                            dFstdF = [np.nan] * len(trace)
                     flu_dfstdF.append(dFstdF)
                     flu_dff.append(trace_dff)
             else:
@@ -1960,18 +1970,33 @@ def get_nontargets_stim_traces_norm(expobj, normalize_to='', pre_stim=10, post_s
             flu_dff = []
             if normalize_to == 'baseline':
                 mean_spont_baseline = np.mean(expobj.baseline_raw[cell_idx])
-                for trace in flu:
-                    trace_dff = ((trace - mean_spont_baseline) / mean_spont_baseline) * 100
+                for i in range(len(flu)):
+                    trace_dff = ((flu[i] - mean_spont_baseline) / mean_spont_baseline) * 100
+
+                    # add nan if cell is inside sz boundary for this stim
+                    if hasattr(expobj, 'is_cell_insz'):
+                        if expobj.is_cell_insz(cell=cell, stim=stim_timings[i]):
+                            trace_dff = [np.nan] * len(flu[i])
+
                     flu_dff.append(trace_dff)
+
             elif normalize_to == 'pre-stim':
-                for trace in flu:
+                for i in range(len(flu)):
+                    trace = flu[i]
                     mean_pre = np.mean(trace[0:pre_stim])
                     trace_dff = ((trace - mean_pre) / mean_pre) * 100
-
                     std_pre = np.std(trace[0:pre_stim])
                     dFstdF = (trace - mean_pre) / std_pre  # make dF divided by std of pre-stim F trace
+
+                    # add nan if cell is inside sz boundary for this stim
+                    if hasattr(expobj, 'is_cell_insz'):
+                        if expobj.is_cell_insz(cell=cell, stim=stim_timings[i]):
+                            trace_dff = [np.nan] * len(trace)
+                            dFstdF = [np.nan] * len(trace)
+
                     flu_dfstdF.append(dFstdF)
                     flu_dff.append(trace_dff)
+
             else:
                 TypeError('need to specify what to normalize to in get_targets_dFF (choose "baseline" or "pre-stim")')
 
@@ -1985,10 +2010,10 @@ def get_nontargets_stim_traces_norm(expobj, normalize_to='', pre_stim=10, post_s
             raw_traces_avg.append(np.mean(flu, axis=0))
 
     if normalize_to == 'baseline':
-        print('Completed collecting pre to post stim traces -- normalized to spont imaging as baseline -- for %s cells' % len(dff_traces_avg))
+        print('\nCompleted collecting pre to post stim traces -- normalized to spont imaging as baseline -- for %s cells' % len(dff_traces_avg))
         return dff_traces, dff_traces_avg
     elif normalize_to == 'pre-stim':
-        print('Completed collecting pre to post stim traces -- normalized to pre-stim stdF -- for %s cells' % len(dff_traces_avg))
+        print('\nCompleted collecting pre to post stim traces -- normalized to pre-stim stdF -- for %s cells' % len(dff_traces_avg))
         return dff_traces, dff_traces_avg, dfstdF_traces, dfstdF_traces_avg, raw_traces, raw_traces_avg
 
 
@@ -2073,13 +2098,13 @@ def _good_photostim_cells(expobj, std_thresh=1, dff_threshold=None, pre_stim=10,
     elif dff_threshold is None:
         print('[std threshold of %s std]' % std_thresh)
 
-    print('\n%s cells out of %s s2p target cells selected above threshold' % (
+    print('|- %s cells out of %s s2p target cells selected above threshold' % (
         len(good_photostim_cells), len(targeted_cells)))
     total += len(good_photostim_cells)
     total_considered += len(targeted_cells)
 
     expobj.good_photostim_cells_all = [y for x in expobj.good_photostim_cells for y in x]
-    print('Total number of good photostim responsive cells found: %s (out of %s s2p photostim target cells)' % (
+    print('|- Total number of good photostim responsive cells found: %s (out of %s s2p photostim target cells)' % (
         total, total_considered))
 
 def normalize_dff_baseline(arr, baseline_array):
