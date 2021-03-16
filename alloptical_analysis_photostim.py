@@ -17,7 +17,7 @@ from numba import njit
 from skimage import draw
 
 ###### IMPORT pkl file containing data in form of expobj
-trial = 't-009'
+trial = 't-011'
 date = '2020-12-18'
 pkl_path = "/home/pshah/mnt/qnap/Analysis/%s/%s_%s/%s_%s.pkl" % (date, date, trial, date, trial)
 # pkl_path = "/home/pshah/mnt/qnap/Data/%s/%s_%s/%s_%s.pkl" % (date, date, trial, date, trial)
@@ -145,7 +145,7 @@ x = np.asarray([i for i in expobj.targets_dfstdF_avg])
 # y_label = 'pct. dFF (normalized to prestim period)'
 y_label = 'dFstdF (normalized to prestim period)'
 
-# TODO modify plot_photostim_avg code to exclude in_sz cells
+# TODO modify plot_photostim_avg code to exclude in_sz cells/stim trials
 aoplot.plot_photostim_avg(dff_array=x, expobj=expobj, stim_duration=expobj.duration_frames, pre_stim=expobj.pre_stim,
                           post_stim=expobj.post_stim,
                           title=(experiment + '- responses of all photostim targets'),

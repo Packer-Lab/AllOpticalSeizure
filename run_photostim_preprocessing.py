@@ -154,7 +154,7 @@ def run_photostim_processing(trial, exp_type, tiffs_loc_dir, tiffs_loc, naparms_
 
 # %% update the trial and photostim experiment files information below before running run_photostim_processing()
 animal_prep = 'RL108'
-trial = 't-009'  # note that %s magic command in the code below will be using these trials listed here
+trial = 't-011'  # note that %s magic command in the code below will be using these trials listed here
 
 data_path_base = '/home/pshah/mnt/qnap/Data/2020-12-18'
 date = '2020-12-18'

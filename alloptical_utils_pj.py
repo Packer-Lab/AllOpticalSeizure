@@ -1644,6 +1644,16 @@ class Post4ap(alloptical):
 
         return in_sz
 
+    def is_cell_in(self, cell, stim):
+        """for a given cell and stim, return True if cell is inside the sz boundary."""
+        if hasattr(self, 'cells_sz_stim'):
+            if cell in self.cells_sz_stim[stim]:
+                return True
+            else:
+                return False
+        else:
+            raise Exception('cannot check for cell inside sz boundary because cell sz classification hasnot been performed yet')
+
 
 ## Rob's functions for generating some important commonly used image types.
 def s2pMeanImage(s2p_path):
