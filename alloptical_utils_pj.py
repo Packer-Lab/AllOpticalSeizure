@@ -1447,7 +1447,7 @@ class Post4ap(alloptical):
             print('***Saving a total of ', len(self.bad_frames),
                   'photostim + seizure/CSD frames +  additional bad frames to bad_frames.npy***')
 
-        print('now creating raw movies for each sz as well (saved to the /Analysis folder')
+        print('\nnow creating raw movies for each sz as well (saved to the /Analysis folder)')
         self._subselect_sz_tiffs(onsets=self.seizure_lfp_onsets, offsets=self.seizure_lfp_offsets)
 
     def find_closest_sz_frames(self):

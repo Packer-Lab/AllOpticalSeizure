@@ -239,7 +239,7 @@ def dff(flu, baseline=None):
 
 
 # simple plot of the location of the given cell(s) against a black FOV
-def plot_cell_loc(expobj, cells: list, color: str = 'pink', title=None, show: bool = True):
+def plot_cell_loc(expobj, cells: list, color: str = '#EDEDED', title=None, show: bool = True):
     """
     plots an image of the FOV to show the locations of cells given in cells list.
     :param expobj: alloptical or 2p imaging object
@@ -252,8 +252,15 @@ def plot_cell_loc(expobj, cells: list, color: str = 'pink', title=None, show: bo
     plt.imshow(black)
 
     for cell in cells:
-        y, x = expobj.stat[cell]['med']
-        plt.scatter(x=x, y=y, edgecolors=color, facecolors='none', linewidths=0.8)
+        y, x = expobj.stat[expobj.cell_id.index(cell)]['med']
+        if hasattr(expobj, 's2p_cell_targets'):
+            if cell in expobj.s2p_cell_targets:
+                color_ = '#F02A71'
+            else:
+                color_ = 'none'
+        else:
+            color_ = 'none'
+        plt.scatter(x=x, y=y, edgecolors=color, facecolors=color_, linewidths=0.8)
 
     if title is not None:
         plt.suptitle(title)

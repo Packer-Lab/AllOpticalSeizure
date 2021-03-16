@@ -126,8 +126,7 @@ expobj.save()
 
 # %% convert stim responses to `nan` for cells inside the sz boundary at each of the stim timings
 
-expobj.dfstdf_all_cells
-
+## MOVED ALL OF THIS TO THE AOPROCESSING_PHOTOSTIM SCRIPT!!! WHERE IT IS BETTER SUITED!!!
 
 
 

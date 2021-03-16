@@ -15,8 +15,20 @@ trial = 't-011'
 experiment = 'RL108: photostim-post4ap-%s' % trial
 date = '2020-12-18'
 pkl_path = "/home/pshah/mnt/qnap/Analysis/%s/%s_%s/%s_%s.pkl" % (date, date, trial, date, trial)
+with open(pkl_path, 'rb') as f:
+    print('importing expobj for "%s %s" from: %s' % (date, experiment, pkl_path))
+    expobj = pickle.load(f)
+    print('DONE IMPORT.')
+
+if hasattr(expobj, 'paq_rate'):
+    pass
+else:
+    print('need to run paqProcessing to update paq attr.s in expobj')
+    expobj.paqProcessing(); expobj.save_pkl()
 
 
+
+#%% prep for importing data from suite2p for this whole experiment
 # determine which frames to retrieve from the overall total s2p output
 trials = ['t-005', 't-006', 't-008', 't-009', 't-010', 't-011', 't-012',
           't-013']  # specify all trials that were used in the suite2p run
@@ -28,18 +40,17 @@ baseline_frames = [0, 0]
 for t in trials:
     pkl_path_2 = "/home/pshah/mnt/qnap/Data/%s/%s_%s/%s_%s.pkl" % (date, date, t, date, t)
     with open(pkl_path_2, 'rb') as f:
-        expobj = pickle.load(f)
+        _expobj = pickle.load(f)
         # import suite2p data
-    total_frames_stitched += expobj.n_frames
+    total_frames_stitched += _expobj.n_frames
     if t == trial:
-        curr_trial_frames = [total_frames_stitched - expobj.n_frames, total_frames_stitched]
+        curr_trial_frames = [total_frames_stitched - _expobj.n_frames, total_frames_stitched]
     if t in baseline_trials:
         baseline_frames[1] = total_frames_stitched
 
-with open(pkl_path, 'rb') as f:
-    expobj = pickle.load(f)
 
-# %% suite2p processing on expobj; import suite2p data, flu, spks, cell coordinates and make s2p masks images stack
+
+# suite2p processing on expobj; import suite2p data, flu, spks, cell coordinates and make s2p masks images stack
 
 s2p_path = '/home/pshah/mnt/qnap/Analysis/2020-12-18/suite2p/alloptical-2p-08x/plane0'  # (most recent run for RL108 -- contains all trials including post4ap all optical trials)
 # s2p_path = '/Users/prajayshah/Documents/data-to-process/2020-12-18/suite2p/alloptical-2p-pre-4ap-08x/plane0'
@@ -288,7 +299,7 @@ for on, off in zip(expobj.stims_bf_sz, expobj.stims_af_sz):
 
         in_sz = expobj.classify_cells_sz(sz_border_path, to_plot=True, title='%s' % stim, flip=flip)
         expobj.cells_sz_stim[stim] = in_sz  # for each stim, there will be a list of cells that will be classified as in seizure or out of seizure
-expobj.save()
+# expobj.save()
 
 # %% convert stim responses to `nan` for cells inside the sz boundary at each of the stim timings
 
@@ -296,7 +307,11 @@ expobj.save()
 for stim in expobj.dfstdf_all_cells.columns[1:]:
     if stim in expobj.cells_sz_stim.keys():
         cells_toko = expobj.cells_sz_stim[stim]
-        expobj.dfstdf_all_cells.loc[cells_toko][str(stim)]
+        expobj.dfstdf_all_cells.loc[cells_toko, str(stim)] = np.nan
+        expobj.dff_all_cells.loc[cells_toko, str(stim)] = np.nan
+
+expobj.save()
+
 
 
 
