@@ -233,5 +233,20 @@ def plot_lfp_stims(expobj, title=None):
     else:
         raise Exception('look, you need to create stims_in_sz and stims_out_sz attributes first (or rewrite this function)')
 
+def plot_heatmap_photostim_trace(data, vmin=None, vmax=None, stim_on=None, stim_off=None):
+    fig = plt.subplots(figsize=(5, 5))
+    plt.imshow(data, aspect='auto')
+    plt.set_cmap('bwr')
+    plt.clim(vmin, vmax)
+    plt.xlim(0, 100)
+    if vmin and vmax:
+        cbar = plt.colorbar(boundaries=np.linspace(vmin, vmax, 1000), ticks=[vmin, 0, vmax])
+    if stim_on and stim_off: # draw vertical dashed lines for stim period
+        # plt.vlines(x=stim_on, ymin=0, ymax=len(data), colors='black')
+        # plt.vlines(x=stim_off, ymin=0, ymax=len(data))
+        plt.axvline(x=stim_on, color='black', linestyle='--')
+        plt.axvline(x=stim_off, color='black', linestyle='--')
+        plt.ylim(0, len(data)-0.5)
+    plt.show()
 
 ### below are plotting functions that I am still working on coding:

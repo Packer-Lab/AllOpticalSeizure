@@ -17,8 +17,8 @@ from numba import njit
 from skimage import draw
 
 ###### IMPORT pkl file containing data in form of expobj
-trial = 't-011'
-experiment = 'RL108: photostim-post4ap-%s' % trial
+trial = 't-009'
+experiment = 'RL108: photostim-pre4ap-%s' % trial
 date = '2020-12-18'
 pkl_path = "/home/pshah/mnt/qnap/Analysis/%s/%s_%s/%s_%s.pkl" % (date, date, trial, date, trial)
 # pkl_path = "/home/pshah/mnt/qnap/Data/%s/%s_%s/%s_%s.pkl" % (date, date, trial, date, trial)
@@ -209,7 +209,51 @@ pj.bar_with_points(data=[pre_4ap_reliability, post_4ap_reliabilty], x_tick_label
 
 # %% TODO PLOT HEATMAP OF AVG PRE- POST TRACE AVGed OVER ALL PHOTOSTIM. TRIALS - ALL CELLS (photostim targets at top) - Lloyd style :D
 
+# heatmap pre to post stim traces avg of targets
+# x = np.asarray([i for i in expobj.targets_dfstdF_avg])
+# vmin = -1
+# vmax = 1
+# fig = plt.subplots(figsize=(5, 3))
+# plt.imshow(x, aspect='auto')
+# plt.set_cmap('bwr')
+# plt.clim(vmin, vmax)
+# plt.xlim(0, 150)
+# cbar = plt.colorbar(boundaries=np.linspace(vmin, vmax, 1000), ticks=[vmin, 0, vmax], fraction=0.05)
+# plt.show()
+#
+# # heatmap pre to post stim traces avg of nontargets
+# x = np.asarray([i for i in expobj.dfstdF_traces_avg])
+# vmin = -0.5
+# vmax = 0.5
+# fig = plt.subplots(figsize=(3, 8))
+# plt.imshow(x, aspect='auto')
+# plt.set_cmap('bwr')
+# plt.clim(vmin, vmax)
+# plt.xlim(0, 150)
+# cbar = plt.colorbar(boundaries=np.linspace(vmin, vmax, 1000), ticks=[vmin, 0, vmax], fraction=0.5)
+# plt.show()
 
+def plot_heatmap_photostim_trace(data, vmin=None, vmax=None, stim_on=None, stim_off=None):
+    fig = plt.subplots(figsize=(5, 5))
+    plt.imshow(x, aspect='auto')
+    plt.set_cmap('bwr')
+    plt.clim(vmin, vmax)
+    plt.xlim(0, 100)
+    if vmin and vmax:
+        cbar = plt.colorbar(boundaries=np.linspace(vmin, vmax, 1000), ticks=[vmin, 0, vmax])
+    if stim_on and stim_off: # draw vertical dashed lines for stim period
+        # plt.vlines(x=stim_on, ymin=0, ymax=len(data), colors='black')
+        # plt.vlines(x=stim_off, ymin=0, ymax=len(data))
+        plt.axvline(x=stim_on, color='black', linestyle='--')
+        plt.axvline(x=stim_off, color='black', linestyle='--')
+        plt.ylim(0, len(data)-0.5)
+    plt.show()
+
+x = np.asarray([i for i in expobj.targets_dfstdF_avg])
+plot_heatmap_photostim_trace(x, vmin=-1, vmax=1, stim_on=expobj.pre_stim, stim_off=expobj.pre_stim+expobj.duration_frames-1)
+
+x = np.asarray([i for i in expobj.dfstdF_traces_avg])
+plot_heatmap_photostim_trace(x, vmin=-0.5, vmax=0.5, stim_on=expobj.pre_stim, stim_off=expobj.pre_stim+expobj.duration_frames-1)
 
 
 # %% BAR PLOT PHOTOSTIM RESPONSES SIZE - TARGETS vs. NON-TARGETS

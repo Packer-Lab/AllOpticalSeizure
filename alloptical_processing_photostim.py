@@ -11,14 +11,13 @@ import numpy as np
 import utils.funcs_pj as pj
 
 ###### IMPORT pkl file containing expobj
-trial = 't-011'
-experiment = 'RL108: photostim-post4ap-%s' % trial
+trial = 't-009'
 date = '2020-12-18'
 pkl_path = "/home/pshah/mnt/qnap/Analysis/%s/%s_%s/%s_%s.pkl" % (date, date, trial, date, trial)
 with open(pkl_path, 'rb') as f:
-    print('importing expobj for "%s %s" from: %s' % (date, experiment, pkl_path))
+    print('importing expobj for "%s" from: %s' % (date, pkl_path))
     expobj = pickle.load(f)
-    print('DONE IMPORT.')
+    print('DONE IMPORT of %s: %s, %s' % (expobj.metainfo['animal prep.'], expobj.metainfo['trial'], expobj.metainfo['exptype']))
 
 if hasattr(expobj, 'paq_rate'):
     pass
@@ -89,7 +88,7 @@ id = to_plot.index(min(a))
 # expobj.good_cells[id]
 
 
-# %% FILTER CELLS THAT ARE ACTIVE AT LEAST ONCE FOR >2.5*std
+# %% FILTER ALL CELLS THAT ARE ACTIVE AT LEAST ONCE FOR >2.5*std
 
 # pull out needed variables because numba doesn't work with custom classes (such as this all-optical class object)
 cell_ids = expobj.cell_id
@@ -105,7 +104,7 @@ expobj.good_cells = aoutils._good_cells(cell_ids=cell_ids, raws=raws, photostim_
                                         radiuses=radiuses,
                                         std_thresh=2, min_radius_pix=2.5, max_radius_pix=8.5)
 
-# %% filter for GOOD PHOTOSTIM. TARGETED CELLS with responses above threshold = 1 std of the prestim std
+# %% COLLECT PRE- AND POST- STIM TRACES FOR PHOTOSTIM TARGETED CELLS, FILTER FOR GOOD PHOTOSTIM. TARGETED CELLS with responses above threshold = 1 std of the prestim std
 
 expobj.pre_stim = 15  # specify pre-stim and post-stim periods of analysis and plotting
 expobj.post_stim = 150
@@ -119,7 +118,17 @@ expobj.targets_dff, expobj.targets_dff_avg, expobj.targets_dfstdF, \
 
 aoutils._good_photostim_cells(expobj=expobj, pre_stim=expobj.pre_stim, post_stim=expobj.post_stim, dff_threshold=None)
 
-# TODO what does threshold value mean? add more descriptive print output for that
+# what does threshold value mean? add more descriptive print output for that
+
+# %% TODO collect avg pre to post stim traces for NON-TARGETS
+
+expobj.dff_traces, expobj.dff_traces_avg, expobj.dfstdF_traces, \
+    expobj.dfstdF_traces_avg, expobj.raw_traces, expobj.raw_traces_avg = \
+    aoutils.get_nontargets_stim_traces_norm(expobj=expobj, normalize_to='pre-stim', pre_stim=expobj.pre_stim,
+                                            post_stim=expobj.post_stim)
+
+
+
 
 # %% (full) plot individual cell's flu or dFF trace, with photostim. timings for that cell
 

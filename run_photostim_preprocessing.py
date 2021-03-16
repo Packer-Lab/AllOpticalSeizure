@@ -153,7 +153,8 @@ def run_photostim_processing(trial, exp_type, tiffs_loc_dir, tiffs_loc, naparms_
 
 
 # %% update the trial and photostim experiment files information below before running run_photostim_processing()
-trial = 't-011'  # note that %s magic command in the code below will be using these trials listed here
+animal_prep = 'RL108'
+trial = 't-009'  # note that %s magic command in the code below will be using these trials listed here
 
 data_path_base = '/home/pshah/mnt/qnap/Data/2020-12-18'
 date = '2020-12-18'
@@ -161,8 +162,8 @@ date = '2020-12-18'
 # specify location of the naparm export for the trial(s) - ensure that this export was used for all trials, if # of trials > 1
 naparms_loc = '%s/photostim/2020-12-18_RL108_ps_008/' % data_path_base  # make sure to include '/' at the end to indicate the child directory
 
-exp_type = 'post 4ap all optical trial'
-comments = '5 seizure events on LFP (trial starts during a seizure)'
+exp_type = 'pre 4ap all optical trial'
+comments = ''
 tiffs_loc_dir = '%s/%s_%s' % (data_path_base, date, trial)
 tiffs_loc = '%s/%s_%s_Cycle00001_Ch3.tif' % (tiffs_loc_dir, date, trial)
 pkl_path = "/home/pshah/mnt/qnap/Analysis/%s/%s_%s/%s_%s.pkl" % (date, date, trial, date, trial)  # specify path in Analysis folder to save pkl object
@@ -174,6 +175,7 @@ matlab_badframes_path = '%s/paired_measurements/2020-12-18_RL108_%s.mat' % (data
 # matlab_badframes_path = None
 
 metainfo = {
+    'animal prep.': animal_prep,
     'trial': trial,
     'date': date,
     'exptype': exp_type,

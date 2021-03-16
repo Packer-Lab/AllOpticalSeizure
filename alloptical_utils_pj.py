@@ -1917,6 +1917,74 @@ def get_targets_stim_traces_norm(expobj, normalize_to='', pre_stim=10, post_stim
         return targets_dff, targets_dff_avg, targets_dfstdF, targets_dfstdF_avg, targets_raw, targets_raw_avg
 
 
+
+def get_nontargets_stim_traces_norm(expobj, normalize_to='', pre_stim=10, post_stim=200):
+    """
+    primary function to measure the dFF traces for photostimulated targets.
+    :param expobj: alloptical experiment object
+    :param normalize_to: str; either "baseline" or "pre-stim"
+    :param pre_stim: number of frames to use as pre-stim
+    :param post_stim: number of frames to use as post-stim
+    :return: lists of individual targets dFF traces, and averaged targets dFF over all stims for each target
+    """
+    stim_timings = expobj.stim_start_frames
+    nontarget_cells = [cell for cell in expobj.good_cells if cell not in expobj.s2p_cell_targets]
+
+    # collect photostim timed average dff traces of photostim targets
+    dff_traces = []
+    dff_traces_avg = []
+
+    dfstdF_traces = []
+    dfstdF_traces_avg = []
+
+    raw_traces = []
+    raw_traces_avg = []
+    for cell in nontarget_cells:
+        # print('considering cell # %s' % cell)
+        if cell in expobj.cell_id:
+            cell_idx = expobj.cell_id.index(cell)
+            flu = [expobj.raw[cell_idx][stim - pre_stim: stim + post_stim] for stim in stim_timings if
+                   stim not in expobj.seizure_frames]
+
+            flu_dfstdF = []
+            flu_dff = []
+            if normalize_to == 'baseline':
+                mean_spont_baseline = np.mean(expobj.baseline_raw[cell_idx])
+                for trace in flu:
+                    trace_dff = ((trace - mean_spont_baseline) / mean_spont_baseline) * 100
+                    flu_dff.append(trace_dff)
+            elif normalize_to == 'pre-stim':
+                for trace in flu:
+                    mean_pre = np.mean(trace[0:pre_stim])
+                    trace_dff = ((trace - mean_pre) / mean_pre) * 100
+
+                    std_pre = np.std(trace[0:pre_stim])
+                    dFstdF = (trace - mean_pre) / std_pre  # make dF divided by std of pre-stim F trace
+                    flu_dfstdF.append(dFstdF)
+                    flu_dff.append(trace_dff)
+            else:
+                TypeError('need to specify what to normalize to in get_targets_dFF (choose "baseline" or "pre-stim")')
+
+            dff_traces.append(flu_dff)  # contains all individual dFF traces for all stim times
+            dff_traces_avg.append(np.mean(flu_dff, axis=0))  # contains the dFF trace averaged across all stim times
+
+            dfstdF_traces.append(flu_dfstdF)
+            dfstdF_traces_avg.append(np.mean(flu_dfstdF, axis=0))
+
+            raw_traces.append(flu)
+            raw_traces_avg.append(np.mean(flu, axis=0))
+
+    if normalize_to == 'baseline':
+        print('Completed collecting pre to post stim traces -- normalized to spont imaging as baseline -- for %s cells' % len(dff_traces_avg))
+        return dff_traces, dff_traces_avg
+    elif normalize_to == 'pre-stim':
+        print('Completed collecting pre to post stim traces -- normalized to pre-stim stdF -- for %s cells' % len(dff_traces_avg))
+        return dff_traces, dff_traces_avg, dfstdF_traces, dfstdF_traces_avg, raw_traces, raw_traces_avg
+
+
+
+
+
 def _good_photostim_cells(expobj, std_thresh=1, dff_threshold=None, pre_stim=10,
                           post_stim=200, to_plot=None, use_raw=False):
     '''
@@ -2004,7 +2072,6 @@ def _good_photostim_cells(expobj, std_thresh=1, dff_threshold=None, pre_stim=10,
     print('Total number of good photostim responsive cells found: %s (out of %s s2p photostim target cells)' % (
         total, total_considered))
 
-
 def normalize_dff_baseline(arr, baseline_array):
     """normalize given array (cells x time) to the mean of the spont baseline value for each cell.
     :param arr: pandas df or 1-dimensional array
@@ -2022,7 +2089,6 @@ def normalize_dff_baseline(arr, baseline_array):
             mean_ = baseline_array.loc[str(i)].mean()
             new_array_df.loc[str(i)] = (arr.loc[str(i)] - mean_) / mean_ * 100
         return new_array_df
-
 
 def normalize_dff(arr, threshold=20):
     """normalize given array (cells x time) to the mean of the fluorescence values below given threshold"""
@@ -2045,7 +2111,6 @@ def normalize_dff(arr, threshold=20):
                 print('      Mean of the sub-threshold for this cell: %s' % mean_)
 
     return new_array
-
 
 @jit
 def normalize_dff_jit(arr, threshold=20):
@@ -2070,7 +2135,6 @@ def normalize_dff_jit(arr, threshold=20):
 
     return new_array
 
-
 def make_tiff_stack(tiff_paths, save_as=''):
     """
     read in a bunch of tiffs and stack them together, and save the output as the save_as
@@ -2092,7 +2156,6 @@ def make_tiff_stack(tiff_paths, save_as=''):
             msg = ' -- Writing frame: ' + str(i + 1) + ' out of ' + str(num_frames)
             print(msg, end='\r')
 
-
 def convert_to_8bit(img, target_type_min=0, target_type_max=255):
     """
     :param img:
@@ -2108,7 +2171,6 @@ def convert_to_8bit(img, target_type_min=0, target_type_max=255):
     b = target_type_max - a * imax
     new_img = (a * img + b).astype(np.uint8)
     return new_img
-
 
 def downsample_tiff(tiff_path, save_as=None):
     print('working on... %s' % tiff_path)
@@ -2143,14 +2205,12 @@ def downsample_tiff(tiff_path, save_as=None):
 
     return
 
-
 def subselect_tiff(tiff_stack, select_frames, save_as):
     stack_cropped = tiff_stack[select_frames[0]:select_frames[1]]
 
     stack8 = convert_to_8bit(stack_cropped)
 
     tf.imwrite(save_as, stack8, photometric='minisblack')
-
 
 # STATISTICS AND OTHER ANALYSES FUNCTIONS
 
@@ -2170,7 +2230,6 @@ def corrcoef_array(array):
     print('Correlation coefficient: %.2f' % corr)
 
     return corr, result
-
 
 # calculate reliability of photostim responsiveness of all of the targeted cells (found in s2p output)
 def calculate_reliability(expobj, dfstdf_threshold=None, dff_threshold=None, pre_stim=10,
@@ -2253,7 +2312,6 @@ def calculate_reliability(expobj, dfstdf_threshold=None, dff_threshold=None, pre
     print(reliability)
     print("avg reliability is: %s (calc. over %s stims)" % (round(np.mean(list(reliability.values())), 2), counter))
     return reliability
-
 
 # calculate the dFF responses of the non-targeted cells, create a pandas df of the post-stim dFF responses of all cells
 
@@ -2358,7 +2416,6 @@ def all_cell_responses_dff(expobj, normalize_to=''):
 
     return df
 
-
 def all_cell_responses_dFstdF(expobj):
     # TODO need to confirm that this code works properly
     # normalizing post stim dF response to PRE-STIM std F
@@ -2442,7 +2499,6 @@ def all_cell_responses_dFstdF(expobj):
 
     return df
 
-
 # 2 functions for plotting photostimulation timed DFF, baseline DFF considered as pre-stim period
 def plot_photostim_avg(dff_array, stim_duration, pre_stim=10, post_stim=200, title='', y_min=None, y_max=None):
     flu_avg = np.median(dff_array, axis=0)
@@ -2461,7 +2517,6 @@ def plot_photostim_avg(dff_array, stim_duration, pre_stim=10, post_stim=200, tit
     fig.suptitle(title, y=0.95)
     plt.show()
 
-
 def plot_photostim_(dff_array, stim_duration, pre_stim=10, post_stim=200, title='', y_min=None, y_max=None):
     x = list(range(-pre_stim, post_stim))
     fig, ax = plt.subplots()
@@ -2472,7 +2527,6 @@ def plot_photostim_(dff_array, stim_duration, pre_stim=10, post_stim=200, title=
         ax.set_ylim([y_min, y_max])
     fig.suptitle(title, y=0.95)
     plt.show()
-
 
 ## kept in utils.funcs_pj
 def plot_single_tiff(tiff_path: str, title: str = None):
