@@ -2288,7 +2288,7 @@ def corrcoef_array(array):
 
 # calculate reliability of photostim responsiveness of all of the targeted cells (found in s2p output)
 def calculate_reliability(expobj, dfstdf_threshold=None, dff_threshold=None, pre_stim=10,
-                          post_stim=200, filter_for_sz=False):
+                          post_stim=200, sz_filter=True):
     """calculates the percentage of successful photoresponsive trials for each targeted cell, where success is post
      stim response over the dff_threshold. the filter_for_sz argument is set to True when needing to filter out stim timings
      that occured when the cell was classified as inside the sz boundary."""
@@ -2297,7 +2297,7 @@ def calculate_reliability(expobj, dfstdf_threshold=None, dff_threshold=None, pre
     targets_dff_all_stimtrials = {}  # dict will contain the peri-stim dFF for each cell by the cell_idx
     stim_timings = expobj.stim_start_frames
 
-    if filter_for_sz:
+    if sz_filter:
         # assert list(stim_timings) == list(expobj.cells_sz_stim.keys())  # dont really need this assertion because you wont necessarily always look at the sz boundary for all stims every trial
         # stim_timings = expobj.cells_sz_stim.keys()
         if dff_threshold:
@@ -2314,21 +2314,19 @@ def calculate_reliability(expobj, dfstdf_threshold=None, dff_threshold=None, pre
 
         for cell in expobj.s2p_cell_targets:
             # print('considering cell # %s' % cell)
-            if cell in expobj.cell_id:
-                cell_idx = expobj.cell_id.index(cell)
+            # if cell in expobj.cell_id:
+            stims_to_use = [str(stim) for stim in stim_timings if cell not in expobj.cells_sz_stim[
+                stim]]  # select only the stim times where the cell IS NOT inside the sz boundary
+            counter = len(stims_to_use)
+            responses = df.loc[
+                cell, stims_to_use]  # collect the appropriate responses for the current cell at the selected stim times
+            success = sum(i >= threshold for i in responses)
 
-                # going to start using the pandas photostim response df
-                stims_to_use = [str(stim) for stim in stim_timings if cell not in expobj.cells_sz_stim[
-                    stim]]  # select only the stim times where the cell IS NOT inside the sz boundary
-                counter = len(stims_to_use)
-                responses = df.loc[
-                    cell, stims_to_use]  # collect the appropriate responses for the current cell at the selected stim times
-                success = sum(i >= threshold for i in responses)
-
-                reliability[cell] = success / counter * 100.
+            reliability[cell] = success / counter * 100.
+            reliability[cell] = success / counter * 100.
+            print(cell, reliability, 'calc over %s stims' % counter)
 
     else:
-        # TODO need to update code to utilize the main responses pandas df for the expobj
         if dff_threshold:
             threshold = round(dff_threshold)
             dff = True
@@ -2362,7 +2360,7 @@ def calculate_reliability(expobj, dfstdf_threshold=None, dff_threshold=None, pre
                         success += 1
 
                 reliability[cell] = success / counter * 100.
-                print(reliability, 'calc over %s stims' % counter)
+                print(cell, reliability, 'calc over %s stims' % counter)
     print("avg reliability is: %s" % (round(np.nanmean(list(reliability.values())), 2)))
     return reliability
 
