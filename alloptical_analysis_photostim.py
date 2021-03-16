@@ -126,7 +126,7 @@ expobj.save()
 
 # %% convert stim responses to `nan` for cells inside the sz boundary at each of the stim timings
 
-## MOVED ALL OF THIS TO THE AOPROCESSING_PHOTOSTIM SCRIPT!!! WHERE IT IS BETTER SUITED!!!
+## MOVED ALL OF THE ABOVE SZ PROCESSING STUFF TO THE AOPROCESSING_PHOTOSTIM SCRIPT!!! WHERE IT IS BETTER SUITED!!!
 
 
 
@@ -147,6 +147,7 @@ x = np.asarray([i for i in expobj.targets_dfstdF_avg])
 # y_label = 'pct. dFF (normalized to prestim period)'
 y_label = 'dFstdF (normalized to prestim period)'
 
+# TODO modify plot_photostim_avg code to exclude in_sz cells
 aoplot.plot_photostim_avg(dff_array=x, expobj=expobj, stim_duration=expobj.duration_frames, pre_stim=expobj.pre_stim,
                           post_stim=expobj.post_stim,
                           title=(experiment + '- responses of all photostim targets'),

@@ -1628,8 +1628,8 @@ class Post4ap(alloptical):
                 yline = np.array(yline)[line_argsort]
 
                 # pjf.plot_cell_loc(self, cells=[cell], show=False)
-                plt.scatter(x=xline[0], y=yline[0])
-                plt.scatter(x=xline[1], y=yline[1])
+                plt.scatter(x=xline[0], y=yline[0], facecolors='#1A8B9D')
+                plt.scatter(x=xline[1], y=yline[1], facecolors='#B2D430')
                 # plt.show()
 
         if flip:
