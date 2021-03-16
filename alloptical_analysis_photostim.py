@@ -22,7 +22,7 @@ date = '2020-12-18'
 pkl_path = "/home/pshah/mnt/qnap/Analysis/%s/%s_%s/%s_%s.pkl" % (date, date, trial, date, trial)
 # pkl_path = "/home/pshah/mnt/qnap/Data/%s/%s_%s/%s_%s.pkl" % (date, date, trial, date, trial)
 
-expobj = aoutils.import_expobj(trial=trial, date=date, pkl_path=pkl_path)
+expobj, experiment = aoutils.import_expobj(trial=trial, date=date, pkl_path=pkl_path)
 
 
 #%%#####################################################################################################################
@@ -38,7 +38,6 @@ x = np.asarray([i for i in expobj.targets_dfstdF_avg])
 # y_label = 'pct. dFF (normalized to prestim period)'
 y_label = 'dFstdF (normalized to prestim period)'
 
-# TODO modify plot_photostim_avg code to handle nans
 aoplot.plot_photostim_avg(dff_array=x, expobj=expobj, stim_duration=expobj.duration_frames, pre_stim=expobj.pre_stim,
                           post_stim=expobj.post_stim,
                           title=(experiment + '- responses of all photostim targets'),
@@ -57,12 +56,12 @@ expobj.targets_dff_base = aoutils.normalize_dff_baseline(
 to_plot = expobj.dff_targets
 
 
-aoplot.plot_photostim_overlap_plots(dff_array=to_plot, expobj=expobj,
-                                    title=(experiment + '-'))
+aoplot.plot_photostim_overlap_plots(dff_array=to_plot, expobj=expobj, exclude_id=[expobj.s2p_cell_targets.index(cell) for cell in [191]],
+                                    y_lims=[0, 5000], title=(experiment + '-'))
 
 aoplot.plot_photostim_subplots(dff_array=to_plot, expobj=expobj, x_label='Frames',
                                y_label='Raw Flu',
-                               title=(experiment + '-'))
+                               title=(experiment))
 
 
 # # plot the photostim targeted cells as a heatmap
@@ -85,11 +84,11 @@ pj.bar_with_points(data=[list(expobj.reliability.values())], x_tick_labels=['pos
                    title='reliability of stim responses', expand_size_x=2)
 
 
-pre_4ap_reliability = list(expobj.reliability.values())
-post_4ap_reliabilty = list(expobj.reliability.values())  # reimport another expobj for post4ap trial
-
-pj.bar_with_points(data=[pre_4ap_reliability, post_4ap_reliabilty], x_tick_labels=['pre-4ap', 'post-4ap'],
-                   ylims=[0, 100], bar=False, title='reliability of stim responses', expand_size_y=1.2)
+# pre_4ap_reliability = list(expobj.reliability.values())
+# post_4ap_reliabilty = list(expobj.reliability.values())  # reimport another expobj for post4ap trial
+#
+# pj.bar_with_points(data=[pre_4ap_reliability, post_4ap_reliabilty], x_tick_labels=['pre-4ap', 'post-4ap'],
+#                    ylims=[0, 100], bar=False, title='reliability of stim responses', expand_size_y=1.2)
 
 
 # %% PLOT AVG PHOTOSTIM PRE- POST- TRACE AVGed OVER ALL PHOTOSTIM. TRIALS - NON - TARGETS

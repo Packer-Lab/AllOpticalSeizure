@@ -1674,7 +1674,7 @@ def import_expobj(trial, date, pkl_path):
         expobj.paqProcessing()
         expobj.save_pkl()
 
-    return expobj
+    return expobj, experiment
 
 ## Rob's functions for generating some important commonly used image types.
 def s2pMeanImage(s2p_path):
@@ -2299,7 +2299,7 @@ def calculate_reliability(expobj, dfstdf_threshold=None, dff_threshold=None, pre
 
     if filter_for_sz:
         # assert list(stim_timings) == list(expobj.cells_sz_stim.keys())  # dont really need this assertion because you wont necessarily always look at the sz boundary for all stims every trial
-        stim_timings = expobj.cells_sz_stim.keys()
+        # stim_timings = expobj.cells_sz_stim.keys()
         if dff_threshold:
             threshold = round(dff_threshold)
             df = expobj.dff_all_cells
@@ -2342,9 +2342,7 @@ def calculate_reliability(expobj, dfstdf_threshold=None, dff_threshold=None, pre
             if cell in expobj.cell_id:
                 cell_idx = expobj.cell_id.index(cell)
                 # collect a trace of prestim and poststim raw fluorescence for each stim time
-                flu_all_stims = [expobj.raw[cell_idx][stim - pre_stim: stim + post_stim] for stim in stim_timings if
-                                 stim not in expobj.seizure_frames]  # REMOVING ALL STIMS FROM SEIZURE FRAMES
-
+                flu_all_stims = [expobj.raw[cell_idx][stim - pre_stim: stim + post_stim] for stim in stim_timings]
                 success = 0
                 counter = 0
                 for trace in flu_all_stims:
@@ -2358,14 +2356,14 @@ def calculate_reliability(expobj, dfstdf_threshold=None, dff_threshold=None, pre
                         response_trace = ((trace - pre_stim_mean) / std_pre) * 100
 
                     # calculate if the current trace beats dff_threshold for calculating reliability (note that this happens over a specific window just after the photostim)
-                    response = np.mean(response_trace[
+                    response = np.nanmean(response_trace[
                                        pre_stim + expobj.duration_frames:pre_stim + 3 * expobj.duration_frames])  # calculate the dF over pre-stim mean F response within the response window
                     if response >= threshold:
                         success += 1
 
                 reliability[cell] = success / counter * 100.
-    print(reliability)
-    print("avg reliability is: %s (calc. over %s stims)" % (round(np.mean(list(reliability.values())), 2), counter))
+                print(reliability, 'calc over %s stims' % counter)
+    print("avg reliability is: %s" % (round(np.nanmean(list(reliability.values())), 2)))
     return reliability
 
 # calculate the dFF responses of the non-targeted cells, create a pandas df of the post-stim dFF responses of all cells

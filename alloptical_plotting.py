@@ -45,8 +45,9 @@ def plot_photostim_subplots(dff_array, expobj, title='', y_min=None, y_max=None,
             axs[i].set_ylim([y_min, y_max])
         for j in expobj.stim_start_frames:
             axs[i].axvline(x=j, c='gray', alpha=0.7)
+        axs[i].set_title('Cell # %s' % expobj.s2p_cell_targets[i])
 
-    axs[0].set_title((title + ' - %s' % len_ + ' cells'), horizontalalignment='center', verticalalignment='top', pad=20,
+    axs[0].set_title((title + ' - %s' % len_ + ' cells'), horizontalalignment='left', verticalalignment='top', pad=20,
                      fontsize=15)
     axs[-1].set_xlabel(x_label)
     axs[-1].set_ylabel(y_label)
@@ -57,8 +58,8 @@ def plot_photostim_subplots(dff_array, expobj, title='', y_min=None, y_max=None,
     plt.show()
 
 
-def plot_photostim_overlap_plots(dff_array, expobj, spacing=1, title='', y_min=None,
-                                 y_max=None, x_label='Time (seconds)', save_fig=None):
+def plot_photostim_overlap_plots(dff_array, expobj, exclude_id=[], spacing=1, title='', y_lims=None,
+                                 x_label='Time (seconds)', save_fig=None):
     '''
     :param dff_array:
     :param expobj:
@@ -77,7 +78,8 @@ def plot_photostim_overlap_plots(dff_array, expobj, spacing=1, title='', y_min=N
     len_ = len(dff_array)
     fig, ax = plt.subplots(figsize=(40, 6))
     for i in range(len_):
-        ax.plot(dff_array[i] + i * 100 * spacing, linewidth=1)
+        if i not in exclude_id:
+            ax.plot(dff_array[i] + i * 100 * spacing, linewidth=1)
     for j in expobj.stim_start_frames:
         if j <= dff_array.shape[1]:
             ax.axvline(x=j, c='gray', alpha=0.3)
@@ -96,6 +98,9 @@ def plot_photostim_overlap_plots(dff_array, expobj, spacing=1, title='', y_min=N
     ax.spines['left'].set_visible(False)
     ax.set_xlabel(x_label)
 
+    if y_lims is not None:
+        ax.set_ylim(y_lims)
+
     if save_fig is not None:
         plt.savefig(save_fig)
 
@@ -112,7 +117,7 @@ def plot_photostim_avg(dff_array, expobj, stim_duration, pre_stim=10, post_stim=
 
     fig, ax = plt.subplots()
     ax.margins(0)
-    ax.axvspan(0, stim_duration, alpha=0.2, color='crimson')
+    ax.axvspan(0, stim_duration, alpha=0.2, color='tomato')
     for cell_trace in dff_array:
         ax.plot(x, cell_trace, linewidth=1, alpha=0.8)
     ax.plot(x, flu_avg, color='black', linewidth=2)  # plot median trace
