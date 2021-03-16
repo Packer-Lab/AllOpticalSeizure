@@ -1659,6 +1659,23 @@ class Post4ap(alloptical):
             raise Exception('cannot check for cell inside sz boundary because cell sz classification hasnot been performed yet')
 
 
+# import expobj from the pkl file
+def import_expobj(trial, date, pkl_path):
+    with open(pkl_path, 'rb') as f:
+        print('importing expobj for "%s" from: %s' % (date, pkl_path))
+        expobj = pickle.load(f)
+        experiment = '%s: %s, %s' % (
+        expobj.metainfo['animal prep.'], expobj.metainfo['trial'], expobj.metainfo['exptype'])
+        print('DONE IMPORT of %s' % experiment)
+    if hasattr(expobj, 'paq_rate'):
+        pass
+    else:
+        print('need to run paqProcessing to update paq attr.s in expobj')
+        expobj.paqProcessing()
+        expobj.save_pkl()
+
+    return expobj
+
 ## Rob's functions for generating some important commonly used image types.
 def s2pMeanImage(s2p_path):
     os.chdir(s2p_path)

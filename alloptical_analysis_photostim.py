@@ -22,16 +22,7 @@ date = '2020-12-18'
 pkl_path = "/home/pshah/mnt/qnap/Analysis/%s/%s_%s/%s_%s.pkl" % (date, date, trial, date, trial)
 # pkl_path = "/home/pshah/mnt/qnap/Data/%s/%s_%s/%s_%s.pkl" % (date, date, trial, date, trial)
 
-with open(pkl_path, 'rb') as f:
-    print('importing expobj for "%s" from: %s' % (date, pkl_path))
-    expobj = pickle.load(f)
-    experiment = '%s: %s, %s' % (expobj.metainfo['animal prep.'], expobj.metainfo['trial'], expobj.metainfo['exptype'])
-    print('DONE IMPORT of %s' % experiment)
-if hasattr(expobj, 'paq_rate'):
-    pass
-else:
-    print('need to run paqProcessing to update paq attr.s in expobj')
-    expobj.paqProcessing(); expobj.save_pkl()
+expobj = aoutils.import_expobj(trial=trial, date=date, pkl_path=pkl_path)
 
 
 #%%#####################################################################################################################
