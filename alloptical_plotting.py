@@ -31,7 +31,6 @@ def plot_cell_radius_aspectr(expobj, stat, to_plot):
 
 
 ### plot entire trace of individual targeted cells as super clean subplots, with the same y-axis lims
-# TODO add calculation and print of the # of stims during plotting
 def plot_photostim_subplots(dff_array, expobj, title='', y_min=None, y_max=None, x_label=None,
                             y_label=None, save_fig=None):
     # make rolling average for these plots
@@ -140,7 +139,6 @@ def plot_photostim_avg(dff_array, expobj, stim_duration, pre_stim=10, post_stim=
 
 
 ### (full) plot individual cell's flu or dFF trace, with photostim. timings for that cell
-# TODO don't keep a vague argument requirement for to_plot
 def plot_flu_trace(expobj, cell, x_lims=None, slm_group=None, to_plot='raw', figsize=(20, 3), linewidth=0.10):
     idx = expobj.cell_id.index(cell)
     raw = expobj.raw[idx]

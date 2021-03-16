@@ -33,105 +33,6 @@ else:
     print('need to run paqProcessing to update paq attr.s in expobj')
     expobj.paqProcessing(); expobj.save_pkl()
 
-# %%  ------------------- PROCESSING STEPS FOR SEIZURE TRIALS ONLY!! #####################################################
-
-expobj.avg_sub_l, im_sub_l, im_diff_l = expobj.avg_seizure_images(
-    baseline_tiff="/home/pshah/mnt/qnap/Data/2020-12-18/2020-12-18_t-005/2020-12-18_t-005_Cycle00001_Ch3.tif",
-    frames_last=1000)
-
-# counter = 0
-# for i in avg_sub_l:
-#     plt.imshow(i); plt.suptitle('%s' % counter); plt.show()
-#     counter += 1
-
-expobj.avg_stim_images(stim_timings=expobj.stim_start_frames, peri_frames=50, to_plot=False, save_img=True)
-expobj.save_pkl()
-
-for i in range(len(expobj.avg_sub_l)):
-    img = pj.rotate_img_avg(expobj.avg_sub_l[i], angle=90)
-    # PCA decomposition of the avg_seizure images
-    img_compressed = pj.pca_decomp_image(img, components=1, plot_quant=True)
-
-
-# MAKE SUBSELECTED TIFFS OF INVIDUAL SEIZURES BASED ON THEIR START AND STOP FRAMES
-expobj._subselect_sz_tiffs(onsets=expobj.stims_bf_sz, offsets=expobj.stims_af_sz)
-
-
-# %% classifying stims as in_sz or out_sz or before_sz or after_sz
-
-expobj.stims_in_sz = [stim for stim in expobj.stim_start_frames if stim in expobj.seizure_frames]
-expobj.stims_out_sz = [stim for stim in expobj.stim_start_frames if stim not in expobj.seizure_frames]
-expobj.stims_bf_sz = [stim for stim in expobj.stim_start_frames
-                      for sz_start in expobj.seizure_lfp_onsets
-                      if 0 < (sz_start - stim) < 5 * expobj.fps]  # select stims that occur within 5 seconds before of the sz onset
-expobj.stims_af_sz = [stim for stim in expobj.stim_start_frames
-                      for sz_start in expobj.seizure_lfp_offsets
-                      if 0 < -1 * (sz_start - stim) < 5 * expobj.fps]  # select stims that occur within 5 seconds afterof the sz offset
-print('\n|- stims_in_sz:', expobj.stims_in_sz, '\n|- stims_out_sz:', expobj.stims_out_sz,
-      '\n|- stims_bf_sz:', expobj.stims_bf_sz, '\n|- stims_af_sz:', expobj.stims_af_sz)
-aoplot.plot_lfp_stims(expobj)
-expobj.save_pkl()
-
-# %% classifying cells as in or out of the current seizure location in the FOV
-
-# draw boundary on the image in ImageJ and save results as CSV
-
-
-# import the CSV file in and classify cells by their location in or out of seizure
-
-# moved this to utils.funcs_pj
-def plot_cell_loc(expobj, cells: list, color: str = 'pink', show: bool = True):
-    """
-    plots an image of the FOV to show the locations of cells given in cells list.
-    :param expobj: alloptical or 2p imaging object
-    :param color: str to specify color of the scatter plot for cells
-    :param cells: list of cells to plot
-    :param show: if True, show the plot at the end of the function
-    """
-    black = np.zeros((expobj.frame_x, expobj.frame_x), dtype='uint16')
-    plt.imshow(black)
-
-    for cell in cells:
-        y, x = expobj.stat[cell]['med']
-        plt.scatter(x=x, y=y, edgecolors=color, facecolors='none', linewidths=0.8)
-
-    if show:
-        plt.show()
-# csv_path = "/home/pshah/mnt/qnap/Analysis/2020-12-18/2020-12-18_t-013/2020-12-18_t-013_post_border.csv"
-
-# need to run this twice to correct for mis-assignment of cells (look at results and then find out which stims need to be flipped)
-flip_stims = [1424, 1572, 1720,
-              3944, 4092, 4240, 4388, 4537,
-              7650, 7798, 7946, 8094, 8242, 8391,
-              11059, 11207, 11355, 11504, 11652, 11800, 11948]  # specify here the stims where the flip=False leads to incorrect assignment
-
-print('working on classifying cells for stims start frames:')
-for on, off in zip(expobj.stims_bf_sz, expobj.stims_af_sz):
-    stims_of_interest = [stim for stim in expobj.stim_start_frames if on <= stim <= off]
-    print('|-', stims_of_interest)
-
-    expobj.cells_sz_stim = {}
-    for stim in stims_of_interest:
-        sz_border_path = "%s/boundary_csv/2020-12-18_%s_stim-%s.tif_border.csv" % (expobj.analysis_save_path, trial, stim)
-        if stim in flip_stims:
-            flip = True
-        else:
-            flip = False
-
-        in_sz = expobj.classify_cells_sz(sz_border_path, to_plot=True, title='%s' % stim, flip=flip)
-        expobj.cells_sz_stim[stim] = in_sz  # for each stim, there will be a list of cells that will be classified as in seizure or out of seizure
-expobj.save()
-
-# %% convert stim responses to `nan` for cells inside the sz boundary at each of the stim timings
-
-## MOVED ALL OF THE ABOVE SZ PROCESSING STUFF TO THE AOPROCESSING_PHOTOSTIM SCRIPT!!! WHERE IT IS BETTER SUITED!!!
-
-
-
-
-
-
-
 
 # %% ###################################################################################################################
 
@@ -145,7 +46,7 @@ x = np.asarray([i for i in expobj.targets_dfstdF_avg])
 # y_label = 'pct. dFF (normalized to prestim period)'
 y_label = 'dFstdF (normalized to prestim period)'
 
-# TODO modify plot_photostim_avg code to exclude in_sz cells/stim trials
+# TODO modify plot_photostim_avg code to handle nans
 aoplot.plot_photostim_avg(dff_array=x, expobj=expobj, stim_duration=expobj.duration_frames, pre_stim=expobj.pre_stim,
                           post_stim=expobj.post_stim,
                           title=(experiment + '- responses of all photostim targets'),
@@ -438,7 +339,7 @@ plt.scatter(x=df_dist_resp['distance'], y=df_dist_resp['response_of_non_target']
 plt.show()
 
 # %%
-# TODO calculate probability of stimulation in 10x10um micron bins around targeted cell
+# TODO calculate probability of stimulation in 100x100um micron bins around targeted cell
 
 all_x = []
 all_y = []
@@ -556,10 +457,10 @@ binned_amplitudes_2d(all_x=list(df_dist_resp_rec['norm_location - x']),
 # next multiply the annulus array with a matrix of cell coords (with responses) responses_group_1
 
 
-# TODO photostimulation of targeted cells before CSD, just after CSD, and a while after CSD
+# photostimulation of targeted cells before CSD, just after CSD, and a while after CSD
 
 
-# TODO photostimulation of targeted cells before seizure, just after seizure, and a while after seizure
+# photostimulation of targeted cells before seizure, just after seizure, and a while after seizure
 
 
 # %%
@@ -1108,7 +1009,6 @@ expobj.post_stim = 150
 
 aoutils._good_photostim_cells(expobj=expobj, groups_per_stim=3, pre_stim=expobj.pre_stim, post_stim=expobj.post_stim,
                               dff_threshold=None)
-# TODO what does threshold value mean? add more descriptive print output for that
 
 # (full) plot individual cell's flu or dFF trace, with photostim. timings for that cell
 cell = 1
@@ -1118,7 +1018,7 @@ group = 1
 # plot flu trace of selected cell with the std threshold
 idx = expobj.cell_id.index(cell)
 plot_flu_trace(expobj=expobj, idx=idx, slm_group=group, to_plot='dff');
-print(expobj.stat[idx])  # TODO don't keep a vague argument requirement for to_plot
+print(expobj.stat[idx])
 
 # %%
 ##### SAVE expobj as PKL
