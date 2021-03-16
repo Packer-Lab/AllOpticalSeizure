@@ -17,7 +17,8 @@ pkl_path = "/home/pshah/mnt/qnap/Analysis/%s/%s_%s/%s_%s.pkl" % (date, date, tri
 with open(pkl_path, 'rb') as f:
     print('importing expobj for "%s" from: %s' % (date, pkl_path))
     expobj = pickle.load(f)
-    print('DONE IMPORT of %s: %s, %s' % (expobj.metainfo['animal prep.'], expobj.metainfo['trial'], expobj.metainfo['exptype']))
+    experiment = '%s: %s, %s' % (expobj.metainfo['animal prep.'], expobj.metainfo['trial'], expobj.metainfo['exptype'])
+    print('DONE IMPORT of %s' % experiment)
 
 if hasattr(expobj, 'paq_rate'):
     pass

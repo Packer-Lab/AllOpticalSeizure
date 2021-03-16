@@ -113,7 +113,7 @@ def plot_photostim_avg(dff_array, expobj, stim_duration, pre_stim=10, post_stim=
 
     fig, ax = plt.subplots()
     ax.margins(0)
-    ax.axvspan(0, stim_duration, alpha=0.2, color='green')
+    ax.axvspan(0, stim_duration, alpha=0.2, color='crimson')
     for cell_trace in dff_array:
         ax.plot(x, cell_trace, linewidth=1, alpha=0.8)
     ax.plot(x, flu_avg, color='black', linewidth=2)  # plot median trace
@@ -233,8 +233,11 @@ def plot_lfp_stims(expobj, title=None):
     else:
         raise Exception('look, you need to create stims_in_sz and stims_out_sz attributes first (or rewrite this function)')
 
-def plot_heatmap_photostim_trace(data, vmin=None, vmax=None, stim_on=None, stim_off=None):
-    fig = plt.subplots(figsize=(5, 5))
+def plot_heatmap_photostim_trace(data, vmin=None, vmax=None, stim_on=None, stim_off=None, figsize=None):
+    if figsize:
+        fig = plt.subplots(figsize=figsize)
+    else:
+        fig = plt.subplots(figsize=(5, 5))
     plt.imshow(data, aspect='auto')
     plt.set_cmap('bwr')
     plt.clim(vmin, vmax)
