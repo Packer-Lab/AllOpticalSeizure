@@ -2315,8 +2315,8 @@ def calculate_reliability(expobj, dfstdf_threshold=None, dff_threshold=None, pre
         for cell in expobj.s2p_cell_targets:
             # print('considering cell # %s' % cell)
             # if cell in expobj.cell_id:
-            stims_to_use = [str(stim) for stim in stim_timings if cell not in expobj.cells_sz_stim[
-                stim]]  # select only the stim times where the cell IS NOT inside the sz boundary
+            stims_to_use = [str(stim) for stim in stim_timings
+                            if stim not in expobj.cells_sz_stim.keys() or cell not in expobj.cells_sz_stim[stim]]  # select only the stim times where the cell IS NOT inside the sz boundary
             counter = len(stims_to_use)
             responses = df.loc[
                 cell, stims_to_use]  # collect the appropriate responses for the current cell at the selected stim times
@@ -2324,7 +2324,7 @@ def calculate_reliability(expobj, dfstdf_threshold=None, dff_threshold=None, pre
 
             reliability[cell] = success / counter * 100.
             reliability[cell] = success / counter * 100.
-            print(cell, reliability, 'calc over %s stims' % counter)
+            print(cell, reliability[cell], 'calc over %s stims' % counter)
 
     else:
         if dff_threshold:
