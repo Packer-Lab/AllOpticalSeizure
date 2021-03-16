@@ -15,7 +15,6 @@ import seaborn as sns
 
 from numba import njit
 from skimage import draw
-import tifffile as tf
 
 ###### IMPORT pkl file containing data in form of expobj
 trial = 't-011'
@@ -36,7 +35,7 @@ else:
     print('need to run paqProcessing to update paq attr.s in expobj')
     expobj.paqProcessing(); expobj.save_pkl()
 
-# %% ANALYSIS STEPS FOR SEIZURE TRIALS ONLY!!
+# %%  ------------------- PROCESSING STEPS FOR SEIZURE TRIALS ONLY!! #####################################################
 
 expobj.avg_sub_l, im_sub_l, im_diff_l = expobj.avg_seizure_images(
     baseline_tiff="/home/pshah/mnt/qnap/Data/2020-12-18/2020-12-18_t-005/2020-12-18_t-005_Cycle00001_Ch3.tif",
@@ -123,12 +122,26 @@ for on, off in zip(expobj.stims_bf_sz, expobj.stims_af_sz):
 
         in_sz = expobj.classify_cells_sz(sz_border_path, to_plot=True, title='%s' % stim, flip=flip)
         expobj.cells_sz_stim[stim] = in_sz  # for each stim, there will be a list of cells that will be classified as in seizure or out of seizure
+expobj.save()
+
+# %% convert stim responses to `nan` for cells inside the sz boundary at each of the stim timings
+
+expobj.dfstdf_all_cells
 
 
-# %%
 
 
-# %% photostim analysis - PLOT avg over all photstim. trials traces from PHOTOSTIM TARGETTED cells
+
+
+
+
+
+# %% ###################################################################################################################
+
+# %% -------------------- ALL OPTICAL PHOTOSTIM AND ETC. ANALYSIS STEPS ################################################
+
+
+# %% PLOT AVG PHOTOSTIM PRE- POST- TRACE AVGed OVER ALL PHOTOSTIM. TRIALS - PHOTOSTIM TARGETTED cells
 
 # x = np.asarray([i for i in expobj.good_photostim_cells_stim_responses_dFF[0]])
 x = np.asarray([i for i in expobj.targets_dfstdF_avg])
@@ -140,7 +153,10 @@ aoplot.plot_photostim_avg(dff_array=x, expobj=expobj, stim_duration=expobj.durat
                           title=(experiment + '- responses of all photostim targets'),
                           y_label=y_label, x_label='Time post-stimulation (seconds)')
 
-# %% plot entire trace of individual targeted cells as super clean subplots, with the same y-axis lims
+
+
+
+# %% PLOT ENTIRE TRIAL - targeted cells plotted individually as subplots
 
 expobj.raw_targets = [expobj.raw[expobj.cell_id.index(i)] for i in expobj.good_photostim_cells_all]
 expobj.dff_targets = aoutils.normalize_dff(np.array(expobj.raw_targets))
@@ -150,13 +166,15 @@ expobj.targets_dff_base = aoutils.normalize_dff_baseline(
 # plot_photostim_subplots(dff_array=dff_targets,
 #                 title=(experiment + '%s responses of responsive cells' % len(expobj.good_photostim_cells_stim_responses_dFF)))
 to_plot = expobj.dff_targets
-# to_plot = expobj.targets_dff_base.to_numpy()
+
+
 aoplot.plot_photostim_overlap_plots(dff_array=to_plot, expobj=expobj,
                                     title=(experiment + '-'))
 
 aoplot.plot_photostim_subplots(dff_array=to_plot, expobj=expobj, x_label='Frames',
                                y_label='Raw Flu',
                                title=(experiment + '-'))
+
 
 # # plot the photostim targeted cells as a heatmap
 # dff_array = expobj.dff_targets[:, :]
@@ -169,7 +187,7 @@ aoplot.plot_photostim_subplots(dff_array=to_plot, expobj=expobj, x_label='Frames
 # plt.show()
 
 
-# %%
+# %% RELIABILITY MEASUREMENTS and PLOT - PHOTOSTIM TARGETED CELLS
 # measure, for each cell, the pct of trials in which the dFF > 20% post stim (normalized to pre-stim avgF for the trial and cell)
 # can plot this as a bar plot for now showing the distribution of the reliability measurement
 
@@ -177,32 +195,45 @@ expobj.reliability = aoutils.calculate_reliability(expobj=expobj, dfstdf_thresho
 pj.bar_with_points(data=[list(expobj.reliability.values())], x_tick_labels=['post-4ap'], ylims=[0, 100], bar=False,
                    title='reliability of stim responses', expand_size_x=2)
 
-# %%
+
 pre_4ap_reliability = list(expobj.reliability.values())
 post_4ap_reliabilty = list(expobj.reliability.values())  # reimport another expobj for post4ap trial
 
 pj.bar_with_points(data=[pre_4ap_reliability, post_4ap_reliabilty], x_tick_labels=['pre-4ap', 'post-4ap'],
-                   ylims=[0, 100], bar=False, title='reliability of stim responses', expand_size=1.2)
+                   ylims=[0, 100], bar=False, title='reliability of stim responses', expand_size_y=1.2)
 
-# %% plot response of ALL cells across whole trace in FOV after photostim - plotting not yet working properly
+
+# %% TODO PLOT AVG PHOTOSTIM PRE- POST- TRACE AVGed OVER ALL PHOTOSTIM. TRIALS - NON - TARGETS
+
+
+
+# %% TODO PLOT HEATMAP OF AVG PRE- POST TRACE AVGed OVER ALL PHOTOSTIM. TRIALS - ALL CELLS (photostim targets at top) - Lloyd style :D
+
+
+
+
+# %% BAR PLOT PHOTOSTIM RESPONSES SIZE - TARGETS vs. NON-TARGETS
 # collect photostim timed average dff traces
 title = 'All cells dFF'
 all_cells_dff = []
 good_std_cells = []
 
-# %% calculate and plot average response of cells in response to all stims as a bar graph
+# calculate and plot average response of cells in response to all stims as a bar graph
 
 
 # there's a bunch of very high dFF responses of cells
+# remove cells with very high average response values from the dff dataframe
 high_responders = expobj.average_responses_df[expobj.average_responses_df['Avg. dFF response'] > 500].index.values
 # expobj.dff_all_cells.iloc[high_responders[0], 1:]
 # list(expobj.dff_all_cells.iloc[high_responders[0], 1:])
 # idx = expobj.cell_id.index(1668);
 # aoplot.plot_flu_trace(expobj=expobj, idx=idx, to_plot='dff', size_factor=2)
 
-# TODO need to troubleshoot how these scripts are calculating the post stim responses for the non-targets because some of them seem ridiculously off
 
-# remove cells with very high average response values from the dff dataframe
+# need to troubleshoot how these scripts are calculating the post stim responses for the non-targets because some of them seem ridiculously off
+# --->  this should be okay now since I've moved to df_stdf correct?
+
+
 
 ## using pj.bar_with_points() for a nice bar graph
 group1 = list(expobj.average_responses_dfstdf[expobj.average_responses_dfstdf['group'] == 'photostim target'][
@@ -214,11 +245,11 @@ pj.bar_with_points(data=[group1, group2], x_tick_labels=['photostim target', 'no
                    colors=['red', 'black'], title=experiment, y_label='Avg dF/stdF response', expand_size_y=1.3,
                    expand_size_x=1.4)
 
-# %% plot heatmap of average of all stims. per cell for each stim. group
+# %% PLOT HEATMAP OF PHOTOSTIM. RESPONSES TO PHOTOSTIM FOR ALL CELLS
 # - need to find a way to sort these responses that similar cells are sorted together
+# - implement a heirarchical clustering method
 
 stim_timings = [str(i) for i in expobj.stim_start_frames]  # need each stim start frame as a str type for pandas slicing
-average_responses = expobj.dfstdf_all_cells[stim_timings].mean(axis=1).tolist()
 
 # make heatmap of responses across all cells across all stims
 df_ = expobj.dfstdf_all_cells[stim_timings]  # select appropriate stim time reponses from the pandas df
@@ -228,7 +259,11 @@ plt.figure(figsize=(5, 15));
 sns.heatmap(df_, cmap='seismic', vmin=-5, vmax=5, cbar_kws={"shrink": 0.25});
 plt.show()
 
-# %% plot imshow XY locations with average response of ALL cells in FOV
+
+# %% PLOT imshow() XY locations with COLORS AS average response of ALL cells in FOV
+
+stim_timings = [str(i) for i in expobj.stim_start_frames]  # need each stim start frame as a str type for pandas slicing
+average_responses = expobj.dfstdf_all_cells[stim_timings].mean(axis=1).tolist()
 
 # TODO transfer this FOV cell location mapped response plot to the aoplot script
 

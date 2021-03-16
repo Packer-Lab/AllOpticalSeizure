@@ -1610,9 +1610,9 @@ class Post4ap(alloptical):
             x = self._InOutSz(cell=cell, cell_med=s['med'], sz_border_path=sz_border_path, to_plot=to_plot)
 
             if x is True:
-                in_sz.append(cell)
+                in_sz.append(s['original_index'])
             elif x is False:
-                out_sz.append(cell)
+                out_sz.append(s['original_index'])
 
             if to_plot:  # plot the sz boundary points
                 xline = []
