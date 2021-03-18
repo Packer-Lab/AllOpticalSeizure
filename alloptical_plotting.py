@@ -236,7 +236,19 @@ def plot_lfp_stims(expobj, title=None):
     else:
         raise Exception('look, you need to create stims_in_sz and stims_out_sz attributes first (or rewrite this function)')
 
-def plot_heatmap_photostim_trace(data, vmin=None, vmax=None, stim_on=None, stim_off=None, figsize=None):
+# plot the whole pre stim to post stim period as a cool heatmap
+def plot_heatmap_photostim_trace(data, vmin=None, vmax=None, stim_on=None, stim_off=None, figsize=None, title=None):
+    """
+    plot the whole pre stim to post stim period as a cool heatmap
+    :param data:
+    :param vmin:
+    :param vmax:
+    :param stim_on:
+    :param stim_off:
+    :param figsize:
+    :param title:
+    :return:
+    """
     if figsize:
         fig = plt.subplots(figsize=figsize)
     else:
@@ -253,6 +265,60 @@ def plot_heatmap_photostim_trace(data, vmin=None, vmax=None, stim_on=None, stim_
         plt.axvline(x=stim_on, color='black', linestyle='--')
         plt.axvline(x=stim_off, color='black', linestyle='--')
         plt.ylim(0, len(data)-0.5)
+    if title is not None:
+        plt.suptitle(title)
     plt.show()
+
+# plot to show the response magnitude of each cell as the actual's filling in the cell's ROI pixels.
+def xyloc_responses(expobj, to_plot='dfstdf', clim=[-10, +10], plot_target_coords=True, save_fig: str = None):
+    """
+    plot to show the response magnitude of each cell as the actual's filling in the cell's ROI pixels.
+
+    :param expobj:
+    :param to_plot:
+    :param clim:
+    :param plot_target_coords: bool, if True plot the actual X and Y coords of all photostim cell targets
+    :param save_fig: where to save the save figure (optional)
+    :return:
+    """
+    stim_timings = [str(i) for i in
+                    expobj.stim_start_frames]  # need each stim start frame as a str type for pandas slicing
+
+    if to_plot == 'dfstdf':
+        average_responses = expobj.dfstdf_all_cells[stim_timings].mean(axis=1).tolist()
+    elif to_plot == 'dff':
+        average_responses = expobj.dff_all_cells[stim_timings].mean(axis=1).tolist()
+    else:
+        raise Exception('need to specify to_plot arg as either dfstdf or dff in string form!')
+
+    # make a matrix containing pixel locations and responses at each of those pixels
+    responses = np.zeros((expobj.frame_x, expobj.frame_x), dtype='uint16')
+
+    for n in expobj.good_cells:
+        idx = expobj.cell_id.index(n)
+        ypix = expobj.stat[idx]['ypix']
+        xpix = expobj.stat[idx]['xpix']
+        responses[ypix, xpix] = 100. + 1 * round(average_responses[expobj.good_cells.index(n)], 2)
+
+    # mask some 'bad' data, in your case you would have: data < 0.05
+    responses = np.ma.masked_where(responses < 0.05, responses)
+    cmap = plt.cm.bwr
+    cmap.set_bad(color='black')
+
+    plt.figure(figsize=(7, 7))
+    im = plt.imshow(responses, cmap=cmap)
+    cb = plt.colorbar(im, fraction=0.046, pad=0.04)
+    cb.set_label(to_plot)
+
+    plt.clim(100+clim[0], 100+clim[1])
+    if plot_target_coords:
+        for (x, y) in expobj.target_coords_all:
+            plt.scatter(x=x, y=y, edgecolors='green', facecolors='none', linewidths=1.0)
+    plt.suptitle((experiment + ' - avg. dFF - targets in green'), y=0.95, fontsize=10)
+    # pj.plot_cell_loc(expobj, cells=expobj.s2p_cell_targets, background_transparent=True)
+    plt.show()
+    if save_fig is not None:
+        plt.savefig(save_fig)
+
 
 ### below are plotting functions that I am still working on coding:

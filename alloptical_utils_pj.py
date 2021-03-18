@@ -1112,14 +1112,14 @@ class alloptical():
                     self.metainfo['date'], self.metainfo['trial'], stim)
                 if os.path.exists(save_path):
                     print("saving stim_img tiff to... %s" % save_path_stim)
-                    avg_sub8 = convert_to_8bit(avg_sub, np.uint8, 0, 255)
+                    avg_sub8 = convert_to_8bit(avg_sub, 0, 255)
                     tf.imwrite(save_path_stim,
                                avg_sub8, photometric='minisblack')
                 else:
                     print('made new directory for saving images at:', save_path)
                     os.mkdir(save_path)
                     print("saving as... %s" % save_path_stim)
-                    avg_sub8 = convert_to_8bit(avg_sub, np.uint8, 0, 255)
+                    avg_sub8 = convert_to_8bit(avg_sub, 0, 255)
                     tf.imwrite(save_path_stim,
                                avg_sub, photometric='minisblack')
 
@@ -1662,7 +1662,7 @@ class Post4ap(alloptical):
 # import expobj from the pkl file
 def import_expobj(trial, date, pkl_path):
     with open(pkl_path, 'rb') as f:
-        print('importing expobj for "%s" from: %s' % (date, pkl_path))
+        print('importing expobj for "%s, %s" from: %s' % (date, trial, pkl_path))
         expobj = pickle.load(f)
         experiment = '%s: %s, %s' % (
         expobj.metainfo['animal prep.'], expobj.metainfo['trial'], expobj.metainfo['exptype'])
@@ -2237,7 +2237,7 @@ def downsample_tiff(tiff_path, save_as=None):
     # downsample to 8-bit
     stack8 = np.full_like(stack, fill_value=0)
     for frame in np.arange(stack.shape[0]):
-        stack8[frame] = convert_to_8bit(stack[frame], np.uint8, 0, 255)
+        stack8[frame] = convert_to_8bit(stack[frame], 0, 255)
 
     # grouped average by specified interval
     group_by = 4
@@ -2315,8 +2315,11 @@ def calculate_reliability(expobj, dfstdf_threshold=None, dff_threshold=None, pre
         for cell in expobj.s2p_cell_targets:
             # print('considering cell # %s' % cell)
             # if cell in expobj.cell_id:
-            stims_to_use = [str(stim) for stim in stim_timings
-                            if stim not in expobj.cells_sz_stim.keys() or cell not in expobj.cells_sz_stim[stim]]  # select only the stim times where the cell IS NOT inside the sz boundary
+            if hasattr(expobj, 'cells_sz_stim'):
+                stims_to_use = [str(stim) for stim in stim_timings
+                                if stim not in expobj.cells_sz_stim.keys() or cell not in expobj.cells_sz_stim[stim]]  # select only the stim times where the cell IS NOT inside the sz boundary
+            else:
+                stims_to_use = [str(stim) for stim in stim_timings]
             counter = len(stims_to_use)
             responses = df.loc[
                 cell, stims_to_use]  # collect the appropriate responses for the current cell at the selected stim times

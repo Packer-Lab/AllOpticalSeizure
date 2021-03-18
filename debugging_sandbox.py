@@ -14,7 +14,7 @@ from utils import funcs_pj as pj
 import pickle
 
 ###### IMPORT pkl file containing expobj
-trial = 't-011'
+trial = 't-013'
 date = '2020-12-18'
 pkl_path = "/home/pshah/mnt/qnap/Analysis/%s/%s_%s/%s_%s.pkl" % (date, date, trial, date, trial)
 with open(pkl_path, 'rb') as f:
@@ -24,7 +24,5 @@ with open(pkl_path, 'rb') as f:
     print('DONE IMPORT of %s' % experiment)
 
 # %%
-expobj.targets_dff, expobj.targets_dff_avg, expobj.targets_dfstdF, \
-    expobj.targets_dfstdF_avg, expobj.targets_raw, expobj.targets_raw_avg = \
-    aoutils.get_targets_stim_traces_norm(expobj=expobj, normalize_to='pre-stim', pre_stim=expobj.pre_stim,
-                                         post_stim=expobj.post_stim)
+sz_csv = '/home/pshah/mnt/qnap/Analysis/2020-12-18/2020-12-18_t-013/2020-12-18_t-013_stim-9222.tif_border.csv'
+expobj.classify_cells_sz(sz_border_path=sz_csv, to_plot=True, title='9222', flip=True)

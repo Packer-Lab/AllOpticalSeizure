@@ -1,6 +1,7 @@
 ## this file is for processing the photostim-experiment alloptical expobj object AFTER suite2p has been run
 ## the end of the script will update the expobj that was in the original pkl path
 
+import sys
 import os
 import pickle
 import alloptical_utils_pj as aoutils
@@ -11,21 +12,14 @@ import numpy as np
 import utils.funcs_pj as pj
 
 ###### IMPORT pkl file containing expobj
-trial = 't-011'
+trial = 't-010'
 date = '2020-12-18'
 pkl_path = "/home/pshah/mnt/qnap/Analysis/%s/%s_%s/%s_%s.pkl" % (date, date, trial, date, trial)
-with open(pkl_path, 'rb') as f:
-    print('importing expobj for "%s" from: %s' % (date, pkl_path))
-    expobj = pickle.load(f)
-    experiment = '%s: %s, %s' % (expobj.metainfo['animal prep.'], expobj.metainfo['trial'], expobj.metainfo['exptype'])
-    print('DONE IMPORT of %s' % experiment)
+# pkl_path = "/home/pshah/mnt/qnap/Data/%s/%s_%s/%s_%s.pkl" % (date, date, trial, date, trial)
 
-if hasattr(expobj, 'paq_rate'):
-    pass
-else:
-    print('need to run paqProcessing to update paq attr.s in expobj')
-    expobj.paqProcessing(); expobj.save_pkl()
+expobj, experiment = aoutils.import_expobj(trial=trial, date=date, pkl_path=pkl_path)
 
+cont_inue=True  # i know this is a rather very precarious thing here...
 
 
 #%% prep for importing data from suite2p for this whole experiment
@@ -44,7 +38,7 @@ for t in trials:
         # import suite2p data
     total_frames_stitched += _expobj.n_frames
     if t == trial:
-        curr_trial_frames = [total_frames_stitched - _expobj.n_frames, total_frames_stitched]
+        expobj.curr_trial_frames = [total_frames_stitched - _expobj.n_frames, total_frames_stitched]
     if t in baseline_trials:
         baseline_frames[1] = total_frames_stitched
 
@@ -60,7 +54,7 @@ s2p_path = '/home/pshah/mnt/qnap/Analysis/2020-12-18/suite2p/alloptical-2p-08x/p
 # s2p_path = '/Volumes/Extreme SSD/oxford-data/2020-03-18/suite2p/photostim-4ap_stitched/plane0'
 
 # main function that imports suite2p data and adds attributes to the expobj
-expobj.s2pProcessing(s2p_path=s2p_path, subset_frames=curr_trial_frames, subtract_neuropil=True,
+expobj.s2pProcessing(s2p_path=s2p_path, subset_frames=expobj.curr_trial_frames, subtract_neuropil=True,
                      baseline_frames=baseline_frames)
 # if needed for pkl expobj generated from older versions of Vape
 expobj.target_coords_all = expobj.target_coords
@@ -146,10 +140,6 @@ for i in range(len(expobj.avg_sub_l)):
     img_compressed = pj.pca_decomp_image(img, components=1, plot_quant=True)
 
 
-# MAKE SUBSELECTED TIFFS OF INVIDUAL SEIZURES BASED ON THEIR START AND STOP FRAMES
-expobj._subselect_sz_tiffs(onsets=expobj.stims_bf_sz, offsets=expobj.stims_af_sz)
-
-
 # %% classifying stims as in_sz or out_sz or before_sz or after_sz
 
 expobj.stims_in_sz = [stim for stim in expobj.stim_start_frames if stim in expobj.seizure_frames]
@@ -165,10 +155,20 @@ print('\n|- stims_in_sz:', expobj.stims_in_sz, '\n|- stims_out_sz:', expobj.stim
 aoplot.plot_lfp_stims(expobj)
 expobj.save_pkl()
 
+
+# MAKE SUBSELECTED TIFFS OF INVIDUAL SEIZURES BASED ON THEIR START AND STOP FRAMES
+on_ = [expobj.stim_start_frames[0]]
+on_.extend(expobj.stims_bf_sz)
+expobj._subselect_sz_tiffs(onsets=on, offsets=expobj.stims_af_sz)
+
+
 # %% classifying cells as in or out of the current seizure location in the FOV
 
 # FRIST manually draw boundary on the image in ImageJ and save results as CSV to analysis folder under boundary_csv
-
+if cont_inue:
+    pass
+else:
+    sys.exit()
 
 # import the CSV file in and classify cells by their location in or out of seizure
 
@@ -193,14 +193,15 @@ def plot_cell_loc(expobj, cells: list, color: str = 'pink', show: bool = True):
 # csv_path = "/home/pshah/mnt/qnap/Analysis/2020-12-18/2020-12-18_t-013/2020-12-18_t-013_post_border.csv"
 
 # need to run this twice to correct for mis-assignment of cells (look at results and then find out which stims need to be flipped)
-expobj.flip_stims = [1424, 1572, 1720,
-                     3944, 4092, 4240, 4388, 4537,
-                     7650, 7798, 7946, 8094, 8242, 8391,
-                     11059, 11207, 11355, 11504, 11652, 11800, 11948]  # specify here the stims where the flip=False leads to incorrect assignment
+expobj.flip_stims = [328, 476, 624, 772, 921, 1069, 1217, 1365, 1514, 1662, 1810, 1958,
+                     4775, 4923, 5071, 5219, 5368,
+                     6702, 6850, 6998, 7295,
+                     8777, 8925, 9074, 9370, 9518,
+                     12038, 12186, 12335, 12483, 12631, 13669]  # specify here the stims where the flip=False leads to incorrect assignment
 
 print('working on classifying cells for stims start frames:')
 expobj.cells_sz_stim = {}
-for on, off in zip(expobj.stims_bf_sz, expobj.stims_af_sz):
+for on, off in zip(on_, expobj.stims_af_sz):
     stims_of_interest = [stim for stim in expobj.stim_start_frames if on <= stim <= off]
     print('|-', stims_of_interest)
 
@@ -213,8 +214,7 @@ for on, off in zip(expobj.stims_bf_sz, expobj.stims_af_sz):
 
         in_sz = expobj.classify_cells_sz(sz_border_path, to_plot=True, title='%s' % stim, flip=flip)
         expobj.cells_sz_stim[stim] = in_sz  # for each stim, there will be a list of cells that will be classified as in seizure or out of seizure
-# expobj.save()
-
+expobj.save()
 
 
 #%%#####################################################################################################################
@@ -252,13 +252,13 @@ expobj.dff_traces, expobj.dff_traces_avg, expobj.dfstdF_traces, \
 # %% (full) plot individual cell's flu or dFF trace, with photostim. timings for that cell
 
 # plot flu trace of selected cell with the std threshold
-aoplot.plot_flu_trace(expobj=expobj, cell=0, x_lims=None, to_plot='dff')
+# aoplot.plot_flu_trace(expobj=expobj, cell=0, x_lims=None, to_plot='dff')
 
 
 #%% turn important cell x time arrays into pandas dataframes
 
 # raw Flu traces of all good cells
-columns = [f'{num}' for num in range(curr_trial_frames[0], curr_trial_frames[1])]
+columns = [f'{num}' for num in range(expobj.curr_trial_frames[0], expobj.curr_trial_frames[1])]
 index = [f'{num}' for num in expobj.good_cells]
 idxs = [expobj.cell_id.index(cell) for cell in expobj.good_cells]
 expobj.raw_df = pd.DataFrame(expobj.raw[idxs, :], columns=columns, index=index)
@@ -349,57 +349,57 @@ expobj.save()
 ########################################################################################################################
 
 
-# %%  EXTRA THINGS
-# there's a bunch of very high dFF responses of cells
-expobj.abnormal_high_responders = list(
-    expobj.average_responses_df[expobj.average_responses_df['Avg. dFF response'] > 500]['cell_id']);
-print(len(expobj.abnormal_high_responders))
-cell = expobj.abnormal_high_responders[0]
-x_ = list(expobj.dff_all_cells.loc[cell][1:]);
-print(x_, '\nAverage:', np.mean(x_))
-[expobj.stim_start_frames[x] for x in range(len(x_)) if x_[x] > 6000]
-idx = expobj.cell_id.index(cell)
-
-# what is the mean baseline fluorescence value of these high responder cells?
-np.mean(expobj.raw[idx, 11281 + expobj.duration_frames:11281 + 2 * expobj.duration_frames])
-
-a = 0
-for trace in expobj.raw:
-    if np.mean(trace) <= 50:
-        a += 1
-print(a)
-
+# # %%  EXTRA THINGS
+# # there's a bunch of very high dFF responses of cells
+# expobj.abnormal_high_responders = list(
+#     expobj.average_responses_df[expobj.average_responses_df['Avg. dFF response'] > 500]['cell_id']);
+# print(len(expobj.abnormal_high_responders))
+# cell = expobj.abnormal_high_responders[0]
+# x_ = list(expobj.dff_all_cells.loc[cell][1:]);
+# print(x_, '\nAverage:', np.mean(x_))
+# [expobj.stim_start_frames[x] for x in range(len(x_)) if x_[x] > 6000]
+# idx = expobj.cell_id.index(cell)
 #
-cell = expobj.abnormal_high_responders[0]
-mean_pre_list = []
-trace_dff_list = []
-trace_raw_list = []
-problem_stims = []
-for stim in expobj.stim_start_frames:
-    cell_idx = expobj.cell_id.index(cell)
-    trace = expobj.raw[cell_idx][stim - expobj.pre_stim:stim + expobj.duration_frames + expobj.post_stim];
-    trace_raw_list.append(trace)
-    mean_pre = np.mean(trace[0:expobj.pre_stim]);
-    mean_pre_list.append(mean_pre)
-    trace_dff = ((trace - mean_pre) / abs(mean_pre)) * 100;
-    trace_dff_list.append(trace_dff)
-    response = np.mean(trace_dff[
-                       expobj.pre_stim + expobj.duration_frames:expobj.pre_stim + 3 * expobj.duration_frames])
-    if response > 500:
-        problem_stims.append(list(expobj.stim_start_frames).index(stim))
-
-# del(trace_dff_list[10])
-for trace in trace_raw_list:
-    plt.plot(trace)
-plt.plot(np.mean(trace_raw_list, axis=0), color='black')
-# plt.ylim([-10,100])
-plt.show()
-
-# plt.plot(trace_raw_list[10]); plt.show()
-
-# %%
-
-
-aoplot.plot_flu_trace(expobj=expobj, x_lims=None, idx=idx, to_plot='dff')
-
-aoplot.plot_flu_trace(expobj=expobj, idx=idx, to_plot='raw', x_lims=[7000, 8000], figsize=(10, 5), linewidth=1)
+# # what is the mean baseline fluorescence value of these high responder cells?
+# np.mean(expobj.raw[idx, 11281 + expobj.duration_frames:11281 + 2 * expobj.duration_frames])
+#
+# a = 0
+# for trace in expobj.raw:
+#     if np.mean(trace) <= 50:
+#         a += 1
+# print(a)
+#
+# #
+# cell = expobj.abnormal_high_responders[0]
+# mean_pre_list = []
+# trace_dff_list = []
+# trace_raw_list = []
+# problem_stims = []
+# for stim in expobj.stim_start_frames:
+#     cell_idx = expobj.cell_id.index(cell)
+#     trace = expobj.raw[cell_idx][stim - expobj.pre_stim:stim + expobj.duration_frames + expobj.post_stim];
+#     trace_raw_list.append(trace)
+#     mean_pre = np.mean(trace[0:expobj.pre_stim]);
+#     mean_pre_list.append(mean_pre)
+#     trace_dff = ((trace - mean_pre) / abs(mean_pre)) * 100;
+#     trace_dff_list.append(trace_dff)
+#     response = np.mean(trace_dff[
+#                        expobj.pre_stim + expobj.duration_frames:expobj.pre_stim + 3 * expobj.duration_frames])
+#     if response > 500:
+#         problem_stims.append(list(expobj.stim_start_frames).index(stim))
+#
+# # del(trace_dff_list[10])
+# for trace in trace_raw_list:
+#     plt.plot(trace)
+# plt.plot(np.mean(trace_raw_list, axis=0), color='black')
+# # plt.ylim([-10,100])
+# plt.show()
+#
+# # plt.plot(trace_raw_list[10]); plt.show()
+#
+# # %%
+#
+#
+# aoplot.plot_flu_trace(expobj=expobj, x_lims=None, idx=idx, to_plot='dff')
+#
+# aoplot.plot_flu_trace(expobj=expobj, idx=idx, to_plot='raw', x_lims=[7000, 8000], figsize=(10, 5), linewidth=1)

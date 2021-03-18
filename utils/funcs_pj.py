@@ -239,7 +239,7 @@ def dff(flu, baseline=None):
 
 
 # simple plot of the location of the given cell(s) against a black FOV
-def plot_cell_loc(expobj, cells: list, color: str = '#EDEDED', title=None, show: bool = True):
+def plot_cell_loc(expobj, cells: list, color: str = '#EDEDED', title=None, show: bool = True, background_transparent=False):
     """
     plots an image of the FOV to show the locations of cells given in cells list.
     :param expobj: alloptical or 2p imaging object
@@ -248,8 +248,10 @@ def plot_cell_loc(expobj, cells: list, color: str = '#EDEDED', title=None, show:
     :param title: str title for plot
     :param show: if True, show the plot at the end of the function
     """
-    black = np.zeros((expobj.frame_x, expobj.frame_x), dtype='uint16')
-    plt.imshow(black)
+
+    if background_transparent is False:
+        black = np.zeros((expobj.frame_x, expobj.frame_y), dtype='uint16')
+        plt.imshow(black)
 
     for cell in cells:
         y, x = expobj.stat[expobj.cell_id.index(cell)]['med']
@@ -261,6 +263,10 @@ def plot_cell_loc(expobj, cells: list, color: str = '#EDEDED', title=None, show:
         else:
             color_ = 'none'
         plt.scatter(x=x, y=y, edgecolors=color, facecolors=color_, linewidths=0.8)
+
+    if background_transparent:
+        plt.xlim(0, expobj.frame_x)
+        plt.ylim(0, expobj.frame_y)
 
     if title is not None:
         plt.suptitle(title)
