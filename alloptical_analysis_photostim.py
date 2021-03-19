@@ -1,23 +1,21 @@
 # %% IMPORT MODULES AND TRIAL expobj OBJECT
 import sys
 
+sys.path.append('/home/pshah/Documents/code/PackerLab_pycharm/')
 sys.path.append('/home/pshah/Documents/code/')
-# sys.path.append('/home/pshah/Documents/code/Vape/utils/')
 import alloptical_utils_pj as aoutils
 import alloptical_plotting as aoplot
-from utils import funcs_pj as pj
+import utils.funcs_pj as pj
 
-import pickle
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
 
-from numba import njit
 from skimage import draw
 
 ###### IMPORT pkl file containing data in form of expobj
-trial = 't-013'
+trial = 't-011'
 date = '2020-12-18'
 pkl_path = "/home/pshah/mnt/qnap/Analysis/%s/%s_%s/%s_%s.pkl" % (date, date, trial, date, trial)
 # pkl_path = "/home/pshah/mnt/qnap/Data/%s/%s_%s/%s_%s.pkl" % (date, date, trial, date, trial)
@@ -106,13 +104,12 @@ aoplot.plot_photostim_avg(dff_array=x, expobj=expobj, stim_duration=expobj.durat
 # %% PLOT HEATMAP OF AVG PRE- POST TRACE AVGed OVER ALL PHOTOSTIM. TRIALS - ALL CELLS (photostim targets at top) - Lloyd style :D
 
 x = np.asarray([i for i in expobj.targets_dfstdF_avg])
-aoplot.plot_heatmap_photostim_trace(x, vmin=-1, vmax=1, stim_on=expobj.pre_stim, stim_off=expobj.pre_stim+expobj.duration_frames-1,
-                                    title=(experiment + ' - targets only'))
+aoplot.plot_traces_heatmap(x, vmin=-1, vmax=1, stim_on=expobj.pre_stim, stim_off=expobj.pre_stim + expobj.duration_frames - 1,
+                           title=(experiment + ' - targets only'))
 
 x = np.asarray([i for i in expobj.dfstdF_traces_avg])
-aoplot.plot_heatmap_photostim_trace(x, vmin=-0.5, vmax=0.5, stim_on=expobj.pre_stim, stim_off=expobj.pre_stim+expobj.duration_frames-1,
-                                    title=(experiment + ' - nontargets'))
-
+aoplot.plot_traces_heatmap(x, vmin=-0.5, vmax=0.5, stim_on=expobj.pre_stim, stim_off=expobj.pre_stim + expobj.duration_frames - 1,
+                           title=(experiment + ' - nontargets'))
 
 # %% BAR PLOT PHOTOSTIM RESPONSES SIZE - TARGETS vs. NON-TARGETS
 # collect photostim timed average dff traces
@@ -125,8 +122,8 @@ good_std_cells = []
 # there's a bunch of very high dFF responses of cells
 # remove cells with very high average response values from the dff dataframe
 # high_responders = expobj.average_responses_df[expobj.average_responses_df['Avg. dFF response'] > 500].index.values
-# expobj.dff_all_cells.iloc[high_responders[0], 1:]
-# list(expobj.dff_all_cells.iloc[high_responders[0], 1:])
+# expobj.dff_responses_all_cells.iloc[high_responders[0], 1:]
+# list(expobj.dff_responses_all_cells.iloc[high_responders[0], 1:])
 # idx = expobj.cell_id.index(1668);
 # aoplot.plot_flu_trace(expobj=expobj, idx=idx, to_plot='dff', size_factor=2)
 
@@ -162,15 +159,19 @@ plt.show()
 
 
 # %% PLOT imshow() XY locations with COLORS AS average response of ALL cells in FOV
-
-
-# transfer this FOV cell location mapped response plot to the aoplot script
-
-
-
 aoplot.xyloc_responses(expobj, to_plot='dfstdf', clim=[-1, +1], plot_target_coords=True)
 
 
+
+# %% PLOT seizure period as heatmap
+
+sz = 3
+sz_onset, sz_offset = expobj.stims_bf_sz[sz], expobj.stims_af_sz[sz]
+x = expobj.raw[[expobj.cell_id.index(cell) for cell in expobj.good_cells], sz_onset:sz_offset]
+stims = [(stim - sz_onset) for stim in expobj.stim_start_frames if sz_onset <= stim < sz_offset]
+stims_off = [(stim + expobj.duration_frames - 1) for stim in stims]
+aoplot.plot_traces_heatmap(x, stim_on=stims, stim_off=stims_off, cmap='Spectral_r',
+                           title=('%s - seizure %s' % (trial, sz)), xlims=None, vmin=100, vmax=500)
 
 
 #########################################################################################################################
@@ -178,6 +179,44 @@ aoplot.xyloc_responses(expobj, to_plot='dfstdf', clim=[-1, +1], plot_target_coor
 #########################################################################################################################
 
 #%%
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

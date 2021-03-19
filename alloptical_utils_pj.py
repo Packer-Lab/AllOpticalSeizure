@@ -53,6 +53,8 @@ class alloptical():
         self.naparm_path = paths[2]
         self.paq_path = paths[3]
 
+        self.seizure_frames = []
+
         self._parsePVMetadata()
 
         self.stim_type = stimtype
@@ -1447,8 +1449,9 @@ class Post4ap(alloptical):
             print('***Saving a total of ', len(self.bad_frames),
                   'photostim + seizure/CSD frames +  additional bad frames to bad_frames.npy***')
 
-        print('\nnow creating raw movies for each sz as well (saved to the /Analysis folder)')
-        self._subselect_sz_tiffs(onsets=self.seizure_lfp_onsets, offsets=self.seizure_lfp_offsets)
+        if seizures_info_array is not None:
+            print('\nnow creating raw movies for each sz as well (saved to the /Analysis folder)')
+            self._subselect_sz_tiffs(onsets=self.seizure_lfp_onsets, offsets=self.seizure_lfp_offsets)
 
     def find_closest_sz_frames(self):
         """finds time from the closest seizure onset on LFP (-ve values for forthcoming, +ve for past)
@@ -2288,7 +2291,7 @@ def corrcoef_array(array):
 
 # calculate reliability of photostim responsiveness of all of the targeted cells (found in s2p output)
 def calculate_reliability(expobj, dfstdf_threshold=None, dff_threshold=None, pre_stim=10,
-                          post_stim=200, sz_filter=True):
+                          post_stim=200, sz_filter=True, verbose=False):
     """calculates the percentage of successful photoresponsive trials for each targeted cell, where success is post
      stim response over the dff_threshold. the filter_for_sz argument is set to True when needing to filter out stim timings
      that occured when the cell was classified as inside the sz boundary."""
@@ -2302,7 +2305,7 @@ def calculate_reliability(expobj, dfstdf_threshold=None, dff_threshold=None, pre
         # stim_timings = expobj.cells_sz_stim.keys()
         if dff_threshold:
             threshold = round(dff_threshold)
-            df = expobj.dff_all_cells
+            df = expobj.dff_responses_all_cells
         elif dfstdf_threshold:
             threshold = dfstdf_threshold
             df = expobj.dfstdf_all_cells
@@ -2327,7 +2330,8 @@ def calculate_reliability(expobj, dfstdf_threshold=None, dff_threshold=None, pre
 
             reliability[cell] = success / counter * 100.
             reliability[cell] = success / counter * 100.
-            print(cell, reliability[cell], 'calc over %s stims' % counter)
+            if verbose:
+                print(cell, reliability[cell], 'calc over %s stims' % counter)
 
     else:
         if dff_threshold:

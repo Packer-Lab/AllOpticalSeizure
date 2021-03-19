@@ -20,11 +20,12 @@ def plot_cell_radius_aspectr(expobj, stat, to_plot):
 
     if to_plot == 'radius':
         to_plot_ = radius
+        plt.axvline(7.5 / expobj.pix_sz_x, color='grey')
+        plt.axvline(12.5 / expobj.pix_sz_x, color='grey')
     elif to_plot == 'aspect':
         to_plot_ = aspect_ratio
     n, bins, patches = plt.hist(to_plot_, 100)
-    plt.axvline(3.5, color='green')
-    plt.axvline(8.5, color='red')
+
     plt.suptitle('All cells - %s' % to_plot, y=0.95)
     plt.show()
     return to_plot_
@@ -143,6 +144,13 @@ def plot_photostim_avg(dff_array, expobj, stim_duration, pre_stim=10, post_stim=
     plt.show()
 
 
+def plot_s2p_raw(expobj, cell_id):
+    plt.figure(figsize=(50, 3))
+    plt.plot(expobj.baseline_raw[expobj.cell_id.index(cell_id)], linewidth=0.5, c='black')
+    plt.xlim(0, len(expobj.baseline_raw[0]))
+    plt.show()
+
+
 ### (full) plot individual cell's flu or dFF trace, with photostim. timings for that cell
 def plot_flu_trace(expobj, cell, x_lims=None, slm_group=None, to_plot='raw', figsize=(20, 3), linewidth=0.10):
     idx = expobj.cell_id.index(cell)
@@ -237,7 +245,8 @@ def plot_lfp_stims(expobj, title=None):
         raise Exception('look, you need to create stims_in_sz and stims_out_sz attributes first (or rewrite this function)')
 
 # plot the whole pre stim to post stim period as a cool heatmap
-def plot_heatmap_photostim_trace(data, vmin=None, vmax=None, stim_on=None, stim_off=None, figsize=None, title=None):
+def plot_traces_heatmap(data, vmin=None, vmax=None, stim_on=None, stim_off=None, figsize=None, title=None, xlims=(0,100),
+                        cmap='bwr'):
     """
     plot the whole pre stim to post stim period as a cool heatmap
     :param data:
@@ -247,6 +256,7 @@ def plot_heatmap_photostim_trace(data, vmin=None, vmax=None, stim_on=None, stim_
     :param stim_off:
     :param figsize:
     :param title:
+    :param xlims:
     :return:
     """
     if figsize:
@@ -254,16 +264,23 @@ def plot_heatmap_photostim_trace(data, vmin=None, vmax=None, stim_on=None, stim_
     else:
         fig = plt.subplots(figsize=(5, 5))
     plt.imshow(data, aspect='auto')
-    plt.set_cmap('bwr')
+    plt.set_cmap(cmap)
     plt.clim(vmin, vmax)
-    plt.xlim(0, 100)
+    if xlims is not None:
+        plt.xlim(xlims)
     if vmin and vmax:
         cbar = plt.colorbar(boundaries=np.linspace(vmin, vmax, 1000), ticks=[vmin, 0, vmax])
-    if stim_on and stim_off: # draw vertical dashed lines for stim period
+    if stim_on and stim_off:  # draw vertical dashed lines for stim period
         # plt.vlines(x=stim_on, ymin=0, ymax=len(data), colors='black')
         # plt.vlines(x=stim_off, ymin=0, ymax=len(data))
-        plt.axvline(x=stim_on, color='black', linestyle='--')
-        plt.axvline(x=stim_off, color='black', linestyle='--')
+        # plt.axvline(x=stim_on, color='grey', linestyle='--')
+        if stim_on is int:
+            stim_on = [stim_on]
+            stim_off = [stim_off]
+        for line in stim_on:
+            plt.axvline(x=line, color='grey', linestyle='--')
+        for line in stim_off:
+            plt.axvline(x=line, color='black', linestyle='--')
         plt.ylim(0, len(data)-0.5)
     if title is not None:
         plt.suptitle(title)
@@ -287,7 +304,7 @@ def xyloc_responses(expobj, to_plot='dfstdf', clim=[-10, +10], plot_target_coord
     if to_plot == 'dfstdf':
         average_responses = expobj.dfstdf_all_cells[stim_timings].mean(axis=1).tolist()
     elif to_plot == 'dff':
-        average_responses = expobj.dff_all_cells[stim_timings].mean(axis=1).tolist()
+        average_responses = expobj.dff_responses_all_cells[stim_timings].mean(axis=1).tolist()
     else:
         raise Exception('need to specify to_plot arg as either dfstdf or dff in string form!')
 
@@ -314,7 +331,7 @@ def xyloc_responses(expobj, to_plot='dfstdf', clim=[-10, +10], plot_target_coord
     if plot_target_coords:
         for (x, y) in expobj.target_coords_all:
             plt.scatter(x=x, y=y, edgecolors='green', facecolors='none', linewidths=1.0)
-    plt.suptitle((experiment + ' - avg. dFF - targets in green'), y=0.95, fontsize=10)
+    plt.suptitle((expobj.metainfo['trial'] + ' - avg. %s - targets in green' % to_plot), y=0.95, fontsize=10)
     # pj.plot_cell_loc(expobj, cells=expobj.s2p_cell_targets, background_transparent=True)
     plt.show()
     if save_fig is not None:

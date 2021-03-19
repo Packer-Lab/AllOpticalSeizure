@@ -11,17 +11,31 @@ import alloptical_utils_pj as aoutils
 import alloptical_plotting as aoplot
 from utils import funcs_pj as pj
 
-import pickle
+# IMPORT MODULES AND TRIAL expobj OBJECT
+import sys
 
-###### IMPORT pkl file containing expobj
-trial = 't-013'
+sys.path.append('/home/pshah/Documents/code/PackerLab_pycharm/')
+sys.path.append('/home/pshah/Documents/code/')
+import alloptical_utils_pj as aoutils
+import alloptical_plotting as aoplot
+import utils.funcs_pj as pj
+
+import pickle
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+from numba import njit
+from skimage import draw
+
+###### IMPORT pkl file containing data in form of expobj
+trial = 't-011'
 date = '2020-12-18'
 pkl_path = "/home/pshah/mnt/qnap/Analysis/%s/%s_%s/%s_%s.pkl" % (date, date, trial, date, trial)
-with open(pkl_path, 'rb') as f:
-    print('importing expobj for "%s" from: %s' % (date, pkl_path))
-    expobj = pickle.load(f)
-    experiment = '%s: %s, %s' % (expobj.metainfo['animal prep.'], expobj.metainfo['trial'], expobj.metainfo['exptype'])
-    print('DONE IMPORT of %s' % experiment)
+# pkl_path = "/home/pshah/mnt/qnap/Data/%s/%s_%s/%s_%s.pkl" % (date, date, trial, date, trial)
+
+expobj, experiment = aoutils.import_expobj(trial=trial, date=date, pkl_path=pkl_path)
 
 # %%
 sz_csv = '/home/pshah/mnt/qnap/Analysis/2020-12-18/2020-12-18_t-013/2020-12-18_t-013_stim-9222.tif_border.csv'

@@ -1,5 +1,5 @@
 # Step #1) in all optical experiment analysis - preprocessing the data to prep for suite2p analysis and creating some starter experiment objects
-
+import os
 import numpy as np
 import pickle
 import tifffile as tf
@@ -86,7 +86,8 @@ def rm_artifacts_tiffs(expobj, tiffs_loc, new_tiffs):
 
 
 def run_photostim_processing(trial, exp_type, tiffs_loc_dir, tiffs_loc, naparms_loc, paqs_loc, pkl_path, metainfo,
-                             new_tiffs, matlab_badframes_path=None, processed_tiffs=True, discard_all=False):
+                             new_tiffs, matlab_badframes_path=None, processed_tiffs=True, discard_all=False,
+                             analysis_save_path=''):
 
     print('\n-----Processing trial # %s-----' % trial)
 
@@ -109,6 +110,16 @@ def run_photostim_processing(trial, exp_type, tiffs_loc_dir, tiffs_loc, naparms_
     expobj.stimProcessing(stim_channel='markpoints2packio')
     expobj._findTargets()
     expobj.find_photostim_frames()
+
+    # set analysis save path for expobj
+    # make the necessary Analysis saving subfolder as well
+    expobj.analysis_save_path = analysis_save_path
+    if os.path.exists(expobj.analysis_save_path):
+        pass
+    elif os.path.exists(expobj.analysis_save_path[:-17]):
+        os.mkdir(expobj.analysis_save_path)
+    elif os.path.exists(expobj.analysis_save_path[:-27]):
+        os.mkdir(expobj.analysis_save_path[:-17])
 
     with open(pkl_path, 'wb') as f:
         pickle.dump(expobj, f)
@@ -153,24 +164,27 @@ def run_photostim_processing(trial, exp_type, tiffs_loc_dir, tiffs_loc, naparms_
 
 
 # %% update the trial and photostim experiment files information below before running run_photostim_processing()
-animal_prep = 'RL108'
-trial = 't-010'  # note that %s magic command in the code below will be using these trials listed here
-exp_type = 'pre 4ap all optical'
-comments = ''
-data_path_base = '/home/pshah/mnt/qnap/Data/2020-12-18'
-date = '2020-12-18'
-naparms_loc = '%s/photostim/2020-12-18_RL108_ps_009/' % data_path_base  # make sure to include '/' at the end to indicate the child directory
+trial = 't-019'  # note that %s magic command in the code below will be using these trials listed here
+data_path_base = '/home/pshah/mnt/qnap/Data/2020-12-19'
+animal_prep = 'RL109'
+naparms_loc = '%s/photostim/2020-12-19_RL109_ps_018/' % data_path_base  # make sure to include '/' at the end to indicate the child directory
 # specify location of the naparm export for the trial(s) - ensure that this export was used for all trials, if # of trials > 1
+exp_type = 'post 4ap 2p all optical'
+comments = 'no sz'
+date = '2020-12-19'
+paqs_loc = '%s/%s_RL109_%s.paq' % (data_path_base, date, trial[2:])  # path to the .paq files for the selected trials
+
 
 tiffs_loc_dir = '%s/%s_%s' % (data_path_base, date, trial)
 tiffs_loc = '%s/%s_%s_Cycle00001_Ch3.tif' % (tiffs_loc_dir, date, trial)
 pkl_path = "/home/pshah/mnt/qnap/Analysis/%s/%s_%s/%s_%s.pkl" % (date, date, trial, date, trial)  # specify path in Analysis folder to save pkl object
-paqs_loc = '%s/%s_RL108_%s.paq' % (data_path_base, date, trial[2:])  # path to the .paq files for the selected trials
+# paqs_loc = '%s/%s_RL109_010.paq' % (data_path_base, date)  # path to the .paq files for the selected trials
 new_tiffs = tiffs_loc[:-19]  # where new tiffs from rm_artifacts_tiffs will be saved
+# make the necessary Analysis saving subfolder as well
+analysis_save_path = tiffs_loc[:21] + 'Analysis/' + tiffs_loc_dir[26:]
 
-# choose matlab path if need to use or use None for no additional bad frames
-matlab_badframes_path = '%s/paired_measurements/2020-12-18_RL108_%s.mat' % (data_path_base, trial[2:])
-# matlab_badframes_path = None
+# matlab_badframes_path = '%s/paired_measurements/2020-12-19_RL109_%s.mat' % (analysis_save_path[:-17], trial[2:])  # choose matlab path if need to use or use None for no additional bad frames
+matlab_badframes_path = None
 
 metainfo = {
     'animal prep.': animal_prep,
@@ -184,4 +198,4 @@ metainfo = {
 run_photostim_processing(trial, exp_type=exp_type, pkl_path=pkl_path, new_tiffs=new_tiffs, metainfo=metainfo,
                          tiffs_loc_dir=tiffs_loc_dir, tiffs_loc=tiffs_loc, naparms_loc=naparms_loc,
                          paqs_loc=paqs_loc, matlab_badframes_path=matlab_badframes_path,
-                         processed_tiffs=False, discard_all=True)
+                         processed_tiffs=False, discard_all=True, analysis_save_path=analysis_save_path)

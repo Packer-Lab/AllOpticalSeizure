@@ -21,7 +21,6 @@ expobj, experiment = aoutils.import_expobj(trial=trial, date=date, pkl_path=pkl_
 
 cont_inue=True  # i know this is a rather very precarious thing here...
 
-
 #%% prep for importing data from suite2p for this whole experiment
 # determine which frames to retrieve from the overall total s2p output
 trials = ['t-005', 't-006', 't-008', 't-009', 't-010', 't-011', 't-012',
@@ -75,12 +74,10 @@ for i in expobj.s2p_cell_targets:
 plt.xlim(0, len(expobj.baseline_raw[0]))
 plt.show()
 
+
 # %% plotting the distribution of radius and aspect ratios - should this be running before the filtering step which is right below????????
 
-to_plot = aoplot.plot_cell_radius_aspectr(expobj, expobj.stat, to_plot='radius')
-a = [i for i in to_plot if i > 6]
-id = to_plot.index(min(a))
-# expobj.good_cells[id]
+radius_list = aoplot.plot_cell_radius_aspectr(expobj, expobj.stat, to_plot='radius')
 
 
 # %% FILTER ALL CELLS THAT ARE ACTIVE AT LEAST ONCE FOR >2.5*std
@@ -114,6 +111,7 @@ elif os.path.exists(expobj.analysis_save_path[:-27]):
 expobj.save_pkl(pkl_path=pkl_path)
 
 
+print("\n COMPLETED RUNNING ALL OPTICAL PROCESSING PHOTOSTIM.")
 
 
 #%%#####################################################################################################################
@@ -121,6 +119,12 @@ expobj.save_pkl(pkl_path=pkl_path)
 ##### ------------------- processing steps for SEIZURE TRIALS only!! ###################################################
 
 ########################################################################################################################
+
+if 'post' in expobj.metainfo['exptype'] and '4ap' in expobj.metainfo['exptype']:
+    print('\n MOVING ONTO POST-4AP SZ PROCESSING')
+else:
+    sys.exit()
+
 
 expobj.avg_sub_l, im_sub_l, im_diff_l = expobj.avg_seizure_images(
     baseline_tiff="/home/pshah/mnt/qnap/Data/2020-12-18/2020-12-18_t-005/2020-12-18_t-005_Cycle00001_Ch3.tif",
@@ -279,10 +283,10 @@ expobj.baseline_raw_df = pd.DataFrame(expobj.baseline_raw[idxs, :], columns=colu
 #   give group name 'non_targets' to the non-targetted cells, and the appropriate SLM group number to targetted cells
 
 
-expobj.dff_all_cells = aoutils.all_cell_responses_dff(expobj, normalize_to='pre-stim')
+expobj.dff_responses_all_cells = aoutils.all_cell_responses_dff(expobj, normalize_to='pre-stim')
 
 # calculate the avg response values for all cells across all stims
-average_responses = np.mean(expobj.dff_all_cells[expobj.dff_all_cells.columns[1:]], axis=1)
+average_responses = np.mean(expobj.dff_responses_all_cells[expobj.dff_responses_all_cells.columns[1:]], axis=1)
 responses = {'cell_id': [], 'group': [], 'Avg. dFF response': []}
 for cell in expobj.good_cells:
     if cell in expobj.s2p_cell_targets:
@@ -331,7 +335,7 @@ for stim in expobj.dfstdf_all_cells.columns[1:]:
     if stim in expobj.cells_sz_stim.keys():
         cells_toko = expobj.cells_sz_stim[stim]
         expobj.dfstdf_all_cells.loc[cells_toko, str(stim)] = np.nan
-        expobj.dff_all_cells.loc[cells_toko, str(stim)] = np.nan
+        expobj.dff_responses_all_cells.loc[cells_toko, str(stim)] = np.nan
 
 expobj.save()
 
@@ -355,7 +359,7 @@ expobj.save()
 #     expobj.average_responses_df[expobj.average_responses_df['Avg. dFF response'] > 500]['cell_id']);
 # print(len(expobj.abnormal_high_responders))
 # cell = expobj.abnormal_high_responders[0]
-# x_ = list(expobj.dff_all_cells.loc[cell][1:]);
+# x_ = list(expobj.dff_responses_all_cells.loc[cell][1:]);
 # print(x_, '\nAverage:', np.mean(x_))
 # [expobj.stim_start_frames[x] for x in range(len(x_)) if x_[x] > 6000]
 # idx = expobj.cell_id.index(cell)

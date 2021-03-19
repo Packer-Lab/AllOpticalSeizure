@@ -405,7 +405,7 @@ def xyloc_responses(expobj, to_plot='dfstdf', clim=[-10, +10], plot_target_coord
     if to_plot == 'dfstdf':
         average_responses = expobj.dfstdf_all_cells[stim_timings].mean(axis=1).tolist()
     elif to_plot == 'dff':
-        average_responses = expobj.dff_all_cells[stim_timings].mean(axis=1).tolist()
+        average_responses = expobj.dff_responses_all_cells[stim_timings].mean(axis=1).tolist()
     else:
         raise Exception('need to specify to_plot arg as either dfstdf or dff in string form!')
 
