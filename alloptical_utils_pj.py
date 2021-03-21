@@ -1028,7 +1028,7 @@ class alloptical():
 
     def find_photostim_frames(self):
         '''finds all photostim frames and saves them into the bad_frames attribute for the exp object'''
-        print('\n-----calculating photostimulation frames and adding to bad_frames.npy file...')
+        print('\n-----calculating photostimulation frames...')
         print('# of photostim frames calculated per stim. trial: ', self.duration_frames + 1)
 
         photostim_frames = []
@@ -1443,11 +1443,6 @@ class Post4ap(alloptical):
         self.append_bad_frames(
             bad_frames=bad_frames)  # here only need to append the bad frames to the expobj.bad_frames property
 
-        if len(self.bad_frames) > 0:
-            np.save('%s/bad_frames.npy' % self.tiff_path[:-35],
-                    self.bad_frames)  # save to npy file and remember to move npy file to tiff folder before running with suite2p
-            print('***Saving a total of ', len(self.bad_frames),
-                  'photostim + seizure/CSD frames +  additional bad frames to bad_frames.npy***')
 
         if seizures_info_array is not None:
             print('\nnow creating raw movies for each sz as well (saved to the /Analysis folder)')

@@ -3,7 +3,7 @@ import sys
 
 import numpy as np
 import pandas as pd
-from scipy import stats, ndimage
+from scipy import stats, ndimage, io
 import itertools
 import matplotlib.pyplot as plt
 import random
@@ -217,6 +217,14 @@ def paq_read(file_path=None, plot=False):
             "rate": rate,
             "num_datapoints": num_datapoints}
 
+# read matlab array
+def load_matlab_array(path):
+    """
+    Returns a matlab array read in from the path given in path.
+    :param path: path to the matlab output file ending in .mat
+    :return: array
+    """
+    return io.loadmat(path)
 
 # useful for returning indexes when a
 def threshold_detect(signal, threshold):

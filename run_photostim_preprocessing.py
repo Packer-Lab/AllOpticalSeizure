@@ -129,6 +129,12 @@ def run_photostim_processing(trial, exp_type, tiffs_loc_dir, tiffs_loc, naparms_
     if 'post' in exp_type and '4ap' in exp_type:
         expobj.collect_seizures_info(seizures_info_array=matlab_badframes_path, discard_all=discard_all)
 
+    if len(expobj.bad_frames) > 0:
+        np.save('%s/bad_frames.npy' % expobj.tiff_path[:-35],
+                expobj.bad_frames)  # save to npy file and remember to move npy file to tiff folder before running with suite2p
+        print('***  Saving a total of ', len(expobj.bad_frames),
+              'photostim + seizure/CSD frames +  additional bad frames to bad_frames.npy  ***')
+
     # if matlab_badframes_path is not None or discard_all is True:
     #     paq = paq_read(file_path=paqs_loc, plot=False)
     #     # print(paq[0]['data'][0])  # print the frame clock signal from the .paq file to make sure its being read properly
@@ -164,13 +170,17 @@ def run_photostim_processing(trial, exp_type, tiffs_loc_dir, tiffs_loc, naparms_
 
 
 # %% update the trial and photostim experiment files information below before running run_photostim_processing()
-trial = 't-019'  # note that %s magic command in the code below will be using these trials listed here
+
+# need to update these 4 things for every trial
+trial = 't-007'  # note that %s magic command in the code below will be using these trials listed here
+naparms_loc = '/photostim/2020-12-19_RL109_ps_007/'  # make sure to include '/' at the end to indicate the child directory
+exp_type = 'pre 4ap 2p all optical'
+comments = '10 cells x 5 groups; 5mW per cell; preset: 2020-11-25_PS_250ms-stim-50hz (approach #1)'
+######
+
 data_path_base = '/home/pshah/mnt/qnap/Data/2020-12-19'
 animal_prep = 'RL109'
-naparms_loc = '%s/photostim/2020-12-19_RL109_ps_018/' % data_path_base  # make sure to include '/' at the end to indicate the child directory
 # specify location of the naparm export for the trial(s) - ensure that this export was used for all trials, if # of trials > 1
-exp_type = 'post 4ap 2p all optical'
-comments = 'no sz'
 date = '2020-12-19'
 paqs_loc = '%s/%s_RL109_%s.paq' % (data_path_base, date, trial[2:])  # path to the .paq files for the selected trials
 
@@ -183,8 +193,8 @@ new_tiffs = tiffs_loc[:-19]  # where new tiffs from rm_artifacts_tiffs will be s
 # make the necessary Analysis saving subfolder as well
 analysis_save_path = tiffs_loc[:21] + 'Analysis/' + tiffs_loc_dir[26:]
 
-# matlab_badframes_path = '%s/paired_measurements/2020-12-19_RL109_%s.mat' % (analysis_save_path[:-17], trial[2:])  # choose matlab path if need to use or use None for no additional bad frames
-matlab_badframes_path = None
+matlab_badframes_path = '%s/paired_measurements/2020-12-19_RL109_%s.mat' % (analysis_save_path[:-17], trial[2:])  # choose matlab path if need to use or use None for no additional bad frames
+# matlab_badframes_path = None
 
 metainfo = {
     'animal prep.': animal_prep,
@@ -196,6 +206,6 @@ metainfo = {
 }
 
 run_photostim_processing(trial, exp_type=exp_type, pkl_path=pkl_path, new_tiffs=new_tiffs, metainfo=metainfo,
-                         tiffs_loc_dir=tiffs_loc_dir, tiffs_loc=tiffs_loc, naparms_loc=naparms_loc,
+                         tiffs_loc_dir=tiffs_loc_dir, tiffs_loc=tiffs_loc, naparms_loc=(data_path_base+naparms_loc),
                          paqs_loc=paqs_loc, matlab_badframes_path=matlab_badframes_path,
                          processed_tiffs=False, discard_all=True, analysis_save_path=analysis_save_path)
