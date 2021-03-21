@@ -8,6 +8,7 @@ from utils import sta
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
+import matplotlib.ticker as mticker
 import scipy.signal as signal
 from scipy import io
 
@@ -118,6 +119,19 @@ def paq_read(file_path=None, plot=False):
             ax.set_ylim([data[idx].min() - 1, data[idx].max() + 1])
             # ax.set_ylabel(units[idx])
             ax.set_title(chan_names[idx])
+
+            # -- Prajay edit
+            # change x axis ticks to seconds
+            label_format = '{:,.0f}'
+            labels = [item for item in ax.get_xticks()]
+            for item in labels:
+                labels[labels.index(item)] = int(round(item / rate))
+            ticks_loc = ax.get_xticks().tolist()
+            ax.xaxis.set_major_locator(mticker.FixedLocator(ticks_loc))
+            ax.set_xticklabels([label_format.format(x) for x in labels])
+            ax.set_xlabel('Time (secs)')
+            # --
+
         plt.tight_layout()
         plt.show()
 

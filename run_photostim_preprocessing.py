@@ -166,23 +166,24 @@ def run_photostim_processing(trial, exp_type, tiffs_loc_dir, tiffs_loc, naparms_
     if processed_tiffs:
         rm_artifacts_tiffs(expobj, tiffs_loc=tiffs_loc, new_tiffs=new_tiffs)
 
-    print('\n----- COMPLETED RUNNING run_photostim_processing() -----')
+    print('\n----- COMPLETED RUNNING run_photostim_processing() *******')
 
 
 # %% update the trial and photostim experiment files information below before running run_photostim_processing()
-
-# need to update these 4 things for every trial
-trial = 't-007'  # note that %s magic command in the code below will be using these trials listed here
-naparms_loc = '/photostim/2020-12-19_RL109_ps_007/'  # make sure to include '/' at the end to indicate the child directory
-exp_type = 'pre 4ap 2p all optical'
-comments = '10 cells x 5 groups; 5mW per cell; preset: 2020-11-25_PS_250ms-stim-50hz (approach #1)'
-######
-
 data_path_base = '/home/pshah/mnt/qnap/Data/2020-12-19'
 animal_prep = 'RL109'
 # specify location of the naparm export for the trial(s) - ensure that this export was used for all trials, if # of trials > 1
 date = '2020-12-19'
+# paqs_loc = '%s/%s_RL109_%s.paq' % (data_path_base, date, trial[2:])  # path to the .paq files for the selected trials
+
+# need to update these 5 things for every trial
+trial = 't-014'  # note that %s magic command in the code below will be using these trials listed here
+naparms_loc = '/photostim/2020-12-19_RL109_ps_016/'  # make sure to include '/' at the end to indicate the child directory
+exp_type = 'pre 4ap 2p all optical'
+comments = '40 cells x 1 groups; 5mW per cell; preset: 2020-11-25_PS_250ms-stim-50hz (approach #1); a different overall set of clumped cells, but targeted as one large group of 40 cells.'
 paqs_loc = '%s/%s_RL109_%s.paq' % (data_path_base, date, trial[2:])  # path to the .paq files for the selected trials
+######
+
 
 
 tiffs_loc_dir = '%s/%s_%s' % (data_path_base, date, trial)

@@ -390,7 +390,9 @@ class alloptical():
 
     def paqProcessing(self):
 
-        print('\nloading', self.paq_path)
+        print('\n-----processing paq file...')
+
+        print('loading', self.paq_path)
 
         paq, _ = paq_read(self.paq_path, plot=True)
         self.paq_rate = paq['rate']
@@ -1027,7 +1029,7 @@ class alloptical():
         tf.imwrite(save_as, im_stack_1, photometric='minisblack')
 
     def find_photostim_frames(self):
-        '''finds all photostim frames and saves them into the bad_frames attribute for the exp object'''
+        """finds all photostim frames and saves them into the bad_frames attribute for the exp object"""
         print('\n-----calculating photostimulation frames...')
         print('# of photostim frames calculated per stim. trial: ', self.duration_frames + 1)
 
@@ -1039,9 +1041,9 @@ class alloptical():
 
         self.photostim_frames = photostim_frames
         # print(photostim_frames)
-        print('|\n -- Original # of frames:', self.n_frames, 'frames ///')
-        print('|\n -- # of Photostim frames:', len(photostim_frames), 'frames ///')
-        print('|\n -- Minus photostim. frames total:', self.n_frames - len(photostim_frames), 'frames ///')
+        print('|-- Original # of frames:', self.n_frames, 'frames')
+        print('|-- # of Photostim frames:', len(photostim_frames), 'frames')
+        print('|-- Minus photostim. frames total:', self.n_frames - len(photostim_frames), 'frames')
         self.bad_frames = photostim_frames
 
     def append_bad_frames(self, bad_frames=[]):
