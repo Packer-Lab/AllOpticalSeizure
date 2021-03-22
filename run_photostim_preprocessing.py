@@ -210,3 +210,33 @@ run_photostim_processing(trial, exp_type=exp_type, pkl_path=pkl_path, new_tiffs=
                          tiffs_loc_dir=tiffs_loc_dir, tiffs_loc=tiffs_loc, naparms_loc=(data_path_base+naparms_loc),
                          paqs_loc=paqs_loc, matlab_badframes_path=matlab_badframes_path,
                          processed_tiffs=False, discard_all=True, analysis_save_path=analysis_save_path)
+
+
+# %% MAKING A BIG bad_frames.npy FILE FOR ALL TRIALS STITCHED TOGETHER
+cont = False
+if cont:
+    import pickle
+    import numpy as np
+
+    date = '2020-12-19'
+    data_path_base = '/home/pshah/mnt/qnap/Data/2020-12-19'
+
+    to_suite2p = ['t-005', 't-006', 't-007', 't-008', 't-011', 't-012', 't-013', 't-014', 't-016',
+                  't-017', 't-018', 't-019', 't-020', 't-021']  # specify all trials that were used in the suite2p run
+    # to_suite2p = ['t-011', 't-012', 't-013']
+    # note ^^^ this only works currently when the spont baseline trials all come first, and also back to back
+    total_frames_stitched = 0
+    curr_trial_frames = None
+    baseline_frames = [0, 0]
+    bad_frames = []
+    for t in to_suite2p:
+        pkl_path_2 = "/home/pshah/mnt/qnap/Analysis/%s/%s_%s/%s_%s.pkl" % (date, date, t, date, t)
+        with open(pkl_path_2, 'rb') as f:
+            _expobj = pickle.load(f)
+            # import suite2p data
+        total_frames_stitched += _expobj.n_frames
+        if hasattr(_expobj, 'bad_frames'):
+            print(_expobj.bad_frames[:5])
+            bad_frames.extend([(int(frame) + total_frames_stitched) for frame in _expobj.bad_frames])
+
+    np.save(data_path_base + '/bad_frames.npy', np.array(bad_frames))  # save to npy file and remember to move npy file to tiff folder before running with suite2p

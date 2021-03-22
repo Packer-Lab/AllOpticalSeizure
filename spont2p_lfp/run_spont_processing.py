@@ -63,7 +63,7 @@ def run_spont_processing(trial, paths):
 
 
 #%% make sure to run EphysViewer.m from MATLAB if you need to specify any bad frames!
-trial = 't-006'
+trial = 't-005'
 data_path_base = '/home/pshah/mnt/qnap/Data/2020-12-19'
 animal_prep = 'RL109'
 date = '2020-12-19'

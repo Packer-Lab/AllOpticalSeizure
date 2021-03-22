@@ -23,9 +23,9 @@ cont_inue=True  # i know this is a rather very precarious thing here...
 
 #%% prep for importing data from suite2p for this whole experiment
 # determine which frames to retrieve from the overall total s2p output
-trials = ['t-005', 't-006', 't-008', 't-009', 't-010', 't-011', 't-012',
-          't-013']  # specify all trials that were used in the suite2p run
-baseline_trials = ['t-005', 't-006', 't-008']  # specify which trials to use as spont baseline
+trials = ['t-005', 't-006', 't-007', 't-008', 't-011', 't-012', 't-013', 't-014', 't-016',
+          't-017', 't-018', 't-019', 't-020', 't-021']  # specify all trials that were used in the suite2p run
+baseline_trials = ['t-005', 't-006', 't-007', 't-008']  # specify which trials to use as spont baseline
 # note ^^^ this only works currently when the spont baseline trials all come first, and also back to back
 total_frames_stitched = 0
 curr_trial_frames = None
