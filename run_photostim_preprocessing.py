@@ -130,9 +130,7 @@ def run_photostim_processing(trial, exp_type, tiffs_loc_dir, tiffs_loc, naparms_
         expobj.collect_seizures_info(seizures_info_array=matlab_badframes_path, discard_all=discard_all)
 
     if len(expobj.bad_frames) > 0:
-        np.save('%s/bad_frames.npy' % expobj.tiff_path[:-35],
-                expobj.bad_frames)  # save to npy file and remember to move npy file to tiff folder before running with suite2p
-        print('***  Saving a total of ', len(expobj.bad_frames),
+        print('***  Collected a total of ', len(expobj.bad_frames),
               'photostim + seizure/CSD frames +  additional bad frames to bad_frames.npy  ***')
 
     # if matlab_badframes_path is not None or discard_all is True:
