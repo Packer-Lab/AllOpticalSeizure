@@ -211,8 +211,13 @@ run_photostim_processing(trial, exp_type=exp_type, pkl_path=pkl_path, new_tiffs=
 
 
 # %% MAKING A BIG bad_frames.npy FILE FOR ALL TRIALS STITCHED TOGETHER
-cont = False
+cont = True
 if cont:
+    # define base path for data and saving results
+    base_path_data = '/home/pshah/mnt/qnap/Data/2020-12-19'
+    date = base_path_data[-10:]
+    base_path_save = '/home/pshah/mnt/qnap/Analysis/%s/suite2p/' % date
+
     import pickle
     import numpy as np
 
@@ -227,14 +232,17 @@ if cont:
     curr_trial_frames = None
     baseline_frames = [0, 0]
     bad_frames = []
+    to_suite2p_tiffs = []
     for t in to_suite2p:
         pkl_path_2 = "/home/pshah/mnt/qnap/Analysis/%s/%s_%s/%s_%s.pkl" % (date, date, t, date, t)
         with open(pkl_path_2, 'rb') as f:
             _expobj = pickle.load(f)
             # import suite2p data
-        total_frames_stitched += _expobj.n_frames
         if hasattr(_expobj, 'bad_frames'):
-            print(_expobj.bad_frames[:5])
             bad_frames.extend([(int(frame) + total_frames_stitched) for frame in _expobj.bad_frames])
+            print(bad_frames[-5:])
+        total_frames_stitched += _expobj.n_frames
 
-    np.save(data_path_base + '/bad_frames.npy', np.array(bad_frames))  # save to npy file and remember to move npy file to tiff folder before running with suite2p
+        to_suite2p_tiffs.append('%s/%s_%s/%s_%s_Cycle00001_Ch3.tif' % (base_path_data, date, t, date, t))
+
+    np.save(data_path_base + '/bad_frames.npy', np.array(bad_frames))
