@@ -274,7 +274,7 @@ def plot_traces_heatmap(data, vmin=None, vmax=None, stim_on=None, stim_off=None,
         # plt.vlines(x=stim_on, ymin=0, ymax=len(data), colors='black')
         # plt.vlines(x=stim_off, ymin=0, ymax=len(data))
         # plt.axvline(x=stim_on, color='grey', linestyle='--')
-        if stim_on is int:
+        if type(stim_on) is int:
             stim_on = [stim_on]
             stim_off = [stim_off]
         for line in stim_on:

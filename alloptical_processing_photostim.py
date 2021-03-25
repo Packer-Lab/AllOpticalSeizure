@@ -1,7 +1,7 @@
 ## this file is for processing the photostim-experiment alloptical expobj object AFTER suite2p has been run
 ## the end of the script will update the expobj that was in the original pkl path
 
-import sys
+import sys; sys.path.append('/home/pshah/Documents/code/PackerLab_pycharm/')
 import os
 import pickle
 import alloptical_utils_pj as aoutils
@@ -12,26 +12,27 @@ import numpy as np
 import utils.funcs_pj as pj
 
 ###### IMPORT pkl file containing expobj
-trial = 't-010'
+trial = 't-011'
 date = '2020-12-18'
 pkl_path = "/home/pshah/mnt/qnap/Analysis/%s/%s_%s/%s_%s.pkl" % (date, date, trial, date, trial)
 # pkl_path = "/home/pshah/mnt/qnap/Data/%s/%s_%s/%s_%s.pkl" % (date, date, trial, date, trial)
 
 expobj, experiment = aoutils.import_expobj(trial=trial, date=date, pkl_path=pkl_path)
 
-cont_inue=True  # i know this is a rather very precarious thing here...
+cont_inue = True  # i know this is a rather very precarious thing here...
 
-#%% prep for importing data from suite2p for this whole experiment
+s2p_path = '/home/pshah/mnt/qnap/Analysis/2020-12-18/suite2p/alloptical-2p-1x-alltrials/plane0'  # (most recent run for RL108 -- contains all trials including post4ap all optical trials)
+
+# %% prep for importing data from suite2p for this whole experiment
 # determine which frames to retrieve from the overall total s2p output
-trials = ['t-005', 't-006', 't-007', 't-008', 't-011', 't-012', 't-013', 't-014', 't-016',
-          't-017', 't-018', 't-019', 't-020', 't-021']  # specify all trials that were used in the suite2p run
-baseline_trials = ['t-005', 't-006', 't-007', 't-008']  # specify which trials to use as spont baseline
+trials = ['t-005', 't-006', 't-008', 't-009', 't-010', 't-011', 't-012', 't-013']  # specify all trials that were used in the suite2p run
+baseline_trials = ['t-005', 't-006']  # specify which trials to use as spont baseline
 # note ^^^ this only works currently when the spont baseline trials all come first, and also back to back
 total_frames_stitched = 0
 curr_trial_frames = None
 baseline_frames = [0, 0]
 for t in trials:
-    pkl_path_2 = "/home/pshah/mnt/qnap/Data/%s/%s_%s/%s_%s.pkl" % (date, date, t, date, t)
+    pkl_path_2 = "/home/pshah/mnt/qnap/Analysis/%s/%s_%s/%s_%s.pkl" % (date, date, t, date, t)
     with open(pkl_path_2, 'rb') as f:
         _expobj = pickle.load(f)
         # import suite2p data
@@ -44,8 +45,6 @@ for t in trials:
 
 
 # suite2p processing on expobj; import suite2p data, flu, spks, cell coordinates and make s2p masks images stack
-
-s2p_path = '/home/pshah/mnt/qnap/Analysis/2020-12-18/suite2p/alloptical-2p-08x/plane0'  # (most recent run for RL108 -- contains all trials including post4ap all optical trials)
 # s2p_path = '/Users/prajayshah/Documents/data-to-process/2020-12-18/suite2p/alloptical-2p-pre-4ap-08x/plane0'
 # flu, spks, stat = uf.s2p_loader(s2p_path, subtract_neuropil=True)
 
@@ -55,7 +54,7 @@ s2p_path = '/home/pshah/mnt/qnap/Analysis/2020-12-18/suite2p/alloptical-2p-08x/p
 # main function that imports suite2p data and adds attributes to the expobj
 expobj.s2pProcessing(s2p_path=s2p_path, subset_frames=expobj.curr_trial_frames, subtract_neuropil=True,
                      baseline_frames=baseline_frames)
-# if needed for pkl expobj generated from older versions of Vape
+
 expobj.target_coords_all = expobj.target_coords
 expobj.s2p_targets()
 
@@ -99,7 +98,7 @@ expobj.good_cells = aoutils._good_cells(cell_ids=cell_ids, raws=raws, photostim_
 # %% SAVE THE UPDATED expobj OBJECT IN THE ORIGINAL PKL PATH TO USE NEXT
 
 # make the necessary Analysis saving subfolder as well
-expobj.analysis_save_path = expobj.tiff_path[:21] + 'Analysis/' + expobj.tiff_path_dir[26:]
+expobj.analysis_save_path = expobj.tiff_path[:21] + 'Analysis/' + expobj.tiff_path[26:-35]
 if os.path.exists(expobj.analysis_save_path):
     pass
 elif os.path.exists(expobj.analysis_save_path[:-17]):
@@ -160,10 +159,11 @@ aoplot.plot_lfp_stims(expobj)
 expobj.save_pkl()
 
 
-# MAKE SUBSELECTED TIFFS OF INVIDUAL SEIZURES BASED ON THEIR START AND STOP FRAMES
-on_ = [expobj.stim_start_frames[0]]
+# %% MAKE SUBSELECTED TIFFS OF INVIDUAL SEIZURES BASED ON THEIR START AND STOP FRAMES
+on_ = []
+# on_ = [expobj.stim_start_frames[0]]  # uncomment if imaging is starting mid seizure
 on_.extend(expobj.stims_bf_sz)
-expobj._subselect_sz_tiffs(onsets=on, offsets=expobj.stims_af_sz)
+expobj._subselect_sz_tiffs(onsets=on_, offsets=expobj.stims_af_sz)
 
 
 # %% classifying cells as in or out of the current seizure location in the FOV
@@ -197,11 +197,8 @@ def plot_cell_loc(expobj, cells: list, color: str = 'pink', show: bool = True):
 # csv_path = "/home/pshah/mnt/qnap/Analysis/2020-12-18/2020-12-18_t-013/2020-12-18_t-013_post_border.csv"
 
 # need to run this twice to correct for mis-assignment of cells (look at results and then find out which stims need to be flipped)
-expobj.flip_stims = [328, 476, 624, 772, 921, 1069, 1217, 1365, 1514, 1662, 1810, 1958,
-                     4775, 4923, 5071, 5219, 5368,
-                     6702, 6850, 6998, 7295,
-                     8777, 8925, 9074, 9370, 9518,
-                     12038, 12186, 12335, 12483, 12631, 13669]  # specify here the stims where the flip=False leads to incorrect assignment
+expobj.not_flip_stims = [1868]  # specify here the stims where the flip=False leads to incorrect assignment
+cont_inue2 = True
 
 print('working on classifying cells for stims start frames:')
 expobj.cells_sz_stim = {}
@@ -210,16 +207,20 @@ for on, off in zip(on_, expobj.stims_af_sz):
     print('|-', stims_of_interest)
 
     for stim in stims_of_interest:
-        sz_border_path = "%s/boundary_csv/2020-12-18_%s_stim-%s.tif_border.csv" % (expobj.analysis_save_path, trial, stim)
-        if stim in expobj.flip_stims:
-            flip = True
-        else:
+        sz_border_path = "%s/boundary_csv/2020-12-18_%s_stim-%s.tif_border.csv" % (expobj.analysis_save_path[:-1], trial, stim)
+        if stim in expobj.not_flip_stims:
             flip = False
+        else:
+            flip = True
 
         in_sz = expobj.classify_cells_sz(sz_border_path, to_plot=True, title='%s' % stim, flip=flip)
         expobj.cells_sz_stim[stim] = in_sz  # for each stim, there will be a list of cells that will be classified as in seizure or out of seizure
-expobj.save()
+# expobj.save()
 
+if cont_inue2:
+    pass
+else:
+    sys.exit()
 
 #%%#####################################################################################################################
 
@@ -329,7 +330,6 @@ print('\nThe avg. dF/stdF responses of photostim targets is: %s' % np.mean(
 
 
 # %% Convert stim responses TO NAN for cells inside the sz boundary at each of the stim timings
-
 
 for stim in expobj.dfstdf_all_cells.columns[1:]:
     if stim in expobj.cells_sz_stim.keys():

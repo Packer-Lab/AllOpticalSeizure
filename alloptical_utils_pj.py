@@ -29,7 +29,7 @@ import xml.etree.ElementTree as ET
 
 from utils import funcs_pj as pjf
 from utils.paq_utils import paq_read, frames_discard
-
+import alloptical_plotting as aoplot
 import pickle
 
 from numba import njit, jit
@@ -962,7 +962,13 @@ class alloptical():
 
         print('------- Search completed.')
         print('Number of targeted cells: ', self.n_targeted_cells)
-        print('Target cells found in suite2p: ', self.s2p_cell_targets, ' -- %s cells' % len(self.s2p_cell_targets))
+        print('Target cells found in suite2p: ', self.s2p_cell_targets, ' -- %s cells (out of %s target coords)' % (len(self.s2p_cell_targets), len(self.target_coords_all)))
+
+        pjf.plot_cell_loc(self, cells=self.s2p_cell_targets, show=False, title='s2p cell targets and all target coords %s/%s' % (self.metainfo['trial'], self.metainfo['animal prep.']))
+        for (x, y) in self.target_coords_all:
+            plt.scatter(x=x, y=y, edgecolors='yellowgreen', facecolors='none', linewidths=1.0)
+        plt.show()
+
         # print('Target cells SLM Group #1: ', self.s2p_cell_targets_1)
         # print('Target cells SLM Group #2: ', self.s2p_cell_targets_2)
         #
