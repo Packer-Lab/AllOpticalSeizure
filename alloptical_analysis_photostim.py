@@ -44,11 +44,11 @@ aoplot.plot_photostim_avg(dff_array=x, expobj=expobj, stim_duration=expobj.durat
 
 # %% PLOT ENTIRE TRIAL - targeted cells plotted individually as subplots
 
-expobj.raw_targets = [expobj.raw[expobj.cell_id.index(i)] for i in expobj.good_photostim_cells_all]
+expobj.raw_targets = [expobj.raw[expobj.cell_id.index(i)] for i in expobj.s2p_cell_targets]
 expobj.dff_targets = aoutils.normalize_dff(np.array(expobj.raw_targets))
-expobj.targets_dff_base = aoutils.normalize_dff_baseline(
-    arr=expobj.raw_df.loc[[str(x) for x in expobj.s2p_cell_targets]],
-    baseline_array=expobj.baseline_raw_df)
+# expobj.targets_dff_base = aoutils.normalize_dff_baseline(
+#     arr=expobj.raw_df.loc[[str(x) for x in expobj.s2p_cell_targets]],
+#     baseline_array=expobj.baseline_raw_df)
 # plot_photostim_subplots(dff_array=dff_targets,
 #                 title=(experiment + '%s responses of responsive cells' % len(expobj.good_photostim_cells_stim_responses_dFF)))
 to_plot = expobj.dff_targets
@@ -165,13 +165,22 @@ aoplot.xyloc_responses(expobj, to_plot='dfstdf', clim=[-1, +1], plot_target_coor
 
 # %% PLOT seizure period as heatmap
 
-sz = 3
+sz = 0
 sz_onset, sz_offset = expobj.stims_bf_sz[sz], expobj.stims_af_sz[sz]
 x = expobj.raw[[expobj.cell_id.index(cell) for cell in expobj.good_cells], sz_onset:sz_offset]
+
 stims = [(stim - sz_onset) for stim in expobj.stim_start_frames if sz_onset <= stim < sz_offset]
 stims_off = [(stim + expobj.duration_frames - 1) for stim in stims]
-aoplot.plot_traces_heatmap(x, stim_on=stims, stim_off=stims_off, cmap='Spectral_r',
-                           title=('%s - seizure %s' % (trial, sz)), xlims=None, vmin=100, vmax=500)
+
+sz = 0
+x_bf = expobj.stim_times[np.where(expobj.stim_start_frames == expobj.stims_bf_sz[sz])[0][0]]
+x_af = expobj.stim_times[np.where(expobj.stim_start_frames == expobj.stims_af_sz[sz])[0][0]]
+
+lfp_signal = expobj.lfp_signal[x_bf:x_af]
+
+aoplot.plot_traces_heatmap(x, stim_on=stims, stim_off=stims_off, cmap='Spectral_r', figsize=(10,6),
+                           title=('%s - seizure %s' % (trial, sz)), xlims=None, vmin=100, vmax=500,
+                           lfp_signal=lfp_signal)
 
 
 #########################################################################################################################

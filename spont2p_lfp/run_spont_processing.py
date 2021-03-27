@@ -65,13 +65,13 @@ def run_spont_processing(trial, paths, analysis_save_path):
 
 #%% make sure to run EphysViewer.m from MATLAB if you need to specify any bad frames!
 # trial = 't-001'
-trials = ['t-011']
-data_path_base = '/home/pshah/mnt/qnap/Data/2020-12-20'
-animal_prep = 'RL111'
-date = '2020-12-20'
+trials = ['t-007']
+data_path_base = '/home/pshah/mnt/qnap/Data/2021-01-10'
+animal_prep = 'PS06'
+date = '2021-01-10'
 
 for trial in trials:
-    paqs_loc = '%s/%s_RL111_%s.paq' % (data_path_base, date, trial[2:])  # path to the .paq files for the selected trials
+    paqs_loc = '%s/%s_PS06_%s.paq' % (data_path_base, date, trial[2:])  # path to the .paq files for the selected trials
 
 
     tiffs_loc_dir = '%s/%s_%s' % (data_path_base, date, trial)

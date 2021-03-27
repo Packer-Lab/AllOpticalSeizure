@@ -166,21 +166,22 @@ def run_photostim_processing(trial, exp_type, tiffs_loc_dir, tiffs_loc, naparms_
         rm_artifacts_tiffs(expobj, tiffs_loc=tiffs_loc, new_tiffs=new_tiffs)
 
     print('\n----- COMPLETED RUNNING run_photostim_processing() *******')
+    print(metainfo)
 
 
 # %% update the trial and photostim experiment files information below before running run_photostim_processing()
-data_path_base = '/home/pshah/mnt/qnap/Data/2020-12-20'
-animal_prep = 'RL111'
+data_path_base = '/home/pshah/mnt/qnap/Data/2021-01-10'
+animal_prep = 'PS06'
 # specify location of the naparm export for the trial(s) - ensure that this export was used for all trials, if # of trials > 1
-date = '2020-12-20'
+date = '2021-01-10'
 # paqs_loc = '%s/%s_RL109_%s.paq' % (data_path_base, date, trial[2:])  # path to the .paq files for the selected trials
 
 # need to update these 5 things for every trial
-trial = 't-010'  # note that %s magic command in the code below will be using these trials listed here
-naparms_loc = '/photostim/2020-12-20_RL111_ps_009/'  # make sure to include '/' at the end to indicate the child directory
-exp_type = 'pre 4ap 2p all optical'
-comments = '15 cells x 1 groups; 5mW per cell; 5 sec trial length'
-paqs_loc = '%s/%s_RL111_%s.paq' % (data_path_base, date, trial[2:])  # path to the .paq files for the selected trials
+trial = 't-016'  # note that %s magic command in the code below will be using these trials listed here
+naparms_loc = '/photostim/ 2021-01-10_PS06_photostim_012/'  # make sure to include '/' at the end to indicate the child directory
+exp_type = 'post 4ap 2p all optical'  # use 'post' and '4ap' in the description to create the appropriate post4ap exp object
+comments = '10 cells x 5 groups; 7mW per cell preset: 2021-01-07_PS_250ms-stim-40hz-multi.mat (prot. #2b); not really getting seizures anymore'
+paqs_loc = '%s/%s_PS06_%s.paq' % (data_path_base, date, trial[2:])  # path to the .paq files for the selected trials
 # paqs_loc = '%s/%s_RL111_%s.paq' % (data_path_base, date, '008')  # path to the .paq files for the selected trials
 ######
 
@@ -212,22 +213,22 @@ run_photostim_processing(trial, exp_type=exp_type, pkl_path=pkl_path, new_tiffs=
                          processed_tiffs=False, discard_all=True, analysis_save_path=analysis_save_path)
 
 
-# %% MAKING A BIG bad_frames.npy FILE FOR ALL TRIALS STITCHED TOGETHER
+# %% MAKING A BIG bad_frames.npy FILE FOR ALL TRIALS STITCHED TOGETHER (RUN THIS BEFORE RUNNING SUITE2P FOR ALL OPTICAL EXPERIMENTS)
+
+## the code below is run as part of the jupyter notebooks for each experiment's suite2p run
 cont = True
 if cont:
     # define base path for data and saving results
-    base_path_data = '/home/pshah/mnt/qnap/Data/2020-12-20'
-    date = base_path_data[-10:]
-    base_path_save = '/home/pshah/mnt/qnap/Analysis/%s/suite2p/' % date
 
     import pickle
     import numpy as np
 
-    date = '2020-12-20'
-    data_path_base = '/home/pshah/mnt/qnap/Data/2020-12-20'
+    date = '2021-01-10'
+    data_path_base = '/home/pshah/mnt/qnap/Data/2021-01-10'
+    base_path_save = '/home/pshah/mnt/qnap/Analysis/%s/suite2p/' % date
 
-    to_suite2p = ['t-001', 't-003', 't-004', 't-005', 't-006', 't-009', 't-010', 't-012',
-                  't-013']  # specify all trials that were used in the suite2p run
+    to_suite2p = ['t-002', 't-003', 't-005', 't-007', 't-008', 't-009', 't-010', 't-011', 't-012',
+                  't-013', 't-014', 't-015', 't-016']  # specify all trials that were used in the suite2p run
     # to_suite2p = ['t-011', 't-012', 't-013']
     # note ^^^ this only works currently when the spont baseline trials all come first, and also back to back
     total_frames_stitched = 0
@@ -245,6 +246,7 @@ if cont:
             print(bad_frames[-5:])
         total_frames_stitched += _expobj.n_frames
 
-        to_suite2p_tiffs.append('%s/%s_%s/%s_%s_Cycle00001_Ch3.tif' % (base_path_data, date, t, date, t))
+        to_suite2p_tiffs.append('%s/%s_%s/%s_%s_Cycle00001_Ch3.tif' % (data_path_base, date, t, date, t))
 
+    print('# of bad_frames saved to bad_frames.npy: ', len(bad_frames))
     np.save(data_path_base + '/bad_frames.npy', np.array(bad_frames))

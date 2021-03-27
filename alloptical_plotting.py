@@ -246,7 +246,7 @@ def plot_lfp_stims(expobj, title=None):
 
 # plot the whole pre stim to post stim period as a cool heatmap
 def plot_traces_heatmap(data, vmin=None, vmax=None, stim_on=None, stim_off=None, figsize=None, title=None, xlims=(0,100),
-                        cmap='bwr'):
+                        cmap='bwr', show=True, **kwargs):
     """
     plot the whole pre stim to post stim period as a cool heatmap
     :param data:
@@ -282,9 +282,21 @@ def plot_traces_heatmap(data, vmin=None, vmax=None, stim_on=None, stim_off=None,
         for line in stim_off:
             plt.axvline(x=line, color='black', linestyle='--')
         plt.ylim(0, len(data)-0.5)
+
+    if 'lfp_signal' in kwargs.keys():
+        x_c = np.linspace(0, data.shape[1] - 1, len(kwargs['lfp_signal']))
+        plt.plot(x_c, kwargs['lfp_signal'] * 50 + data.shape[0] - 100, c='black')
+
+
+
+
     if title is not None:
         plt.suptitle(title)
-    plt.show()
+
+    if show:
+        plt.show()
+    else:
+        pass
 
 # plot to show the response magnitude of each cell as the actual's filling in the cell's ROI pixels.
 def xyloc_responses(expobj, to_plot='dfstdf', clim=[-10, +10], plot_target_coords=True, save_fig: str = None):
