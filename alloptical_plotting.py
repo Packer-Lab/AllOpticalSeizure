@@ -278,7 +278,7 @@ def plot_traces_heatmap(data, vmin=None, vmax=None, stim_on=None, stim_off=None,
             stim_on = [stim_on]
             stim_off = [stim_off]
         for line in stim_on:
-            plt.axvline(x=line, color='grey', linestyle='--')
+            plt.axvline(x=line, color='red', linestyle='--')
         for line in stim_off:
             plt.axvline(x=line, color='black', linestyle='--')
         plt.ylim(0, len(data)-0.5)

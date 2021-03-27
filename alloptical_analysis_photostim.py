@@ -165,14 +165,13 @@ aoplot.xyloc_responses(expobj, to_plot='dfstdf', clim=[-1, +1], plot_target_coor
 
 # %% PLOT seizure period as heatmap
 
-sz = 0
+sz = 2
 sz_onset, sz_offset = expobj.stims_bf_sz[sz], expobj.stims_af_sz[sz]
 x = expobj.raw[[expobj.cell_id.index(cell) for cell in expobj.good_cells], sz_onset:sz_offset]
 
 stims = [(stim - sz_onset) for stim in expobj.stim_start_frames if sz_onset <= stim < sz_offset]
 stims_off = [(stim + expobj.duration_frames - 1) for stim in stims]
 
-sz = 0
 x_bf = expobj.stim_times[np.where(expobj.stim_start_frames == expobj.stims_bf_sz[sz])[0][0]]
 x_af = expobj.stim_times[np.where(expobj.stim_start_frames == expobj.stims_af_sz[sz])[0][0]]
 
