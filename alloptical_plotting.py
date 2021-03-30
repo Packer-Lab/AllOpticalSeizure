@@ -20,8 +20,8 @@ def plot_cell_radius_aspectr(expobj, stat, to_plot):
 
     if to_plot == 'radius':
         to_plot_ = radius
-        plt.axvline(7.5 / expobj.pix_sz_x, color='grey')
-        plt.axvline(12.5 / expobj.pix_sz_x, color='grey')
+        plt.axvline(6 / expobj.pix_sz_x, color='grey')
+        plt.axvline(14 / expobj.pix_sz_x, color='grey')
     elif to_plot == 'aspect':
         to_plot_ = aspect_ratio
     n, bins, patches = plt.hist(to_plot_, 100)
@@ -152,7 +152,7 @@ def plot_s2p_raw(expobj, cell_id):
 
 
 ### (full) plot individual cell's flu or dFF trace, with photostim. timings for that cell
-def plot_flu_trace(expobj, cell, x_lims=None, slm_group=None, to_plot='raw', figsize=(20, 3), linewidth=0.10):
+def plot_flu_trace(expobj, cell, x_lims=None, slm_group=None, to_plot='raw', figsize=(20, 3), linewidth=0.10, show=True):
     idx = expobj.cell_id.index(cell)
     raw = expobj.raw[idx]
     raw_ = np.delete(raw, expobj.photostim_frames)  # this is very problematic for the dFF plotting with stim frames if you're deleting ALL of the photostim frames!?!!!
@@ -165,11 +165,9 @@ def plot_flu_trace(expobj, cell, x_lims=None, slm_group=None, to_plot='raw', fig
     # y = []
     for j in np.arange(len(raw_dff), step=4):
         avg = np.mean(raw_dff[j:j + 4])
-        if avg > np.mean(raw_dff) + 2.5 * std_dff:
+        if avg > np.mean(raw_dff) + 2 * std_dff:
             x.append(j)
             # y.append(0)
-
-    print(x)
 
     if to_plot == 'raw':
         to_plot_ = raw
@@ -209,7 +207,8 @@ def plot_flu_trace(expobj, cell, x_lims=None, slm_group=None, to_plot='raw', fig
         plt.xlim(x_lims)
 
     # plt.ylim(0, 300)
-    plt.show()
+    if show:
+        plt.show()
 
 
 # make a plot with the paq file LFP signal to visualize these classifications
@@ -278,7 +277,7 @@ def plot_traces_heatmap(data, vmin=None, vmax=None, stim_on=None, stim_off=None,
             stim_on = [stim_on]
             stim_off = [stim_off]
         for line in stim_on:
-            plt.axvline(x=line, color='red', linestyle='--')
+            plt.axvline(x=line, color='black', linestyle='--')
         for line in stim_off:
             plt.axvline(x=line, color='black', linestyle='--')
         plt.ylim(0, len(data)-0.5)
@@ -286,9 +285,6 @@ def plot_traces_heatmap(data, vmin=None, vmax=None, stim_on=None, stim_off=None,
     if 'lfp_signal' in kwargs.keys():
         x_c = np.linspace(0, data.shape[1] - 1, len(kwargs['lfp_signal']))
         plt.plot(x_c, kwargs['lfp_signal'] * 50 + data.shape[0] - 100, c='black')
-
-
-
 
     if title is not None:
         plt.suptitle(title)

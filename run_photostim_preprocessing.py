@@ -177,10 +177,10 @@ date = '2021-01-10'
 # paqs_loc = '%s/%s_RL109_%s.paq' % (data_path_base, date, trial[2:])  # path to the .paq files for the selected trials
 
 # need to update these 5 things for every trial
-trial = 't-016'  # note that %s magic command in the code below will be using these trials listed here
-naparms_loc = '/photostim/ 2021-01-10_PS06_photostim_012/'  # make sure to include '/' at the end to indicate the child directory
+trial = 't-013'  # note that %s magic command in the code below will be using these trials listed here
+naparms_loc = '/photostim/ 2021-01-10_PS06_photostim_011/'  # make sure to include '/' at the end to indicate the child directory
 exp_type = 'post 4ap 2p all optical'  # use 'post' and '4ap' in the description to create the appropriate post4ap exp object
-comments = '10 cells x 5 groups; 7mW per cell preset: 2021-01-07_PS_250ms-stim-40hz-multi.mat (prot. #2b); not really getting seizures anymore'
+comments = '6 sz events, trial starts mid-sz of 1st sz, and also ends mid of last sz; 10 cells x 5 groups; 7mW per cell preset: 2021-01-07_PS_250ms-stim-40hz-multi_interleaved.mat (prot. #3b)'
 paqs_loc = '%s/%s_PS06_%s.paq' % (data_path_base, date, trial[2:])  # path to the .paq files for the selected trials
 # paqs_loc = '%s/%s_RL111_%s.paq' % (data_path_base, date, '008')  # path to the .paq files for the selected trials
 ######
@@ -195,8 +195,8 @@ new_tiffs = tiffs_loc[:-19]  # where new tiffs from rm_artifacts_tiffs will be s
 # make the necessary Analysis saving subfolder as well
 analysis_save_path = tiffs_loc[:21] + 'Analysis/' + tiffs_loc_dir[26:]
 
-# matlab_badframes_path = '%s/paired_measurements/2020-12-20_RL111_%s.mat' % (analysis_save_path[:-17], trial[2:])  # choose matlab path if need to use or use None for no additional bad frames
-matlab_badframes_path = None
+matlab_badframes_path = '%s/paired_measurements/2021-01-10_PS06_%s.mat' % (analysis_save_path[:-17], trial[2:])  # choose matlab path if need to use or use None for no additional bad frames
+# matlab_badframes_path = None
 
 metainfo = {
     'animal prep.': animal_prep,
@@ -216,7 +216,7 @@ run_photostim_processing(trial, exp_type=exp_type, pkl_path=pkl_path, new_tiffs=
 # %% MAKING A BIG bad_frames.npy FILE FOR ALL TRIALS STITCHED TOGETHER (RUN THIS BEFORE RUNNING SUITE2P FOR ALL OPTICAL EXPERIMENTS)
 
 ## the code below is run as part of the jupyter notebooks for each experiment's suite2p run
-cont = True
+cont = False
 if cont:
     # define base path for data and saving results
 

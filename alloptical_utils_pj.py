@@ -685,6 +685,8 @@ class alloptical():
 
         listdir = os.listdir(naparm_path)
 
+        scale_factor = self.frame_x / 512
+
         ## All SLM targets
         for path in listdir:
             if 'AllFOVTargets' in path:
@@ -707,8 +709,6 @@ class alloptical():
         # n = np.array([[0, 0], [0, 1]])
         # target_image_scaled = np.kron(target_image, n)
 
-        target_image_scaled = target_image;
-        del target_image
         # target_image_scaled_1 = target_image_slm_1;
         # del target_image_slm_1
         # target_image_scaled_2 = target_image_slm_2;
@@ -754,11 +754,11 @@ class alloptical():
         #     #             tf.imwrite(os.path.join(naparm_path, 'target_image_scaled.tif'), image_8bit)
         #     tf.imwrite(os.path.join(naparm_path, 'target_image_scaled.tif'), target_image_scaled)
 
-        targets = np.where(target_image_scaled > 0)
+        targets = np.where(target_image > 0)
         # targets_1 = np.where(target_image_scaled_1 > 0)
         # targets_2 = np.where(target_image_scaled_2 > 0)
 
-        targetCoordinates = list(zip(targets[1], targets[0]))
+        targetCoordinates = list(zip(targets[1] * scale_factor, targets[0] * scale_factor))
         print('Number of targets:', len(targetCoordinates))
 
         # targetCoordinates_1 = list(zip(targets_1[1], targets_1[0]))
@@ -1082,7 +1082,7 @@ class alloptical():
     def save(self):
         self.save_pkl()
 
-    def avg_stim_images(self, peri_frames: int = 100, stim_timings: list = [], save_img=False, to_plot=False):
+    def avg_stim_images(self, peri_frames: int = 100, stim_timings: list = [], save_img=False, to_plot=False, verbose=False):
         """
         Outputs (either by saving or plotting, or both) images from raw t-series TIFF for a trial around each individual
         stim timings.
@@ -1121,7 +1121,8 @@ class alloptical():
                 save_path_stim = save_path + '/%s_%s_stim-%s.tif' % (
                     self.metainfo['date'], self.metainfo['trial'], stim)
                 if os.path.exists(save_path):
-                    print("saving stim_img tiff to... %s" % save_path_stim)
+                    if verbose:
+                        print("saving stim_img tiff to... %s" % save_path_stim)
                     avg_sub8 = convert_to_8bit(avg_sub, 0, 255)
                     tf.imwrite(save_path_stim,
                                avg_sub8, photometric='minisblack')
@@ -1852,18 +1853,42 @@ def save_pkl(expobj, pkl_path):
 
 
 # PRE-PROCESSING FUNCTIONS
-@njit
+# @njit
 def moving_average(a, n=4):
     ret = np.cumsum(a)
     ret[n:] = ret[n:] - ret[:-n]
     return ret[n - 1:] / n
 
 
-@njit
-def _good_cells(cell_ids, raws, photostim_frames, radiuses, std_thresh, min_radius_pix, max_radius_pix):
+# @njit
+def _good_cells(cell_ids: list, raws: np.ndarray, photostim_frames: list, std_thresh: int, radiuses: list = None, min_radius_pix: int = 2.5, max_radius_pix: int = 10):
+    """
+    This function is used for filtering for "good" cells based on detection of Flu deflections that are above some std threshold based on std_thresh.
+    Note: a moving averaging window of 4 frames is used to find Flu deflections above std threshold.
+
+    :param cell_ids: list of cell ids to iterate over
+    :param raws: raw flu values corresponding to the cell list in cell_ids
+    :param photostim_frames: frames to delete from the raw flu traces across all cells (because they are photostim frames)
+    :param std_thresh: std. factor above which to define reliable Flu events
+    :param radiuses: radiuses of the s2p ROI mask of all cells in the same order as cell_ids
+    :param min_radius_pix:
+    :param max_radius_pix:
+    :return:
+        good_cells: list of cell_ids that had atleast 1 event above the std_thresh
+        events_loc_cells: dictionary containing locations for each cell_id where the moving averaged Flu trace passes the std_thresh
+        flu_events_cells: dictionary containing the dff Flu value corresponding to events_loc_cells
+        stds = dictionary containing the dFF trace std value for each cell_id
+    """
+
     good_cells = []
-    len_cell_ids = len(cell_ids)
-    for i in range(len_cell_ids):
+    events_loc_cells = {}
+    flu_events_cells = {}
+    stds = {}  # collect the std values for all filtered cells used later for identifying high and low std cells
+    for i in range(len(cell_ids)):
+        cell_id = cell_ids[i]
+
+        if i % 100 == 0:  # print the progress once every 100 cell iterations
+            print(i, " out of ", len(cell_ids), " cells done")
 
         # print(i, " out of ", len(cell_ids), " cells")
         raw = raws[i]
@@ -1874,22 +1899,28 @@ def _good_cells(cell_ids, raws, photostim_frames, radiuses, std_thresh, min_radi
         raw_dff_ = moving_average(raw_dff, n=4)
 
         thr = np.mean(raw_dff) + std_thresh * std_
-        e = np.where(raw_dff_ > thr)
-        # y = raw_dff_[e]
+        events = np.where(raw_dff_ > thr)
+        flu_values = raw_dff[events]
 
-        radius = radiuses[i]
-
-        if len(e[0]) > 0 and radius > min_radius_pix and radius < max_radius_pix:
-            good_cells.append(cell_ids[i])
-
-        if i % 100 == 0:  # print the progress once every 100 cell iterations
-            print(i, " out of ", len_cell_ids, " cells done")
+        if radiuses is not None:
+            radius = radiuses[i]
+            if len(events[0]) > 0 and radius > min_radius_pix and radius < max_radius_pix:
+                events_loc_cells[cell_id] = events
+                flu_events_cells[cell_id] = flu_values
+                stds[cell_id] = std_
+                good_cells.append(cell_id)
+        elif len(events[0]) > 0:
+            events_loc_cells[cell_id] = events
+            flu_events_cells[cell_id] = flu_values
+            good_cells.append(cell_id)
+            stds[cell_id] = std_
 
         # if i == 465:  # just using this here if ever need to check back with specific cells if function seems to be misbehaving
-        #     print(e, len(e[0]), thr)
+        #     print(events, len(events[0]), thr)
 
-    print('# of good cells found: ', len(good_cells), ' (out of ', len_cell_ids, ' ROIs)')
-    return good_cells
+
+    print('# of good cells found: ', len(good_cells), ' (out of ', len(cell_ids), ' ROIs)')
+    return good_cells, events_loc_cells, flu_events_cells, stds
 
 
 def get_targets_stim_traces_norm(expobj, normalize_to='', pre_stim=10, post_stim=200):
@@ -2164,7 +2195,7 @@ def normalize_dff(arr, threshold=20):
         for i in range(len(arr)):
             a = np.percentile(arr[i], threshold)
             mean_ = np.mean(arr[i][arr[i] < a])
-            new_array[i] = arr[i] / abs(mean_) * 100
+            new_array[i] = (arr[i] - mean_) / abs(mean_) * 100  # TODO fix this to return dF over F
 
             if np.isnan(new_array[i]).any() == True:
                 print('Warning:')
@@ -2173,7 +2204,7 @@ def normalize_dff(arr, threshold=20):
 
     return new_array
 
-@jit
+# @jit
 def normalize_dff_jit(arr, threshold=20):
     """normalize given array (cells x time) to the mean of the fluorescence values below given threshold"""
 
@@ -2187,7 +2218,7 @@ def normalize_dff_jit(arr, threshold=20):
         for i in range(len(arr)):
             a = np.percentile(arr[i], threshold)
             mean_ = np.mean(arr[i][arr[i] < a])
-            new_array[i] = arr[i] / abs(mean_) * 100
+            new_array[i] = (arr[i] - mean_) / abs(mean_) * 100
 
             if np.isnan(new_array[i]).any() == True:
                 print('Warning:')

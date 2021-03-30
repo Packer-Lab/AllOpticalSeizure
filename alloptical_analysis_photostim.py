@@ -15,8 +15,8 @@ import seaborn as sns
 from skimage import draw
 
 ###### IMPORT pkl file containing data in form of expobj
-trial = 't-011'
-date = '2020-12-18'
+trial = 't-013'
+date = '2021-01-10'
 pkl_path = "/home/pshah/mnt/qnap/Analysis/%s/%s_%s/%s_%s.pkl" % (date, date, trial, date, trial)
 # pkl_path = "/home/pshah/mnt/qnap/Data/%s/%s_%s/%s_%s.pkl" % (date, date, trial, date, trial)
 
@@ -165,7 +165,7 @@ aoplot.xyloc_responses(expobj, to_plot='dfstdf', clim=[-1, +1], plot_target_coor
 
 # %% PLOT seizure period as heatmap
 
-sz = 2
+sz = 3
 sz_onset, sz_offset = expobj.stims_bf_sz[sz], expobj.stims_af_sz[sz]
 x = expobj.raw[[expobj.cell_id.index(cell) for cell in expobj.good_cells], sz_onset:sz_offset]
 
