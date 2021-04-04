@@ -61,7 +61,7 @@ def run_1p_processing(tiffs_loc_dir, tiffs_loc, paqs_loc, pkl_path, metainfo):
 
     return expobj
 
-# expobj = run_1p_processing(tiffs_loc_dir, tiffs_loc, paqs_loc, pkl_path, metainfo)
+expobj = run_1p_processing(tiffs_loc_dir, tiffs_loc, paqs_loc, pkl_path, metainfo)
 
 
 # %%
@@ -85,8 +85,11 @@ expobj, experiment = aoutils.import_expobj(trial=trial, date=date, pkl_path=pkl_
 # %% # look at the average Ca Flu trace pre and post stim, just calculate the average of the whole frame and plot as continuous timeseries
 # - this approach should also allow to look at the stims that give rise to extended seizure events where the Ca Flu stays up
 
-aoplot.plot_flu_trace_1pstim(expobj, stim_span_color=None, x_axis='frames')
 
-aoplot.plot_1pstim_avg_trace(expobj)
+# exclude certain stim start frames
+expobj.stim_start_frames = [frame for frame in expobj.stim_start_frames if 4000 > frame or frame > 5000]
+
+aoplot.plot_flu_trace_1pstim(expobj, stim_span_color='black', x_axis='frames')
+aoplot.plot_1pstim_avg_trace(expobj, x_axis='frames', individual_traces=True)
 
 # TODO make plot of voltage signal pre and post 1p stim

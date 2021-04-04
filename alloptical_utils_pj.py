@@ -1720,9 +1720,35 @@ class onePstim(twopimaging):
 
         frame_clock = pjf.threshold_detect(clock_voltage, 1)
         self.frame_clock = frame_clock
-        plt.figure(figsize=(10, 5))
+
+        # find start and stop frame_clock times
+        self.frame_start_times = [self.frame_clock[0]]  # initialize list
+        self.frame_end_times = []
+        i = len(self.frame_start_times)
+        for frame in self.frame_clock[1:]:
+            if (frame - self.frame_start_times[i - 1]) > 2e3:
+                i += 1
+                self.frame_start_times.append(frame)
+                self.frame_end_times.append(self.frame_clock[np.where(self.frame_clock == frame)[0] - 1][0])
+        self.frame_end_times.append(self.frame_clock[-1])
+
+        # handling cases where 2p imaging clock has been started/stopped >1 in the paq trial
+        if len(self.frame_start_times) > 1:
+            diff = self.frame_end_times - self.frame_start_times  # lengths of the various epochs of imaging collections
+            idx = diff.index(max(diff))
+            self.frame_start_time_actual = self.frame_start_times[idx]
+            self.frame_end_time_actual = self.frame_end_times[idx]
+            self.frame_clock_actual = [frame for frame in self.frame_clock if
+                                       self.frame_start_time_actual <= frame <= self.frame_end_time_actual]
+        else:
+            self.frame_start_time_actual = self.frame_start_times[0]
+            self.frame_end_time_actual = self.frame_end_times[0]
+            self.frame_clock_actual = self.frame_clock
+
+        plt.figure(figsize=(50, 2))
         plt.plot(clock_voltage)
-        plt.plot(frame_clock, np.ones(len(frame_clock)), '.')
+        plt.plot(frame_clock, np.ones(len(frame_clock)), '.', color='red')
+        plt.plot(self.frame_clock_actual, np.ones(len(frame_clock)), '.', color='green')
         plt.suptitle('frame clock from paq, with detected frame clock instances as scatter')
         plt.show()
 
@@ -1734,7 +1760,7 @@ class onePstim(twopimaging):
         frame_rate = self.fps / self.n_planes
 
         self.stim_times = stim_times
-        self.stim_start_times = [self.stim_times[0]]
+        self.stim_start_times = [self.stim_times[0]]  # initialize list
         self.stim_end_times = []
         i = len(self.stim_start_times)
         for stim in self.stim_times[1:]:
@@ -1744,7 +1770,7 @@ class onePstim(twopimaging):
                 self.stim_end_times.append(self.stim_times[np.where(self.stim_times == stim)[0] - 1][0])
         self.stim_end_times.append(self.stim_times[-1])
 
-        plt.figure(figsize=(10, 5))
+        plt.figure(figsize=(50, 2))
         plt.plot(stim_volts)
         plt.plot(stim_times, np.ones(len(stim_times)), '.')
         plt.suptitle('1p stims from paq, with detected 1p stim instances as scatter')
@@ -1755,7 +1781,7 @@ class onePstim(twopimaging):
         self.stim_frames = []
         for plane in range(self.n_planes):
             for stim in range(len(self.stim_start_times)):
-                stim_frames_ = [frame for frame, t in enumerate(frame_clock[plane::self.n_planes]) if
+                stim_frames_ = [frame for frame, t in enumerate(self.frame_clock_actual[plane::self.n_planes]) if
                                 self.stim_start_times[stim] - 100/self.paq_rate <= t <= self.stim_end_times[stim] + 100/self.paq_rate]
 
                 self.stim_frames.append(stim_frames_)

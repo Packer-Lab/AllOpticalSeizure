@@ -371,28 +371,35 @@ def plot_flu_trace_1pstim(expobj, stim_span_color='white', title='1p photostim a
     plt.suptitle(title)
     plt.show()
 
-def plot_1pstim_avg_trace(expobj, title='Average trace of 1p stim'):
+def plot_1pstim_avg_trace(expobj, title='Average trace of 1p stim', individual_traces=False, x_axis='time'):
     fig, ax = plt.subplots()
     x = [expobj.onePstim_trace[stim - 40: stim + 160] for stim in expobj.stim_start_frames]
     x_ = np.mean(x, axis=0)
-    std_ = np.std(x, axis=0)
     ax.plot(x_, color='black', zorder=1)
-    ax.fill_between(x=range(len(x_)), y1=x_ + std_, y2=x_ - std_, alpha=0.3, zorder=1, color='forestgreen')
-    ax.axvspan(40 - 3, 40 + expobj.stim_duration_frames + 1, color='white', zorder=2)
-    # individual traces
-    # for trace in x:
-    #     ax.plot(trace, color='forestgreen', zorder=1, alpha=0.1)
-    #     ax.axvspan(20-2, 20-2 + 1 + expobj.stim_duration_frames, color='white', zorder=2)
-    # change x axis ticks to seconds
 
-    label_format = '{:,.0f}'
-    labels = [item for item in ax.get_xticks()]
-    for item in labels:
-        labels[labels.index(item)] = int(round(item / expobj.fps))
-    ticks_loc = ax.get_xticks().tolist()
-    ax.xaxis.set_major_locator(mticker.FixedLocator(ticks_loc))
-    ax.set_xticklabels([label_format.format(x) for x in labels])
-    ax.set_xlabel('Time (secs)')
+    if individual_traces:
+        # individual traces
+        for trace in x:
+            ax.plot(trace, color='forestgreen', zorder=1, alpha=0.1)
+            ax.axvspan(40-3, 40 + expobj.stim_duration_frames + 1, color='white', zorder=2)
+    else:
+        # plot standard deviation of the traces array as a span above and below the mean
+        std_ = np.std(x, axis=0)
+        ax.fill_between(x=range(len(x_)), y1=x_ + std_, y2=x_ - std_, alpha=0.3, zorder=1, color='forestgreen')
+        ax.axvspan(40 - 3, 40 + expobj.stim_duration_frames + 1, color='white', zorder=2)
+
+    if x_axis == 'time':
+        # change x axis ticks to seconds
+        label_format = '{:,.0f}'
+        labels = [item for item in ax.get_xticks()]
+        for item in labels:
+            labels[labels.index(item)] = int(round(item / expobj.fps))
+        ticks_loc = ax.get_xticks().tolist()
+        ax.xaxis.set_major_locator(mticker.FixedLocator(ticks_loc))
+        ax.set_xticklabels([label_format.format(x) for x in labels])
+        ax.set_xlabel('Time (secs)')
+    else:
+        ax.set_xlabel('frame clock')
     ax.set_ylabel('Flu (a.u.)')
     plt.suptitle(title)
     plt.show()
