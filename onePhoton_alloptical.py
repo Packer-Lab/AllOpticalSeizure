@@ -8,17 +8,17 @@ import alloptical_utils_pj as aoutils
 import alloptical_plotting as aoplot
 
 # %%
-data_path_base = '/home/pshah/mnt/qnap/Data/2021-01-10'
-animal_prep = 'PS006'
+data_path_base = '/home/pshah/mnt/qnap/Data/2021-01-09'
+animal_prep = 'PS04'
 # specify location of the naparm export for the trial(s) - ensure that this export was used for all trials, if # of trials > 1
 date = data_path_base[-10:]
 # paqs_loc = '%s/%s_RL109_%s.paq' % (data_path_base, date, trial[2:])  # path to the .paq files for the selected trials
 
 # need to update these 5 things for every trial
-trial = 't-018'  # note that %s magic command in the code below will be using these trials listed here
+trial = 't-021'  # note that %s magic command in the code below will be using these trials listed here
 exp_type = '1p photostim'
 comments = '20x 1p opto stim; tiff images are built properly'
-paqs_loc = '%s/%s_PS06_%s.paq' % (data_path_base, date, trial[2:])  # path to the .paq files for the selected trials
+paqs_loc = '%s/%s_PS04_%s.paq' % (data_path_base, date, trial[2:])  # path to the .paq files for the selected trials
 
 
 tiffs_loc_dir = '%s/%s_%s' % (data_path_base, date, trial)
@@ -61,22 +61,32 @@ def run_1p_processing(tiffs_loc_dir, tiffs_loc, paqs_loc, pkl_path, metainfo):
 
     return expobj
 
-expobj = run_1p_processing(tiffs_loc_dir, tiffs_loc, paqs_loc, pkl_path, metainfo)
+# expobj = run_1p_processing(tiffs_loc_dir, tiffs_loc, paqs_loc, pkl_path, metainfo)
 
 
 # %%
+
+import utils.funcs_pj as pjf
+import matplotlib.pyplot as plt
+import numpy as np
+import os
+import alloptical_utils_pj as aoutils
+import alloptical_plotting as aoplot
+
 ###### IMPORT pkl file containing data in form of expobj
-trial = 't-018'
-date = '2021-01-10'
+trial = 't-021'
+date = '2021-01-09'
 pkl_path = "/home/pshah/mnt/qnap/Analysis/%s/%s_%s/%s_%s.pkl" % (date, date, trial, date, trial)
 # pkl_path = "/home/pshah/mnt/qnap/Data/%s/%s_%s/%s_%s.pkl" % (date, date, trial, date, trial)
 
 expobj, experiment = aoutils.import_expobj(trial=trial, date=date, pkl_path=pkl_path)
 
 
-# # look at the average Ca Flu trace pre and post stim, just calculate the average of the whole frame and plot as continuous timeseries
+# %% # look at the average Ca Flu trace pre and post stim, just calculate the average of the whole frame and plot as continuous timeseries
 # - this approach should also allow to look at the stims that give rise to extended seizure events where the Ca Flu stays up
 
-aoplot.plot_flu_trace_1pstim(expobj)
+aoplot.plot_flu_trace_1pstim(expobj, stim_span_color=None, x_axis='frames')
 
 aoplot.plot_1pstim_avg_trace(expobj)
+
+# TODO make plot of voltage signal pre and post 1p stim

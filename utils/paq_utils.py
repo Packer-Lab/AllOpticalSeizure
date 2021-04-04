@@ -112,7 +112,7 @@ def paq_read(file_path=None, plot=False):
         # import matplotlib
         # matplotlib.use('QT4Agg')
         import matplotlib.pylab as plt
-        f, axes = plt.subplots(num_chans, 1, sharex=True, figsize=(10, num_chans), frameon=False)
+        f, axes = plt.subplots(num_chans, 1, sharex=True, figsize=(15, num_chans*5), frameon=False)
         for idx, ax in enumerate(axes):
             ax.plot(data[idx])
             ax.set_xlim([0, num_datapoints - 1])

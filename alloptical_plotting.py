@@ -348,21 +348,25 @@ def xyloc_responses(expobj, to_plot='dfstdf', clim=[-10, +10], plot_target_coord
         plt.savefig(save_fig)
 
 
-def plot_flu_trace_1pstim(expobj, stim_span_color='white', title='1p photostim average Flu trace'):
+def plot_flu_trace_1pstim(expobj, stim_span_color='white', title='1p photostim average Flu trace', x_axis='time'):
     # make plot of avg Ca trace
-    fig, ax = plt.subplots(figsize=[10, 3])
+    fig, ax = plt.subplots(figsize=[10 * len(expobj.onePstim_trace) / 4000, 3])
     ax.plot(expobj.onePstim_trace, c='forestgreen', zorder=1, linewidth=0.75)
-    for stim in expobj.stim_start_frames:
-        ax.axvspan(stim - 8, 1 + stim + expobj.stim_duration_frames, color=stim_span_color, zorder=2)
-    # change x axis ticks to seconds
-    label_format = '{:,.0f}'
-    labels = [item for item in ax.get_xticks()]
-    for item in labels:
-        labels[labels.index(item)] = int(round(item / expobj.fps))
-    ticks_loc = ax.get_xticks().tolist()
-    ax.xaxis.set_major_locator(mticker.FixedLocator(ticks_loc))
-    ax.set_xticklabels([label_format.format(x) for x in labels])
-    ax.set_xlabel('Time (secs)')
+    if stim_span_color is not None:
+        for stim in expobj.stim_start_frames:
+            ax.axvspan(stim - 8, 1 + stim + expobj.stim_duration_frames, color=stim_span_color, zorder=2)
+    if x_axis == 'time':
+        # change x axis ticks to seconds
+        label_format = '{:,.0f}'
+        labels = [item for item in ax.get_xticks()]
+        for item in labels:
+            labels[labels.index(item)] = int(round(item / expobj.fps))
+        ticks_loc = ax.get_xticks().tolist()
+        ax.xaxis.set_major_locator(mticker.FixedLocator(ticks_loc))
+        ax.set_xticklabels([label_format.format(x) for x in labels])
+        ax.set_xlabel('Time (secs)')
+    else:
+        ax.set_xlabel('frame clock')
     ax.set_ylabel('Flu (a.u.)')
     plt.suptitle(title)
     plt.show()
