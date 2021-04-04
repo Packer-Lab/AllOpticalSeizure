@@ -79,27 +79,7 @@ expobj, experiment = aoutils.import_expobj(trial=trial, date=date, pkl_path=pkl_
 # %% # look at the average Ca Flu trace pre and post stim, just calculate the average of the whole frame and plot as continuous timeseries
 # - this approach should also allow to look at the stims that give rise to extended seizure events where the Ca Flu stays up
 
-import tifffile as tf
-import matplotlib.pyplot as plt
-import numpy as np
 
-def analyze_flu_trace_1pstim(expobj):
-    pass
-
-### make a new tiff file (not for suite2p) with the first photostim frame whitened, and save new tiff
-print('\n-----making processed photostim .tiff from:')
-tiff_path = tiffs_loc
-print(tiff_path)
-im_stack = tf.imread(tiff_path, key=range(expobj.n_frames))
-print('Processing experiment tiff of shape: ', im_stack.shape)
-
-im_avg = np.mean(np.mean(im_stack, axis=1), axis=1); print(im_avg.shape)
-
-
-# make plot of avg Ca trace
-plt.figure(figsize=[10,3])
-plt.plot(im_avg, c='seagreen')
-plt.show()
 
 
 #%%

@@ -1693,7 +1693,6 @@ class onePstim(twopimaging):
         self.paqProcessing()
 
     def paqProcessing(self):
-        # TODO need to check if this works for trials with multiple 1p stim trials.
 
         print('\n-----processing paq file for 1p photostim...')
 
@@ -1726,9 +1725,7 @@ class onePstim(twopimaging):
         stim_volts = paq['data'][opto_loopback_chan, :]
         stim_times = pjf.threshold_detect(stim_volts, 1)
 
-        stim_duration_ms = (stim_times[-1] - stim_times[0]) / paq['rate'] * 1e3
         frame_rate = self.fps / self.n_planes
-        duration_frames = np.ceil((stim_duration_ms / 1e3) * frame_rate)
 
         self.stim_times = stim_times
         self.stim_start_times = [self.stim_times[0]]
@@ -1740,8 +1737,6 @@ class onePstim(twopimaging):
                 self.stim_start_times.append(stim)
                 self.stim_end_times.append(self.stim_times[np.where(self.stim_times == stim)[0] - 1][0])
         self.stim_end_times.append(self.stim_times[-1])
-
-        self.duration_frames = int(duration_frames)
 
         plt.figure(figsize=(10, 5))
         plt.plot(stim_volts)
@@ -1762,6 +1757,7 @@ class onePstim(twopimaging):
         # if >1 1p stims per trial, find the start of all 1p trials
         self.stim_start_frames = [stim_frames[0] for stim_frames in self.stim_frames]
         self.stim_end_frames = [stim_frames[-1] for stim_frames in self.stim_frames]
+        self.stim_duration_frames = self.stim_end_frames[0] - self.stim_start_frames[0]
         # i = len(self.stim_start_frames)
         # for stim in self.stim_frames[1:]:
         #     if (stim - self.stim_start_frames[i-1]) > 100:

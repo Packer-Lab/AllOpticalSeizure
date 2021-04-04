@@ -6,6 +6,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 import alloptical_utils_pj as aoutils
+import tifffile as tf
 
 
 ### plotting the distribution of radius and aspect ratios - should this be running before the filtering step which is right below????????
@@ -344,6 +345,23 @@ def xyloc_responses(expobj, to_plot='dfstdf', clim=[-10, +10], plot_target_coord
     plt.show()
     if save_fig is not None:
         plt.savefig(save_fig)
+
+
+def plot_flu_trace_1pstim(expobj, stim_span_color='white', title='1p photostim average Flu trace'):
+    print(expobj.tiff_path)
+    im_stack = tf.imread(expobj.tiff_path, key=range(expobj.n_frames))
+    print('Processing experiment tiff of shape: ', im_stack.shape)
+
+    im_avg = np.mean(np.mean(im_stack, axis=1), axis=1); print(im_avg.shape)
+
+    # make plot of avg Ca trace
+    fig, ax = plt.subplots(figsize=[10,3])
+    ax.plot(im_avg, c='forestgreen', zorder=1)
+    for stim in expobj.stim_start_frames:
+        ax.axvspan(stim - 4, 1 + stim + expobj.stim_duration_frames, color=stim_span_color, zorder=2)
+    plt.suptitle(title)
+    plt.show()
+
 
 
 ### below are plotting functions that I am still working on coding:
