@@ -4,6 +4,7 @@
 # imports
 import numpy as np
 import matplotlib.pyplot as plt
+import matplotlib.ticker as mticker
 
 import alloptical_utils_pj as aoutils
 import tifffile as tf
@@ -354,16 +355,19 @@ def plot_flu_trace_1pstim(expobj, stim_span_color='white', title='1p photostim a
     for stim in expobj.stim_start_frames:
         ax.axvspan(stim - 8, 1 + stim + expobj.stim_duration_frames, color=stim_span_color, zorder=2)
     # change x axis ticks to seconds
+    label_format = '{:,.0f}'
     labels = [item for item in ax.get_xticks()]
     for item in labels:
         labels[labels.index(item)] = int(round(item / expobj.fps))
-    ax.set_xticklabels(labels)
+    ticks_loc = ax.get_xticks().tolist()
+    ax.xaxis.set_major_locator(mticker.FixedLocator(ticks_loc))
+    ax.set_xticklabels([label_format.format(x) for x in labels])
     ax.set_xlabel('Time (secs)')
     ax.set_ylabel('Flu (a.u.)')
     plt.suptitle(title)
     plt.show()
 
-def plot_1pstim_avg_trace(expobj):
+def plot_1pstim_avg_trace(expobj, title='Average trace of 1p stim'):
     fig, ax = plt.subplots()
     x = [expobj.onePstim_trace[stim - 40: stim + 160] for stim in expobj.stim_start_frames]
     x_ = np.mean(x, axis=0)
@@ -377,14 +381,18 @@ def plot_1pstim_avg_trace(expobj):
     #     ax.axvspan(20-2, 20-2 + 1 + expobj.stim_duration_frames, color='white', zorder=2)
     # change x axis ticks to seconds
 
+    label_format = '{:,.0f}'
     labels = [item for item in ax.get_xticks()]
     for item in labels:
         labels[labels.index(item)] = int(round(item / expobj.fps))
-    ax.set_xticklabels(labels)
+    ticks_loc = ax.get_xticks().tolist()
+    ax.xaxis.set_major_locator(mticker.FixedLocator(ticks_loc))
+    ax.set_xticklabels([label_format.format(x) for x in labels])
     ax.set_xlabel('Time (secs)')
     ax.set_ylabel('Flu (a.u.)')
-    plt.suptitle('Average trace of 1p stim')
+    plt.suptitle(title)
     plt.show()
+
 
 
 ### below are plotting functions that I am still working on coding:
