@@ -1799,7 +1799,9 @@ class onePstim(twopimaging):
         # if >1 1p stims per trial, find the start of all 1p trials
         self.stim_start_frames = [stim_frames[0] for stim_frames in self.stim_frames]
         self.stim_end_frames = [stim_frames[-1] for stim_frames in self.stim_frames]
-        self.stim_duration_frames = self.stim_end_frames[0] - self.stim_start_frames[0]
+        self.stim_duration_frames = int(np.mean(
+            [self.stim_end_frames[idx] - self.stim_start_frames[idx] for idx in range(len(self.stim_start_frames))]))
+
         # i = len(self.stim_start_frames)
         # for stim in self.stim_frames[1:]:
         #     if (stim - self.stim_start_frames[i-1]) > 100:

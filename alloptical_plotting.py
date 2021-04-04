@@ -412,6 +412,8 @@ def plot_1pstim_avg_trace(expobj, title='Average trace of stims', individual_tra
     plt.show()
 
 def plot_lfp_1pstim_avg_trace(expobj, title='Average LFP peri- stims', individual_traces=False, x_axis='time'):
+    stim_duration = int(np.mean([expobj.stim_end_times[idx] - expobj.stim_start_times[idx] for idx in range(len(expobj.stim_start_times))]))
+
     fig, ax = plt.subplots()
     x = [expobj.lfp_signal[stim - 1 * expobj.paq_rate: stim + 4 * expobj.paq_rate] for stim in expobj.stim_start_times]
     x_ = np.mean(x, axis=0)
@@ -421,12 +423,16 @@ def plot_lfp_1pstim_avg_trace(expobj, title='Average LFP peri- stims', individua
         # individual traces
         for trace in x:
             ax.plot(trace, color='steelblue', zorder=1, alpha=0.25)
-            ax.axvspan(40 - 3, 40 + expobj.stim_duration_frames + 1.75, color='white', zorder=2)
+            ax.axvspan(1 * expobj.paq_rate,
+                       1 * expobj.paq_rate + stim_duration,
+                       color='powderblue', zorder=1, alpha=0.3)
+
     else:
         # plot standard deviation of the traces array as a span above and below the mean
         std_ = np.std(x, axis=0)
         ax.fill_between(x=range(len(x_)), y1=x_ + std_, y2=x_ - std_, alpha=0.3, zorder=1, color='forestgreen')
-        ax.axvspan(40 - 3, 40 + expobj.stim_duration_frames + 1.5, color='white', zorder=2)
+        ax.axvspan(1 * expobj.paq_rate,
+                   1 * expobj.paq_rate + stim_duration, color='powderblue', zorder=1, alpha=0.3)
 
     if x_axis == 'time':
         # change x axis ticks to seconds
@@ -439,7 +445,7 @@ def plot_lfp_1pstim_avg_trace(expobj, title='Average LFP peri- stims', individua
         ax.set_xticklabels([label_format.format(x) for x in labels])
         ax.set_xlabel('Time (secs)')
     else:
-        ax.set_xlabel('frame clock')
+        ax.set_xlabel('paq clock')
     ax.set_ylabel('Flu (a.u.)')
     plt.suptitle(
         '%s %s %s %s' % (title, expobj.metainfo['exptype'], expobj.metainfo['animal prep.'], expobj.metainfo['trial']))
@@ -466,7 +472,7 @@ def plot_lfp_1pstim(expobj, stim_span_color='white', title='LFP trace', x_axis='
         ax.set_xticklabels([label_format.format(x) for x in labels])
         ax.set_xlabel('Time (secs)')
     else:
-        ax.set_xlabel('frame clock')
+        ax.set_xlabel('paq clock')
     ax.set_ylabel('Flu (a.u.)')
     plt.suptitle(
         '%s %s %s %s' % (title, expobj.metainfo['exptype'], expobj.metainfo['animal prep.'], expobj.metainfo['trial']))

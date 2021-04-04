@@ -96,9 +96,8 @@ aoplot.plot_flu_trace_1pstim(expobj, stim_span_color='white', x_axis='frames')
 aoplot.plot_1pstim_avg_trace(expobj, x_axis='frames')
 
 aoplot.plot_lfp_1pstim(expobj, x_axis='frame', stim_span_color=None)
-aoplot.plot_lfp_1pstim_avg_trace(expobj, individual_traces=True, x_axis='frame')
+aoplot.plot_lfp_1pstim_avg_trace(expobj, individual_traces=True, x_axis='paq')
 
-# %% TODO make plot of voltage signal pre and post 1p stim
 # def plot_lfp_1pstim_avg_trace(expobj, title='Average LFP peri- stims', individual_traces=False, x_axis='time'):
 #     fig, ax = plt.subplots()
 #     x = [expobj.lfp_signal[stim - 1 * expobj.paq_rate: stim + 4 * expobj.paq_rate] for stim in expobj.stim_start_times]
@@ -159,4 +158,3 @@ aoplot.plot_lfp_1pstim_avg_trace(expobj, individual_traces=True, x_axis='frame')
 #     plt.suptitle(
 #         '%s %s %s %s' % (title, expobj.metainfo['exptype'], expobj.metainfo['animal prep.'], expobj.metainfo['trial']))
 #     plt.show()
-
