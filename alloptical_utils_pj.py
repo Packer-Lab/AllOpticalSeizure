@@ -1686,11 +1686,17 @@ class Post4ap(alloptical):
 class onePstim(twopimaging):
     def __init__(self, paths, metainfo):
         self.tiff_path_dir = paths[0]
-        self.tiff_path = paths[1]
         self.paq_path = paths[2]
         self.metainfo = metainfo
         twopimaging.__init__(self, self.tiff_path_dir, self.paq_path)
+        self.tiff_path = paths[1]
         self.paqProcessing()
+        print(self.tiff_path)
+        im_stack = tf.imread(self.tiff_path, key=range(self.n_frames))
+        print('Processing experiment tiff of shape: ', im_stack.shape)
+
+        im_avg = np.mean(np.mean(im_stack, axis=1), axis=1);
+        self.onePstim_trace = im_avg
 
     def paqProcessing(self):
 
@@ -1732,7 +1738,7 @@ class onePstim(twopimaging):
         self.stim_end_times = []
         i = len(self.stim_start_times)
         for stim in self.stim_times[1:]:
-            if (stim - self.stim_start_times[i - 1]) > 1e4:
+            if (stim - self.stim_start_times[i - 1]) > 1e5:
                 i += 1
                 self.stim_start_times.append(stim)
                 self.stim_end_times.append(self.stim_times[np.where(self.stim_times == stim)[0] - 1][0])

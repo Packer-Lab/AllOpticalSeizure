@@ -348,20 +348,43 @@ def xyloc_responses(expobj, to_plot='dfstdf', clim=[-10, +10], plot_target_coord
 
 
 def plot_flu_trace_1pstim(expobj, stim_span_color='white', title='1p photostim average Flu trace'):
-    print(expobj.tiff_path)
-    im_stack = tf.imread(expobj.tiff_path, key=range(expobj.n_frames))
-    print('Processing experiment tiff of shape: ', im_stack.shape)
-
-    im_avg = np.mean(np.mean(im_stack, axis=1), axis=1); print(im_avg.shape)
-
     # make plot of avg Ca trace
-    fig, ax = plt.subplots(figsize=[10,3])
-    ax.plot(im_avg, c='forestgreen', zorder=1)
+    fig, ax = plt.subplots(figsize=[10, 3])
+    ax.plot(expobj.onePstim_trace, c='forestgreen', zorder=1, linewidth=0.75)
     for stim in expobj.stim_start_frames:
-        ax.axvspan(stim - 4, 1 + stim + expobj.stim_duration_frames, color=stim_span_color, zorder=2)
+        ax.axvspan(stim - 8, 1 + stim + expobj.stim_duration_frames, color=stim_span_color, zorder=2)
+    # change x axis ticks to seconds
+    labels = [item for item in ax.get_xticks()]
+    for item in labels:
+        labels[labels.index(item)] = int(round(item / expobj.fps))
+    ax.set_xticklabels(labels)
+    ax.set_xlabel('Time (secs)')
+    ax.set_ylabel('Flu (a.u.)')
     plt.suptitle(title)
     plt.show()
 
+def plot_1pstim_avg_trace(expobj):
+    fig, ax = plt.subplots()
+    x = [expobj.onePstim_trace[stim - 40: stim + 160] for stim in expobj.stim_start_frames]
+    x_ = np.mean(x, axis=0)
+    std_ = np.std(x, axis=0)
+    ax.plot(x_, color='black', zorder=1)
+    ax.fill_between(x=range(len(x_)), y1=x_ + std_, y2=x_ - std_, alpha=0.3, zorder=1, color='forestgreen')
+    ax.axvspan(40 - 3, 40 + expobj.stim_duration_frames + 1, color='white', zorder=2)
+    # individual traces
+    # for trace in x:
+    #     ax.plot(trace, color='forestgreen', zorder=1, alpha=0.1)
+    #     ax.axvspan(20-2, 20-2 + 1 + expobj.stim_duration_frames, color='white', zorder=2)
+    # change x axis ticks to seconds
+
+    labels = [item for item in ax.get_xticks()]
+    for item in labels:
+        labels[labels.index(item)] = int(round(item / expobj.fps))
+    ax.set_xticklabels(labels)
+    ax.set_xlabel('Time (secs)')
+    ax.set_ylabel('Flu (a.u.)')
+    plt.suptitle('Average trace of 1p stim')
+    plt.show()
 
 
 ### below are plotting functions that I am still working on coding:
