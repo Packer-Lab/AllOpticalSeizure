@@ -173,7 +173,6 @@ def run_photostim_processing(trial, exp_type, tiffs_loc_dir, tiffs_loc, naparms_
 data_path_base = '/home/pshah/mnt/qnap/Data/2021-01-10'
 animal_prep = 'PS06'
 # specify location of the naparm export for the trial(s) - ensure that this export was used for all trials, if # of trials > 1
-date = '2021-01-10'
 # paqs_loc = '%s/%s_RL109_%s.paq' % (data_path_base, date, trial[2:])  # path to the .paq files for the selected trials
 
 # need to update these 5 things for every trial
@@ -186,7 +185,7 @@ paqs_loc = '%s/%s_PS06_%s.paq' % (data_path_base, date, trial[2:])  # path to th
 ######
 
 
-
+date = data_path_base[-10:]
 tiffs_loc_dir = '%s/%s_%s' % (data_path_base, date, trial)
 tiffs_loc = '%s/%s_%s_Cycle00001_Ch3.tif' % (tiffs_loc_dir, date, trial)
 pkl_path = "/home/pshah/mnt/qnap/Analysis/%s/%s_%s/%s_%s.pkl" % (date, date, trial, date, trial)  # specify path in Analysis folder to save pkl object

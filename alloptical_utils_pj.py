@@ -1,7 +1,8 @@
 #### NOTE: THIS IS NOT CURRENTLY SETUP TO BE ABLE TO HANDLE MULTIPLE GROUPS/STIMS (IT'S REALLY ONLY FOR A SINGLE STIM TRIGGER PHOTOSTIM RESPONSES)
 
 # TODO need to condense functions that are currently all calculating photostim responses
-#      essentially you should only have to calculate the poststim respones for all cells (including targets) once.
+#      essentially you should only have to calculate the poststim respones for all cells (including targets) once to avoid redundancy, and
+#      more importantly to avoid risk of calculating it differently at various stages.
 
 
 import os
@@ -407,6 +408,7 @@ class alloptical():
         plt.figure(figsize=(10, 5))
         plt.plot(clock_voltage)
         plt.plot(frame_clock, np.ones(len(frame_clock)), '.')
+        plt.suptitle('frame clock from paq, with detected frame clock instances as scatter')
         sns.despine()
         plt.show()
 
@@ -1211,12 +1213,11 @@ class alloptical():
 class twopimaging():
 
     def __init__(self, tiff_path_dir, paq_path, suite2p_path=None, suite2p_run=False):
-        '''
-
+        """
         :param paths: list of key paths (tiff_loc
         :param suite2p_path: path to the suite2p outputs (plan0 file? or ops file? not sure yet)
         :param suite2p_run: set to true if suite2p is already run for this trial
-        '''
+        """
 
         self.tiff_path = tiff_path_dir
         self.paq_path = paq_path
@@ -1394,6 +1395,23 @@ class twopimaging():
               '\npixel size (um):', pix_sz_x, pix_sz_y,
               '\nscan centre (V):', scan_x, scan_y
               )
+
+    def save_pkl(self, pkl_path: str = None):
+        if pkl_path is None:
+            if hasattr(self, 'pkl_path'):
+                pkl_path = self.pkl_path
+            else:
+                raise ValueError(
+                    'pkl path for saving was not found in object attributes, please provide path to save to')
+        else:
+            self.pkl_path = pkl_path
+
+        with open(self.pkl_path, 'wb') as f:
+            pickle.dump(self, f)
+        print("pkl saved to %s" % pkl_path)
+
+    def save(self):
+        self.save_pkl()
 
 
 class Post4ap(alloptical):
@@ -1665,6 +1683,101 @@ class Post4ap(alloptical):
             # return False  # not all expobj will have the sz boundary classes attr so for those just assume no seizure
             raise Exception('cannot check for cell inside sz boundary because cell sz classification hasnot been performed yet')
 
+class onePstim(twopimaging):
+    def __init__(self, paths, metainfo):
+        self.tiff_path_dir = paths[0]
+        self.tiff_path = paths[1]
+        self.paq_path = paths[2]
+        self.metainfo = metainfo
+        twopimaging.__init__(self, self.tiff_path_dir, self.paq_path)
+        self.paqProcessing()
+
+    def paqProcessing(self):
+        # TODO need to check if this works for trials with multiple 1p stim trials.
+
+        print('\n-----processing paq file for 1p photostim...')
+
+        print('loading', self.paq_path)
+
+        paq, _ = paq_read(self.paq_path, plot=True)
+        self.paq_rate = paq['rate']
+
+        if 'shutter_loopback' in paq['chan_names']:
+            ans = input('shutter_loopback in this paq found, should we continue')
+            if ans is True or 'Yes':
+                pass
+            else:
+                raise Exception('need to write code for using the shutter loopback')
+
+        # find frame_clock times
+        clock_idx = paq['chan_names'].index('frame_clock')
+        clock_voltage = paq['data'][clock_idx, :]
+
+        frame_clock = pjf.threshold_detect(clock_voltage, 1)
+        self.frame_clock = frame_clock
+        plt.figure(figsize=(10, 5))
+        plt.plot(clock_voltage)
+        plt.plot(frame_clock, np.ones(len(frame_clock)), '.')
+        plt.suptitle('frame clock from paq, with detected frame clock instances as scatter')
+        plt.show()
+
+        # find 1p stim times
+        opto_loopback_chan = paq['chan_names'].index('opto_loopback')
+        stim_volts = paq['data'][opto_loopback_chan, :]
+        stim_times = pjf.threshold_detect(stim_volts, 1)
+
+        stim_duration_ms = (stim_times[-1] - stim_times[0]) / paq['rate'] * 1e3
+        frame_rate = self.fps / self.n_planes
+        duration_frames = np.ceil((stim_duration_ms / 1e3) * frame_rate)
+
+        self.stim_times = stim_times
+        self.stim_start_times = [self.stim_times[0]]
+        self.stim_end_times = []
+        i = len(self.stim_start_times)
+        for stim in self.stim_times[1:]:
+            if (stim - self.stim_start_times[i - 1]) > 1e4:
+                i += 1
+                self.stim_start_times.append(stim)
+                self.stim_end_times.append(self.stim_times[np.where(self.stim_times == stim)[0] - 1][0])
+        self.stim_end_times.append(self.stim_times[-1])
+
+        self.duration_frames = int(duration_frames)
+
+        plt.figure(figsize=(10, 5))
+        plt.plot(stim_volts)
+        plt.plot(stim_times, np.ones(len(stim_times)), '.')
+        plt.suptitle('1p stims from paq, with detected 1p stim instances as scatter')
+        plt.xlim([stim_times[0] - 2e3, stim_times[-1] + 2e3])
+        plt.show()
+
+        # find all stim frames
+        self.stim_frames = []
+        for plane in range(self.n_planes):
+            for stim in range(len(self.stim_start_times)):
+                stim_frames_ = [frame for frame, t in enumerate(frame_clock[plane::self.n_planes]) if
+                                self.stim_start_times[stim] - 100/self.paq_rate <= t <= self.stim_end_times[stim] + 100/self.paq_rate]
+
+                self.stim_frames.append(stim_frames_)
+
+        # if >1 1p stims per trial, find the start of all 1p trials
+        self.stim_start_frames = [stim_frames[0] for stim_frames in self.stim_frames]
+        self.stim_end_frames = [stim_frames[-1] for stim_frames in self.stim_frames]
+        # i = len(self.stim_start_frames)
+        # for stim in self.stim_frames[1:]:
+        #     if (stim - self.stim_start_frames[i-1]) > 100:
+        #         i += 1
+        #         self.stim_start_frames.append(stim)
+
+
+
+        # # sanity check
+        # assert max(self.stim_start_frames[0]) < self.raw[plane].shape[1] * self.n_planes
+
+        # find voltage channel and save as lfp_signal attribute
+        voltage_idx = paq['chan_names'].index('voltage')
+        self.lfp_signal = paq['data'][voltage_idx]
+
+
 
 # import expobj from the pkl file
 def import_expobj(trial, date, pkl_path):
@@ -1888,7 +2001,7 @@ def _good_cells(cell_ids: list, raws: np.ndarray, photostim_frames: list, std_th
         cell_id = cell_ids[i]
 
         if i % 100 == 0:  # print the progress once every 100 cell iterations
-            print(i, " out of ", len(cell_ids), " cells done")
+            print(i, " out of ", len(cell_ids), " cells done", end='\r')
 
         # print(i, " out of ", len(cell_ids), " cells")
         raw = raws[i]
