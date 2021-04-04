@@ -1725,16 +1725,23 @@ class onePstim(twopimaging):
         self.frame_start_times = [self.frame_clock[0]]  # initialize list
         self.frame_end_times = []
         i = len(self.frame_start_times)
-        for frame in self.frame_clock[1:]:
-            if (frame - self.frame_start_times[i - 1]) > 2e3:
+        for idx in range(1, len(self.frame_clock)-1):
+            if (self.frame_clock[idx + 1] - self.frame_clock[idx]) > 2e3:
                 i += 1
-                self.frame_start_times.append(frame)
-                self.frame_end_times.append(self.frame_clock[np.where(self.frame_clock == frame)[0] - 1][0])
+                self.frame_end_times.append(self.frame_clock[idx])
+                self.frame_start_times.append(self.frame_clock[idx+1])
         self.frame_end_times.append(self.frame_clock[-1])
+
+        # for frame in self.frame_clock[1:]:
+        #     if (frame - self.frame_start_times[i - 1]) > 2e3:
+        #         i += 1
+        #         self.frame_start_times.append(frame)
+        #         self.frame_end_times.append(self.frame_clock[np.where(self.frame_clock == frame)[0] - 1][0])
+        # self.frame_end_times.append(self.frame_clock[-1])
 
         # handling cases where 2p imaging clock has been started/stopped >1 in the paq trial
         if len(self.frame_start_times) > 1:
-            diff = self.frame_end_times - self.frame_start_times  # lengths of the various epochs of imaging collections
+            diff = [self.frame_end_times[idx] - self.frame_start_times[idx] for idx in range(len(self.frame_start_times))]
             idx = diff.index(max(diff))
             self.frame_start_time_actual = self.frame_start_times[idx]
             self.frame_end_time_actual = self.frame_end_times[idx]
@@ -1747,8 +1754,8 @@ class onePstim(twopimaging):
 
         plt.figure(figsize=(50, 2))
         plt.plot(clock_voltage)
-        plt.plot(frame_clock, np.ones(len(frame_clock)), '.', color='red')
-        plt.plot(self.frame_clock_actual, np.ones(len(frame_clock)), '.', color='green')
+        plt.plot(frame_clock, np.ones(len(frame_clock)), '.', color='orange')
+        plt.plot(self.frame_clock_actual, np.ones(len(self.frame_clock_actual)), '.', color='red')
         plt.suptitle('frame clock from paq, with detected frame clock instances as scatter')
         plt.show()
 
