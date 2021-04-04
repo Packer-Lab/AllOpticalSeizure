@@ -348,13 +348,16 @@ def xyloc_responses(expobj, to_plot='dfstdf', clim=[-10, +10], plot_target_coord
         plt.savefig(save_fig)
 
 
-def plot_flu_trace_1pstim(expobj, stim_span_color='white', title='1p photostim average Flu trace', x_axis='time'):
+def plot_flu_trace_1pstim(expobj, stim_span_color='white', title='average Flu trace', x_axis='time'):
     # make plot of avg Ca trace
     fig, ax = plt.subplots(figsize=[10 * len(expobj.onePstim_trace) / 4000, 3])
     ax.plot(expobj.onePstim_trace, c='forestgreen', zorder=1, linewidth=0.75)
     if stim_span_color is not None:
         for stim in expobj.stim_start_frames:
             ax.axvspan(stim - 8, 1 + stim + expobj.stim_duration_frames, color=stim_span_color, zorder=2)
+        if stim_span_color is not 'black':
+            for line in expobj.stim_start_frames:
+                plt.axvline(x=line+2, color='black', linestyle='--', linewidth=0.6)
     if x_axis == 'time':
         # change x axis ticks to seconds
         label_format = '{:,.0f}'
@@ -368,10 +371,11 @@ def plot_flu_trace_1pstim(expobj, stim_span_color='white', title='1p photostim a
     else:
         ax.set_xlabel('frame clock')
     ax.set_ylabel('Flu (a.u.)')
-    plt.suptitle(title)
+    plt.suptitle(
+        '%s %s %s %s' % (title, expobj.metainfo['exptype'], expobj.metainfo['animal prep.'], expobj.metainfo['trial']))
     plt.show()
 
-def plot_1pstim_avg_trace(expobj, title='Average trace of 1p stim', individual_traces=False, x_axis='time'):
+def plot_1pstim_avg_trace(expobj, title='Average trace of stims', individual_traces=False, x_axis='time'):
     fig, ax = plt.subplots()
     x = [expobj.onePstim_trace[stim - 40: stim + 160] for stim in expobj.stim_start_frames]
     x_ = np.mean(x, axis=0)
@@ -380,7 +384,7 @@ def plot_1pstim_avg_trace(expobj, title='Average trace of 1p stim', individual_t
     if individual_traces:
         # individual traces
         for trace in x:
-            ax.plot(trace, color='forestgreen', zorder=1, alpha=0.1)
+            ax.plot(trace, color='forestgreen', zorder=1, alpha=0.25)
             ax.axvspan(40-3, 40 + expobj.stim_duration_frames + 1, color='white', zorder=2)
     else:
         # plot standard deviation of the traces array as a span above and below the mean
@@ -401,7 +405,8 @@ def plot_1pstim_avg_trace(expobj, title='Average trace of 1p stim', individual_t
     else:
         ax.set_xlabel('frame clock')
     ax.set_ylabel('Flu (a.u.)')
-    plt.suptitle(title)
+    plt.suptitle(
+        '%s %s %s %s' % (title, expobj.metainfo['exptype'], expobj.metainfo['animal prep.'], expobj.metainfo['trial']))
     plt.show()
 
 

@@ -1707,6 +1707,8 @@ class onePstim(twopimaging):
         paq, _ = paq_read(self.paq_path, plot=True)
         self.paq_rate = paq['rate']
 
+        frame_rate = self.fps / self.n_planes
+
         if 'shutter_loopback' in paq['chan_names']:
             ans = input('shutter_loopback in this paq found, should we continue')
             if ans is True or 'Yes':
@@ -1759,12 +1761,11 @@ class onePstim(twopimaging):
         plt.suptitle('frame clock from paq, with detected frame clock instances as scatter')
         plt.show()
 
+
         # find 1p stim times
         opto_loopback_chan = paq['chan_names'].index('opto_loopback')
         stim_volts = paq['data'][opto_loopback_chan, :]
         stim_times = pjf.threshold_detect(stim_volts, 1)
-
-        frame_rate = self.fps / self.n_planes
 
         self.stim_times = stim_times
         self.stim_start_times = [self.stim_times[0]]  # initialize list
