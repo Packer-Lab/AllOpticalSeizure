@@ -1692,8 +1692,10 @@ class onePstim(twopimaging):
         self.tiff_path = paths[1]
         self.paqProcessing()
         print(self.tiff_path)
+
+        print('\n-----processing tiff file for 1p photostim...')
         im_stack = tf.imread(self.tiff_path, key=range(self.n_frames))
-        print('Processing experiment tiff of shape: ', im_stack.shape)
+        print('Loaded experiment tiff of shape: ', im_stack.shape)
 
         im_avg = np.mean(np.mean(im_stack, axis=1), axis=1);
         self.onePstim_trace = im_avg
