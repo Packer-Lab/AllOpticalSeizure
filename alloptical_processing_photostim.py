@@ -10,10 +10,11 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import numpy as np
 import utils.funcs_pj as pj
+import tifffile as tf
 
 ###### IMPORT pkl file containing expobj
 trial = 't-009'
-date = '2020-12-18'
+date = '2021-01-10'
 pkl_path = "/home/pshah/mnt/qnap/Analysis/%s/%s_%s/%s_%s.pkl" % (date, date, trial, date, trial)
 # pkl_path = "/home/pshah/mnt/qnap/Data/%s/%s_%s/%s_%s.pkl" % (date, date, trial, date, trial)
 
@@ -21,17 +22,21 @@ expobj, experiment = aoutils.import_expobj(trial=trial, date=date, pkl_path=pkl_
 
 cont_inue = True  # i know this is a rather very precarious thing here...
 
-s2p_path = '/home/pshah/mnt/qnap/Analysis/2020-12-18/suite2p/alloptical-2p-1x-alltrials/plane0'  # (most recent run for RL108 -- contains all trials including post4ap all optical trials)
+s2p_path = '/home/pshah/mnt/qnap/Analysis/2021-01-10/suite2p/alloptical-2p-08x-alltrials-reg_tiff/plane0'  # (most recent run for RL108 -- contains all trials including post4ap all optical trials)
+
 
 # %% prep for importing data from suite2p for this whole experiment
 # determine which frames to retrieve from the overall total s2p output
-trials = ['t-005', 't-006', 't-008', 't-009', 't-010', 't-011', 't-012', 't-013']  # specify all trials that were used in the suite2p run
-baseline_trials = ['t-005', 't-006']  # specify which trials to use as spont baseline
+to_suite2p = ['t-002', 't-003', 't-005', 't-007', 't-008', 't-009', 't-010', 't-011', 't-012',
+              't-013', 't-014', 't-015', 't-016']  # specify all trials that were used in the suite2p runtotal_frames_stitched = 0
+
+
+baseline_trials = ['t-002', 't-003', 't-005', 't-007']  # specify which trials to use as spont baseline
 # note ^^^ this only works currently when the spont baseline trials all come first, and also back to back
 total_frames_stitched = 0
 curr_trial_frames = None
 baseline_frames = [0, 0]
-for t in trials:
+for t in to_suite2p:
     pkl_path_2 = "/home/pshah/mnt/qnap/Analysis/%s/%s_%s/%s_%s.pkl" % (date, date, t, date, t)
     with open(pkl_path_2, 'rb') as f:
         _expobj = pickle.load(f)
@@ -63,7 +68,31 @@ expobj.s2p_targets()
 # flu, expobj.spks, expobj.stat = uf.s2p_loader(s2p_path, subtract_neuropil=True)
 
 aoutils.s2pMaskStack(obj=expobj, pkl_list=[pkl_path], s2p_path=s2p_path,
-                     parent_folder='/home/pshah/mnt/qnap/Analysis/2020-12-18/')
+                     parent_folder=expobj.analysis_save_path)
+
+# %% stitching of registered TIFFs
+
+tif_path = s2p_path + '/reg_tiff_full.tif'
+if os.path.exists(tif_path):
+    pass
+elif os.path.exists(s2p_path + '/reg_tif'):
+    reg_tif_folder = s2p_path + '/reg_tif/'
+    reg_tif_list = os.listdir(reg_tif_folder)
+    reg_tif_list.sort()
+    conc_tif = np.empty([0, expobj.frame_x, expobj.frame_y])
+    for tif in reg_tif_list:
+        print('reading %s out of %s' % (tif, reg_tif_list[-1]), end='\r')
+        tif_path_ = reg_tif_folder + tif
+        tif = tf.imread(tif_path_)
+        # downsample to 8-bit
+        stack8 = np.full_like(tif, fill_value=0)
+        for frame in np.arange(tif.shape[0]):
+            stack8[frame] = aoutils.convert_to_8bit(tif[frame], 0, 255)
+        conc_tif = np.append(conc_tif, stack8, axis=0)
+        del tif
+    tf.imsave(tif_path, conc_tif.astype('np.int8'))
+else:
+    pass
 
 # %% (quick) plot individual fluorescence traces - see InteractiveMatplotlibExample to make these plots interactively
 # plot raw fluorescence traces

@@ -272,7 +272,6 @@ class alloptical():
                 self.baseline_raw = FminusFneu[:, baseline_frames[0]:baseline_frames[1]]
             self.mean_img = ops['meanImg']
             cell_id = []
-            cell_plane = []
             cell_med = []
             cell_x = []
             cell_y = []
@@ -327,6 +326,25 @@ class alloptical():
                 num_units = FminusFneu.shape[0]
                 cell_plane.extend([plane] * num_units)
                 self.cell_plane.append(cell_plane)
+
+        # # stitching of suite2p registered TIFFs (if output is saved in the reg_tif folder)
+        # reg_tif_path = s2p_path + '/reg_tiff_full.tif'
+        # if os.path.exists(reg_tif_path):
+        #     pass
+        # elif os.path.exists(s2p_path + '/reg_tif'):
+        #     reg_tif_folder = s2p_path + '/reg_tif/'
+        #     reg_tif_list = os.listdir(reg_tif_folder)
+        #     reg_tif_list.sort()
+        #     conc_tif = np.empty([0, self.frame_x, self.frame_y])
+        #     for tif in reg_tif_list:
+        #         print('reading %s out of %s' % (tif, reg_tif_list[-1]), end='\r')
+        #         tif_path_ = reg_tif_folder + tif
+        #         tif = tf.imread(tif_path_)
+        #         conc_tif = np.append(conc_tif, tif, axis=0)
+        #     tf.imsave(reg_tif_path, conc_tif.astype(np.int16))
+        # else:
+        #     pass
+
 
     def _parseNAPARMxml(self):
 
@@ -1818,14 +1836,39 @@ class onePstim(twopimaging):
         self.lfp_signal = paq['data'][voltage_idx]
 
 
+# preprocessing functions
+def run_1p_processing(tiffs_loc_dir, tiffs_loc, paqs_loc, pkl_path, metainfo, trial, analysis_save_path):
+    print('\n-----Processing trial # %s-----' % trial)
+
+    paths = [tiffs_loc_dir, tiffs_loc, paqs_loc]
+    # print('tiffs_loc_dir, naparms_loc, paqs_loc paths:\n', paths)
+
+    expobj = onePstim(paths, metainfo)
+
+    # set analysis save path for expobj
+    # make the necessary Analysis saving subfolder as well
+    expobj.analysis_save_path = analysis_save_path
+    if os.path.exists(expobj.analysis_save_path):
+        pass
+    elif os.path.exists(expobj.analysis_save_path[:-17]):
+        os.mkdir(expobj.analysis_save_path)
+    elif os.path.exists(expobj.analysis_save_path[:-27]):
+        os.mkdir(expobj.analysis_save_path[:-17])
+        os.mkdir(expobj.analysis_save_path)
+
+    expobj.save_pkl(pkl_path=pkl_path)
+
+    return expobj
+
+
 
 # import expobj from the pkl file
 def import_expobj(trial, date, pkl_path):
     with open(pkl_path, 'rb') as f:
         print('importing expobj for "%s, %s" from: %s' % (date, trial, pkl_path))
         expobj = pickle.load(f)
-        experiment = '%s: %s, %s' % (
-        expobj.metainfo['animal prep.'], expobj.metainfo['trial'], expobj.metainfo['exptype'])
+        experiment = '%s: %s, %s, %s' % (
+        expobj.metainfo['animal prep.'], expobj.metainfo['trial'], expobj.metainfo['exptype'], expobj.metainfo['comments'])
         print('DONE IMPORT of %s' % experiment)
     if hasattr(expobj, 'paq_rate'):
         pass
