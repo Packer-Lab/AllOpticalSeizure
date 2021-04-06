@@ -244,7 +244,7 @@ class alloptical():
                 else:
                     self.cell_area.append(1)
 
-    def s2pProcessing(self, s2p_path, subset_frames=None, subtract_neuropil=True, baseline_frames=[]):
+    def s2pProcessing(self, s2p_path, trial, to_suite2p, baseline_trials, subset_frames=None, subtract_neuropil=True):
 
         """processing of suite2p data on the experimental object"""
 
@@ -257,6 +257,24 @@ class alloptical():
         self.raw = []
         self.mean_img = []
         self.radius = []
+        self.s2p_path = s2p_path
+
+        # determine which frames to retrieve from the overall total s2p output
+        total_frames_stitched = 0
+        curr_trial_frames = None
+        baseline_frames = [0, 0]
+        for t in to_suite2p:
+            pkl_path_2 = "/home/pshah/mnt/qnap/Analysis/%s/%s_%s/%s_%s.pkl" % (self.metainfo['date'], self.metainfo['date'], t, self.metainfo['date'], t)
+            with open(pkl_path_2, 'rb') as f:
+                _expobj = pickle.load(f)
+                # import suite2p data
+            total_frames_stitched += _expobj.n_frames
+            if t == trial:
+                self.curr_trial_frames = [total_frames_stitched - _expobj.n_frames, total_frames_stitched]
+            if t in baseline_trials:
+                baseline_frames[1] = total_frames_stitched
+
+
 
         if self.n_planes == 1:
             # s2p_path = os.path.join(self.tiff_path, 'suite2p', 'plane' + str(plane))
@@ -327,24 +345,28 @@ class alloptical():
                 cell_plane.extend([plane] * num_units)
                 self.cell_plane.append(cell_plane)
 
-        # # stitching of suite2p registered TIFFs (if output is saved in the reg_tif folder)
-        # reg_tif_path = s2p_path + '/reg_tiff_full.tif'
-        # if os.path.exists(reg_tif_path):
-        #     pass
-        # elif os.path.exists(s2p_path + '/reg_tif'):
-        #     reg_tif_folder = s2p_path + '/reg_tif/'
-        #     reg_tif_list = os.listdir(reg_tif_folder)
-        #     reg_tif_list.sort()
-        #     conc_tif = np.empty([0, self.frame_x, self.frame_y])
-        #     for tif in reg_tif_list:
-        #         print('reading %s out of %s' % (tif, reg_tif_list[-1]), end='\r')
-        #         tif_path_ = reg_tif_folder + tif
-        #         tif = tf.imread(tif_path_)
-        #         conc_tif = np.append(conc_tif, tif, axis=0)
-        #     tf.imsave(reg_tif_path, conc_tif.astype(np.int16))
-        # else:
-        #     pass
+    def stitch_reg_tiffs(self):
+        start = self.curr_trial_frames[0] // 2000  # 2000 because that is the batch size for suite2p run
+        end = self.curr_trial_frames[1] // 2000 + 1
 
+        tif_path_save = self.analysis_save_path + '/reg_tiff_%s.tif' % self.metainfo['trial']
+        tif_path_save2 = self.analysis_save_path + '/reg_tiff_%s_r.tif' % self.metainfo['trial']
+        reg_tif_folder = self.s2p_path + '/reg_tif/'
+        reg_tif_list = os.listdir(reg_tif_folder)
+        reg_tif_list.sort()
+        sorted_paths = [reg_tif_folder + tif for tif in reg_tif_list][start:end + 1]
+
+        if os.path.exists(tif_path_save):
+            pass
+        else:
+            make_tiff_stack(sorted_paths, save_as=tif_path_save)
+
+        with tf.TiffWriter(tif_path_save2, bigtiff=True) as tif:
+            with tf.TiffFile(tif_path_save, multifile=False) as input_tif:
+                data = input_tif.asarray()
+            reg_tif_crop = data[self.curr_trial_frames[0] - start * 2000: self.curr_trial_frames[1] - (
+                    self.curr_trial_frames[0] - start * 2000)]
+            tif.save(data)
 
     def _parseNAPARMxml(self):
 

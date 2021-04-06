@@ -33,19 +33,19 @@ to_suite2p = ['t-002', 't-003', 't-005', 't-007', 't-008', 't-009', 't-010', 't-
 
 baseline_trials = ['t-002', 't-003', 't-005', 't-007']  # specify which trials to use as spont baseline
 # note ^^^ this only works currently when the spont baseline trials all come first, and also back to back
-total_frames_stitched = 0
-curr_trial_frames = None
-baseline_frames = [0, 0]
-for t in to_suite2p:
-    pkl_path_2 = "/home/pshah/mnt/qnap/Analysis/%s/%s_%s/%s_%s.pkl" % (date, date, t, date, t)
-    with open(pkl_path_2, 'rb') as f:
-        _expobj = pickle.load(f)
-        # import suite2p data
-    total_frames_stitched += _expobj.n_frames
-    if t == trial:
-        expobj.curr_trial_frames = [total_frames_stitched - _expobj.n_frames, total_frames_stitched]
-    if t in baseline_trials:
-        baseline_frames[1] = total_frames_stitched
+# total_frames_stitched = 0
+# curr_trial_frames = None
+# baseline_frames = [0, 0]
+# for t in to_suite2p:
+#     pkl_path_2 = "/home/pshah/mnt/qnap/Analysis/%s/%s_%s/%s_%s.pkl" % (date, date, t, date, t)
+#     with open(pkl_path_2, 'rb') as f:
+#         _expobj = pickle.load(f)
+#         # import suite2p data
+#     total_frames_stitched += _expobj.n_frames
+#     if t == trial:
+#         expobj.curr_trial_frames = [total_frames_stitched - _expobj.n_frames, total_frames_stitched]
+#     if t in baseline_trials:
+#         baseline_frames[1] = total_frames_stitched
 
 
 
@@ -57,8 +57,8 @@ for t in to_suite2p:
 # s2p_path = '/Volumes/Extreme SSD/oxford-data/2020-03-18/suite2p/photostim-4ap_stitched/plane0'
 
 # main function that imports suite2p data and adds attributes to the expobj
-expobj.s2pProcessing(s2p_path=s2p_path, subset_frames=expobj.curr_trial_frames, subtract_neuropil=True,
-                     baseline_frames=baseline_frames)
+expobj.s2pProcessing(s2p_path=s2p_path, trial=trial, to_suite2p=to_suite2p, baseline_trials=baseline_trials,
+                     subset_frames=expobj.curr_trial_frames, subtract_neuropil=True)
 
 expobj.target_coords_all = expobj.target_coords
 expobj.s2p_targets()
@@ -70,52 +70,34 @@ expobj.s2p_targets()
 aoutils.s2pMaskStack(obj=expobj, pkl_list=[pkl_path], s2p_path=s2p_path,
                      parent_folder=expobj.analysis_save_path)
 
-# %% stitching of registered TIFFs
+# %% stitching of registered TIFFs -- moved to function in aoutils
+expobj.stitch_reg_tiffs()
 
-tif_path = s2p_path + '/reg_tiff_full.tif'
-if os.path.exists(tif_path):
-    pass
-elif os.path.exists(s2p_path + '/reg_tif'):
-    reg_tif_folder = s2p_path + '/reg_tif/'
-    reg_tif_list = os.listdir(reg_tif_folder)
-    reg_tif_list.sort()
-    conc_tif = np.empty([0, expobj.frame_x, expobj.frame_y])
-    for tif in reg_tif_list:
-        print('reading %s out of %s' % (tif, reg_tif_list[-1]), end='\r')
-        tif_path_ = reg_tif_folder + tif
-        tif = tf.imread(tif_path_)
-        # downsample to 8-bit
-        stack8 = np.full_like(tif, fill_value=0)
-        for frame in np.arange(tif.shape[0]):
-            stack8[frame] = aoutils.convert_to_8bit(tif[frame], 0, 255)
-        conc_tif = np.append(conc_tif, stack8, axis=0)
-        del tif
-    tf.imsave(tif_path, conc_tif.astype('np.int8'))
-else:
-    pass
+# start = expobj.curr_trial_frames[0] // 2000  # 2000 because that is the batch size for suite2p run
+# end = expobj.curr_trial_frames[1] // 2000 + 1
+#
+# tif_path_save = expobj.analysis_save_path + '/reg_tiff_%s.tif' % expobj.metainfo['trial']
+# tif_path_save2 = expobj.analysis_save_path + '/reg_tiff_%s_r.tif' % expobj.metainfo['trial']
+# reg_tif_folder = s2p_path + '/reg_tif/'
+# reg_tif_list = os.listdir(reg_tif_folder)
+# reg_tif_list.sort()
+# sorted_paths = [reg_tif_folder+tif for tif in reg_tif_list][start:end + 1]
+#
+# if os.path.exists(tif_path_save):
+#     pass
+# else:
+#     aoutils.make_tiff_stack(sorted_paths, save_as=tif_path_save)
+#
+# with tf.TiffWriter(tif_path_save2, bigtiff=True) as tif:
+#     with tf.TiffFile(tif_path_save, multifile=False) as input_tif:
+#         data = input_tif.asarray()
+#     reg_tif_crop = data[expobj.curr_trial_frames[0] - start * 2000: expobj.curr_trial_frames[1] - (expobj.curr_trial_frames[0] - start * 2000)]
+#     tif.save(data)
 
-
-# %% trying a new approach for stitching of multiple tiffs
-
-big_tif_path = s2p_path + '/reg_tiff_full.tif'
-reg_tif_folder = s2p_path + '/reg_tif/'
-reg_tif_list = os.listdir(reg_tif_folder)
-reg_tif_list.sort()
-sorted_paths = [reg_tif_folder+tif for tif in reg_tif_list]
-
-aoutils.make_tiff_stack(sorted_paths[:20], save_as=big_tif_path)
+#%% TODO need to implement function so that you can read in invididual tiffs, collect traces from cells, and then concatenate the traces to get data for the whole trial
 
 
-# conc_tif = np.empty([0, expobj.frame_x, expobj.frame_y])
-# for i in range(len(reg_tif_list))[:3]:
-#     print('size of concatanated tiff'); pj.print_size_of(conc_tif)
-#     tif_path_ = reg_tif_folder + reg_tif_list[i]
-#     print('reading tiff %s' % (tif_path_))
-#     with tf.TiffFile(tif_path_, 'rb') as tif:
-#         data = tif.asarray()
-#         # data = tf.imread(tif)
-#         print('size of tif read in'); pj.print_size_of(data)
-#     conc_tif = np.append(conc_tif, data, axis=0)
+
 
 # %% (quick) plot individual fluorescence traces - see InteractiveMatplotlibExample to make these plots interactively
 # plot raw fluorescence traces
