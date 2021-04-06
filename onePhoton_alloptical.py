@@ -51,7 +51,7 @@ import alloptical_plotting as aoplot
 
 
 ###### IMPORT pkl file containing data in form of expobj
-trial = 't-012'
+trial = 't-003'
 date = '2021-01-19'
 pkl_path = "/home/pshah/mnt/qnap/Analysis/%s/%s_%s/%s_%s.pkl" % (date, date, trial, date, trial)
 # pkl_path = "/home/pshah/mnt/qnap/Data/%s/%s_%s/%s_%s.pkl" % (date, date, trial, date, trial)
@@ -71,9 +71,9 @@ expobj, experiment = aoutils.import_expobj(trial=trial, date=date, pkl_path=pkl_
 # expobj.stim_duration_frames = int(np.mean(
 #     [expobj.stim_end_frames[idx] - expobj.stim_start_frames[idx] for idx in range(len(expobj.stim_start_frames))]))
 
-aoplot.plot_flu_trace_1pstim(expobj, stim_span_color='white', x_axis='frames')
-aoplot.plot_1pstim_avg_trace(expobj, x_axis='time', individual_traces=False, stim_span_color=None)
+aoplot.plot_flu_trace_1pstim(expobj, stim_span_color='white', x_axis='frames', xlims=[0, 3000])
+aoplot.plot_lfp_1pstim(expobj, x_axis='paq')
 
-aoplot.plot_lfp_1pstim(expobj, x_axis='frame', stim_span_color='powderblue')
-aoplot.plot_lfp_1pstim_avg_trace(expobj, individual_traces=False, x_axis='time')
+aoplot.plot_1pstim_avg_trace(expobj, x_axis='time', individual_traces=True, stim_span_color=None)
+aoplot.plot_lfp_1pstim_avg_trace(expobj, x_axis='time', individual_traces=False)
 
