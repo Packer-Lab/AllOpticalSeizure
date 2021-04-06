@@ -94,6 +94,29 @@ elif os.path.exists(s2p_path + '/reg_tif'):
 else:
     pass
 
+
+# %% trying a new approach for stitching of multiple tiffs
+
+big_tif_path = s2p_path + '/reg_tiff_full.tif'
+reg_tif_folder = s2p_path + '/reg_tif/'
+reg_tif_list = os.listdir(reg_tif_folder)
+reg_tif_list.sort()
+sorted_paths = [reg_tif_folder+tif for tif in reg_tif_list]
+
+aoutils.make_tiff_stack(sorted_paths[:20], save_as=big_tif_path)
+
+
+# conc_tif = np.empty([0, expobj.frame_x, expobj.frame_y])
+# for i in range(len(reg_tif_list))[:3]:
+#     print('size of concatanated tiff'); pj.print_size_of(conc_tif)
+#     tif_path_ = reg_tif_folder + reg_tif_list[i]
+#     print('reading tiff %s' % (tif_path_))
+#     with tf.TiffFile(tif_path_, 'rb') as tif:
+#         data = tif.asarray()
+#         # data = tf.imread(tif)
+#         print('size of tif read in'); pj.print_size_of(data)
+#     conc_tif = np.append(conc_tif, data, axis=0)
+
 # %% (quick) plot individual fluorescence traces - see InteractiveMatplotlibExample to make these plots interactively
 # plot raw fluorescence traces
 plt.figure(figsize=(50, 3))

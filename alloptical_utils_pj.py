@@ -2461,26 +2461,24 @@ def normalize_dff_jit(arr, threshold=20):
 
     return new_array
 
-def make_tiff_stack(tiff_paths, save_as=''):
+def make_tiff_stack(sorted_paths: list, save_as: str):
     """
     read in a bunch of tiffs and stack them together, and save the output as the save_as
-    - make sure that the save_as variable is a .tif file path to where the tif should be saved
-    - make sure to change dtype as necessary
-    - make sure that tiff_paths is a glob type path, where you can * for many tiffs
-    e.g.: '/home/pshah/mnt/qnap/Data/2020-02-25/t05/*.tif'
+
+    :param sorted_paths: list of string paths for tiffs to stack
+    :param save_as: .tif file path to where the tif should be saved
     """
 
-    sorted_paths = sorted(glob.glob(tiff_paths))
-
-    num_frames = len(sorted_paths)
+    num_tiffs = len(sorted_paths)
+    print('working on tifs to stack: ', num_tiffs)
 
     with tf.TiffWriter(save_as, bigtiff=True) as tif:
-        for i, frame in enumerate(sorted_paths):
-            with tf.TiffFile(frame, multifile=False) as input_tif:
+        for i, tif_ in enumerate(sorted_paths):
+            with tf.TiffFile(tif_, multifile=False) as input_tif:
                 data = input_tif.asarray()
-            tif.save(data)
-            msg = ' -- Writing frame: ' + str(i + 1) + ' out of ' + str(num_frames)
+            msg = ' -- Writing tiff: ' + str(i + 1) + ' out of ' + str(num_tiffs)
             print(msg, end='\r')
+            tif.save(data)
 
 def convert_to_8bit(img, target_type_min=0, target_type_max=255):
     """
@@ -2529,7 +2527,7 @@ def downsample_tiff(tiff_path, save_as=None):
     tf.imwrite(save_as,
                avgd_stack, photometric='minisblack')
 
-    return
+    return avgd_stack
 
 def subselect_tiff(tiff_stack, select_frames, save_as):
     stack_cropped = tiff_stack[select_frames[0]:select_frames[1]]

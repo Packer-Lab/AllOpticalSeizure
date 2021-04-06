@@ -294,6 +294,8 @@ def sizeof_fmt(num, suffix='B'):
         num /= 1024.0
     return "%.1f %s%s" % (num, 'Yi', suffix)
 
+def print_size_of(var):
+    print(sizeof_fmt(sys.getsizeof(var)))
 
 def print_size_vars():
     for name, size in sorted(((name, sys.getsizeof(value)) for name, value in locals().items()),
