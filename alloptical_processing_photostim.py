@@ -57,8 +57,8 @@ baseline_trials = ['t-002', 't-003', 't-005', 't-007']  # specify which trials t
 # s2p_path = '/Volumes/Extreme SSD/oxford-data/2020-03-18/suite2p/photostim-4ap_stitched/plane0'
 
 # main function that imports suite2p data and adds attributes to the expobj
-expobj.s2pProcessing(s2p_path=s2p_path, trial=trial, to_suite2p=to_suite2p, baseline_trials=baseline_trials,
-                     subset_frames=expobj.curr_trial_frames, subtract_neuropil=True)
+expobj.subset_frames_current_trial(trial=trial, to_suite2p=to_suite2p, baseline_trials=baseline_trials)
+expobj.s2pProcessing(s2p_path=s2p_path, subset_frames=expobj.curr_trial_frames, subtract_neuropil=True)
 
 expobj.target_coords_all = expobj.target_coords
 expobj.s2p_targets()

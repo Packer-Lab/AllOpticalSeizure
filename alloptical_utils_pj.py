@@ -244,8 +244,24 @@ class alloptical():
                 else:
                     self.cell_area.append(1)
 
-    def s2pProcessing(self, s2p_path, trial, to_suite2p, baseline_trials, subset_frames=None, subtract_neuropil=True):
+    def subset_frames_current_trial(self, to_suite2p, trial, baseline_trials):
+        # determine which frames to retrieve from the overall total s2p output
+        total_frames_stitched = 0
+        curr_trial_frames = None
+        baseline_frames = [0, 0]
+        for t in to_suite2p:
+            pkl_path_2 = "/home/pshah/mnt/qnap/Analysis/%s/%s_%s/%s_%s.pkl" % (
+            self.metainfo['date'], self.metainfo['date'], t, self.metainfo['date'], t)
+            with open(pkl_path_2, 'rb') as f:
+                _expobj = pickle.load(f)
+                # import suite2p data
+            total_frames_stitched += _expobj.n_frames
+            if t == trial:
+                self.curr_trial_frames = [total_frames_stitched - _expobj.n_frames, total_frames_stitched]
+            if t in baseline_trials:
+                baseline_frames[1] = total_frames_stitched
 
+    def s2pProcessing(self, s2p_path, subset_frames=None, subtract_neuropil=True, baseline_frames=[]):
         """processing of suite2p data on the experimental object"""
 
         self.cell_id = []
@@ -258,23 +274,6 @@ class alloptical():
         self.mean_img = []
         self.radius = []
         self.s2p_path = s2p_path
-
-        # determine which frames to retrieve from the overall total s2p output
-        total_frames_stitched = 0
-        curr_trial_frames = None
-        baseline_frames = [0, 0]
-        for t in to_suite2p:
-            pkl_path_2 = "/home/pshah/mnt/qnap/Analysis/%s/%s_%s/%s_%s.pkl" % (self.metainfo['date'], self.metainfo['date'], t, self.metainfo['date'], t)
-            with open(pkl_path_2, 'rb') as f:
-                _expobj = pickle.load(f)
-                # import suite2p data
-            total_frames_stitched += _expobj.n_frames
-            if t == trial:
-                self.curr_trial_frames = [total_frames_stitched - _expobj.n_frames, total_frames_stitched]
-            if t in baseline_trials:
-                baseline_frames[1] = total_frames_stitched
-
-
 
         if self.n_planes == 1:
             # s2p_path = os.path.join(self.tiff_path, 'suite2p', 'plane' + str(plane))
