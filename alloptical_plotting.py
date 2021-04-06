@@ -348,16 +348,23 @@ def xyloc_responses(expobj, to_plot='dfstdf', clim=[-10, +10], plot_target_coord
         plt.savefig(save_fig)
 
 
-def plot_flu_trace_1pstim(expobj, stim_span_color='white', title='raw Flu trace', x_axis='time'):
+def plot_flu_trace_1pstim(expobj, stim_span_color='white', title='raw Flu trace', x_axis='time', figsize=None):
     # make plot of avg Ca trace
-    fig, ax = plt.subplots(figsize=[10 * len(expobj.onePstim_trace) / 2000, 3])
-    ax.plot(expobj.onePstim_trace, c='forestgreen', zorder=1, linewidth=0.75)
+    if figsize:
+        fig, ax = plt.subplots(figsize=figsize)
+    else:
+        fig, ax = plt.subplots(figsize=[10 * len(expobj.onePstim_trace) / 2000, 3])
+    ax.plot(expobj.onePstim_trace, c='forestgreen', zorder=1, linewidth=2)
     if stim_span_color is not None:
-        for stim in expobj.stim_start_frames:
-            ax.axvspan(stim, 1 + stim + expobj.stim_duration_frames, color=stim_span_color, zorder=2)
-        if stim_span_color != 'black':
-            for line in expobj.stim_start_frames:
-                plt.axvline(x=line, color='black', linestyle='--', linewidth=0.6)
+        if hasattr(expobj, 'shutter_frames'):
+            for start, end in zip(expobj.shutter_start_frames[0], expobj.shutter_end_frames[0]):
+                ax.axvspan(start-4.5, end, color=stim_span_color, zorder=2)
+        else:
+            for stim in expobj.stim_start_frames:
+                ax.axvspan(stim, 1 + stim + expobj.stim_duration_frames, color=stim_span_color, zorder=2)
+    if stim_span_color != 'black':
+        for line in expobj.stim_start_frames:
+            plt.axvline(x=line, color='black', linestyle='--', linewidth=0.6)
     if x_axis == 'time':
         # change x axis ticks to seconds
         label_format = '{:,.0f}'
@@ -376,19 +383,19 @@ def plot_flu_trace_1pstim(expobj, stim_span_color='white', title='raw Flu trace'
     plt.show()
 
 def plot_1pstim_avg_trace(expobj, title='Average trace of stims', individual_traces=False, x_axis='time', stim_span_color='white'):
-    pre_stim = 2  # seconds
-    post_stim = 5  # seconds
+    pre_stim = 1  # seconds
+    post_stim = 4  # seconds
     fig, ax = plt.subplots()
     x = [expobj.onePstim_trace[stim - int(pre_stim * expobj.fps): stim + int(post_stim * expobj.fps)] for stim in expobj.stim_start_frames]
     x_ = np.mean(x, axis=0)
-    ax.plot(x_, color='black', zorder=2, linewidth=1.75)
+    ax.plot(x_, color='black', zorder=2, linewidth=2.2)
 
     if individual_traces:
         # individual traces
         for trace in x:
             ax.plot(trace, color='forestgreen', zorder=1, alpha=0.25)
         if stim_span_color is not None:
-            ax.axvspan(int(pre_stim * expobj.fps) - 2, int(pre_stim * expobj.fps) + expobj.stim_duration_frames + 1, color=stim_span_color, zorder=1)
+            ax.axvspan(int(pre_stim * expobj.fps) - 2, int(pre_stim * expobj.fps) + expobj.stim_duration_frames + 1, color='powderblue', zorder=1)
         elif stim_span_color is None:
             plt.axvline(x=int(pre_stim * expobj.fps) - 2, color='black', linestyle='--', linewidth=1)
             plt.axvline(x=int(pre_stim * expobj.fps) + expobj.stim_duration_frames + 1, color='black', linestyle='--', linewidth=1)
@@ -397,17 +404,17 @@ def plot_1pstim_avg_trace(expobj, title='Average trace of stims', individual_tra
         std_ = np.std(x, axis=0)
         ax.fill_between(x=range(len(x_)), y1=x_ + std_, y2=x_ - std_, alpha=0.3, zorder=1, color='forestgreen')
         if stim_span_color is not None:
-            ax.axvspan(int(pre_stim * expobj.fps) - 3, int(pre_stim * expobj.fps) + expobj.stim_duration_frames + 1.5, color=stim_span_color, zorder=1)
+            ax.axvspan(int(pre_stim * expobj.fps) - 3, int(pre_stim * expobj.fps) + expobj.stim_duration_frames + 1.5, color=stim_span_color, zorder=3)
         elif stim_span_color is None:
             plt.axvline(x=int(pre_stim * expobj.fps) - 2, color='black', linestyle='--', linewidth=1)
             plt.axvline(x=int(pre_stim * expobj.fps) + expobj.stim_duration_frames + 2, color='black', linestyle='--', linewidth=1)
 
     if x_axis == 'time':
         # change x axis ticks to seconds
-        label_format = '{:,.0f}'
+        label_format = '{:,.2f}'
         labels = [item for item in ax.get_xticks()]
         for item in labels:
-            labels[labels.index(item)] = int(round(item / expobj.fps))
+            labels[labels.index(item)] = round(item / expobj.fps, 2)
         ticks_loc = ax.get_xticks().tolist()
         ax.xaxis.set_major_locator(mticker.FixedLocator(ticks_loc))
         ax.set_xticklabels([label_format.format(x) for x in labels])
@@ -421,12 +428,12 @@ def plot_1pstim_avg_trace(expobj, title='Average trace of stims', individual_tra
 
 def plot_lfp_1pstim_avg_trace(expobj, title='Average LFP peri- stims', individual_traces=False, x_axis='time'):
     stim_duration = int(np.mean([expobj.stim_end_times[idx] - expobj.stim_start_times[idx] for idx in range(len(expobj.stim_start_times))]))
-    pre_stim = 2  # seconds
-    post_stim = 5  # seconds
+    pre_stim = 1  # seconds
+    post_stim = 4  # seconds
     fig, ax = plt.subplots()
     x = [expobj.lfp_signal[stim - int(pre_stim * expobj.paq_rate): stim + int(post_stim * expobj.paq_rate)] for stim in expobj.stim_start_times]
     x_ = np.mean(x, axis=0)
-    ax.plot(x_, color='black', zorder=1, linewidth=1.75)
+    ax.plot(x_, color='black', zorder=2, linewidth=1.75)
 
     if individual_traces:
         # individual traces
@@ -445,10 +452,10 @@ def plot_lfp_1pstim_avg_trace(expobj, title='Average LFP peri- stims', individua
 
     if x_axis == 'time':
         # change x axis ticks to seconds
-        label_format = '{:,.0f}'
+        label_format = '{:,.2f}'
         labels = [item for item in ax.get_xticks()]
         for item in labels:
-            labels[labels.index(item)] = int(round(item / expobj.paq_rate))
+            labels[labels.index(item)] = round(item / expobj.paq_rate, 2)
         ticks_loc = ax.get_xticks().tolist()
         ax.xaxis.set_major_locator(mticker.FixedLocator(ticks_loc))
         ax.set_xticklabels([label_format.format(x) for x in labels])
@@ -460,9 +467,12 @@ def plot_lfp_1pstim_avg_trace(expobj, title='Average LFP peri- stims', individua
         '%s %s %s %s' % (title, expobj.metainfo['exptype'], expobj.metainfo['animal prep.'], expobj.metainfo['trial']))
     plt.show()
 
-def plot_lfp_1pstim(expobj, stim_span_color='white', title='LFP trace', x_axis='time'):
+def plot_lfp_1pstim(expobj, stim_span_color='white', title='LFP trace', x_axis='time', figsize=None):
     # make plot of avg Ca trace
-    fig, ax = plt.subplots(figsize=[60 * len(expobj.lfp_signal) / 1e7, 3])
+    if figsize:
+        fig, ax = plt.subplots(figsize=figsize)
+    else:
+        fig, ax = plt.subplots(figsize=[60 * len(expobj.lfp_signal) / 1e7, 3])
     ax.plot(expobj.lfp_signal, c='steelblue', zorder=1, linewidth=0.4)
     if stim_span_color is not None:
         for stim in expobj.stim_start_times:

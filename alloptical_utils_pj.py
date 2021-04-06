@@ -1729,12 +1729,12 @@ class onePstim(twopimaging):
 
         frame_rate = self.fps / self.n_planes
 
-        if 'shutter_loopback' in paq['chan_names']:
-            ans = input('shutter_loopback in this paq found, should we continue')
-            if ans is True or 'Yes':
-                pass
-            else:
-                raise Exception('need to write code for using the shutter loopback')
+        # if 'shutter_loopback' in paq['chan_names']:
+        #     ans = input('shutter_loopback in this paq found, should we continue')
+        #     if ans is True or 'Yes':
+        #         pass
+        #     else:
+        #         raise Exception('need to write code for using the shutter loopback')
 
         # find frame_clock times
         clock_idx = paq['chan_names'].index('frame_clock')
@@ -1827,6 +1827,32 @@ class onePstim(twopimaging):
         #         self.stim_start_frames.append(stim)
 
 
+        # find shutter loopback frames
+        if 'shutter_loopback' in paq['chan_names']:
+            shutter_idx = paq['chan_names'].index('shutter_loopback')
+            shutter_voltage = paq['data'][shutter_idx, :]
+
+            shutter_times = np.where(shutter_voltage > 4)
+            self.shutter_times = shutter_times[0]
+            self.shutter_frames = []
+            self.shutter_start_frames = []
+            self.shutter_end_frames = []
+            for plane in range(self.n_planes):
+                shutter_frames_ = [frame for frame, t in enumerate(self.frame_clock_actual[plane::self.n_planes]) if t in self.shutter_times]
+                self.shutter_frames.append(shutter_frames_)
+
+                shutter_start_frames = [shutter_frames_[0]]
+                shutter_end_frames = []
+                i = len(shutter_start_frames)
+                for frame in shutter_frames_[1:]:
+                    if (frame - shutter_start_frames[i - 1]) > 5:
+                        i += 1
+                        shutter_start_frames.append(frame)
+                        shutter_end_frames.append(shutter_frames_[shutter_frames_.index(frame)-1])
+                shutter_end_frames.append(shutter_frames_[-1])
+                self.shutter_start_frames.append(shutter_start_frames)
+                self.shutter_end_frames.append(shutter_end_frames)
+
 
         # # sanity check
         # assert max(self.stim_start_frames[0]) < self.raw[plane].shape[1] * self.n_planes
@@ -1837,7 +1863,19 @@ class onePstim(twopimaging):
 
 
 # preprocessing functions
-def run_1p_processing(tiffs_loc_dir, tiffs_loc, paqs_loc, pkl_path, metainfo, trial, analysis_save_path):
+def run_1p_processing(data_path_base, date, animal_prep, trial, metainfo):
+
+    paqs_loc = '%s/%s_%s_%s.paq' % (
+    data_path_base, date, animal_prep, trial[2:])  # path to the .paq files for the selected trials
+    tiffs_loc_dir = '%s/%s_%s' % (data_path_base, date, trial)
+    tiffs_loc = '%s/%s_%s_Cycle00001_Ch3.tif' % (tiffs_loc_dir, date, trial)
+    pkl_path = "/home/pshah/mnt/qnap/Analysis/%s/%s_%s/%s_%s.pkl" % (
+    date, date, trial, date, trial)  # specify path in Analysis folder to save pkl object
+    # paqs_loc = '%s/%s_RL109_010.paq' % (data_path_base, date)  # path to the .paq files for the selected trials
+    new_tiffs = tiffs_loc[:-19]  # where new tiffs from rm_artifacts_tiffs will be saved
+    # make the necessary Analysis saving subfolder as well
+    analysis_save_path = tiffs_loc[:21] + 'Analysis/' + tiffs_loc_dir[26:]
+
     print('\n-----Processing trial # %s-----' % trial)
 
     paths = [tiffs_loc_dir, tiffs_loc, paqs_loc]
