@@ -70,33 +70,10 @@ expobj.s2p_targets()
 aoutils.s2pMaskStack(obj=expobj, pkl_list=[pkl_path], s2p_path=s2p_path,
                      parent_folder=expobj.analysis_save_path)
 
-# %% stitching of registered TIFFs -- moved to function in aoutils
-expobj.stitch_reg_tiffs()
+expobj.raw_traces_from_targets()
 
-# start = expobj.curr_trial_frames[0] // 2000  # 2000 because that is the batch size for suite2p run
-# end = expobj.curr_trial_frames[1] // 2000 + 1
-#
-# tif_path_save = expobj.analysis_save_path + '/reg_tiff_%s.tif' % expobj.metainfo['trial']
-# tif_path_save2 = expobj.analysis_save_path + '/reg_tiff_%s_r.tif' % expobj.metainfo['trial']
-# reg_tif_folder = s2p_path + '/reg_tif/'
-# reg_tif_list = os.listdir(reg_tif_folder)
-# reg_tif_list.sort()
-# sorted_paths = [reg_tif_folder+tif for tif in reg_tif_list][start:end + 1]
-#
-# if os.path.exists(tif_path_save):
-#     pass
-# else:
-#     aoutils.make_tiff_stack(sorted_paths, save_as=tif_path_save)
-#
-# with tf.TiffWriter(tif_path_save2, bigtiff=True) as tif:
-#     with tf.TiffFile(tif_path_save, multifile=False) as input_tif:
-#         data = input_tif.asarray()
-#     reg_tif_crop = data[expobj.curr_trial_frames[0] - start * 2000: expobj.curr_trial_frames[1] - (expobj.curr_trial_frames[0] - start * 2000)]
-#     tif.save(data)
-
-#%% TODO need to implement function so that you can read in invididual tiffs, collect traces from cells, and then concatenate the traces to get data for the whole trial
-
-
+# stitching of registered TIFFs
+# expobj.stitch_reg_tiffs()
 
 
 # %% (quick) plot individual fluorescence traces - see InteractiveMatplotlibExample to make these plots interactively
