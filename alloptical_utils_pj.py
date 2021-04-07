@@ -251,7 +251,7 @@ class alloptical():
         baseline_frames = [0, 0]
         for t in to_suite2p:
             pkl_path_2 = "/home/pshah/mnt/qnap/Analysis/%s/%s_%s/%s_%s.pkl" % (
-            self.metainfo['date'], self.metainfo['date'], t, self.metainfo['date'], t)
+                self.metainfo['date'], self.metainfo['date'], t, self.metainfo['date'], t)
             with open(pkl_path_2, 'rb') as f:
                 _expobj = pickle.load(f)
                 # import suite2p data
@@ -365,7 +365,36 @@ class alloptical():
                 data = input_tif.asarray()
             reg_tif_crop = data[self.curr_trial_frames[0] - start * 2000: self.curr_trial_frames[1] - (
                     self.curr_trial_frames[0] - start * 2000)]
-            tif.save(data)
+            tif.save(reg_tif_crop)
+
+    def raw_traces_from_targets(self):
+        # read in registered tiff
+        reg_tif_folder = self.s2p_path + '/reg_tif/'
+        reg_tif_list = os.listdir(reg_tif_folder)
+        reg_tif_list.sort()
+        start = self.curr_trial_frames[0] // 2000  # 2000 because that is the batch size for suite2p run
+        end = self.curr_trial_frames[1] // 2000 + 1
+
+        # collect mean traces from target areas of each target coordinate by reading in individual registered tiffs that contain frames for current trial
+        targets_trace_full = np.zeros([len(self.target_coords_all), (end - start) * 2000], dtype='float32')
+        for i in range(start, end):
+            tif_path_save2 = self.s2p_path + '/reg_tif/' + reg_tif_list[i]
+            with tf.TiffFile(tif_path_save2, multifile=False) as input_tif:
+                print('reading tiff: %s' % tif_path_save2)
+                data = input_tif.asarray()
+
+            targets_trace = np.zeros([len(self.target_coords_all), data.shape[0]], dtype='float32')
+            for coord in range(len(self.target_coords_all)):
+                target_areas = np.array(self.target_areas)
+                x = data[:, target_areas[coord, :, 1], target_areas[coord, :, 0]]  # = 1
+                targets_trace[coord] = np.mean(x, axis=1)
+
+            targets_trace_full[:, (i - start) * 2000: (i - start + 1) * 2000] = targets_trace
+
+        # final part, crop to the *exact* frames for current trial
+        self.targets_raw = targets_trace_full[:,
+                           self.curr_trial_frames[0] - start * 2000: self.curr_trial_frames[1] - (
+                                   self.curr_trial_frames[0] - start * 2000)]
 
     def _parseNAPARMxml(self):
 
@@ -1003,9 +1032,12 @@ class alloptical():
 
         print('------- Search completed.')
         print('Number of targeted cells: ', self.n_targeted_cells)
-        print('Target cells found in suite2p: ', self.s2p_cell_targets, ' -- %s cells (out of %s target coords)' % (len(self.s2p_cell_targets), len(self.target_coords_all)))
+        print('Target cells found in suite2p: ', self.s2p_cell_targets,
+              ' -- %s cells (out of %s target coords)' % (len(self.s2p_cell_targets), len(self.target_coords_all)))
 
-        pjf.plot_cell_loc(self, cells=self.s2p_cell_targets, show=False, title='s2p cell targets and all target coords %s/%s' % (self.metainfo['trial'], self.metainfo['animal prep.']))
+        pjf.plot_cell_loc(self, cells=self.s2p_cell_targets, show=False,
+                          title='s2p cell targets and all target coords %s/%s' % (
+                              self.metainfo['trial'], self.metainfo['animal prep.']))
         for (x, y) in self.target_coords_all:
             plt.scatter(x=x, y=y, edgecolors='yellowgreen', facecolors='none', linewidths=1.0)
         plt.show()
@@ -1123,7 +1155,8 @@ class alloptical():
     def save(self):
         self.save_pkl()
 
-    def avg_stim_images(self, peri_frames: int = 100, stim_timings: list = [], save_img=False, to_plot=False, verbose=False):
+    def avg_stim_images(self, peri_frames: int = 100, stim_timings: list = [], save_img=False, to_plot=False,
+                        verbose=False):
         """
         Outputs (either by saving or plotting, or both) images from raw t-series TIFF for a trial around each individual
         stim timings.
@@ -1509,7 +1542,6 @@ class Post4ap(alloptical):
         self.append_bad_frames(
             bad_frames=bad_frames)  # here only need to append the bad frames to the expobj.bad_frames property
 
-
         if seizures_info_array is not None:
             print('\nnow creating raw movies for each sz as well (saved to the /Analysis folder)')
             self._subselect_sz_tiffs(onsets=self.seizure_lfp_onsets, offsets=self.seizure_lfp_offsets)
@@ -1720,7 +1752,9 @@ class Post4ap(alloptical):
                 return False
         else:
             # return False  # not all expobj will have the sz boundary classes attr so for those just assume no seizure
-            raise Exception('cannot check for cell inside sz boundary because cell sz classification hasnot been performed yet')
+            raise Exception(
+                'cannot check for cell inside sz boundary because cell sz classification hasnot been performed yet')
+
 
 class onePstim(twopimaging):
     def __init__(self, paths, metainfo):
@@ -1768,11 +1802,11 @@ class onePstim(twopimaging):
         self.frame_start_times = [self.frame_clock[0]]  # initialize list
         self.frame_end_times = []
         i = len(self.frame_start_times)
-        for idx in range(1, len(self.frame_clock)-1):
+        for idx in range(1, len(self.frame_clock) - 1):
             if (self.frame_clock[idx + 1] - self.frame_clock[idx]) > 2e3:
                 i += 1
                 self.frame_end_times.append(self.frame_clock[idx])
-                self.frame_start_times.append(self.frame_clock[idx+1])
+                self.frame_start_times.append(self.frame_clock[idx + 1])
         self.frame_end_times.append(self.frame_clock[-1])
 
         # for frame in self.frame_clock[1:]:
@@ -1784,7 +1818,8 @@ class onePstim(twopimaging):
 
         # handling cases where 2p imaging clock has been started/stopped >1 in the paq trial
         if len(self.frame_start_times) > 1:
-            diff = [self.frame_end_times[idx] - self.frame_start_times[idx] for idx in range(len(self.frame_start_times))]
+            diff = [self.frame_end_times[idx] - self.frame_start_times[idx] for idx in
+                    range(len(self.frame_start_times))]
             idx = diff.index(max(diff))
             self.frame_start_time_actual = self.frame_start_times[idx]
             self.frame_end_time_actual = self.frame_end_times[idx]
@@ -1801,7 +1836,6 @@ class onePstim(twopimaging):
         plt.plot(self.frame_clock_actual, np.ones(len(self.frame_clock_actual)), '.', color='red')
         plt.suptitle('frame clock from paq, with detected frame clock instances as scatter')
         plt.show()
-
 
         # find 1p stim times
         opto_loopback_chan = paq['chan_names'].index('opto_loopback')
@@ -1831,7 +1865,8 @@ class onePstim(twopimaging):
         for plane in range(self.n_planes):
             for stim in range(len(self.stim_start_times)):
                 stim_frames_ = [frame for frame, t in enumerate(self.frame_clock_actual[plane::self.n_planes]) if
-                                self.stim_start_times[stim] - 100/self.paq_rate <= t <= self.stim_end_times[stim] + 100/self.paq_rate]
+                                self.stim_start_times[stim] - 100 / self.paq_rate <= t <= self.stim_end_times[
+                                    stim] + 100 / self.paq_rate]
 
                 self.stim_frames.append(stim_frames_)
 
@@ -1847,7 +1882,6 @@ class onePstim(twopimaging):
         #         i += 1
         #         self.stim_start_frames.append(stim)
 
-
         # find shutter loopback frames
         if 'shutter_loopback' in paq['chan_names']:
             shutter_idx = paq['chan_names'].index('shutter_loopback')
@@ -1859,7 +1893,8 @@ class onePstim(twopimaging):
             self.shutter_start_frames = []
             self.shutter_end_frames = []
             for plane in range(self.n_planes):
-                shutter_frames_ = [frame for frame, t in enumerate(self.frame_clock_actual[plane::self.n_planes]) if t in self.shutter_times]
+                shutter_frames_ = [frame for frame, t in enumerate(self.frame_clock_actual[plane::self.n_planes]) if
+                                   t in self.shutter_times]
                 self.shutter_frames.append(shutter_frames_)
 
                 shutter_start_frames = [shutter_frames_[0]]
@@ -1869,11 +1904,10 @@ class onePstim(twopimaging):
                     if (frame - shutter_start_frames[i - 1]) > 5:
                         i += 1
                         shutter_start_frames.append(frame)
-                        shutter_end_frames.append(shutter_frames_[shutter_frames_.index(frame)-1])
+                        shutter_end_frames.append(shutter_frames_[shutter_frames_.index(frame) - 1])
                 shutter_end_frames.append(shutter_frames_[-1])
                 self.shutter_start_frames.append(shutter_start_frames)
                 self.shutter_end_frames.append(shutter_end_frames)
-
 
         # # sanity check
         # assert max(self.stim_start_frames[0]) < self.raw[plane].shape[1] * self.n_planes
@@ -1885,13 +1919,12 @@ class onePstim(twopimaging):
 
 # preprocessing functions
 def run_1p_processing(data_path_base, date, animal_prep, trial, metainfo):
-
     paqs_loc = '%s/%s_%s_%s.paq' % (
-    data_path_base, date, animal_prep, trial[2:])  # path to the .paq files for the selected trials
+        data_path_base, date, animal_prep, trial[2:])  # path to the .paq files for the selected trials
     tiffs_loc_dir = '%s/%s_%s' % (data_path_base, date, trial)
     tiffs_loc = '%s/%s_%s_Cycle00001_Ch3.tif' % (tiffs_loc_dir, date, trial)
     pkl_path = "/home/pshah/mnt/qnap/Analysis/%s/%s_%s/%s_%s.pkl" % (
-    date, date, trial, date, trial)  # specify path in Analysis folder to save pkl object
+        date, date, trial, date, trial)  # specify path in Analysis folder to save pkl object
     # paqs_loc = '%s/%s_RL109_010.paq' % (data_path_base, date)  # path to the .paq files for the selected trials
     new_tiffs = tiffs_loc[:-19]  # where new tiffs from rm_artifacts_tiffs will be saved
     # make the necessary Analysis saving subfolder as well
@@ -1920,14 +1953,14 @@ def run_1p_processing(data_path_base, date, animal_prep, trial, metainfo):
     return expobj
 
 
-
 # import expobj from the pkl file
 def import_expobj(trial, date, pkl_path):
     with open(pkl_path, 'rb') as f:
         print('importing expobj for "%s, %s" from: %s' % (date, trial, pkl_path))
         expobj = pickle.load(f)
         experiment = '%s: %s, %s, %s' % (
-        expobj.metainfo['animal prep.'], expobj.metainfo['trial'], expobj.metainfo['exptype'], expobj.metainfo['comments'])
+            expobj.metainfo['animal prep.'], expobj.metainfo['trial'], expobj.metainfo['exptype'],
+            expobj.metainfo['comments'])
         print('DONE IMPORT of %s' % experiment)
     if hasattr(expobj, 'paq_rate'):
         pass
@@ -1937,6 +1970,7 @@ def import_expobj(trial, date, pkl_path):
         expobj.save_pkl()
 
     return expobj, experiment
+
 
 ## Rob's functions for generating some important commonly used image types.
 def s2pMeanImage(s2p_path):
@@ -2116,7 +2150,8 @@ def moving_average(a, n=4):
 
 
 # @njit
-def _good_cells(cell_ids: list, raws: np.ndarray, photostim_frames: list, std_thresh: int, radiuses: list = None, min_radius_pix: int = 2.5, max_radius_pix: int = 10):
+def _good_cells(cell_ids: list, raws: np.ndarray, photostim_frames: list, std_thresh: int, radiuses: list = None,
+                min_radius_pix: int = 2.5, max_radius_pix: int = 10):
     """
     This function is used for filtering for "good" cells based on detection of Flu deflections that are above some std threshold based on std_thresh.
     Note: a moving averaging window of 4 frames is used to find Flu deflections above std threshold.
@@ -2172,7 +2207,6 @@ def _good_cells(cell_ids: list, raws: np.ndarray, photostim_frames: list, std_th
 
         # if i == 465:  # just using this here if ever need to check back with specific cells if function seems to be misbehaving
         #     print(events, len(events[0]), thr)
-
 
     print('# of good cells found: ', len(good_cells), ' (out of ', len(cell_ids), ' ROIs)')
     return good_cells, events_loc_cells, flu_events_cells, stds
@@ -2249,7 +2283,6 @@ def get_targets_stim_traces_norm(expobj, normalize_to='', pre_stim=10, post_stim
         return targets_dff, targets_dff_avg, targets_dfstdF, targets_dfstdF_avg, targets_raw, targets_raw_avg
 
 
-
 def get_nontargets_stim_traces_norm(expobj, normalize_to='', pre_stim=10, post_stim=200):
     """
     primary function to measure the dFF traces for photostimulated targets.
@@ -2322,14 +2355,14 @@ def get_nontargets_stim_traces_norm(expobj, normalize_to='', pre_stim=10, post_s
             raw_traces_avg.append(np.nanmean(flu, axis=0))
 
     if normalize_to == 'baseline':
-        print('\nCompleted collecting pre to post stim traces -- normalized to spont imaging as baseline -- for %s cells' % len(dff_traces_avg))
+        print(
+            '\nCompleted collecting pre to post stim traces -- normalized to spont imaging as baseline -- for %s cells' % len(
+                dff_traces_avg))
         return dff_traces, dff_traces_avg
     elif normalize_to == 'pre-stim':
-        print('\nCompleted collecting pre to post stim traces -- normalized to pre-stim stdF -- for %s cells' % len(dff_traces_avg))
+        print('\nCompleted collecting pre to post stim traces -- normalized to pre-stim stdF -- for %s cells' % len(
+            dff_traces_avg))
         return dff_traces, dff_traces_avg, dfstdF_traces, dfstdF_traces_avg, raw_traces, raw_traces_avg
-
-
-
 
 
 def _good_photostim_cells(expobj, std_thresh=1, dff_threshold=None, pre_stim=10,
@@ -2419,6 +2452,7 @@ def _good_photostim_cells(expobj, std_thresh=1, dff_threshold=None, pre_stim=10,
     print('|- Total number of good photostim responsive cells found: %s (out of %s s2p photostim target cells)' % (
         total, total_considered))
 
+
 def normalize_dff_baseline(arr, baseline_array):
     """normalize given array (cells x time) to the mean of the spont baseline value for each cell.
     :param arr: pandas df or 1-dimensional array
@@ -2436,6 +2470,7 @@ def normalize_dff_baseline(arr, baseline_array):
             mean_ = baseline_array.loc[str(i)].mean()
             new_array_df.loc[str(i)] = (arr.loc[str(i)] - mean_) / mean_ * 100
         return new_array_df
+
 
 def normalize_dff(arr, threshold=20):
     """normalize given array (cells x time) to the mean of the fluorescence values below given threshold"""
@@ -2458,6 +2493,7 @@ def normalize_dff(arr, threshold=20):
                 print('      Mean of the sub-threshold for this cell: %s' % mean_)
 
     return new_array
+
 
 # @jit
 def normalize_dff_jit(arr, threshold=20):
@@ -2482,6 +2518,7 @@ def normalize_dff_jit(arr, threshold=20):
 
     return new_array
 
+
 def make_tiff_stack(sorted_paths: list, save_as: str):
     """
     read in a bunch of tiffs and stack them together, and save the output as the save_as
@@ -2501,6 +2538,7 @@ def make_tiff_stack(sorted_paths: list, save_as: str):
             print(msg, end='\r')
             tif.save(data)
 
+
 def convert_to_8bit(img, target_type_min=0, target_type_max=255):
     """
     :param img:
@@ -2516,6 +2554,7 @@ def convert_to_8bit(img, target_type_min=0, target_type_max=255):
     b = target_type_max - a * imax
     new_img = (a * img + b).astype(np.uint8)
     return new_img
+
 
 def downsample_tiff(tiff_path, save_as=None):
     print('working on... %s' % tiff_path)
@@ -2550,12 +2589,14 @@ def downsample_tiff(tiff_path, save_as=None):
 
     return avgd_stack
 
+
 def subselect_tiff(tiff_stack, select_frames, save_as):
     stack_cropped = tiff_stack[select_frames[0]:select_frames[1]]
 
     stack8 = convert_to_8bit(stack_cropped)
 
     tf.imwrite(save_as, stack8, photometric='minisblack')
+
 
 # STATISTICS AND OTHER ANALYSES FUNCTIONS
 
@@ -2575,6 +2616,7 @@ def corrcoef_array(array):
     print('Correlation coefficient: %.2f' % corr)
 
     return corr, result
+
 
 # calculate reliability of photostim responsiveness of all of the targeted cells (found in s2p output)
 def calculate_reliability(expobj, dfstdf_threshold=None, dff_threshold=None, pre_stim=10,
@@ -2607,7 +2649,8 @@ def calculate_reliability(expobj, dfstdf_threshold=None, dff_threshold=None, pre
             # if cell in expobj.cell_id:
             if hasattr(expobj, 'cells_sz_stim'):
                 stims_to_use = [str(stim) for stim in stim_timings
-                                if stim not in expobj.cells_sz_stim.keys() or cell not in expobj.cells_sz_stim[stim]]  # select only the stim times where the cell IS NOT inside the sz boundary
+                                if stim not in expobj.cells_sz_stim.keys() or cell not in expobj.cells_sz_stim[
+                                    stim]]  # select only the stim times where the cell IS NOT inside the sz boundary
             else:
                 stims_to_use = [str(stim) for stim in stim_timings]
             counter = len(stims_to_use)
@@ -2649,7 +2692,7 @@ def calculate_reliability(expobj, dfstdf_threshold=None, dff_threshold=None, pre
 
                     # calculate if the current trace beats dff_threshold for calculating reliability (note that this happens over a specific window just after the photostim)
                     response = np.nanmean(response_trace[
-                                       pre_stim + expobj.duration_frames:pre_stim + 3 * expobj.duration_frames])  # calculate the dF over pre-stim mean F response within the response window
+                                          pre_stim + expobj.duration_frames:pre_stim + 3 * expobj.duration_frames])  # calculate the dF over pre-stim mean F response within the response window
                     if response >= threshold:
                         success += 1
 
@@ -2657,6 +2700,7 @@ def calculate_reliability(expobj, dfstdf_threshold=None, dff_threshold=None, pre
                 print(cell, reliability, 'calc over %s stims' % counter)
     print("avg reliability is: %s" % (round(np.nanmean(list(reliability.values())), 2)))
     return reliability
+
 
 # calculate the dFF responses of the non-targeted cells, create a pandas df of the post-stim dFF responses of all cells
 
@@ -2761,6 +2805,7 @@ def all_cell_responses_dff(expobj, normalize_to=''):
 
     return df
 
+
 def all_cell_responses_dFstdF(expobj):
     # TODO need to confirm that this code works properly
     # normalizing post stim dF response to PRE-STIM std F
@@ -2844,6 +2889,7 @@ def all_cell_responses_dFstdF(expobj):
 
     return df
 
+
 # 2 functions for plotting photostimulation timed DFF, baseline DFF considered as pre-stim period
 def plot_photostim_avg(dff_array, stim_duration, pre_stim=10, post_stim=200, title='', y_min=None, y_max=None):
     flu_avg = np.median(dff_array, axis=0)
@@ -2862,6 +2908,7 @@ def plot_photostim_avg(dff_array, stim_duration, pre_stim=10, post_stim=200, tit
     fig.suptitle(title, y=0.95)
     plt.show()
 
+
 def plot_photostim_(dff_array, stim_duration, pre_stim=10, post_stim=200, title='', y_min=None, y_max=None):
     x = list(range(-pre_stim, post_stim))
     fig, ax = plt.subplots()
@@ -2872,6 +2919,7 @@ def plot_photostim_(dff_array, stim_duration, pre_stim=10, post_stim=200, title=
         ax.set_ylim([y_min, y_max])
     fig.suptitle(title, y=0.95)
     plt.show()
+
 
 ## kept in utils.funcs_pj
 def plot_single_tiff(tiff_path: str, title: str = None):
