@@ -39,7 +39,7 @@ def corrcoef_array(array):
     return corr, result
 
 
-# making a new class inherited from alloptical for post4ap functions and elements and variables and attributes
+# making a new class inherited from AllOptical for post4ap functions and elements and variables and attributes
 def rotate_img_avg(input_img, angle):
     """this function will be used to rotate the input_img (ideally will be the avg seizure image) at the given angle.
     The function also will return the 1 x n length average across non-zero values along the x axis.
@@ -250,7 +250,7 @@ def dff(flu, baseline=None):
 def plot_cell_loc(expobj, cells: list, color: str = '#EDEDED', title=None, show: bool = True, background_transparent=False):
     """
     plots an image of the FOV to show the locations of cells given in cells list.
-    :param expobj: alloptical or 2p imaging object
+    :param expobj: AllOptical or 2p imaging object
     :param color: str to specify color of the scatter plot for cells
     :param cells: list of cells to plot
     :param title: str title for plot

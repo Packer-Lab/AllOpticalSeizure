@@ -94,7 +94,7 @@ def run_find_resp_processing(trial, tiffs_loc, tiffs_loc2, naparms_loc, paqs_loc
     paths = [[tiffs_loc, naparms_loc, paqs_loc]]
     print(paths)
 
-    exp_obj = ao.alloptical(paths[0], stim='2pstim')
+    exp_obj = ao.AllOptical(paths[0], stim='2pstim')
     for key, values in vars(exp_obj).items():
         print(key)
 

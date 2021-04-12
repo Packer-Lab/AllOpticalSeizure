@@ -1,4 +1,4 @@
-## this file is for processing the photostim-experiment alloptical expobj object AFTER suite2p has been run
+## this file is for processing the photostim-experiment AllOptical expobj object AFTER suite2p has been run
 ## the end of the script will update the expobj that was in the original pkl path
 
 import sys; sys.path.append('/home/pshah/Documents/code/PackerLab_pycharm/')
@@ -14,7 +14,7 @@ import tifffile as tf
 
 ###### IMPORT pkl file containing expobj
 trial = 't-009'
-date = '2021-01-10'
+date = '2020-12-18'
 pkl_path = "/home/pshah/mnt/qnap/Analysis/%s/%s_%s/%s_%s.pkl" % (date, date, trial, date, trial)
 # pkl_path = "/home/pshah/mnt/qnap/Data/%s/%s_%s/%s_%s.pkl" % (date, date, trial, date, trial)
 
@@ -22,17 +22,22 @@ expobj, experiment = aoutils.import_expobj(trial=trial, date=date, pkl_path=pkl_
 
 cont_inue = True  # i know this is a rather very precarious thing here...
 
-s2p_path = '/home/pshah/mnt/qnap/Analysis/2021-01-10/suite2p/alloptical-2p-08x-alltrials-reg_tiff/plane0'  # (most recent run for RL108 -- contains all trials including post4ap all optical trials)
+if not hasattr(expobj, 's2p_path'):
+    expobj.s2p_path = '/home/pshah/mnt/qnap/Analysis/2020-12-18/suite2p/AllOptical-2p-1x-alltrials/plane0'
 
 
 # %% prep for importing data from suite2p for this whole experiment
 # determine which frames to retrieve from the overall total s2p output
-to_suite2p = ['t-002', 't-003', 't-005', 't-007', 't-008', 't-009', 't-010', 't-011', 't-012',
-              't-013', 't-014', 't-015', 't-016']  # specify all trials that were used in the suite2p runtotal_frames_stitched = 0
 
+if not hasattr(expobj, 'suite2p_trials'):
+    to_suite2p = ['t-005', 't-006', 't-008', 't-009', 't-010', 't-011', 't-012', 't-013']  # specify all trials that were used in the suite2p runtotal_frames_stitched = 0
+    baseline_trials = ['t-005', 't-006']  # specify which trials to use as spont baseline
+    # note ^^^ this only works currently when the spont baseline trials all come first, and also back to back
 
-baseline_trials = ['t-002', 't-003', 't-005', 't-007']  # specify which trials to use as spont baseline
-# note ^^^ this only works currently when the spont baseline trials all come first, and also back to back
+    expobj.suite2p_trials = to_suite2p
+    expobj.baseline_trials = baseline_trials
+    expobj.save()
+
 # total_frames_stitched = 0
 # curr_trial_frames = None
 # baseline_frames = [0, 0]
@@ -47,34 +52,23 @@ baseline_trials = ['t-002', 't-003', 't-005', 't-007']  # specify which trials t
 #     if t in baseline_trials:
 #         baseline_frames[1] = total_frames_stitched
 
-
-
-# suite2p processing on expobj; import suite2p data, flu, spks, cell coordinates and make s2p masks images stack
-# s2p_path = '/Users/prajayshah/Documents/data-to-process/2020-12-18/suite2p/alloptical-2p-pre-4ap-08x/plane0'
-# flu, spks, stat = uf.s2p_loader(s2p_path, subtract_neuropil=True)
-
-
-# s2p_path = '/Volumes/Extreme SSD/oxford-data/2020-03-18/suite2p/photostim-4ap_stitched/plane0'
-
 # main function that imports suite2p data and adds attributes to the expobj
-expobj.subset_frames_current_trial(trial=trial, to_suite2p=to_suite2p, baseline_trials=baseline_trials)
-expobj.s2pProcessing(s2p_path=s2p_path, subset_frames=expobj.curr_trial_frames, subtract_neuropil=True)
+expobj.subset_frames_current_trial(trial=trial, to_suite2p=expobj.suite2p_trials, baseline_trials=expobj.baseline_trials)
+expobj.s2pProcessing(s2p_path=expobj.s2p_path, subset_frames=expobj.curr_trial_frames, subtract_neuropil=True)
 
 expobj.target_coords_all = expobj.target_coords
 expobj.s2p_targets()
 
 # expobj.target_coords_all = expobj.target_coords
 
-# flu, expobj.spks, expobj.stat = uf.s2p_loader(s2p_path, subtract_neuropil=True)
-
-aoutils.s2pMaskStack(obj=expobj, pkl_list=[pkl_path], s2p_path=s2p_path,
+aoutils.s2pMaskStack(obj=expobj, pkl_list=[pkl_path], s2p_path=expobj.s2p_path,
                      parent_folder=expobj.analysis_save_path)
 
 expobj.raw_traces_from_targets()
+expobj.save()
 
 # stitching of registered TIFFs
 # expobj.stitch_reg_tiffs()
-
 
 # %% (quick) plot individual fluorescence traces - see InteractiveMatplotlibExample to make these plots interactively
 # plot raw fluorescence traces
@@ -103,8 +97,7 @@ radiuses = expobj.radius
 # _, _, _, _ = aoutils._good_cells(cell_ids=cell_ids[:3], raws=raws, photostim_frames=expobj.photostim_frames, radiuses=radiuses,
 #                         std_thresh=2, min_radius_pix=2.5, max_radius_pix=8.5)
 expobj.good_cells, events_loc_cells, flu_events_cells, stds = aoutils._good_cells(cell_ids=cell_ids, raws=raws, photostim_frames=expobj.photostim_frames,
-                                        radiuses=radiuses,
-                                        std_thresh=2, min_radius_pix=2.5, max_radius_pix=8.5)
+                                                                                  radiuses=radiuses, std_thresh=2, min_radius_pix=3, max_radius_pix=9)
 
 # sort the stds dictionary in order of std
 stds_sorted = {}
@@ -121,16 +114,6 @@ for cell in list(stds_sorted.keys())[-5:]:
 
 
 # %% SAVE THE UPDATED expobj OBJECT IN THE ORIGINAL PKL PATH TO USE NEXT
-
-# make the necessary Analysis saving subfolder as well
-expobj.analysis_save_path = expobj.tiff_path[:21] + 'Analysis/' + expobj.tiff_path[26:-35]
-if os.path.exists(expobj.analysis_save_path):
-    pass
-elif os.path.exists(expobj.analysis_save_path[:-17]):
-    os.mkdir(expobj.analysis_save_path)
-elif os.path.exists(expobj.analysis_save_path[:-27]):
-    os.mkdir(expobj.analysis_save_path[:-17])
-
 
 expobj.save_pkl(pkl_path=pkl_path)
 
@@ -205,7 +188,7 @@ else:
 def plot_cell_loc(expobj, cells: list, color: str = 'pink', show: bool = True):
     """
     plots an image of the FOV to show the locations of cells given in cells list.
-    :param expobj: alloptical or 2p imaging object
+    :param expobj: AllOptical or 2p imaging object
     :param color: str to specify color of the scatter plot for cells
     :param cells: list of cells to plot
     :param show: if True, show the plot at the end of the function
@@ -255,15 +238,15 @@ else:
 
 # Collect pre to post stim traces for PHOTOSTIM TARGETED CELLS, FILTER FOR GOOD PHOTOSTIM. TARGETED CELLS with responses above threshold = 1 std of the prestim std
 
-expobj.pre_stim = 15  # specify pre-stim and post-stim periods of analysis and plotting
-expobj.post_stim = 150
+expobj.pre_stim = 1*int(expobj.fps)  # specify pre-stim and post-stim periods of analysis and plotting
+expobj.post_stim = 3*int(expobj.fps)
 
 # function for gathering all good photostim cells who respond on average across all trials to the photostim
 # note that the threshold for this is 1 * std of the prestim raw flu (fluorescence trace)
 expobj.targets_dff, expobj.targets_dff_avg, expobj.targets_dfstdF, \
     expobj.targets_dfstdF_avg, expobj.targets_raw, expobj.targets_raw_avg = \
-    aoutils.get_targets_stim_traces_norm(expobj=expobj, normalize_to='pre-stim', pre_stim=expobj.pre_stim,
-                                         post_stim=expobj.post_stim)
+    aoutils.get_s2ptargets_stim_traces(expobj=expobj, normalize_to='pre-stim', pre_stim=expobj.pre_stim,
+                                       post_stim=expobj.post_stim)
 
 aoutils._good_photostim_cells(expobj=expobj, pre_stim=expobj.pre_stim, post_stim=expobj.post_stim, dff_threshold=None)
 

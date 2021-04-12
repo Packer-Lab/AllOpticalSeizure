@@ -13,7 +13,7 @@ data_path_base = '/home/pshah/mnt/qnap/Data/2021-01-19'
 date = data_path_base[-10:]
 
 # need to update these 3 things for every trial
-trial = 't-012'  # note that %s magic command in the code below will be using these trials listed here
+trial = 't-015'  # note that %s magic command in the code below will be using these trials listed here
 exp_type = '1p photostim, post 4ap'
 comments = '10x trials of 1p stim'
 
@@ -37,7 +37,7 @@ metainfo = {
 # analysis_save_path = tiffs_loc[:21] + 'Analysis/' + tiffs_loc_dir[26:]
 
 
-expobj = aoutils.run_1p_processing(data_path_base, date, animal_prep, trial, metainfo)
+expobj = aoutils.OnePhotonStim(data_path_base, date, animal_prep, trial, metainfo)
 # expobj = aoutils.run_1p_processing(tiffs_loc_dir, tiffs_loc, paqs_loc, pkl_path, metainfo, trial, analysis_save_path)
 
 
@@ -51,7 +51,7 @@ import alloptical_plotting as aoplot
 
 
 ###### IMPORT pkl file containing data in form of expobj
-trial = 't-003'
+trial = 't-015'
 date = '2021-01-19'
 pkl_path = "/home/pshah/mnt/qnap/Analysis/%s/%s_%s/%s_%s.pkl" % (date, date, trial, date, trial)
 # pkl_path = "/home/pshah/mnt/qnap/Data/%s/%s_%s/%s_%s.pkl" % (date, date, trial, date, trial)
@@ -75,5 +75,6 @@ aoplot.plot_flu_trace_1pstim(expobj, stim_span_color='white', x_axis='frames', x
 aoplot.plot_lfp_1pstim(expobj, x_axis='paq')
 
 aoplot.plot_1pstim_avg_trace(expobj, x_axis='time', individual_traces=True, stim_span_color=None)
-aoplot.plot_lfp_1pstim_avg_trace(expobj, x_axis='time', individual_traces=False)
+aoplot.plot_lfp_1pstim_avg_trace(expobj, x_axis='time', individual_traces=False, pre_stim=0.25, post_stim=0.75)
 
+# TODO need to classify seizures in paq files for 1p photostim trials

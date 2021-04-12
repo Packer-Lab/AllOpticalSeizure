@@ -34,7 +34,7 @@ with open(pkl_path, 'rb') as f:
 # color = ['grey', 'green']
 
 #%% new experiment object
-# exp_obj = ao.twopimaging(suite2p_path=s2p_path)
+# exp_obj = ao.TwoPhotonImaging(suite2p_path=s2p_path)
 
 # add bad seizure frames
 exp_obj.seizure_frames = [list(range(0, 5900)), list(range(2810 * 4, 3240 * 4)), list(range(3450 * 4, 4190 * 4)), list(range(4530 * 4, 4930 * 4)),

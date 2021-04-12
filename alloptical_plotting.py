@@ -22,7 +22,7 @@ def plot_cell_radius_aspectr(expobj, stat, to_plot):
 
     if to_plot == 'radius':
         to_plot_ = radius
-        plt.axvline(6 / expobj.pix_sz_x, color='grey')
+        plt.axvline(4 / expobj.pix_sz_x, color='grey')
         plt.axvline(14 / expobj.pix_sz_x, color='grey')
     elif to_plot == 'aspect':
         to_plot_ = aspect_ratio
@@ -34,21 +34,22 @@ def plot_cell_radius_aspectr(expobj, stat, to_plot):
 
 
 ### plot entire trace of individual targeted cells as super clean subplots, with the same y-axis lims
-def plot_photostim_subplots(dff_array, expobj, title='', y_min=None, y_max=None, x_label=None,
+def plot_photostim_subplots(array, expobj, title='', y_min=None, y_max=None, x_label=None,
                             y_label=None, save_fig=None):
     # make rolling average for these plots
     w = 30
-    dff_array = [(np.convolve(trace, np.ones(w), 'valid') / w) for trace in dff_array]
+    array = [(np.convolve(trace, np.ones(w), 'valid') / w) for trace in array]
 
-    len_ = len(dff_array)
+    len_ = len(array)
     fig, axs = plt.subplots(nrows=len_, sharex=True, figsize=(20, 3 * len_))
     for i in range(len(axs)):
-        axs[i].plot(dff_array[i], linewidth=1, color='black')
+        axs[i].plot(array[i], linewidth=1, color='black')
         if y_min != None:
             axs[i].set_ylim([y_min, y_max])
         for j in expobj.stim_start_frames:
             axs[i].axvline(x=j, c='gray', alpha=0.7)
-        axs[i].set_title('Cell # %s' % expobj.s2p_cell_targets[i])
+        if len_ == len(expobj.s2p_cell_targets):
+            axs[i].set_title('Cell # %s' % expobj.s2p_cell_targets[i])
 
     axs[0].set_title((title + ' - %s' % len_ + ' cells'), horizontalalignment='left', verticalalignment='top', pad=20,
                      fontsize=15)
@@ -61,10 +62,10 @@ def plot_photostim_subplots(dff_array, expobj, title='', y_min=None, y_max=None,
     plt.show()
 
 
-def plot_photostim_overlap_plots(dff_array, expobj, exclude_id=[], spacing=1, title='', y_lims=None,
+def plot_photostim_overlap_plots(array, expobj, exclude_id=[], spacing=1, title='', y_lims=None,
                                  x_label='Time (seconds)', save_fig=None):
     '''
-    :param dff_array:
+    :param array:
     :param expobj:
     :param spacing: a multiplication factor that will be used when setting the spacing between each trace in the final plot
     :param title:
@@ -76,15 +77,15 @@ def plot_photostim_overlap_plots(dff_array, expobj, exclude_id=[], spacing=1, ti
     '''
     # make rolling average for these plots
     w = 30
-    dff_array = np.asarray([(np.convolve(trace, np.ones(w), 'valid') / w) for trace in dff_array])
+    array = np.asarray([(np.convolve(trace, np.ones(w), 'valid') / w) for trace in array])
 
-    len_ = len(dff_array)
+    len_ = len(array)
     fig, ax = plt.subplots(figsize=(40, 6))
     for i in range(len_):
         if i not in exclude_id:
-            ax.plot(dff_array[i] + i * 100 * spacing, linewidth=1)
+            ax.plot(array[i] + i * 100 * spacing, linewidth=1)
     for j in expobj.stim_start_frames:
-        if j <= dff_array.shape[1]:
+        if j <= array.shape[1]:
             ax.axvline(x=j, c='gray', alpha=0.3)
 
     ax.margins(0)
@@ -111,22 +112,26 @@ def plot_photostim_overlap_plots(dff_array, expobj, exclude_id=[], spacing=1, ti
 
 
 ### photostim analysis - PLOT avg over all photstim. trials traces from PHOTOSTIM TARGETTED cells
-def plot_photostim_avg(dff_array, expobj, stim_duration, pre_stim=10, post_stim=200, title='', y_min=None, y_max=None,
+def plot_photostim_avg(arr, expobj, stim_duration, pre_stim=10, post_stim=200, title='', y_min=None, y_max=None,
                        x_label=None, y_label=None, savepath=None):
-    dff_array = dff_array[:, :pre_stim + post_stim]
-    len_ = len(dff_array)
-    flu_avg = np.mean(dff_array, axis=0)
-    x = list(range(-pre_stim, post_stim))
+    if pre_stim and post_stim:
+        arr = arr[:, pre_stim: pre_stim + post_stim]
+        x = list(range(-pre_stim, post_stim-pre_stim))
+    else:
+        x = list(range(arr.shape[1]))
+
+    len_ = len(arr)
+    flu_avg = np.mean(arr, axis=0)
 
     fig, ax = plt.subplots()
     ax.margins(0)
     ax.axvspan(0, stim_duration, alpha=0.2, color='tomato')
-    for cell_trace in dff_array:
-        ax.plot(x, cell_trace, linewidth=1, alpha=0.8)
-    ax.plot(x, flu_avg, color='black', linewidth=2)  # plot median trace
+    for cell_trace in arr:
+        ax.plot(x, cell_trace, linewidth=0.5, alpha=0.2, c='steelblue')
+    ax.plot(x, flu_avg, color='black', linewidth=2)  # plot average trace
     if y_min != None:
         ax.set_ylim([y_min, y_max])
-    ax.set_title((title + ' - %s' % len_ + ' cells'), horizontalalignment='center', verticalalignment='top', pad=20,
+    ax.set_title((title + ' - %s' % len_ + ' traces'), horizontalalignment='center', verticalalignment='top', pad=20,
                  fontsize=10)
 
     # change x axis ticks to seconds
@@ -431,10 +436,10 @@ def plot_1pstim_avg_trace(expobj, title='Average trace of stims', individual_tra
         '%s %s %s %s' % (title, expobj.metainfo['exptype'], expobj.metainfo['animal prep.'], expobj.metainfo['trial']))
     plt.show()
 
-def plot_lfp_1pstim_avg_trace(expobj, title='Average LFP peri- stims', individual_traces=False, x_axis='time'):
-    stim_duration = int(np.mean([expobj.stim_end_times[idx] - expobj.stim_start_times[idx] for idx in range(len(expobj.stim_start_times))]))
-    pre_stim = 1  # seconds
-    post_stim = 4  # seconds
+def plot_lfp_1pstim_avg_trace(expobj, title='Average LFP peri- stims', individual_traces=False, x_axis='time', pre_stim=1.0, post_stim=5.0):
+    stim_duration = int(np.mean([expobj.stim_end_times[idx] - expobj.stim_start_times[idx] for idx in range(len(expobj.stim_start_times))]) + 0.01*expobj.paq_rate)
+    pre_stim = pre_stim  # seconds
+    post_stim = post_stim  # seconds
     fig, ax = plt.subplots()
     x = [expobj.lfp_signal[stim - int(pre_stim * expobj.paq_rate): stim + int(post_stim * expobj.paq_rate)] for stim in expobj.stim_start_times]
     x_ = np.mean(x, axis=0)

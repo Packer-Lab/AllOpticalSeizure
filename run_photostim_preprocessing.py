@@ -97,9 +97,9 @@ def run_photostim_processing(trial, exp_type, tiffs_loc_dir, tiffs_loc, naparms_
     if 'post' in exp_type and '4ap' in exp_type:
         expobj = ao.Post4ap(paths[0], metainfo=metainfo, stimtype='2pstim')
     elif 'pre' in exp_type and '4ap' in exp_type:
-        expobj = ao.alloptical(paths[0], metainfo=metainfo, stimtype='2pstim')
+        expobj = ao.AllOptical(paths[0], metainfo=metainfo, stimtype='2pstim')
     else:
-        expobj = ao.twopimaging()
+        expobj = ao.TwoPhotonImaging()
 
     # for key, values in vars(expobj).items():
     #     print(key)

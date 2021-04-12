@@ -16,7 +16,7 @@ def prep4suite2p(expobj, trial, paths):
 
     tiff_path_dir = paths[0]
     paq_path = paths[2]
-    # expobj = ao.twopimaging(tiff_path_dir, paq_path)
+    # expobj = ao.TwoPhotonImaging(tiff_path_dir, paq_path)
 
     if paths[3] is not None:
         paq = paq_read(file_path=paq_path, plot=False)
@@ -40,7 +40,7 @@ def run_spont_processing(trial, paths, analysis_save_path):
 
     print('\n Processing spont. trial # %s' % trial)
 
-    expobj = ao.twopimaging(tiff_path_dir, paq_path)
+    expobj = ao.TwoPhotonImaging(tiff_path_dir, paq_path)
 
     prep4suite2p(expobj, trial, paths)
 

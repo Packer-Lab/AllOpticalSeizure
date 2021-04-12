@@ -45,31 +45,24 @@ def points_in_circle_np(radius, x0=0, y0=0, ):
         yield x, y
 
 
-class alloptical():
+## this should technically be the biggest super class lol
+class TwoPhotonImaging:
 
-    def __init__(self, paths, metainfo, stimtype):
-        self.metainfo = metainfo
-        self.tiff_path_dir = paths[0]
-        self.tiff_path = paths[1]
-        self.naparm_path = paths[2]
-        self.paq_path = paths[3]
+    def __init__(self, tiff_path_dir, paq_path, suite2p_path=None, suite2p_run=False):
+        """
+        :param paths: list of key paths (tiff_loc
+        :param suite2p_path: path to the suite2p outputs (plan0 file? or ops file? not sure yet)
+        :param suite2p_run: set to true if suite2p is already run for this trial
+        """
 
-        self.seizure_frames = []
+        self.tiff_path = tiff_path_dir
+        self.paq_path = paq_path
 
         self._parsePVMetadata()
 
-        self.stim_type = stimtype
-
-        ## CREATE THE APPROPRIATE ANALYSIS SUBFOLDER TO USE FOR SAVING ANALYSIS RESULTS TO
-        self.analysis_save_path = self.tiff_path[:21] + 'Analysis/' + self.tiff_path_dir[26:]
-        if os.path.exists(self.analysis_save_path):
-            pass
-        elif os.path.exists(self.analysis_save_path[:-17]):
-            os.mkdir(self.analysis_save_path)
-        elif os.path.exists(self.analysis_save_path[:-27]):
-            os.mkdir(self.analysis_save_path[:-17])
-
-        print('\ninitialized alloptical expobj of exptype and trial: \n', self.metainfo)
+        if suite2p_run:
+            self.suite2p_path = suite2p_path
+            self.s2pProcessing(s2p_path=self.suite2p_path)
 
     def _getPVStateShard(self, path, key):
 
@@ -117,7 +110,7 @@ class alloptical():
 
         print('\n-----parsing PV Metadata')
 
-        tiff_path = self.tiff_path_dir
+        tiff_path = self.tiff_path
         path = []
 
         try:  # look for xml file in path, or two paths up (achieved by decreasing count in while loop)
@@ -132,7 +125,7 @@ class alloptical():
                 tiff_path = os.path.dirname(tiff_path)
 
         except:
-            raise Exception('ERROR: Could not find xml for this acquisition, check it exists')
+            raise Exception('ERROR: Could not find xml for this acquisition, check it exists in %s' % tiff_path)
 
         xml_tree = ET.parse(path)  # parse xml from a path
         root = xml_tree.getroot()  # make xml tree structure
@@ -197,69 +190,6 @@ class alloptical():
               '\npixel size (um):', pix_sz_x, pix_sz_y,
               '\nscan centre (V):', scan_x, scan_y
               )
-
-    def s2pRun(self, ops, db, user_batch_size):
-
-        '''run suite2p on the experiment object, using the attributes deteremined directly from the experiment object'''
-
-        num_pixels = self.frame_x * self.frame_y
-        sampling_rate = self.fps / self.n_planes
-        diameter_x = 13 / self.pix_sz_x
-        diameter_y = 13 / self.pix_sz_y
-        diameter = int(diameter_x), int(diameter_y)
-        batch_size = user_batch_size * (
-                262144 / num_pixels)  # larger frames will be more RAM intensive, scale user batch size based on num pixels in 512x512 images
-
-        if not db:
-            db = {
-                'data_path': [self.tiff_path],
-                'fs': float(sampling_rate),
-                'diameter': diameter,
-                'batch_size': int(batch_size),
-                'nimg_init': int(batch_size),
-                'nplanes': self.n_planes
-            }
-
-        print(db)
-
-        opsEnd = run_s2p(ops=ops, db=db)
-
-    def cellAreas(self, x=None, y=None):
-
-        '''not sure what this function does'''
-
-        self.cell_area = []
-
-        if x:
-            for i, _ in enumerate(self.cell_id):
-                if self.cell_med[i][1] < x:
-                    self.cell_area.append(0)
-                else:
-                    self.cell_area.append(1)
-
-        if y:
-            for i, _ in enumerate(self.cell_id):
-                if self.cell_med[i][1] < y:
-                    self.cell_area.append(0)
-                else:
-                    self.cell_area.append(1)
-
-    def subset_frames_current_trial(self, to_suite2p, trial, baseline_trials):
-        # determine which frames to retrieve from the overall total s2p output
-        total_frames_stitched = 0
-        curr_trial_frames = None
-        baseline_frames = [0, 0]
-        for t in to_suite2p:
-            pkl_path_2 = "/home/pshah/mnt/qnap/Analysis/%s/%s_%s/%s_%s.pkl" % (
-                self.metainfo['date'], self.metainfo['date'], t, self.metainfo['date'], t)
-            with open(pkl_path_2, 'rb') as f:
-                _expobj = pickle.load(f)
-                # import suite2p data
-            total_frames_stitched += _expobj.n_frames
-            if t == trial:
-                self.curr_trial_frames = [total_frames_stitched - _expobj.n_frames, total_frames_stitched]
-            if t in baseline_trials:
-                baseline_frames[1] = total_frames_stitched
 
     def s2pProcessing(self, s2p_path, subset_frames=None, subtract_neuropil=True, baseline_frames=[]):
         """processing of suite2p data on the experimental object"""
@@ -344,28 +274,230 @@ class alloptical():
                 cell_plane.extend([plane] * num_units)
                 self.cell_plane.append(cell_plane)
 
-    def stitch_reg_tiffs(self):
+    def save_pkl(self, pkl_path: str = None):
+        if pkl_path is None:
+            if hasattr(self, 'pkl_path'):
+                pkl_path = self.pkl_path
+            else:
+                raise ValueError(
+                    'pkl path for saving was not found in object attributes, please provide path to save to')
+        else:
+            self.pkl_path = pkl_path
+
+        with open(self.pkl_path, 'wb') as f:
+            pickle.dump(self, f)
+        print("\n\npkl saved to %s" % pkl_path)
+
+    def save(self):
+        self.save_pkl()
+
+class AllOptical(TwoPhotonImaging):
+
+    def __init__(self, paths, metainfo, stimtype):
+        TwoPhotonImaging.__init__(self, tiff_path_dir=paths[0], paq_path=paths[3], suite2p_path=None, suite2p_run=False)
+        self.metainfo = metainfo
+        self.tiff_path_dir = paths[0]
+        self.tiff_path = paths[1]
+        self.naparm_path = paths[2]
+        self.paq_path = paths[3]
+
+        self.seizure_frames = []
+
+        self._parsePVMetadata()
+
+        self.stim_type = stimtype
+
+        ## CREATE THE APPROPRIATE ANALYSIS SUBFOLDER TO USE FOR SAVING ANALYSIS RESULTS TO
+        self.analysis_save_path = self.tiff_path[:21] + 'Analysis/' + self.tiff_path_dir[26:]
+        if os.path.exists(self.analysis_save_path):
+            pass
+        elif os.path.exists(self.analysis_save_path[:-17]):
+            os.mkdir(self.analysis_save_path)
+        elif os.path.exists(self.analysis_save_path[:-27]):
+            os.mkdir(self.analysis_save_path[:-17])
+
+        print('\ninitialized AllOptical expobj of exptype and trial: \n', self.metainfo)
+
+    # def _parsePVMetadata(self):
+    #
+    #     print('\n-----parsing PV Metadata')
+    #
+    #     tiff_path = self.tiff_path_dir
+    #     path = []
+    #
+    #     try:  # look for xml file in path, or two paths up (achieved by decreasing count in while loop)
+    #         count = 2
+    #         while count != 0 and not path:
+    #             count -= 1
+    #             for file in os.listdir(tiff_path):
+    #                 if file.endswith('.xml'):
+    #                     path = os.path.join(tiff_path, file)
+    #                 if file.endswith('.env'):
+    #                     env_path = os.path.join(tiff_path, file)
+    #             tiff_path = os.path.dirname(tiff_path)
+    #
+    #     except:
+    #         raise Exception('ERROR: Could not find xml for this acquisition, check it exists')
+    #
+    #     xml_tree = ET.parse(path)  # parse xml from a path
+    #     root = xml_tree.getroot()  # make xml tree structure
+    #
+    #     sequence = root.find('Sequence')
+    #     acq_type = sequence.get('type')
+    #
+    #     if 'ZSeries' in acq_type:
+    #         n_planes = len(sequence.findall('Frame'))
+    #
+    #     else:
+    #         n_planes = 1
+    #
+    #     frame_period = float(self._getPVStateShard(path, 'framePeriod')[0])
+    #     fps = 1 / frame_period
+    #
+    #     frame_x = int(self._getPVStateShard(path, 'pixelsPerLine')[0])
+    #
+    #     frame_y = int(self._getPVStateShard(path, 'linesPerFrame')[0])
+    #
+    #     zoom = float(self._getPVStateShard(path, 'opticalZoom')[0])
+    #
+    #     scanVolts, _, index = self._getPVStateShard(path, 'currentScanCenter')
+    #     for scanVolts, index in zip(scanVolts, index):
+    #         if index == 'XAxis':
+    #             scan_x = float(scanVolts)
+    #         if index == 'YAxis':
+    #             scan_y = float(scanVolts)
+    #
+    #     pixelSize, _, index = self._getPVStateShard(path, 'micronsPerPixel')
+    #     for pixelSize, index in zip(pixelSize, index):
+    #         if index == 'XAxis':
+    #             pix_sz_x = float(pixelSize)
+    #         if index == 'YAxis':
+    #             pix_sz_y = float(pixelSize)
+    #
+    #     env_tree = ET.parse(env_path)
+    #     env_root = env_tree.getroot()
+    #
+    #     elem_list = env_root.find('TSeries')
+    #     # n_frames = elem_list[0].get('repetitions') # Rob would get the n_frames from env file
+    #     # change this to getting the last actual index from the xml file
+    #
+    #     n_frames = root.findall('Sequence/Frame')[-1].get('index')
+    #
+    #     self.fps = fps
+    #     self.frame_x = frame_x
+    #     self.frame_y = frame_y
+    #     self.n_planes = n_planes
+    #     self.pix_sz_x = pix_sz_x
+    #     self.pix_sz_y = pix_sz_y
+    #     self.scan_x = scan_x
+    #     self.scan_y = scan_y
+    #     self.zoom = zoom
+    #     self.n_frames = int(n_frames)
+    #
+    #     print('n planes:', n_planes,
+    #           '\nn frames:', int(n_frames),
+    #           '\nfps:', fps,
+    #           '\nframe size (px):', frame_x, 'x', frame_y,
+    #           '\nzoom:', zoom,
+    #           '\npixel size (um):', pix_sz_x, pix_sz_y,
+    #           '\nscan centre (V):', scan_x, scan_y
+    #           )
+
+    def s2pRun(self, ops, db, user_batch_size):
+
+        '''run suite2p on the experiment object, using the attributes deteremined directly from the experiment object'''
+
+        num_pixels = self.frame_x * self.frame_y
+        sampling_rate = self.fps / self.n_planes
+        diameter_x = 13 / self.pix_sz_x
+        diameter_y = 13 / self.pix_sz_y
+        diameter = int(diameter_x), int(diameter_y)
+        batch_size = user_batch_size * (
+                262144 / num_pixels)  # larger frames will be more RAM intensive, scale user batch size based on num pixels in 512x512 images
+
+        if not db:
+            db = {
+                'data_path': [self.tiff_path],
+                'fs': float(sampling_rate),
+                'diameter': diameter,
+                'batch_size': int(batch_size),
+                'nimg_init': int(batch_size),
+                'nplanes': self.n_planes
+            }
+
+        print(db)
+
+        opsEnd = run_s2p(ops=ops, db=db)
+
+    def cellAreas(self, x=None, y=None):
+
+        '''not sure what this function does'''
+
+        self.cell_area = []
+
+        if x:
+            for i, _ in enumerate(self.cell_id):
+                if self.cell_med[i][1] < x:
+                    self.cell_area.append(0)
+                else:
+                    self.cell_area.append(1)
+
+        if y:
+            for i, _ in enumerate(self.cell_id):
+                if self.cell_med[i][1] < y:
+                    self.cell_area.append(0)
+                else:
+                    self.cell_area.append(1)
+
+    def subset_frames_current_trial(self, to_suite2p, trial, baseline_trials):
+        # determine which frames to retrieve from the overall total s2p output
+        total_frames_stitched = 0
+        curr_trial_frames = None
+        baseline_frames = [0, 0]
+        for t in to_suite2p:
+            pkl_path_2 = "/home/pshah/mnt/qnap/Analysis/%s/%s_%s/%s_%s.pkl" % (
+                self.metainfo['date'], self.metainfo['date'], t, self.metainfo['date'], t)
+            with open(pkl_path_2, 'rb') as f:
+                _expobj = pickle.load(f)
+                # import suite2p data
+            total_frames_stitched += _expobj.n_frames
+            if t == trial:
+                self.curr_trial_frames = [total_frames_stitched - _expobj.n_frames, total_frames_stitched]
+            if t in baseline_trials:
+                baseline_frames[1] = total_frames_stitched
+
+    def stitch_reg_tiffs(self, force_crop: bool=False, force_stack: bool=False):
         start = self.curr_trial_frames[0] // 2000  # 2000 because that is the batch size for suite2p run
         end = self.curr_trial_frames[1] // 2000 + 1
 
-        tif_path_save = self.analysis_save_path + '/reg_tiff_%s.tif' % self.metainfo['trial']
-        tif_path_save2 = self.analysis_save_path + '/reg_tiff_%s_r.tif' % self.metainfo['trial']
+        tif_path_save = self.analysis_save_path + 'reg_tiff_%s.tif' % self.metainfo['trial']
+        tif_path_save2 = self.analysis_save_path + 'reg_tiff_%s_r.tif' % self.metainfo['trial']
         reg_tif_folder = self.s2p_path + '/reg_tif/'
         reg_tif_list = os.listdir(reg_tif_folder)
         reg_tif_list.sort()
         sorted_paths = [reg_tif_folder + tif for tif in reg_tif_list][start:end + 1]
 
+        print(tif_path_save)
+        print(sorted_paths)
+
         if os.path.exists(tif_path_save):
-            pass
+            if force_stack:
+                make_tiff_stack(sorted_paths, save_as=tif_path_save)
+            else:
+                pass
         else:
             make_tiff_stack(sorted_paths, save_as=tif_path_save)
 
-        with tf.TiffWriter(tif_path_save2, bigtiff=True) as tif:
-            with tf.TiffFile(tif_path_save, multifile=False) as input_tif:
-                data = input_tif.asarray()
-            reg_tif_crop = data[self.curr_trial_frames[0] - start * 2000: self.curr_trial_frames[1] - (
-                    self.curr_trial_frames[0] - start * 2000)]
-            tif.save(reg_tif_crop)
+        if not os.path.exists(tif_path_save2) or force_crop:
+            with tf.TiffWriter(tif_path_save2, bigtiff=True) as tif:
+                with tf.TiffFile(tif_path_save, multifile=False) as input_tif:
+                    print('cropping registered tiff')
+                    data = input_tif.asarray()
+                    print('shape of stitched tiff: ', data.shape)
+                reg_tif_crop = data[self.curr_trial_frames[0] - start * 2000: self.curr_trial_frames[1] - (
+                        self.curr_trial_frames[0] - start * 2000)]
+                print('saving cropped tiff ', reg_tif_crop.shape)
+                tif.save(reg_tif_crop)
 
     def raw_traces_from_targets(self):
         # read in registered tiff
@@ -1138,23 +1270,6 @@ class alloptical():
         print('len of seizures_frames:', len(self.seizure_frames))
         print('len of photostim_frames:', len(self.photostim_frames))
 
-    def save_pkl(self, pkl_path: str = None):
-        if pkl_path is None:
-            if hasattr(self, 'pkl_path'):
-                pkl_path = self.pkl_path
-            else:
-                raise ValueError(
-                    'pkl path for saving was not found in object attributes, please provide path to save to')
-        else:
-            self.pkl_path = pkl_path
-
-        with open(self.pkl_path, 'wb') as f:
-            pickle.dump(self, f)
-        print("pkl saved to %s" % pkl_path)
-
-    def save(self):
-        self.save_pkl()
-
     def avg_stim_images(self, peri_frames: int = 100, stim_timings: list = [], save_img=False, to_plot=False,
                         verbose=False):
         """
@@ -1281,216 +1396,11 @@ class alloptical():
         return x
 
 
-## this should technically be the biggest super class lol
-class twopimaging():
-
-    def __init__(self, tiff_path_dir, paq_path, suite2p_path=None, suite2p_run=False):
-        """
-        :param paths: list of key paths (tiff_loc
-        :param suite2p_path: path to the suite2p outputs (plan0 file? or ops file? not sure yet)
-        :param suite2p_run: set to true if suite2p is already run for this trial
-        """
-
-        self.tiff_path = tiff_path_dir
-        self.paq_path = paq_path
-
-        self._parsePVMetadata()
-
-        if suite2p_run:
-            self.suite2p_path = suite2p_path
-            self.s2pProcessing(s2p_path=self.suite2p_path)
-
-    def s2pProcessing(self, s2p_path, subtract_neuropil=True):
-
-        '''processing of suite2p data on the experimental object?'''
-
-        self.cell_id = []
-        self.n_units = []
-        self.cell_plane = []
-        self.cell_med = []
-        self.cell_x = []
-        self.cell_y = []
-        self.raw = []
-        self.mean_img = []
-        self.radius = []
-
-        # s2p_path = os.path.join(self.tiff_path, 'suite2p', 'plane' + str(plane))
-        FminusFneu, spks, stat = s2p_loader(s2p_path, subtract_neuropil)  # s2p_loader() is in utils_func
-        ops = np.load(os.path.join(s2p_path, 'ops.npy'), allow_pickle=True).item()
-
-        self.raw = FminusFneu
-        self.spks = spks
-        self.stat = stat
-        self.mean_img = ops['meanImg']
-        cell_id = []
-        cell_plane = []
-        cell_med = []
-        cell_x = []
-        cell_y = []
-        radius = []
-
-        for cell, s in enumerate(stat):
-            cell_id.append(s['original_index'])  # stat is an np array of dictionaries!
-            cell_med.append(s['med'])
-            cell_x.append(s['xpix'])
-            cell_y.append(s['ypix'])
-            radius.append(s['radius'])
-
-        self.cell_id = cell_id
-        self.n_units = len(self.cell_id)
-        self.cell_med = cell_med
-        self.cell_x = cell_x
-        self.cell_y = cell_y
-        self.radius = radius
-
-    def _getPVStateShard(self, path, key):
-
-        '''
-        Used in function PV metadata below
-        '''
-
-        value = []
-        description = []
-        index = []
-
-        xml_tree = ET.parse(path)  # parse xml from a path
-        root = xml_tree.getroot()  # make xml tree structure
-
-        pv_state_shard = root.find('PVStateShard')  # find pv state shard element in root
-
-        for elem in pv_state_shard:  # for each element in pv state shard, find the value for the specified key
-
-            if elem.get('key') == key:
-
-                if len(elem) == 0:  # if the element has only one subelement
-                    value = elem.get('value')
-                    break
-
-                else:  # if the element has many subelements (i.e. lots of entries for that key)
-                    for subelem in elem:
-                        value.append(subelem.get('value'))
-                        description.append(subelem.get('description'))
-                        index.append(subelem.get('index'))
-            else:
-                for subelem in elem:  # if key not in element, try subelements
-                    if subelem.get('key') == key:
-                        value = elem.get('value')
-                        break
-
-            if value:  # if found key in subelement, break the loop
-                break
-
-        if not value:  # if no value found at all, raise exception
-            raise Exception('ERROR: no element or subelement with that key')
-
-        return value, description, index
-
-    def _parsePVMetadata(self):
-
-        tiff_path = self.tiff_path
-        path = []
-
-        try:  # look for xml file in path, or two paths up (achieved by decreasing count in while loop)
-            count = 2
-            while count != 0 and not path:
-                count -= 1
-                for file in os.listdir(tiff_path):
-                    if file.endswith('.xml'):
-                        path = os.path.join(tiff_path, file)
-                    if file.endswith('.env'):
-                        env_path = os.path.join(tiff_path, file)
-                tiff_path = os.path.dirname(tiff_path)
-
-        except:
-            raise Exception('ERROR: Could not find xml for this acquisition, check it exists in %s' % tiff_path)
-
-        xml_tree = ET.parse(path)  # parse xml from a path
-        root = xml_tree.getroot()  # make xml tree structure
-
-        sequence = root.find('Sequence')
-        acq_type = sequence.get('type')
-
-        if 'ZSeries' in acq_type:
-            n_planes = len(sequence.findall('Frame'))
-
-        else:
-            n_planes = 1
-
-        frame_period = float(self._getPVStateShard(path, 'framePeriod')[0])
-        fps = 1 / frame_period
-
-        frame_x = int(self._getPVStateShard(path, 'pixelsPerLine')[0])
-
-        frame_y = int(self._getPVStateShard(path, 'linesPerFrame')[0])
-
-        zoom = float(self._getPVStateShard(path, 'opticalZoom')[0])
-
-        scanVolts, _, index = self._getPVStateShard(path, 'currentScanCenter')
-        for scanVolts, index in zip(scanVolts, index):
-            if index == 'XAxis':
-                scan_x = float(scanVolts)
-            if index == 'YAxis':
-                scan_y = float(scanVolts)
-
-        pixelSize, _, index = self._getPVStateShard(path, 'micronsPerPixel')
-        for pixelSize, index in zip(pixelSize, index):
-            if index == 'XAxis':
-                pix_sz_x = float(pixelSize)
-            if index == 'YAxis':
-                pix_sz_y = float(pixelSize)
-
-        env_tree = ET.parse(env_path)
-        env_root = env_tree.getroot()
-
-        elem_list = env_root.find('TSeries')
-        # n_frames = elem_list[0].get('repetitions') # Rob would get the n_frames from env file
-        # change this to getting the last actual index from the xml file
-
-        n_frames = root.findall('Sequence/Frame')[-1].get('index')
-
-        self.fps = fps
-        self.frame_x = frame_x
-        self.frame_y = frame_y
-        self.n_planes = n_planes
-        self.pix_sz_x = pix_sz_x
-        self.pix_sz_y = pix_sz_y
-        self.scan_x = scan_x
-        self.scan_y = scan_y
-        self.zoom = zoom
-        self.n_frames = int(n_frames)
-
-        print('n planes:', n_planes,
-              '\nn frames:', int(n_frames),
-              '\nfps:', fps,
-              '\nframe size (px):', frame_x, 'x', frame_y,
-              '\nzoom:', zoom,
-              '\npixel size (um):', pix_sz_x, pix_sz_y,
-              '\nscan centre (V):', scan_x, scan_y
-              )
-
-    def save_pkl(self, pkl_path: str = None):
-        if pkl_path is None:
-            if hasattr(self, 'pkl_path'):
-                pkl_path = self.pkl_path
-            else:
-                raise ValueError(
-                    'pkl path for saving was not found in object attributes, please provide path to save to')
-        else:
-            self.pkl_path = pkl_path
-
-        with open(self.pkl_path, 'wb') as f:
-            pickle.dump(self, f)
-        print("pkl saved to %s" % pkl_path)
-
-    def save(self):
-        self.save_pkl()
-
-
-class Post4ap(alloptical):
+class Post4ap(AllOptical):
     # TODO fix the superclass definitions and heirarchy which might require more rejigging of the code you are running later on as well
 
     def __init__(self, paths, metainfo, stimtype):
-        alloptical.__init__(self, paths, metainfo, stimtype)
+        AllOptical.__init__(self, paths, metainfo, stimtype)
         print('\ninitialized Post4ap expobj of exptype and trial: %s, %s, %s' % (self.metainfo['exptype'],
                                                                                  self.metainfo['trial'],
                                                                                  self.metainfo['date']))
@@ -1756,12 +1666,29 @@ class Post4ap(alloptical):
                 'cannot check for cell inside sz boundary because cell sz classification hasnot been performed yet')
 
 
-class onePstim(twopimaging):
-    def __init__(self, paths, metainfo):
+class OnePhotonStim(TwoPhotonImaging):
+    def __init__(self, data_path_base, date, animal_prep, trial, metainfo):
+        paqs_loc = '%s/%s_%s_%s.paq' % (
+            data_path_base, date, animal_prep, trial[2:])  # path to the .paq files for the selected trials
+        tiffs_loc_dir = '%s/%s_%s' % (data_path_base, date, trial)
+        tiffs_loc = '%s/%s_%s_Cycle00001_Ch3.tif' % (tiffs_loc_dir, date, trial)
+        pkl_path = "/home/pshah/mnt/qnap/Analysis/%s/%s_%s/%s_%s.pkl" % (
+            date, date, trial, date, trial)  # specify path in Analysis folder to save pkl object
+        # paqs_loc = '%s/%s_RL109_010.paq' % (data_path_base, date)  # path to the .paq files for the selected trials
+        new_tiffs = tiffs_loc[:-19]  # where new tiffs from rm_artifacts_tiffs will be saved
+        # make the necessary Analysis saving subfolder as well
+        analysis_save_path = tiffs_loc[:21] + 'Analysis/' + tiffs_loc_dir[26:]
+
+        print('\n-----Processing trial # %s-----' % trial)
+
+        paths = [tiffs_loc_dir, tiffs_loc, paqs_loc]
+        # print('tiffs_loc_dir, naparms_loc, paqs_loc paths:\n', paths)
+
+
         self.tiff_path_dir = paths[0]
         self.paq_path = paths[2]
         self.metainfo = metainfo
-        twopimaging.__init__(self, self.tiff_path_dir, self.paq_path)
+        TwoPhotonImaging.__init__(self, self.tiff_path_dir, self.paq_path)
         self.tiff_path = paths[1]
         self.paqProcessing()
         print(self.tiff_path)
@@ -1770,8 +1697,18 @@ class onePstim(twopimaging):
         im_stack = tf.imread(self.tiff_path, key=range(self.n_frames))
         print('Loaded experiment tiff of shape: ', im_stack.shape)
 
-        im_avg = np.mean(np.mean(im_stack, axis=1), axis=1);
-        self.onePstim_trace = im_avg
+        self.onePstim_trace = np.mean(np.mean(im_stack, axis=1), axis=1)
+
+        self.analysis_save_path = analysis_save_path
+        if os.path.exists(self.analysis_save_path):
+            pass
+        elif os.path.exists(self.analysis_save_path[:-17]):
+            os.mkdir(self.analysis_save_path)
+        elif os.path.exists(self.analysis_save_path[:-27]):
+            os.mkdir(self.analysis_save_path[:-17])
+            os.mkdir(self.analysis_save_path)
+
+        self.save_pkl(pkl_path=pkl_path)
 
     def paqProcessing(self):
 
@@ -1918,39 +1855,39 @@ class onePstim(twopimaging):
 
 
 # preprocessing functions
-def run_1p_processing(data_path_base, date, animal_prep, trial, metainfo):
-    paqs_loc = '%s/%s_%s_%s.paq' % (
-        data_path_base, date, animal_prep, trial[2:])  # path to the .paq files for the selected trials
-    tiffs_loc_dir = '%s/%s_%s' % (data_path_base, date, trial)
-    tiffs_loc = '%s/%s_%s_Cycle00001_Ch3.tif' % (tiffs_loc_dir, date, trial)
-    pkl_path = "/home/pshah/mnt/qnap/Analysis/%s/%s_%s/%s_%s.pkl" % (
-        date, date, trial, date, trial)  # specify path in Analysis folder to save pkl object
-    # paqs_loc = '%s/%s_RL109_010.paq' % (data_path_base, date)  # path to the .paq files for the selected trials
-    new_tiffs = tiffs_loc[:-19]  # where new tiffs from rm_artifacts_tiffs will be saved
-    # make the necessary Analysis saving subfolder as well
-    analysis_save_path = tiffs_loc[:21] + 'Analysis/' + tiffs_loc_dir[26:]
-
-    print('\n-----Processing trial # %s-----' % trial)
-
-    paths = [tiffs_loc_dir, tiffs_loc, paqs_loc]
-    # print('tiffs_loc_dir, naparms_loc, paqs_loc paths:\n', paths)
-
-    expobj = onePstim(paths, metainfo)
-
-    # set analysis save path for expobj
-    # make the necessary Analysis saving subfolder as well
-    expobj.analysis_save_path = analysis_save_path
-    if os.path.exists(expobj.analysis_save_path):
-        pass
-    elif os.path.exists(expobj.analysis_save_path[:-17]):
-        os.mkdir(expobj.analysis_save_path)
-    elif os.path.exists(expobj.analysis_save_path[:-27]):
-        os.mkdir(expobj.analysis_save_path[:-17])
-        os.mkdir(expobj.analysis_save_path)
-
-    expobj.save_pkl(pkl_path=pkl_path)
-
-    return expobj
+# def run_1p_processing(data_path_base, date, animal_prep, trial, metainfo):  # ---> moved to the __init__() for OnePhotonStim class
+#     paqs_loc = '%s/%s_%s_%s.paq' % (
+#         data_path_base, date, animal_prep, trial[2:])  # path to the .paq files for the selected trials
+#     tiffs_loc_dir = '%s/%s_%s' % (data_path_base, date, trial)
+#     tiffs_loc = '%s/%s_%s_Cycle00001_Ch3.tif' % (tiffs_loc_dir, date, trial)
+#     pkl_path = "/home/pshah/mnt/qnap/Analysis/%s/%s_%s/%s_%s.pkl" % (
+#         date, date, trial, date, trial)  # specify path in Analysis folder to save pkl object
+#     # paqs_loc = '%s/%s_RL109_010.paq' % (data_path_base, date)  # path to the .paq files for the selected trials
+#     new_tiffs = tiffs_loc[:-19]  # where new tiffs from rm_artifacts_tiffs will be saved
+#     # make the necessary Analysis saving subfolder as well
+#     analysis_save_path = tiffs_loc[:21] + 'Analysis/' + tiffs_loc_dir[26:]
+#
+#     print('\n-----Processing trial # %s-----' % trial)
+#
+#     paths = [tiffs_loc_dir, tiffs_loc, paqs_loc]
+#     # print('tiffs_loc_dir, naparms_loc, paqs_loc paths:\n', paths)
+#
+#     expobj = OnePhotonStim(paths, metainfo)
+#
+#     # set analysis save path for expobj
+#     # make the necessary Analysis saving subfolder as well
+#     expobj.analysis_save_path = analysis_save_path
+#     if os.path.exists(expobj.analysis_save_path):
+#         pass
+#     elif os.path.exists(expobj.analysis_save_path[:-17]):
+#         os.mkdir(expobj.analysis_save_path)
+#     elif os.path.exists(expobj.analysis_save_path[:-27]):
+#         os.mkdir(expobj.analysis_save_path[:-17])
+#         os.mkdir(expobj.analysis_save_path)
+#
+#     expobj.save_pkl(pkl_path=pkl_path)
+#
+#     return expobj
 
 
 # import expobj from the pkl file
@@ -2212,7 +2149,7 @@ def _good_cells(cell_ids: list, raws: np.ndarray, photostim_frames: list, std_th
     return good_cells, events_loc_cells, flu_events_cells, stds
 
 
-def get_targets_stim_traces_norm(expobj, normalize_to='', pre_stim=10, post_stim=200):
+def get_s2ptargets_stim_traces(expobj, normalize_to='', pre_stim=10, post_stim=200):
     """
     primary function to measure the dFF traces for photostimulated targets.
     :param expobj:
@@ -2286,7 +2223,7 @@ def get_targets_stim_traces_norm(expobj, normalize_to='', pre_stim=10, post_stim
 def get_nontargets_stim_traces_norm(expobj, normalize_to='', pre_stim=10, post_stim=200):
     """
     primary function to measure the dFF traces for photostimulated targets.
-    :param expobj: alloptical experiment object
+    :param expobj: AllOptical experiment object
     :param normalize_to: str; either "baseline" or "pre-stim"
     :param pre_stim: number of frames to use as pre-stim
     :param post_stim: number of frames to use as post-stim
@@ -2532,7 +2469,7 @@ def make_tiff_stack(sorted_paths: list, save_as: str):
 
     with tf.TiffWriter(save_as, bigtiff=True) as tif:
         for i, tif_ in enumerate(sorted_paths):
-            with tf.TiffFile(tif_, multifile=False) as input_tif:
+            with tf.TiffFile(tif_, multifile=True) as input_tif:
                 data = input_tif.asarray()
             msg = ' -- Writing tiff: ' + str(i + 1) + ' out of ' + str(num_tiffs)
             print(msg, end='\r')

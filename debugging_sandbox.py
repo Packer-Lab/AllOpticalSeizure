@@ -28,15 +28,57 @@ import seaborn as sns
 
 from numba import njit
 from skimage import draw
+import tifffile as tf
 
-###### IMPORT pkl file containing data in form of expobj
-trial = 't-011'
-date = '2020-12-18'
-pkl_path = "/home/pshah/mnt/qnap/Analysis/%s/%s_%s/%s_%s.pkl" % (date, date, trial, date, trial)
-# pkl_path = "/home/pshah/mnt/qnap/Data/%s/%s_%s/%s_%s.pkl" % (date, date, trial, date, trial)
+# original = '/home/pshah/mnt/qnap/Analysis/2021-01-10/suite2p/AllOptical-2p-08x-alltrials-reg_tiff/plane0/reg_tif/file021_chan0.tif'
+# recreated = '/home/pshah/mnt/qnap/Analysis/2021-01-10/2021-01-10_t-008/reg_tiff_t-008.tif'
+#
+# with tf.TiffFile(original, multifile=False) as input_tif:
+#     data_original = input_tif.asarray()
+#     print('shape of tiff: ', data_original.shape)
+#
+# with tf.TiffFile(recreated, multifile=False) as input_tif:
+#     data_recreated = input_tif.asarray()
+#     print('shape of tiff: ', data_recreated.shape)
+#     data_recreated1 = data_recreated[0]
+#
 
-expobj, experiment = aoutils.import_expobj(trial=trial, date=date, pkl_path=pkl_path)
+sorted_paths = ['/home/pshah/mnt/qnap/Analysis/2021-01-10/suite2p/AllOptical-2p-08x-alltrials-reg_tiff/plane0/reg_tif/file021_chan0.tif',
+                '/home/pshah/mnt/qnap/Analysis/2021-01-10/suite2p/AllOptical-2p-08x-alltrials-reg_tiff/plane0/reg_tif/file022_chan0.tif',
+                '/home/pshah/mnt/qnap/Analysis/2021-01-10/suite2p/AllOptical-2p-08x-alltrials-reg_tiff/plane0/reg_tif/file023_chan0.tif',
+                '/home/pshah/mnt/qnap/Analysis/2021-01-10/suite2p/AllOptical-2p-08x-alltrials-reg_tiff/plane0/reg_tif/file024_chan0.tif',
+                '/home/pshah/mnt/qnap/Analysis/2021-01-10/suite2p/AllOptical-2p-08x-alltrials-reg_tiff/plane0/reg_tif/file025_chan0.tif']
 
-# %%
-sz_csv = '/home/pshah/mnt/qnap/Analysis/2020-12-18/2020-12-18_t-013/2020-12-18_t-013_stim-9222.tif_border.csv'
-expobj.classify_cells_sz(sz_border_path=sz_csv, to_plot=True, title='9222', flip=True)
+def make_tiff_stack(sorted_paths: list, save_as: str):
+    """
+    read in a bunch of tiffs and stack them together, and save the output as the save_as
+
+    :param sorted_paths: list of string paths for tiffs to stack
+    :param save_as: .tif file path to where the tif should be saved
+    """
+
+    num_tiffs = len(sorted_paths)
+    print('working on tifs to stack: ', num_tiffs)
+
+    with tf.TiffWriter(save_as, bigtiff=True) as tif:
+        for i, tif_ in enumerate(sorted_paths):
+            with tf.TiffFile(tif_, multifile=True) as input_tif:
+                data = input_tif.asarray()
+                for frame in data:
+                    tif.write(frame, contiguous=True)
+
+                # tif.save(data[0])
+            msg = ' -- Writing tiff: ' + str(i + 1) + ' out of ' + str(num_tiffs)
+            print(msg, end='\r')
+            # tif.save(data)
+
+make_tiff_stack(sorted_paths=sorted_paths, save_as='/home/pshah/mnt/qnap/Analysis/2021-01-10/2021-01-10_t-008/reg_tiff_t-008.tif')
+
+# series0 = np.random.randint(0, 255, (32, 32, 3), 'uint8')
+# series1 = np.random.randint(0, 1023, (4, 256, 256), 'uint16')
+series0 = np.random.randint(0, 1023, (4, 256, 256), 'uint16')
+series1 = np.random.randint(0, 1023, (4, 256, 256), 'uint16')
+tf.imwrite('temp.tif', series0, photometric='minisblack')
+tf.imwrite('temp.tif', series1, append=True)
+
+img = tf.imread('temp.tif')

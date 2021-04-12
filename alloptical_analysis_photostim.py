@@ -15,7 +15,7 @@ import seaborn as sns
 from skimage import draw
 
 ###### IMPORT pkl file containing data in form of expobj
-trial = 't-013'
+trial = 't-009'
 date = '2021-01-10'
 pkl_path = "/home/pshah/mnt/qnap/Analysis/%s/%s_%s/%s_%s.pkl" % (date, date, trial, date, trial)
 # pkl_path = "/home/pshah/mnt/qnap/Data/%s/%s_%s/%s_%s.pkl" % (date, date, trial, date, trial)
@@ -36,28 +36,159 @@ x = np.asarray([i for i in expobj.targets_dfstdF_avg])
 # y_label = 'pct. dFF (normalized to prestim period)'
 y_label = 'dFstdF (normalized to prestim period)'
 
-aoplot.plot_photostim_avg(dff_array=x, expobj=expobj, stim_duration=expobj.duration_frames, pre_stim=expobj.pre_stim,
+aoplot.plot_photostim_avg(arr=x, expobj=expobj, stim_duration=expobj.duration_frames, pre_stim=expobj.pre_stim,
                           post_stim=expobj.post_stim,
                           title=(experiment + '- responses of all photostim targets'),
                           y_label=y_label, x_label='Time post-stimulation (seconds)')
 
+# %% plot all photostim targets -- move to analysis_photostim.py soon
+
+# aoplot.plot_photostim_subplots(array=expobj.targets_raw, expobj=expobj, x_label='Frames',
+#                                y_label='Raw Flu',
+#                                title=(experiment))
+
+expobj.dff_targets = aoutils.normalize_dff(np.array(expobj.targets_raw))
+
+
+# make rolling average for these plots to smooth out the traces a little more
+w = 10
+array = [(np.convolve(trace, np.ones(w), 'valid') / w) for trace in expobj.targets_raw[:3]]
+
+len_ = len(array)
+fig, axs = plt.subplots(nrows=len_, sharex=True, figsize=(30, 3 * len_))
+for i in range(len(axs)):
+    axs[i].plot(array[i], linewidth=1, color='black')
+    for j in expobj.stim_start_frames:
+        axs[i].axvline(x=j, c='gray', alpha=0.7, linestyle='--')
+    if len_ == len(expobj.s2p_cell_targets):
+        axs[i].set_title('Cell # %s' % expobj.s2p_cell_targets[i])
+plt.show()
+
+# %% plot the average peri- photostim response for individual cells, including individual traces for each stim.
+def get_alltargets_stim_traces_norm(expobj, targets_idx=None, subselect_cells=None, pre_stim=15, post_stim=200):
+    """
+    primary function to measure the dFF traces for photostimulated targets.
+    :param expobj:
+    :param normalize_to: str; either "baseline" or "pre-stim"
+    :param pre_stim: number of frames to use as pre-stim
+    :param post_stim: number of frames to use as post-stim
+    :return: lists of individual targets dFF traces, and averaged targets dFF over all stims for each target
+    """
+    stim_timings = expobj.stim_start_frames
+
+    if subselect_cells:
+        num_cells = len(expobj.targets_raw[subselect_cells])
+        targets_trace = expobj.targets_raw[subselect_cells]
+    else:
+        num_cells = len(expobj.targets_raw)
+        targets_trace = expobj.targets_raw
+
+    # collect photostim timed average dff traces of photostim targets
+    targets_dff = np.zeros([num_cells, len(expobj.stim_start_frames), pre_stim + post_stim])
+    targets_dff_avg = np.zeros([num_cells, pre_stim + post_stim])
+
+    targets_dfstdF = np.zeros([num_cells, len(expobj.stim_start_frames), pre_stim + post_stim])
+    targets_dfstdF_avg = np.zeros([num_cells, pre_stim + post_stim])
+
+    targets_raw = np.zeros([num_cells, len(expobj.stim_start_frames), pre_stim + post_stim])
+    targets_raw_avg = np.zeros([num_cells, pre_stim + post_stim])
+
+    if targets_idx is not None:
+        flu = [targets_trace[targets_idx][stim - pre_stim: stim + post_stim] for stim in stim_timings if
+               stim not in expobj.seizure_frames]
+
+        # flu_dfstdF = []
+        # flu_dff = []
+        for i in range(len(flu)):
+            trace = flu[i]
+            mean_pre = np.mean(trace[0:pre_stim])
+            trace_dff = ((trace - mean_pre) / mean_pre) * 100
+            std_pre = np.std(trace[0:pre_stim])
+            dFstdF = (trace - mean_pre) / std_pre  # make dF divided by std of pre-stim F trace
+
+            targets_raw[targets_idx, i] = trace
+            targets_dff[targets_idx, i] = trace_dff
+            targets_dfstdF[targets_idx, i] = dFstdF
+        return targets_raw[targets_idx], targets_dff[targets_idx], targets_dfstdF[targets_idx]
+
+    else:
+        for cell_idx in range(num_cells):
+            # print('considering cell # %s' % cell)
+            flu = [targets_trace[cell_idx][stim - pre_stim: stim + post_stim] for stim in stim_timings if
+                   stim not in expobj.seizure_frames]
+
+            # flu_dfstdF = []
+            # flu_dff = []
+            for i in range(len(flu)):
+                trace = flu[i]
+                mean_pre = np.mean(trace[0:pre_stim])
+                trace_dff = ((trace - mean_pre) / mean_pre) * 100
+                std_pre = np.std(trace[0:pre_stim])
+                dFstdF = (trace - mean_pre) / std_pre  # make dF divided by std of pre-stim F trace
+
+                targets_raw[cell_idx, i] = trace
+                targets_dff[cell_idx, i] = trace_dff
+                targets_dfstdF[cell_idx, i] = dFstdF
+                # flu_dfstdF.append(dFstdF)
+                # flu_dff.append(trace_dff)
+
+            # targets_dff.append(flu_dff)  # contains all individual dFF traces for all stim times
+            # targets_dff_avg.append(np.nanmean(flu_dff, axis=0))  # contains the dFF trace averaged across all stim times
+
+            # targets_dfstdF.append(flu_dfstdF)
+            # targets_dfstdF_avg.append(np.nanmean(flu_dfstdF, axis=0))
+
+            # targets_raw.append(flu)
+            # targets_raw_avg.append(np.nanmean(flu, axis=0))
+
+        targets_dff_avg = np.mean(targets_dff, axis=1)
+        targets_dfstdF_avg = np.mean(targets_dfstdF, axis=1)
+        targets_raw_avg = np.mean(targets_raw, axis=1)
+
+        return targets_dff, targets_dff_avg, targets_dfstdF, targets_dfstdF_avg, targets_raw, targets_raw_avg
+
+
+# targets_dff, targets_dff_avg, targets_dfstdF, targets_dfstdF_avg, targets_raw, targets_raw_avg = get_alltargets_stim_traces_norm(expobj)
+# array = (np.convolve(targets_raw[targets_idx], np.ones(w), 'valid') / w)
+
+targets_idx = 0
+for targets_idx in range(24, 50):
+    targets_raw, targets_dff, targets_dfstdF = get_alltargets_stim_traces_norm(expobj, targets_idx=targets_idx, pre_stim=int(expobj.fps),
+                                                                               post_stim=5*int(expobj.fps))
+    w = 2
+    array = [(np.convolve(trace, np.ones(w), 'valid') / w) for trace in targets_raw]
+
+    aoplot.plot_photostim_avg(arr=targets_dfstdF, expobj=expobj, stim_duration=expobj.duration_frames,
+                              title='Cell' + str(targets_idx), pre_stim=int(expobj.fps), post_stim=5*int(expobj.fps))
+
+###
+len_ = len(array)
+fig, axs = plt.subplots(nrows=len_, sharex=True, figsize=(30, 3 * len_))
+for i in range(len(axs)):
+    axs[i].plot(array[i], linewidth=1, color='black')
+    for j in expobj.stim_start_frames:
+        axs[i].axvline(x=j, c='gray', alpha=0.7, linestyle='--')
+    if len_ == len(expobj.s2p_cell_targets):
+        axs[i].set_title('Cell # %s' % expobj.s2p_cell_targets[i])
+plt.show()
+
+
 
 # %% PLOT ENTIRE TRIAL - targeted cells plotted individually as subplots
 
-expobj.raw_targets = [expobj.raw[expobj.cell_id.index(i)] for i in expobj.s2p_cell_targets]
-expobj.dff_targets = aoutils.normalize_dff(np.array(expobj.raw_targets))
+expobj.raw_s2ptargets = [expobj.raw[expobj.cell_id.index(i)] for i in expobj.s2p_cell_targets if i in expobj.good_photostim_cells_all]
+expobj.dff_s2ptargets = aoutils.normalize_dff(np.array(expobj.raw_s2ptargets))
 # expobj.targets_dff_base = aoutils.normalize_dff_baseline(
 #     arr=expobj.raw_df.loc[[str(x) for x in expobj.s2p_cell_targets]],
 #     baseline_array=expobj.baseline_raw_df)
 # plot_photostim_subplots(dff_array=dff_targets,
 #                 title=(experiment + '%s responses of responsive cells' % len(expobj.good_photostim_cells_stim_responses_dFF)))
-to_plot = expobj.dff_targets
+to_plot = expobj.dff_s2ptargets
 
-
-aoplot.plot_photostim_overlap_plots(dff_array=to_plot, expobj=expobj, exclude_id=[expobj.s2p_cell_targets.index(cell) for cell in [211, 400, 542]],
+aoplot.plot_photostim_overlap_plots(array=to_plot, expobj=expobj, exclude_id=[expobj.s2p_cell_targets.index(cell) for cell in [211, 400, 542]],
                                     y_lims=[0, 5000], title=(experiment + '-'))
 
-aoplot.plot_photostim_subplots(dff_array=to_plot, expobj=expobj, x_label='Frames',
+aoplot.plot_photostim_subplots(array=to_plot, expobj=expobj, x_label='Frames',
                                y_label='Raw Flu',
                                title=(experiment))
 
