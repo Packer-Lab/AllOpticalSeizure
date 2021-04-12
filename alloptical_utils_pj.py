@@ -64,6 +64,32 @@ class TwoPhotonImaging:
             self.suite2p_path = suite2p_path
             self.s2pProcessing(s2p_path=self.suite2p_path)
 
+    def s2pRun(self, ops, db, user_batch_size):
+
+        '''run suite2p on the experiment object, using the attributes deteremined directly from the experiment object'''
+
+        num_pixels = self.frame_x * self.frame_y
+        sampling_rate = self.fps / self.n_planes
+        diameter_x = 13 / self.pix_sz_x
+        diameter_y = 13 / self.pix_sz_y
+        diameter = int(diameter_x), int(diameter_y)
+        batch_size = user_batch_size * (
+                262144 / num_pixels)  # larger frames will be more RAM intensive, scale user batch size based on num pixels in 512x512 images
+
+        if not db:
+            db = {
+                'data_path': [self.tiff_path],
+                'fs': float(sampling_rate),
+                'diameter': diameter,
+                'batch_size': int(batch_size),
+                'nimg_init': int(batch_size),
+                'nplanes': self.n_planes
+            }
+
+        print(db)
+
+        opsEnd = run_s2p(ops=ops, db=db)
+
     def _getPVStateShard(self, path, key):
 
         '''
@@ -274,6 +300,34 @@ class TwoPhotonImaging:
                 cell_plane.extend([plane] * num_units)
                 self.cell_plane.append(cell_plane)
 
+    def paqProcessing(self, lfp=False):
+
+        print('\n-----processing paq file...')
+
+        print('loading', self.paq_path)
+
+        paq, _ = paq_read(self.paq_path, plot=True)
+        self.paq_rate = paq['rate']
+
+        # find frame times
+
+        clock_idx = paq['chan_names'].index('frame_clock')
+        clock_voltage = paq['data'][clock_idx, :]
+
+        frame_clock = pjf.threshold_detect(clock_voltage, 1)
+        self.frame_clock = frame_clock
+        plt.figure(figsize=(10, 5))
+        plt.plot(clock_voltage)
+        plt.plot(frame_clock, np.ones(len(frame_clock)), '.')
+        plt.suptitle('frame clock from paq, with detected frame clock instances as scatter')
+        sns.despine()
+        plt.show()
+
+        if lfp:
+            # find voltage (LFP recording signal) channel and save as lfp_signal attribute
+            voltage_idx = paq['chan_names'].index('voltage')
+            self.lfp_signal = paq['data'][voltage_idx]
+
     def save_pkl(self, pkl_path: str = None):
         if pkl_path is None:
             if hasattr(self, 'pkl_path'):
@@ -290,6 +344,7 @@ class TwoPhotonImaging:
 
     def save(self):
         self.save_pkl()
+
 
 class AllOptical(TwoPhotonImaging):
 
@@ -403,32 +458,6 @@ class AllOptical(TwoPhotonImaging):
     #           '\nscan centre (V):', scan_x, scan_y
     #           )
 
-    def s2pRun(self, ops, db, user_batch_size):
-
-        '''run suite2p on the experiment object, using the attributes deteremined directly from the experiment object'''
-
-        num_pixels = self.frame_x * self.frame_y
-        sampling_rate = self.fps / self.n_planes
-        diameter_x = 13 / self.pix_sz_x
-        diameter_y = 13 / self.pix_sz_y
-        diameter = int(diameter_x), int(diameter_y)
-        batch_size = user_batch_size * (
-                262144 / num_pixels)  # larger frames will be more RAM intensive, scale user batch size based on num pixels in 512x512 images
-
-        if not db:
-            db = {
-                'data_path': [self.tiff_path],
-                'fs': float(sampling_rate),
-                'diameter': diameter,
-                'batch_size': int(batch_size),
-                'nimg_init': int(batch_size),
-                'nplanes': self.n_planes
-            }
-
-        print(db)
-
-        opsEnd = run_s2p(ops=ops, db=db)
-
     def cellAreas(self, x=None, y=None):
 
         '''not sure what this function does'''
@@ -466,7 +495,7 @@ class AllOptical(TwoPhotonImaging):
             if t in baseline_trials:
                 baseline_frames[1] = total_frames_stitched
 
-    def stitch_reg_tiffs(self, force_crop: bool=False, force_stack: bool=False):
+    def stitch_reg_tiffs(self, force_crop: bool = False, force_stack: bool = False):
         start = self.curr_trial_frames[0] // 2000  # 2000 because that is the batch size for suite2p run
         end = self.curr_trial_frames[1] // 2000 + 1
 
@@ -589,7 +618,7 @@ class AllOptical(TwoPhotonImaging):
         self.spiral_size = int(spiral_size)
         # self.single_stim_dur = single_stim_dur  # not sure why this was previously getting this value from here, but I'm now getting it from the xml file above
 
-    def paqProcessing(self):
+    def paqProcessing(self, **kwargs):
 
         print('\n-----processing paq file...')
 
@@ -651,9 +680,10 @@ class AllOptical(TwoPhotonImaging):
             # # sanity check
             # assert max(self.stim_start_frames[0]) < self.raw[plane].shape[1] * self.n_planes
 
-        # find voltage channel and save as lfp_signal attribute
-        voltage_idx = paq['chan_names'].index('voltage')
-        self.lfp_signal = paq['data'][voltage_idx]
+        if kwargs['lfp']:
+            # find voltage (LFP recording signal) channel and save as lfp_signal attribute
+            voltage_idx = paq['chan_names'].index('voltage')
+            self.lfp_signal = paq['data'][voltage_idx]
 
     def photostimProcessing(self):
 
@@ -684,7 +714,7 @@ class AllOptical(TwoPhotonImaging):
         print('Single stim. Duration (ms): ', self.single_stim_dur)
         print('Total stim. Duration per trial (ms): ', self.stim_dur)
 
-        self.paqProcessing()
+        self.paqProcessing(lfp=True)
 
     def stimProcessing(self, stim_channel):
 
@@ -1684,7 +1714,6 @@ class OnePhotonStim(TwoPhotonImaging):
         paths = [tiffs_loc_dir, tiffs_loc, paqs_loc]
         # print('tiffs_loc_dir, naparms_loc, paqs_loc paths:\n', paths)
 
-
         self.tiff_path_dir = paths[0]
         self.paq_path = paths[2]
         self.metainfo = metainfo
@@ -1710,7 +1739,7 @@ class OnePhotonStim(TwoPhotonImaging):
 
         self.save_pkl(pkl_path=pkl_path)
 
-    def paqProcessing(self):
+    def paqProcessing(self, **kwargs):
 
         print('\n-----processing paq file for 1p photostim...')
 
