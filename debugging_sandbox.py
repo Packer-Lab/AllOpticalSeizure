@@ -30,7 +30,7 @@ from numba import njit
 from skimage import draw
 import tifffile as tf
 
-# original = '/home/pshah/mnt/qnap/Analysis/2021-01-10/suite2p/AllOptical-2p-08x-alltrials-reg_tiff/plane0/reg_tif/file021_chan0.tif'
+# original = '/home/pshah/mnt/qnap/Analysis/2021-01-10/suite2p/alloptical-2p-08x-alltrials-reg_tiff/plane0/reg_tif/file021_chan0.tif'
 # recreated = '/home/pshah/mnt/qnap/Analysis/2021-01-10/2021-01-10_t-008/reg_tiff_t-008.tif'
 #
 # with tf.TiffFile(original, multifile=False) as input_tif:
@@ -43,11 +43,11 @@ import tifffile as tf
 #     data_recreated1 = data_recreated[0]
 #
 
-sorted_paths = ['/home/pshah/mnt/qnap/Analysis/2021-01-10/suite2p/AllOptical-2p-08x-alltrials-reg_tiff/plane0/reg_tif/file021_chan0.tif',
-                '/home/pshah/mnt/qnap/Analysis/2021-01-10/suite2p/AllOptical-2p-08x-alltrials-reg_tiff/plane0/reg_tif/file022_chan0.tif',
-                '/home/pshah/mnt/qnap/Analysis/2021-01-10/suite2p/AllOptical-2p-08x-alltrials-reg_tiff/plane0/reg_tif/file023_chan0.tif',
-                '/home/pshah/mnt/qnap/Analysis/2021-01-10/suite2p/AllOptical-2p-08x-alltrials-reg_tiff/plane0/reg_tif/file024_chan0.tif',
-                '/home/pshah/mnt/qnap/Analysis/2021-01-10/suite2p/AllOptical-2p-08x-alltrials-reg_tiff/plane0/reg_tif/file025_chan0.tif']
+sorted_paths = ['/home/pshah/mnt/qnap/Analysis/2021-01-10/suite2p/alloptical-2p-08x-alltrials-reg_tiff/plane0/reg_tif/file021_chan0.tif',
+                '/home/pshah/mnt/qnap/Analysis/2021-01-10/suite2p/alloptical-2p-08x-alltrials-reg_tiff/plane0/reg_tif/file022_chan0.tif',
+                '/home/pshah/mnt/qnap/Analysis/2021-01-10/suite2p/alloptical-2p-08x-alltrials-reg_tiff/plane0/reg_tif/file023_chan0.tif',
+                '/home/pshah/mnt/qnap/Analysis/2021-01-10/suite2p/alloptical-2p-08x-alltrials-reg_tiff/plane0/reg_tif/file024_chan0.tif',
+                '/home/pshah/mnt/qnap/Analysis/2021-01-10/suite2p/alloptical-2p-08x-alltrials-reg_tiff/plane0/reg_tif/file025_chan0.tif']
 
 def make_tiff_stack(sorted_paths: list, save_as: str):
     """

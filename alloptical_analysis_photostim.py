@@ -16,7 +16,7 @@ from skimage import draw
 
 ###### IMPORT pkl file containing data in form of expobj
 trial = 't-009'
-date = '2021-01-10'
+date = '2020-12-18'
 pkl_path = "/home/pshah/mnt/qnap/Analysis/%s/%s_%s/%s_%s.pkl" % (date, date, trial, date, trial)
 # pkl_path = "/home/pshah/mnt/qnap/Data/%s/%s_%s/%s_%s.pkl" % (date, date, trial, date, trial)
 

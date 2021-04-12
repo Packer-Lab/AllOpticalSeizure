@@ -1,4 +1,4 @@
-## this file is for processing the photostim-experiment AllOptical expobj object AFTER suite2p has been run
+## this file is for processing the photostim-experiment alloptical expobj object AFTER suite2p has been run
 ## the end of the script will update the expobj that was in the original pkl path
 
 import sys; sys.path.append('/home/pshah/Documents/code/PackerLab_pycharm/')
@@ -23,7 +23,7 @@ expobj, experiment = aoutils.import_expobj(trial=trial, date=date, pkl_path=pkl_
 cont_inue = True  # i know this is a rather very precarious thing here...
 
 if not hasattr(expobj, 's2p_path'):
-    expobj.s2p_path = '/home/pshah/mnt/qnap/Analysis/2020-12-18/suite2p/AllOptical-2p-1x-alltrials/plane0'
+    expobj.s2p_path = '/home/pshah/mnt/qnap/Analysis/2020-12-18/suite2p/alloptical-2p-1x-alltrials/plane0'
 
 
 # %% prep for importing data from suite2p for this whole experiment
@@ -188,7 +188,7 @@ else:
 def plot_cell_loc(expobj, cells: list, color: str = 'pink', show: bool = True):
     """
     plots an image of the FOV to show the locations of cells given in cells list.
-    :param expobj: AllOptical or 2p imaging object
+    :param expobj: alloptical or 2p imaging object
     :param color: str to specify color of the scatter plot for cells
     :param cells: list of cells to plot
     :param show: if True, show the plot at the end of the function

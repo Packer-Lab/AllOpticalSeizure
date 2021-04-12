@@ -346,7 +346,7 @@ class TwoPhotonImaging:
         self.save_pkl()
 
 
-class AllOptical(TwoPhotonImaging):
+class alloptical(TwoPhotonImaging):
 
     def __init__(self, paths, metainfo, stimtype):
         TwoPhotonImaging.__init__(self, tiff_path_dir=paths[0], paq_path=paths[3], suite2p_path=None, suite2p_run=False)
@@ -371,7 +371,7 @@ class AllOptical(TwoPhotonImaging):
         elif os.path.exists(self.analysis_save_path[:-27]):
             os.mkdir(self.analysis_save_path[:-17])
 
-        print('\ninitialized AllOptical expobj of exptype and trial: \n', self.metainfo)
+        print('\ninitialized alloptical expobj of exptype and trial: \n', self.metainfo)
 
     # def _parsePVMetadata(self):
     #
@@ -1426,11 +1426,11 @@ class AllOptical(TwoPhotonImaging):
         return x
 
 
-class Post4ap(AllOptical):
+class Post4ap(alloptical):
     # TODO fix the superclass definitions and heirarchy which might require more rejigging of the code you are running later on as well
 
     def __init__(self, paths, metainfo, stimtype):
-        AllOptical.__init__(self, paths, metainfo, stimtype)
+        alloptical.__init__(self, paths, metainfo, stimtype)
         print('\ninitialized Post4ap expobj of exptype and trial: %s, %s, %s' % (self.metainfo['exptype'],
                                                                                  self.metainfo['trial'],
                                                                                  self.metainfo['date']))
@@ -2252,7 +2252,7 @@ def get_s2ptargets_stim_traces(expobj, normalize_to='', pre_stim=10, post_stim=2
 def get_nontargets_stim_traces_norm(expobj, normalize_to='', pre_stim=10, post_stim=200):
     """
     primary function to measure the dFF traces for photostimulated targets.
-    :param expobj: AllOptical experiment object
+    :param expobj: alloptical experiment object
     :param normalize_to: str; either "baseline" or "pre-stim"
     :param pre_stim: number of frames to use as pre-stim
     :param post_stim: number of frames to use as post-stim

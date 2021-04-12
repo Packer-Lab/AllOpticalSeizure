@@ -460,8 +460,8 @@ with open(pkl_path, 'rb') as f:
 
 # suite2p processing on expobj
 
-s2p_path = '/home/pshah/mnt/qnap/Analysis/2020-12-18/suite2p/AllOptical-2p-pre-4ap-08x/plane0'
-# s2p_path = '/Users/prajayshah/Documents/data-to-process/2020-12-18/suite2p/AllOptical-2p-pre-4ap-08x/plane0'
+s2p_path = '/home/pshah/mnt/qnap/Analysis/2020-12-18/suite2p/alloptical-2p-pre-4ap-08x/plane0'
+# s2p_path = '/Users/prajayshah/Documents/data-to-process/2020-12-18/suite2p/alloptical-2p-pre-4ap-08x/plane0'
 # flu, spks, stat = uf.s2p_loader(s2p_path, subtract_neuropil=True)
 
 
