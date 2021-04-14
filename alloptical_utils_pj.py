@@ -589,11 +589,11 @@ class alloptical(TwoPhotonImaging):
         stim_timings = self.stim_start_frames
 
         if subselect_cells:
-            num_cells = len(self.slm_targets_raw[subselect_cells])
-            targets_trace = self.slm_targets_raw[subselect_cells]
+            num_cells = len(self.raw_SLMTargets[subselect_cells])
+            targets_trace = self.raw_SLMTargets[subselect_cells]
         else:
-            num_cells = len(self.slm_targets_raw)
-            targets_trace = self.slm_targets_raw
+            num_cells = len(self.raw_SLMTargets)
+            targets_trace = self.raw_SLMTargets
 
         # collect photostim timed average dff traces of photostim targets
         targets_dff = np.zeros([num_cells, len(self.stim_start_frames), pre_stim + post_stim])

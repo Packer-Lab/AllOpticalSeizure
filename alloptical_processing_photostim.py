@@ -244,7 +244,7 @@ expobj.post_stim = 3*int(expobj.fps)
 # function for gathering all good photostim cells who respond on average across all trials to the photostim
 # note that the threshold for this is 1 * std of the prestim raw flu (fluorescence trace)
 expobj.targets_dff, expobj.targets_dff_avg, expobj.targets_dfstdF, \
-expobj.targets_dfstdF_avg, expobj.SLMTargets_stims_raw, expobj.targets_raw_avg = \
+expobj.targets_dfstdF_avg, expobj.targets_stims_raw, expobj.targets_stims_raw_avg = \
     aoutils.get_s2ptargets_stim_traces(expobj=expobj, normalize_to='pre-stim', pre_stim=expobj.pre_stim,
                                        post_stim=expobj.post_stim)
 

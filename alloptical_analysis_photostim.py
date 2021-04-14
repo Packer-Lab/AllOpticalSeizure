@@ -15,7 +15,7 @@ import seaborn as sns
 from skimage import draw
 
 ###### IMPORT pkl file containing data in form of expobj
-trial = 't-013'
+trial = 't-009'
 date = '2020-12-18'
 pkl_path = "/home/pshah/mnt/qnap/Analysis/%s/%s_%s/%s_%s.pkl" % (date, date, trial, date, trial)
 # pkl_path = "/home/pshah/mnt/qnap/Data/%s/%s_%s/%s_%s.pkl" % (date, date, trial, date, trial)
@@ -83,7 +83,7 @@ expobj.dff_SLMTargets = aoutils.normalize_dff(np.array(expobj.raw_SLMTargets))
 
 # make rolling average for these plots to smooth out the traces a little more
 w = 10
-to_plot = [(np.convolve(trace, np.ones(w), 'valid') / w) for trace in expobj.SLMTargets_dff[:3]]
+to_plot = [(np.convolve(trace, np.ones(w), 'valid') / w) for trace in expobj.dff_SLMTargets[:3]]
 
 aoplot.plot_photostim_traces(array=to_plot, expobj=expobj, x_label='Frames',
                              y_label='Raw Flu', title=experiment)
@@ -110,15 +110,15 @@ expobj.SLMTargets_stims_dfstdF_avg, expobj.SLMTargets_stims_raw, expobj.SLMTarge
 # array = (np.convolve(SLMTargets_stims_raw[targets_idx], np.ones(w), 'valid') / w)
 
 # targets_idx = 0
-plot = False
+plot = True
 for i in range(0, expobj.n_targets_total):
     SLMTargets_stims_raw, SLMTargets_stims_dff, SLMtargets_stims_dfstdF = expobj.get_alltargets_stim_traces_norm(targets_idx=i, pre_stim=pre_stim,
                                                                                                post_stim=post_stim)
     if plot:
         w = 2
         array = [(np.convolve(trace, np.ones(w), 'valid') / w) for trace in SLMTargets_stims_raw]
-
-        aoplot.plot_periphotostim_avg(arr=SLMtargets_stims_dfstdF, expobj=expobj, stim_duration=expobj.duration_frames,
+        random_sub = np.random.randint(0,100,10)
+        aoplot.plot_periphotostim_avg(arr=SLMtargets_stims_dfstdF[random_sub], expobj=expobj, stim_duration=expobj.duration_frames,
                                       title='Cell ' + str(i), pre_stim=pre_stim, post_stim=post_stim, color='steelblue', y_lims=[-0.5, 2.5])
     # plt.show()
 
@@ -130,157 +130,22 @@ for i in range(0, expobj.n_targets_total):
 # measure, for each cell, the pct of trials in which the dFF > 20% post stim (normalized to pre-stim avgF for the trial and cell)
 # can plot this as a bar plot for now showing the distribution of the reliability measurement
 
-# collect raw traces around stims for s2p targets
-for cell in expobj.s2p_cell_targets:
-    # print('considering cell # %s' % cell)
-    if cell in expobj.cell_id:
-        cell_idx = expobj.cell_id.index(cell)
-        # collect a trace of prestim and poststim raw fluorescence for each stim time
-        flu_all_stims = [expobj.raw[cell_idx][stim - expobj.pre_stim: stim + expobj.post_stim] for stim in expobj.stim_start_frames]
-## these two should be equal actually already
-flu_all_stims = expobj.targets_dfstdF
-
-def calculate_reliability(expobj, cell_ids: list, raw_traces_stims=None, dfstdf_threshold=None,
-                          dff_threshold=None, pre_stim=10, sz_filter=False, verbose=False, plot=False):
-    """calculates the percentage of successful photoresponsive trials for each targeted cell, where success is post
-     stim response over the dff_threshold. the filter_for_sz argument is set to True when needing to filter out stim timings
-     that occured when the cell was classified as inside the sz boundary."""
-
-    reliability_cells = {}  # dict will be used to store the reliability results for each targeted cell
-    hits_cells = {}
-    responses_cells = {}
-    targets_dff_all_stimtrials = {}  # dict will contain the peri-stim dFF for each cell by the cell_idx
-    stim_timings = expobj.stim_start_frames
-
-    # assert list(stim_timings) == list(expobj.cells_sz_stim.keys())  # dont really need this assertion because you wont necessarily always look at the sz boundary for all stims every trial
-    # stim_timings = expobj.cells_sz_stim.keys()
-    if dff_threshold:
-        threshold = round(dff_threshold)
-        # dff = True
-        if raw_traces_stims is None:
-            df = expobj.dff_responses_all_cells
-    elif dfstdf_threshold:
-        threshold = dfstdf_threshold
-        # dff = False
-        if raw_traces_stims is None:
-            df = expobj.dfstdf_all_cells
-    else:
-        raise Exception("need to specify either dff_threshold or dfstdf_threshold value to use")
-
-    # if you need to filter out cells based on their location inside the sz or not, you need a different approach
-    # where you are for looping over each stim and calculating the reliability of cells like that. BUT the goal is still to collect reliability values by cell.
-
-    if raw_traces_stims is None:
-        for cell in expobj.s2p_cell_targets:
-            # print('considering cell # %s' % cell)
-            # if cell in expobj.cell_id:
-            if sz_filter:
-                if hasattr(expobj, 'cells_sz_stim'):
-                    stims_to_use = [str(stim) for stim in stim_timings
-                                    if stim not in expobj.cells_sz_stim.keys() or cell not in expobj.cells_sz_stim[
-                                        stim]]  # select only the stim times where the cell IS NOT inside the sz boundary
-                else:
-                    print('no information about cell locations in seizures by stim available, therefore not excluding any stims based on sz state')
-                    stims_to_use = [str(stim) for stim in stim_timings]
-            else:
-                print('not excluding any stims based on sz state')
-                stims_to_use = [str(stim) for stim in stim_timings]
-            counter = len(stims_to_use)
-            responses = df.loc[
-                cell, stims_to_use]  # collect the appropriate responses for the current cell at the selected stim times
-            success = sum(i >= threshold for i in responses)
-
-            reliability[cell] = success / counter * 100.
-            reliability[cell] = success / counter * 100.
-            if verbose:
-                print(cell, reliability[cell], 'calc over %s stims' % counter)
-
-    elif raw_traces_stims is not None:
-        if sz_filter:
-            raise Exception("the seizure filtering by stims + cells functionality is only available for s2p defined cell targets as of now")
-
-        for idx in range(len(cell_ids)):
-            success = 0
-            counter = 0
-            responses = []
-            hits = []
-            for trace in raw_traces_stims[idx]:
-                counter += 1
-                # calculate dFF (noramlized to pre-stim) for each trace
-                pre_stim_mean = np.mean(trace[0:pre_stim])
-                if dff_threshold:  # calculate dFF response for each stim trace
-                    response_trace = ((trace - pre_stim_mean) / pre_stim_mean) * 100
-                else:  # calculate dF_stdF response for each stim trace
-                    std_pre = np.std(trace[0:expobj.pre_stim])
-                    response_trace = ((trace - pre_stim_mean) / std_pre)
-
-                # calculate if the current trace beats the threshold for calculating reliability (note that this happens over a specific window just after the photostim)
-                response = np.nanmean(response_trace[
-                                      pre_stim + expobj.duration_frames:pre_stim + 3 * expobj.duration_frames])  # calculate the dF over pre-stim mean F response within the response window
-                responses.append(response)
-                if response >= threshold:
-                    success += 1
-                    hits.append([1])
-                else:
-                    hits.append([0])
-
-            reliability_cells[idx] = success / counter * 100.
-            hits_cells[idx] = hits
-            responses_cells[idx] = responses
-            if verbose:
-                print('Cell # %s: %s percent hits over %s stims' % (cell_ids[idx], reliability_cells[idx], counter))
-            if plot:
-                aoplot.plot_periphotostim_avg(arr=SLMtargets_stims_dfstdF[idx], expobj=expobj, stim_duration=expobj.duration_frames,
-                                              x_label='frames', pre_stim=pre_stim, post_stim=post_stim, color='steelblue',
-                                              y_lims=[-0.5, 2.5], show=False, title='Cell ' + str(idx))
-                m = expobj.duration_frames + (3 * expobj.duration_frames)/2 - pre_stim
-                x = np.random.randn(len(responses)) * 1.5 + m
-                plt.scatter(x, responses, c='chocolate', zorder=3, alpha=0.6)
-                plt.show()
-    else:
-        raise Exception("basically the error is that somehow the raw traces provided weren't detected")
-
-        # old version
-        # for cell in expobj.s2p_cell_targets:
-        #     # print('considering cell # %s' % cell)
-        #     if cell in expobj.cell_id:
-        #         cell_idx = expobj.cell_id.index(cell)
-        #         # collect a trace of prestim and poststim raw fluorescence for each stim time
-        #         flu_all_stims = [expobj.raw[cell_idx][stim - pre_stim: stim + post_stim] for stim in stim_timings]
-        #         success = 0
-        #         counter = 0
-        #         for trace in flu_all_stims:
-        #             counter += 1
-        #             # calculate dFF (noramlized to pre-stim) for each trace
-        #             pre_stim_mean = np.mean(trace[0:pre_stim])
-        #             if dff:
-        #                 response_trace = ((trace - pre_stim_mean) / pre_stim_mean) * 100
-        #             elif not dff:
-        #                 std_pre = np.std(trace[0:expobj.pre_stim])
-        #                 response_trace = ((trace - pre_stim_mean) / std_pre) * 100
-        #
-        #             # calculate if the current trace beats dff_threshold for calculating reliability (note that this happens over a specific window just after the photostim)
-        #             response = np.nanmean(response_trace[
-        #                                   pre_stim + expobj.duration_frames:pre_stim + 3 * expobj.duration_frames])  # calculate the dF over pre-stim mean F response within the response window
-        #             if response >= threshold:
-        #                 success += 1
-        #
-        #         reliability[cell] = success / counter * 100.
-        #         print(cell, reliability, 'calc over %s stims' % counter)
-
-    print("avg reliability is: %s" % (round(np.nanmean(list(reliability_cells.values())), 2)))
-    return reliability_cells, hits_cells, responses_cells
-
-
-cell_ids = list(range(len(SLMtargets_stims_dfstdF)))
+cell_ids = list(range(len(expobj.SLMTargets_stims_dfstdF)))
 
 expobj.reliability_cells, expobj.hits_cells, expobj.responses_cells = \
     aoutils.calculate_reliability(expobj, cell_ids=cell_ids, raw_traces_stims=expobj.SLMTargets_stims_raw,
                                   dfstdf_threshold=0.3, pre_stim=expobj.pre_stim, sz_filter=False,
                                   verbose=True, plot=True)
 
+w = 10
+arr_to_plot = [(np.convolve(trace, np.ones(w), 'valid') / w) for trace in expobj.SLMTargets_stims_dff[:3]]
 
-# %% ########## BAR PLOT showing average res
+aoplot.plot_photostim_traces(array=arr_to_plot, expobj=expobj, x_label='Frames',
+                             y_label='Raw Flu', title=experiment, scatter=list(expobj.hits_cells.values())[:3])
+
+
+
+# %% ########## BAR PLOT showing average success rate of photostimulation
 
 pj.bar_with_points(data=[list(expobj.reliability_cells.values())], x_tick_labels=['t-013'], ylims=[0, 100], bar=False, y_label = '% success stims.'
                    title='%s success rate of stim responses' % trial, expand_size_x=2)
