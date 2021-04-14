@@ -634,7 +634,7 @@ for cell in targets:
         # fig.suptitle('Cell %s' % cell)
         # plt.show()
 
-aoutils.plot_photostim_avg(dff_array=targets_dff_filtered, pre_stim=pre_stim, post_stim=post_stim, title=title)
+aoutils.plot_periphotostim_avg(dff_array=targets_dff_filtered, pre_stim=pre_stim, post_stim=post_stim, title=title)
 aoutils.plot_photostim_(dff_array=targets_dff_filtered, pre_stim=pre_stim, post_stim=post_stim, title=title)
 
 # now plot to see what the dF_stdF trace looks like

@@ -106,7 +106,7 @@ sorted_keys = sorted(stds, key=stds.get)  # [1, 3, 2]
 for w in sorted_keys:
     stds_sorted[w] = stds[w]
 
-#%% add a plot for the cells with high std. to make sure that they are not being unfairly excluded out
+#%% make a plot for the cells with high std. to make sure that they are not being unfairly excluded out
 for cell in list(stds_sorted.keys())[-5:]:
     aoplot.plot_flu_trace(expobj,to_plot='dff',  cell=cell, show=False)
     plt.scatter(x=events_loc_cells[cell], y=flu_events_cells[cell], s=0.5, c='darkgreen')
@@ -244,7 +244,7 @@ expobj.post_stim = 3*int(expobj.fps)
 # function for gathering all good photostim cells who respond on average across all trials to the photostim
 # note that the threshold for this is 1 * std of the prestim raw flu (fluorescence trace)
 expobj.targets_dff, expobj.targets_dff_avg, expobj.targets_dfstdF, \
-    expobj.targets_dfstdF_avg, expobj.targets_raw, expobj.targets_raw_avg = \
+expobj.targets_dfstdF_avg, expobj.SLMTargets_stims_raw, expobj.targets_raw_avg = \
     aoutils.get_s2ptargets_stim_traces(expobj=expobj, normalize_to='pre-stim', pre_stim=expobj.pre_stim,
                                        post_stim=expobj.post_stim)
 
@@ -277,11 +277,11 @@ idxs = [expobj.cell_id.index(cell) for cell in expobj.good_cells]
 expobj.raw_df = pd.DataFrame(expobj.raw[idxs, :], columns=columns, index=index)
 
 
-# raw baseline Flu traces of all good cells
-columns = [f'{num}' for num in range(baseline_frames[0], baseline_frames[1])]
-index = [f'{num}' for num in expobj.good_cells]
-idxs = [expobj.cell_id.index(cell) for cell in expobj.good_cells]
-expobj.baseline_raw_df = pd.DataFrame(expobj.baseline_raw[idxs, :], columns=columns, index=index)
+# # raw baseline Flu traces of all good cells
+# columns = [f'{num}' for num in range(baseline_frames[0], baseline_frames[1])]
+# index = [f'{num}' for num in expobj.good_cells]
+# idxs = [expobj.cell_id.index(cell) for cell in expobj.good_cells]
+# expobj.baseline_raw_df = pd.DataFrame(expobj.baseline_raw[idxs, :], columns=columns, index=index)
 
 
 
@@ -339,6 +339,7 @@ print('\nThe avg. dF/stdF responses of photostim targets is: %s' % np.mean(
 
 # %% Convert stim responses TO NAN for cells inside the sz boundary at each of the stim timings
 
+## for post 4ap trials with seizures only
 for stim in expobj.dfstdf_all_cells.columns[1:]:
     if stim in expobj.cells_sz_stim.keys():
         cells_toko = expobj.cells_sz_stim[stim]

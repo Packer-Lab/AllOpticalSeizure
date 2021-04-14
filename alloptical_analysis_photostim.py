@@ -29,172 +29,39 @@ expobj, experiment = aoutils.import_expobj(trial=trial, date=date, pkl_path=pkl_
 
 ########################################################################################################################
 
-# %% PLOT AVG PHOTOSTIM PRE- POST- TRACE AVGed OVER ALL PHOTOSTIM. TRIALS - PHOTOSTIM TARGETTED cells
+# %% PLOT AVG PHOTOSTIM PRE- POST- TRACE AVGed OVER ALL PHOTOSTIM. TRIALS - PHOTOSTIM TARGETTED suite2p cells
 
 # x = np.asarray([i for i in expobj.good_photostim_cells_stim_responses_dFF[0]])
 x = np.asarray([i for i in expobj.targets_dfstdF_avg])
 # y_label = 'pct. dFF (normalized to prestim period)'
 y_label = 'dFstdF (normalized to prestim period)'
 
-aoplot.plot_photostim_avg(arr=x, expobj=expobj, stim_duration=expobj.duration_frames, pre_stim=expobj.pre_stim,
-                          post_stim=expobj.post_stim,
-                          title=(experiment + '- responses of all photostim targets'),
-                          y_label=y_label, x_label='Time post-stimulation (seconds)')
-
-# %% plot all photostim targets -- move to analysis_photostim.py soon
-
-# aoplot.plot_photostim_subplots(array=expobj.targets_raw, expobj=expobj, x_label='Frames',
-#                                y_label='Raw Flu',
-#                                title=(experiment))
-
-expobj.dff_targets = aoutils.normalize_dff(np.array(expobj.targets_raw))
+aoplot.plot_periphotostim_avg(arr=x, expobj=expobj, stim_duration=expobj.duration_frames, pre_stim=expobj.pre_stim,
+                              post_stim=expobj.post_stim,
+                              title=(experiment + '- responses of all photostim targets'),
+                              y_label=y_label, x_label='Time post-stimulation (seconds)')
 
 
-# make rolling average for these plots to smooth out the traces a little more
-w = 10
-array = [(np.convolve(trace, np.ones(w), 'valid') / w) for trace in expobj.targets_raw[:3]]
-
-len_ = len(array)
-fig, axs = plt.subplots(nrows=len_, sharex=True, figsize=(30, 3 * len_))
-for i in range(len(axs)):
-    axs[i].plot(array[i], linewidth=1, color='black')
-    for j in expobj.stim_start_frames:
-        axs[i].axvline(x=j, c='gray', alpha=0.7, linestyle='--')
-    if len_ == len(expobj.s2p_cell_targets):
-        axs[i].set_title('Cell # %s' % expobj.s2p_cell_targets[i])
-plt.show()
-
-# %% plot the average peri- photostim response for individual cells, including individual traces for each stim.
-def get_alltargets_stim_traces_norm(expobj, targets_idx=None, subselect_cells=None, pre_stim=15, post_stim=200):
-    """
-    primary function to measure the dFF traces for photostimulated targets.
-    :param expobj:
-    :param normalize_to: str; either "baseline" or "pre-stim"
-    :param pre_stim: number of frames to use as pre-stim
-    :param post_stim: number of frames to use as post-stim
-    :return: lists of individual targets dFF traces, and averaged targets dFF over all stims for each target
-    """
-    stim_timings = expobj.stim_start_frames
-
-    if subselect_cells:
-        num_cells = len(expobj.targets_raw[subselect_cells])
-        targets_trace = expobj.targets_raw[subselect_cells]
-    else:
-        num_cells = len(expobj.targets_raw)
-        targets_trace = expobj.targets_raw
-
-    # collect photostim timed average dff traces of photostim targets
-    targets_dff = np.zeros([num_cells, len(expobj.stim_start_frames), pre_stim + post_stim])
-    targets_dff_avg = np.zeros([num_cells, pre_stim + post_stim])
-
-    targets_dfstdF = np.zeros([num_cells, len(expobj.stim_start_frames), pre_stim + post_stim])
-    targets_dfstdF_avg = np.zeros([num_cells, pre_stim + post_stim])
-
-    targets_raw = np.zeros([num_cells, len(expobj.stim_start_frames), pre_stim + post_stim])
-    targets_raw_avg = np.zeros([num_cells, pre_stim + post_stim])
-
-    if targets_idx is not None:
-        flu = [targets_trace[targets_idx][stim - pre_stim: stim + post_stim] for stim in stim_timings if
-               stim not in expobj.seizure_frames]
-
-        # flu_dfstdF = []
-        # flu_dff = []
-        for i in range(len(flu)):
-            trace = flu[i]
-            mean_pre = np.mean(trace[0:pre_stim])
-            trace_dff = ((trace - mean_pre) / mean_pre) * 100
-            std_pre = np.std(trace[0:pre_stim])
-            dFstdF = (trace - mean_pre) / std_pre  # make dF divided by std of pre-stim F trace
-
-            targets_raw[targets_idx, i] = trace
-            targets_dff[targets_idx, i] = trace_dff
-            targets_dfstdF[targets_idx, i] = dFstdF
-        return targets_raw[targets_idx], targets_dff[targets_idx], targets_dfstdF[targets_idx]
-
-    else:
-        for cell_idx in range(num_cells):
-            # print('considering cell # %s' % cell)
-            flu = [targets_trace[cell_idx][stim - pre_stim: stim + post_stim] for stim in stim_timings if
-                   stim not in expobj.seizure_frames]
-
-            # flu_dfstdF = []
-            # flu_dff = []
-            for i in range(len(flu)):
-                trace = flu[i]
-                mean_pre = np.mean(trace[0:pre_stim])
-                trace_dff = ((trace - mean_pre) / mean_pre) * 100
-                std_pre = np.std(trace[0:pre_stim])
-                dFstdF = (trace - mean_pre) / std_pre  # make dF divided by std of pre-stim F trace
-
-                targets_raw[cell_idx, i] = trace
-                targets_dff[cell_idx, i] = trace_dff
-                targets_dfstdF[cell_idx, i] = dFstdF
-                # flu_dfstdF.append(dFstdF)
-                # flu_dff.append(trace_dff)
-
-            # targets_dff.append(flu_dff)  # contains all individual dFF traces for all stim times
-            # targets_dff_avg.append(np.nanmean(flu_dff, axis=0))  # contains the dFF trace averaged across all stim times
-
-            # targets_dfstdF.append(flu_dfstdF)
-            # targets_dfstdF_avg.append(np.nanmean(flu_dfstdF, axis=0))
-
-            # targets_raw.append(flu)
-            # targets_raw_avg.append(np.nanmean(flu, axis=0))
-
-        targets_dff_avg = np.mean(targets_dff, axis=1)
-        targets_dfstdF_avg = np.mean(targets_dfstdF, axis=1)
-        targets_raw_avg = np.mean(targets_raw, axis=1)
-
-        return targets_dff, targets_dff_avg, targets_dfstdF, targets_dfstdF_avg, targets_raw, targets_raw_avg
-
-
-# targets_dff, targets_dff_avg, targets_dfstdF, targets_dfstdF_avg, targets_raw, targets_raw_avg = get_alltargets_stim_traces_norm(expobj)
-# array = (np.convolve(targets_raw[targets_idx], np.ones(w), 'valid') / w)
-
-targets_idx = 0
-for targets_idx in range(24, 50):
-    targets_raw, targets_dff, targets_dfstdF = get_alltargets_stim_traces_norm(expobj, targets_idx=targets_idx, pre_stim=int(expobj.fps),
-                                                                               post_stim=5*int(expobj.fps))
-    w = 2
-    array = [(np.convolve(trace, np.ones(w), 'valid') / w) for trace in targets_raw]
-
-    aoplot.plot_photostim_avg(arr=targets_dfstdF, expobj=expobj, stim_duration=expobj.duration_frames,
-                              title='Cell' + str(targets_idx), pre_stim=int(expobj.fps), post_stim=5*int(expobj.fps))
-
-###
-len_ = len(array)
-fig, axs = plt.subplots(nrows=len_, sharex=True, figsize=(30, 3 * len_))
-for i in range(len(axs)):
-    axs[i].plot(array[i], linewidth=1, color='black')
-    for j in expobj.stim_start_frames:
-        axs[i].axvline(x=j, c='gray', alpha=0.7, linestyle='--')
-    if len_ == len(expobj.s2p_cell_targets):
-        axs[i].set_title('Cell # %s' % expobj.s2p_cell_targets[i])
-plt.show()
-
-
-
-# %% PLOT ENTIRE TRIAL - targeted cells plotted individually as subplots
+# %% PLOT ENTIRE TRIAL - targeted suite2p cells plotted individually as subplots
 
 expobj.raw_s2ptargets = [expobj.raw[expobj.cell_id.index(i)] for i in expobj.s2p_cell_targets if i in expobj.good_photostim_cells_all]
 expobj.dff_s2ptargets = aoutils.normalize_dff(np.array(expobj.raw_s2ptargets))
 # expobj.targets_dff_base = aoutils.normalize_dff_baseline(
 #     arr=expobj.raw_df.loc[[str(x) for x in expobj.s2p_cell_targets]],
 #     baseline_array=expobj.baseline_raw_df)
-# plot_photostim_subplots(dff_array=dff_targets,
+# plot_photostim_subplots(dff_array=SLMTargets_dff,
 #                 title=(experiment + '%s responses of responsive cells' % len(expobj.good_photostim_cells_stim_responses_dFF)))
 to_plot = expobj.dff_s2ptargets
 
-aoplot.plot_photostim_overlap_plots(array=to_plot, expobj=expobj, exclude_id=[expobj.s2p_cell_targets.index(cell) for cell in [211, 400, 542]],
-                                    y_lims=[0, 5000], title=(experiment + '-'))
+aoplot.plot_photostim_traces_overlap(array=to_plot, expobj=expobj, exclude_id=[expobj.s2p_cell_targets.index(cell) for cell in [211, 400, 542]],
+                                     y_lims=[0, 5000], title=(experiment + '-'))
 
-aoplot.plot_photostim_subplots(array=to_plot, expobj=expobj, x_label='Frames',
-                               y_label='Raw Flu',
-                               title=(experiment))
+aoplot.plot_photostim_traces(array=to_plot, expobj=expobj, x_label='Frames',
+                             y_label='Raw Flu', title=experiment)
 
 
 # # plot the photostim targeted cells as a heatmap
-# dff_array = expobj.dff_targets[:, :]
+# dff_array = expobj.SLMTargets_dff[:, :]
 # w = 10
 # dff_array = [(np.convolve(trace, np.ones(w), 'valid') / w) for trace in dff_array]
 # dff_array = np.asarray(dff_array)
@@ -204,13 +71,219 @@ aoplot.plot_photostim_subplots(array=to_plot, expobj=expobj, x_label='Frames',
 # plt.show()
 
 
+
+# %% plot SLM photostim individual targets -- full traces, dff normalized
+
+# aoplot.plot_photostim_traces(array=expobj.SLMTargets_stims_raw, expobj=expobj, x_label='Frames',
+#                                y_label='Raw Flu',
+#                                title=(experiment))
+
+expobj.dff_SLMTargets = aoutils.normalize_dff(np.array(expobj.raw_SLMTargets))
+
+
+# make rolling average for these plots to smooth out the traces a little more
+w = 10
+to_plot = [(np.convolve(trace, np.ones(w), 'valid') / w) for trace in expobj.SLMTargets_dff[:3]]
+
+aoplot.plot_photostim_traces(array=to_plot, expobj=expobj, x_label='Frames',
+                             y_label='Raw Flu', title=experiment)
+
+# len_ = len(array)
+# fig, axs = plt.subplots(nrows=len_, sharex=True, figsize=(30, 3 * len_))
+# for i in range(len(axs)):
+#     axs[i].plot(array[i], linewidth=1, color='black')
+#     for j in expobj.stim_start_frames:
+#         axs[i].axvline(x=j, c='gray', alpha=0.7, linestyle='--')
+#     if len_ == len(expobj.s2p_cell_targets):
+#         axs[i].set_title('Cell # %s' % expobj.s2p_cell_targets[i])
+# plt.show()
+
+# %% plot peri- photostim traces for individual SLM target individual, incl. individual traces for each stim
+
+pre_stim = expobj.pre_stim
+post_stim = expobj.post_stim
+expobj.SLMTargets_stims_dff, expobj.SLMTargets_stims_dffAvg, expobj.SLMTargets_stims_dfstdF, \
+expobj.SLMTargets_stims_dfstdF_avg, expobj.SLMTargets_stims_raw, expobj.SLMTargets_stims_rawAvg = \
+    expobj.get_alltargets_stim_traces_norm(pre_stim=pre_stim, post_stim=post_stim)
+
+
+# array = (np.convolve(SLMTargets_stims_raw[targets_idx], np.ones(w), 'valid') / w)
+
+# targets_idx = 0
+plot = False
+for i in range(0, expobj.n_targets_total):
+    SLMTargets_stims_raw, SLMTargets_stims_dff, SLMtargets_stims_dfstdF = expobj.get_alltargets_stim_traces_norm(targets_idx=i, pre_stim=pre_stim,
+                                                                                               post_stim=post_stim)
+    if plot:
+        w = 2
+        array = [(np.convolve(trace, np.ones(w), 'valid') / w) for trace in SLMTargets_stims_raw]
+
+        aoplot.plot_periphotostim_avg(arr=SLMtargets_stims_dfstdF, expobj=expobj, stim_duration=expobj.duration_frames,
+                                      title='Cell ' + str(i), pre_stim=pre_stim, post_stim=post_stim, color='steelblue', y_lims=[-0.5, 2.5])
+    # plt.show()
+
+
+
+
+
 # %% RELIABILITY MEASUREMENTS and PLOT - PHOTOSTIM TARGETED CELLS
 # measure, for each cell, the pct of trials in which the dFF > 20% post stim (normalized to pre-stim avgF for the trial and cell)
 # can plot this as a bar plot for now showing the distribution of the reliability measurement
 
-expobj.reliability = aoutils.calculate_reliability(expobj=expobj, dfstdf_threshold=0.3)
-pj.bar_with_points(data=[list(expobj.reliability.values())], x_tick_labels=['t-013'], ylims=[0, 100], bar=False,
-                   title='%s reliability of stim responses' % trial, expand_size_x=2)
+# collect raw traces around stims for s2p targets
+for cell in expobj.s2p_cell_targets:
+    # print('considering cell # %s' % cell)
+    if cell in expobj.cell_id:
+        cell_idx = expobj.cell_id.index(cell)
+        # collect a trace of prestim and poststim raw fluorescence for each stim time
+        flu_all_stims = [expobj.raw[cell_idx][stim - expobj.pre_stim: stim + expobj.post_stim] for stim in expobj.stim_start_frames]
+## these two should be equal actually already
+flu_all_stims = expobj.targets_dfstdF
+
+def calculate_reliability(expobj, cell_ids: list, raw_traces_stims=None, dfstdf_threshold=None,
+                          dff_threshold=None, pre_stim=10, sz_filter=False, verbose=False, plot=False):
+    """calculates the percentage of successful photoresponsive trials for each targeted cell, where success is post
+     stim response over the dff_threshold. the filter_for_sz argument is set to True when needing to filter out stim timings
+     that occured when the cell was classified as inside the sz boundary."""
+
+    reliability_cells = {}  # dict will be used to store the reliability results for each targeted cell
+    hits_cells = {}
+    responses_cells = {}
+    targets_dff_all_stimtrials = {}  # dict will contain the peri-stim dFF for each cell by the cell_idx
+    stim_timings = expobj.stim_start_frames
+
+    # assert list(stim_timings) == list(expobj.cells_sz_stim.keys())  # dont really need this assertion because you wont necessarily always look at the sz boundary for all stims every trial
+    # stim_timings = expobj.cells_sz_stim.keys()
+    if dff_threshold:
+        threshold = round(dff_threshold)
+        # dff = True
+        if raw_traces_stims is None:
+            df = expobj.dff_responses_all_cells
+    elif dfstdf_threshold:
+        threshold = dfstdf_threshold
+        # dff = False
+        if raw_traces_stims is None:
+            df = expobj.dfstdf_all_cells
+    else:
+        raise Exception("need to specify either dff_threshold or dfstdf_threshold value to use")
+
+    # if you need to filter out cells based on their location inside the sz or not, you need a different approach
+    # where you are for looping over each stim and calculating the reliability of cells like that. BUT the goal is still to collect reliability values by cell.
+
+    if raw_traces_stims is None:
+        for cell in expobj.s2p_cell_targets:
+            # print('considering cell # %s' % cell)
+            # if cell in expobj.cell_id:
+            if sz_filter:
+                if hasattr(expobj, 'cells_sz_stim'):
+                    stims_to_use = [str(stim) for stim in stim_timings
+                                    if stim not in expobj.cells_sz_stim.keys() or cell not in expobj.cells_sz_stim[
+                                        stim]]  # select only the stim times where the cell IS NOT inside the sz boundary
+                else:
+                    print('no information about cell locations in seizures by stim available, therefore not excluding any stims based on sz state')
+                    stims_to_use = [str(stim) for stim in stim_timings]
+            else:
+                print('not excluding any stims based on sz state')
+                stims_to_use = [str(stim) for stim in stim_timings]
+            counter = len(stims_to_use)
+            responses = df.loc[
+                cell, stims_to_use]  # collect the appropriate responses for the current cell at the selected stim times
+            success = sum(i >= threshold for i in responses)
+
+            reliability[cell] = success / counter * 100.
+            reliability[cell] = success / counter * 100.
+            if verbose:
+                print(cell, reliability[cell], 'calc over %s stims' % counter)
+
+    elif raw_traces_stims is not None:
+        if sz_filter:
+            raise Exception("the seizure filtering by stims + cells functionality is only available for s2p defined cell targets as of now")
+
+        for idx in range(len(cell_ids)):
+            success = 0
+            counter = 0
+            responses = []
+            hits = []
+            for trace in raw_traces_stims[idx]:
+                counter += 1
+                # calculate dFF (noramlized to pre-stim) for each trace
+                pre_stim_mean = np.mean(trace[0:pre_stim])
+                if dff_threshold:  # calculate dFF response for each stim trace
+                    response_trace = ((trace - pre_stim_mean) / pre_stim_mean) * 100
+                else:  # calculate dF_stdF response for each stim trace
+                    std_pre = np.std(trace[0:expobj.pre_stim])
+                    response_trace = ((trace - pre_stim_mean) / std_pre)
+
+                # calculate if the current trace beats the threshold for calculating reliability (note that this happens over a specific window just after the photostim)
+                response = np.nanmean(response_trace[
+                                      pre_stim + expobj.duration_frames:pre_stim + 3 * expobj.duration_frames])  # calculate the dF over pre-stim mean F response within the response window
+                responses.append(response)
+                if response >= threshold:
+                    success += 1
+                    hits.append([1])
+                else:
+                    hits.append([0])
+
+            reliability_cells[idx] = success / counter * 100.
+            hits_cells[idx] = hits
+            responses_cells[idx] = responses
+            if verbose:
+                print('Cell # %s: %s percent hits over %s stims' % (cell_ids[idx], reliability_cells[idx], counter))
+            if plot:
+                aoplot.plot_periphotostim_avg(arr=SLMtargets_stims_dfstdF[idx], expobj=expobj, stim_duration=expobj.duration_frames,
+                                              x_label='frames', pre_stim=pre_stim, post_stim=post_stim, color='steelblue',
+                                              y_lims=[-0.5, 2.5], show=False, title='Cell ' + str(idx))
+                m = expobj.duration_frames + (3 * expobj.duration_frames)/2 - pre_stim
+                x = np.random.randn(len(responses)) * 1.5 + m
+                plt.scatter(x, responses, c='chocolate', zorder=3, alpha=0.6)
+                plt.show()
+    else:
+        raise Exception("basically the error is that somehow the raw traces provided weren't detected")
+
+        # old version
+        # for cell in expobj.s2p_cell_targets:
+        #     # print('considering cell # %s' % cell)
+        #     if cell in expobj.cell_id:
+        #         cell_idx = expobj.cell_id.index(cell)
+        #         # collect a trace of prestim and poststim raw fluorescence for each stim time
+        #         flu_all_stims = [expobj.raw[cell_idx][stim - pre_stim: stim + post_stim] for stim in stim_timings]
+        #         success = 0
+        #         counter = 0
+        #         for trace in flu_all_stims:
+        #             counter += 1
+        #             # calculate dFF (noramlized to pre-stim) for each trace
+        #             pre_stim_mean = np.mean(trace[0:pre_stim])
+        #             if dff:
+        #                 response_trace = ((trace - pre_stim_mean) / pre_stim_mean) * 100
+        #             elif not dff:
+        #                 std_pre = np.std(trace[0:expobj.pre_stim])
+        #                 response_trace = ((trace - pre_stim_mean) / std_pre) * 100
+        #
+        #             # calculate if the current trace beats dff_threshold for calculating reliability (note that this happens over a specific window just after the photostim)
+        #             response = np.nanmean(response_trace[
+        #                                   pre_stim + expobj.duration_frames:pre_stim + 3 * expobj.duration_frames])  # calculate the dF over pre-stim mean F response within the response window
+        #             if response >= threshold:
+        #                 success += 1
+        #
+        #         reliability[cell] = success / counter * 100.
+        #         print(cell, reliability, 'calc over %s stims' % counter)
+
+    print("avg reliability is: %s" % (round(np.nanmean(list(reliability_cells.values())), 2)))
+    return reliability_cells, hits_cells, responses_cells
+
+
+cell_ids = list(range(len(SLMtargets_stims_dfstdF)))
+
+expobj.reliability_cells, expobj.hits_cells, expobj.responses_cells = \
+    aoutils.calculate_reliability(expobj, cell_ids=cell_ids, raw_traces_stims=expobj.SLMTargets_stims_raw,
+                                  dfstdf_threshold=0.3, pre_stim=expobj.pre_stim, sz_filter=False,
+                                  verbose=True, plot=True)
+
+
+# %% ########## BAR PLOT showing average res
+
+pj.bar_with_points(data=[list(expobj.reliability_cells.values())], x_tick_labels=['t-013'], ylims=[0, 100], bar=False, y_label = '% success stims.'
+                   title='%s success rate of stim responses' % trial, expand_size_x=2)
 
 
 t009_pre_4ap_reliability = list(expobj.reliability.values())
@@ -227,10 +300,10 @@ x = np.asarray([i for i in expobj.dfstdF_traces_avg])
 # y_label = 'pct. dFF (normalized to prestim period)'
 y_label = 'dFstdF (normalized to prestim period)'
 
-aoplot.plot_photostim_avg(dff_array=x, expobj=expobj, stim_duration=expobj.duration_frames, pre_stim=expobj.pre_stim,
-                          post_stim=expobj.post_stim,
-                          title=(experiment + '- responses of all photostim targets'),
-                          y_label=y_label, x_label='Time post-stimulation (seconds)')
+aoplot.plot_periphotostim_avg(dff_array=x, expobj=expobj, stim_duration=expobj.duration_frames, pre_stim=expobj.pre_stim,
+                              post_stim=expobj.post_stim,
+                              title=(experiment + '- responses of all photostim targets'),
+                              y_label=y_label, x_label='Time post-stimulation (seconds)')
 
 # %% PLOT HEATMAP OF AVG PRE- POST TRACE AVGed OVER ALL PHOTOSTIM. TRIALS - ALL CELLS (photostim targets at top) - Lloyd style :D
 

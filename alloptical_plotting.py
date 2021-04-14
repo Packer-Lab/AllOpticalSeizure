@@ -34,8 +34,23 @@ def plot_cell_radius_aspectr(expobj, stat, to_plot):
 
 
 ### plot entire trace of individual targeted cells as super clean subplots, with the same y-axis lims
-def plot_photostim_subplots(array, expobj, title='', y_min=None, y_max=None, x_label=None,
-                            y_label=None, save_fig=None):
+def plot_photostim_traces(array, expobj, title='', y_min=None, y_max=None, x_label=None,
+                          y_label=None, save_fig=None, **kwargs):
+    """
+
+    :param array:
+    :param expobj:
+    :param title:
+    :param y_min:
+    :param y_max:
+    :param x_label:
+    :param y_label:
+    :param save_fig:
+    :param kwargs:
+        options include:
+            hits: list; a list of 1s and 0s that is used to add a scatter point to the plot at stim_start_frames indexes at 1s
+    :return:
+    """
     # make rolling average for these plots
     w = 30
     array = [(np.convolve(trace, np.ones(w), 'valid') / w) for trace in array]
@@ -43,15 +58,20 @@ def plot_photostim_subplots(array, expobj, title='', y_min=None, y_max=None, x_l
     len_ = len(array)
     fig, axs = plt.subplots(nrows=len_, sharex=True, figsize=(20, 3 * len_))
     for i in range(len(axs)):
-        axs[i].plot(array[i], linewidth=1, color='black')
+        axs[i].plot(array[i], linewidth=1, color='black', zorder=2)
         if y_min != None:
             axs[i].set_ylim([y_min, y_max])
         for j in expobj.stim_start_frames:
-            axs[i].axvline(x=j, c='gray', alpha=0.7)
+            axs[i].axvline(x=j, c='gray', alpha=0.7, zorder=1)
+        if 'scatter' in kwargs.keys():
+            x = expobj.stim_start_frames[kwargs['scatter'][i]]
+            y = [0] * len(x)
+            axs[i].scatter(x, y, c='chocolate', zorder=3)
         if len_ == len(expobj.s2p_cell_targets):
             axs[i].set_title('Cell # %s' % expobj.s2p_cell_targets[i])
 
-    axs[0].set_title((title + ' - %s' % len_ + ' cells'), horizontalalignment='left', verticalalignment='top', pad=20,
+
+    axs[0].set_title((title + ' - %s' % len_ + ' cells'), loc='left', verticalalignment='top', pad=20,
                      fontsize=15)
     axs[-1].set_xlabel(x_label)
     axs[-1].set_ylabel(y_label)
@@ -62,8 +82,8 @@ def plot_photostim_subplots(array, expobj, title='', y_min=None, y_max=None, x_l
     plt.show()
 
 
-def plot_photostim_overlap_plots(array, expobj, exclude_id=[], spacing=1, title='', y_lims=None,
-                                 x_label='Time (seconds)', save_fig=None):
+def plot_photostim_traces_overlap(array, expobj, exclude_id=[], spacing=1, title='', y_lims=None,
+                                  x_label='Time (seconds)', save_fig=None):
     '''
     :param array:
     :param expobj:
@@ -112,11 +132,29 @@ def plot_photostim_overlap_plots(array, expobj, exclude_id=[], spacing=1, title=
 
 
 ### photostim analysis - PLOT avg over all photstim. trials traces from PHOTOSTIM TARGETTED cells
-def plot_photostim_avg(arr, expobj, stim_duration, pre_stim=10, post_stim=200, title='', y_min=None, y_max=None,
-                       x_label=None, y_label=None, savepath=None):
+def plot_periphotostim_avg(arr, expobj, stim_duration, pre_stim=10, post_stim=200, title='', y_lims=None,
+                           x_label=None, y_label=None, **kwargs):
+    """
+    plot trace across all stims
+    :param arr:
+    :param expobj:
+    :param stim_duration:
+    :param pre_stim:
+    :param post_stim:
+    :param title:
+    :param y_lims:
+    :param x_label:
+    :param y_label:
+    :param kwargs:
+        options include:
+            'color': str, color of the individual traces behind the mean trace
+            'savepath': str, path to save plot to
+            'show': bool = to show the plot or not
+    :return:
+    """
     if pre_stim and post_stim:
-        arr = arr[:, pre_stim: pre_stim + post_stim]
-        x = list(range(-pre_stim, post_stim-pre_stim))
+        arr = arr[:, expobj.pre_stim - pre_stim: expobj.pre_stim + post_stim]
+        x = list(range(-pre_stim, post_stim))
     else:
         x = list(range(arr.shape[1]))
 
@@ -127,18 +165,22 @@ def plot_photostim_avg(arr, expobj, stim_duration, pre_stim=10, post_stim=200, t
     ax.margins(0)
     ax.axvspan(0, stim_duration, alpha=0.2, color='tomato')
     for cell_trace in arr:
-        ax.plot(x, cell_trace, linewidth=0.5, alpha=0.2, c='steelblue')
-    ax.plot(x, flu_avg, color='black', linewidth=2)  # plot average trace
-    if y_min != None:
-        ax.set_ylim([y_min, y_max])
+        if 'color' in kwargs.keys():
+            ax.plot(x, cell_trace, linewidth=1, alpha=0.6, c=kwargs['color'], zorder=1)
+        else:
+            ax.plot(x, cell_trace, linewidth=1, alpha=0.5, zorder=1)
+    ax.plot(x, flu_avg, color='black', linewidth=2.3, zorder=2)  # plot average trace
+    ax.set_ylim(y_lims)
     ax.set_title((title + ' - %s' % len_ + ' traces'), horizontalalignment='center', verticalalignment='top', pad=20,
                  fontsize=10)
 
     # change x axis ticks to seconds
-    labels = [item for item in ax.get_xticks()]
-    for item in labels:
-        labels[labels.index(item)] = round(item / expobj.fps, 1)
-    ax.set_xticklabels(labels)
+    if x_label == 'time':
+        label_format = '{:,.2f}'
+        labels = [item for item in ax.get_xticks()]
+        for item in labels:
+            labels[labels.index(item)] = round(item / expobj.fps, 2)
+        ax.set_xticklabels([label_format.format(x) for x in labels])
 
     # ax.spines['top'].set_visible(False)
     # ax.spines['right'].set_visible(False)
@@ -146,9 +188,15 @@ def plot_photostim_avg(arr, expobj, stim_duration, pre_stim=10, post_stim=200, t
 
     ax.set_xlabel(x_label)
     ax.set_ylabel(y_label)
-    if savepath:
-        plt.savefig(savepath)
-    plt.show()
+
+    if 'savepath' in kwargs.keys():
+        plt.savefig(kwargs['savepath'])
+
+    if 'show' in kwargs.keys():
+        if kwargs['show'] is True:
+            plt.show()
+    else:
+        plt.show()
 
 
 def plot_s2p_raw(expobj, cell_id):
@@ -244,8 +292,7 @@ def plot_lfp_stims(expobj, title=None):
 
 
 
-        if title is not None:
-            plt.suptitle(title)
+        plt.suptitle(title)
         plt.show()
     else:
         raise Exception('look, you need to create stims_in_sz and stims_out_sz attributes first (or rewrite this function)')
@@ -293,8 +340,7 @@ def plot_traces_heatmap(data, vmin=None, vmax=None, stim_on=None, stim_off=None,
         x_c = np.linspace(0, data.shape[1] - 1, len(kwargs['lfp_signal']))
         plt.plot(x_c, kwargs['lfp_signal'] * 50 + data.shape[0] - 100, c='black')
 
-    if title is not None:
-        plt.suptitle(title)
+    plt.suptitle(title)
 
     if show:
         plt.show()
