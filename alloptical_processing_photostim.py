@@ -31,7 +31,7 @@ if not hasattr(expobj, 's2p_path'):
 
 if not hasattr(expobj, 'suite2p_trials'):
     to_suite2p = ['t-005', 't-006', 't-008', 't-009', 't-010', 't-011', 't-012', 't-013']  # specify all trials that were used in the suite2p runtotal_frames_stitched = 0
-    baseline_trials = ['t-005', 't-006']  # specify which trials to use as spont baseline
+    baseline_trials = ['t-005', 't-006', 't-008']  # specify which trials to use as spont baseline
     # note ^^^ this only works currently when the spont baseline trials all come first, and also back to back
 
     expobj.suite2p_trials = to_suite2p

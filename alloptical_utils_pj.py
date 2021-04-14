@@ -44,11 +44,27 @@ def points_in_circle_np(radius, x0=0, y0=0, ):
     for x, y in zip(x_[x], y_[y]):
         yield x, y
 
+def import_expobj(trial, date, pkl_path):
+    with open(pkl_path, 'rb') as f:
+        print('\nimporting expobj for "%s, %s" from: %s' % (date, trial, pkl_path))
+        expobj = pickle.load(f)
+        experiment = '%s: %s, %s, %s' % (
+            expobj.metainfo['animal prep.'], expobj.metainfo['trial'], expobj.metainfo['exptype'],
+            expobj.metainfo['comments'])
+        print('\n\nDONE IMPORT of %s' % experiment)
+    if hasattr(expobj, 'paq_rate'):
+        pass
+    else:
+        print('\n-need to run paqProcessing to update paq attr.s in expobj')
+        expobj.paqProcessing()
+        expobj.save_pkl()
+
+    return expobj, experiment
 
 ## this should technically be the biggest super class lol
 class TwoPhotonImaging:
 
-    def __init__(self, tiff_path_dir, tiff_path, paq_path, suite2p_path=None, suite2p_run=False):
+    def __init__(self, tiff_path_dir, tiff_path, paq_path, metainfo, suite2p_path=None, suite2p_run=False):
         """
         :param paths: list of key paths (tiff_loc
         :param suite2p_path: path to the suite2p outputs (plane0 file? or ops file? not sure yet)
@@ -58,6 +74,7 @@ class TwoPhotonImaging:
         self.tiff_path_dir = tiff_path_dir
         self.tiff_path = tiff_path
         self.paq_path = paq_path
+        self.metainfo = metainfo
 
         self._parsePVMetadata()
 
@@ -350,8 +367,9 @@ class TwoPhotonImaging:
 class alloptical(TwoPhotonImaging):
 
     def __init__(self, paths, metainfo, stimtype):
-        TwoPhotonImaging.__init__(self, tiff_path_dir=paths[0], tiff_path=paths[1], paq_path=paths[3], suite2p_path=None, suite2p_run=False)
-        self.metainfo = metainfo
+        TwoPhotonImaging.__init__(self, tiff_path_dir=paths[0], tiff_path=paths[1], paq_path=paths[3], metainfo=metainfo,
+                                  suite2p_path=None, suite2p_run=False)
+        # self.metainfo = metainfo
         self.stim_type = stimtype
 
         # self.tiff_path_dir = paths[0]
@@ -2009,23 +2027,6 @@ class OnePhotonStim(TwoPhotonImaging):
 
 
 # import expobj from the pkl file
-def import_expobj(trial, date, pkl_path):
-    with open(pkl_path, 'rb') as f:
-        print('\nimporting expobj for "%s, %s" from: %s' % (date, trial, pkl_path))
-        expobj = pickle.load(f)
-        experiment = '%s: %s, %s, %s' % (
-            expobj.metainfo['animal prep.'], expobj.metainfo['trial'], expobj.metainfo['exptype'],
-            expobj.metainfo['comments'])
-        print('\n\nDONE IMPORT of %s' % experiment)
-    if hasattr(expobj, 'paq_rate'):
-        pass
-    else:
-        print('\n-need to run paqProcessing to update paq attr.s in expobj')
-        expobj.paqProcessing()
-        expobj.save_pkl()
-
-    return expobj, experiment
-
 
 ## Rob's functions for generating some important commonly used image types.
 def s2pMeanImage(s2p_path):

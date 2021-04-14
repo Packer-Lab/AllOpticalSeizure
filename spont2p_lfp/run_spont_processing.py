@@ -33,14 +33,15 @@ def prep4suite2p(expobj, trial, paths):
         np.save('%s/bad_frames.npy' % tiff_path_dir,
                 bad_frames)  # save to npy file and remember to move npy file to tiff folder before running with suite2p
 
-def run_spont_processing(trial, paths, analysis_save_path):
+def run_spont_processing(trial, paths, analysis_save_path, metainfo):
 
     tiff_path_dir = paths[0]
+    tiff_path = paths[1]
     paq_path = paths[2]
 
     print('\n Processing spont. trial # %s' % trial)
 
-    expobj = ao.TwoPhotonImaging(tiff_path_dir, paq_path)
+    expobj = ao.TwoPhotonImaging(tiff_path_dir, tiff_path, paq_path, metainfo)
 
     prep4suite2p(expobj, trial, paths)
 
@@ -65,13 +66,24 @@ def run_spont_processing(trial, paths, analysis_save_path):
 
 #%% make sure to run EphysViewer.m from MATLAB if you need to specify any bad frames!
 # trial = 't-001'
-trials = ['t-007']
-data_path_base = '/home/pshah/mnt/qnap/Data/2021-01-10'
-animal_prep = 'PS06'
-date = '2021-01-10'
+trials = ['t-005', 't-006', 't-008']
+data_path_base = '/home/pshah/mnt/qnap/Data/2020-12-18'
+animal_prep = 'RL108'
+date = '2020-12-18'
+exp_type = 'spont imaging'
+comments = 'spont imaging period before running alloptical experiment'
+
 
 for trial in trials:
-    paqs_loc = '%s/%s_PS06_%s.paq' % (data_path_base, date, trial[2:])  # path to the .paq files for the selected trials
+    metainfo = {
+        'animal prep.': animal_prep,
+        'trial': trial,
+        'date': date,
+        'exptype': exp_type,
+        'data_path_base': data_path_base,
+        'comments': comments
+    }
+    paqs_loc = '%s/%s_%s_%s.paq' % (data_path_base, date, animal_prep, trial[2:])  # path to the .paq files for the selected trials
 
 
     tiffs_loc_dir = '%s/%s_%s' % (data_path_base, date, trial)
@@ -84,4 +96,4 @@ for trial in trials:
 
     paths = [tiffs_loc_dir, tiffs_loc, paqs_loc, matlab_loc, pkl_path]
 
-    run_spont_processing(trial, paths, analysis_save_path=analysis_save_path)
+    run_spont_processing(trial, paths, analysis_save_path=analysis_save_path, metainfo=metainfo)
