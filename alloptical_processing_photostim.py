@@ -13,7 +13,7 @@ import utils.funcs_pj as pj
 import tifffile as tf
 
 ###### IMPORT pkl file containing expobj
-trial = 't-009'
+trial = 't-013'
 date = '2020-12-18'
 pkl_path = "/home/pshah/mnt/qnap/Analysis/%s/%s_%s/%s_%s.pkl" % (date, date, trial, date, trial)
 # pkl_path = "/home/pshah/mnt/qnap/Data/%s/%s_%s/%s_%s.pkl" % (date, date, trial, date, trial)
@@ -59,13 +59,10 @@ expobj.s2pProcessing(s2p_path=expobj.s2p_path, subset_frames=expobj.curr_trial_f
 expobj.target_coords_all = expobj.target_coords
 expobj.s2p_targets()
 
-# expobj.target_coords_all = expobj.target_coords
-
 aoutils.s2pMaskStack(obj=expobj, pkl_list=[pkl_path], s2p_path=expobj.s2p_path,
                      parent_folder=expobj.analysis_save_path)
 
 expobj.raw_traces_from_targets()
-expobj.save()
 
 # stitching of registered TIFFs
 # expobj.stitch_reg_tiffs()

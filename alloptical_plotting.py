@@ -69,12 +69,14 @@ def plot_photostim_traces(array, expobj, title='', y_min=None, y_max=None, x_lab
             axs[i].scatter(x, y, c='chocolate', zorder=3)
         if len_ == len(expobj.s2p_cell_targets):
             axs[i].set_title('Cell # %s' % expobj.s2p_cell_targets[i])
+        if 'line_ids' in kwargs:
+            axs[i].legend(['Target %s' % kwargs['line_ids'][i]], loc='upper left')
 
 
     axs[0].set_title((title + ' - %s' % len_ + ' cells'), loc='left', verticalalignment='top', pad=20,
                      fontsize=15)
     axs[-1].set_xlabel(x_label)
-    axs[-1].set_ylabel(y_label)
+    axs[0].set_ylabel(y_label)
 
     if save_fig is not None:
         plt.savefig(save_fig)

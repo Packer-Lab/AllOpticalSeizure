@@ -15,7 +15,7 @@ import seaborn as sns
 from skimage import draw
 
 ###### IMPORT pkl file containing data in form of expobj
-trial = 't-009'
+trial = 't-013'
 date = '2020-12-18'
 pkl_path = "/home/pshah/mnt/qnap/Analysis/%s/%s_%s/%s_%s.pkl" % (date, date, trial, date, trial)
 # pkl_path = "/home/pshah/mnt/qnap/Data/%s/%s_%s/%s_%s.pkl" % (date, date, trial, date, trial)
@@ -86,7 +86,7 @@ w = 10
 to_plot = [(np.convolve(trace, np.ones(w), 'valid') / w) for trace in expobj.dff_SLMTargets[:3]]
 
 aoplot.plot_photostim_traces(array=to_plot, expobj=expobj, x_label='Frames',
-                             y_label='Raw Flu', title=experiment)
+                             y_label='dFF Flu', title=experiment)
 
 # len_ = len(array)
 # fig, axs = plt.subplots(nrows=len_, sharex=True, figsize=(30, 3 * len_))
@@ -110,7 +110,7 @@ expobj.SLMTargets_stims_dfstdF_avg, expobj.SLMTargets_stims_raw, expobj.SLMTarge
 # array = (np.convolve(SLMTargets_stims_raw[targets_idx], np.ones(w), 'valid') / w)
 
 # targets_idx = 0
-plot = True
+plot = False
 for i in range(0, expobj.n_targets_total):
     SLMTargets_stims_raw, SLMTargets_stims_dff, SLMtargets_stims_dfstdF = expobj.get_alltargets_stim_traces_norm(targets_idx=i, pre_stim=pre_stim,
                                                                                                post_stim=post_stim)
@@ -126,38 +126,41 @@ for i in range(0, expobj.n_targets_total):
 
 
 
-# %% RELIABILITY MEASUREMENTS and PLOT - PHOTOSTIM TARGETED CELLS
+# %% photostim. SUCCESS RATE MEASUREMENTS and PLOT - PHOTOSTIM TARGETED CELLS
 # measure, for each cell, the pct of trials in which the dFF > 20% post stim (normalized to pre-stim avgF for the trial and cell)
 # can plot this as a bar plot for now showing the distribution of the reliability measurement
 
 cell_ids = list(range(len(expobj.SLMTargets_stims_dfstdF)))
 
-expobj.reliability_cells, expobj.hits_cells, expobj.responses_cells = \
-    aoutils.calculate_reliability(expobj, cell_ids=cell_ids, raw_traces_stims=expobj.SLMTargets_stims_raw,
-                                  dfstdf_threshold=0.3, pre_stim=expobj.pre_stim, sz_filter=False,
-                                  verbose=True, plot=True)
+expobj.StimSuccessRate_cells, expobj.hits_cells, expobj.responses_cells = \
+    aoutils.calculate_StimSuccessRate(expobj, cell_ids=cell_ids, raw_traces_stims=expobj.SLMTargets_stims_raw,
+                                      dfstdf_threshold=0.3, pre_stim=expobj.pre_stim, sz_filter=False,
+                                      verbose=True, plot=True)
 
-w = 10
-arr_to_plot = [(np.convolve(trace, np.ones(w), 'valid') / w) for trace in expobj.SLMTargets_stims_dff[:3]]
+random_sub = np.random.randint(0,expobj.n_targets_total, 5)
+w = 3
+arr_to_plot = [(np.convolve(trace, np.ones(w), 'valid') / w) for trace in expobj.raw_SLMTargets[random_sub]]
 
 aoplot.plot_photostim_traces(array=arr_to_plot, expobj=expobj, x_label='Frames',
-                             y_label='Raw Flu', title=experiment, scatter=list(expobj.hits_cells.values())[:3])
+                             y_label='dFF Flu', title=experiment, scatter=np.array(list(expobj.hits_cells.values()))[random_sub],
+                             line_ids=random_sub)
 
 
 
 # %% ########## BAR PLOT showing average success rate of photostimulation
 
-pj.bar_with_points(data=[list(expobj.reliability_cells.values())], x_tick_labels=['t-013'], ylims=[0, 100], bar=False, y_label = '% success stims.'
+pj.bar_with_points(data=[list(expobj.StimSuccessRate_cells.values())], x_tick_labels=['t-013'], ylims=[0, 100], bar=False, y_label ='% success stims.',
                    title='%s success rate of stim responses' % trial, expand_size_x=2)
 
 
-t009_pre_4ap_reliability = list(expobj.reliability.values())
-t011_post_4ap_reliabilty = list(expobj.reliability.values())  # reimport another expobj for post4ap trial
-t013_post_4ap_reliabilty = list(expobj.reliability.values())  # reimport another expobj for post4ap trial
-
-pj.bar_with_points(data=[t009_pre_4ap_reliability, t011_post_4ap_reliabilty, t013_post_4ap_reliabilty],
-                   x_tick_labels=['t-009', 't-011', 't-013'], colors=['green', 'deeppink'],
-                   ylims=[0, 100], bar=False, title='reliability of stim responses', expand_size_y=1.2, expand_size_x=1.2)
+# plot across different groups
+# t009_pre_4ap_reliability = list(expobj.StimSuccessRate_cells.values())
+# t011_post_4ap_reliabilty = list(expobj.StimSuccessRate_cells.values())  # reimport another expobj for post4ap trial
+# t013_post_4ap_reliabilty = list(expobj.StimSuccessRate_cells.values())  # reimport another expobj for post4ap trial
+#
+# pj.bar_with_points(data=[t009_pre_4ap_reliability, t011_post_4ap_reliabilty, t013_post_4ap_reliabilty],
+#                    x_tick_labels=['t-009', 't-011', 't-013'], colors=['green', 'deeppink'],
+#                    ylims=[0, 100], bar=False, title='reliability of stim responses', expand_size_y=1.2, expand_size_x=1.2)
 
 
 # %% PLOT AVG PHOTOSTIM PRE- POST- TRACE AVGed OVER ALL PHOTOSTIM. TRIALS - NON - TARGETS

@@ -235,66 +235,44 @@ class TwoPhotonImaging:
               '\nscan centre (V):', scan_x, scan_y
               )
 
-    def s2pProcessing(self, s2p_path, subset_frames=None, subtract_neuropil=True, baseline_frames=[]):
+    def s2pProcessing(self, s2p_path, subset_frames=None, subtract_neuropil=True, baseline_frames=[], force_redo: bool = False, save=True):
         """processing of suite2p data on the experimental object"""
 
-        self.cell_id = []
-        self.n_units = []
-        self.cell_plane = []
-        self.cell_med = []
-        self.cell_x = []
-        self.cell_y = []
-        self.raw = []
-        self.mean_img = []
-        self.radius = []
-        self.s2p_path = s2p_path
-
-        if self.n_planes == 1:
-            # s2p_path = os.path.join(self.tiff_path, 'suite2p', 'plane' + str(plane))
-            FminusFneu, self.spks, self.stat = s2p_loader(s2p_path, subtract_neuropil)  # s2p_loader() is in utils_func
-            ops = np.load(os.path.join(s2p_path, 'ops.npy'), allow_pickle=True).item()
-
-            if subset_frames is None:
-                self.raw = FminusFneu
-            elif subset_frames is not None:
-                self.raw = FminusFneu[:, subset_frames[0]:subset_frames[1]]
-                self.spks = self.spks[:, subset_frames[0]:subset_frames[1]]
-            if len(baseline_frames) > 0:
-                self.baseline_raw = FminusFneu[:, baseline_frames[0]:baseline_frames[1]]
-            self.mean_img = ops['meanImg']
-            cell_id = []
-            cell_med = []
-            cell_x = []
-            cell_y = []
-            radius = []
-
-            for cell, s in enumerate(self.stat):
-                cell_id.append(s['original_index'])  # stat is an np array of dictionaries!
-                cell_med.append(s['med'])
-                cell_x.append(s['xpix'])
-                cell_y.append(s['ypix'])
-                radius.append(s['radius'])
-
-            self.cell_id = cell_id
-            self.n_units = len(self.cell_id)
-            self.cell_med = cell_med
-            self.cell_x = cell_x
-            self.cell_y = cell_y
-            self.radius = radius
-
-            num_units = FminusFneu.shape[0]
-
+        if hasattr(self, 'stat'):
+            print('skipped re-processing suite2p data for current trial')
+            continu = False
+        elif force_redo:
+            continu = True
         else:
-            for plane in range(self.n_planes):
+            continu = True
+
+        if continu:
+
+            self.cell_id = []
+            self.n_units = []
+            self.cell_plane = []
+            self.cell_med = []
+            self.cell_x = []
+            self.cell_y = []
+            self.raw = []
+            self.mean_img = []
+            self.radius = []
+            self.s2p_path = s2p_path
+
+            if self.n_planes == 1:
                 # s2p_path = os.path.join(self.tiff_path, 'suite2p', 'plane' + str(plane))
-                FminusFneu, self.spks, self.stat = s2p_loader(s2p_path,
-                                                              subtract_neuropil)  # s2p_loader() is in utils_func
+                FminusFneu, self.spks, self.stat = s2p_loader(s2p_path, subtract_neuropil)  # s2p_loader() is in utils_func
                 ops = np.load(os.path.join(s2p_path, 'ops.npy'), allow_pickle=True).item()
 
-                self.raw.append(FminusFneu)
-                self.mean_img.append(ops['meanImg'])
+                if subset_frames is None:
+                    self.raw = FminusFneu
+                elif subset_frames is not None:
+                    self.raw = FminusFneu[:, subset_frames[0]:subset_frames[1]]
+                    self.spks = self.spks[:, subset_frames[0]:subset_frames[1]]
+                if len(baseline_frames) > 0:
+                    self.baseline_raw = FminusFneu[:, baseline_frames[0]:baseline_frames[1]]
+                self.mean_img = ops['meanImg']
                 cell_id = []
-                cell_plane = []
                 cell_med = []
                 cell_x = []
                 cell_y = []
@@ -307,16 +285,51 @@ class TwoPhotonImaging:
                     cell_y.append(s['ypix'])
                     radius.append(s['radius'])
 
-                self.cell_id.append(cell_id)
-                self.n_units.append(len(self.cell_id[plane]))
-                self.cell_med.append(cell_med)
-                self.cell_x.append(cell_x)
-                self.cell_y.append(cell_y)
+                self.cell_id = cell_id
+                self.n_units = len(self.cell_id)
+                self.cell_med = cell_med
+                self.cell_x = cell_x
+                self.cell_y = cell_y
                 self.radius = radius
 
                 num_units = FminusFneu.shape[0]
-                cell_plane.extend([plane] * num_units)
-                self.cell_plane.append(cell_plane)
+
+            else:
+                for plane in range(self.n_planes):
+                    # s2p_path = os.path.join(self.tiff_path, 'suite2p', 'plane' + str(plane))
+                    FminusFneu, self.spks, self.stat = s2p_loader(s2p_path,
+                                                                  subtract_neuropil)  # s2p_loader() is in utils_func
+                    ops = np.load(os.path.join(s2p_path, 'ops.npy'), allow_pickle=True).item()
+
+                    self.raw.append(FminusFneu)
+                    self.mean_img.append(ops['meanImg'])
+                    cell_id = []
+                    cell_plane = []
+                    cell_med = []
+                    cell_x = []
+                    cell_y = []
+                    radius = []
+
+                    for cell, s in enumerate(self.stat):
+                        cell_id.append(s['original_index'])  # stat is an np array of dictionaries!
+                        cell_med.append(s['med'])
+                        cell_x.append(s['xpix'])
+                        cell_y.append(s['ypix'])
+                        radius.append(s['radius'])
+
+                    self.cell_id.append(cell_id)
+                    self.n_units.append(len(self.cell_id[plane]))
+                    self.cell_med.append(cell_med)
+                    self.cell_x.append(cell_x)
+                    self.cell_y.append(cell_y)
+                    self.radius = radius
+
+                    num_units = FminusFneu.shape[0]
+                    cell_plane.extend([plane] * num_units)
+                    self.cell_plane.append(cell_plane)
+
+            if save:
+                self.save()
 
     def paqProcessing(self, lfp=False):
 
@@ -358,7 +371,7 @@ class TwoPhotonImaging:
 
         with open(self.pkl_path, 'wb') as f:
             pickle.dump(self, f)
-        print("\n\npkl saved to %s" % pkl_path)
+        print("\n\npkl saved to %s\n" % pkl_path)
 
     def save(self):
         self.save_pkl()
@@ -498,22 +511,34 @@ class alloptical(TwoPhotonImaging):
                 else:
                     self.cell_area.append(1)
 
-    def subset_frames_current_trial(self, to_suite2p, trial, baseline_trials):
-        # determine which frames to retrieve from the overall total s2p output
-        total_frames_stitched = 0
-        curr_trial_frames = None
-        baseline_frames = [0, 0]
-        for t in to_suite2p:
-            pkl_path_2 = "/home/pshah/mnt/qnap/Analysis/%s/%s_%s/%s_%s.pkl" % (
-                self.metainfo['date'], self.metainfo['date'], t, self.metainfo['date'], t)
-            with open(pkl_path_2, 'rb') as f:
-                _expobj = pickle.load(f)
-                # import suite2p data
-            total_frames_stitched += _expobj.n_frames
-            if t == trial:
-                self.curr_trial_frames = [total_frames_stitched - _expobj.n_frames, total_frames_stitched]
-            if t in baseline_trials:
-                baseline_frames[1] = total_frames_stitched
+    def subset_frames_current_trial(self, to_suite2p, trial, baseline_trials, force_redo: bool = False, save=True):
+        if hasattr(self, 'curr_trial_frames'):
+            print('skipped re-collecting subset frames of current trial')
+            continu = False
+        elif force_redo:
+            continu = True
+        else:
+            continu = True
+
+        if continu:
+            # determine which frames to retrieve from the overall total s2p output
+            total_frames_stitched = 0
+            curr_trial_frames = None
+            baseline_frames = [0, 0]
+            for t in to_suite2p:
+                pkl_path_2 = "/home/pshah/mnt/qnap/Analysis/%s/%s_%s/%s_%s.pkl" % (
+                    self.metainfo['date'], self.metainfo['date'], t, self.metainfo['date'], t)
+                with open(pkl_path_2, 'rb') as f:
+                    _expobj = pickle.load(f)
+                    # import suite2p data
+                total_frames_stitched += _expobj.n_frames
+                if t == trial:
+                    self.curr_trial_frames = [total_frames_stitched - _expobj.n_frames, total_frames_stitched]
+                if t in baseline_trials:
+                    baseline_frames[1] = total_frames_stitched
+
+            if save:
+                self.save()
 
     def stitch_reg_tiffs(self, force_crop: bool = False, force_stack: bool = False):
         start = self.curr_trial_frames[0] // 2000  # 2000 because that is the batch size for suite2p run
@@ -548,34 +573,47 @@ class alloptical(TwoPhotonImaging):
                 print('saving cropped tiff ', reg_tif_crop.shape)
                 tif.save(reg_tif_crop)
 
-    def raw_traces_from_targets(self):
-        # read in registered tiff
-        reg_tif_folder = self.s2p_path + '/reg_tif/'
-        reg_tif_list = os.listdir(reg_tif_folder)
-        reg_tif_list.sort()
-        start = self.curr_trial_frames[0] // 2000  # 2000 because that is the batch size for suite2p run
-        end = self.curr_trial_frames[1] // 2000 + 1
+    def raw_traces_from_targets(self, force_redo: bool = False, save: bool = True):
+        if hasattr(self, 'raw_SLMTargets'):
+            print('skipped re-collecting of raw traces from SLM targets')
+            continu = False
+        elif force_redo:
+            continu = True
+        else:
+            continu = True
 
-        # collect mean traces from target areas of each target coordinate by reading in individual registered tiffs that contain frames for current trial
-        targets_trace_full = np.zeros([len(self.target_coords_all), (end - start) * 2000], dtype='float32')
-        for i in range(start, end):
-            tif_path_save2 = self.s2p_path + '/reg_tif/' + reg_tif_list[i]
-            with tf.TiffFile(tif_path_save2, multifile=False) as input_tif:
-                print('reading tiff: %s' % tif_path_save2)
-                data = input_tif.asarray()
+        if continu:
+            print('\n\ncollecting raw Flu traces from SLM target coord. areas from registered TIFFs')
+            # read in registered tiff
+            reg_tif_folder = self.s2p_path + '/reg_tif/'
+            reg_tif_list = os.listdir(reg_tif_folder)
+            reg_tif_list.sort()
+            start = self.curr_trial_frames[0] // 2000  # 2000 because that is the batch size for suite2p run
+            end = self.curr_trial_frames[1] // 2000 + 1
 
-            targets_trace = np.zeros([len(self.target_coords_all), data.shape[0]], dtype='float32')
-            for coord in range(len(self.target_coords_all)):
-                target_areas = np.array(self.target_areas)
-                x = data[:, target_areas[coord, :, 1], target_areas[coord, :, 0]]  # = 1
-                targets_trace[coord] = np.mean(x, axis=1)
+            # collect mean traces from target areas of each target coordinate by reading in individual registered tiffs that contain frames for current trial
+            targets_trace_full = np.zeros([len(self.target_coords_all), (end - start) * 2000], dtype='float32')
+            for i in range(start, end):
+                tif_path_save2 = self.s2p_path + '/reg_tif/' + reg_tif_list[i]
+                with tf.TiffFile(tif_path_save2, multifile=False) as input_tif:
+                    print('|-reading tiff: %s' % tif_path_save2)
+                    data = input_tif.asarray()
 
-            targets_trace_full[:, (i - start) * 2000: (i - start + 1) * 2000] = targets_trace
+                targets_trace = np.zeros([len(self.target_coords_all), data.shape[0]], dtype='float32')
+                for coord in range(len(self.target_coords_all)):
+                    target_areas = np.array(self.target_areas)
+                    x = data[:, target_areas[coord, :, 1], target_areas[coord, :, 0]]  # = 1
+                    targets_trace[coord] = np.mean(x, axis=1)
 
-        # final part, crop to the *exact* frames for current trial
-        self.raw_SLMTargets = targets_trace_full[:,
-                           self.curr_trial_frames[0] - start * 2000: self.curr_trial_frames[1] - (
-                                   self.curr_trial_frames[0] - start * 2000)]
+                targets_trace_full[:, (i - start) * 2000: ((i - start) * 2000) + data.shape[0]] = targets_trace  ## iteratively write to each successive segment of the targets_trace array based on the length of the reg_tiff that is read in.
+
+
+            # final part, crop to the *exact* frames for current trial
+            self.raw_SLMTargets = targets_trace_full[:,
+                               self.curr_trial_frames[0] - start * 2000: self.curr_trial_frames[1] - (
+                                       self.curr_trial_frames[0] - start * 2000)]
+            if save:
+                self.save()
 
     def get_alltargets_stim_traces_norm(self, targets_idx: int = None, subselect_cells: list = None, pre_stim=15, post_stim=200):
         """
@@ -1189,127 +1227,138 @@ class alloptical(TwoPhotonImaging):
 
         print('Got targets...')
 
-    def s2p_targets(self):
+    def s2p_targets(self, force_redo: bool = False):
         '''finding s2p cell ROIs that were also SLM targets'''
 
-        self.is_target = []
+        if hasattr(self, 's2p_cell_targets'):
+            print('skipped re-running of finding s2p targets from suite2p cell list')
+            continu = False
+        elif force_redo:
+            continu = True
+        else:
+            continu = True
 
-        print('\nsearching for targeted cells...')
+        if continu:
+            self.is_target = []
 
-        # # Rob's new version of this, not really sure how he meant for it to be done, but it's not working
-        # targ_img = np.zeros([self.frame_x, self.frame_y], dtype='uint16')
-        # target_areas = np.array(self.target_areas)
-        # targ_img[target_areas[:, :, 1], target_areas[:, :, 0]] = 1
-        #
-        # cell_img = np.zeros([self.frame_x, self.frame_y], dtype='uint16')
-        # cell_x = np.array(self.cell_x)
-        # cell_y = np.array(self.cell_y)
-        # for i, coord in enumerate(zip(cell_x[0], cell_y[0])):
-        #     cell_img[coord] = i + 1
-        #
-        # targ_cell = cell_img * targ_img
-        #
-        # targ_cell_ids = np.unique(targ_cell)[1:] - 1
-        #
-        # self.is_target = np.zeros([self.n_units], dtype='bool')
-        # self.is_target[targ_cell_ids] = True
-        #
-        # self.n_targeted_cells = np.sum(self.is_target)
-        #
-        # self.s2p_cell_targets = [i for i, x in enumerate(self.is_target) if
-        #                          x == True]  # get list of s2p cells that were photostim targetted
+            print('\nsearching for targeted cells...')
 
-        ##### new version
-        # s2p targets for all SLM targets
-        for cell in range(self.n_units):
-            flag = 0
-            for x, y in zip(self.cell_x[cell], self.cell_y[cell]):
-                if (x, y) in self.target_coords:
-                    print((x, y))
-                    flag = 1
-                elif (x, y) in self.target_coords_all:
-                    print((x, y))
-                    flag = 1
+            # # Rob's new version of this, not really sure how he meant for it to be done, but it's not working
+            # targ_img = np.zeros([self.frame_x, self.frame_y], dtype='uint16')
+            # target_areas = np.array(self.target_areas)
+            # targ_img[target_areas[:, :, 1], target_areas[:, :, 0]] = 1
+            #
+            # cell_img = np.zeros([self.frame_x, self.frame_y], dtype='uint16')
+            # cell_x = np.array(self.cell_x)
+            # cell_y = np.array(self.cell_y)
+            # for i, coord in enumerate(zip(cell_x[0], cell_y[0])):
+            #     cell_img[coord] = i + 1
+            #
+            # targ_cell = cell_img * targ_img
+            #
+            # targ_cell_ids = np.unique(targ_cell)[1:] - 1
+            #
+            # self.is_target = np.zeros([self.n_units], dtype='bool')
+            # self.is_target[targ_cell_ids] = True
+            #
+            # self.n_targeted_cells = np.sum(self.is_target)
+            #
+            # self.s2p_cell_targets = [i for i, x in enumerate(self.is_target) if
+            #                          x == True]  # get list of s2p cells that were photostim targetted
 
-            if flag == 1:
-                self.is_target.append(1)
-            else:
-                self.is_target.append(0)
+            ##### new version
+            # s2p targets for all SLM targets
+            for cell in range(self.n_units):
+                flag = 0
+                for x, y in zip(self.cell_x[cell], self.cell_y[cell]):
+                    if (x, y) in self.target_coords:
+                        print((x, y))
+                        flag = 1
+                    elif (x, y) in self.target_coords_all:
+                        print((x, y))
+                        flag = 1
 
-        self.n_targeted_cells = sum(self.is_target)
-        self.s2p_cell_targets = [self.cell_id[i] for i, x in enumerate(self.is_target) if
-                                 x == 1]  # get list of s2p cells that were photostim targetted
+                if flag == 1:
+                    self.is_target.append(1)
+                else:
+                    self.is_target.append(0)
 
-        # # s2p targets for SLM group #1
-        # self.targeted_cells_1 = []
-        # for cell in range(self.n_units):
-        #     flag = 0
-        #     for x, y in zip(self.cell_x[cell], self.cell_y[cell]):
-        #         if (x, y) in self.target_coords_1:
-        #             print('Target coordinate found (Group #1)', (x, y))
-        #             flag = 1
-        #
-        #     if flag == 1:
-        #         self.targeted_cells_1.append(1)
-        #     else:
-        #         self.targeted_cells_1.append(0)
-        #
-        # self.n_targeted_cells_1 = sum(self.targeted_cells_1)
-        # self.s2p_cell_targets_1 = [self.cell_id[i] for i, x in enumerate(self.targeted_cells_1) if
-        #                            x == 1]  # get list of s2p cells that were photostim targetted
-        #
-        # # s2p targets for SLM group #2
-        # self.targeted_cells_2 = []
-        # for cell in range(self.n_units):
-        #     flag = 0
-        #     for x, y in zip(self.cell_x[cell], self.cell_y[cell]):
-        #         if (x, y) in self.target_coords_2:
-        #             print('Target coordinate found (Group #2)', (x, y))
-        #             flag = 1
-        #
-        #     if flag == 1:
-        #         self.targeted_cells_2.append(1)
-        #     else:
-        #         self.targeted_cells_2.append(0)
-        #
-        # self.n_targeted_cells_2 = sum(self.targeted_cells_2)
-        # self.s2p_cell_targets_2 = [self.cell_id[i] for i, x in enumerate(self.targeted_cells_2) if
-        #                            x == 1]  # get list of s2p cells that were photostim targetted
+            self.n_targeted_cells = sum(self.is_target)
+            self.s2p_cell_targets = [self.cell_id[i] for i, x in enumerate(self.is_target) if
+                                     x == 1]  # get list of s2p cells that were photostim targetted
 
-        # ##### old version - pretty sure something is wrong with this code, the s2p cell targets this code finds don't make much sense
-        # print('Searching for targeted cells in suite2p results...')
-        # for cell in range(self.n_units):
-        #     flag = 0
-        #
-        #     for x, y in zip(self.cell_x[cell], self.cell_y[cell]):
-        #         for target in range(self.n_targets):
-        #             for a, b in self.target_areas[target]:
-        #                 if x == a and y == b:
-        #                     flag = 1
-        #
-        #     if flag == 1:
-        #         self.is_target.append(1)
-        #     else:
-        #         self.is_target.append(0)
-        #
-        # self.s2p_cell_targets = [i for i, x in enumerate(self.is_target) if
-        #                     x == 1]  # get list of s2p cells that were photostim targetted
-        #
-        # self.n_targeted_cells = len(self.s2p_cell_targets)
+            # # s2p targets for SLM group #1
+            # self.targeted_cells_1 = []
+            # for cell in range(self.n_units):
+            #     flag = 0
+            #     for x, y in zip(self.cell_x[cell], self.cell_y[cell]):
+            #         if (x, y) in self.target_coords_1:
+            #             print('Target coordinate found (Group #1)', (x, y))
+            #             flag = 1
+            #
+            #     if flag == 1:
+            #         self.targeted_cells_1.append(1)
+            #     else:
+            #         self.targeted_cells_1.append(0)
+            #
+            # self.n_targeted_cells_1 = sum(self.targeted_cells_1)
+            # self.s2p_cell_targets_1 = [self.cell_id[i] for i, x in enumerate(self.targeted_cells_1) if
+            #                            x == 1]  # get list of s2p cells that were photostim targetted
+            #
+            # # s2p targets for SLM group #2
+            # self.targeted_cells_2 = []
+            # for cell in range(self.n_units):
+            #     flag = 0
+            #     for x, y in zip(self.cell_x[cell], self.cell_y[cell]):
+            #         if (x, y) in self.target_coords_2:
+            #             print('Target coordinate found (Group #2)', (x, y))
+            #             flag = 1
+            #
+            #     if flag == 1:
+            #         self.targeted_cells_2.append(1)
+            #     else:
+            #         self.targeted_cells_2.append(0)
+            #
+            # self.n_targeted_cells_2 = sum(self.targeted_cells_2)
+            # self.s2p_cell_targets_2 = [self.cell_id[i] for i, x in enumerate(self.targeted_cells_2) if
+            #                            x == 1]  # get list of s2p cells that were photostim targetted
 
-        # self.s2p_cell_targets_groups = [self.s2p_cell_targets_1, self.s2p_cell_targets_2]
+            # ##### old version - pretty sure something is wrong with this code, the s2p cell targets this code finds don't make much sense
+            # print('Searching for targeted cells in suite2p results...')
+            # for cell in range(self.n_units):
+            #     flag = 0
+            #
+            #     for x, y in zip(self.cell_x[cell], self.cell_y[cell]):
+            #         for target in range(self.n_targets):
+            #             for a, b in self.target_areas[target]:
+            #                 if x == a and y == b:
+            #                     flag = 1
+            #
+            #     if flag == 1:
+            #         self.is_target.append(1)
+            #     else:
+            #         self.is_target.append(0)
+            #
+            # self.s2p_cell_targets = [i for i, x in enumerate(self.is_target) if
+            #                     x == 1]  # get list of s2p cells that were photostim targetted
+            #
+            # self.n_targeted_cells = len(self.s2p_cell_targets)
 
-        print('------- Search completed.')
-        print('Number of targeted cells: ', self.n_targeted_cells)
-        print('Target cells found in suite2p: ', self.s2p_cell_targets,
-              ' -- %s cells (out of %s target coords)' % (len(self.s2p_cell_targets), len(self.target_coords_all)))
+            # self.s2p_cell_targets_groups = [self.s2p_cell_targets_1, self.s2p_cell_targets_2]
 
-        pjf.plot_cell_loc(self, cells=self.s2p_cell_targets, show=False,
-                          title='s2p cell targets and all target coords %s/%s' % (
-                              self.metainfo['trial'], self.metainfo['animal prep.']))
-        for (x, y) in self.target_coords_all:
-            plt.scatter(x=x, y=y, edgecolors='yellowgreen', facecolors='none', linewidths=1.0)
-        plt.show()
+            print('------- Search completed.')
+            print('Number of targeted cells: ', self.n_targeted_cells)
+            print('\nTarget cells found in suite2p: ', self.s2p_cell_targets,
+                  ' -- %s cells (out of %s target coords)' % (len(self.s2p_cell_targets), len(self.target_coords_all)))
+
+            pjf.plot_cell_loc(self, cells=self.s2p_cell_targets, show=False,
+                              title='s2p cell targets and all target coords %s/%s' % (
+                                  self.metainfo['trial'], self.metainfo['animal prep.']))
+            for (x, y) in self.target_coords_all:
+                plt.scatter(x=x, y=y, edgecolors='yellowgreen', facecolors='none', linewidths=1.0)
+            plt.show()
+
+            self.save()
 
         # print('Target cells SLM Group #1: ', self.s2p_cell_targets_1)
         # print('Target cells SLM Group #2: ', self.s2p_cell_targets_2)
@@ -2105,97 +2154,99 @@ def getTargetImage(obj):
     return targ_img  # , targ_img_1, targ_img_2
 
 
-def s2pMaskStack(obj, pkl_list, s2p_path, parent_folder):
-    '''makes a TIFF stack with the s2p mean image, and then suite2p ROI masks for all cells detected, target cells, and also SLM targets as well?'''
+def s2pMaskStack(obj, pkl_list, s2p_path, parent_folder, force_redo: bool = False):
+    """makes a TIFF stack with the s2p mean image, and then suite2p ROI masks for all cells detected, target cells, and also SLM targets as well?"""
 
-    for pkl in pkl_list:
-        expobj = obj
+    if hasattr(obj, 's2p_cell_targets'):
+        print('skipped re-making TIFF stack of finding s2p targets from suite2p cell list')
+        continu = False
+    elif force_redo:
+        continu = True
+    else:
+        continu = True
 
-        print('Retrieving s2p masks for:', pkl, '             ', end='\r')
+    if continu:
 
-        # with open(pkl, 'rb') as f:
-        #     expobj = pickle.load(f)
+        for pkl in pkl_list:
+            expobj = obj
 
-        # list of cell ids to filter s2p masks by
-        # cell_id_list = [list(range(1, 99999)),  # all
-        #                 expobj.photostim_r.cell_id[0],  # cells
-        #                 [expobj.photostim_r.cell_id[0][i] for i, b in enumerate(expobj.photostim_r.cell_s1[0]) if
-        #                  b == False],  # s2 cells
-        #                 [expobj.photostim_r.cell_id[0][i] for i, b in enumerate(expobj.photostim_r.is_target) if
-        #                  b == 1],  # pr cells
-        #                 [expobj.photostim_s.cell_id[0][i] for i, b in enumerate(expobj.photostim_s.is_target) if
-        #                  b == 1],  # ps cells
-        #                 ]
-        #
-        cell_ids = expobj.cell_id
+            print('Retrieving s2p masks for:', pkl, end='\r')
 
-        # empty stack to fill with images
-        stack = np.empty((0, expobj.frame_y, expobj.frame_x), dtype='uint8')
+            # with open(pkl, 'rb') as f:
+            #     expobj = pickle.load(f)
 
-        s2p_path = s2p_path
+            # list of cell ids to filter s2p masks by
+            # cell_id_list = [list(range(1, 99999)),  # all
+            #                 expobj.photostim_r.cell_id[0],  # cells
+            #                 [expobj.photostim_r.cell_id[0][i] for i, b in enumerate(expobj.photostim_r.cell_s1[0]) if
+            #                  b == False],  # s2 cells
+            #                 [expobj.photostim_r.cell_id[0][i] for i, b in enumerate(expobj.photostim_r.is_target) if
+            #                  b == 1],  # pr cells
+            #                 [expobj.photostim_s.cell_id[0][i] for i, b in enumerate(expobj.photostim_s.is_target) if
+            #                  b == 1],  # ps cells
+            #                 ]
+            #
+            cell_ids = expobj.cell_id
 
-        # mean image from s2p
-        mean_img = s2pMeanImage(s2p_path)
-        mean_img = np.expand_dims(mean_img, axis=0)
-        stack = np.append(stack, mean_img, axis=0)
+            # empty stack to fill with images
+            stack = np.empty((0, expobj.frame_y, expobj.frame_x), dtype='uint8')
 
-        # mask images from s2p
-        mask_img, targets_s2p_img = s2pMasks(obj=expobj, s2p_path=s2p_path, cell_ids=cell_ids)
-        mask_img = np.expand_dims(mask_img, axis=0)
-        targets_s2p_img = np.expand_dims(targets_s2p_img, axis=0)
-        # targets_s2p_img_1 = np.expand_dims(targets_s2p_img_1, axis=0)
-        # targets_s2p_img_2 = np.expand_dims(targets_s2p_img_2, axis=0)
-        stack = np.append(stack, mask_img, axis=0)
-        stack = np.append(stack, targets_s2p_img, axis=0)
-        # stack = np.append(stack, targets_s2p_img_1, axis=0)
-        # stack = np.append(stack, targets_s2p_img_2, axis=0)
+            s2p_path = s2p_path
 
-        # # sta images
-        # for file in os.listdir(stam_save_path):
-        #     if all(s in file for s in ['AvgImage', expobj.photostim_r.tiff_path.split('/')[-1]]):
-        #         pr_sta_img = tf.imread(os.path.join(stam_save_path, file))
-        #         pr_sta_img = np.expand_dims(pr_sta_img, axis=0)
-        #     elif all(s in file for s in ['AvgImage', expobj.photostim_s.tiff_path.split('/')[-1]]):
-        #         ps_sta_img = tf.imread(os.path.join(stam_save_path, file))
-        #         ps_sta_img = np.expand_dims(ps_sta_img, axis=0)
+            # mean image from s2p
+            mean_img = s2pMeanImage(s2p_path)
+            mean_img = np.expand_dims(mean_img, axis=0)
+            stack = np.append(stack, mean_img, axis=0)
 
-        # stack = np.append(stack, pr_sta_img, axis=0)
-        # stack = np.append(stack, ps_sta_img, axis=0)
+            # mask images from s2p
+            mask_img, targets_s2p_img = s2pMasks(obj=expobj, s2p_path=s2p_path, cell_ids=cell_ids)
+            mask_img = np.expand_dims(mask_img, axis=0)
+            targets_s2p_img = np.expand_dims(targets_s2p_img, axis=0)
+            # targets_s2p_img_1 = np.expand_dims(targets_s2p_img_1, axis=0)
+            # targets_s2p_img_2 = np.expand_dims(targets_s2p_img_2, axis=0)
+            stack = np.append(stack, mask_img, axis=0)
+            stack = np.append(stack, targets_s2p_img, axis=0)
+            # stack = np.append(stack, targets_s2p_img_1, axis=0)
+            # stack = np.append(stack, targets_s2p_img_2, axis=0)
 
-        # target images
-        targ_img = getTargetImage(expobj)
-        targ_img = np.expand_dims(targ_img, axis=0)
-        stack = np.append(stack, targ_img, axis=0)
+            # # sta images
+            # for file in os.listdir(stam_save_path):
+            #     if all(s in file for s in ['AvgImage', expobj.photostim_r.tiff_path.split('/')[-1]]):
+            #         pr_sta_img = tf.imread(os.path.join(stam_save_path, file))
+            #         pr_sta_img = np.expand_dims(pr_sta_img, axis=0)
+            #     elif all(s in file for s in ['AvgImage', expobj.photostim_s.tiff_path.split('/')[-1]]):
+            #         ps_sta_img = tf.imread(os.path.join(stam_save_path, file))
+            #         ps_sta_img = np.expand_dims(ps_sta_img, axis=0)
 
-        # targ_img_1 = np.expand_dims(targ_img_1, axis=0)
-        # stack = np.append(stack, targ_img_1, axis=0)
-        #
-        # targ_img_2 = np.expand_dims(targ_img_2, axis=0)
-        # stack = np.append(stack, targ_img_2, axis=0)
+            # stack = np.append(stack, pr_sta_img, axis=0)
+            # stack = np.append(stack, ps_sta_img, axis=0)
 
-        # stack is now: mean_img, all_rois, all_cells, s2_cells, pr_cells, ps_cells,
-        # (whisker,) pr_sta_img, ps_sta_img, pr_target_areas, ps_target_areas
-        # c, x, y = stack.shape
-        # stack.shape = 1, 1, c, x, y, 1  # dimensions in TZCYXS order
+            # target images
+            targ_img = getTargetImage(expobj)
+            targ_img = np.expand_dims(targ_img, axis=0)
+            stack = np.append(stack, targ_img, axis=0)
 
-        x_pix = expobj.pix_sz_x
-        y_pix = expobj.pix_sz_y
+            # targ_img_1 = np.expand_dims(targ_img_1, axis=0)
+            # stack = np.append(stack, targ_img_1, axis=0)
+            #
+            # targ_img_2 = np.expand_dims(targ_img_2, axis=0)
+            # stack = np.append(stack, targ_img_2, axis=0)
 
-        save_path = os.path.join(parent_folder, pkl.split('/')[-1][:-4] + '_s2p_masks.tif')
+            # stack is now: mean_img, all_rois, all_cells, s2_cells, pr_cells, ps_cells,
+            # (whisker,) pr_sta_img, ps_sta_img, pr_target_areas, ps_target_areas
+            # c, x, y = stack.shape
+            # stack.shape = 1, 1, c, x, y, 1  # dimensions in TZCYXS order
 
-        tf.imwrite(save_path, stack, photometric='minisblack')
-        print('\ns2p ROI + photostim targets masks saved to: ', save_path)
+            x_pix = expobj.pix_sz_x
+            y_pix = expobj.pix_sz_y
+
+            save_path = os.path.join(parent_folder, pkl.split('/')[-1][:-4] + '_s2p_masks.tif')
+
+            tf.imwrite(save_path, stack, photometric='minisblack')
+            print('\ns2p ROI + photostim targets masks saved in TIFF to: ', save_path)
 
 
 # other functions written by me
-
-# TODO need to transfer alot of these functions to methods
-
-def save_pkl(expobj, pkl_path):
-    with open(pkl_path, 'wb') as f:
-        pickle.dump(expobj, f)
-    print("pkl saved to %s" % pkl_path)
-
 
 # PRE-PROCESSING FUNCTIONS
 # @njit
@@ -2675,8 +2726,8 @@ def corrcoef_array(array):
 
 
 # calculate reliability of photostim responsiveness of all of the targeted cells (found in s2p output)
-def calculate_reliability(expobj, cell_ids: list, raw_traces_stims=None, dfstdf_threshold=None,
-                          dff_threshold=None, pre_stim=10, sz_filter=False, verbose=False, plot=False):
+def calculate_StimSuccessRate(expobj, cell_ids: list, raw_traces_stims=None, dfstdf_threshold=None,
+                              dff_threshold=None, pre_stim=10, sz_filter=False, verbose=False, plot=False):
     """calculates the percentage of successful photoresponsive trials for each targeted cell, where success is post
      stim response over the dff_threshold. the filter_for_sz argument is set to True when needing to filter out stim timings
      that occured when the cell was classified as inside the sz boundary."""
@@ -2740,7 +2791,7 @@ def calculate_reliability(expobj, cell_ids: list, raw_traces_stims=None, dfstdf_
             responses = []
             hits = []
             for trace in raw_traces_stims[idx]:
-                counter += 1
+
                 # calculate dFF (noramlized to pre-stim) for each trace
                 pre_stim_mean = np.mean(trace[0:pre_stim])
                 if dff_threshold:  # calculate dFF response for each stim trace
@@ -2757,6 +2808,7 @@ def calculate_reliability(expobj, cell_ids: list, raw_traces_stims=None, dfstdf_
                 if response_std >= threshold:
                     success += 1
                     hits.append(counter)
+                counter += 1
 
             reliability_cells[idx] = round(success / counter * 100., 2)
             hits_cells[idx] = hits
