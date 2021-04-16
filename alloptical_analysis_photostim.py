@@ -22,6 +22,16 @@ pkl_path = "/home/pshah/mnt/qnap/Analysis/%s/%s_%s/%s_%s.pkl" % (date, date, tri
 
 expobj, experiment = aoutils.import_expobj(trial=trial, date=date, pkl_path=pkl_path)
 
+if not hasattr(expobj, 's2p_path'):
+    expobj.s2p_path = '/home/pshah/mnt/qnap/Analysis/2020-12-18/suite2p/alloptical-2p-1x-alltrials/plane0'
+
+if not hasattr(expobj, 'meanRawFluTrace'):
+    expobj.mean_raw_flu_trace(plot=True)
+else:
+    aoplot.plotMeanRawFluTrace(expobj=expobj, stim_span_color=None, x_axis='frames', figsize=[20, 3])
+
+aoplot.plotLfpSignal(expobj, stim_span_color=None, x_axis='frames', figsize=[20, 3])
+
 
 #%%#####################################################################################################################
 
@@ -36,7 +46,7 @@ x = np.asarray([i for i in expobj.targets_dfstdF_avg])
 # y_label = 'pct. dFF (normalized to prestim period)'
 y_label = 'dFstdF (normalized to prestim period)'
 
-aoplot.plot_periphotostim_avg(arr=x, expobj=expobj, stim_duration=expobj.duration_frames, pre_stim=expobj.pre_stim,
+aoplot.plot_periphotostim_avg(arr=x, expobj=expobj, stim_duration=expobj.stim_duration_frames, pre_stim=expobj.pre_stim,
                               post_stim=expobj.post_stim,
                               title=(experiment + '- responses of all photostim targets'),
                               y_label=y_label, x_label='Time post-stimulation (seconds)')
@@ -118,7 +128,7 @@ for i in range(0, expobj.n_targets_total):
         w = 2
         array = [(np.convolve(trace, np.ones(w), 'valid') / w) for trace in SLMTargets_stims_raw]
         random_sub = np.random.randint(0,100,10)
-        aoplot.plot_periphotostim_avg(arr=SLMtargets_stims_dfstdF[random_sub], expobj=expobj, stim_duration=expobj.duration_frames,
+        aoplot.plot_periphotostim_avg(arr=SLMtargets_stims_dfstdF[random_sub], expobj=expobj, stim_duration=expobj.stim_duration_frames,
                                       title='Cell ' + str(i), pre_stim=pre_stim, post_stim=post_stim, color='steelblue', y_lims=[-0.5, 2.5])
     # plt.show()
 
@@ -136,6 +146,7 @@ expobj.StimSuccessRate_cells, expobj.hits_cells, expobj.responses_cells = \
     aoutils.calculate_StimSuccessRate(expobj, cell_ids=cell_ids, raw_traces_stims=expobj.SLMTargets_stims_raw,
                                       dfstdf_threshold=0.3, pre_stim=expobj.pre_stim, sz_filter=False,
                                       verbose=True, plot=True)
+expobj.save()
 
 random_sub = np.random.randint(0,expobj.n_targets_total, 5)
 w = 3
@@ -168,7 +179,7 @@ x = np.asarray([i for i in expobj.dfstdF_traces_avg])
 # y_label = 'pct. dFF (normalized to prestim period)'
 y_label = 'dFstdF (normalized to prestim period)'
 
-aoplot.plot_periphotostim_avg(dff_array=x, expobj=expobj, stim_duration=expobj.duration_frames, pre_stim=expobj.pre_stim,
+aoplot.plot_periphotostim_avg(dff_array=x, expobj=expobj, stim_duration=expobj.stim_duration_frames, pre_stim=expobj.pre_stim,
                               post_stim=expobj.post_stim,
                               title=(experiment + '- responses of all photostim targets'),
                               y_label=y_label, x_label='Time post-stimulation (seconds)')
@@ -176,11 +187,11 @@ aoplot.plot_periphotostim_avg(dff_array=x, expobj=expobj, stim_duration=expobj.d
 # %% PLOT HEATMAP OF AVG PRE- POST TRACE AVGed OVER ALL PHOTOSTIM. TRIALS - ALL CELLS (photostim targets at top) - Lloyd style :D
 
 x = np.asarray([i for i in expobj.targets_dfstdF_avg])
-aoplot.plot_traces_heatmap(x, vmin=-1, vmax=1, stim_on=expobj.pre_stim, stim_off=expobj.pre_stim + expobj.duration_frames - 1,
+aoplot.plot_traces_heatmap(x, vmin=-1, vmax=1, stim_on=expobj.pre_stim, stim_off=expobj.pre_stim + expobj.stim_duration_frames - 1,
                            title=(experiment + ' - targets only'))
 
 x = np.asarray([i for i in expobj.dfstdF_traces_avg])
-aoplot.plot_traces_heatmap(x, vmin=-0.5, vmax=0.5, stim_on=expobj.pre_stim, stim_off=expobj.pre_stim + expobj.duration_frames - 1,
+aoplot.plot_traces_heatmap(x, vmin=-0.5, vmax=0.5, stim_on=expobj.pre_stim, stim_off=expobj.pre_stim + expobj.stim_duration_frames - 1,
                            title=(experiment + ' - nontargets'))
 
 # %% BAR PLOT PHOTOSTIM RESPONSES SIZE - TARGETS vs. NON-TARGETS
@@ -237,21 +248,28 @@ aoplot.xyloc_responses(expobj, to_plot='dfstdf', clim=[-1, +1], plot_target_coor
 
 # %% PLOT seizure period as heatmap
 
-sz = 3
-sz_onset, sz_offset = expobj.stims_bf_sz[sz], expobj.stims_af_sz[sz]
+sz = 2
+sz_onset, sz_offset = expobj.stims_bf_sz[sz], expobj.stims_af_sz[sz+1]
 x = expobj.raw[[expobj.cell_id.index(cell) for cell in expobj.good_cells], sz_onset:sz_offset]
 
+## TODO organize individual cells in array in order of peak firing rate
+
+
 stims = [(stim - sz_onset) for stim in expobj.stim_start_frames if sz_onset <= stim < sz_offset]
-stims_off = [(stim + expobj.duration_frames - 1) for stim in stims]
+stims_off = [(stim + expobj.stim_duration_frames - 1) for stim in stims]
 
 x_bf = expobj.stim_times[np.where(expobj.stim_start_frames == expobj.stims_bf_sz[sz])[0][0]]
-x_af = expobj.stim_times[np.where(expobj.stim_start_frames == expobj.stims_af_sz[sz])[0][0]]
+x_af = expobj.stim_times[np.where(expobj.stim_start_frames == expobj.stims_af_sz[sz+1])[0][0]]
 
 lfp_signal = expobj.lfp_signal[x_bf:x_af]
 
 aoplot.plot_traces_heatmap(x, stim_on=stims, stim_off=stims_off, cmap='Spectral_r', figsize=(10,6),
                            title=('%s - seizure %s' % (trial, sz)), xlims=None, vmin=100, vmax=500,
                            lfp_signal=lfp_signal)
+
+
+# %% TODO plot the change in target photostim responses for individual targets over the course of the trial
+#    (normalize to each target's overall mean response) and plot over the timecourse of the trial
 
 
 #########################################################################################################################

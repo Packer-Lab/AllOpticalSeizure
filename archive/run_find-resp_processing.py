@@ -24,7 +24,7 @@ def rm_artifacts_tiffs(exp_obj, tiffs_loc, tiffs_loc2, new_tiffs):
     frames_to_remove = []
     for j in exp_obj.stim_start_frames[0]:
         for i in range(0,
-                       exp_obj.duration_frames + 1):  # usually need to remove 1 more frame than the stim duration, as the stim isn't perfectly aligned with the start of the imaging frame
+                       exp_obj.stim_duration_frames + 1):  # usually need to remove 1 more frame than the stim duration, as the stim isn't perfectly aligned with the start of the imaging frame
             frames_to_remove.append(j + i)
 
     print('# of total photostim artifact frames:', len(frames_to_remove))

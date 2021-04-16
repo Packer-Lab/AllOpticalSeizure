@@ -71,8 +71,8 @@ expobj, experiment = aoutils.import_expobj(trial=trial, date=date, pkl_path=pkl_
 # expobj.stim_duration_frames = int(np.mean(
 #     [expobj.stim_end_frames[idx] - expobj.stim_start_frames[idx] for idx in range(len(expobj.stim_start_frames))]))
 
-aoplot.plot_flu_trace_1pstim(expobj, stim_span_color='white', x_axis='frames', xlims=[0, 3000])
-aoplot.plot_lfp_1pstim(expobj, x_axis='paq')
+aoplot.plotMeanRawFluTrace(expobj, stim_span_color='white', x_axis='frames', xlims=[0, 3000])
+aoplot.plotLfpSignal(expobj, x_axis='paq')
 
 aoplot.plot_1pstim_avg_trace(expobj, x_axis='time', individual_traces=True, stim_span_color=None)
 aoplot.plot_lfp_1pstim_avg_trace(expobj, x_axis='time', individual_traces=False, pre_stim=0.25, post_stim=0.75)

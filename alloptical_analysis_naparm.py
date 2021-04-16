@@ -206,13 +206,13 @@ def _good_photostim_cells(exp_obj, std_thresh=1, dff_threshold=None, pre_stim=10
             trace = targets_dff[
                 targeted_cells.index(cell)]  # trace = averaged dff trace across all photostims. for this cell
             pre_stim_trace = trace[:pre_stim]
-            # post_stim_trace = trace[pre_stim + exp_obj.duration_frames:post_stim]
+            # post_stim_trace = trace[pre_stim + exp_obj.stim_duration_frames:post_stim]
             mean_pre = np.mean(pre_stim_trace)
             std_pre = np.std(pre_stim_trace)
             # mean_post = np.mean(post_stim_trace[:10])
             dF_stdF = (trace - mean_pre) / std_pre  # make dF divided by std of pre-stim F trace
-            # response = np.mean(dF_stdF[pre_stim + exp_obj.duration_frames:pre_stim + 3*exp_obj.duration_frames])
-            response = np.mean(trace[pre_stim + exp_obj.duration_frames:pre_stim + 3 * exp_obj.duration_frames]) # calculate the dF over pre-stim mean F response within the response window
+            # response = np.mean(dF_stdF[pre_stim + exp_obj.stim_duration_frames:pre_stim + 3*exp_obj.stim_duration_frames])
+            response = np.mean(trace[pre_stim + exp_obj.stim_duration_frames:pre_stim + 3 * exp_obj.stim_duration_frames]) # calculate the dF over pre-stim mean F response within the response window
             if dff_threshold is None:
                 thresh_ = mean_pre + std_thresh * std_pre
             else:
@@ -319,8 +319,8 @@ def plot_photostim_(dff_array, stim_duration, pre_stim=10, post_stim=200, title=
     ax.set_ylabel(y_label)
     plt.show()
 
-plot_photostim_avg(dff_array=r_array, stim_duration=exp_obj.duration_frames, pre_stim=pre_stim, post_stim=post_stim, title=(experiment + ' - Avg photostim. response of all responsive cells'), y_label=y_label)
-plot_photostim_(dff_array=r_array, stim_duration=exp_obj.duration_frames, pre_stim=pre_stim, post_stim=post_stim, title=(experiment + ' - Photostim. response of all responsive cells'), y_label=y_label)
+plot_photostim_avg(dff_array=r_array, stim_duration=exp_obj.stim_duration_frames, pre_stim=pre_stim, post_stim=post_stim, title=(experiment + ' - Avg photostim. response of all responsive cells'), y_label=y_label)
+plot_photostim_(dff_array=r_array, stim_duration=exp_obj.stim_duration_frames, pre_stim=pre_stim, post_stim=post_stim, title=(experiment + ' - Photostim. response of all responsive cells'), y_label=y_label)
 
 def plot_single_stim_trial(cell, stim_number, title, stim_frame=None, pre_stim=pre_stim, post_stim=post_stim, x_label=None, y_label=None):
     '''plot a single cell's photostim response on a single stim trial, along with the 1*std pre-stim line'''
@@ -329,20 +329,20 @@ def plot_single_stim_trial(cell, stim_number, title, stim_frame=None, pre_stim=p
         stim_frame = exp_obj.stim_start_frames[0][group::exp_obj.n_groups][stim_number]
 
     cell_idx = exp_obj.cell_id.index(cell)
-    trace = exp_obj.raw[cell_idx][stim_frame-pre_stim:stim_frame+exp_obj.duration_frames+post_stim]
+    trace = exp_obj.raw[cell_idx][stim_frame-pre_stim:stim_frame + exp_obj.stim_duration_frames + post_stim]
     std_pre = np.std(trace[0:pre_stim])
     pre_stim_mean = np.mean(trace[0:pre_stim])
-    response = np.mean(trace[pre_stim+exp_obj.duration_frames: pre_stim + 1 + 2*exp_obj.duration_frames])
+    response = np.mean(trace[pre_stim+exp_obj.stim_duration_frames: pre_stim + 1 + 2 * exp_obj.stim_duration_frames])
 
     # make plot
     fig, ax = plt.subplots()
     ax.plot(trace)
-    x = range(pre_stim+exp_obj.duration_frames, pre_stim + 1 + 2*exp_obj.duration_frames)
+    x = range(pre_stim + exp_obj.stim_duration_frames, pre_stim + 1 + 2 * exp_obj.stim_duration_frames)
     y = [response]*len(x)
     ax.scatter(x=x, y=y, marker='_', alpha=0.4, color='purple')
     ax.axhline(y=pre_stim_mean+2*std_pre, linestyle='-', color = 'purple', alpha=0.4)
-    ax.axvspan(pre_stim, pre_stim+exp_obj.duration_frames, color='green', alpha=0.1)
-    ax.axvspan(pre_stim+exp_obj.duration_frames, pre_stim + 1 + 2*exp_obj.duration_frames, color='gray', alpha=0.1)
+    ax.axvspan(pre_stim, pre_stim + exp_obj.stim_duration_frames, color='green', alpha=0.1)
+    ax.axvspan(pre_stim + exp_obj.stim_duration_frames, pre_stim + 1 + 2 * exp_obj.stim_duration_frames, color='gray', alpha=0.1)
     ax.set_xlabel(x_label)
     ax.set_ylabel(y_label)
     ax.set_title((title + ' - Cell %s, stim. # %s' % (cell, stim_number)), horizontalalignment='center', verticalalignment='top', pad=20,
@@ -377,14 +377,14 @@ for group in df['groups'].unique():
     for stim in stims:
         for cell in cells:
             cell_idx = exp_obj.cell_id.index(cell)
-            trace = exp_obj.raw[cell_idx][stim - pre_stim:stim + exp_obj.duration_frames + post_stim]
+            trace = exp_obj.raw[cell_idx][stim - pre_stim:stim + exp_obj.stim_duration_frames + post_stim]
             mean = np.mean(trace[0:pre_stim])
             trace_dff = ((trace - mean) / abs(mean)) * 100
             std_pre = np.std(trace[0:pre_stim])
-            # response = np.mean(trace_dff[pre_stim + exp_obj.duration_frames:pre_stim + 3*exp_obj.duration_frames])
+            # response = np.mean(trace_dff[pre_stim + exp_obj.stim_duration_frames:pre_stim + 3*exp_obj.stim_duration_frames])
             dF_stdF = (trace - mean) / std_pre  # make dF divided by std of pre-stim F trace
-            # response = np.mean(dF_stdF[pre_stim + exp_obj.duration_frames:pre_stim + 1 + 2 * exp_obj.duration_frames])
-            response = np.mean(trace_dff[pre_stim + exp_obj.duration_frames:pre_stim + 1 + 2 * exp_obj.duration_frames])
+            # response = np.mean(dF_stdF[pre_stim + exp_obj.stim_duration_frames:pre_stim + 1 + 2 * exp_obj.stim_duration_frames])
+            response = np.mean(trace_dff[pre_stim + exp_obj.stim_duration_frames:pre_stim + 1 + 2 * exp_obj.stim_duration_frames])
             df.at[cell, '%s' % stim] = response
 
 exp_obj.cell_responses_dff = df # save responses to exp_obj
@@ -655,7 +655,7 @@ print("pkl saved to %s" % pkl_path)
 ###### photostim analysis - select SLM group to analyse
 # select SLM group of cells to analyze
 group = 31
-stim_timings = exp_obj.stim_start_frames[0][group::exp_obj.duration_frames]
+stim_timings = exp_obj.stim_start_frames[0][group::exp_obj.stim_duration_frames]
 title = 'SLM naparm Group #%s' % group
 #is_target = exp_obj.s2p_targets_naparm[group]
 targeted_cells = [cell for cell in exp_obj.s2p_targets_naparm[group] if cell in exp_obj.good_cells]

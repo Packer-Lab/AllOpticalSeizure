@@ -12,7 +12,7 @@ if any(s in obj.stim_type for s in ['pr', 'ps']):
 ​
 # non-parametric test with repeated measures H_A = residual > | < 0 (post-pre)
 pre_trial_frames = np.s_[obj.pre_frames - obj.test_frames : obj.pre_frames]
-stim_end = obj.pre_frames + obj.duration_frames
+stim_end = obj.pre_frames + obj.stim_duration_frames
 post_trial_frames = np.s_[stim_end : stim_end + obj.test_frames]
 ​
 pre_array = np.mean(subtracted_trials[:, pre_trial_frames, :], axis=1)

@@ -404,16 +404,20 @@ def xyloc_responses(expobj, to_plot='dfstdf', clim=[-10, +10], plot_target_coord
         plt.savefig(save_fig)
 
 
-def plot_flu_trace_1pstim(expobj, stim_span_color='white', title='raw Flu trace', x_axis='time', figsize=None, xlims=None):
+# plots the raw trace for the Flu mean of the FOV
+def plotMeanRawFluTrace(expobj, stim_span_color='white', title='raw Flu trace', x_axis='time', figsize=None, xlims=None):
     # make plot of avg Ca trace
     if figsize:
         fig, ax = plt.subplots(figsize=figsize)
+        fig.tight_layout(pad=0)
     else:
         if xlims:
             fig, ax = plt.subplots(figsize=[10 * (xlims[1] - xlims[0]) / 2000, 3])
+            fig.tight_layout(pad=0)
         else:
-            fig, ax = plt.subplots(figsize=[10 * len(expobj.onePstim_trace) / 2000, 3])
-    ax.plot(expobj.onePstim_trace, c='forestgreen', zorder=1, linewidth=2)
+            fig, ax = plt.subplots(figsize=[10 * len(expobj.meanRawFluTrace) / 2000, 3])
+            fig.tight_layout(pad=0)
+    ax.plot(expobj.meanRawFluTrace, c='forestgreen', zorder=1, linewidth=2)
     if stim_span_color is not None:
         if hasattr(expobj, 'shutter_frames'):
             for start, end in zip(expobj.shutter_start_frames[0], expobj.shutter_end_frames[0]):
@@ -423,7 +427,7 @@ def plot_flu_trace_1pstim(expobj, stim_span_color='white', title='raw Flu trace'
                 ax.axvspan(stim, 1 + stim + expobj.stim_duration_frames, color=stim_span_color, zorder=2)
     if stim_span_color != 'black':
         for line in expobj.stim_start_frames:
-            plt.axvline(x=line, color='black', linestyle='--', linewidth=0.6)
+            plt.axvline(x=line, color='black', linestyle='--', linewidth=0.6, zorder=0)
     if x_axis == 'time':
         # change x axis ticks to seconds
         label_format = '{:,.0f}'
@@ -443,11 +447,44 @@ def plot_flu_trace_1pstim(expobj, stim_span_color='white', title='raw Flu trace'
         '%s %s %s %s' % (title, expobj.metainfo['exptype'], expobj.metainfo['animal prep.'], expobj.metainfo['trial']))
     plt.show()
 
+
+# plots the raw trace for the Flu mean of the FOV
+def plotLfpSignal(expobj, stim_span_color='powderblue', title='LFP trace', x_axis='time', figsize=None):
+    # make plot of avg Ca trace
+    if figsize:
+        fig, ax = plt.subplots(figsize=figsize)
+    else:
+        fig, ax = plt.subplots(figsize=[60 * (expobj.stim_start_times[-1] + 1e5 - (expobj.stim_start_times[0] - 1e5)) / 1e7, 3])
+    ax.plot(expobj.lfp_signal[expobj.frame_start_time_actual: expobj.frame_end_time_actual], c='steelblue', zorder=1, linewidth=0.4)
+    if stim_span_color is not None:
+        for stim in expobj.stim_start_times:
+            ax.axvspan(stim - 8, 1 + stim + expobj.stim_duration_frames / expobj.fps * expobj.paq_rate, color=stim_span_color, zorder=1, alpha=0.5)
+    else:
+        for line in expobj.stim_start_times:
+            plt.axvline(x=line+2, color='black', linestyle='--', linewidth=0.6, zorder=0)
+    if x_axis == 'time':
+        # change x axis ticks to seconds
+        label_format = '{:,.2f}'
+        labels = [item for item in ax.get_xticks()]
+        for item in labels:
+            labels[labels.index(item)] = int(round(item / expobj.paq_rate, 2))
+        ticks_loc = ax.get_xticks().tolist()
+        ax.xaxis.set_major_locator(mticker.FixedLocator(ticks_loc))
+        ax.set_xticklabels([label_format.format(x) for x in labels])
+        ax.set_xlabel('Time (secs)')
+    else:
+        ax.set_xlabel('paq clock')
+    ax.set_ylabel('Voltage')
+    # ax.set_xlim([expobj.frame_start_time_actual, expobj.frame_end_time_actual])  ## this should be limited to the 2p acquisition duration only
+    plt.suptitle(
+        '%s - %s %s %s' % (title, expobj.metainfo['exptype'], expobj.metainfo['animal prep.'], expobj.metainfo['trial']))
+    plt.show()
+
 def plot_1pstim_avg_trace(expobj, title='Average trace of stims', individual_traces=False, x_axis='time', stim_span_color='white'):
     pre_stim = 1  # seconds
     post_stim = 4  # seconds
     fig, ax = plt.subplots()
-    x = [expobj.onePstim_trace[stim - int(pre_stim * expobj.fps): stim + int(post_stim * expobj.fps)] for stim in expobj.stim_start_frames]
+    x = [expobj.meanRawFluTrace[stim - int(pre_stim * expobj.fps): stim + int(post_stim * expobj.fps)] for stim in expobj.stim_start_frames]
     x_ = np.mean(x, axis=0)
     ax.plot(x_, color='black', zorder=2, linewidth=2.2)
 
@@ -486,6 +523,7 @@ def plot_1pstim_avg_trace(expobj, title='Average trace of stims', individual_tra
     plt.suptitle(
         '%s %s %s %s' % (title, expobj.metainfo['exptype'], expobj.metainfo['animal prep.'], expobj.metainfo['trial']))
     plt.show()
+
 
 def plot_lfp_1pstim_avg_trace(expobj, title='Average LFP peri- stims', individual_traces=False, x_axis='time', pre_stim=1.0, post_stim=5.0):
     stim_duration = int(np.mean([expobj.stim_end_times[idx] - expobj.stim_start_times[idx] for idx in range(len(expobj.stim_start_times))]) + 0.01*expobj.paq_rate)
@@ -527,37 +565,6 @@ def plot_lfp_1pstim_avg_trace(expobj, title='Average LFP peri- stims', individua
     else:
         ax.set_xlabel('paq clock')
     ax.set_ylabel('Voltage')
-    plt.suptitle(
-        '%s %s %s %s' % (title, expobj.metainfo['exptype'], expobj.metainfo['animal prep.'], expobj.metainfo['trial']))
-    plt.show()
-
-def plot_lfp_1pstim(expobj, stim_span_color='powderblue', title='LFP trace', x_axis='time', figsize=None):
-    # make plot of avg Ca trace
-    if figsize:
-        fig, ax = plt.subplots(figsize=figsize)
-    else:
-        fig, ax = plt.subplots(figsize=[60 * (expobj.stim_start_times[-1] + 1e5 - (expobj.stim_start_times[0] - 1e5)) / 1e7, 3])
-    ax.plot(expobj.lfp_signal, c='steelblue', zorder=1, linewidth=0.4)
-    if stim_span_color is not None:
-        for stim in expobj.stim_start_times:
-            ax.axvspan(stim - 8, 1 + stim + expobj.stim_duration_frames / expobj.fps * expobj.paq_rate, color=stim_span_color, zorder=1, alpha=0.5)
-    else:
-        for line in expobj.stim_start_times:
-            plt.axvline(x=line+2, color='black', linestyle='--', linewidth=0.6)
-    if x_axis == 'time':
-        # change x axis ticks to seconds
-        label_format = '{:,.2f}'
-        labels = [item for item in ax.get_xticks()]
-        for item in labels:
-            labels[labels.index(item)] = int(round(item / expobj.paq_rate, 2))
-        ticks_loc = ax.get_xticks().tolist()
-        ax.xaxis.set_major_locator(mticker.FixedLocator(ticks_loc))
-        ax.set_xticklabels([label_format.format(x) for x in labels])
-        ax.set_xlabel('Time (secs)')
-    else:
-        ax.set_xlabel('paq clock')
-    ax.set_ylabel('Voltage')
-    ax.set_xlim([expobj.stim_start_times[0] - 1e5, expobj.stim_start_times[-1] + 1e5])
     plt.suptitle(
         '%s %s %s %s' % (title, expobj.metainfo['exptype'], expobj.metainfo['animal prep.'], expobj.metainfo['trial']))
     plt.show()

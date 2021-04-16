@@ -189,7 +189,17 @@ expobj, experiment = aoutils.import_expobj(trial=trial, date=date, pkl_path=pkl_
 
 
 # %%
-expobj.raw_traces_from_targets()
-expobj.save()
+
+pre_stim = expobj.pre_stim
+post_stim = expobj.post_stim
+expobj.SLMTargets_stims_dff, expobj.SLMTargets_stims_dffAvg, expobj.SLMTargets_stims_dfstdF, \
+expobj.SLMTargets_stims_dfstdF_avg, expobj.SLMTargets_stims_raw, expobj.SLMTargets_stims_rawAvg = \
+    expobj.get_alltargets_stim_traces_norm(pre_stim=pre_stim, post_stim=post_stim)
 
 
+cell_ids = list(range(len(expobj.SLMTargets_stims_dfstdF)))
+
+expobj.StimSuccessRate_cells, expobj.hits_cells, expobj.responses_cells = \
+    aoutils.calculate_StimSuccessRate(expobj, cell_ids=cell_ids, raw_traces_stims=expobj.SLMTargets_stims_raw,
+                                      dfstdf_threshold=0.3, pre_stim=expobj.pre_stim, sz_filter=False,
+                                      verbose=True, plot=True)

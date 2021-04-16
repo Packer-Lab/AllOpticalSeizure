@@ -25,6 +25,13 @@ cont_inue = True  # i know this is a rather very precarious thing here...
 if not hasattr(expobj, 's2p_path'):
     expobj.s2p_path = '/home/pshah/mnt/qnap/Analysis/2020-12-18/suite2p/alloptical-2p-1x-alltrials/plane0'
 
+if not hasattr(expobj, 'meanRawFluTrace'):
+    expobj.mean_raw_flu_trace(plot=True)
+else:
+    aoplot.plotMeanRawFluTrace(expobj=expobj, stim_span_color=None, x_axis='frames', figsize=[20, 3])
+
+aoplot.plotLfpSignal(expobj, stim_span_color=None, x_axis='frames', figsize=[20, 3])
+
 
 # %% prep for importing data from suite2p for this whole experiment
 # determine which frames to retrieve from the overall total s2p output
@@ -94,6 +101,7 @@ radiuses = expobj.radius
 # _, _, _, _ = aoutils._good_cells(cell_ids=cell_ids[:3], raws=raws, photostim_frames=expobj.photostim_frames, radiuses=radiuses,
 #                         std_thresh=2, min_radius_pix=2.5, max_radius_pix=8.5)
 expobj.good_cells, events_loc_cells, flu_events_cells, stds = aoutils._good_cells(cell_ids=cell_ids, raws=raws, photostim_frames=expobj.photostim_frames, std_thresh=2.5)
+expobj.save()
 
 # sort the stds dictionary in order of std
 stds_sorted = {}
@@ -133,9 +141,8 @@ else:
     sys.exit()
 
 
-expobj.avg_sub_l, im_sub_l, im_diff_l = expobj.MeanSeizureImages(
-    baseline_tiff="/home/pshah/mnt/qnap/Data/2020-12-18/2020-12-18_t-005/2020-12-18_t-005_Cycle00001_Ch3.tif",
-    frames_last=1000)
+expobj.MeanSeizureImages(baseline_tiff="/home/pshah/mnt/qnap/Data/2020-12-18/2020-12-18_t-005/2020-12-18_t-005_Cycle00001_Ch3.tif",
+                         frames_last=1000)
 
 # counter = 0
 # for i in avg_sub_l:
@@ -151,30 +158,23 @@ for i in range(len(expobj.avg_sub_l)):
 
 
 
-# %% downsampled movies of the seizures
-
-
-
-
-
-
 # %% classifying stims as in_sz or out_sz or before_sz or after_sz
 
-expobj.stims_in_sz = [stim for stim in expobj.stim_start_frames if stim in expobj.seizure_frames]
-expobj.stims_out_sz = [stim for stim in expobj.stim_start_frames if stim not in expobj.seizure_frames]
-expobj.stims_bf_sz = [stim for stim in expobj.stim_start_frames
-                      for sz_start in expobj.seizure_lfp_onsets
-                      if 0 < (sz_start - stim) < 5 * expobj.fps]  # select stims that occur within 5 seconds before of the sz onset
-expobj.stims_af_sz = [stim for stim in expobj.stim_start_frames
-                      for sz_start in expobj.seizure_lfp_offsets
-                      if 0 < -1 * (sz_start - stim) < 5 * expobj.fps]  # select stims that occur within 5 seconds afterof the sz offset
-print('\n|- stims_in_sz:', expobj.stims_in_sz, '\n|- stims_out_sz:', expobj.stims_out_sz,
-      '\n|- stims_bf_sz:', expobj.stims_bf_sz, '\n|- stims_af_sz:', expobj.stims_af_sz)
+# expobj.stims_in_sz = [stim for stim in expobj.stim_start_frames if stim in expobj.seizure_frames]
+# expobj.stims_out_sz = [stim for stim in expobj.stim_start_frames if stim not in expobj.seizure_frames]
+# expobj.stims_bf_sz = [stim for stim in expobj.stim_start_frames
+#                       for sz_start in expobj.seizure_lfp_onsets
+#                       if 0 < (sz_start - stim) < 5 * expobj.fps]  # select stims that occur within 5 seconds before of the sz onset
+# expobj.stims_af_sz = [stim for stim in expobj.stim_start_frames
+#                       for sz_start in expobj.seizure_lfp_offsets
+#                       if 0 < -1 * (sz_start - stim) < 5 * expobj.fps]  # select stims that occur within 5 seconds afterof the sz offset
+# print('\n|- stims_in_sz:', expobj.stims_in_sz, '\n|- stims_out_sz:', expobj.stims_out_sz,
+#       '\n|- stims_bf_sz:', expobj.stims_bf_sz, '\n|- stims_af_sz:', expobj.stims_af_sz)
+# expobj.save_pkl()
 aoplot.plot_lfp_stims(expobj)
-expobj.save_pkl()
 
 
-# %% MAKE SUBSELECTED TIFFS OF INVIDUAL SEIZURES BASED ON THEIR START AND STOP FRAMES
+# %% MAKE SUBSELECTED TIFFs OF EACH INVIDUAL SEIZURES BASED ON THEIR START AND STOP FRAMES
 on_ = []
 # on_ = [expobj.stim_start_frames[0]]  # uncomment if imaging is starting mid seizure
 on_.extend(expobj.stims_bf_sz)
@@ -279,7 +279,7 @@ expobj.dff_traces, expobj.dff_traces_avg, expobj.dfstdF_traces, \
 # aoplot.plot_flu_trace(expobj=expobj, cell=0, x_lims=None, to_plot='dff')
 
 
-#%% turn important cell x time arrays into pandas dataframes
+#%% turn the important cell x time arrays into pandas dataframes
 
 # raw Flu traces of all good cells
 columns = [f'{num}' for num in range(expobj.curr_trial_frames[0], expobj.curr_trial_frames[1])]
@@ -385,7 +385,7 @@ expobj.save()
 # idx = expobj.cell_id.index(cell)
 #
 # # what is the mean baseline fluorescence value of these high responder cells?
-# np.mean(expobj.raw[idx, 11281 + expobj.duration_frames:11281 + 2 * expobj.duration_frames])
+# np.mean(expobj.raw[idx, 11281 + expobj.stim_duration_frames:11281 + 2 * expobj.stim_duration_frames])
 #
 # a = 0
 # for trace in expobj.raw:
@@ -401,14 +401,14 @@ expobj.save()
 # problem_stims = []
 # for stim in expobj.stim_start_frames:
 #     cell_idx = expobj.cell_id.index(cell)
-#     trace = expobj.raw[cell_idx][stim - expobj.pre_stim:stim + expobj.duration_frames + expobj.post_stim];
+#     trace = expobj.raw[cell_idx][stim - expobj.pre_stim:stim + expobj.stim_duration_frames + expobj.post_stim];
 #     trace_raw_list.append(trace)
 #     mean_pre = np.mean(trace[0:expobj.pre_stim]);
 #     mean_pre_list.append(mean_pre)
 #     trace_dff = ((trace - mean_pre) / abs(mean_pre)) * 100;
 #     trace_dff_list.append(trace_dff)
 #     response = np.mean(trace_dff[
-#                        expobj.pre_stim + expobj.duration_frames:expobj.pre_stim + 3 * expobj.duration_frames])
+#                        expobj.pre_stim + expobj.stim_duration_frames:expobj.pre_stim + 3 * expobj.stim_duration_frames])
 #     if response > 500:
 #         problem_stims.append(list(expobj.stim_start_frames).index(stim))
 #

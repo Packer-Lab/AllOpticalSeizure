@@ -87,14 +87,14 @@ def _good_photostim_cells(expobj, groups_per_stim=1, std_thresh=1, dff_threshold
             trace = targets_dff[
                 targeted_cells.index(cell)]  # trace = averaged dff trace across all photostims. for this cell
             pre_stim_trace = trace[:pre_stim]
-            # post_stim_trace = trace[pre_stim + expobj.duration_frames:post_stim]
+            # post_stim_trace = trace[pre_stim + expobj.stim_duration_frames:post_stim]
             mean_pre = np.mean(pre_stim_trace)
             std_pre = np.std(pre_stim_trace)
             # mean_post = np.mean(post_stim_trace[:10])
             dF_stdF = (trace - mean_pre) / std_pre  # make dF divided by std of pre-stim F trace
-            # response = np.mean(dF_stdF[pre_stim + expobj.duration_frames:pre_stim + 3*expobj.duration_frames])
+            # response = np.mean(dF_stdF[pre_stim + expobj.stim_duration_frames:pre_stim + 3*expobj.stim_duration_frames])
             response = np.mean(trace[
-                               pre_stim + expobj.duration_frames:pre_stim + 3 * expobj.duration_frames])  # calculate the dF over pre-stim mean F response within the response window
+                               pre_stim + expobj.stim_duration_frames:pre_stim + 3 * expobj.stim_duration_frames])  # calculate the dF over pre-stim mean F response within the response window
             if dff_threshold is None:
                 thresh_ = mean_pre + std_thresh * std_pre
             else:
@@ -254,7 +254,7 @@ def calculate_reliability(expobj, groups_per_stim=1, dff_threshold=20, pre_stim=
 
                     # calculate if the current trace beats dff_threshold for calculating reliability (note that this happens over a specific window just after the photostim)
                     response = np.mean(trace[
-                                       pre_stim + expobj.duration_frames:pre_stim + 3 * expobj.duration_frames])  # calculate the dF over pre-stim mean F response within the response window
+                                       pre_stim + expobj.stim_duration_frames:pre_stim + 3 * expobj.stim_duration_frames])  # calculate the dF over pre-stim mean F response within the response window
                     if response >= round(dff_threshold):
                         success += 1
 
@@ -279,30 +279,30 @@ for group in cell_groups:
             cells = [i for i in expobj.good_cells if i not in expobj.good_photostim_cells_all]
             for cell in cells:
                 cell_idx = expobj.cell_id.index(cell)
-                trace = expobj.raw[cell_idx][stim - expobj.pre_stim:stim + expobj.duration_frames + expobj.post_stim]
+                trace = expobj.raw[cell_idx][stim - expobj.pre_stim:stim + expobj.stim_duration_frames + expobj.post_stim]
                 mean_pre = np.mean(trace[0:expobj.pre_stim])
                 trace_dff = ((trace - mean_pre) / abs(mean_pre))  # * 100
                 std_pre = np.std(trace[0:expobj.pre_stim])
-                # response = np.mean(trace_dff[pre_stim + expobj.duration_frames:pre_stim + 3*expobj.duration_frames])
+                # response = np.mean(trace_dff[pre_stim + expobj.stim_duration_frames:pre_stim + 3*expobj.stim_duration_frames])
                 dF_stdF = (trace - mean_pre) / std_pre  # make dF divided by std of pre-stim F trace
-                # response = np.mean(dF_stdF[pre_stim + expobj.duration_frames:pre_stim + 1 + 2 * expobj.duration_frames])
+                # response = np.mean(dF_stdF[pre_stim + expobj.stim_duration_frames:pre_stim + 1 + 2 * expobj.stim_duration_frames])
                 response = np.mean(trace_dff[
-                                   expobj.pre_stim + expobj.duration_frames:expobj.pre_stim + 1 + 2 * expobj.duration_frames])
+                                   expobj.pre_stim + expobj.stim_duration_frames:expobj.pre_stim + 1 + 2 * expobj.stim_duration_frames])
                 df.at[cell, '%s' % stim] = round(response, 4)
     elif 'SLM Group' in group:
         cells = expobj.good_photostim_cells[int(group[-1])]
         for stim in expobj.stim_start_frames:
             for cell in cells:
                 cell_idx = expobj.cell_id.index(cell)
-                trace = expobj.raw[cell_idx][stim - expobj.pre_stim:stim + expobj.duration_frames + expobj.post_stim]
+                trace = expobj.raw[cell_idx][stim - expobj.pre_stim:stim + expobj.stim_duration_frames + expobj.post_stim]
                 mean_pre = np.mean(trace[0:expobj.pre_stim])
                 trace_dff = ((trace - mean_pre) / abs(mean_pre)) * 100
                 std_pre = np.std(trace[0:expobj.pre_stim])
-                # response = np.mean(trace_dff[pre_stim + expobj.duration_frames:pre_stim + 3*expobj.duration_frames])
+                # response = np.mean(trace_dff[pre_stim + expobj.stim_duration_frames:pre_stim + 3*expobj.stim_duration_frames])
                 dF_stdF = (trace - mean_pre) / std_pre  # make dF divided by std of pre-stim F trace
-                # response = np.mean(dF_stdF[pre_stim + expobj.duration_frames:pre_stim + 1 + 2 * expobj.duration_frames])
+                # response = np.mean(dF_stdF[pre_stim + expobj.stim_duration_frames:pre_stim + 1 + 2 * expobj.stim_duration_frames])
                 response = np.mean(trace_dff[
-                                   expobj.pre_stim + expobj.duration_frames:expobj.pre_stim + 1 + 2 * expobj.duration_frames])
+                                   expobj.pre_stim + expobj.stim_duration_frames:expobj.pre_stim + 1 + 2 * expobj.stim_duration_frames])
                 df.at[cell, '%s' % stim] = round(response, 4)
                 df.at[cell, 'group'] = group
 
@@ -550,7 +550,7 @@ def find_photostim_frames(expobj):
     photostim_frames = []
     for j in expobj.stim_start_frames:
         for i in range(
-                expobj.duration_frames + 1):  # usually need to remove 1 more frame than the stim duration, as the stim isn't perfectly aligned with the start of the imaging frame
+                expobj.stim_duration_frames + 1):  # usually need to remove 1 more frame than the stim duration, as the stim isn't perfectly aligned with the start of the imaging frame
             photostim_frames.append(j + i)
 
     expobj.photostim_frames = photostim_frames
@@ -737,7 +737,7 @@ plt.show()
 #     plt.show()
 #
 #
-# plot_photostim_avg(dff_array=x, stim_duration=expobj.duration_frames, pre_stim=pre_stim, post_stim=post_stim,
+# plot_photostim_avg(dff_array=x, stim_duration=expobj.stim_duration_frames, pre_stim=pre_stim, post_stim=post_stim,
 #                    title=(experiment + '- %s avg. response of good responsive cells' % title), y_label=y_label, x_label='Time post-stimulation (seconds)')
 
 #%%
