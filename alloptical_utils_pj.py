@@ -1463,7 +1463,7 @@ class alloptical(TwoPhotonImaging):
         print('len of photostim_frames:', len(self.photostim_frames))
 
     def avg_stim_images(self, peri_frames: int = 100, stim_timings: list = [], save_img=False, to_plot=False,
-                        verbose=False):
+                        verbose=False, force_redo=False):
         """
         Outputs (either by saving or plotting, or both) images from raw t-series TIFF for a trial around each individual
         stim timings.
@@ -1472,58 +1472,73 @@ class alloptical(TwoPhotonImaging):
         :param stim_timings:
         :param save_img:
         :param to_plot:
+        :param force_redo:
+        :param verbose:
         :return:
         """
 
-        if hasattr(self, 'stim_images'):
-            x = [0 for stim in stim_timings if stim not in self.stim_images.keys()]
-        else:
-            self.stim_images = {}
-            x = [0] * len(stim_timings)
-        if 0 in x:
-            tiffs_loc = '%s/*Ch3.tif' % self.tiff_path_dir
-            tiff_path = glob.glob(tiffs_loc)[0]
-            print('loading up %s tiff from: ' % self.metainfo['trial'], tiff_path)
-            im_stack = tf.imread(tiff_path, key=range(self.n_frames))
-            print('Processing seizures from experiment tiff (wait for all seizure comparisons to be processed), \n '
-                  'total tiff shape: ', im_stack.shape)
-
-        for stim in stim_timings:
-            if stim in self.stim_images.keys():
-                avg_sub = self.stim_images[stim]
+        if force_redo:
+            continu = True
+        elif hasattr(self, 'avgstimimages'):
+            if self.avgstimimages_r is True:
+                continu = False
             else:
-                im_sub = im_stack[stim - peri_frames: stim + peri_frames]
-                avg_sub = np.mean(im_sub, axis=0)
-                self.stim_images[stim] = avg_sub
-
-            if save_img:
-                # save in a subdirectory under the ANALYSIS folder path from whence t-series TIFF came from
-                save_path = self.tiff_path[:21] + 'Analysis/' + self.tiff_path_dir[26:] + '/avg_stim_images'
-                save_path_stim = save_path + '/%s_%s_stim-%s.tif' % (
-                    self.metainfo['date'], self.metainfo['trial'], stim)
-                if os.path.exists(save_path):
-                    if verbose:
-                        print("saving stim_img tiff to... %s" % save_path_stim)
-                    avg_sub8 = convert_to_8bit(avg_sub, 0, 255)
-                    tf.imwrite(save_path_stim,
-                               avg_sub8, photometric='minisblack')
-                else:
-                    print('made new directory for saving images at:', save_path)
-                    os.mkdir(save_path)
-                    print("saving as... %s" % save_path_stim)
-                    avg_sub8 = convert_to_8bit(avg_sub, 0, 255)
-                    tf.imwrite(save_path_stim,
-                               avg_sub, photometric='minisblack')
-
-            if to_plot:
-                plt.imshow(avg_sub, cmap='gray')
-                plt.suptitle('avg image from %s frames around stim_start_frame %s' % (peri_frames, stim))
-                plt.show()  # just plot for now to make sure that you are doing things correctly so far
-
-        if hasattr(self, 'pkl_path'):
-            self.save_pkl()
+                continu = True
         else:
-            print('note: pkl not saved yet...')
+            continu = True
+
+        if continu:
+            if hasattr(self, 'stim_images'):
+                x = [0 for stim in stim_timings if stim not in self.stim_images.keys()]
+            else:
+                self.stim_images = {}
+                x = [0] * len(stim_timings)
+            if 0 in x:
+                tiffs_loc = '%s/*Ch3.tif' % self.tiff_path_dir
+                tiff_path = glob.glob(tiffs_loc)[0]
+                print('loading up %s tiff from: ' % self.metainfo['trial'], tiff_path)
+                im_stack = tf.imread(tiff_path, key=range(self.n_frames))
+                print('Processing seizures from experiment tiff (wait for all seizure comparisons to be processed), \n '
+                      'total tiff shape: ', im_stack.shape)
+
+            for stim in stim_timings:
+                if stim in self.stim_images.keys():
+                    avg_sub = self.stim_images[stim]
+                else:
+                    im_sub = im_stack[stim - peri_frames: stim + peri_frames]
+                    avg_sub = np.mean(im_sub, axis=0)
+                    self.stim_images[stim] = avg_sub
+
+                if save_img:
+                    # save in a subdirectory under the ANALYSIS folder path from whence t-series TIFF came from
+                    save_path = self.tiff_path[:21] + 'Analysis/' + self.tiff_path_dir[26:] + '/avg_stim_images'
+                    save_path_stim = save_path + '/%s_%s_stim-%s.tif' % (
+                        self.metainfo['date'], self.metainfo['trial'], stim)
+                    if os.path.exists(save_path):
+                        if verbose:
+                            print("saving stim_img tiff to... %s" % save_path_stim)
+                        avg_sub8 = convert_to_8bit(avg_sub, 0, 255)
+                        tf.imwrite(save_path_stim,
+                                   avg_sub8, photometric='minisblack')
+                    else:
+                        print('made new directory for saving images at:', save_path)
+                        os.mkdir(save_path)
+                        print("saving as... %s" % save_path_stim)
+                        avg_sub8 = convert_to_8bit(avg_sub, 0, 255)
+                        tf.imwrite(save_path_stim,
+                                   avg_sub, photometric='minisblack')
+
+                if to_plot:
+                    plt.imshow(avg_sub, cmap='gray')
+                    plt.suptitle('avg image from %s frames around stim_start_frame %s' % (peri_frames, stim))
+                    plt.show()  # just plot for now to make sure that you are doing things correctly so far
+
+            if hasattr(self, 'pkl_path'):
+                self.save_pkl()
+            else:
+                print('note: pkl not saved yet...')
+
+            self.avgstimimages_r = True
 
     # def _good_cells(self, min_radius_pix, max_radius_pix):
     #     '''
@@ -1674,7 +1689,7 @@ class Post4ap(alloptical):
             self.closest_sz['closest sz off (frames)'].append(closest_sz_off)
             self.closest_sz['closest sz (instance)'].append(sz_number)
 
-    def MeanSeizureImages(self, baseline_tiff: str = '', frames_last: int = 0):
+    def MeanSeizureImages(self, baseline_tiff: str = None, frames_last: int = 0, force_redo: bool = False):
         """
         used to make mean images of all seizures contained within an individual expobj trial. the averaged images
         are also subtracted from baseline_tiff image to give a difference image that should highlight the seizure well.
@@ -1683,53 +1698,67 @@ class Post4ap(alloptical):
         :param frames_last: use to specify the tail of the seizure frames for images.
         :return:
         """
-        if baseline_tiff == '':
-            raise Exception(
-                'please provide a baseline tiff path to use for this trial -- usually the spont imaging trials of the same experiment')
 
-        print('First loading up and plotting baseline (comparison) tiff from: ', baseline_tiff)
-        im_stack_base = tf.imread(baseline_tiff, key=range(5000))  # reading in just the first 5000 frames of the spont
-        avg_baseline = np.mean(im_stack_base, axis=0)
-        plt.imshow(avg_baseline, cmap='gray')
-        plt.suptitle('avg 5000 frames baseline from %s' % baseline_tiff[-35:], wrap=True)
-        plt.show()
-
-        tiffs_loc = '%s/*Ch3.tif' % self.tiff_path_dir
-        tiff_path = glob.glob(tiffs_loc)[0]
-        print('loading up post4ap tiff from: ', tiff_path)
-        im_stack = tf.imread(tiff_path, key=range(self.n_frames))
-        print('Processing seizures from experiment tiff (wait for all seizure comparisons to be processed), \n '
-              'total tiff shape: ', im_stack.shape)
-        avg_sub_list = []
-        im_sub_list = []
-        im_diff_list = []
-        counter = 0
-        for sz_on, sz_off in zip(self.seizure_lfp_onsets, self.seizure_lfp_offsets):
-            # subselect for frames within sz on and sz off, and plot average and difference compared to the baseline
-            if frames_last != 0:
-                im_sub = im_stack[sz_off - frames_last:sz_off]  # trying out last 1000 frames from seizure_offset
+        if force_redo:
+            continu = True
+        elif hasattr(self, 'meanszimages_r'):
+            if self.meanszimages_r is True:
+                continu = False
             else:
-                im_sub = im_stack[
-                         sz_on:sz_off]  # take the whole seizure period (as defined by the LFP onset and offsets)
-            avg_sub = np.mean(im_sub, axis=0)
-            plt.imshow(avg_sub, cmap='gray')
-            plt.suptitle('avg of seizure from %s to %s frames' % (sz_on, sz_off))
-            plt.show()  # just plot for now to make sure that you are doing things correctly so far
+                continu = True
+        else:
+            continu = True
 
-            im_diff = avg_sub - avg_baseline
-            plt.imshow(im_diff, cmap='gray')
-            plt.suptitle('diff of seizure from %s to %s frames' % (sz_on, sz_off))
-            plt.show()  # just plot for now to make sure that you are doing things correctly so far
+        if continu:
 
-            avg_sub_list.append(avg_sub)
-            im_sub_list.append(im_sub)
-            im_diff_list.append(im_diff)
+            if baseline_tiff is None:
+                raise Exception(
+                    'please provide a baseline tiff path to use for this trial -- usually the spont imaging trials of the same experiment')
 
-            counter += 1
+            print('First loading up and plotting baseline (comparison) tiff from: ', baseline_tiff)
+            im_stack_base = tf.imread(baseline_tiff, key=range(5000))  # reading in just the first 5000 frames of the spont
+            avg_baseline = np.mean(im_stack_base, axis=0)
+            plt.imshow(avg_baseline, cmap='gray')
+            plt.suptitle('avg 5000 frames baseline from %s' % baseline_tiff[-35:], wrap=True)
+            plt.show()
 
-            ## create downsampled TIFFs for each sz
-            # SaveDownsampledTiff(stack=im_sub, save_as=self.analysis_save_path + '%s_%s_sz%s_downsampled.tiff' % (self.metainfo['date'], self.metainfo['trial'], counter))
+            tiffs_loc = '%s/*Ch3.tif' % self.tiff_path_dir
+            tiff_path = glob.glob(tiffs_loc)[0]
+            print('loading up post4ap tiff from: ', tiff_path)
+            im_stack = tf.imread(tiff_path, key=range(self.n_frames))
+            print('Processing seizures from experiment tiff (wait for all seizure comparisons to be processed), \n '
+                  'total tiff shape: ', im_stack.shape)
+            avg_sub_list = []
+            im_sub_list = []
+            im_diff_list = []
+            counter = 0
+            for sz_on, sz_off in zip(self.seizure_lfp_onsets, self.seizure_lfp_offsets):
+                # subselect for frames within sz on and sz off, and plot average and difference compared to the baseline
+                if frames_last != 0:
+                    im_sub = im_stack[sz_off - frames_last:sz_off]  # trying out last 1000 frames from seizure_offset
+                else:
+                    im_sub = im_stack[
+                             sz_on:sz_off]  # take the whole seizure period (as defined by the LFP onset and offsets)
+                avg_sub = np.mean(im_sub, axis=0)
+                plt.imshow(avg_sub, cmap='gray')
+                plt.suptitle('avg of seizure from %s to %s frames' % (sz_on, sz_off))
+                plt.show()  # just plot for now to make sure that you are doing things correctly so far
 
+                im_diff = avg_sub - avg_baseline
+                plt.imshow(im_diff, cmap='gray')
+                plt.suptitle('diff of seizure from %s to %s frames' % (sz_on, sz_off))
+                plt.show()  # just plot for now to make sure that you are doing things correctly so far
+
+                avg_sub_list.append(avg_sub)
+                im_sub_list.append(im_sub)
+                im_diff_list.append(im_diff)
+
+                counter += 1
+
+                ## create downsampled TIFFs for each sz
+                # SaveDownsampledTiff(stack=im_sub, save_as=self.analysis_save_path + '%s_%s_sz%s_downsampled.tiff' % (self.metainfo['date'], self.metainfo['trial'], counter))
+
+                self.meanszimages_r = True
 
         return avg_sub_list, im_sub_list, im_diff_list
 

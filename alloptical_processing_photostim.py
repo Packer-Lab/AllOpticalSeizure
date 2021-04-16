@@ -143,12 +143,12 @@ expobj.avg_sub_l, im_sub_l, im_diff_l = expobj.MeanSeizureImages(
 #     counter += 1
 
 expobj.avg_stim_images(stim_timings=expobj.stim_start_frames, peri_frames=50, to_plot=False, save_img=True)
-expobj.save_pkl()
 
 for i in range(len(expobj.avg_sub_l)):
     img = pj.rotate_img_avg(expobj.avg_sub_l[i], angle=90)
     # PCA decomposition of the avg_seizure images
     img_compressed = pj.pca_decomp_image(img, components=1, plot_quant=True)
+
 
 
 # %% downsampled movies of the seizures

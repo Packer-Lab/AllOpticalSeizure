@@ -87,7 +87,7 @@ def pca_decomp_image(input_img, components: int = 3, plot_quant: bool = False):
 
         ax3.plot(avg)
         ax3.set_xlim(20, len(img_t) - 20)
-        ax3.title.set_text('average plot quantification of the input img')
+        ax3.set_title('average plot quantification of the input img', wrap=True)
         plt.show()
 
         # quantify the PC reconstructed image
