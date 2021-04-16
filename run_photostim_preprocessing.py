@@ -129,7 +129,7 @@ def run_photostim_processing(trial, exp_type, tiffs_loc_dir, tiffs_loc, naparms_
 
     # collect information about seizures
     if 'post' in exp_type and '4ap' in exp_type:
-        expobj.collect_seizures_info(seizures_info_array=matlab_badframes_path, discard_all=discard_all)
+        expobj.collect_seizures_info(seizures_lfp_timing_matarray=matlab_badframes_path, discard_all=discard_all)
 
     if len(expobj.bad_frames) > 0:
         print('***  Collected a total of ', len(expobj.bad_frames),
@@ -195,8 +195,8 @@ new_tiffs = tiffs_loc[:-19]  # where new tiffs from rm_artifacts_tiffs will be s
 # make the necessary Analysis saving subfolder as well
 analysis_save_path = tiffs_loc[:21] + 'Analysis/' + tiffs_loc_dir[26:]
 
-# matlab_badframes_path = '%s/paired_measurements/%s_%s_%s.mat' % (date, animal_prep, analysis_save_path[:-17], trial[2:])  # choose matlab path if need to use or use None for no additional bad frames
-matlab_badframes_path = None
+matlab_badframes_path = '%s/paired_measurements/%s_%s_%s.mat' % (analysis_save_path[:-17], date, animal_prep, trial[2:])  # choose matlab path if need to use or use None for no additional bad frames
+# matlab_badframes_path = None
 
 metainfo = {
     'animal prep.': animal_prep,

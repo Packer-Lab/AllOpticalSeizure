@@ -45,8 +45,8 @@ plt.imshow(stack[101], cmap='gist_gray', vmin=0, vmax=3000); plt.show()
 i = 5
 tiff_path = '/mnt/qnap_Root/apacker/Data/2020-07-17/WF/HF098/2020-07-16_HF098_00400001/2020-07-16_HF098_00400001(%s).tif' % i
 save_as = '/home/pshah/mnt/qnap/Analysis/2020-07-17/HF98/004/2020-07-16_HF098_004_%s_downsampled.tif' % i
-ao.downsample_tiff(tiff_path="/home/pshah/mnt/qnap/Analysis/2020-07-17/HF98/003/2020-07-17_HF098_003_last50pct.tif",
-                   save_as="/home/pshah/mnt/qnap/Analysis/2020-07-17/HF98/003/2020-07-17_HF098_003_last50pct_downsampled.tif")
+ao.SaveDownsampledTiff(tiff_path="/home/pshah/mnt/qnap/Analysis/2020-07-17/HF98/003/2020-07-17_HF098_003_last50pct.tif",
+                       save_as="/home/pshah/mnt/qnap/Analysis/2020-07-17/HF98/003/2020-07-17_HF098_003_last50pct_downsampled.tif")
 
 
 

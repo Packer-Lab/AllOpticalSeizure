@@ -44,6 +44,7 @@ def points_in_circle_np(radius, x0=0, y0=0, ):
     for x, y in zip(x_[x], y_[y]):
         yield x, y
 
+
 def import_expobj(trial, date, pkl_path):
     with open(pkl_path, 'rb') as f:
         print('\nimporting expobj for "%s, %s" from: %s' % (date, trial, pkl_path))
@@ -60,6 +61,7 @@ def import_expobj(trial, date, pkl_path):
         expobj.save_pkl()
 
     return expobj, experiment
+
 
 ## this should technically be the biggest super class lol
 class TwoPhotonImaging:
@@ -235,14 +237,15 @@ class TwoPhotonImaging:
               '\nscan centre (V):', scan_x, scan_y
               )
 
-    def s2pProcessing(self, s2p_path, subset_frames=None, subtract_neuropil=True, baseline_frames=[], force_redo: bool = False, save=True):
+    def s2pProcessing(self, s2p_path, subset_frames=None, subtract_neuropil=True, baseline_frames=[],
+                      force_redo: bool = False, save=True):
         """processing of suite2p data on the experimental object"""
 
-        if hasattr(self, 'stat'):
+        if force_redo:
+            continu = True
+        elif hasattr(self, 'stat'):
             print('skipped re-processing suite2p data for current trial')
             continu = False
-        elif force_redo:
-            continu = True
         else:
             continu = True
 
@@ -261,7 +264,8 @@ class TwoPhotonImaging:
 
             if self.n_planes == 1:
                 # s2p_path = os.path.join(self.tiff_path, 'suite2p', 'plane' + str(plane))
-                FminusFneu, self.spks, self.stat = s2p_loader(s2p_path, subtract_neuropil)  # s2p_loader() is in utils_func
+                FminusFneu, self.spks, self.stat = s2p_loader(s2p_path,
+                                                              subtract_neuropil)  # s2p_loader() is in utils_func
                 ops = np.load(os.path.join(s2p_path, 'ops.npy'), allow_pickle=True).item()
 
                 if subset_frames is None:
@@ -380,7 +384,8 @@ class TwoPhotonImaging:
 class alloptical(TwoPhotonImaging):
 
     def __init__(self, paths, metainfo, stimtype):
-        TwoPhotonImaging.__init__(self, tiff_path_dir=paths[0], tiff_path=paths[1], paq_path=paths[3], metainfo=metainfo,
+        TwoPhotonImaging.__init__(self, tiff_path_dir=paths[0], tiff_path=paths[1], paq_path=paths[3],
+                                  metainfo=metainfo,
                                   suite2p_path=None, suite2p_run=False)
         # self.metainfo = metainfo
         self.stim_type = stimtype
@@ -393,7 +398,6 @@ class alloptical(TwoPhotonImaging):
         self.seizure_frames = []
 
         # self._parsePVMetadata()
-
 
         ## CREATE THE APPROPRIATE ANALYSIS SUBFOLDER TO USE FOR SAVING ANALYSIS RESULTS TO
         self.analysis_save_path = self.tiff_path[:21] + 'Analysis/' + self.tiff_path_dir[26:]
@@ -512,11 +516,12 @@ class alloptical(TwoPhotonImaging):
                     self.cell_area.append(1)
 
     def subset_frames_current_trial(self, to_suite2p, trial, baseline_trials, force_redo: bool = False, save=True):
-        if hasattr(self, 'curr_trial_frames'):
+
+        if force_redo:
+            continu = True
+        elif hasattr(self, 'curr_trial_frames'):
             print('skipped re-collecting subset frames of current trial')
             continu = False
-        elif force_redo:
-            continu = True
         else:
             continu = True
 
@@ -574,11 +579,12 @@ class alloptical(TwoPhotonImaging):
                 tif.save(reg_tif_crop)
 
     def raw_traces_from_targets(self, force_redo: bool = False, save: bool = True):
-        if hasattr(self, 'raw_SLMTargets'):
+
+        if force_redo:
+            continu = True
+        elif hasattr(self, 'raw_SLMTargets'):
             print('skipped re-collecting of raw traces from SLM targets')
             continu = False
-        elif force_redo:
-            continu = True
         else:
             continu = True
 
@@ -605,17 +611,18 @@ class alloptical(TwoPhotonImaging):
                     x = data[:, target_areas[coord, :, 1], target_areas[coord, :, 0]]  # = 1
                     targets_trace[coord] = np.mean(x, axis=1)
 
-                targets_trace_full[:, (i - start) * 2000: ((i - start) * 2000) + data.shape[0]] = targets_trace  ## iteratively write to each successive segment of the targets_trace array based on the length of the reg_tiff that is read in.
-
+                targets_trace_full[:, (i - start) * 2000: ((i - start) * 2000) + data.shape[
+                    0]] = targets_trace  ## iteratively write to each successive segment of the targets_trace array based on the length of the reg_tiff that is read in.
 
             # final part, crop to the *exact* frames for current trial
             self.raw_SLMTargets = targets_trace_full[:,
-                               self.curr_trial_frames[0] - start * 2000: self.curr_trial_frames[1] - (
-                                       self.curr_trial_frames[0] - start * 2000)]
+                                  self.curr_trial_frames[0] - start * 2000: self.curr_trial_frames[1] - (
+                                          self.curr_trial_frames[0] - start * 2000)]
             if save:
                 self.save()
 
-    def get_alltargets_stim_traces_norm(self, targets_idx: int = None, subselect_cells: list = None, pre_stim=15, post_stim=200):
+    def get_alltargets_stim_traces_norm(self, targets_idx: int = None, subselect_cells: list = None, pre_stim=15,
+                                        post_stim=200):
         """
         primary function to measure the dFF traces for photostimulated targets.
         :param targets_idx: integer for the index of target cell to process
@@ -644,7 +651,7 @@ class alloptical(TwoPhotonImaging):
         targets_raw_avg = np.zeros([num_cells, pre_stim + post_stim])
 
         if targets_idx is not None:
-            print('collecting stim traces for cell ', targets_idx+1)
+            print('collecting stim traces for cell ', targets_idx + 1)
             flu = [targets_trace[targets_idx][stim - pre_stim: stim + post_stim] for stim in stim_timings if
                    stim not in self.seizure_frames]
 
@@ -667,7 +674,7 @@ class alloptical(TwoPhotonImaging):
                 if subselect_cells:
                     print('collecting stim traces for cell %s' % subselect_cells[cell_idx])
                 else:
-                    print('collecting stim traces for cell # %s out of %s' % (cell_idx+1, num_cells))
+                    print('collecting stim traces for cell # %s out of %s' % (cell_idx + 1, num_cells))
                 flu = [targets_trace[cell_idx][stim - pre_stim: stim + post_stim] for stim in stim_timings if
                        stim not in self.seizure_frames]
 
@@ -700,7 +707,6 @@ class alloptical(TwoPhotonImaging):
             targets_raw_avg = np.mean(targets_raw, axis=1)
 
             return targets_dff, targets_dff_avg, targets_dfstdF, targets_dfstdF_avg, targets_raw, targets_raw_avg
-
 
     def _parseNAPARMxml(self):
 
@@ -1017,6 +1023,143 @@ class alloptical(TwoPhotonImaging):
 
             self.sta_sig.append(sig_units)
 
+    def s2p_targets(self, force_redo: bool = False):
+        '''finding s2p cell ROIs that were also SLM targets'''
+
+        if force_redo:
+            continu = True
+        elif hasattr(self, 's2p_cell_targets'):
+            print('skipped re-running of finding s2p targets from suite2p cell list')
+            continu = False
+        else:
+            continu = True
+
+        if continu:
+            self.is_target = []
+
+            print('\nsearching for targeted cells...')
+
+            # # Rob's new version of this, not really sure how he meant for it to be done, but it's not working
+            # targ_img = np.zeros([self.frame_x, self.frame_y], dtype='uint16')
+            # target_areas = np.array(self.target_areas)
+            # targ_img[target_areas[:, :, 1], target_areas[:, :, 0]] = 1
+            #
+            # cell_img = np.zeros([self.frame_x, self.frame_y], dtype='uint16')
+            # cell_x = np.array(self.cell_x)
+            # cell_y = np.array(self.cell_y)
+            # for i, coord in enumerate(zip(cell_x[0], cell_y[0])):
+            #     cell_img[coord] = i + 1
+            #
+            # targ_cell = cell_img * targ_img
+            #
+            # targ_cell_ids = np.unique(targ_cell)[1:] - 1
+            #
+            # self.is_target = np.zeros([self.n_units], dtype='bool')
+            # self.is_target[targ_cell_ids] = True
+            #
+            # self.n_targeted_cells = np.sum(self.is_target)
+            #
+            # self.s2p_cell_targets = [i for i, x in enumerate(self.is_target) if
+            #                          x == True]  # get list of s2p cells that were photostim targetted
+
+            ##### new version
+            # s2p targets for all SLM targets
+            for cell in range(self.n_units):
+                flag = 0
+                for x, y in zip(self.cell_x[cell], self.cell_y[cell]):
+                    if (x, y) in self.target_coords:
+                        print((x, y))
+                        flag = 1
+                    elif (x, y) in self.target_coords_all:
+                        print((x, y))
+                        flag = 1
+
+                if flag == 1:
+                    self.is_target.append(1)
+                else:
+                    self.is_target.append(0)
+
+            self.n_targeted_cells = sum(self.is_target)
+            self.s2p_cell_targets = [self.cell_id[i] for i, x in enumerate(self.is_target) if
+                                     x == 1]  # get list of s2p cells that were photostim targetted
+
+            # # s2p targets for SLM group #1
+            # self.targeted_cells_1 = []
+            # for cell in range(self.n_units):
+            #     flag = 0
+            #     for x, y in zip(self.cell_x[cell], self.cell_y[cell]):
+            #         if (x, y) in self.target_coords_1:
+            #             print('Target coordinate found (Group #1)', (x, y))
+            #             flag = 1
+            #
+            #     if flag == 1:
+            #         self.targeted_cells_1.append(1)
+            #     else:
+            #         self.targeted_cells_1.append(0)
+            #
+            # self.n_targeted_cells_1 = sum(self.targeted_cells_1)
+            # self.s2p_cell_targets_1 = [self.cell_id[i] for i, x in enumerate(self.targeted_cells_1) if
+            #                            x == 1]  # get list of s2p cells that were photostim targetted
+            #
+            # # s2p targets for SLM group #2
+            # self.targeted_cells_2 = []
+            # for cell in range(self.n_units):
+            #     flag = 0
+            #     for x, y in zip(self.cell_x[cell], self.cell_y[cell]):
+            #         if (x, y) in self.target_coords_2:
+            #             print('Target coordinate found (Group #2)', (x, y))
+            #             flag = 1
+            #
+            #     if flag == 1:
+            #         self.targeted_cells_2.append(1)
+            #     else:
+            #         self.targeted_cells_2.append(0)
+            #
+            # self.n_targeted_cells_2 = sum(self.targeted_cells_2)
+            # self.s2p_cell_targets_2 = [self.cell_id[i] for i, x in enumerate(self.targeted_cells_2) if
+            #                            x == 1]  # get list of s2p cells that were photostim targetted
+
+            # ##### old version - pretty sure something is wrong with this code, the s2p cell targets this code finds don't make much sense
+            # print('Searching for targeted cells in suite2p results...')
+            # for cell in range(self.n_units):
+            #     flag = 0
+            #
+            #     for x, y in zip(self.cell_x[cell], self.cell_y[cell]):
+            #         for target in range(self.n_targets):
+            #             for a, b in self.target_areas[target]:
+            #                 if x == a and y == b:
+            #                     flag = 1
+            #
+            #     if flag == 1:
+            #         self.is_target.append(1)
+            #     else:
+            #         self.is_target.append(0)
+            #
+            # self.s2p_cell_targets = [i for i, x in enumerate(self.is_target) if
+            #                     x == 1]  # get list of s2p cells that were photostim targetted
+            #
+            # self.n_targeted_cells = len(self.s2p_cell_targets)
+
+            # self.s2p_cell_targets_groups = [self.s2p_cell_targets_1, self.s2p_cell_targets_2]
+
+            print('------- Search completed.')
+            print('Number of targeted cells: ', self.n_targeted_cells)
+            print('\nTarget cells found in suite2p: ', self.s2p_cell_targets,
+                  ' -- %s cells (out of %s target coords)' % (len(self.s2p_cell_targets), len(self.target_coords_all)))
+
+            pjf.plot_cell_loc(self, cells=self.s2p_cell_targets, show=False,
+                              title='s2p cell targets and all target coords %s/%s' % (
+                                  self.metainfo['trial'], self.metainfo['animal prep.']))
+            for (x, y) in self.target_coords_all:
+                plt.scatter(x=x, y=y, edgecolors='yellowgreen', facecolors='none', linewidths=1.0)
+            plt.show()
+
+            self.save()
+
+        # print('Target cells SLM Group #1: ', self.s2p_cell_targets_1)
+        # print('Target cells SLM Group #2: ', self.s2p_cell_targets_2)
+        #
+
     def singleTrialSignificance(self):
 
         self.single_sig = []  # single trial significance value for each trial for each cell in each plane
@@ -1226,143 +1369,6 @@ class alloptical(TwoPhotonImaging):
         self.target_areas = target_areas
 
         print('Got targets...')
-
-    def s2p_targets(self, force_redo: bool = False):
-        '''finding s2p cell ROIs that were also SLM targets'''
-
-        if hasattr(self, 's2p_cell_targets'):
-            print('skipped re-running of finding s2p targets from suite2p cell list')
-            continu = False
-        elif force_redo:
-            continu = True
-        else:
-            continu = True
-
-        if continu:
-            self.is_target = []
-
-            print('\nsearching for targeted cells...')
-
-            # # Rob's new version of this, not really sure how he meant for it to be done, but it's not working
-            # targ_img = np.zeros([self.frame_x, self.frame_y], dtype='uint16')
-            # target_areas = np.array(self.target_areas)
-            # targ_img[target_areas[:, :, 1], target_areas[:, :, 0]] = 1
-            #
-            # cell_img = np.zeros([self.frame_x, self.frame_y], dtype='uint16')
-            # cell_x = np.array(self.cell_x)
-            # cell_y = np.array(self.cell_y)
-            # for i, coord in enumerate(zip(cell_x[0], cell_y[0])):
-            #     cell_img[coord] = i + 1
-            #
-            # targ_cell = cell_img * targ_img
-            #
-            # targ_cell_ids = np.unique(targ_cell)[1:] - 1
-            #
-            # self.is_target = np.zeros([self.n_units], dtype='bool')
-            # self.is_target[targ_cell_ids] = True
-            #
-            # self.n_targeted_cells = np.sum(self.is_target)
-            #
-            # self.s2p_cell_targets = [i for i, x in enumerate(self.is_target) if
-            #                          x == True]  # get list of s2p cells that were photostim targetted
-
-            ##### new version
-            # s2p targets for all SLM targets
-            for cell in range(self.n_units):
-                flag = 0
-                for x, y in zip(self.cell_x[cell], self.cell_y[cell]):
-                    if (x, y) in self.target_coords:
-                        print((x, y))
-                        flag = 1
-                    elif (x, y) in self.target_coords_all:
-                        print((x, y))
-                        flag = 1
-
-                if flag == 1:
-                    self.is_target.append(1)
-                else:
-                    self.is_target.append(0)
-
-            self.n_targeted_cells = sum(self.is_target)
-            self.s2p_cell_targets = [self.cell_id[i] for i, x in enumerate(self.is_target) if
-                                     x == 1]  # get list of s2p cells that were photostim targetted
-
-            # # s2p targets for SLM group #1
-            # self.targeted_cells_1 = []
-            # for cell in range(self.n_units):
-            #     flag = 0
-            #     for x, y in zip(self.cell_x[cell], self.cell_y[cell]):
-            #         if (x, y) in self.target_coords_1:
-            #             print('Target coordinate found (Group #1)', (x, y))
-            #             flag = 1
-            #
-            #     if flag == 1:
-            #         self.targeted_cells_1.append(1)
-            #     else:
-            #         self.targeted_cells_1.append(0)
-            #
-            # self.n_targeted_cells_1 = sum(self.targeted_cells_1)
-            # self.s2p_cell_targets_1 = [self.cell_id[i] for i, x in enumerate(self.targeted_cells_1) if
-            #                            x == 1]  # get list of s2p cells that were photostim targetted
-            #
-            # # s2p targets for SLM group #2
-            # self.targeted_cells_2 = []
-            # for cell in range(self.n_units):
-            #     flag = 0
-            #     for x, y in zip(self.cell_x[cell], self.cell_y[cell]):
-            #         if (x, y) in self.target_coords_2:
-            #             print('Target coordinate found (Group #2)', (x, y))
-            #             flag = 1
-            #
-            #     if flag == 1:
-            #         self.targeted_cells_2.append(1)
-            #     else:
-            #         self.targeted_cells_2.append(0)
-            #
-            # self.n_targeted_cells_2 = sum(self.targeted_cells_2)
-            # self.s2p_cell_targets_2 = [self.cell_id[i] for i, x in enumerate(self.targeted_cells_2) if
-            #                            x == 1]  # get list of s2p cells that were photostim targetted
-
-            # ##### old version - pretty sure something is wrong with this code, the s2p cell targets this code finds don't make much sense
-            # print('Searching for targeted cells in suite2p results...')
-            # for cell in range(self.n_units):
-            #     flag = 0
-            #
-            #     for x, y in zip(self.cell_x[cell], self.cell_y[cell]):
-            #         for target in range(self.n_targets):
-            #             for a, b in self.target_areas[target]:
-            #                 if x == a and y == b:
-            #                     flag = 1
-            #
-            #     if flag == 1:
-            #         self.is_target.append(1)
-            #     else:
-            #         self.is_target.append(0)
-            #
-            # self.s2p_cell_targets = [i for i, x in enumerate(self.is_target) if
-            #                     x == 1]  # get list of s2p cells that were photostim targetted
-            #
-            # self.n_targeted_cells = len(self.s2p_cell_targets)
-
-            # self.s2p_cell_targets_groups = [self.s2p_cell_targets_1, self.s2p_cell_targets_2]
-
-            print('------- Search completed.')
-            print('Number of targeted cells: ', self.n_targeted_cells)
-            print('\nTarget cells found in suite2p: ', self.s2p_cell_targets,
-                  ' -- %s cells (out of %s target coords)' % (len(self.s2p_cell_targets), len(self.target_coords_all)))
-
-            pjf.plot_cell_loc(self, cells=self.s2p_cell_targets, show=False,
-                              title='s2p cell targets and all target coords %s/%s' % (
-                                  self.metainfo['trial'], self.metainfo['animal prep.']))
-            for (x, y) in self.target_coords_all:
-                plt.scatter(x=x, y=y, edgecolors='yellowgreen', facecolors='none', linewidths=1.0)
-            plt.show()
-
-            self.save()
-
-        # print('Target cells SLM Group #1: ', self.s2p_cell_targets_1)
-        # print('Target cells SLM Group #2: ', self.s2p_cell_targets_2)
-        #
 
     def find_s2p_targets_naparm(self):
         '''finding s2p cells that were SLM targets - naparm, lots of different SLM groups version'''
@@ -1591,7 +1597,7 @@ class Post4ap(alloptical):
                                                                                  self.metainfo['trial'],
                                                                                  self.metainfo['date']))
 
-    def _subselect_sz_tiffs(self, onsets, offsets):
+    def _subselect_sz_tiffs(self, onsets, offsets, on_off_type: str):
         """subselect raw tiff movie over all seizures as marked by onset and offsets. save under analysis path for object.
         Note that the onsets and offsets definitions may vary, so check exactly what was used in those args."""
 
@@ -1607,30 +1613,31 @@ class Post4ap(alloptical):
 
         # subselect raw tiff movie over all seizures as marked by LFP onset and offsets
         for on, off in zip(onsets, offsets):
-            select_frames = (on, off);
+            select_frames = (on, off)
             print('cropping sz frames', select_frames)
-            save_as = self.analysis_save_path + '/%s_%s_subselected_%s_%s.tif' % (self.metainfo['date'],
-                                                                                  self.metainfo['trial'],
-                                                                                  select_frames[0], select_frames[1])
+            save_as = self.analysis_save_path + '/%s_%s_subselected_%s_%s_%s.tif' % (self.metainfo['date'],
+                                                                                     self.metainfo['trial'],
+                                                                                     select_frames[0], select_frames[1],
+                                                                                     on_off_type)
             subselect_tiff(tiff_stack=stack, select_frames=select_frames, save_as=save_as)
         print('\ndone. saved to:', self.analysis_save_path)
 
-    def collect_seizures_info(self, seizures_info_array=None, discard_all=True):
+    def collect_seizures_info(self, seizures_lfp_timing_matarray=None, discard_all=True):
         print('\ncollecting information about seizures...')
-        self.seizures_info_array = seizures_info_array  # path to the matlab array containing paired measurements of seizures onset and offsets
+        self.seizures_lfp_timing_matarray = seizures_lfp_timing_matarray  # path to the matlab array containing paired measurements of seizures onset and offsets
 
         # retrieve seizure onset and offset times from the seizures info array input
         paq = paq_read(file_path=self.paq_path, plot=False)
 
         # print(paq[0]['data'][0])  # print the frame clock signal from the .paq file to make sure its being read properly
         # NOTE: the output of all of the following function is in dimensions of the FRAME CLOCK (not official paq clock time)
-        if seizures_info_array is not None:
-            print('-- using matlab array to collect seizures %s: ' % seizures_info_array)
+        if seizures_lfp_timing_matarray is not None:
+            print('-- using matlab array to collect seizures %s: ' % seizures_lfp_timing_matarray)
             bad_frames, self.seizure_frames, self.seizure_lfp_onsets, self.seizure_lfp_offsets = frames_discard(
-                paq=paq[0], input_array=seizures_info_array, total_frames=self.n_frames, discard_all=discard_all)
+                paq=paq[0], input_array=seizures_lfp_timing_matarray, total_frames=self.n_frames, discard_all=discard_all)
         else:
             print('-- no matlab array given to use for finding seizures.')
-            bad_frames = frames_discard(paq=paq[0], input_array=seizures_info_array, total_frames=self.n_frames,
+            bad_frames = frames_discard(paq=paq[0], input_array=seizures_lfp_timing_matarray, total_frames=self.n_frames,
                                         discard_all=discard_all)
 
         print('\nTotal extra seizure/CSD or other frames to discard: ', len(bad_frames))
@@ -1638,9 +1645,9 @@ class Post4ap(alloptical):
         self.append_bad_frames(
             bad_frames=bad_frames)  # here only need to append the bad frames to the expobj.bad_frames property
 
-        if seizures_info_array is not None:
+        if seizures_lfp_timing_matarray is not None:
             print('\nnow creating raw movies for each sz as well (saved to the /Analysis folder)')
-            self._subselect_sz_tiffs(onsets=self.seizure_lfp_onsets, offsets=self.seizure_lfp_offsets)
+            self._subselect_sz_tiffs(onsets=self.seizure_lfp_onsets, offsets=self.seizure_lfp_offsets, on_off_type='lfp_onsets_offsets')
 
     def find_closest_sz_frames(self):
         """finds time from the closest seizure onset on LFP (-ve values for forthcoming, +ve for past)
@@ -1667,9 +1674,9 @@ class Post4ap(alloptical):
             self.closest_sz['closest sz off (frames)'].append(closest_sz_off)
             self.closest_sz['closest sz (instance)'].append(sz_number)
 
-    def avg_seizure_images(self, baseline_tiff: str = '', frames_last: int = 0):
+    def MeanSeizureImages(self, baseline_tiff: str = '', frames_last: int = 0):
         """
-        used to make averaged images of all seizures contained within an individual expobj trial. the averaged images
+        used to make mean images of all seizures contained within an individual expobj trial. the averaged images
         are also subtracted from baseline_tiff image to give a difference image that should highlight the seizure well.
 
         :param baseline_tiff: path to the baseline tiff file to use
@@ -1684,7 +1691,7 @@ class Post4ap(alloptical):
         im_stack_base = tf.imread(baseline_tiff, key=range(5000))  # reading in just the first 5000 frames of the spont
         avg_baseline = np.mean(im_stack_base, axis=0)
         plt.imshow(avg_baseline, cmap='gray')
-        plt.suptitle('avg 5000 frames baseline from %s' % baseline_tiff[-35:])
+        plt.suptitle('avg 5000 frames baseline from %s' % baseline_tiff[-35:], wrap=True)
         plt.show()
 
         tiffs_loc = '%s/*Ch3.tif' % self.tiff_path_dir
@@ -1693,9 +1700,10 @@ class Post4ap(alloptical):
         im_stack = tf.imread(tiff_path, key=range(self.n_frames))
         print('Processing seizures from experiment tiff (wait for all seizure comparisons to be processed), \n '
               'total tiff shape: ', im_stack.shape)
-        avg_sub_l = []
-        im_sub_l = []
-        im_diff_l = []
+        avg_sub_list = []
+        im_sub_list = []
+        im_diff_list = []
+        counter = 0
         for sz_on, sz_off in zip(self.seizure_lfp_onsets, self.seizure_lfp_offsets):
             # subselect for frames within sz on and sz off, and plot average and difference compared to the baseline
             if frames_last != 0:
@@ -1713,14 +1721,17 @@ class Post4ap(alloptical):
             plt.suptitle('diff of seizure from %s to %s frames' % (sz_on, sz_off))
             plt.show()  # just plot for now to make sure that you are doing things correctly so far
 
-            avg_sub_l.append(avg_sub)
-            im_sub_l.append(im_sub)
-            im_diff_l.append(im_diff)
+            avg_sub_list.append(avg_sub)
+            im_sub_list.append(im_sub)
+            im_diff_list.append(im_diff)
 
-            # how to calculate the dominant direction? do you need to look at the seizure throughout its whole length
-            # or can you just take the mean image of the seizure duration and then use that mean img to make the dominant direction measurement
+            counter += 1
 
-        return avg_sub_l, im_sub_l, im_diff_l
+            ## create downsampled TIFFs for each sz
+            # SaveDownsampledTiff(stack=im_sub, save_as=self.analysis_save_path + '%s_%s_sz%s_downsampled.tiff' % (self.metainfo['date'], self.metainfo['trial'], counter))
+
+
+        return avg_sub_list, im_sub_list, im_diff_list
 
     def _InOutSz(self, cell, cell_med: list, sz_border_path: str, to_plot=False):
         """
@@ -2157,11 +2168,11 @@ def getTargetImage(obj):
 def s2pMaskStack(obj, pkl_list, s2p_path, parent_folder, force_redo: bool = False):
     """makes a TIFF stack with the s2p mean image, and then suite2p ROI masks for all cells detected, target cells, and also SLM targets as well?"""
 
-    if hasattr(obj, 's2p_cell_targets'):
+    if force_redo:
+        continu = True
+    elif hasattr(obj, 's2p_cell_targets'):
         print('skipped re-making TIFF stack of finding s2p targets from suite2p cell list')
         continu = False
-    elif force_redo:
-        continu = True
     else:
         continu = True
 
@@ -2354,7 +2365,7 @@ def get_s2ptargets_stim_traces(expobj, normalize_to='', pre_stim=10, post_stim=2
                 for i in range(len(flu)):
                     trace_dff = ((flu[i] - mean_spont_baseline) / mean_spont_baseline) * 100
                     # add nan if cell is inside sz boundary for this stim
-                    if hasattr(expobj, 'is_cell_insz'):
+                    if hasattr(expobj, 'cells_sz_stim'):
                         if expobj.is_cell_insz(cell=cell, stim=stim_timings[i]):
                             trace_dff = [np.nan] * len(flu[i])
                     flu_dff.append(trace_dff)
@@ -2366,7 +2377,7 @@ def get_s2ptargets_stim_traces(expobj, normalize_to='', pre_stim=10, post_stim=2
                     std_pre = np.std(trace[0:pre_stim])
                     dFstdF = (trace - mean_pre) / std_pre  # make dF divided by std of pre-stim F trace
                     # add nan if cell is inside sz boundary for this stim
-                    if hasattr(expobj, 'is_cell_insz'):
+                    if hasattr(expobj, 'cells_sz_stim'):
                         if expobj.is_cell_insz(cell=cell, stim=stim_timings[i]):
                             trace_dff = [np.nan] * len(trace)
                             dFstdF = [np.nan] * len(trace)
@@ -2426,7 +2437,7 @@ def get_nontargets_stim_traces_norm(expobj, normalize_to='', pre_stim=10, post_s
                     trace_dff = ((flu[i] - mean_spont_baseline) / mean_spont_baseline) * 100
 
                     # add nan if cell is inside sz boundary for this stim
-                    if hasattr(expobj, 'is_cell_insz'):
+                    if hasattr(expobj, 'cells_sz_stim'):
                         if expobj.is_cell_insz(cell=cell, stim=stim_timings[i]):
                             trace_dff = [np.nan] * len(flu[i])
 
@@ -2441,7 +2452,7 @@ def get_nontargets_stim_traces_norm(expobj, normalize_to='', pre_stim=10, post_s
                     dFstdF = (trace - mean_pre) / std_pre  # make dF divided by std of pre-stim F trace
 
                     # add nan if cell is inside sz boundary for this stim
-                    if hasattr(expobj, 'is_cell_insz'):
+                    if hasattr(expobj, 'cells_sz_stim'):
                         if expobj.is_cell_insz(cell=cell, stim=stim_timings[i]):
                             trace_dff = [np.nan] * len(trace)
                             dFstdF = [np.nan] * len(trace)
@@ -2663,12 +2674,14 @@ def convert_to_8bit(img, target_type_min=0, target_type_max=255):
     return new_img
 
 
-def downsample_tiff(tiff_path, save_as=None):
-    print('working on... %s' % tiff_path)
+def SaveDownsampledTiff(tiff_path: str = None, stack: np.array = None, save_as=None):
+    print('downsampling of tiff stack...')
 
-    # open tiff file
-    stack = tf.imread(tiff_path)
-    resolution = stack.shape[1]
+    if stack is None:
+        # open tiff file
+        print('|- working on... %s' % tiff_path)
+        stack = tf.imread(tiff_path)
+        resolution = stack.shape[1]
 
     # downsample to 8-bit
     stack8 = np.full_like(stack, fill_value=0)
@@ -2686,7 +2699,7 @@ def downsample_tiff(tiff_path, save_as=None):
         frame = frame_count[i]
         avgd_stack[i] = np.mean(stack8[frame:frame + group_by], axis=0)
 
-    if save_as == None:
+    if save_as is None:
         save_as = tiff_path[:-4] + '_downsampled.tif'
 
     # write output
@@ -2766,7 +2779,8 @@ def calculate_StimSuccessRate(expobj, cell_ids: list, raw_traces_stims=None, dfs
                                     if stim not in expobj.cells_sz_stim.keys() or cell not in expobj.cells_sz_stim[
                                         stim]]  # select only the stim times where the cell IS NOT inside the sz boundary
                 else:
-                    print('no information about cell locations in seizures by stim available, therefore not excluding any stims based on sz state')
+                    print(
+                        'no information about cell locations in seizures by stim available, therefore not excluding any stims based on sz state')
                     stims_to_use = [str(stim) for stim in stim_timings]
             else:
                 print('not excluding any stims based on sz state')
@@ -2783,7 +2797,8 @@ def calculate_StimSuccessRate(expobj, cell_ids: list, raw_traces_stims=None, dfs
 
     elif raw_traces_stims is not None:
         if sz_filter:
-            raise Exception("the seizure filtering by stims + cells functionality is only available for s2p defined cell targets as of now")
+            raise Exception(
+                "the seizure filtering by stims + cells functionality is only available for s2p defined cell targets as of now")
 
         for idx in range(len(cell_ids)):
             success = 0
@@ -2816,11 +2831,13 @@ def calculate_StimSuccessRate(expobj, cell_ids: list, raw_traces_stims=None, dfs
             if verbose:
                 print('Target # %s: %s percent hits over %s stims' % (cell_ids[idx], reliability_cells[idx], counter))
             if plot:
-                random_select = np.random.randint(0,100, 10)  # select just 10 random traces to show on the plot
-                aoplot.plot_periphotostim_avg(arr=expobj.SLMTargets_stims_dfstdF[idx][random_select], expobj=expobj, stim_duration=expobj.duration_frames,
-                                              x_label = 'frames', pre_stim=pre_stim, post_stim=expobj.post_stim, color='steelblue',
+                random_select = np.random.randint(0, 100, 10)  # select just 10 random traces to show on the plot
+                aoplot.plot_periphotostim_avg(arr=expobj.SLMTargets_stims_dfstdF[idx][random_select], expobj=expobj,
+                                              stim_duration=expobj.duration_frames,
+                                              x_label='frames', pre_stim=pre_stim, post_stim=expobj.post_stim,
+                                              color='steelblue',
                                               y_lims=[-0.5, 2.5], show=False, title='Target ' + str(idx))
-                m = expobj.duration_frames + (3 * expobj.duration_frames)/2 - pre_stim
+                m = expobj.duration_frames + (3 * expobj.duration_frames) / 2 - pre_stim
                 x = np.random.randn(len(responses)) * 1.5 + m
                 plt.scatter(x, responses, c='chocolate', zorder=3, alpha=0.6)
                 plt.show()
@@ -2857,7 +2874,6 @@ def calculate_StimSuccessRate(expobj, cell_ids: list, raw_traces_stims=None, dfs
 
     print("avg reliability is: %s" % (round(np.nanmean(list(reliability_cells.values())), 2)))
     return reliability_cells, hits_cells, responses_cells
-
 
 
 # calculate the dFF responses of the non-targeted cells, create a pandas df of the post-stim dFF responses of all cells

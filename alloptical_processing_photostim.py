@@ -93,8 +93,7 @@ radiuses = expobj.radius
 # initial quick run to allow numba to compile the function - not sure if this is actually needed/creating time savings
 # _, _, _, _ = aoutils._good_cells(cell_ids=cell_ids[:3], raws=raws, photostim_frames=expobj.photostim_frames, radiuses=radiuses,
 #                         std_thresh=2, min_radius_pix=2.5, max_radius_pix=8.5)
-expobj.good_cells, events_loc_cells, flu_events_cells, stds = aoutils._good_cells(cell_ids=cell_ids, raws=raws, photostim_frames=expobj.photostim_frames,
-                                                                                  radiuses=radiuses, std_thresh=2, min_radius_pix=3, max_radius_pix=9)
+expobj.good_cells, events_loc_cells, flu_events_cells, stds = aoutils._good_cells(cell_ids=cell_ids, raws=raws, photostim_frames=expobj.photostim_frames, std_thresh=2.5)
 
 # sort the stds dictionary in order of std
 stds_sorted = {}
@@ -119,18 +118,22 @@ print("\n COMPLETED RUNNING ALL OPTICAL PROCESSING PHOTOSTIM.")
 
 
 #%%#####################################################################################################################
-
+########################################################################################################################
+########################################################################################################################
+########################################################################################################################
 ##### ------------------- processing steps for SEIZURE TRIALS only!! ###################################################
-
+########################################################################################################################
+########################################################################################################################
+########################################################################################################################
 ########################################################################################################################
 
 if 'post' in expobj.metainfo['exptype'] and '4ap' in expobj.metainfo['exptype']:
-    print('\n MOVING ONTO POST-4AP SZ PROCESSING')
+    print('\n MOVING ONTO POST-4AP SZ PROCESSING\n\n')
 else:
     sys.exit()
 
 
-expobj.avg_sub_l, im_sub_l, im_diff_l = expobj.avg_seizure_images(
+expobj.avg_sub_l, im_sub_l, im_diff_l = expobj.MeanSeizureImages(
     baseline_tiff="/home/pshah/mnt/qnap/Data/2020-12-18/2020-12-18_t-005/2020-12-18_t-005_Cycle00001_Ch3.tif",
     frames_last=1000)
 
@@ -146,6 +149,13 @@ for i in range(len(expobj.avg_sub_l)):
     img = pj.rotate_img_avg(expobj.avg_sub_l[i], angle=90)
     # PCA decomposition of the avg_seizure images
     img_compressed = pj.pca_decomp_image(img, components=1, plot_quant=True)
+
+
+# %% downsampled movies of the seizures
+
+
+
+
 
 
 # %% classifying stims as in_sz or out_sz or before_sz or after_sz
@@ -168,7 +178,7 @@ expobj.save_pkl()
 on_ = []
 # on_ = [expobj.stim_start_frames[0]]  # uncomment if imaging is starting mid seizure
 on_.extend(expobj.stims_bf_sz)
-expobj._subselect_sz_tiffs(onsets=on_, offsets=expobj.stims_af_sz)
+expobj._subselect_sz_tiffs(onsets=on_, offsets=expobj.stims_af_sz, on_off_type='StimsBfAfSz')
 
 
 # %% classifying cells as in or out of the current seizure location in the FOV
@@ -228,9 +238,13 @@ else:
     sys.exit()
 
 #%%#####################################################################################################################
-
+########################################################################################################################
+########################################################################################################################
+########################################################################################################################
 ##### ------------------- processing steps for ALL OPTICAL PHOTOSTIM related stuff #####################################
-
+########################################################################################################################
+########################################################################################################################
+########################################################################################################################
 ########################################################################################################################
 
 # Collect pre to post stim traces for PHOTOSTIM TARGETED CELLS, FILTER FOR GOOD PHOTOSTIM. TARGETED CELLS with responses above threshold = 1 std of the prestim std
@@ -249,7 +263,7 @@ aoutils._good_photostim_cells(expobj=expobj, pre_stim=expobj.pre_stim, post_stim
 
 # what does threshold value mean? add more descriptive print output for that
 
-# Collect pre to post stim traces for NON-TARGETS
+# %% Collect pre to post stim traces for NON-TARGETS
 
 expobj.dff_traces, expobj.dff_traces_avg, expobj.dfstdF_traces, \
     expobj.dfstdF_traces_avg, expobj.raw_traces, expobj.raw_traces_avg = \

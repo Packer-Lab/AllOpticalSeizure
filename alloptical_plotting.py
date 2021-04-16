@@ -11,7 +11,7 @@ import tifffile as tf
 
 
 ### plotting the distribution of radius and aspect ratios - should this be running before the filtering step which is right below????????
-def plot_cell_radius_aspectr(expobj, stat, to_plot):
+def plot_cell_radius_aspectr(expobj, stat, to_plot, min_vline: int = 4, max_vline: int = 12):
     radius = []
     aspect_ratio = []
     for cell in range(len(stat)):
@@ -22,13 +22,16 @@ def plot_cell_radius_aspectr(expobj, stat, to_plot):
 
     if to_plot == 'radius':
         to_plot_ = radius
-        plt.axvline(4 / expobj.pix_sz_x, color='grey')
-        plt.axvline(14 / expobj.pix_sz_x, color='grey')
+        plt.axvline(min_vline / expobj.pix_sz_x, color='grey')
+        plt.axvline(max_vline / expobj.pix_sz_x, color='grey')
+        n, bins, patches = plt.hist(to_plot_, 100)
+        title = 'radius - {%s um to %s um}' % (min_vline, max_vline)
     elif to_plot == 'aspect':
         to_plot_ = aspect_ratio
-    n, bins, patches = plt.hist(to_plot_, 100)
+        n, bins, patches = plt.hist(to_plot_, 100)
+        title = 'aspect ratio'
 
-    plt.suptitle('All cells - %s' % to_plot, y=0.95)
+    plt.suptitle('All cells - %s' % title, y=0.95)
     plt.show()
     return to_plot_
 
