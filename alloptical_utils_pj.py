@@ -889,7 +889,7 @@ class alloptical(TwoPhotonImaging):
             # # sanity check
             # assert max(self.stim_start_frames[0]) < self.raw[plane].shape[1] * self.n_planes
 
-        if 'lfp' in kwargs:
+        if 'lfp' in kwargs.keys():
             if kwargs['lfp']:
                 # find voltage (LFP recording signal) channel and save as lfp_signal attribute
                 voltage_idx = paq['chan_names'].index('voltage')
@@ -2946,7 +2946,7 @@ def calculate_StimSuccessRate(expobj, cell_ids: list, raw_traces_stims=None, dfs
             if verbose:
                 print('|- Target # %s: %s percent hits over %s stims' % (cell_ids[idx], reliability_cells[idx], counter))
             if plot:
-                random_select = np.random.randint(0, 100, 10)  # select just 10 random traces to show on the plot
+                random_select = np.random.randint(0, raw_traces_stims.shape[1], 10)  # select just 10 random traces to show on the plot
                 aoplot.plot_periphotostim_avg(arr=expobj.SLMTargets_stims_dfstdF[idx][random_select], expobj=expobj,
                                               stim_duration=expobj.stim_duration_frames,
                                               x_label='frames', pre_stim=pre_stim, post_stim=expobj.post_stim,

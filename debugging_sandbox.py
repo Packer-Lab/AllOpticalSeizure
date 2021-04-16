@@ -203,3 +203,11 @@ expobj.StimSuccessRate_cells, expobj.hits_cells, expobj.responses_cells = \
     aoutils.calculate_StimSuccessRate(expobj, cell_ids=cell_ids, raw_traces_stims=expobj.SLMTargets_stims_raw,
                                       dfstdf_threshold=0.3, pre_stim=expobj.pre_stim, sz_filter=False,
                                       verbose=True, plot=True)
+
+# %% TODO plot the change in target photostim responses for individual targets over the course of the trial
+#    (normalize to each target's overall mean response) and plot over the timecourse of the trial
+
+# use expobj.responses_cells
+
+aoplot.plotMeanRawFluTrace(expobj=expobj, show=False)
+

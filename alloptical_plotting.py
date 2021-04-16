@@ -405,7 +405,8 @@ def xyloc_responses(expobj, to_plot='dfstdf', clim=[-10, +10], plot_target_coord
 
 
 # plots the raw trace for the Flu mean of the FOV
-def plotMeanRawFluTrace(expobj, stim_span_color='white', title='raw Flu trace', x_axis='time', figsize=None, xlims=None):
+def plotMeanRawFluTrace(expobj, stim_span_color='white', title='raw Flu trace', x_axis='time', figsize=None, xlims=None,
+                        **kwargs):
     # make plot of avg Ca trace
     if figsize:
         fig, ax = plt.subplots(figsize=figsize)
@@ -445,7 +446,9 @@ def plotMeanRawFluTrace(expobj, stim_span_color='white', title='raw Flu trace', 
         ax.set_xlim(xlims)
     plt.suptitle(
         '%s %s %s %s' % (title, expobj.metainfo['exptype'], expobj.metainfo['animal prep.'], expobj.metainfo['trial']))
-    plt.show()
+    if 'show' in kwargs.keys():
+        if kwargs['show'] is True:
+            plt.show()
 
 
 # plots the raw trace for the Flu mean of the FOV
