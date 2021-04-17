@@ -20,7 +20,7 @@ pkl_path = "/home/pshah/mnt/qnap/Analysis/%s/%s_%s/%s_%s.pkl" % (date, date, tri
 
 expobj, experiment = aoutils.import_expobj(trial=trial, date=date, pkl_path=pkl_path)
 
-sz_boundary_csv_done = True  # i know this is a rather very precarious thing here...
+expobj.sz_boundary_csv_done = True  # i know this is a rather very precarious thing here...
 
 if not hasattr(expobj, 's2p_path'):
     expobj.s2p_path = '/home/pshah/mnt/qnap/Analysis/2020-12-18/suite2p/alloptical-2p-1x-alltrials/plane0'
@@ -188,7 +188,7 @@ on_.extend(expobj.stims_bf_sz)
 # %% classifying cells as in or out of the current seizure location in the FOV
 
 # FRIST manually draw boundary on the image in ImageJ and save results as CSV to analysis folder under boundary_csv
-if sz_boundary_csv_done:
+if expobj.sz_boundary_csv_done:
     pass
 else:
     sys.exit()
@@ -215,9 +215,9 @@ for on, off in zip(on_, expobj.stims_af_sz):
         else:
             flip = True
 
-        in_sz = expobj.classify_cells_sz(sz_border_path, to_plot=True, title='%s' % stim, flip=flip)
+        in_sz = expobj.classify_cells_sz(sz_border_path, to_plot=False, title='%s' % stim, flip=flip)
         expobj.cells_sz_stim[stim] = in_sz  # for each stim, there will be a list of cells that will be classified as in seizure or out of seizure
-# expobj.save()
+expobj.save()
 
 # if cont_inue2:
 #     pass

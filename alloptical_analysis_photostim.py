@@ -25,12 +25,14 @@ expobj, experiment = aoutils.import_expobj(trial=trial, date=date, pkl_path=pkl_
 if not hasattr(expobj, 's2p_path'):
     expobj.s2p_path = '/home/pshah/mnt/qnap/Analysis/2020-12-18/suite2p/alloptical-2p-1x-alltrials/plane0'
 
-if not hasattr(expobj, 'meanRawFluTrace'):
-    expobj.mean_raw_flu_trace(plot=True)
-else:
-    aoplot.plotMeanRawFluTrace(expobj=expobj, stim_span_color=None, x_axis='frames', figsize=[20, 3])
+plot = False
+if plot:
+    if not hasattr(expobj, 'meanRawFluTrace'):
+        expobj.mean_raw_flu_trace(plot=True)
+    else:
+        aoplot.plotMeanRawFluTrace(expobj=expobj, stim_span_color=None, x_axis='frames', figsize=[20, 3])
 
-aoplot.plotLfpSignal(expobj, stim_span_color=None, x_axis='frames', figsize=[20, 3])
+    aoplot.plotLfpSignal(expobj, stim_span_color=None, x_axis='frames', figsize=[20, 3])
 
 
 #%%#####################################################################################################################
@@ -300,6 +302,9 @@ ax2 = ax1.twinx()
 for target in expobj.responses_SLMtargets.keys():
     mean_response = np.mean(expobj.responses_SLMtargets[target])
     # print(mean_response)
+    x = []
+    y = []
+    min_distance = []
     for i in range(len(expobj.stim_times)):
         # the response magnitude of the current SLM target at the current stim time (relative to the mean of the responses of the target over this trial)
         response = expobj.responses_SLMtargets[target][i] - mean_response
@@ -308,23 +313,29 @@ for target in expobj.responses_SLMtargets.keys():
         ## -- thinking about doing this as comparing distances between all targets and all suite2p ROIs,
         #     and the shortest distance that is found for each SLM target is that target's distance to seizure wavefront
         # calculate the min distance of slm target to s2p cells classified inside of sz boundary at the current stim
-        s2pcells = expobj.cells_sz_stim[expobj.stim_start_frames[i]]
-        target_coord = expobj.target_coords_all[target]
-        min_distance = 1000
-        for j in range(len(s2pcells)):
-            dist = pj.calc_distance_2points(target_coord, tuple(expobj.stat[j]['med']))  # distance in pixels
-            if dist < min_distance:
-                min_distance = dist
+        min_distance_ = 100
+        if expobj.stim_start_frames[i] in list(expobj.cells_sz_stim.keys()):
+            s2pcells = expobj.cells_sz_stim[expobj.stim_start_frames[i]]  ## TODO fix: the stims that are not in seizures will have a key in .cells_sz_stim
+            target_coord = expobj.target_coords_all[target]
+            for j in range(len(s2pcells)):
+                dist = pj.calc_distance_2points(target_coord, tuple(expobj.stat[j]['med']))  # distance in pixels
+                if dist < min_distance_:
+                    min_distance_ = dist
 
+        # min_distance.append((np.random.rand(1) * 1000)[0])  # just for testing
+        min_distance.append(min_distance_)
         # plot the response magnitude of the current SLM target at the current stim time
         rand = np.random.randint(-10, 30, 1)[0] #* 1/(abs(response)**1/2)  # used for adding random jitter to the x loc scatter point
-        ax2.scatter(x=expobj.stim_times[i] + rand * 1e3, y=response, c=min_distance, cmap='RdYlBu',
-                    alpha=0.70, s=15, zorder=4)  # use cmap correlated to distance from seizure to define colors of each target at each individual stim times
+        x.append(expobj.stim_times[i] + rand * 1e3)
+        y.append(response)
+    ax2.scatter(x=x, y=y, c=min_distance, cmap='RdYlBu_r',
+                alpha=0.70, s=15, zorder=4)  # use cmap correlated to distance from seizure to define colors of each target at each individual stim times
         # ax2.scatter(x=expobj.stim_times[i] + rand * 1e3, y=response, color=target_colors[target], alpha=0.70, s=15, zorder=4)  # use same color for each target at all stim times
 # for i in expobj.stim_start_frames:
 #     plt.axvline(i)
 plt.show()
 
+#%%
 for i in range(len(expobj.stim_times)):
     # calculate the min distance of slm target to s2p cells classified inside of sz boundary at the current stim
     s2pcells = expobj.cells_sz_stim[expobj.stim_start_frames[i]]
