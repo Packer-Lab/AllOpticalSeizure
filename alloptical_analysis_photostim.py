@@ -140,12 +140,13 @@ for i in range(0, expobj.n_targets_total):
 # measure, for each cell, the pct of trials in which the dFF > 20% post stim (normalized to pre-stim avgF for the trial and cell)
 # can plot this as a bar plot for now showing the distribution of the reliability measurement
 
-cell_ids = list(range(len(expobj.SLMTargets_stims_dfstdF)))
+SLMtarget_ids = list(range(len(expobj.SLMTargets_stims_dfstdF)))
 
-expobj.StimSuccessRate_cells, expobj.hits_cells, expobj.responses_cells = \
-    aoutils.calculate_StimSuccessRate(expobj, cell_ids=cell_ids, raw_traces_stims=expobj.SLMTargets_stims_raw,
+expobj.StimSuccessRate_SLMtargets, expobj.hits_SLMtargets, expobj.responses_SLMtargets = \
+    aoutils.calculate_StimSuccessRate(expobj, cell_ids=SLMtarget_ids, raw_traces_stims=expobj.SLMTargets_stims_raw,
                                       dfstdf_threshold=0.3, pre_stim=expobj.pre_stim, sz_filter=False,
-                                      verbose=True, plot=True)
+                                      verbose=True, plot=False)
+
 expobj.save()
 
 random_sub = np.random.randint(0,expobj.n_targets_total, 5)
@@ -268,9 +269,44 @@ aoplot.plot_traces_heatmap(x, stim_on=stims, stim_off=stims_off, cmap='Spectral_
                            lfp_signal=lfp_signal)
 
 
-# %% TODO plot the change in target photostim responses for individual targets over the course of the trial
+# %% plot the target photostim responses for individual targets for each stim over the course of the trial
 #    (normalize to each target's overall mean response) and plot over the timecourse of the trial
 
+
+SLMtarget_ids = list(range(len(expobj.SLMTargets_stims_dfstdF)))
+target_colors = pj.make_random_color_array(SLMtarget_ids)
+
+# --- plot with mean FOV fluorescence signal
+fig, ax1 = plt.subplots(figsize=[60, 6])
+fig, ax1 = aoplot.plotMeanRawFluTrace(expobj=expobj, stim_span_color='white', x_axis='frames', figsize=[20, 3], show=False,
+                                      fig=fig, ax=ax1)
+ax2 = ax1.twinx()
+for cell in expobj.responses_SLMtargets.keys():
+    mean_response = np.mean(expobj.responses_SLMtargets[cell])
+    # print(mean_response)
+    for i in range(len(expobj.stim_start_frames)):
+        response = expobj.responses_SLMtargets[cell][i] - mean_response
+        rand = np.random.randint(-15, 25, 1)[0] #* 1/(abs(response)**1/2)
+        ax2.scatter(x=expobj.stim_start_frames[i] + rand, y=response, color=target_colors[cell], alpha=0.70, s=15, zorder=4)
+# for i in expobj.stim_start_frames:
+#     plt.axvline(i)
+plt.show()
+
+
+# %% --- plot with LFP signal
+fig, ax1 = plt.subplots(figsize=[60, 6])
+fig, ax1 = aoplot.plotLfpSignal(expobj, stim_span_color=None, x_axis='frames', show=False, fig=fig, ax=ax1)
+ax2 = ax1.twinx()
+for cell in expobj.responses_SLMtargets.keys():
+    mean_response = np.mean(expobj.responses_SLMtargets[cell])
+    # print(mean_response)
+    for i in range(len(expobj.stim_times)):
+        response = expobj.responses_SLMtargets[cell][i] - mean_response
+        rand = np.random.randint(-10, 30, 1)[0] #* 1/(abs(response)**1/2)
+        ax2.scatter(x=expobj.stim_times[i] + rand * 1e3, y=response, color=target_colors[cell], alpha=0.70, s=15, zorder=4)
+# for i in expobj.stim_start_frames:
+#     plt.axvline(i)
+plt.show()
 
 #########################################################################################################################
 #### END OF CODE THAT HAS BEEN REVIEWED SO FAR ##########################################################################

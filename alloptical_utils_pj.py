@@ -1202,18 +1202,19 @@ class alloptical(TwoPhotonImaging):
             # self.s2p_cell_targets_groups = [self.s2p_cell_targets_1, self.s2p_cell_targets_2]
 
             print('------- Search completed.')
-            print('Number of targeted cells: ', self.n_targeted_cells)
-            print('\nTarget cells found in suite2p: ', self.s2p_cell_targets,
-                  ' -- %s cells (out of %s target coords)' % (len(self.s2p_cell_targets), len(self.target_coords_all)))
-
-            pjf.plot_cell_loc(self, cells=self.s2p_cell_targets, show=False,
-                              title='s2p cell targets and all target coords %s/%s' % (
-                                  self.metainfo['trial'], self.metainfo['animal prep.']))
-            for (x, y) in self.target_coords_all:
-                plt.scatter(x=x, y=y, edgecolors='yellowgreen', facecolors='none', linewidths=1.0)
-            plt.show()
-
             self.save()
+
+        print('Number of targeted cells: ', self.n_targeted_cells)
+        print('\nTarget cells found in suite2p: ', self.s2p_cell_targets,
+              ' -- %s cells (out of %s target coords)' % (len(self.s2p_cell_targets), len(self.target_coords_all)))
+
+        pjf.plot_cell_loc(self, cells=self.s2p_cell_targets, show=False,
+                          title='s2p cell targets and all target coords %s/%s' % (
+                              self.metainfo['trial'], self.metainfo['animal prep.']))
+        for (x, y) in self.target_coords_all:
+            plt.scatter(x=x, y=y, edgecolors='yellowgreen', facecolors='none', linewidths=1.0)
+        plt.show()
+
 
         # print('Target cells SLM Group #1: ', self.s2p_cell_targets_1)
         # print('Target cells SLM Group #2: ', self.s2p_cell_targets_2)
@@ -2987,7 +2988,7 @@ def calculate_StimSuccessRate(expobj, cell_ids: list, raw_traces_stims=None, dfs
         #         reliability[cell] = success / counter * 100.
         #         print(cell, reliability, 'calc over %s stims' % counter)
 
-    print("\navg reliability is: %s" % (round(np.nanmean(list(reliability_cells.values())), 2)))
+    print("\navg photostim. success rate is: %s pct." % (round(np.nanmean(list(reliability_cells.values())), 2)))
     return reliability_cells, hits_cells, responses_cells
 
 

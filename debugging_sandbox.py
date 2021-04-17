@@ -91,6 +91,11 @@ pkl_path = "/home/pshah/mnt/qnap/Analysis/%s/%s_%s/%s_%s.pkl" % (date, date, tri
 
 expobj, experiment = aoutils.import_expobj(trial=trial, date=date, pkl_path=pkl_path)
 
+aoplot.plotMeanRawFluTrace(expobj=expobj, stim_span_color=None, x_axis='frames', figsize=[20, 3], show=True)
+
+aoplot.plotLfpSignal(expobj, stim_span_color=None, x_axis='frames', figsize=[20, 3])
+
+
 #%%
 # expobj.raw_traces_from_targets()
 # expobj.save()
@@ -199,15 +204,32 @@ expobj.SLMTargets_stims_dfstdF_avg, expobj.SLMTargets_stims_raw, expobj.SLMTarge
 
 cell_ids = list(range(len(expobj.SLMTargets_stims_dfstdF)))
 
-expobj.StimSuccessRate_cells, expobj.hits_cells, expobj.responses_cells = \
+expobj.StimSuccessRate_SLMtargets, expobj.hits_SLMtargets, expobj.responses_SLMtargets = \
     aoutils.calculate_StimSuccessRate(expobj, cell_ids=cell_ids, raw_traces_stims=expobj.SLMTargets_stims_raw,
                                       dfstdf_threshold=0.3, pre_stim=expobj.pre_stim, sz_filter=False,
-                                      verbose=True, plot=True)
+                                      verbose=True, plot=False)
 
 # %% TODO plot the change in target photostim responses for individual targets over the course of the trial
 #    (normalize to each target's overall mean response) and plot over the timecourse of the trial
 
 # use expobj.responses_cells
 
-aoplot.plotMeanRawFluTrace(expobj=expobj, show=False)
+cell_ids = list(range(len(expobj.SLMTargets_stims_dfstdF)))
+
+target_colors = pj.make_random_color_array(cell_ids)
+
+fig, ax1 = plt.subplots(figsize=[60, 6])
+fig, ax1 = aoplot.plotMeanRawFluTrace(expobj=expobj, stim_span_color=None, x_axis='frames', figsize=[20, 3], show=False,
+                                      fig=fig, ax=ax1)
+ax2 = ax1.twinx()
+for cell in expobj.responses_SLMtargets.keys():
+    mean_response = np.mean(expobj.responses_SLMtargets[cell])
+    # print(mean_response)
+    for i in range(len(expobj.stim_start_frames)):
+        rand = np.random.randint(-10,10,1)[0]
+        response = expobj.responses_SLMtargets[cell][i] - mean_response
+        ax2.scatter(x=expobj.stim_start_frames[i] + rand, y=response, color=target_colors[cell], alpha=0.70, s=10, zorder=4)
+# for i in expobj.stim_start_frames:
+#     plt.axvline(i)
+plt.show()
 
