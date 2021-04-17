@@ -281,13 +281,13 @@ fig, ax1 = plt.subplots(figsize=[60, 6])
 fig, ax1 = aoplot.plotMeanRawFluTrace(expobj=expobj, stim_span_color='white', x_axis='frames', figsize=[20, 3], show=False,
                                       fig=fig, ax=ax1)
 ax2 = ax1.twinx()
-for cell in expobj.responses_SLMtargets.keys():
-    mean_response = np.mean(expobj.responses_SLMtargets[cell])
+for target in expobj.responses_SLMtargets.keys():
+    mean_response = np.mean(expobj.responses_SLMtargets[target])
     # print(mean_response)
     for i in range(len(expobj.stim_start_frames)):
-        response = expobj.responses_SLMtargets[cell][i] - mean_response
+        response = expobj.responses_SLMtargets[target][i] - mean_response
         rand = np.random.randint(-15, 25, 1)[0] #* 1/(abs(response)**1/2)
-        ax2.scatter(x=expobj.stim_start_frames[i] + rand, y=response, color=target_colors[cell], alpha=0.70, s=15, zorder=4)
+        ax2.scatter(x=expobj.stim_start_frames[i] + rand, y=response, color=target_colors[target], alpha=0.70, s=15, zorder=4)
 # for i in expobj.stim_start_frames:
 #     plt.axvline(i)
 plt.show()
@@ -297,16 +297,44 @@ plt.show()
 fig, ax1 = plt.subplots(figsize=[60, 6])
 fig, ax1 = aoplot.plotLfpSignal(expobj, stim_span_color=None, x_axis='frames', show=False, fig=fig, ax=ax1)
 ax2 = ax1.twinx()
-for cell in expobj.responses_SLMtargets.keys():
-    mean_response = np.mean(expobj.responses_SLMtargets[cell])
+for target in expobj.responses_SLMtargets.keys():
+    mean_response = np.mean(expobj.responses_SLMtargets[target])
     # print(mean_response)
     for i in range(len(expobj.stim_times)):
-        response = expobj.responses_SLMtargets[cell][i] - mean_response
-        rand = np.random.randint(-10, 30, 1)[0] #* 1/(abs(response)**1/2)
-        ax2.scatter(x=expobj.stim_times[i] + rand * 1e3, y=response, color=target_colors[cell], alpha=0.70, s=15, zorder=4)
+        # the response magnitude of the current SLM target at the current stim time (relative to the mean of the responses of the target over this trial)
+        response = expobj.responses_SLMtargets[target][i] - mean_response
+
+        ## TODO working on add feature for color of scatter plot based on calculated distance to seizure
+        ## -- thinking about doing this as comparing distances between all targets and all suite2p ROIs,
+        #     and the shortest distance that is found for each SLM target is that target's distance to seizure wavefront
+        # calculate the min distance of slm target to s2p cells classified inside of sz boundary at the current stim
+        s2pcells = expobj.cells_sz_stim[expobj.stim_start_frames[i]]
+        target_coord = expobj.target_coords_all[target]
+        min_distance = 1000
+        for j in range(len(s2pcells)):
+            dist = pj.calc_distance_2points(target_coord, tuple(expobj.stat[j]['med']))  # distance in pixels
+            if dist < min_distance:
+                min_distance = dist
+
+        # plot the response magnitude of the current SLM target at the current stim time
+        rand = np.random.randint(-10, 30, 1)[0] #* 1/(abs(response)**1/2)  # used for adding random jitter to the x loc scatter point
+        ax2.scatter(x=expobj.stim_times[i] + rand * 1e3, y=response, c=min_distance, cmap='RdYlBu',
+                    alpha=0.70, s=15, zorder=4)  # use cmap correlated to distance from seizure to define colors of each target at each individual stim times
+        # ax2.scatter(x=expobj.stim_times[i] + rand * 1e3, y=response, color=target_colors[target], alpha=0.70, s=15, zorder=4)  # use same color for each target at all stim times
 # for i in expobj.stim_start_frames:
 #     plt.axvline(i)
 plt.show()
+
+for i in range(len(expobj.stim_times)):
+    # calculate the min distance of slm target to s2p cells classified inside of sz boundary at the current stim
+    s2pcells = expobj.cells_sz_stim[expobj.stim_start_frames[i]]
+    target_coord = expobj.target_coords_all[target]
+    min_distance = 1000
+    for j in range(len(s2pcells)):
+        dist = pj.calc_distance_2points(target_coord, tuple(expobj.stat[j]['med']))  # distance in pixels
+        if dist < min_distance:
+            min_distance = dist
+
 
 #########################################################################################################################
 #### END OF CODE THAT HAS BEEN REVIEWED SO FAR ##########################################################################

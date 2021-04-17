@@ -9,7 +9,7 @@ import matplotlib.pyplot as plt
 import random
 from sklearn.decomposition import PCA
 import tifffile as tf
-
+import math
 
 # plotting settings
 # fig = plt.figure()
@@ -38,6 +38,14 @@ def corrcoef_array(array):
 
     return corr, result
 
+def calc_distance_2points(p1: tuple, p2: tuple):
+    """
+    uses the hypothenus method to calculate the straight line distance between two given points on a 2d cartesian plane.
+    :param p1: point 1
+    :param p2: point 2
+    :return:
+    """
+    return math.hypot(p2[0] - p1[0], p2[1] - p1[1])
 
 # making a new class inherited from alloptical for post4ap functions and elements and variables and attributes
 def rotate_img_avg(input_img, angle):
@@ -247,9 +255,10 @@ def dff(flu, baseline=None):
 
 
 # simple plot of the location of the given cell(s) against a black FOV
-def plot_cell_loc(expobj, cells: list, color: str = '#EDEDED', title=None, show: bool = True, background_transparent=False):
+def plot_cell_loc(expobj, cells: list, color: str = '#EDEDED', title=None, show: bool = True, background: np.array = None):
     """
     plots an image of the FOV to show the locations of cells given in cells list.
+    :param background: either 2dim numpy array to use as the backsplash or None (where black backsplash will be created)
     :param expobj: alloptical or 2p imaging object
     :param color: str to specify color of the scatter plot for cells
     :param cells: list of cells to plot
@@ -257,9 +266,12 @@ def plot_cell_loc(expobj, cells: list, color: str = '#EDEDED', title=None, show:
     :param show: if True, show the plot at the end of the function
     """
 
-    if background_transparent is False:
+    if background is None:
         black = np.zeros((expobj.frame_x, expobj.frame_y), dtype='uint16')
         plt.imshow(black)
+    else:
+        plt.imshow(background)
+
 
     for cell in cells:
         y, x = expobj.stat[expobj.cell_id.index(cell)]['med']
@@ -272,7 +284,7 @@ def plot_cell_loc(expobj, cells: list, color: str = '#EDEDED', title=None, show:
             color_ = 'none'
         plt.scatter(x=x, y=y, edgecolors=color, facecolors=color_, linewidths=0.8)
 
-    if background_transparent:
+    if background is None:
         plt.xlim(0, expobj.frame_x)
         plt.ylim(0, expobj.frame_y)
 

@@ -366,15 +366,17 @@ class TwoPhotonImaging:
 
     def mean_raw_flu_trace(self, plot: bool = False):
         print('\n-----collecting mean raw flu trace from tiff file...')
+        print(self.tiff_path)
         im_stack = tf.imread(self.tiff_path, key=range(self.n_frames))
-        print('Loaded experiment tiff of shape: ', im_stack.shape)
+        print('|- Loaded experiment tiff of shape: ', im_stack.shape)
 
+        self.meanFluImg = np.mean(im_stack, axis=0)
         self.meanRawFluTrace = np.mean(np.mean(im_stack, axis=1), axis=1)
 
         self.save()
 
         if plot:
-            aoplot.plotMeanRawFluTrace(expobj=expobj, stim_span_color=None, x_axis='frames', figsize=[20, 3],
+            aoplot.plotMeanRawFluTrace(expobj=self, stim_span_color=None, x_axis='frames', figsize=[20, 3],
                                        title='Mean raw Flu trace -')
 
     def save_pkl(self, pkl_path: str = None):
@@ -613,12 +615,14 @@ class alloptical(TwoPhotonImaging):
             start = self.curr_trial_frames[0] // 2000  # 2000 because that is the batch size for suite2p run
             end = self.curr_trial_frames[1] // 2000 + 1
 
+            mean_img_stack = np.zeros([end - start, self.frame_x, self.frame_y])
             # collect mean traces from target areas of each target coordinate by reading in individual registered tiffs that contain frames for current trial
             targets_trace_full = np.zeros([len(self.target_coords_all), (end - start) * 2000], dtype='float32')
+            counter = 0
             for i in range(start, end):
                 tif_path_save2 = self.s2p_path + '/reg_tif/' + reg_tif_list[i]
                 with tf.TiffFile(tif_path_save2, multifile=False) as input_tif:
-                    print('|-reading tiff: %s' % tif_path_save2)
+                    print('|- reading tiff: %s' % tif_path_save2)
                     data = input_tif.asarray()
 
                 targets_trace = np.zeros([len(self.target_coords_all), data.shape[0]], dtype='float32')
@@ -628,12 +632,19 @@ class alloptical(TwoPhotonImaging):
                     targets_trace[coord] = np.mean(x, axis=1)
 
                 targets_trace_full[:, (i - start) * 2000: ((i - start) * 2000) + data.shape[
-                    0]] = targets_trace  ## iteratively write to each successive segment of the targets_trace array based on the length of the reg_tiff that is read in.
+                    0]] = targets_trace  # iteratively write to each successive segment of the targets_trace array based on the length of the reg_tiff that is read in.
+
+                mean_img_stack[counter] = np.mean(data, axis=0)
+                counter += 1
 
             # final part, crop to the *exact* frames for current trial
             self.raw_SLMTargets = targets_trace_full[:,
                                   self.curr_trial_frames[0] - start * 2000: self.curr_trial_frames[1] - (
                                           self.curr_trial_frames[0] - start * 2000)]
+
+
+            self.meanFluImg_registered = np.mean(mean_img_stack, axis=0)
+
             if save:
                 self.save()
 
@@ -649,7 +660,8 @@ class alloptical(TwoPhotonImaging):
         :return: lists of individual targets dFF traces, and averaged targets dFF over all stims for each target
         """
         if filter_sz:
-            raise Exception('this function is not yet set up to be able to handle filtering out stims that are in the sz')
+            raise Exception(
+                'this function is not yet set up to be able to handle filtering out stims that are in the sz')
 
         stim_timings = self.stim_start_frames
 
@@ -855,7 +867,6 @@ class alloptical(TwoPhotonImaging):
         stim_times = pjf.threshold_detect(stim_volts, 1)
         self.stim_times = stim_times
         print('# of stims found on %s: %s' % (self.stim_channel, len(self.stim_times)))
-
 
         # correct this based on txt file
         duration_ms = self.stim_dur
@@ -1204,7 +1215,7 @@ class alloptical(TwoPhotonImaging):
             print('------- Search completed.')
             self.save()
 
-        print('Number of targeted cells: ', self.n_targeted_cells)
+        print('Number of targeted cells found suite2p: ', self.n_targeted_cells)
         print('\nTarget cells found in suite2p: ', self.s2p_cell_targets,
               ' -- %s cells (out of %s target coords)' % (len(self.s2p_cell_targets), len(self.target_coords_all)))
 
@@ -1214,7 +1225,6 @@ class alloptical(TwoPhotonImaging):
         for (x, y) in self.target_coords_all:
             plt.scatter(x=x, y=y, edgecolors='yellowgreen', facecolors='none', linewidths=1.0)
         plt.show()
-
 
         # print('Target cells SLM Group #1: ', self.s2p_cell_targets_1)
         # print('Target cells SLM Group #2: ', self.s2p_cell_targets_2)
@@ -1675,7 +1685,7 @@ class Post4ap(alloptical):
                                                                                  self.metainfo['trial'],
                                                                                  self.metainfo['date']))
 
-    def _subselect_sz_tiffs(self, onsets, offsets, on_off_type: str):
+    def subselect_tiffs_sz(self, onsets, offsets, on_off_type: str):
         """subselect raw tiff movie over all seizures as marked by onset and offsets. save under analysis path for object.
         Note that the onsets and offsets definitions may vary, so check exactly what was used in those args."""
 
@@ -1722,12 +1732,13 @@ class Post4ap(alloptical):
 
         print('\nTotal extra seizure/CSD or other frames to discard: ', len(bad_frames))
         print('|- first and last 10 indexes of these frames', bad_frames[:10], bad_frames[-10:])
-        self.append_bad_frames(bad_frames=bad_frames)  # here only need to append the bad frames to the expobj.bad_frames property
+        self.append_bad_frames(
+            bad_frames=bad_frames)  # here only need to append the bad frames to the expobj.bad_frames property
 
         if seizures_lfp_timing_matarray is not None:
             print('|-now creating raw movies for each sz as well (saved to the /Analysis folder) ... ')
-            self._subselect_sz_tiffs(onsets=self.seizure_lfp_onsets, offsets=self.seizure_lfp_offsets,
-                                     on_off_type='lfp_onsets_offsets')
+            self.subselect_tiffs_sz(onsets=self.seizure_lfp_onsets, offsets=self.seizure_lfp_offsets,
+                                    on_off_type='lfp_onsets_offsets')
 
             print('|-now classifying photostims at phases of seizures ... ')
             self.stims_in_sz = [stim for stim in self.stim_start_frames if stim in self.seizure_frames]
@@ -1956,8 +1967,9 @@ class Post4ap(alloptical):
             out_sz = in_sz_2
 
         if to_plot:
-            pjf.plot_cell_loc(self, cells=in_sz, title=title)
-            # plt.show()  # the indiviual cells were plotted in ._InOutSz
+            pjf.plot_cell_loc(self, cells=in_sz, title=title, show=False)
+            plt.gca().invert_yaxis()
+            plt.show()  # the indiviual cells were plotted in ._InOutSz
 
         return in_sz
 
@@ -2945,9 +2957,11 @@ def calculate_StimSuccessRate(expobj, cell_ids: list, raw_traces_stims=None, dfs
             hits_cells[idx] = hits
             responses_cells[idx] = responses
             if verbose:
-                print('|- Target # %s: %s percent hits over %s stims' % (cell_ids[idx], reliability_cells[idx], counter))
+                print(
+                    '|- Target # %s: %s percent hits over %s stims' % (cell_ids[idx], reliability_cells[idx], counter))
             if plot:
-                random_select = np.random.randint(0, raw_traces_stims.shape[1], 10)  # select just 10 random traces to show on the plot
+                random_select = np.random.randint(0, raw_traces_stims.shape[1],
+                                                  10)  # select just 10 random traces to show on the plot
                 aoplot.plot_periphotostim_avg(arr=expobj.SLMTargets_stims_dfstdF[idx][random_select], expobj=expobj,
                                               stim_duration=expobj.stim_duration_frames,
                                               x_label='frames', pre_stim=pre_stim, post_stim=expobj.post_stim,

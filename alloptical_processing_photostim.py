@@ -20,18 +20,19 @@ pkl_path = "/home/pshah/mnt/qnap/Analysis/%s/%s_%s/%s_%s.pkl" % (date, date, tri
 
 expobj, experiment = aoutils.import_expobj(trial=trial, date=date, pkl_path=pkl_path)
 
-cont_inue = True  # i know this is a rather very precarious thing here...
+sz_boundary_csv_done = True  # i know this is a rather very precarious thing here...
 
 if not hasattr(expobj, 's2p_path'):
     expobj.s2p_path = '/home/pshah/mnt/qnap/Analysis/2020-12-18/suite2p/alloptical-2p-1x-alltrials/plane0'
 
 if not hasattr(expobj, 'meanRawFluTrace'):
     expobj.mean_raw_flu_trace(plot=True)
-else:
-    aoplot.plotMeanRawFluTrace(expobj=expobj, stim_span_color=None, x_axis='frames', figsize=[20, 3])
 
+
+aoplot.plotMeanRawFluTrace(expobj=expobj, stim_span_color=None, x_axis='frames', figsize=[20, 3])
 aoplot.plotLfpSignal(expobj, stim_span_color=None, x_axis='frames', figsize=[20, 3])
-
+aoplot.plotImgSLMtargetsLocs(expobj, background=expobj.meanFluImg_registered)
+aoplot.plot_lfp_stims(expobj)
 
 # %% prep for importing data from suite2p for this whole experiment
 # determine which frames to retrieve from the overall total s2p output
@@ -66,10 +67,13 @@ expobj.s2pProcessing(s2p_path=expobj.s2p_path, subset_frames=expobj.curr_trial_f
 expobj.target_coords_all = expobj.target_coords
 expobj.s2p_targets()
 
+aoplot.plotImgSLMtargetsLocs(expobj, background=expobj.meanFluImg)
+
 aoutils.s2pMaskStack(obj=expobj, pkl_list=[pkl_path], s2p_path=expobj.s2p_path,
                      parent_folder=expobj.analysis_save_path)
 
 expobj.raw_traces_from_targets()
+aoplot.plotImgSLMtargetsLocs(expobj, background=expobj.meanFluImg_registered)
 
 # stitching of registered TIFFs
 # expobj.stitch_reg_tiffs()
@@ -171,20 +175,20 @@ for i in range(len(expobj.avg_sub_l)):
 # print('\n|- stims_in_sz:', expobj.stims_in_sz, '\n|- stims_out_sz:', expobj.stims_out_sz,
 #       '\n|- stims_bf_sz:', expobj.stims_bf_sz, '\n|- stims_af_sz:', expobj.stims_af_sz)
 # expobj.save_pkl()
-aoplot.plot_lfp_stims(expobj)
+
 
 
 # %% MAKE SUBSELECTED TIFFs OF EACH INVIDUAL SEIZURES BASED ON THEIR START AND STOP FRAMES
-on_ = []
-# on_ = [expobj.stim_start_frames[0]]  # uncomment if imaging is starting mid seizure
+# on_ = []
+on_ = [expobj.stim_start_frames[0]]  # uncomment if imaging is starting mid seizure
 on_.extend(expobj.stims_bf_sz)
-expobj._subselect_sz_tiffs(onsets=on_, offsets=expobj.stims_af_sz, on_off_type='StimsBfAfSz')
+# expobj.subselect_tiffs_sz(onsets=on_, offsets=expobj.stims_af_sz, on_off_type='StimsBfAfSz')
 
 
 # %% classifying cells as in or out of the current seizure location in the FOV
 
 # FRIST manually draw boundary on the image in ImageJ and save results as CSV to analysis folder under boundary_csv
-if cont_inue:
+if sz_boundary_csv_done:
     pass
 else:
     sys.exit()
@@ -192,28 +196,11 @@ else:
 # import the CSV file in and classify cells by their location in or out of seizure
 
 # moved this to utils.funcs_pj
-def plot_cell_loc(expobj, cells: list, color: str = 'pink', show: bool = True):
-    """
-    plots an image of the FOV to show the locations of cells given in cells list.
-    :param expobj: alloptical or 2p imaging object
-    :param color: str to specify color of the scatter plot for cells
-    :param cells: list of cells to plot
-    :param show: if True, show the plot at the end of the function
-    """
-    black = np.zeros((expobj.frame_x, expobj.frame_x), dtype='uint16')
-    plt.imshow(black)
-
-    for cell in cells:
-        y, x = expobj.stat[cell]['med']
-        plt.scatter(x=x, y=y, edgecolors=color, facecolors='none', linewidths=0.8)
-
-    if show:
-        plt.show()
-# csv_path = "/home/pshah/mnt/qnap/Analysis/2020-12-18/2020-12-18_t-013/2020-12-18_t-013_post_border.csv"
 
 # need to run this twice to correct for mis-assignment of cells (look at results and then find out which stims need to be flipped)
-expobj.not_flip_stims = [1868]  # specify here the stims where the flip=False leads to incorrect assignment
-cont_inue2 = True
+expobj.not_flip_stims = [2107, 7146, 9222, 9666, 9815, 12779, 12928, 13076, 13224, 13372,
+                         13521]  # specify here the stims where the flip=False leads to incorrect assignment
+# cont_inue2 = True
 
 print('working on classifying cells for stims start frames:')
 expobj.cells_sz_stim = {}
@@ -222,7 +209,7 @@ for on, off in zip(on_, expobj.stims_af_sz):
     print('|-', stims_of_interest)
 
     for stim in stims_of_interest:
-        sz_border_path = "%s/boundary_csv/2020-12-18_%s_stim-%s.tif_border.csv" % (expobj.analysis_save_path[:-1], trial, stim)
+        sz_border_path = "%s/boundary_csv/2020-12-18_%s_stim-%s.tif_border.csv" % (expobj.analysis_save_path, trial, stim)
         if stim in expobj.not_flip_stims:
             flip = False
         else:
@@ -232,10 +219,10 @@ for on, off in zip(on_, expobj.stims_af_sz):
         expobj.cells_sz_stim[stim] = in_sz  # for each stim, there will be a list of cells that will be classified as in seizure or out of seizure
 # expobj.save()
 
-if cont_inue2:
-    pass
-else:
-    sys.exit()
+# if cont_inue2:
+#     pass
+# else:
+#     sys.exit()
 
 #%%#####################################################################################################################
 ########################################################################################################################

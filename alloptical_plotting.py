@@ -36,6 +36,25 @@ def plot_cell_radius_aspectr(expobj, stat, to_plot, min_vline: int = 4, max_vlin
     return to_plot_
 
 
+### plot the location of all SLM targets, along with option for plotting the mean img of the current trial
+def plotImgSLMtargetsLocs(expobj, background: np.ndarray = None, **kwargs):
+
+    if background is None:
+        black = np.zeros((expobj.frame_x, expobj.frame_y), dtype='uint16')
+        plt.imshow(black, cmap='gray')
+    else:
+        plt.imshow(background, cmap='gray')
+
+    for (x, y) in expobj.target_coords_all:
+        plt.scatter(x=x, y=y, edgecolors='yellowgreen', facecolors='none', linewidths=1.0)
+
+    if 'show' in kwargs.keys():
+        if kwargs['show'] is True:
+            plt.show()
+    else:
+        plt.show()
+
+
 ### plot entire trace of individual targeted cells as super clean subplots, with the same y-axis lims
 def plot_photostim_traces(array, expobj, title='', y_min=None, y_max=None, x_label=None,
                           y_label=None, save_fig=None, **kwargs):
@@ -275,27 +294,31 @@ def plot_flu_trace(expobj, cell, x_lims=None, slm_group=None, to_plot='raw', fig
 def plot_lfp_stims(expobj, title=None):
     if hasattr(expobj, 'stims_in_sz') and hasattr(expobj, 'stims_out_sz'):
         fig, ax = plt.subplots(figsize=[20, 3])
-        x = [expobj.stim_times[np.where(expobj.stim_start_frames == stim)[0][0]] for stim in expobj.stims_in_sz]
-        x_out = [expobj.stim_times[np.where(expobj.stim_start_frames == stim)[0][0]] for stim in expobj.stims_out_sz
+        # note that there is a crop adjustment to the paq-times which is needed to sync up the stim times with the plot being returned from plotLfpSignal (which also on its own crops the LFP signal)
+        x = [(expobj.stim_times[np.where(expobj.stim_start_frames == stim)[0][0]] - expobj.frame_start_time_actual) for stim in expobj.stims_in_sz]
+        x_out = [(expobj.stim_times[np.where(expobj.stim_start_frames == stim)[0][0]] - expobj.frame_start_time_actual) for stim in expobj.stims_out_sz
                  if stim not in expobj.stims_bf_sz and stim not in expobj.stims_af_sz]
-        x_bf = [expobj.stim_times[np.where(expobj.stim_start_frames == stim)[0][0]] for stim in expobj.stims_bf_sz]
-        x_af = [expobj.stim_times[np.where(expobj.stim_start_frames == stim)[0][0]] for stim in expobj.stims_af_sz]
-        ax.plot(expobj.lfp_signal)
-        ax.scatter(x=x, y=[0] * len(expobj.stims_in_sz), edgecolors='red', facecolors='white')
-        ax.scatter(x=x_out, y=[0] * len(x_out), edgecolors='grey', facecolors='white')
-        ax.scatter(x=x_bf, y=[0] * len(expobj.stims_bf_sz), edgecolors='grey', facecolors='deeppink')
-        ax.scatter(x=x_af, y=[0] * len(expobj.stims_af_sz), edgecolors='grey', facecolors='hotpink')
+        x_bf = [(expobj.stim_times[np.where(expobj.stim_start_frames == stim)[0][0]] - expobj.frame_start_time_actual) for stim in expobj.stims_bf_sz]
+        x_af = [(expobj.stim_times[np.where(expobj.stim_start_frames == stim)[0][0]] - expobj.frame_start_time_actual) for stim in expobj.stims_af_sz]
+
+        # plot LFP signal
+        # ax.plot(expobj.lfp_signal, zorder=0, linewidth=0.5)
+        fig, ax = plotLfpSignal(expobj, fig=fig, ax=ax, stim_lines=False, show=False, stim_span_color=None, x_axis='paq')
+        ax.scatter(x=x, y=[0] * len(expobj.stims_in_sz), edgecolors='red', facecolors='green', marker="|", zorder=3, s=60, linewidths=2.0)
+        ax.scatter(x=x_out, y=[0] * len(x_out), edgecolors='grey', facecolors='black', marker="|", zorder=3, s=60, linewidths=2.0)
+        ax.scatter(x=x_bf, y=[0] * len(expobj.stims_bf_sz), edgecolors='grey', facecolors='deeppink', marker="|", zorder=3, s=60, linewidths=2.0)
+        ax.scatter(x=x_af, y=[0] * len(expobj.stims_af_sz), edgecolors='grey', facecolors='hotpink', marker="|", zorder=3, s=60, linewidths=2.0)
+
         # set x ticks at every 30 seconds
         labels = list(range(0, len(expobj.lfp_signal)//expobj.paq_rate, 30))
         plt.xticks(ticks=[(label * expobj.paq_rate) for label in labels], labels=labels)
         ax.tick_params(axis='both', which='both', length=3)
+        ax.set_xlabel('Time (secs)')
+
         # ax.set_xticks([(label * expobj.paq_rate) for label in labels])#, labels=range(0, len(expobj.lfp_signal)//expobj.paq_rate, 30))
         # ax.set_xticklabels(labels); plt.show()
-        #
-        ax.set_xlabel('Time (secs)')
+
         ax.set_ylabel('LFP - voltage (mV)')
-
-
 
         plt.suptitle(title)
         plt.show()
@@ -470,7 +493,7 @@ def plotMeanRawFluTrace(expobj, stim_span_color='white', stim_lines: bool = True
 
 
 # plots the raw trace for the Flu mean of the FOV
-def plotLfpSignal(expobj, stim_span_color='powderblue', title='LFP trace', x_axis='time', figsize=None, **kwargs):
+def plotLfpSignal(expobj, stim_span_color='powderblue', stim_lines: bool = True, title='LFP trace', x_axis='time', figsize=None, **kwargs):
     """make plot of LFP with also showing stim locations"""
 
     # if there is a fig and ax provided in the function call then use those, otherwise start anew
@@ -483,16 +506,20 @@ def plotLfpSignal(expobj, stim_span_color='powderblue', title='LFP trace', x_axi
         else:
             fig, ax = plt.subplots(figsize=[60 * (expobj.stim_start_times[-1] + 1e5 - (expobj.stim_start_times[0] - 1e5)) / 1e7, 3])
 
-
+    # plot LFP signal
     ax.plot(expobj.lfp_signal[expobj.frame_start_time_actual: expobj.frame_end_time_actual], c='steelblue', zorder=1, linewidth=0.4)
+
+    # plot stims
     if stim_span_color is not None:
         for stim in expobj.stim_start_times:
             ax.axvspan(stim - 8, 1 + stim + expobj.stim_duration_frames / expobj.fps * expobj.paq_rate, color=stim_span_color, zorder=1, alpha=0.5)
     else:
-        for line in expobj.stim_start_times:
-            plt.axvline(x=line+2, color='black', linestyle='--', linewidth=0.6, zorder=0)
+        if stim_lines:
+            for line in expobj.stim_start_times:
+                plt.axvline(x=line+2, color='black', linestyle='--', linewidth=0.6, zorder=0)
+
+    # change x axis ticks to seconds
     if x_axis == 'time':
-        # change x axis ticks to seconds
         label_format = '{:,.2f}'
         labels = [item for item in ax.get_xticks()]
         for item in labels:
@@ -505,8 +532,12 @@ def plotLfpSignal(expobj, stim_span_color='powderblue', title='LFP trace', x_axi
         ax.set_xlabel('paq clock')
     ax.set_ylabel('Voltage')
     # ax.set_xlim([expobj.frame_start_time_actual, expobj.frame_end_time_actual])  ## this should be limited to the 2p acquisition duration only
+
+    # add title
     plt.suptitle(
         '%s - %s %s %s' % (title, expobj.metainfo['exptype'], expobj.metainfo['animal prep.'], expobj.metainfo['trial']))
+
+    # options for showing plot or returning plot
     if 'show' in kwargs.keys():
         if kwargs['show'] is True:
             plt.show()
