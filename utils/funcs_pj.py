@@ -255,7 +255,8 @@ def dff(flu, baseline=None):
 
 
 # simple plot of the location of the given cell(s) against a black FOV
-def plot_cell_loc(expobj, cells: list, color: str = '#EDEDED', title=None, show: bool = True, background: np.array = None):
+def plot_cell_loc(expobj, cells: list, color: str = '#EDEDED', title=None, background: np.array = None,
+                  **kwargs):
     """
     plots an image of the FOV to show the locations of cells given in cells list.
     :param background: either 2dim numpy array to use as the backsplash or None (where black backsplash will be created)
@@ -266,11 +267,18 @@ def plot_cell_loc(expobj, cells: list, color: str = '#EDEDED', title=None, show:
     :param show: if True, show the plot at the end of the function
     """
 
+    # if there is a fig and ax provided in the function call then use those, otherwise start anew
+    if 'fig' in kwargs.keys():
+        fig = kwargs['fig']
+        ax = kwargs['ax']
+    else:
+        fig, ax = plt.subplots()
+
     if background is None:
         black = np.zeros((expobj.frame_x, expobj.frame_y), dtype='uint16')
-        plt.imshow(black)
+        ax.imshow(black)
     else:
-        plt.imshow(background)
+        ax.imshow(background)
 
 
     for cell in cells:
@@ -282,17 +290,25 @@ def plot_cell_loc(expobj, cells: list, color: str = '#EDEDED', title=None, show:
                 color_ = 'none'
         else:
             color_ = 'none'
-        plt.scatter(x=x, y=y, edgecolors=color, facecolors=color_, linewidths=0.8)
+        ax.scatter(x=x, y=y, edgecolors=color, facecolors=color_, linewidths=0.8)
 
     if background is None:
-        plt.xlim(0, expobj.frame_x)
-        plt.ylim(0, expobj.frame_y)
+        ax.xlim(0, expobj.frame_x)
+        ax.ylim(0, expobj.frame_y)
 
     if title is not None:
         plt.suptitle(title)
 
-    if show:
+    if 'show' in kwargs.keys():
+        if kwargs['show'] is True:
+            plt.show()
+        else:
+            pass
+    else:
         plt.show()
+
+    if 'fig' in kwargs.keys():
+        return fig, ax
 
 
 ############### GENERALLY USEFUL FUNCTIONS #############################################################################

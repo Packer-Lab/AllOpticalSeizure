@@ -1858,7 +1858,7 @@ class Post4ap(alloptical):
         else:
             print('skipping remaking of mean sz images')
 
-    def _InOutSz(self, cell, cell_med: list, sz_border_path: str, to_plot=False):
+    def _InOutSz(self, cell_med: list, sz_border_path: str, to_plot=False):
         """
         Returns True if the given cell's location is inside the seizure boundary which is defined as the coordinates
         given in the .csv sheet.
@@ -1935,7 +1935,7 @@ class Post4ap(alloptical):
         in_sz = []
         out_sz = []
         for cell, s in enumerate(self.stat):
-            x = self._InOutSz(cell=cell, cell_med=s['med'], sz_border_path=sz_border_path, to_plot=to_plot)
+            x = self._InOutSz(cell_med=s['med'], sz_border_path=sz_border_path, to_plot=to_plot)
 
             if x is True:
                 in_sz.append(s['original_index'])
