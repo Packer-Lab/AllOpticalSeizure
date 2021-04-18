@@ -154,7 +154,7 @@ for target in expobj.responses_SLMtargets.keys():
                         #                                background=expobj.meanFluImg_registered)
                         #     ax.scatter(x=target_coord[0], y=target_coord[1])
 
-            if min_distance < 10:
+            if 10 < min_distance < 40:
                 fig, ax = plt.subplots()
                 fig, ax = pj.plot_cell_loc(expobj, cells=s2pcells_sz, show=False, fig=fig, ax=ax,
                                            background=expobj.meanFluImg_registered)
