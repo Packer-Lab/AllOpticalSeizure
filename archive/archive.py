@@ -354,7 +354,7 @@ def bar_with_points(data, title='', x_tick_labels=[], points=True, bar=True, col
            linewidth=lw,  # width of the bar edges
            # tick_label=x_tick_labels,
            edgecolor=edgecolor,
-           color=(0, 0, 0, 0),  # face color transparent
+           color=(0, 0, 0, 0),  # face edgecolor transparent
            )
     ax.set_xticks(x)
     ax.set_xticklabels(x_tick_labels)
@@ -628,8 +628,8 @@ for cell in targets:
         # y = flu_avg
         #
         # fig, ax = plt.subplots()
-        # ax.fill_between(x, (y - ci), (y + ci), color='b', alpha=.1) # plot confidence interval
-        # ax.axvspan(0, 10, alpha=0.2, color='red')
+        # ax.fill_between(x, (y - ci), (y + ci), edgecolor='b', alpha=.1) # plot confidence interval
+        # ax.axvspan(0, 10, alpha=0.2, edgecolor='red')
         # ax.plot(x, y)
         # fig.suptitle('Cell %s' % cell)
         # plt.show()
@@ -718,8 +718,8 @@ plt.show()
 #     y = flu_avg
 #
 #     fig, ax = plt.subplots()
-#     ax.fill_between(x, (y - ci), (y + ci), color='b', alpha=.1)  # plot confidence interval
-#     ax.axvspan(0, stim_duration, alpha=0.2, color='green')
+#     ax.fill_between(x, (y - ci), (y + ci), edgecolor='b', alpha=.1)  # plot confidence interval
+#     ax.axvspan(0, stim_duration, alpha=0.2, edgecolor='green')
 #     ax.plot(x, y)
 #     if y_min != None:
 #         ax.set_ylim([y_min, y_max])

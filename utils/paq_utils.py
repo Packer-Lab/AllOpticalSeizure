@@ -154,13 +154,13 @@ def plot_paq_interactive(paq, input_path, channels_to_plot=None):
     # set layout
     layout = go.Layout(
         title="LFP - Voltage series - %s" % name,  # set title as the full name of the .paq file
-        plot_bgcolor="#FFF",  # Sets background color to white
+        plot_bgcolor="#FFF",  # Sets background edgecolor to white
         hovermode='x',
         hoverdistance=10,
         spikedistance=1000,
         xaxis=dict(
             title="time",
-            linecolor="#BCCCDC",  # Sets color of X-axis line
+            linecolor="#BCCCDC",  # Sets edgecolor of X-axis line
             showgrid=False,  # Removes X-axis grid lines
             # rangeslider=list(),
 
@@ -173,7 +173,7 @@ def plot_paq_interactive(paq, input_path, channels_to_plot=None):
         ),
         yaxis=dict(
             title="price",
-            linecolor="#BCCCDC",  # Sets color of Y-axis line
+            linecolor="#BCCCDC",  # Sets edgecolor of Y-axis line
             showgrid=False,  # Removes Y-axis grid lines
             fixedrange=False,
             rangemode='normal'
@@ -210,13 +210,13 @@ def plot_paq_interactive_line(paq_df, input_path, channels_to_plot=None):
     # set layout
     layout = go.Layout(
         title="LFP - Voltage series - %s" % name,  # set title as the full name of the .paq file
-        plot_bgcolor="#FFF",  # Sets background color to white
+        plot_bgcolor="#FFF",  # Sets background edgecolor to white
         hovermode='x',
         hoverdistance=10,
         spikedistance=1000,
         xaxis=dict(
             title="time",
-            linecolor="#BCCCDC",  # Sets color of X-axis line
+            linecolor="#BCCCDC",  # Sets edgecolor of X-axis line
             showgrid=False,  # Removes X-axis grid lines
             # rangeslider=list(),
 
@@ -229,7 +229,7 @@ def plot_paq_interactive_line(paq_df, input_path, channels_to_plot=None):
         ),
         yaxis=dict(
             title="price",
-            linecolor="#BCCCDC",  # Sets color of Y-axis line
+            linecolor="#BCCCDC",  # Sets edgecolor of Y-axis line
             showgrid=False,  # Removes Y-axis grid lines
             fixedrange=False,
             rangemode='normal'
@@ -369,7 +369,7 @@ def clean_lfp_signal(paq, input_array: str, chan_name: str = 'voltage', plot=Fal
 # volt_ = voltage[int(0.5e7):int(1.5e7)]
 # v_detrended = signal.detrend(volt_)
 # plt.figure(figsize=[40,4])
-# plt.plot(volt_, linewidth=0.2, color='red')
+# plt.plot(volt_, linewidth=0.2, edgecolor='red')
 # plt.plot(v_detrended, linewidth=0.2); plt.suptitle('LFP voltage'); plt.ylim([-2, 2]), plt.show()
 #
 # #%%

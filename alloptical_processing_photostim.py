@@ -390,7 +390,7 @@ expobj.save()
 # # del(trace_dff_list[10])
 # for trace in trace_raw_list:
 #     plt.plot(trace)
-# plt.plot(np.mean(trace_raw_list, axis=0), color='black')
+# plt.plot(np.mean(trace_raw_list, axis=0), edgecolor='black')
 # # plt.ylim([-10,100])
 # plt.show()
 #

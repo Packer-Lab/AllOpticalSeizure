@@ -11,16 +11,23 @@ import alloptical_utils_pj as aoutils
 import tifffile as tf
 
 # simple plot of the location of the given cell(s) against a black FOV
-def plot_cell_loc(expobj, cells: list, color: str = '#EDEDED', title=None, background: np.array = None,
-                  **kwargs):
+def plot_cell_loc(expobj, cells: list, edgecolor: str = '#EDEDED', title=None, background: np.array = None,
+                  show_s2p_targets: bool = True, color_float_array: list = None, cmap: str = 'Reds', **kwargs):
     """
     plots an image of the FOV to show the locations of cells given in cells list.
     :param background: either 2dim numpy array to use as the backsplash or None (where black backsplash will be created)
     :param expobj: alloptical or 2p imaging object
-    :param color: str to specify color of the scatter plot for cells
+    :param edgecolor: str to specify edgecolor of the scatter plot for cells
     :param cells: list of cells to plot
     :param title: str title for plot
-    :param show: if True, show the plot at the end of the function
+    :param color_float_array: if given, it will be used to color the cells according a colormap
+    :param cmap: cmap to be used in conjuction with the color_float_array argument
+    :param show_s2p_targets: if True, then will prioritize coloring of cell points based on whether they were photostim targets
+    :param kwargs: optional arguments
+            invert_y: if True, invert the reverse the direction of the y axis
+            show: if True, show the plot at the end of the function
+            fig:
+            ax:
     """
 
     # if there is a fig and ax provided in the function call then use those, otherwise start anew
@@ -32,28 +39,43 @@ def plot_cell_loc(expobj, cells: list, color: str = '#EDEDED', title=None, backg
 
     if background is None:
         black = np.zeros((expobj.frame_x, expobj.frame_y), dtype='uint16')
-        ax.imshow(black)
+        ax.imshow(black, cmap='Greys_r', zorder=0)
     else:
         ax.imshow(background)
 
-
+    x_list = []
+    y_list = []
     for cell in cells:
         y, x = expobj.stat[expobj.cell_id.index(cell)]['med']
-        if hasattr(expobj, 's2p_cell_targets'):
-            if cell in expobj.s2p_cell_targets:
-                color_ = '#F02A71'
+        x_list.append(x)
+        y_list.append(y)
+
+        if show_s2p_targets:
+            if hasattr(expobj, 's2p_cell_targets'):
+                if cell in expobj.s2p_cell_targets:
+                    color_ = '#F02A71'
+                else:
+                    color_ = 'none'
             else:
                 color_ = 'none'
+            ax.scatter(x=x, y=y, edgecolors=edgecolor, facecolors=color_, linewidths=0.8)
+        elif color_float_array:
+            # ax.scatter(x=x, y=y, edgecolors='none', c=color_float_array[cells.index(cell)], linewidths=0.8,
+            #            cmap=cmap)
+            pass
         else:
-            color_ = 'none'
-        ax.scatter(x=x, y=y, edgecolors=color, facecolors=color_, linewidths=0.8)
+            ax.scatter(x=x, y=y, edgecolors=edgecolor, facecolors='none', linewidths=0.8)
+
+    if color_float_array:
+        ax.scatter(x=x_list, y=y_list, edgecolors='none', c=color_float_array, linewidths=0.8,
+                   cmap=cmap, zorder=1)
 
     if background is None:
         ax.set_xlim(0, expobj.frame_x)
         ax.set_ylim(0, expobj.frame_y)
 
     if title is not None:
-        plt.suptitle(title)
+        plt.suptitle(title, wrap=True)
 
     if 'invert_y' in kwargs.keys():
         if kwargs['invert_y']:
@@ -61,14 +83,15 @@ def plot_cell_loc(expobj, cells: list, color: str = '#EDEDED', title=None, backg
 
     if 'show' in kwargs.keys():
         if kwargs['show'] is True:
-            plt.show()
+            fig.show()
         else:
             pass
     else:
-        plt.show()
+        fig.show()
 
     if 'fig' in kwargs.keys():
         return fig, ax
+
 
 ### plotting the distribution of radius and aspect ratios - should this be running before the filtering step which is right below????????
 def plot_cell_radius_aspectr(expobj, stat, to_plot, min_vline: int = 4, max_vline: int = 12):
@@ -233,7 +256,7 @@ def plot_periphotostim_avg(arr, expobj, stim_duration, pre_stim=10, post_stim=20
     :param y_label:
     :param kwargs:
         options include:
-            'color': str, color of the individual traces behind the mean trace
+            'edgecolor': str, edgecolor of the individual traces behind the mean trace
             'savepath': str, path to save plot to
             'show': bool = to show the plot or not
     :return:
@@ -251,8 +274,8 @@ def plot_periphotostim_avg(arr, expobj, stim_duration, pre_stim=10, post_stim=20
     ax.margins(0)
     ax.axvspan(0, stim_duration, alpha=0.2, color='tomato')
     for cell_trace in arr:
-        if 'color' in kwargs.keys():
-            ax.plot(x, cell_trace, linewidth=1, alpha=0.6, c=kwargs['color'], zorder=1)
+        if 'edgecolor' in kwargs.keys():
+            ax.plot(x, cell_trace, linewidth=1, alpha=0.6, c=kwargs['edgecolor'], zorder=1)
         else:
             ax.plot(x, cell_trace, linewidth=1, alpha=0.5, zorder=1)
     ax.plot(x, flu_avg, color='black', linewidth=2.3, zorder=2)  # plot average trace
@@ -353,7 +376,7 @@ def plot_flu_trace(expobj, cell, x_lims=None, slm_group=None, to_plot='raw', fig
 
 
 # make a plot with the paq file LFP signal to visualize these classifications
-def plot_lfp_stims(expobj, title=None):
+def plot_lfp_stims(expobj, title='LFP signal with photostim. shown (in different colors relative to seizure timing'):
     if hasattr(expobj, 'stims_in_sz') and hasattr(expobj, 'stims_out_sz'):
         fig, ax = plt.subplots(figsize=[20, 3])
         # note that there is a crop adjustment to the paq-times which is needed to sync up the stim times with the plot being returned from plotLfpSignal (which also on its own crops the LFP signal)
@@ -382,7 +405,7 @@ def plot_lfp_stims(expobj, title=None):
 
         ax.set_ylabel('LFP - voltage (mV)')
 
-        plt.suptitle(title)
+        plt.suptitle(title, wrap=True)
         plt.show()
     else:
         raise Exception('look, you need to create stims_in_sz and stims_out_sz attributes first (or rewrite this function)')
@@ -416,7 +439,7 @@ def plot_traces_heatmap(data, vmin=None, vmax=None, stim_on=None, stim_off=None,
     if stim_on and stim_off:  # draw vertical dashed lines for stim period
         # plt.vlines(x=stim_on, ymin=0, ymax=len(data), colors='black')
         # plt.vlines(x=stim_off, ymin=0, ymax=len(data))
-        # plt.axvline(x=stim_on, color='grey', linestyle='--')
+        # plt.axvline(x=stim_on, edgecolor='grey', linestyle='--')
         if type(stim_on) is int:
             stim_on = [stim_on]
             stim_off = [stim_off]
@@ -675,7 +698,7 @@ def plot_lfp_1pstim_avg_trace(expobj, title='Average LFP peri- stims', individua
             ax.plot(trace, color='steelblue', zorder=1, alpha=0.25)
             # ax.axvspan(int(pre_stim * expobj.paq_rate),
             #            int(pre_stim * expobj.paq_rate) + stim_duration,
-            #            color='powderblue', zorder=1, alpha=0.3)
+            #            edgecolor='powderblue', zorder=1, alpha=0.3)
         ax.axvspan(int(pre_stim * expobj.paq_rate),
                    int(pre_stim * expobj.paq_rate) + stim_duration,
                    color='skyblue', zorder=1, alpha=0.7)

@@ -27,14 +27,15 @@ expobj, experiment = aoutils.import_expobj(trial=trial, date=date, pkl_path=pkl_
 if not hasattr(expobj, 's2p_path'):
     expobj.s2p_path = '/home/pshah/mnt/qnap/Analysis/2020-12-18/suite2p/alloptical-2p-1x-alltrials/plane0'
 
-plot = False
-if plot:
-    if not hasattr(expobj, 'meanRawFluTrace'):
-        expobj.mean_raw_flu_trace(plot=True)
-    else:
-        aoplot.plotMeanRawFluTrace(expobj=expobj, stim_span_color=None, x_axis='frames', figsize=[20, 3])
+if not hasattr(expobj, 'meanRawFluTrace'):
+    expobj.mean_raw_flu_trace(plot=True)
 
-    aoplot.plotLfpSignal(expobj, stim_span_color=None, x_axis='frames', figsize=[20, 3])
+plot = True
+if plot:
+    aoplot.plotMeanRawFluTrace(expobj=expobj, stim_span_color=None, x_axis='frames', figsize=[20, 3])
+    # aoplot.plotLfpSignal(expobj, stim_span_color=None, x_axis='frames', figsize=[20, 3])
+    aoplot.plotSLMtargetsLocs(expobj, background=expobj.meanFluImg_registered)
+    aoplot.plot_lfp_stims(expobj)
 
 
 #%%#####################################################################################################################
@@ -105,7 +106,7 @@ aoplot.plot_photostim_traces(array=to_plot, expobj=expobj, x_label='Frames',
 # len_ = len(array)
 # fig, axs = plt.subplots(nrows=len_, sharex=True, figsize=(30, 3 * len_))
 # for i in range(len(axs)):
-#     axs[i].plot(array[i], linewidth=1, color='black')
+#     axs[i].plot(array[i], linewidth=1, edgecolor='black')
 #     for j in expobj.stim_start_frames:
 #         axs[i].axvline(x=j, c='gray', alpha=0.7, linestyle='--')
 #     if len_ == len(expobj.s2p_cell_targets):
@@ -237,14 +238,14 @@ sns.heatmap(df_, cmap='seismic', vmin=-5, vmax=5, cbar_kws={"shrink": 0.25});
 plt.show()
 
 
-# %% PLOT imshow() XY locations with COLORS AS average response of ALL cells in FOV
+# %% PLOT imshow() XY area locations with COLORS AS average response of ALL cells in FOV
 aoplot.xyloc_responses(expobj, to_plot='dfstdf', clim=[-1, +1], plot_target_coords=True)
 
 
 
 # %% PLOT HEATMAP of SEIZURE EVENTS
 
-sz = 2
+sz = 1
 sz_onset, sz_offset = expobj.stims_bf_sz[sz], expobj.stims_af_sz[sz+1]
 
 # -- approach of dFF normalize to the mean of the Flu data 2 seconds before the seizure
@@ -262,10 +263,6 @@ x_af = expobj.stim_times[np.where(expobj.stim_start_frames == expobj.stims_af_sz
 
 lfp_signal = expobj.lfp_signal[x_bf:x_af]
 
-aoplot.plot_traces_heatmap(sz_flu_smooth, stim_on=stims, stim_off=stims_off, cmap='Spectral_r', figsize=(10, 6),
-                           title=('%s - seizure %s - sz flu smooth - %s to %s' % (trial, sz, sz_onset, sz_offset)),
-                           xlims=None, vmin=100, vmax=500, lfp_signal=lfp_signal)
-
 # -- ordering cells based on their order of reaching top 5% signal threshold
 x_95 = [np.percentile(trace, 95) for trace in x_norm]
 
@@ -273,14 +270,28 @@ x_peak = [np.min(np.where(x_norm[i] > x_95[i])) for i in range(len(x_norm))]
 new_order = np.argsort(x_peak)
 x_ordered = x_norm[new_order]
 
+# plot heatmap of dFF processed Flu signals for all cells for selected sz and ordered as determined above
 aoplot.plot_traces_heatmap(x_ordered, stim_on=stims, stim_off=stims_off, cmap='Spectral_r', figsize=(10, 6),
                            title=('%s - seizure %s - sz flu smooth - %s to %s' % (trial, sz, sz_onset, sz_offset)),
                            xlims=None, vmin=100, vmax=500, lfp_signal=lfp_signal)
 
+# just the bottom half cells that seems to show more of an order
+x_ordered = x_norm[new_order[250:]]
+aoplot.plot_traces_heatmap(x_ordered, stim_on=stims, stim_off=stims_off, cmap='Spectral_r', figsize=(10, 6),
+                           title=('%s - seizure %s - sz flu smooth - %s to %s' % (trial, sz, sz_onset, sz_offset)),
+                           xlims=None, vmin=100, vmax=500, lfp_signal=lfp_signal)
+
+
 # %% PLOT cell location with cmap based on their order of reaching top 5% signal during sz event
 
-cell_ids_ordered = np.array(expobj.cell_id)[new_order]
-alloptical_plotting.plot_cell_loc()
+cell_ids_ordered = list(np.array(expobj.cell_id)[new_order])
+aoplot.plot_cell_loc(expobj, cells=cell_ids_ordered, show_s2p_targets=False, color_float_array=list(range(len(cell_ids_ordered))),
+                     title='cell locations ordered by recruitment in sz # %s' % sz, invert_y=True, cmap='Purples')
+
+# just the bottom half cells that seems to show more of an order
+cell_ids_ordered = list(np.array(expobj.cell_id)[new_order])
+aoplot.plot_cell_loc(expobj, cells=cell_ids_ordered, show_s2p_targets=False, color_float_array=list(range(len(cell_ids_ordered))),
+                     title='cell locations ordered by recruitment in sz # %s' % sz, invert_y=True, cmap='Purples')
 
 # %% plot the target photostim responses for individual targets for each stim over the course of the trial
 #    (normalize to each target's overall mean response) and plot over the timecourse of the trial
@@ -345,7 +356,7 @@ for target in expobj.responses_SLMtargets.keys():
                 min_distance = -1
 
             else:
-                ## working on add feature for color of scatter plot based on calculated distance to seizure
+                ## working on add feature for edgecolor of scatter plot based on calculated distance to seizure
                 ## -- thinking about doing this as comparing distances between all targets and all suite2p ROIs,
                 #     and the shortest distance that is found for each SLM target is that target's distance to seizure wavefront
                 # calculate the min distance of slm target to s2p cells classified inside of sz boundary at the current stim
@@ -385,7 +396,7 @@ for target in expobj.responses_SLMtargets.keys():
     # ax2.scatter(x=x, y=y, c=distance_to_sz, cmap='RdYlBu_r',
     #             alpha=0.70, s=15,
     #             zorder=4)  # use cmap correlated to distance from seizure to define colors of each target at each individual stim times
-    # ax2.scatter(x=expobj.stim_times[i] + rand * 1e3, y=response, color=target_colors[target], alpha=0.70, s=15, zorder=4)  # use same color for each target at all stim times
+    # ax2.scatter(x=expobj.stim_times[i] + rand * 1e3, y=response, edgecolor=target_colors[target], alpha=0.70, s=15, zorder=4)  # use same edgecolor for each target at all stim times
 # for i in expobj.stim_start_frames:
 #     plt.axvline(i)
 fig1.show()
@@ -729,8 +740,8 @@ for cell in expobj.good_cells:
         # y = flu_avg
         #
         # fig, ax = plt.subplots()
-        # ax.fill_between(x, (y - ci), (y + ci), color='b', alpha=.1) # plot confidence interval
-        # ax.axvspan(0, 10, alpha=0.2, color='red')
+        # ax.fill_between(x, (y - ci), (y + ci), edgecolor='b', alpha=.1) # plot confidence interval
+        # ax.axvspan(0, 10, alpha=0.2, edgecolor='red')
         # ax.plot(x, y)
         # fig.suptitle('Cell %s' % cell)
         # plt.show()

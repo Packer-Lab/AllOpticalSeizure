@@ -239,7 +239,7 @@ _good_photostim_cells(exp_obj, pre_stim=pre_stim, post_stim=post_stim, dff_thres
 
 
 #%% image of all target coords - for demonstration purposes
-# - add random colored circles around the target coords that were good photostim targets (same color for cells in the same SLM group)
+# - add random colored circles around the target coords that were good photostim targets (same edgecolor for cells in the same SLM group)
 
 arr = np.zeros((exp_obj.frame_x, exp_obj.frame_x), dtype='uint8')
 for group in range(exp_obj.n_groups):

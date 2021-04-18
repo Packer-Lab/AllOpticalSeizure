@@ -31,7 +31,7 @@ with open(pkl_path, 'rb') as f:
 #
 # data = [flu, flu_4ap]
 # data = [spks, spks_4ap]
-# color = ['grey', 'green']
+# edgecolor = ['grey', 'green']
 
 #%% new experiment object
 # exp_obj = ao.TwoPhotonImaging(suite2p_path=s2p_path)
@@ -216,7 +216,7 @@ exp_obj.spks_smooth_ = np.asarray([gaussian_filter(a, sigma=frames2sigma(frames=
 def plot_spks(cells):
     plt.figure(figsize=(30, 10))
     plt.margins(0)
-    #plt.plot(a, color="black")
+    #plt.plot(a, edgecolor="black")
     for i in cells:
         plt.plot(exp_obj.spks_smooth_[i] + 100 * i, linewidth=1)
         plt.plot(exp_obj.spks[i][exp_obj.good_frames] + 100 * i, linewidth=1, alpha=0.2, color='black')

@@ -431,7 +431,7 @@ def bar_with_points(data, title='', x_tick_labels=[], points=True, bar=True, col
     fig, ax = plt.subplots(figsize=((2 * len(x) / 2) * expand_size_x, 3 * expand_size_y))
     if not bar:
         for i in x:
-            # ax.plot(np.linspace(x[i] - w / 2, x[i] + w / 2, 3), [np.mean(yi) for yi in y] * 3, color=colors[i])
+            # ax.plot(np.linspace(x[i] - w / 2, x[i] + w / 2, 3), [np.mean(yi) for yi in y] * 3, edgecolor=colors[i])
             ax.plot(np.linspace(x[i] * w * 2 - w / 2, x[i] * w * 2 + w / 2, 3), [np.mean(y[i])] * 3, color='black')
         lw = 0,
         edgecolor = None
@@ -448,7 +448,7 @@ def bar_with_points(data, title='', x_tick_labels=[], points=True, bar=True, col
            linewidth=lw,  # width of the bar edges
            # tick_label=x_tick_labels,
            edgecolor=edgecolor,
-           color=(0, 0, 0, 0),  # face color transparent
+           color=(0, 0, 0, 0),  # face edgecolor transparent
            )
     ax.set_xticks([x * w * 2 for x in x])
     ax.set_xticklabels(x_tick_labels)
