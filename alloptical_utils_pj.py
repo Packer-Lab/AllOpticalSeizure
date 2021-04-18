@@ -547,7 +547,7 @@ class alloptical(TwoPhotonImaging):
             # determine which frames to retrieve from the overall total s2p output
             total_frames_stitched = 0
             curr_trial_frames = None
-            baseline_frames = [0, 0]
+            self.baseline_frames = [0, 0]
             for t in to_suite2p:
                 pkl_path_2 = "/home/pshah/mnt/qnap/Analysis/%s/%s_%s/%s_%s.pkl" % (
                     self.metainfo['date'], self.metainfo['date'], t, self.metainfo['date'], t)
@@ -558,7 +558,10 @@ class alloptical(TwoPhotonImaging):
                 if t == trial:
                     self.curr_trial_frames = [total_frames_stitched - _expobj.n_frames, total_frames_stitched]
                 if t in baseline_trials:
-                    baseline_frames[1] = total_frames_stitched
+                    self.baseline_frames[1] = total_frames_stitched
+
+            print('baseline frames: ', self.baseline_frames)
+            print('current trial frames: ', self.curr_trial_frames)
 
             if save:
                 self.save()

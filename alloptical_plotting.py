@@ -478,6 +478,8 @@ def plotMeanRawFluTrace(expobj, stim_span_color='white', stim_lines: bool = True
     ax.set_ylabel('Flu (a.u.)')
     if xlims:
         ax.set_xlim(xlims)
+
+    # add title
     plt.suptitle(
         '%s %s %s %s' % (title, expobj.metainfo['exptype'], expobj.metainfo['animal prep.'], expobj.metainfo['trial']))
 

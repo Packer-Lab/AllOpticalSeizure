@@ -110,7 +110,7 @@ aoplot.plot_photostim_traces(array=to_plot, expobj=expobj, x_label='Frames',
 #         axs[i].set_title('Cell # %s' % expobj.s2p_cell_targets[i])
 # plt.show()
 
-# %% plot peri- photostim traces for individual SLM target individual, incl. individual traces for each stim
+# %% collect and plot peri- photostim traces for individual SLM target individual, incl. individual traces for each stim
 
 pre_stim = expobj.pre_stim
 post_stim = expobj.post_stim
@@ -150,15 +150,6 @@ expobj.StimSuccessRate_SLMtargets, expobj.hits_SLMtargets, expobj.responses_SLMt
                                       verbose=True, plot=False)
 
 expobj.save()
-
-random_sub = np.random.randint(0,expobj.n_targets_total, 5)
-w = 3
-arr_to_plot = [(np.convolve(trace, np.ones(w), 'valid') / w) for trace in expobj.raw_SLMTargets[random_sub]]
-
-aoplot.plot_photostim_traces(array=arr_to_plot, expobj=expobj, x_label='Frames',
-                             y_label='dFF Flu', title=experiment, scatter=np.array(list(expobj.hits_cells.values()))[random_sub],
-                             line_ids=random_sub)
-
 
 
 # %% ########## BAR PLOT showing average success rate of photostimulation
@@ -256,19 +247,61 @@ sz_onset, sz_offset = expobj.stims_bf_sz[sz], expobj.stims_af_sz[sz+1]
 x = expobj.raw[[expobj.cell_id.index(cell) for cell in expobj.good_cells], sz_onset:sz_offset]
 
 ## TODO organize individual cells in array in order of peak firing rate
-
-
+## - calculate derivative of the raw (or dFF) traces for each cell, then determine where the peak derivative occurs (get that index from the array)
+## - assign the index to each trace index, and then organize the trace indexes in that order. then finally re-order the indexes in accordance with the new indexes.
 stims = [(stim - sz_onset) for stim in expobj.stim_start_frames if sz_onset <= stim < sz_offset]
 stims_off = [(stim + expobj.stim_duration_frames - 1) for stim in stims]
 
 x_bf = expobj.stim_times[np.where(expobj.stim_start_frames == expobj.stims_bf_sz[sz])[0][0]]
 x_af = expobj.stim_times[np.where(expobj.stim_start_frames == expobj.stims_af_sz[sz+1])[0][0]]
 
+
 lfp_signal = expobj.lfp_signal[x_bf:x_af]
 
 aoplot.plot_traces_heatmap(x, stim_on=stims, stim_off=stims_off, cmap='Spectral_r', figsize=(10,6),
                            title=('%s - seizure %s' % (trial, sz)), xlims=None, vmin=100, vmax=500,
                            lfp_signal=lfp_signal)
+
+
+
+
+w = 60
+x_convolved = [(np.convolve(trace, np.ones(w), 'valid') / w) for trace in x]
+
+x_prime = np.gradient(x_convolved, axis=0)
+x_prime2 = np.gradient(x_prime, axis=0)
+
+plt.plot(x_convolved)
+
+
+idx = 0
+x_range = range(len(x_convolved[1]))
+
+fig, ax = plt.subplots(figsize=[20,4])
+ax.plot(x_convolved[idx], color='green')
+ax2 = ax.twinx()
+ax2.plot(x_prime[idx], color='red')
+ax2.axhline(y=0)
+ax2.plot(x_prime2[idx], color='orange')
+fig.show()
+
+
+
+
+w = 50000
+lfp_smoothed = pj.smooth_signal(lfp_signal, w)
+
+x_prime = np.gradient(lfp_smoothed, axis=0)
+x_prime2 = np.gradient(x_prime, axis=0)
+
+fig, ax = plt.subplots(figsize=[20,4])
+# ax.plot(lfp_signal)
+ax2 = ax.twinx()
+ax.plot(lfp_smoothed, color='green')
+ax2.plot(x_prime, color='red')
+ax2.axhline(y=0)
+ax2.plot(x_prime2, color='orange')
+fig.show()
 
 
 # %% plot the target photostim responses for individual targets for each stim over the course of the trial
@@ -358,7 +391,7 @@ for target in expobj.responses_SLMtargets.keys():
                 ax.scatter(x=target_coord[0], y=target_coord[1])
                 plt.title('stim %s' % expobj.stim_start_frames[i])
                 fig.show()
-                print('pause here', min_distance)
+                print(min_distance)
 
         # min_distance.append((np.random.rand(1) * 1000)[0])  # just for testing
         distance_to_sz.append(min_distance)

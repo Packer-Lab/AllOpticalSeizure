@@ -28,11 +28,12 @@ if not hasattr(expobj, 's2p_path'):
 if not hasattr(expobj, 'meanRawFluTrace'):
     expobj.mean_raw_flu_trace(plot=True)
 
-
-aoplot.plotMeanRawFluTrace(expobj=expobj, stim_span_color=None, x_axis='frames', figsize=[20, 3])
-aoplot.plotLfpSignal(expobj, stim_span_color=None, x_axis='frames', figsize=[20, 3])
-aoplot.plotImgSLMtargetsLocs(expobj, background=expobj.meanFluImg_registered)
-aoplot.plot_lfp_stims(expobj)
+plot = False
+if plot:
+    aoplot.plotMeanRawFluTrace(expobj=expobj, stim_span_color=None, x_axis='frames', figsize=[20, 3])
+    aoplot.plotLfpSignal(expobj, stim_span_color=None, x_axis='frames', figsize=[20, 3])
+    aoplot.plotImgSLMtargetsLocs(expobj, background=expobj.meanFluImg_registered)
+    aoplot.plot_lfp_stims(expobj)
 
 # %% prep for importing data from suite2p for this whole experiment
 # determine which frames to retrieve from the overall total s2p output
@@ -46,34 +47,23 @@ if not hasattr(expobj, 'suite2p_trials'):
     expobj.baseline_trials = baseline_trials
     expobj.save()
 
-# total_frames_stitched = 0
-# curr_trial_frames = None
-# baseline_frames = [0, 0]
-# for t in to_suite2p:
-#     pkl_path_2 = "/home/pshah/mnt/qnap/Analysis/%s/%s_%s/%s_%s.pkl" % (date, date, t, date, t)
-#     with open(pkl_path_2, 'rb') as f:
-#         _expobj = pickle.load(f)
-#         # import suite2p data
-#     total_frames_stitched += _expobj.n_frames
-#     if t == trial:
-#         expobj.curr_trial_frames = [total_frames_stitched - _expobj.n_frames, total_frames_stitched]
-#     if t in baseline_trials:
-#         baseline_frames[1] = total_frames_stitched
-
 # main function that imports suite2p data and adds attributes to the expobj
-expobj.subset_frames_current_trial(trial=trial, to_suite2p=expobj.suite2p_trials, baseline_trials=expobj.baseline_trials)
-expobj.s2pProcessing(s2p_path=expobj.s2p_path, subset_frames=expobj.curr_trial_frames, subtract_neuropil=True)
+expobj.subset_frames_current_trial(trial=trial, to_suite2p=expobj.suite2p_trials, baseline_trials=expobj.baseline_trials,
+                                   force_redo=True)
+expobj.s2pProcessing(s2p_path=expobj.s2p_path, subset_frames=expobj.curr_trial_frames, subtract_neuropil=True,
+                     baseline_frames=expobj.baseline_frames, force_redo=True)
 
 expobj.target_coords_all = expobj.target_coords
 expobj.s2p_targets()
 
-aoplot.plotImgSLMtargetsLocs(expobj, background=expobj.meanFluImg)
-
-aoutils.s2pMaskStack(obj=expobj, pkl_list=[pkl_path], s2p_path=expobj.s2p_path,
-                     parent_folder=expobj.analysis_save_path)
 
 expobj.raw_traces_from_targets()
-aoplot.plotImgSLMtargetsLocs(expobj, background=expobj.meanFluImg_registered)
+
+plot = False
+if plot:
+    aoplot.plotImgSLMtargetsLocs(expobj, background=expobj.meanFluImg)
+    aoutils.s2pMaskStack(obj=expobj, pkl_list=[pkl_path], s2p_path=expobj.s2p_path, parent_folder=expobj.analysis_save_path)
+    aoplot.plotImgSLMtargetsLocs(expobj, background=expobj.meanFluImg_registered)
 
 # stitching of registered TIFFs
 # expobj.stitch_reg_tiffs()

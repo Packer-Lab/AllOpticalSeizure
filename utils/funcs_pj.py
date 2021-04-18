@@ -38,6 +38,8 @@ def corrcoef_array(array):
 
     return corr, result
 
+
+# calculate distance between 2 points on a cartesian plane
 def calc_distance_2points(p1: tuple, p2: tuple):
     """
     uses the hypothenus method to calculate the straight line distance between two given points on a 2d cartesian plane.
@@ -47,7 +49,7 @@ def calc_distance_2points(p1: tuple, p2: tuple):
     """
     return math.hypot(p2[0] - p1[0], p2[1] - p1[1])
 
-# making a new class inherited from alloptical for post4ap functions and elements and variables and attributes
+# random func for rotating images and calculating the image intensity along one axis of the image
 def rotate_img_avg(input_img, angle):
     """this function will be used to rotate the input_img (ideally will be the avg seizure image) at the given angle.
     The function also will return the 1 x n length average across non-zero values along the x axis.
@@ -121,6 +123,10 @@ def pca_decomp_image(input_img, components: int = 3, plot_quant: bool = False):
 
     return img_compressed
 
+
+# rolling average / smoothing of a 1dim array
+def smooth_signal(signal, w):
+    return np.convolve(signal, np.ones(w), 'valid') / w
 
 ############### CALCIUM IMAGING RELATED STUFF ##########################################################################
 # paq2py by Llyod Russel
@@ -225,14 +231,6 @@ def paq_read(file_path=None, plot=False):
             "rate": rate,
             "num_datapoints": num_datapoints}
 
-# read matlab array
-def load_matlab_array(path):
-    """
-    Returns a matlab array read in from the path given in path.
-    :param path: path to the matlab output file ending in .mat
-    :return: array
-    """
-    return io.loadmat(path)
 
 # useful for returning indexes when a
 def threshold_detect(signal, threshold):
@@ -243,7 +241,7 @@ def threshold_detect(signal, threshold):
     return frames[0]
 
 
-# normalize Ca values
+# normalize dFF for 1dim array
 def dff(flu, baseline=None):
     if baseline is not None:
         flu_dff = (flu - baseline) / baseline
@@ -293,8 +291,8 @@ def plot_cell_loc(expobj, cells: list, color: str = '#EDEDED', title=None, backg
         ax.scatter(x=x, y=y, edgecolors=color, facecolors=color_, linewidths=0.8)
 
     if background is None:
-        ax.xlim(0, expobj.frame_x)
-        ax.ylim(0, expobj.frame_y)
+        ax.set_xlim(0, expobj.frame_x)
+        ax.set_ylim(0, expobj.frame_y)
 
     if title is not None:
         plt.suptitle(title)
@@ -309,7 +307,6 @@ def plot_cell_loc(expobj, cells: list, color: str = '#EDEDED', title=None, backg
 
     if 'fig' in kwargs.keys():
         return fig, ax
-
 
 ############### GENERALLY USEFUL FUNCTIONS #############################################################################
 
@@ -545,7 +542,7 @@ def bar_with_points(data, title='', x_tick_labels=[], points=True, bar=True, col
         # plt.setp(ax.get_xticklabels(), rotation=45)
     plt.show()
 
-
+# imshow gray plot for a single frame tiff
 def plot_single_tiff(tiff_path: str, title: str = None):
     """
     plots an image of a single tiff frame after reading using tifffile.
@@ -559,4 +556,13 @@ def plot_single_tiff(tiff_path: str, title: str = None):
         plt.suptitle(title)
     plt.show()
 
+
+# read matlab array
+def load_matlab_array(path):
+    """
+    Returns a matlab array read in from the path given in path.
+    :param path: path to the matlab output file ending in .mat
+    :return: array
+    """
+    return io.loadmat(path)
 #######
