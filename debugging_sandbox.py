@@ -94,20 +94,37 @@ expobj, experiment = aoutils.import_expobj(trial=trial, date=date, pkl_path=pkl_
 
 # aoplot.plotLfpSignal(expobj, stim_span_color=None, x_axis='frames', figsize=[20, 3])
 
-aoplot.plotImgSLMtargetsLocs(expobj, background=expobj.meanFluImg_registered)
+# aoplot.plotSLMtargetsLocs(expobj, background=expobj.meanFluImg_registered)
 
 #%%
 
 # testing ordering suite2p cells in order of recruitment into seizure
 
-sz = 2
+sz = 1
 sz_onset, sz_offset = expobj.stims_bf_sz[sz], expobj.stims_af_sz[sz+1]
-expobj.dff_flu = aoutils.normalize_dff_baseline(expobj.raw, baseline_array=expobj)
-dff_mean = [np.percentile(trace, 50) for trace in expobj.dff_flu]
 
-x = expobj.dff_flu[[expobj.cell_id.index(cell) for cell in expobj.good_cells], sz_onset:sz_offset]
-x_mean = [np.percentile(trace, 50) for trace in x]
+# # raw baseline Flu traces of all good cells
+# columns = [f'{num}' for num in range(expobj.baseline_frames[0], expobj.baseline_frames[1])]
+# index = [f'{num}' for num in expobj.good_cells]
+# idxs = [expobj.cell_id.index(cell) for cell in expobj.good_cells]
+# expobj.baseline_raw_df = pd.DataFrame(expobj.baseline_raw[idxs, :], columns=columns, index=index)
+#
+# expobj.dff_flu_baseline = aoutils.normalize_dff_baseline(arr=expobj.raw_df, baseline_array=expobj.baseline_raw_df)
+#
+# dff_mean = [np.percentile(trace, 50) for trace in np.array(expobj.dff_flu_baseline)]
+#
+# x = expobj.dff_flu[[expobj.cell_id.index(cell) for cell in expobj.good_cells], sz_onset:sz_offset]
+# x_mean = [np.percentile(trace, 50) for trace in x]
 
+
+##
+# -- approach of dFF normalize to the mean of the Flu data 2 seconds before the seizure
+pre_sz = 2*int(expobj.fps)
+sz_flu = expobj.raw[[expobj.cell_id.index(cell) for cell in expobj.good_cells], sz_onset - pre_sz: sz_offset]
+
+sz_flu_smooth = np.array([pj.smooth_signal(signal, w=15) for signal in sz_flu])
+
+x_norm = np.array([pj.dff(flu[pre_sz:], np.mean(flu[:pre_sz])) * 100 for flu in sz_flu_smooth])
 
 ## TODO organize individual cells in array in order of peak firing rate
 ## - calculate some measure of peak firing for each cell, then determine where the derivative occurs earliest (get that index from the array)
@@ -118,16 +135,29 @@ stims_off = [(stim + expobj.stim_duration_frames - 1) for stim in stims]
 x_bf = expobj.stim_times[np.where(expobj.stim_start_frames == expobj.stims_bf_sz[sz])[0][0]]
 x_af = expobj.stim_times[np.where(expobj.stim_start_frames == expobj.stims_af_sz[sz+1])[0][0]]
 
-
 lfp_signal = expobj.lfp_signal[x_bf:x_af]
 
-aoplot.plot_traces_heatmap(x, stim_on=stims, stim_off=stims_off, cmap='Spectral_r', figsize=(10,6),
-                           title=('%s - seizure %s' % (trial, sz)), xlims=None, vmin=100, vmax=500,
-                           lfp_signal=lfp_signal)
+aoplot.plot_traces_heatmap(sz_flu_smooth, stim_on=stims, stim_off=stims_off, cmap='Spectral_r', figsize=(10, 6),
+                           title=('%s - seizure %s - sz flu smooth - %s to %s' % (trial, sz, sz_onset, sz_offset)),
+                           xlims=None, vmin=100, vmax=500, lfp_signal=lfp_signal)
 
 # -- trying approach to find top 10% signal, and find earliest index above this threshold
-x_90 = [np.percentile(trace, 90) for trace in x]
 
+
+x_95 = [np.percentile(trace, 95) for trace in x_norm]
+
+x_peak = [np.min(np.where(x_norm[i] > x_95[i])) for i in range(len(x_norm))]
+new_order = np.argsort(x_peak)
+x_ordered = x_norm[new_order]
+
+aoplot.plot_traces_heatmap(x_ordered, stim_on=stims, stim_off=stims_off, cmap='Spectral_r', figsize=(10, 6),
+                           title=('%s - seizure %s - sz flu smooth - %s to %s' % (trial, sz, sz_onset, sz_offset)),
+                           xlims=None, vmin=100, vmax=500, lfp_signal=lfp_signal)
+
+
+i = 8
+plt.plot(sz_flu_smooth[i]); plt.show()
+plt.plot(x_norm[i]); plt.show()
 
 # %%
 # expobj.raw_traces_from_targets()

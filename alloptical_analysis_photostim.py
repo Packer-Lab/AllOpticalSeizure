@@ -240,68 +240,42 @@ aoplot.xyloc_responses(expobj, to_plot='dfstdf', clim=[-1, +1], plot_target_coor
 
 
 
-# %% PLOT seizure period as heatmap
+# %% PLOT HEATMAP of SEIZURE EVENTS
 
 sz = 2
 sz_onset, sz_offset = expobj.stims_bf_sz[sz], expobj.stims_af_sz[sz+1]
-x = expobj.raw[[expobj.cell_id.index(cell) for cell in expobj.good_cells], sz_onset:sz_offset]
 
-## TODO organize individual cells in array in order of peak firing rate
-## - calculate derivative of the raw (or dFF) traces for each cell, then determine where the peak derivative occurs (get that index from the array)
-## - assign the index to each trace index, and then organize the trace indexes in that order. then finally re-order the indexes in accordance with the new indexes.
+# -- approach of dFF normalize to the mean of the Flu data 2 seconds before the seizure
+pre_sz = 2*int(expobj.fps)
+sz_flu = expobj.raw[[expobj.cell_id.index(cell) for cell in expobj.good_cells], sz_onset - pre_sz: sz_offset]
+sz_flu_smooth = np.array([pj.smooth_signal(signal, w=5) for signal in sz_flu])  # grouped average of the raw signal
+x_norm = np.array([pj.dff(flu[pre_sz:], np.mean(flu[:pre_sz])) * 100 for flu in sz_flu_smooth])
+
+
 stims = [(stim - sz_onset) for stim in expobj.stim_start_frames if sz_onset <= stim < sz_offset]
 stims_off = [(stim + expobj.stim_duration_frames - 1) for stim in stims]
 
 x_bf = expobj.stim_times[np.where(expobj.stim_start_frames == expobj.stims_bf_sz[sz])[0][0]]
 x_af = expobj.stim_times[np.where(expobj.stim_start_frames == expobj.stims_af_sz[sz+1])[0][0]]
 
-
 lfp_signal = expobj.lfp_signal[x_bf:x_af]
 
-aoplot.plot_traces_heatmap(x, stim_on=stims, stim_off=stims_off, cmap='Spectral_r', figsize=(10,6),
-                           title=('%s - seizure %s' % (trial, sz)), xlims=None, vmin=100, vmax=500,
-                           lfp_signal=lfp_signal)
+aoplot.plot_traces_heatmap(sz_flu_smooth, stim_on=stims, stim_off=stims_off, cmap='Spectral_r', figsize=(10, 6),
+                           title=('%s - seizure %s - sz flu smooth - %s to %s' % (trial, sz, sz_onset, sz_offset)),
+                           xlims=None, vmin=100, vmax=500, lfp_signal=lfp_signal)
+
+# -- trying approach to find top 10% signal, and find earliest index above this threshold
 
 
+x_95 = [np.percentile(trace, 95) for trace in x_norm]
 
+x_peak = [np.min(np.where(x_norm[i] > x_95[i])) for i in range(len(x_norm))]
+new_order = np.argsort(x_peak)
+x_ordered = x_norm[new_order]
 
-w = 60
-x_convolved = [(np.convolve(trace, np.ones(w), 'valid') / w) for trace in x]
-
-x_prime = np.gradient(x_convolved, axis=0)
-x_prime2 = np.gradient(x_prime, axis=0)
-
-plt.plot(x_convolved)
-
-
-idx = 0
-x_range = range(len(x_convolved[1]))
-
-fig, ax = plt.subplots(figsize=[20,4])
-ax.plot(x_convolved[idx], color='green')
-ax2 = ax.twinx()
-ax2.plot(x_prime[idx], color='red')
-ax2.axhline(y=0)
-ax2.plot(x_prime2[idx], color='orange')
-fig.show()
-
-
-
-
-w = 50000
-lfp_smoothed = pj.smooth_signal(lfp_signal, w)
-
-x_prime = np.gradient(lfp_smoothed, axis=0)
-x_prime2 = np.gradient(x_prime, axis=0)
-
-fig, ax = plt.subplots(figsize=[20,4])
-# ax.plot(lfp_signal)
-ax2 = ax.twinx()
-ax.plot(lfp_smoothed, color='green')
-ax2.plot(x_prime, color='red')
-ax2.axhline(y=0)
-ax2.plot(x_prime2, color='orange')
-fig.show()
+aoplot.plot_traces_heatmap(x_ordered, stim_on=stims, stim_off=stims_off, cmap='Spectral_r', figsize=(10, 6),
+                           title=('%s - seizure %s - sz flu smooth - %s to %s' % (trial, sz, sz_onset, sz_offset)),
+                           xlims=None, vmin=100, vmax=500, lfp_signal=lfp_signal)
 
 
 # %% plot the target photostim responses for individual targets for each stim over the course of the trial

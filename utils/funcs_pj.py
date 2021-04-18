@@ -124,7 +124,7 @@ def pca_decomp_image(input_img, components: int = 3, plot_quant: bool = False):
     return img_compressed
 
 
-# rolling average / smoothing of a 1dim array
+# grouped average / smoothing of a 1dim array (basically the same as grouped average on imageJ)
 def smooth_signal(signal, w):
     return np.convolve(signal, np.ones(w), 'valid') / w
 
@@ -243,6 +243,7 @@ def threshold_detect(signal, threshold):
 
 # normalize dFF for 1dim array
 def dff(flu, baseline=None):
+    """delta F over F ratio (not % dFF )"""
     if baseline is not None:
         flu_dff = (flu - baseline) / baseline
     else:
@@ -297,6 +298,10 @@ def plot_cell_loc(expobj, cells: list, color: str = '#EDEDED', title=None, backg
     if title is not None:
         plt.suptitle(title)
 
+    if 'invert_y' in kwargs.keys():
+        if kwargs['invert_y']:
+            ax.invert_yaxis()
+
     if 'show' in kwargs.keys():
         if kwargs['show'] is True:
             plt.show()
@@ -311,7 +316,7 @@ def plot_cell_loc(expobj, cells: list, color: str = '#EDEDED', title=None, backg
 ############### GENERALLY USEFUL FUNCTIONS #############################################################################
 
 # reporting sizes of variables
-def sizeof_fmt(num, suffix='B'):
+def _sizeof_fmt(num, suffix='B'):
     ''' by Fred Cirera,  https://stackoverflow.com/a/1094933/1870254, modified'''
     for unit in ['', 'Ki', 'Mi', 'Gi', 'Ti', 'Pi', 'Ei', 'Zi']:
         if abs(num) < 1024.0:
@@ -320,12 +325,12 @@ def sizeof_fmt(num, suffix='B'):
     return "%.1f %s%s" % (num, 'Yi', suffix)
 
 def print_size_of(var):
-    print(sizeof_fmt(sys.getsizeof(var)))
+    print(_sizeof_fmt(sys.getsizeof(var)))
 
 def print_size_vars():
     for name, size in sorted(((name, sys.getsizeof(value)) for name, value in locals().items()),
                              key=lambda x: -x[1])[:10]:
-        print("{:>30}: {:>8}".format(name, sizeof_fmt(size)))
+        print("{:>30}: {:>8}".format(name, _sizeof_fmt(size)))
 
 
 # finding paths to files with a certain extension

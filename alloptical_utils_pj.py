@@ -1224,7 +1224,7 @@ class alloptical(TwoPhotonImaging):
 
         pjf.plot_cell_loc(self, cells=self.s2p_cell_targets, show=False,
                           title='s2p cell targets and all target coords %s/%s' % (
-                              self.metainfo['trial'], self.metainfo['animal prep.']))
+                              self.metainfo['trial'], self.metainfo['animal prep.']), invert_y=True)
         for (x, y) in self.target_coords_all:
             plt.scatter(x=x, y=y, edgecolors='yellowgreen', facecolors='none', linewidths=1.0)
         plt.show()

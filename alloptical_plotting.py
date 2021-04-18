@@ -37,7 +37,7 @@ def plot_cell_radius_aspectr(expobj, stat, to_plot, min_vline: int = 4, max_vlin
 
 
 ### plot the location of all SLM targets, along with option for plotting the mean img of the current trial
-def plotImgSLMtargetsLocs(expobj, background: np.ndarray = None, **kwargs):
+def plotSLMtargetsLocs(expobj, background: np.ndarray = None, **kwargs):
 
     if background is None:
         black = np.zeros((expobj.frame_x, expobj.frame_y), dtype='uint16')
@@ -47,6 +47,8 @@ def plotImgSLMtargetsLocs(expobj, background: np.ndarray = None, **kwargs):
 
     for (x, y) in expobj.target_coords_all:
         plt.scatter(x=x, y=y, edgecolors='yellowgreen', facecolors='none', linewidths=1.0)
+
+    plt.suptitle('SLM targets location')
 
     if 'show' in kwargs.keys():
         if kwargs['show'] is True:
