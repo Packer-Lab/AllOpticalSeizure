@@ -5,10 +5,70 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.ticker as mticker
+from matplotlib import pyplot as plt
 
 import alloptical_utils_pj as aoutils
 import tifffile as tf
 
+# simple plot of the location of the given cell(s) against a black FOV
+def plot_cell_loc(expobj, cells: list, color: str = '#EDEDED', title=None, background: np.array = None,
+                  **kwargs):
+    """
+    plots an image of the FOV to show the locations of cells given in cells list.
+    :param background: either 2dim numpy array to use as the backsplash or None (where black backsplash will be created)
+    :param expobj: alloptical or 2p imaging object
+    :param color: str to specify color of the scatter plot for cells
+    :param cells: list of cells to plot
+    :param title: str title for plot
+    :param show: if True, show the plot at the end of the function
+    """
+
+    # if there is a fig and ax provided in the function call then use those, otherwise start anew
+    if 'fig' in kwargs.keys():
+        fig = kwargs['fig']
+        ax = kwargs['ax']
+    else:
+        fig, ax = plt.subplots()
+
+    if background is None:
+        black = np.zeros((expobj.frame_x, expobj.frame_y), dtype='uint16')
+        ax.imshow(black)
+    else:
+        ax.imshow(background)
+
+
+    for cell in cells:
+        y, x = expobj.stat[expobj.cell_id.index(cell)]['med']
+        if hasattr(expobj, 's2p_cell_targets'):
+            if cell in expobj.s2p_cell_targets:
+                color_ = '#F02A71'
+            else:
+                color_ = 'none'
+        else:
+            color_ = 'none'
+        ax.scatter(x=x, y=y, edgecolors=color, facecolors=color_, linewidths=0.8)
+
+    if background is None:
+        ax.set_xlim(0, expobj.frame_x)
+        ax.set_ylim(0, expobj.frame_y)
+
+    if title is not None:
+        plt.suptitle(title)
+
+    if 'invert_y' in kwargs.keys():
+        if kwargs['invert_y']:
+            ax.invert_yaxis()
+
+    if 'show' in kwargs.keys():
+        if kwargs['show'] is True:
+            plt.show()
+        else:
+            pass
+    else:
+        plt.show()
+
+    if 'fig' in kwargs.keys():
+        return fig, ax
 
 ### plotting the distribution of radius and aspect ratios - should this be running before the filtering step which is right below????????
 def plot_cell_radius_aspectr(expobj, stat, to_plot, min_vline: int = 4, max_vline: int = 12):
@@ -645,3 +705,4 @@ def plot_lfp_1pstim_avg_trace(expobj, title='Average LFP peri- stims', individua
     plt.show()
 
 ### below are plotting functions that I am still working on coding:
+

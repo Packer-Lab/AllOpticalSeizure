@@ -1,6 +1,8 @@
 # %% IMPORT MODULES AND TRIAL expobj OBJECT
 import sys
 
+import alloptical_plotting
+
 sys.path.append('/home/pshah/Documents/code/PackerLab_pycharm/')
 sys.path.append('/home/pshah/Documents/code/')
 import alloptical_utils_pj as aoutils
@@ -264,9 +266,7 @@ aoplot.plot_traces_heatmap(sz_flu_smooth, stim_on=stims, stim_off=stims_off, cma
                            title=('%s - seizure %s - sz flu smooth - %s to %s' % (trial, sz, sz_onset, sz_offset)),
                            xlims=None, vmin=100, vmax=500, lfp_signal=lfp_signal)
 
-# -- trying approach to find top 10% signal, and find earliest index above this threshold
-
-
+# -- ordering cells based on their order of reaching top 5% signal threshold
 x_95 = [np.percentile(trace, 95) for trace in x_norm]
 
 x_peak = [np.min(np.where(x_norm[i] > x_95[i])) for i in range(len(x_norm))]
@@ -277,6 +277,10 @@ aoplot.plot_traces_heatmap(x_ordered, stim_on=stims, stim_off=stims_off, cmap='S
                            title=('%s - seizure %s - sz flu smooth - %s to %s' % (trial, sz, sz_onset, sz_offset)),
                            xlims=None, vmin=100, vmax=500, lfp_signal=lfp_signal)
 
+# %% PLOT cell location with cmap based on their order of reaching top 5% signal during sz event
+
+cell_ids_ordered = np.array(expobj.cell_id)[new_order]
+alloptical_plotting.plot_cell_loc()
 
 # %% plot the target photostim responses for individual targets for each stim over the course of the trial
 #    (normalize to each target's overall mean response) and plot over the timecourse of the trial
@@ -360,8 +364,8 @@ for target in expobj.responses_SLMtargets.keys():
 
             if 10 < min_distance < 40:
                 fig, ax = plt.subplots()
-                fig, ax = pj.plot_cell_loc(expobj, cells=s2pcells_sz, show=False, fig=fig, ax=ax,
-                                           background=expobj.meanFluImg_registered)
+                fig, ax = alloptical_plotting.plot_cell_loc(expobj, cells=s2pcells_sz, show=False, fig=fig, ax=ax,
+                                                            background=expobj.meanFluImg_registered)
                 ax.scatter(x=target_coord[0], y=target_coord[1])
                 plt.title('stim %s' % expobj.stim_start_frames[i])
                 fig.show()

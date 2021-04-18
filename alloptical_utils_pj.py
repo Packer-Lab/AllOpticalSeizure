@@ -21,6 +21,8 @@ import itertools
 from scipy import stats
 import sys
 
+import alloptical_plotting
+
 sys.path.append('/home/pshah/Documents/code/')
 from Vape.utils.paq2py import *
 from Vape.utils.utils_funcs import *
@@ -1222,8 +1224,8 @@ class alloptical(TwoPhotonImaging):
         print('\nTarget cells found in suite2p: ', self.s2p_cell_targets,
               ' -- %s cells (out of %s target coords)' % (len(self.s2p_cell_targets), len(self.target_coords_all)))
 
-        pjf.plot_cell_loc(self, cells=self.s2p_cell_targets, show=False,
-                          title='s2p cell targets and all target coords %s/%s' % (
+        alloptical_plotting.plot_cell_loc(self, cells=self.s2p_cell_targets, show=False,
+                                          title='s2p cell targets and all target coords %s/%s' % (
                               self.metainfo['trial'], self.metainfo['animal prep.']), invert_y=True)
         for (x, y) in self.target_coords_all:
             plt.scatter(x=x, y=y, edgecolors='yellowgreen', facecolors='none', linewidths=1.0)
@@ -1970,7 +1972,7 @@ class Post4ap(alloptical):
             out_sz = in_sz_2
 
         if to_plot:
-            pjf.plot_cell_loc(self, cells=in_sz, title=title, show=False)
+            alloptical_plotting.plot_cell_loc(self, cells=in_sz, title=title, show=False)
             plt.gca().invert_yaxis()
             plt.show()  # the indiviual cells were plotted in ._InOutSz
 
