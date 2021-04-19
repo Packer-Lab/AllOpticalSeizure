@@ -41,7 +41,7 @@ def run_spont_processing(trial, paths, analysis_save_path, metainfo):
 
     print('\n Processing spont. trial # %s' % trial)
 
-    expobj = ao.TwoPhotonImaging(tiff_path_dir, tiff_path, paq_path, metainfo)
+    expobj = ao.TwoPhotonImaging(tiff_path_dir, tiff_path, paq_path, metainfo, analysis_save_path=analysis_save_path)
 
     prep4suite2p(expobj, trial, paths)
 
@@ -66,10 +66,10 @@ def run_spont_processing(trial, paths, analysis_save_path, metainfo):
 
 #%% make sure to run EphysViewer.m from MATLAB if you need to specify any bad frames!
 # trial = 't-001'
-trials = ['t-005', 't-006', 't-008']
-data_path_base = '/home/pshah/mnt/qnap/Data/2020-12-18'
-animal_prep = 'RL108'
-date = '2020-12-18'
+trials = ['t-002', 't-006']
+data_path_base = '/home/pshah/mnt/qnap/Data/2021-01-19'
+animal_prep = 'PS07'
+date = data_path_base[-10:]
 exp_type = 'spont imaging'
 comments = 'spont imaging period before running alloptical experiment'
 

@@ -171,18 +171,18 @@ def run_photostim_processing(trial, exp_type, tiffs_loc_dir, tiffs_loc, naparms_
 
 
 # %% update the trial and photostim experiment files information below before running run_photostim_processing()
-data_path_base = '/home/pshah/mnt/qnap/Data/2020-12-18'
-animal_prep = 'RL108'
+data_path_base = '/home/pshah/mnt/qnap/Data/2021-01-19'
+animal_prep = 'PS07'
 date = data_path_base[-10:]
 # specify location of the naparm export for the trial(s) - ensure that this export was used for all trials, if # of trials > 1
 # paqs_loc = '%s/%s_RL109_%s.paq' % (data_path_base, date, trial[2:])  # path to the .paq files for the selected trials
 
 # need to update these 5 things for every trial
-trial = 't-013'  # note that %s magic command in the code below will be using these trials listed here
-naparms_loc = '/photostim/2020-12-18_RL108_ps_008/'  # make sure to include '/' at the end to indicate the child directory
-comments = '5 seizures total, trial starts mid first seizure; 11 cells x 3 groups; 5mW per cell preset: 2020-11-25_PS_250ms-stim-50hz (approach #1)'
-exp_type = 'post 4ap 2p all optical'  # use 'post' and '4ap' in the description to create the appropriate post4ap exp object
-paqs_loc = '%s/%s_RL108_%s.paq' % (data_path_base, date, trial[2:])  # path to the .paq files for the selected trials
+trial = 't-007'  # note that %s magic command in the code below will be using these trials listed here
+naparms_loc = '/photostim/2021-01-19_PS07_photostim_013/'  # make sure to include '/' at the end to indicate the child directory
+comments = '18 cells x 3 groups; 7mW per cell preset: 2021-01-07_PS_250ms-stim-40hz-multi_interleaved.mat (prot. #3)'
+exp_type = 'pre 4ap 2p all optical'  # use 'post' and '4ap' in the description to create the appropriate post4ap exp object
+paqs_loc = '%s/%s_PS07_%s.paq' % (data_path_base, date, trial[2:])  # path to the .paq files for the selected trials
 # paqs_loc = '%s/%s_RL111_%s.paq' % (data_path_base, date, '008')  # path to the .paq files for the selected trials
 ######
 

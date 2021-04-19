@@ -12,8 +12,8 @@ data_path_base = '/home/pshah/mnt/qnap/Data/2021-01-19'
 date = data_path_base[-10:]
 
 # need to update these 3 things for every trial
-trial = 't-012'  # note that %s magic command in the code below will be using these trials listed here
-exp_type = '1p photostim, post 4ap'
+trial = 't-003'  # note that %s magic command in the code below will be using these trials listed here
+exp_type = '1p photostim, pre 4ap'
 comments = '20x trials of 1p stim'
 
 metainfo = {
@@ -43,8 +43,7 @@ date = '2021-01-19'
 # pkl_path = "/home/pshah/mnt/qnap/Data/%s/%s_%s/%s_%s.pkl" % (date, date, trial, date, trial)
 
 expobj, experiment = aoutils.import_expobj(trial=trial, date=date)
-# expobj.metainfo = metainfo
-# expobj.save()
+
 
 # %% # look at the average Ca Flu trace pre and post stim, just calculate the average of the whole frame and plot as continuous timeseries
 # - this approach should also allow to look at the stims that give rise to extended seizure events where the Ca Flu stays up
@@ -60,7 +59,7 @@ expobj, experiment = aoutils.import_expobj(trial=trial, date=date)
 aoplot.plotMeanRawFluTrace(expobj, stim_span_color='white', x_axis='frames', xlims=[0, 3000])
 aoplot.plotLfpSignal(expobj, x_axis='paq')
 
-aoplot.plot_1pstim_avg_trace(expobj, x_axis='time', individual_traces=True, stim_span_color=None)
+aoplot.plot_1pstim_avg_trace(expobj, x_axis='time', individual_traces=True, stim_span_color=None, y_axis='dff')
 aoplot.plot_lfp_1pstim_avg_trace(expobj, x_axis='time', individual_traces=False, pre_stim=0.25, post_stim=0.75)
 
 # TODO need to classify seizures in paq files for 1p photostim trials

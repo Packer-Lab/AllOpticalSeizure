@@ -382,7 +382,8 @@ class TwoPhotonImaging:
         self.meanFluImg = np.mean(im_stack, axis=0)
         self.meanRawFluTrace = np.mean(np.mean(im_stack, axis=1), axis=1)
 
-        self.save_pkl(pkl_path=self.pkl_path)
+        if hasattr(self, 'pkl_path'):
+            self.save_pkl(pkl_path=self.pkl_path)
 
         if plot:
             aoplot.plotMeanRawFluTrace(expobj=self, stim_span_color=None, x_axis='frames', figsize=[20, 3],
@@ -2026,8 +2027,8 @@ class OnePhotonStim(TwoPhotonImaging):
         TwoPhotonImaging.__init__(self, self.tiff_path_dir, self.tiff_path, self.paq_path, metainfo=metainfo,
                                   save_downsampled_tiff=True, analysis_save_path=analysis_save_path)
         self.paqProcessing()
-        print(self.tiff_path)
 
+        # print(self.tiff_path)
         # print('\n-----processing tiff file for 1p photostim...')
         # im_stack = tf.imread(self.tiff_path, key=range(self.n_frames))
         # print('Loaded experiment tiff of shape: ', im_stack.shape)

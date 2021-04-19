@@ -6,7 +6,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.ticker as mticker
 from matplotlib import pyplot as plt
-
+import utils.funcs_pj as pj
 import alloptical_utils_pj as aoutils
 import tifffile as tf
 
@@ -638,11 +638,16 @@ def plotLfpSignal(expobj, stim_span_color='powderblue', stim_lines: bool = True,
         return fig, ax
 
 
-def plot_1pstim_avg_trace(expobj, title='Average trace of stims', individual_traces=False, x_axis='time', stim_span_color='white'):
+def plot_1pstim_avg_trace(expobj, title='Average trace of stims', individual_traces=False, x_axis='time', stim_span_color='white',
+                          y_axis: str = 'raw'):
     pre_stim = 1  # seconds
     post_stim = 4  # seconds
     fig, ax = plt.subplots()
     x = [expobj.meanRawFluTrace[stim - int(pre_stim * expobj.fps): stim + int(post_stim * expobj.fps)] for stim in expobj.stim_start_frames]
+    # convert to dFF normalized to pre-stim F
+    if y_axis == 'dff':  # otherwise default param is raw Flu
+        x = [pj.dff(trace, baseline=np.mean(trace[:int(pre_stim * expobj.fps)])) for trace in x]
+
     x_ = np.mean(x, axis=0)
     ax.plot(x_, color='black', zorder=2, linewidth=2.2)
 
@@ -666,18 +671,25 @@ def plot_1pstim_avg_trace(expobj, title='Average trace of stims', individual_tra
             plt.axvline(x=int(pre_stim * expobj.fps) + expobj.stim_duration_frames + 2, color='black', linestyle='--', linewidth=1)
 
     if x_axis == 'time':
-        # change x axis ticks to seconds
-        label_format = '{:,.2f}'
-        labels = [item for item in ax.get_xticks()]
-        for item in labels:
-            labels[labels.index(item)] = round(item / expobj.fps, 2)
-        ticks_loc = ax.get_xticks().tolist()
-        ax.xaxis.set_major_locator(mticker.FixedLocator(ticks_loc))
-        ax.set_xticklabels([label_format.format(x) for x in labels])
+        # set x ticks at every 30 seconds
+        labels = list(range(0, len(expobj.lfp_signal) // expobj.paq_rate, 30))
+        ax.set_xticks(ticks=[(label * expobj.paq_rate) for label in labels])
+        ax.set_xticklabels(labels)
+        ax.tick_params(axis='both', which='both', length=3)
         ax.set_xlabel('Time (secs)')
+
+        # # change x axis ticks to seconds
+        # label_format = '{:,.2f}'
+        # labels = [item for item in ax.get_xticks()]
+        # for item in labels:
+        #     labels[labels.index(item)] = round(item / expobj.fps, 2)
+        # ticks_loc = ax.get_xticks().tolist()
+        # ax.xaxis.set_major_locator(mticker.FixedLocator(ticks_loc))
+        # ax.set_xticklabels([label_format.format(x) for x in labels])
+        # ax.set_xlabel('Time (secs)')
     else:
         ax.set_xlabel('frame clock')
-    ax.set_ylabel('Flu (a.u.)')
+    ax.set_ylabel(y_axis)
     plt.suptitle(
         '%s %s %s %s' % (title, expobj.metainfo['exptype'], expobj.metainfo['animal prep.'], expobj.metainfo['trial']))
     plt.show()
