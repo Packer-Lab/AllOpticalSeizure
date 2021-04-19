@@ -2128,6 +2128,8 @@ class OnePhotonStim(TwoPhotonImaging):
                 self.stim_end_times.append(self.stim_times[np.where(self.stim_times == stim)[0] - 1][0])
         self.stim_end_times.append(self.stim_times[-1])
 
+        print("\nNumber of 1photon stims found: ", len(self.stim_start_times))
+
         plt.figure(figsize=(50, 2))
         plt.plot(stim_volts)
         plt.plot(stim_times, np.ones(len(stim_times)), '.')
@@ -2150,6 +2152,9 @@ class OnePhotonStim(TwoPhotonImaging):
         self.stim_end_frames = [stim_frames[-1] for stim_frames in self.stim_frames]
         self.stim_duration_frames = int(np.mean(
             [self.stim_end_frames[idx] - self.stim_start_frames[idx] for idx in range(len(self.stim_start_frames))]))
+
+        print("\nStim duration of 1photon stim: %s frames (%s ms)" % (self.stim_duration_frames, round(self.stim_duration_frames / self.fps * 1000)))
+
 
         # i = len(self.stim_start_frames)
         # for stim in self.stim_frames[1:]:
