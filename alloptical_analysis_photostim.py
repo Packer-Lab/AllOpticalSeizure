@@ -285,12 +285,12 @@ aoplot.plot_traces_heatmap(x_ordered, stim_on=stims, stim_off=stims_off, cmap='S
 # %% PLOT cell location with cmap based on their order of reaching top 5% signal during sz event
 
 cell_ids_ordered = list(np.array(expobj.cell_id)[new_order])
-aoplot.plot_cell_loc(expobj, cells=cell_ids_ordered, show_s2p_targets=False, color_float_array=list(range(len(cell_ids_ordered))),
+aoplot.plot_cell_loc(expobj, cells=cell_ids_ordered, show_s2p_targets=False, color_float_list=list(range(len(cell_ids_ordered))),
                      title='cell locations ordered by recruitment in sz # %s' % sz, invert_y=True, cmap='Purples')
 
 # just the bottom half cells that seems to show more of an order
 cell_ids_ordered = list(np.array(expobj.cell_id)[new_order])
-aoplot.plot_cell_loc(expobj, cells=cell_ids_ordered, show_s2p_targets=False, color_float_array=list(range(len(cell_ids_ordered))),
+aoplot.plot_cell_loc(expobj, cells=cell_ids_ordered[250:], show_s2p_targets=False, color_float_list=list(np.array(x_peak)[new_order][250:]),
                      title='cell locations ordered by recruitment in sz # %s' % sz, invert_y=True, cmap='Purples')
 
 # %% plot the target photostim responses for individual targets for each stim over the course of the trial
@@ -524,6 +524,8 @@ plt.clim(80, 120)
 plt.suptitle((experiment + '- avg. stim responses - Group %s' % group), y=1.00)
 plt.show()
 
+
+
 # %%
 # plot response over distance from photostim. target cell to non-target cell in proximity
 import math
@@ -558,6 +560,7 @@ df_dist_resp = pd.DataFrame(d)
 plt.figure()
 plt.scatter(x=df_dist_resp['distance'], y=df_dist_resp['response_of_non_target'])
 plt.show()
+
 
 # %%
 # TODO calculate probability of stimulation in 100x100um micron bins around targeted cell

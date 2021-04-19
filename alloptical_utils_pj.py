@@ -47,7 +47,10 @@ def points_in_circle_np(radius, x0=0, y0=0, ):
         yield x, y
 
 
-def import_expobj(trial, date, pkl_path):
+def import_expobj(trial, date, pkl_path: str = None):
+    if pkl_path is None:
+        pkl_path = "/home/pshah/mnt/qnap/Analysis/%s/%s_%s/%s_%s.pkl" % (date, date, trial, date, trial)
+
     with open(pkl_path, 'rb') as f:
         print('\nimporting expobj for "%s, %s" from: %s' % (date, trial, pkl_path))
         expobj = pickle.load(f)
@@ -68,9 +71,9 @@ def import_expobj(trial, date, pkl_path):
 ## this should technically be the biggest super class lol
 class TwoPhotonImaging:
 
-    def __init__(self, tiff_path_dir, tiff_path, paq_path, metainfo, suite2p_path=None, suite2p_run=False):
+    def __init__(self, tiff_path_dir, tiff_path, paq_path, metainfo, analysis_save_path, suite2p_path=None, suite2p_run=False,
+                 save_downsampled_tiff: bool = False):
         """
-        :param paths: list of key paths (tiff_loc
         :param suite2p_path: path to the suite2p outputs (plane0 file? or ops file? not sure yet)
         :param suite2p_run: set to true if suite2p is already run for this trial
         """
@@ -79,9 +82,13 @@ class TwoPhotonImaging:
         self.tiff_path = tiff_path
         self.paq_path = paq_path
         self.metainfo = metainfo
+        self.analysis_save_path = analysis_save_path
 
         self._parsePVMetadata()
-        self.mean_raw_flu_trace()
+        stack = self.mean_raw_flu_trace()
+        if save_downsampled_tiff:
+            SaveDownsampledTiff(stack=stack, save_as=analysis_save_path + '/%s_%s_downsampled.tif' % (
+            metainfo['date'], metainfo['trial']))  # specify path in Analysis folder to save pkl object')
 
         if suite2p_run:
             self.suite2p_path = suite2p_path
@@ -375,11 +382,12 @@ class TwoPhotonImaging:
         self.meanFluImg = np.mean(im_stack, axis=0)
         self.meanRawFluTrace = np.mean(np.mean(im_stack, axis=1), axis=1)
 
-        self.save()
+        self.save_pkl(pkl_path=self.pkl_path)
 
         if plot:
             aoplot.plotMeanRawFluTrace(expobj=self, stim_span_color=None, x_axis='frames', figsize=[20, 3],
                                        title='Mean raw Flu trace -')
+        return im_stack
 
     def save_pkl(self, pkl_path: str = None):
         if pkl_path is None:
@@ -2000,7 +2008,7 @@ class OnePhotonStim(TwoPhotonImaging):
             data_path_base, date, animal_prep, trial[2:])  # path to the .paq files for the selected trials
         tiffs_loc_dir = '%s/%s_%s' % (data_path_base, date, trial)
         tiffs_loc = '%s/%s_%s_Cycle00001_Ch3.tif' % (tiffs_loc_dir, date, trial)
-        pkl_path = "/home/pshah/mnt/qnap/Analysis/%s/%s_%s/%s_%s.pkl" % (
+        self.pkl_path = "/home/pshah/mnt/qnap/Analysis/%s/%s_%s/%s_%s.pkl" % (
             date, date, trial, date, trial)  # specify path in Analysis folder to save pkl object
         # paqs_loc = '%s/%s_RL109_010.paq' % (data_path_base, date)  # path to the .paq files for the selected trials
         new_tiffs = tiffs_loc[:-19]  # where new tiffs from rm_artifacts_tiffs will be saved
@@ -2015,8 +2023,8 @@ class OnePhotonStim(TwoPhotonImaging):
         self.tiff_path_dir = paths[0]
         self.tiff_path = paths[1]
         self.paq_path = paths[2]
-        self.metainfo = metainfo
-        TwoPhotonImaging.__init__(self, self.tiff_path_dir, self.tiff_path, self.paq_path)
+        TwoPhotonImaging.__init__(self, self.tiff_path_dir, self.tiff_path, self.paq_path, metainfo=metainfo,
+                                  save_downsampled_tiff=True, analysis_save_path=analysis_save_path)
         self.paqProcessing()
         print(self.tiff_path)
 
@@ -2027,7 +2035,6 @@ class OnePhotonStim(TwoPhotonImaging):
         # self.meanRawFluTrace = np.mean(np.mean(im_stack, axis=1), axis=1)
         # TwoPhotonImaging.mean_raw_flu_trace(self)
 
-        self.analysis_save_path = analysis_save_path
         if os.path.exists(self.analysis_save_path):
             pass
         elif os.path.exists(self.analysis_save_path[:-17]):
@@ -2036,7 +2043,10 @@ class OnePhotonStim(TwoPhotonImaging):
             os.mkdir(self.analysis_save_path[:-17])
             os.mkdir(self.analysis_save_path)
 
-        self.save_pkl(pkl_path=pkl_path)
+        self.save_pkl(pkl_path=self.pkl_path)
+
+        print('\n-----DONE OnePhotonStim init of trial # %s-----' % trial)
+
 
     def paqProcessing(self, **kwargs):
 
@@ -2813,7 +2823,8 @@ def SaveDownsampledTiff(tiff_path: str = None, stack: np.array = None, save_as=N
         # open tiff file
         print('|- working on... %s' % tiff_path)
         stack = tf.imread(tiff_path)
-        resolution = stack.shape[1]
+
+    resolution = stack.shape[1]
 
     # downsample to 8-bit
     stack8 = np.full_like(stack, fill_value=0)

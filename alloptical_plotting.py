@@ -12,7 +12,7 @@ import tifffile as tf
 
 # simple plot of the location of the given cell(s) against a black FOV
 def plot_cell_loc(expobj, cells: list, edgecolor: str = '#EDEDED', title=None, background: np.array = None,
-                  show_s2p_targets: bool = True, color_float_array: list = None, cmap: str = 'Reds', **kwargs):
+                  show_s2p_targets: bool = True, color_float_list: list = None, cmap: str = 'Reds', **kwargs):
     """
     plots an image of the FOV to show the locations of cells given in cells list.
     :param background: either 2dim numpy array to use as the backsplash or None (where black backsplash will be created)
@@ -20,14 +20,14 @@ def plot_cell_loc(expobj, cells: list, edgecolor: str = '#EDEDED', title=None, b
     :param edgecolor: str to specify edgecolor of the scatter plot for cells
     :param cells: list of cells to plot
     :param title: str title for plot
-    :param color_float_array: if given, it will be used to color the cells according a colormap
+    :param color_float_list: if given, it will be used to color the cells according a colormap
     :param cmap: cmap to be used in conjuction with the color_float_array argument
     :param show_s2p_targets: if True, then will prioritize coloring of cell points based on whether they were photostim targets
     :param kwargs: optional arguments
             invert_y: if True, invert the reverse the direction of the y axis
-            show: if True, show the plot at the end of the function
-            fig:
-            ax:
+            show: if True, show the plot
+            fig: a fig plt.subplots() instance, if provided use this fig for making figure
+            ax: a ax plt.subplots() instance, if provided use this ax for plotting
     """
 
     # if there is a fig and ax provided in the function call then use those, otherwise start anew
@@ -59,15 +59,15 @@ def plot_cell_loc(expobj, cells: list, edgecolor: str = '#EDEDED', title=None, b
             else:
                 color_ = 'none'
             ax.scatter(x=x, y=y, edgecolors=edgecolor, facecolors=color_, linewidths=0.8)
-        elif color_float_array:
-            # ax.scatter(x=x, y=y, edgecolors='none', c=color_float_array[cells.index(cell)], linewidths=0.8,
+        elif color_float_list:
+            # ax.scatter(x=x, y=y, edgecolors='none', c=color_float_list[cells.index(cell)], linewidths=0.8,
             #            cmap=cmap)
             pass
         else:
             ax.scatter(x=x, y=y, edgecolors=edgecolor, facecolors='none', linewidths=0.8)
 
-    if color_float_array:
-        ax.scatter(x=x_list, y=y_list, edgecolors='none', c=color_float_array, linewidths=0.8,
+    if color_float_list:
+        ax.scatter(x=x_list, y=y_list, edgecolors='none', c=color_float_list, linewidths=0.8,
                    cmap=cmap, zorder=1)
 
     if background is None:
