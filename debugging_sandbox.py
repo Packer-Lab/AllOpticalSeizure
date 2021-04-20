@@ -26,69 +26,16 @@ from numba import njit
 from skimage import draw
 import tifffile as tf
 
-# original = '/home/pshah/mnt/qnap/Analysis/2021-01-10/suite2p/alloptical-2p-08x-alltrials-reg_tiff/plane0/reg_tif/file021_chan0.tif'
-# recreated = '/home/pshah/mnt/qnap/Analysis/2021-01-10/2021-01-10_t-008/reg_tiff_t-008.tif'
-#
-# with tf.TiffFile(original, multifile=False) as input_tif:
-#     data_original = input_tif.asarray()
-#     print('shape of tiff: ', data_original.shape)
-#
-# with tf.TiffFile(recreated, multifile=False) as input_tif:
-#     data_recreated = input_tif.asarray()
-#     print('shape of tiff: ', data_recreated.shape)
-#     data_recreated1 = data_recreated[0]
-#
-
-# sorted_paths = ['/home/pshah/mnt/qnap/Analysis/2021-01-10/suite2p/alloptical-2p-08x-alltrials-reg_tiff/plane0/reg_tif/file021_chan0.tif',
-#                 '/home/pshah/mnt/qnap/Analysis/2021-01-10/suite2p/alloptical-2p-08x-alltrials-reg_tiff/plane0/reg_tif/file022_chan0.tif',
-#                 '/home/pshah/mnt/qnap/Analysis/2021-01-10/suite2p/alloptical-2p-08x-alltrials-reg_tiff/plane0/reg_tif/file023_chan0.tif',
-#                 '/home/pshah/mnt/qnap/Analysis/2021-01-10/suite2p/alloptical-2p-08x-alltrials-reg_tiff/plane0/reg_tif/file024_chan0.tif',
-#                 '/home/pshah/mnt/qnap/Analysis/2021-01-10/suite2p/alloptical-2p-08x-alltrials-reg_tiff/plane0/reg_tif/file025_chan0.tif']
-#
-# def make_tiff_stack(sorted_paths: list, save_as: str):
-#     """
-#     read in a bunch of tiffs and stack them together, and save the output as the save_as
-#
-#     :param sorted_paths: list of string paths for tiffs to stack
-#     :param save_as: .tif file path to where the tif should be saved
-#     """
-#
-#     num_tiffs = len(sorted_paths)
-#     print('working on tifs to stack: ', num_tiffs)
-#
-#     with tf.TiffWriter(save_as, bigtiff=True) as tif:
-#         for i, tif_ in enumerate(sorted_paths):
-#             with tf.TiffFile(tif_, multifile=True) as input_tif:
-#                 data = input_tif.asarray()
-#                 for frame in data:
-#                     tif.write(frame, contiguous=True)
-#
-#                 # tif.save(data[0])
-#             msg = ' -- Writing tiff: ' + str(i + 1) + ' out of ' + str(num_tiffs)
-#             print(msg, end='\r')
-#             # tif.save(data)
-#
-# make_tiff_stack(sorted_paths=sorted_paths, save_as='/home/pshah/mnt/qnap/Analysis/2021-01-10/2021-01-10_t-008/reg_tiff_t-008.tif')
-#
-# # series0 = np.random.randint(0, 255, (32, 32, 3), 'uint8')
-# # series1 = np.random.randint(0, 1023, (4, 256, 256), 'uint16')
-# series0 = np.random.randint(0, 1023, (4, 256, 256), 'uint16')
-# series1 = np.random.randint(0, 1023, (4, 256, 256), 'uint16')
-# tf.imwrite('temp.tif', series0, photometric='minisblack')
-# tf.imwrite('temp.tif', series1, append=True)
-#
-# img = tf.imread('temp.tif')
-
 
 ########
 
-###### IMPORT pkl file containing data in form of expobj
-trial = 't-013'
-date = '2020-12-18'
-pkl_path = "/home/pshah/mnt/qnap/Analysis/%s/%s_%s/%s_%s.pkl" % (date, date, trial, date, trial)
-# pkl_path = "/home/pshah/mnt/qnap/Data/%s/%s_%s/%s_%s.pkl" % (date, date, trial, date, trial)
-
-expobj, experiment = aoutils.import_expobj(trial=trial, date=date, pkl_path=pkl_path)
+# %% ###### IMPORT pkl file containing data in form of expobj
+# trial = 't-013'
+# date = '2020-12-18'
+# pkl_path = "/home/pshah/mnt/qnap/Analysis/%s/%s_%s/%s_%s.pkl" % (date, date, trial, date, trial)
+# # pkl_path = "/home/pshah/mnt/qnap/Data/%s/%s_%s/%s_%s.pkl" % (date, date, trial, date, trial)
+#
+# expobj, experiment = aoutils.import_expobj(trial=trial, date=date, pkl_path=pkl_path)
 
 # aoplot.plotMeanRawFluTrace(expobj=expobj, stim_span_color=None, x_axis='frames', figsize=[20, 3], show=True)
 
@@ -98,66 +45,15 @@ expobj, experiment = aoutils.import_expobj(trial=trial, date=date, pkl_path=pkl_
 
 #%%
 
-# testing ordering suite2p cells in order of recruitment into seizure
+###### IMPORT pkl file containing data in form of expobj
+trial = 't-012'
+date = '2021-01-19'
+# pkl_path = "/home/pshah/mnt/qnap/Data/%s/%s_%s/%s_%s.pkl" % (date, date, trial, date, trial)
 
-sz = 1
-sz_onset, sz_offset = expobj.stims_bf_sz[sz], expobj.stims_af_sz[sz+1]
-
-# # raw baseline Flu traces of all good cells
-# columns = [f'{num}' for num in range(expobj.baseline_frames[0], expobj.baseline_frames[1])]
-# index = [f'{num}' for num in expobj.good_cells]
-# idxs = [expobj.cell_id.index(cell) for cell in expobj.good_cells]
-# expobj.baseline_raw_df = pd.DataFrame(expobj.baseline_raw[idxs, :], columns=columns, index=index)
-#
-# expobj.dff_flu_baseline = aoutils.normalize_dff_baseline(arr=expobj.raw_df, baseline_array=expobj.baseline_raw_df)
-#
-# dff_mean = [np.percentile(trace, 50) for trace in np.array(expobj.dff_flu_baseline)]
-#
-# x = expobj.dff_flu[[expobj.cell_id.index(cell) for cell in expobj.good_cells], sz_onset:sz_offset]
-# x_mean = [np.percentile(trace, 50) for trace in x]
+expobj, experiment = aoutils.import_expobj(trial=trial, date=date)
 
 
-##
-# -- approach of dFF normalize to the mean of the Flu data 2 seconds before the seizure
-pre_sz = 2*int(expobj.fps)
-sz_flu = expobj.raw[[expobj.cell_id.index(cell) for cell in expobj.good_cells], sz_onset - pre_sz: sz_offset]
-
-sz_flu_smooth = np.array([pj.smooth_signal(signal, w=15) for signal in sz_flu])
-
-x_norm = np.array([pj.dff(flu[pre_sz:], np.mean(flu[:pre_sz])) * 100 for flu in sz_flu_smooth])
-
-## TODO organize individual cells in array in order of peak firing rate
-## - calculate some measure of peak firing for each cell, then determine where the derivative occurs earliest (get that index from the array)
-## - assign the index to each trace index, and then organize the trace indexes in that order. then finally re-order the indexes in accordance with the new indexes.
-stims = [(stim - sz_onset) for stim in expobj.stim_start_frames if sz_onset <= stim < sz_offset]
-stims_off = [(stim + expobj.stim_duration_frames - 1) for stim in stims]
-
-x_bf = expobj.stim_times[np.where(expobj.stim_start_frames == expobj.stims_bf_sz[sz])[0][0]]
-x_af = expobj.stim_times[np.where(expobj.stim_start_frames == expobj.stims_af_sz[sz+1])[0][0]]
-
-lfp_signal = expobj.lfp_signal[x_bf:x_af]
-
-aoplot.plot_traces_heatmap(sz_flu_smooth, stim_on=stims, stim_off=stims_off, cmap='Spectral_r', figsize=(10, 6),
-                           title=('%s - seizure %s - sz flu smooth - %s to %s' % (trial, sz, sz_onset, sz_offset)),
-                           xlims=None, vmin=100, vmax=500, lfp_signal=lfp_signal)
-
-# -- trying approach to find top 10% signal, and find earliest index above this threshold
-
-
-x_95 = [np.percentile(trace, 95) for trace in x_norm]
-
-x_peak = [np.min(np.where(x_norm[i] > x_95[i])) for i in range(len(x_norm))]
-new_order = np.argsort(x_peak)
-x_ordered = x_norm[new_order]
-
-aoplot.plot_traces_heatmap(x_ordered, stim_on=stims, stim_off=stims_off, cmap='Spectral_r', figsize=(10, 6),
-                           title=('%s - seizure %s - sz flu smooth - %s to %s' % (trial, sz, sz_onset, sz_offset)),
-                           xlims=None, vmin=100, vmax=500, lfp_signal=lfp_signal)
-
-
-i = 8
-plt.plot(sz_flu_smooth[i]); plt.show()
-plt.plot(x_norm[i]); plt.show()
+aoplot.plot_1pstim_avg_trace(expobj, x_axis='time', individual_traces=True, stim_span_color=None, y_axis='dff')
 
 # %%
 # expobj.raw_traces_from_targets()
@@ -257,3 +153,55 @@ plt.plot(x_norm[i]); plt.show()
 
 
 # %%
+# original = '/home/pshah/mnt/qnap/Analysis/2021-01-10/suite2p/alloptical-2p-08x-alltrials-reg_tiff/plane0/reg_tif/file021_chan0.tif'
+# recreated = '/home/pshah/mnt/qnap/Analysis/2021-01-10/2021-01-10_t-008/reg_tiff_t-008.tif'
+#
+# with tf.TiffFile(original, multifile=False) as input_tif:
+#     data_original = input_tif.asarray()
+#     print('shape of tiff: ', data_original.shape)
+#
+# with tf.TiffFile(recreated, multifile=False) as input_tif:
+#     data_recreated = input_tif.asarray()
+#     print('shape of tiff: ', data_recreated.shape)
+#     data_recreated1 = data_recreated[0]
+#
+
+# sorted_paths = ['/home/pshah/mnt/qnap/Analysis/2021-01-10/suite2p/alloptical-2p-08x-alltrials-reg_tiff/plane0/reg_tif/file021_chan0.tif',
+#                 '/home/pshah/mnt/qnap/Analysis/2021-01-10/suite2p/alloptical-2p-08x-alltrials-reg_tiff/plane0/reg_tif/file022_chan0.tif',
+#                 '/home/pshah/mnt/qnap/Analysis/2021-01-10/suite2p/alloptical-2p-08x-alltrials-reg_tiff/plane0/reg_tif/file023_chan0.tif',
+#                 '/home/pshah/mnt/qnap/Analysis/2021-01-10/suite2p/alloptical-2p-08x-alltrials-reg_tiff/plane0/reg_tif/file024_chan0.tif',
+#                 '/home/pshah/mnt/qnap/Analysis/2021-01-10/suite2p/alloptical-2p-08x-alltrials-reg_tiff/plane0/reg_tif/file025_chan0.tif']
+#
+# def make_tiff_stack(sorted_paths: list, save_as: str):
+#     """
+#     read in a bunch of tiffs and stack them together, and save the output as the save_as
+#
+#     :param sorted_paths: list of string paths for tiffs to stack
+#     :param save_as: .tif file path to where the tif should be saved
+#     """
+#
+#     num_tiffs = len(sorted_paths)
+#     print('working on tifs to stack: ', num_tiffs)
+#
+#     with tf.TiffWriter(save_as, bigtiff=True) as tif:
+#         for i, tif_ in enumerate(sorted_paths):
+#             with tf.TiffFile(tif_, multifile=True) as input_tif:
+#                 data = input_tif.asarray()
+#                 for frame in data:
+#                     tif.write(frame, contiguous=True)
+#
+#                 # tif.save(data[0])
+#             msg = ' -- Writing tiff: ' + str(i + 1) + ' out of ' + str(num_tiffs)
+#             print(msg, end='\r')
+#             # tif.save(data)
+#
+# make_tiff_stack(sorted_paths=sorted_paths, save_as='/home/pshah/mnt/qnap/Analysis/2021-01-10/2021-01-10_t-008/reg_tiff_t-008.tif')
+#
+# # series0 = np.random.randint(0, 255, (32, 32, 3), 'uint8')
+# # series1 = np.random.randint(0, 1023, (4, 256, 256), 'uint16')
+# series0 = np.random.randint(0, 1023, (4, 256, 256), 'uint16')
+# series1 = np.random.randint(0, 1023, (4, 256, 256), 'uint16')
+# tf.imwrite('temp.tif', series0, photometric='minisblack')
+# tf.imwrite('temp.tif', series1, append=True)
+#
+# img = tf.imread('temp.tif')

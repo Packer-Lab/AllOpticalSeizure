@@ -38,7 +38,7 @@ import alloptical_plotting as aoplot
 
 
 ###### IMPORT pkl file containing data in form of expobj
-trial = 't-012'
+trial = 't-003'
 date = '2021-01-19'
 # pkl_path = "/home/pshah/mnt/qnap/Data/%s/%s_%s/%s_%s.pkl" % (date, date, trial, date, trial)
 

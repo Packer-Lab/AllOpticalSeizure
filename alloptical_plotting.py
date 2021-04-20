@@ -388,7 +388,7 @@ def plot_lfp_stims(expobj, title='LFP signal with photostim. shown (in different
 
         # plot LFP signal
         # ax.plot(expobj.lfp_signal, zorder=0, linewidth=0.5)
-        fig, ax = plotLfpSignal(expobj, fig=fig, ax=ax, stim_lines=False, show=False, stim_span_color=None, x_axis='paq')
+        fig, ax = plotLfpSignal(expobj, fig=fig, ax=ax, stim_lines=False, show=False, stim_span_color='', x_axis='paq')
         ax.scatter(x=x, y=[0] * len(expobj.stims_in_sz), edgecolors='red', facecolors='green', marker="|", zorder=3, s=60, linewidths=2.0)
         ax.scatter(x=x_out, y=[0] * len(x_out), edgecolors='grey', facecolors='black', marker="|", zorder=3, s=60, linewidths=2.0)
         ax.scatter(x=x_bf, y=[0] * len(expobj.stims_bf_sz), edgecolors='grey', facecolors='deeppink', marker="|", zorder=3, s=60, linewidths=2.0)
@@ -594,28 +594,46 @@ def plotLfpSignal(expobj, stim_span_color='powderblue', stim_lines: bool = True,
         else:
             fig, ax = plt.subplots(figsize=[60 * (expobj.stim_start_times[-1] + 1e5 - (expobj.stim_start_times[0] - 1e5)) / 1e7, 3])
 
+    if 'alpha' in kwargs:
+        alpha = kwargs['alpha']
+    else:
+        alpha = 1
+
     # plot LFP signal
-    ax.plot(expobj.lfp_signal[expobj.frame_start_time_actual: expobj.frame_end_time_actual], c='steelblue', zorder=1, linewidth=0.4)
+    if 'color' in kwargs:
+        color = kwargs['color']
+    else:
+        color = 'steelblue'
+    ax.plot(expobj.lfp_signal[expobj.frame_start_time_actual: expobj.frame_end_time_actual], c=color, zorder=1, linewidth=0.4, alpha=alpha)
 
     # plot stims
-    if stim_span_color is not None:
+    if stim_span_color is not '':
         for stim in expobj.stim_start_times:
+            stim = stim - expobj.frame_start_time_actual
             ax.axvspan(stim - 8, 1 + stim + expobj.stim_duration_frames / expobj.fps * expobj.paq_rate, color=stim_span_color, zorder=1, alpha=0.5)
     else:
         if stim_lines:
             for line in expobj.stim_start_times:
+                line = line - expobj.frame_start_time_actual
                 plt.axvline(x=line+2, color='black', linestyle='--', linewidth=0.6, zorder=0)
 
     # change x axis ticks to seconds
     if x_axis == 'time':
-        label_format = '{:,.2f}'
-        labels = [item for item in ax.get_xticks()]
-        for item in labels:
-            labels[labels.index(item)] = int(round(item / expobj.paq_rate, 2))
-        ticks_loc = ax.get_xticks().tolist()
-        ax.xaxis.set_major_locator(mticker.FixedLocator(ticks_loc))
-        ax.set_xticklabels([label_format.format(x) for x in labels])
+        # set x ticks at every 30 seconds
+        labels = list(range(0, len(expobj.lfp_signal) // expobj.paq_rate, 30))
+        ax.set_xticks(ticks=[(label * expobj.paq_rate) for label in labels])
+        ax.set_xticklabels(labels)
+        ax.tick_params(axis='both', which='both', length=3)
         ax.set_xlabel('Time (secs)')
+
+        # label_format = '{:,.2f}'
+        # labels = [item for item in ax.get_xticks()]
+        # for item in labels:
+        #     labels[labels.index(item)] = int(round(item / expobj.paq_rate, 2))
+        # ticks_loc = ax.get_xticks().tolist()
+        # ax.xaxis.set_major_locator(mticker.FixedLocator(ticks_loc))
+        # ax.set_xticklabels([label_format.format(x) for x in labels])
+        # ax.set_xlabel('Time (secs)')
     else:
         ax.set_xlabel('paq clock')
     ax.set_ylabel('Voltage')
@@ -671,22 +689,15 @@ def plot_1pstim_avg_trace(expobj, title='Average trace of stims', individual_tra
             plt.axvline(x=int(pre_stim * expobj.fps) + expobj.stim_duration_frames + 2, color='black', linestyle='--', linewidth=1)
 
     if x_axis == 'time':
-        # set x ticks at every 30 seconds
-        labels = list(range(0, len(expobj.lfp_signal) // expobj.paq_rate, 30))
-        ax.set_xticks(ticks=[(label * expobj.paq_rate) for label in labels])
-        ax.set_xticklabels(labels)
-        ax.tick_params(axis='both', which='both', length=3)
+        # change x axis ticks to seconds
+        label_format = '{:,.2f}'
+        labels = [item for item in ax.get_xticks()]
+        for item in labels:
+            labels[labels.index(item)] = round(item / expobj.fps, 2)
+        ticks_loc = ax.get_xticks().tolist()
+        ax.xaxis.set_major_locator(mticker.FixedLocator(ticks_loc))
+        ax.set_xticklabels([label_format.format(x) for x in labels])
         ax.set_xlabel('Time (secs)')
-
-        # # change x axis ticks to seconds
-        # label_format = '{:,.2f}'
-        # labels = [item for item in ax.get_xticks()]
-        # for item in labels:
-        #     labels[labels.index(item)] = round(item / expobj.fps, 2)
-        # ticks_loc = ax.get_xticks().tolist()
-        # ax.xaxis.set_major_locator(mticker.FixedLocator(ticks_loc))
-        # ax.set_xticklabels([label_format.format(x) for x in labels])
-        # ax.set_xlabel('Time (secs)')
     else:
         ax.set_xlabel('frame clock')
     ax.set_ylabel(y_axis)

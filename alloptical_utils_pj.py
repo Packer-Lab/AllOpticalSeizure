@@ -94,6 +94,15 @@ class TwoPhotonImaging:
             self.suite2p_path = suite2p_path
             self.s2pProcessing(s2p_path=self.suite2p_path)
 
+        # create analysis save path location
+        self.analysis_save_path = analysis_save_path
+        if os.path.exists(self.analysis_save_path):
+            pass
+        elif os.path.exists(self.analysis_save_path[:-17]):
+            os.mkdir(self.analysis_save_path)
+        elif os.path.exists(self.analysis_save_path[:-27]):
+            os.mkdir(self.analysis_save_path[:-17])
+
         # create pkl path and save expobj to pkl object
         pkl_path = "/home/pshah/mnt/qnap/Analysis/%s/%s_%s/%s_%s.pkl" % (
         metainfo['date'], metainfo['date'], metainfo['trial'], metainfo['date'], metainfo['trial'])  # specify path in Analysis folder to save pkl object
@@ -432,13 +441,6 @@ class alloptical(TwoPhotonImaging):
         # self._parsePVMetadata()
 
         ## CREATE THE APPROPRIATE ANALYSIS SUBFOLDER TO USE FOR SAVING ANALYSIS RESULTS TO
-        self.analysis_save_path = paths[4]
-        if os.path.exists(self.analysis_save_path):
-            pass
-        elif os.path.exists(self.analysis_save_path[:-17]):
-            os.mkdir(self.analysis_save_path)
-        elif os.path.exists(self.analysis_save_path[:-27]):
-            os.mkdir(self.analysis_save_path[:-17])
 
         print('\ninitialized alloptical expobj of exptype and trial: \n', self.metainfo)
 
