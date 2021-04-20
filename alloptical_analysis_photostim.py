@@ -17,12 +17,10 @@ import seaborn as sns
 from skimage import draw
 
 ###### IMPORT pkl file containing data in form of expobj
-trial = 't-013'
+trial = 't-009'
 date = '2020-12-18'
-pkl_path = "/home/pshah/mnt/qnap/Analysis/%s/%s_%s/%s_%s.pkl" % (date, date, trial, date, trial)
-# pkl_path = "/home/pshah/mnt/qnap/Data/%s/%s_%s/%s_%s.pkl" % (date, date, trial, date, trial)
 
-expobj, experiment = aoutils.import_expobj(trial=trial, date=date, pkl_path=pkl_path)
+expobj, experiment = aoutils.import_expobj(trial=trial, date=date)
 
 if not hasattr(expobj, 's2p_path'):
     expobj.s2p_path = '/home/pshah/mnt/qnap/Analysis/2020-12-18/suite2p/alloptical-2p-1x-alltrials/plane0'
@@ -33,7 +31,7 @@ if not hasattr(expobj, 'meanRawFluTrace'):
 plot = True
 if plot:
     aoplot.plotMeanRawFluTrace(expobj=expobj, stim_span_color=None, x_axis='frames', figsize=[20, 3])
-    # aoplot.plotLfpSignal(expobj, stim_span_color=None, x_axis='frames', figsize=[20, 3])
+    aoplot.plotLfpSignal(expobj, stim_span_color='', x_axis='frames', figsize=[20, 3])
     aoplot.plotSLMtargetsLocs(expobj, background=expobj.meanFluImg_registered)
     aoplot.plot_lfp_stims(expobj)
 
@@ -134,7 +132,7 @@ for i in range(0, expobj.n_targets_total):
         array = [(np.convolve(trace, np.ones(w), 'valid') / w) for trace in SLMTargets_stims_raw]
         random_sub = np.random.randint(0,100,10)
         aoplot.plot_periphotostim_avg(arr=SLMtargets_stims_dfstdF[random_sub], expobj=expobj, stim_duration=expobj.stim_duration_frames,
-                                      title='Cell ' + str(i), pre_stim=pre_stim, post_stim=post_stim, color='steelblue', y_lims=[-0.5, 2.5])
+                                      title='Target ' + str(i), pre_stim=pre_stim, post_stim=post_stim, color='steelblue', y_lims=[-0.5, 2.5])
     # plt.show()
 
 
@@ -157,18 +155,18 @@ expobj.save()
 
 # %% ########## BAR PLOT showing average success rate of photostimulation
 
-pj.bar_with_points(data=[list(expobj.StimSuccessRate_cells.values())], x_tick_labels=['t-013'], ylims=[0, 100], bar=False, y_label ='% success stims.',
+pj.bar_with_points(data=[list(expobj.StimSuccessRate_SLMtargets.values())], x_tick_labels=['t-013'], ylims=[0, 100], bar=False, y_label='% success stims.',
                    title='%s success rate of stim responses' % trial, expand_size_x=2)
 
 
 # plot across different groups
-# t009_pre_4ap_reliability = list(expobj.StimSuccessRate_cells.values())
+t009_pre_4ap_reliability = list(expobj.StimSuccessRate_SLMtargets.values())
 # t011_post_4ap_reliabilty = list(expobj.StimSuccessRate_cells.values())  # reimport another expobj for post4ap trial
-# t013_post_4ap_reliabilty = list(expobj.StimSuccessRate_cells.values())  # reimport another expobj for post4ap trial
+t013_post_4ap_reliabilty = list(expobj.StimSuccessRate_SLMtargets.values())  # reimport another expobj for post4ap trial
 #
-# pj.bar_with_points(data=[t009_pre_4ap_reliability, t011_post_4ap_reliabilty, t013_post_4ap_reliabilty],
-#                    x_tick_labels=['t-009', 't-011', 't-013'], colors=['green', 'deeppink'],
-#                    ylims=[0, 100], bar=False, title='reliability of stim responses', expand_size_y=1.2, expand_size_x=1.2)
+pj.bar_with_points(data=[t009_pre_4ap_reliability, t013_post_4ap_reliabilty], xlims=[0.25, 0.3],
+                   x_tick_labels=['pre-4ap', 'post-4ap'], colors=['green', 'deeppink'], y_label='% success stims.',
+                   ylims=[0, 100], bar=False, title='success rate of stim. responses', expand_size_y=1.2, expand_size_x=1.2)
 
 
 # %% PLOT AVG PHOTOSTIM PRE- POST- TRACE AVGed OVER ALL PHOTOSTIM. TRIALS - NON - TARGETS
@@ -245,7 +243,7 @@ aoplot.xyloc_responses(expobj, to_plot='dfstdf', clim=[-1, +1], plot_target_coor
 
 # %% PLOT HEATMAP of SEIZURE EVENTS
 
-sz = 1
+sz = 2
 sz_onset, sz_offset = expobj.stims_bf_sz[sz], expobj.stims_af_sz[sz+1]
 
 # -- approach of dFF normalize to the mean of the Flu data 2 seconds before the seizure
@@ -332,7 +330,7 @@ for target in expobj.responses_SLMtargets.keys():
     # calculate response magnitude at each stim time for selected target
     for i in range(len(expobj.stim_times)):
         # the response magnitude of the current SLM target at the current stim time (relative to the mean of the responses of the target over this trial)
-        response = expobj.responses_SLMtargets[target][i] - mean_response
+        response = expobj.responses_SLMtargets[target][i] / mean_response  # changed to division by mean response instead of substracting
         min_distance = pj.calc_distance_2points((0, 0), (expobj.frame_x,
                                                          expobj.frame_y))  # maximum distance possible between two points within the FOV, used as the starting point when the sz has not invaded FOV yet
 
@@ -420,7 +418,7 @@ for target in expobj.responses_SLMtargets.keys():
     # calculate response magnitude at each stim time for selected target
     for i in range(len(expobj.stim_times)):
         # the response magnitude of the current SLM target at the current stim time (relative to the mean of the responses of the target over this trial)
-        response = expobj.responses_SLMtargets[target][i] - mean_response
+        response = expobj.responses_SLMtargets[target][i] / mean_response  # changed to division by mean response instead of substracting
         min_distance = pj.calc_distance_2points((0, 0), (expobj.frame_x,
                                                          expobj.frame_y))  # maximum distance possible between two points within the FOV, used as the starting point when the sz has not invaded FOV yet
 
@@ -475,7 +473,7 @@ ax1.scatter(x=distance_to_sz, y=responses, color='cornflowerblue',
             alpha=0.5, s=16, zorder=0)  # use cmap correlated to distance from seizure to define colors of each target at each individual stim times
 ax1.scatter(x=distance_to_sz_, y=responses_, color='firebrick',
             alpha=0.5, s=16, zorder=0)  # use cmap correlated to distance from seizure to define colors of each target at each individual stim times
-ax1.set_xlabel('pixels')
+ax1.set_xlabel('distance to seizure front (pixels)')
 ax1.set_ylabel('response magnitude')
 ax1.set_title('')
 fig1.show()

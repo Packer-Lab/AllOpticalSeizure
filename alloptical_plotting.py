@@ -67,8 +67,10 @@ def plot_cell_loc(expobj, cells: list, edgecolor: str = '#EDEDED', title=None, b
             ax.scatter(x=x, y=y, edgecolors=edgecolor, facecolors='none', linewidths=0.8)
 
     if color_float_list:
-        ax.scatter(x=x_list, y=y_list, edgecolors='none', c=color_float_list, linewidths=0.8,
+        ac = ax.scatter(x=x_list, y=y_list, edgecolors='none', c=color_float_list, linewidths=0.8,
                    cmap=cmap, zorder=1)
+
+        plt.colorbar(ac, ax=ax)
 
     if background is None:
         ax.set_xlim(0, expobj.frame_x)
@@ -377,38 +379,44 @@ def plot_flu_trace(expobj, cell, x_lims=None, slm_group=None, to_plot='raw', fig
 
 # make a plot with the paq file LFP signal to visualize these classifications
 def plot_lfp_stims(expobj, title='LFP signal with photostim. shown (in different colors relative to seizure timing'):
-    if hasattr(expobj, 'stims_in_sz') and hasattr(expobj, 'stims_out_sz'):
-        fig, ax = plt.subplots(figsize=[20, 3])
-        # note that there is a crop adjustment to the paq-times which is needed to sync up the stim times with the plot being returned from plotLfpSignal (which also on its own crops the LFP signal)
+    fig, ax = plt.subplots(figsize=[20, 3])
+
+    # plot LFP signal
+    # ax.plot(expobj.lfp_signal, zorder=0, linewidth=0.5)
+    fig, ax = plotLfpSignal(expobj, fig=fig, ax=ax, stim_lines=False, show=False, stim_span_color='', x_axis='paq')
+    pct75 = np.percentile(expobj.lfp_signal, 75)
+
+    # collect and plot stim times (with coloring according to sz times if available)
+    # note that there is a crop adjustment to the paq-times which is needed to sync up the stim times with the plot being returned from plotLfpSignal (which also on its own crops the LFP signal)
+    if 'post' in expobj.metainfo['exptype'] and '4ap' in expobj.metainfo['exptype']:
         x = [(expobj.stim_times[np.where(expobj.stim_start_frames == stim)[0][0]] - expobj.frame_start_time_actual) for stim in expobj.stims_in_sz]
         x_out = [(expobj.stim_times[np.where(expobj.stim_start_frames == stim)[0][0]] - expobj.frame_start_time_actual) for stim in expobj.stims_out_sz
                  if stim not in expobj.stims_bf_sz and stim not in expobj.stims_af_sz]
         x_bf = [(expobj.stim_times[np.where(expobj.stim_start_frames == stim)[0][0]] - expobj.frame_start_time_actual) for stim in expobj.stims_bf_sz]
         x_af = [(expobj.stim_times[np.where(expobj.stim_start_frames == stim)[0][0]] - expobj.frame_start_time_actual) for stim in expobj.stims_af_sz]
 
-        # plot LFP signal
-        # ax.plot(expobj.lfp_signal, zorder=0, linewidth=0.5)
-        fig, ax = plotLfpSignal(expobj, fig=fig, ax=ax, stim_lines=False, show=False, stim_span_color='', x_axis='paq')
-        ax.scatter(x=x, y=[0] * len(expobj.stims_in_sz), edgecolors='red', facecolors='green', marker="|", zorder=3, s=60, linewidths=2.0)
-        ax.scatter(x=x_out, y=[0] * len(x_out), edgecolors='grey', facecolors='black', marker="|", zorder=3, s=60, linewidths=2.0)
-        ax.scatter(x=x_bf, y=[0] * len(expobj.stims_bf_sz), edgecolors='grey', facecolors='deeppink', marker="|", zorder=3, s=60, linewidths=2.0)
-        ax.scatter(x=x_af, y=[0] * len(expobj.stims_af_sz), edgecolors='grey', facecolors='hotpink', marker="|", zorder=3, s=60, linewidths=2.0)
-
-        # set x ticks at every 30 seconds
-        labels = list(range(0, len(expobj.lfp_signal)//expobj.paq_rate, 30))
-        plt.xticks(ticks=[(label * expobj.paq_rate) for label in labels], labels=labels)
-        ax.tick_params(axis='both', which='both', length=3)
-        ax.set_xlabel('Time (secs)')
-
-        # ax.set_xticks([(label * expobj.paq_rate) for label in labels])#, labels=range(0, len(expobj.lfp_signal)//expobj.paq_rate, 30))
-        # ax.set_xticklabels(labels); plt.show()
-
-        ax.set_ylabel('LFP - voltage (mV)')
-
-        plt.suptitle(title, wrap=True)
-        plt.show()
+        ax.scatter(x=x, y=[pct75] * len(expobj.stims_in_sz), edgecolors='red', facecolors='green', marker="|", zorder=3, s=60, linewidths=2.0)
+        ax.scatter(x=x_out, y=[pct75] * len(x_out), edgecolors='grey', facecolors='black', marker="|", zorder=3, s=60, linewidths=2.0)
+        ax.scatter(x=x_bf, y=[pct75] * len(expobj.stims_bf_sz), edgecolors='grey', facecolors='deeppink', marker="|", zorder=3, s=60, linewidths=2.0)
+        ax.scatter(x=x_af, y=[pct75] * len(expobj.stims_af_sz), edgecolors='grey', facecolors='hotpink', marker="|", zorder=3, s=60, linewidths=2.0)
     else:
-        raise Exception('look, you need to create stims_in_sz and stims_out_sz attributes first (or rewrite this function)')
+        x = [(expobj.stim_times[np.where(expobj.stim_start_frames == stim)[0][0]] - expobj.frame_start_time_actual) for stim in expobj.stim_start_frames]
+        ax.scatter(x=x, y=[pct75] * len(x), edgecolors='red', facecolors='green', marker="|", zorder=3, s=60, linewidths=2.0)
+
+
+    # set x ticks at every 30 seconds
+    labels = list(range(0, len(expobj.lfp_signal)//expobj.paq_rate, 30))
+    plt.xticks(ticks=[(label * expobj.paq_rate) for label in labels], labels=labels)
+    ax.tick_params(axis='both', which='both', length=3)
+    ax.set_xlabel('Time (secs)')
+
+    # ax.set_xticks([(label * expobj.paq_rate) for label in labels])#, labels=range(0, len(expobj.lfp_signal)//expobj.paq_rate, 30))
+    # ax.set_xticklabels(labels); plt.show()
+
+    ax.set_ylabel('LFP - voltage (mV)')
+
+    plt.suptitle(title, wrap=True)
+    plt.show()
 
 # plot the whole pre stim to post stim period as a cool heatmap
 def plot_traces_heatmap(data, vmin=None, vmax=None, stim_on=None, stim_off=None, figsize=None, title=None, xlims=(0,100),
@@ -607,7 +615,7 @@ def plotLfpSignal(expobj, stim_span_color='powderblue', stim_lines: bool = True,
     ax.plot(expobj.lfp_signal[expobj.frame_start_time_actual: expobj.frame_end_time_actual], c=color, zorder=1, linewidth=0.4, alpha=alpha)
 
     # plot stims
-    if stim_span_color is not '':
+    if stim_span_color != '':
         for stim in expobj.stim_start_times:
             stim = stim - expobj.frame_start_time_actual
             ax.axvspan(stim - 8, 1 + stim + expobj.stim_duration_frames / expobj.fps * expobj.paq_rate, color=stim_span_color, zorder=1, alpha=0.5)

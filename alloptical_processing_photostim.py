@@ -13,7 +13,7 @@ import utils.funcs_pj as pj
 import tifffile as tf
 
 ###### IMPORT pkl file containing expobj
-trial = 't-013'
+trial = 't-009'
 date = '2020-12-18'
 pkl_path = "/home/pshah/mnt/qnap/Analysis/%s/%s_%s/%s_%s.pkl" % (date, date, trial, date, trial)
 # pkl_path = "/home/pshah/mnt/qnap/Data/%s/%s_%s/%s_%s.pkl" % (date, date, trial, date, trial)
@@ -28,7 +28,7 @@ if not hasattr(expobj, 's2p_path'):
 if not hasattr(expobj, 'meanRawFluTrace'):
     expobj.mean_raw_flu_trace(plot=True)
 
-plot = True
+plot = False
 if plot:
     aoplot.plotMeanRawFluTrace(expobj=expobj, stim_span_color=None, x_axis='frames', figsize=[20, 3])
     # aoplot.plotLfpSignal(expobj, stim_span_color=None, x_axis='frames', figsize=[20, 3])
@@ -48,23 +48,21 @@ if not hasattr(expobj, 'suite2p_trials'):
     expobj.save()
 
 # main function that imports suite2p data and adds attributes to the expobj
-expobj.subset_frames_current_trial(trial=trial, to_suite2p=expobj.suite2p_trials, baseline_trials=expobj.baseline_trials)
+expobj.subset_frames_current_trial(trial=trial, to_suite2p=expobj.suite2p_trials, baseline_trials=expobj.baseline_trials, force_redo=True)
 expobj.s2pProcessing(s2p_path=expobj.s2p_path, subset_frames=expobj.curr_trial_frames, subtract_neuropil=True,
-                     baseline_frames=expobj.baseline_frames)
-aoutils.s2pMaskStack(obj=expobj, pkl_list=[pkl_path], s2p_path=expobj.s2p_path, parent_folder=expobj.analysis_save_path)
+                     baseline_frames=expobj.baseline_frames, force_redo=True)
+aoutils.s2pMaskStack(obj=expobj, pkl_list=[pkl_path], s2p_path=expobj.s2p_path, parent_folder=expobj.analysis_save_path, force_redo=True)
 expobj.target_coords_all = expobj.target_coords
 expobj.s2p_targets()
 
 
-expobj.raw_traces_from_targets()
+expobj.raw_traces_from_targets(force_redo=True)
 
 plot = False
 if plot:
     aoplot.plotSLMtargetsLocs(expobj, background=expobj.meanFluImg)
     aoplot.plotSLMtargetsLocs(expobj, background=expobj.meanFluImg_registered)
 
-# stitching of registered TIFFs
-# expobj.stitch_reg_tiffs()
 
 # %% (quick) plot individual fluorescence traces - see InteractiveMatplotlibExample to make these plots interactively
 # plot raw fluorescence traces

@@ -892,7 +892,8 @@ class alloptical(TwoPhotonImaging):
         stim_idx = paq['chan_names'].index(self.stim_channel)
         stim_volts = paq['data'][stim_idx, :]
         stim_times = pjf.threshold_detect(stim_volts, 1)
-        self.stim_times = stim_times
+        # self.stim_times = stim_times
+        self.stim_start_times = stim_times
         print('# of stims found on %s: %s' % (self.stim_channel, len(self.stim_times)))
 
         # correct this based on txt file

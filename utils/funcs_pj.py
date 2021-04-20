@@ -470,13 +470,21 @@ def bar_with_points(data, title='', x_tick_labels=[], points=True, bar=True, col
         ylims = [0, 2 * max(data[0])]
         ax.set_ylim(ylims)
 
-    ax.set_title((title), horizontalalignment='center', verticalalignment='top', pad=20,
-                 fontsize=10)
+    # Hide the right and top spines
+    ax.spines['right'].set_visible(False)
+    ax.spines['top'].set_visible(False)
+
+    ax.set_title((title), horizontalalignment='center', verticalalignment='top', pad=25,
+                 fontsize=10, wrap=True)
 
     # ax.spines['top'].set_visible(False)
     # ax.spines['right'].set_visible(False)
     # ax.spines['left'].set_visible(False)
     ax.tick_params(axis='both', which='both', length=10)
+
+    # Only show ticks on the left and bottom spines
+    ax.yaxis.set_ticks_position('left')
+    ax.xaxis.set_ticks_position('bottom')
 
     ax.set_xlabel(x_label)
     ax.set_ylabel(y_label)
