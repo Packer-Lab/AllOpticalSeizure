@@ -30,7 +30,7 @@ from suite2p.run_s2p import run_s2p
 
 import xml.etree.ElementTree as ET
 
-from utils import funcs_pj as pjf
+from utils import funcs_pj as pj
 from utils.paq_utils import paq_read, frames_discard
 import alloptical_plotting as aoplot
 import pickle
@@ -373,7 +373,7 @@ class TwoPhotonImaging:
         clock_idx = paq['chan_names'].index('frame_clock')
         clock_voltage = paq['data'][clock_idx, :]
 
-        frame_clock = pjf.threshold_detect(clock_voltage, 1)
+        frame_clock = pj.threshold_detect(clock_voltage, 1)
         self.frame_clock = frame_clock
         plt.figure(figsize=(10, 5))
         plt.plot(clock_voltage)
@@ -777,7 +777,7 @@ class alloptical(TwoPhotonImaging):
         print('\n-----parsing Naparm xml file...')
 
         print('loading NAPARM_xml_path:')
-        NAPARM_xml_path = pjf.path_finder(self.naparm_path, '.xml')[0]
+        NAPARM_xml_path = pj.path_finder(self.naparm_path, '.xml')[0]
 
         xml_tree = ET.parse(NAPARM_xml_path)
         root = xml_tree.getroot()
@@ -810,7 +810,7 @@ class alloptical(TwoPhotonImaging):
 
         print('\n-----parsing Naparm gpl file...')
 
-        NAPARM_gpl_path = pjf.path_finder(self.naparm_path, '.gpl')[0]
+        NAPARM_gpl_path = pj.path_finder(self.naparm_path, '.gpl')[0]
         print('loading NAPARM_gpl_path: ', NAPARM_gpl_path)
 
         xml_tree = ET.parse(NAPARM_gpl_path)
@@ -847,7 +847,7 @@ class alloptical(TwoPhotonImaging):
         clock_idx = paq['chan_names'].index('frame_clock')
         clock_voltage = paq['data'][clock_idx, :]
 
-        frame_clock = pjf.threshold_detect(clock_voltage, 1)
+        frame_clock = pj.threshold_detect(clock_voltage, 1)
         self.frame_clock = frame_clock
         plt.figure(figsize=(10, 5))
         plt.plot(clock_voltage)
@@ -891,7 +891,7 @@ class alloptical(TwoPhotonImaging):
         # find stim times
         stim_idx = paq['chan_names'].index(self.stim_channel)
         stim_volts = paq['data'][stim_idx, :]
-        stim_times = pjf.threshold_detect(stim_volts, 1)
+        stim_times = pj.threshold_detect(stim_volts, 1)
         # self.stim_times = stim_times
         self.stim_start_times = stim_times
         print('# of stims found on %s: %s' % (self.stim_channel, len(self.stim_times)))
@@ -1941,7 +1941,7 @@ class Post4ap(alloptical):
         ds2 = (frame_x - xline[i]) * (yline[i - 1] - yline[i]) - (half_frame_y - yline[i]) * (xline[i - 1] - xline[i])
 
         # if to_plot:  # plot the sz boundary points
-        #     # pjf.plot_cell_loc(self, cells=[cell], show=False)
+        #     # pj.plot_cell_loc(self, cells=[cell], show=False)
         #     plt.scatter(x=xline[0], y=yline[0])
         #     plt.scatter(x=xline[1], y=yline[1])
         #     # plt.show()
@@ -1988,7 +1988,7 @@ class Post4ap(alloptical):
                 xline = np.array(xline)[line_argsort]
                 yline = np.array(yline)[line_argsort]
 
-                # pjf.plot_cell_loc(self, cells=[cell], show=False)
+                # pj.plot_cell_loc(self, cells=[cell], show=False)
                 plt.scatter(x=xline[0], y=yline[0], facecolors='#1A8B9D')
                 plt.scatter(x=xline[1], y=yline[1], facecolors='#B2D430')
                 # plt.show()
@@ -2090,7 +2090,7 @@ class OnePhotonStim(TwoPhotonImaging):
         clock_idx = paq['chan_names'].index('frame_clock')
         clock_voltage = paq['data'][clock_idx, :]
 
-        frame_clock = pjf.threshold_detect(clock_voltage, 1)
+        frame_clock = pj.threshold_detect(clock_voltage, 1)
         self.frame_clock = frame_clock
 
         # find start and stop frame_clock times -- there might be multiple 2p imaging starts/stops in the paq trial (hence multiple frame start and end times)
@@ -2135,7 +2135,7 @@ class OnePhotonStim(TwoPhotonImaging):
         # find 1p stim times
         opto_loopback_chan = paq['chan_names'].index('opto_loopback')
         stim_volts = paq['data'][opto_loopback_chan, :]
-        stim_times = pjf.threshold_detect(stim_volts, 1)
+        stim_times = pj.threshold_detect(stim_volts, 1)
 
         self.stim_times = stim_times
         self.stim_start_times = [self.stim_times[0]]  # initialize list
@@ -2913,8 +2913,22 @@ def convert_to_8bit(img, target_type_min=0, target_type_max=255):
     return new_img
 
 
-def SaveDownsampledTiff(tiff_path: str = None, stack: np.array = None, save_as=None):
+def SaveDownsampledTiff(tiff_path: str = None, stack: np.array = None, save_as: str = None, plot_zprofile: bool = True):
+    """
+    Create and save a downsampled version of the original tiff file. Original tiff file can be given as a numpy array stack
+    or a str path to the tiff.
+
+    :param tiff_path: path to the tiff to downsample
+    :param stack: numpy array stack of the tiff file already read in
+    :param save_as: path to save the downsampled tiff to, if none provided it will save to the same directory as the provided tiff_path
+    :param plot_zprofile: if True, plot the zaxis profile using the full TIFF stack provided.
+    :return: numpy array containing the downsampled TIFF stack
+    """
     print('downsampling of tiff stack...')
+
+    if save_as is None:
+        assert tiff_path is not None, "please provide a save path to save_as"
+        save_as = tiff_path[:-4] + '_downsampled.tif'
 
     if stack is None:
         # open tiff file
@@ -2922,6 +2936,10 @@ def SaveDownsampledTiff(tiff_path: str = None, stack: np.array = None, save_as=N
         stack = tf.imread(tiff_path)
 
     resolution = stack.shape[1]
+
+    # plot zprofile of full TIFF stack
+    if plot_zprofile:
+        pj.ZProfile(movie=stack, plot_image=True)
 
     # downsample to 8-bit
     stack8 = np.full_like(stack, fill_value=0)
@@ -2939,11 +2957,9 @@ def SaveDownsampledTiff(tiff_path: str = None, stack: np.array = None, save_as=N
         frame = frame_count[i]
         avgd_stack[i] = np.mean(stack8[frame:frame + group_by], axis=0)
 
-    if save_as is None:
-        save_as = tiff_path[:-4] + '_downsampled.tif'
 
     # write output
-    print("saving as... %s" % save_as)
+    print("saving to... %s" % save_as)
     tf.imwrite(save_as,
                avgd_stack, photometric='minisblack')
 

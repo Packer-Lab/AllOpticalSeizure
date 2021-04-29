@@ -272,7 +272,11 @@ def plot_periphotostim_avg(arr, expobj, stim_duration, pre_stim=10, post_stim=20
     len_ = len(arr)
     flu_avg = np.mean(arr, axis=0)
 
-    fig, ax = plt.subplots()
+    if 'figsize' in kwargs:
+        figsize = kwargs['figsize']
+    else:
+        figsize = [5, 5]
+    fig, ax = plt.subplots(figsize=figsize)
     ax.margins(0)
     ax.axvspan(0, stim_duration, alpha=0.2, color='tomato')
     for cell_trace in arr:
@@ -282,19 +286,19 @@ def plot_periphotostim_avg(arr, expobj, stim_duration, pre_stim=10, post_stim=20
             ax.plot(x, cell_trace, linewidth=1, alpha=0.5, zorder=1)
     ax.plot(x, flu_avg, color='black', linewidth=2.3, zorder=2)  # plot average trace
     ax.set_ylim(y_lims)
-    ax.set_title((title + ' - %s' % len_ + ' traces'), horizontalalignment='center', verticalalignment='top', pad=20,
-                 fontsize=10)
+    ax.set_title((title + ' - %s' % len_ + ' traces'), horizontalalignment='center', verticalalignment='top', pad=60,
+                 fontsize=10, wrap=True)
 
     # change x axis ticks to seconds
-    if x_label == 'time':
+    if 'time' in x_label or 'Time' in x_label:
         label_format = '{:,.2f}'
         labels = [item for item in ax.get_xticks()]
         for item in labels:
             labels[labels.index(item)] = round(item / expobj.fps, 2)
         ax.set_xticklabels([label_format.format(x) for x in labels])
 
-    # ax.spines['top'].set_visible(False)
-    # ax.spines['right'].set_visible(False)
+    ax.spines['top'].set_visible(False)
+    ax.spines['right'].set_visible(False)
     # ax.spines['left'].set_visible(False)
 
     ax.set_xlabel(x_label)
@@ -385,10 +389,11 @@ def plot_lfp_stims(expobj, title='LFP signal with photostim. shown (in different
     # ax.plot(expobj.lfp_signal, zorder=0, linewidth=0.5)
     fig, ax = plotLfpSignal(expobj, fig=fig, ax=ax, stim_lines=False, show=False, stim_span_color='', x_axis='paq')
     pct75 = np.percentile(expobj.lfp_signal, 75)
+    pct75 = 0
 
     # collect and plot stim times (with coloring according to sz times if available)
     # note that there is a crop adjustment to the paq-times which is needed to sync up the stim times with the plot being returned from plotLfpSignal (which also on its own crops the LFP signal)
-    if 'post' in expobj.metainfo['exptype'] and '4ap' in expobj.metainfo['exptype']:
+    if 'post' in expobj.metainfo['exptype'] and '4ap' in expobj.metainfo['exptype'] and hasattr(expobj, 'stims_in_sz'):
         x = [(expobj.stim_times[np.where(expobj.stim_start_frames == stim)[0][0]] - expobj.frame_start_time_actual) for stim in expobj.stims_in_sz]
         x_out = [(expobj.stim_times[np.where(expobj.stim_start_frames == stim)[0][0]] - expobj.frame_start_time_actual) for stim in expobj.stims_out_sz
                  if stim not in expobj.stims_bf_sz and stim not in expobj.stims_af_sz]
@@ -401,7 +406,7 @@ def plot_lfp_stims(expobj, title='LFP signal with photostim. shown (in different
         ax.scatter(x=x_af, y=[pct75] * len(expobj.stims_af_sz), edgecolors='grey', facecolors='hotpink', marker="|", zorder=3, s=60, linewidths=2.0)
     else:
         x = [(expobj.stim_times[np.where(expobj.stim_start_frames == stim)[0][0]] - expobj.frame_start_time_actual) for stim in expobj.stim_start_frames]
-        ax.scatter(x=x, y=[pct75] * len(x), edgecolors='red', facecolors='green', marker="|", zorder=3, s=60, linewidths=2.0)
+        ax.scatter(x=x, y=[pct75] * len(x), edgecolors='red', facecolors='black', marker="|", zorder=3, s=60, linewidths=2.0)
 
 
     # set x ticks at every 30 seconds
@@ -520,7 +525,7 @@ def xyloc_responses(expobj, to_plot='dfstdf', clim=[-10, +10], plot_target_coord
         plt.savefig(save_fig)
 
 
-# plots the raw trace for the Flu mean of the FOV
+# plots the raw trace for the Flu mean of the FOV (similar to the ZProject in Fiji)
 def plotMeanRawFluTrace(expobj, stim_span_color='white', stim_lines: bool = True, title='raw Flu trace', x_axis='time', figsize=None, xlims=None,
                         **kwargs):
     """make plot of mean Ca trace averaged over the whole FOV"""
@@ -646,6 +651,12 @@ def plotLfpSignal(expobj, stim_span_color='powderblue', stim_lines: bool = True,
         ax.set_xlabel('paq clock')
     ax.set_ylabel('Voltage')
     # ax.set_xlim([expobj.frame_start_time_actual, expobj.frame_end_time_actual])  ## this should be limited to the 2p acquisition duration only
+
+    # set ylimits:
+    if 'ylims' in kwargs:
+        ax.set_ylim(kwargs['ylims'])
+    else:
+        ax.set_ylim([np.mean(expobj.lfp_signal) - 5, np.mean(expobj.lfp_signal) + 5])
 
     # add title
     plt.suptitle(

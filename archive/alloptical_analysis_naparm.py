@@ -9,7 +9,7 @@
 # import utils_funcs as uf
 # import matplotlib.pyplot as plt
 # print(sys.path)
-# import funcs_pj as pjf
+# import funcs_pj as pj
 # import pickle
 # import pandas as pd
 #

@@ -17,7 +17,7 @@ import seaborn as sns
 from skimage import draw
 
 ###### IMPORT pkl file containing data in form of expobj
-trial = 't-009'
+trial = 't-013'
 date = '2020-12-18'
 
 expobj, experiment = aoutils.import_expobj(trial=trial, date=date)
@@ -28,7 +28,7 @@ if not hasattr(expobj, 's2p_path'):
 if not hasattr(expobj, 'meanRawFluTrace'):
     expobj.mean_raw_flu_trace(plot=True)
 
-plot = True
+plot = False
 if plot:
     aoplot.plotMeanRawFluTrace(expobj=expobj, stim_span_color=None, x_axis='frames', figsize=[20, 3])
     aoplot.plotLfpSignal(expobj, stim_span_color='', x_axis='frames', figsize=[20, 3])
@@ -53,7 +53,6 @@ aoplot.plot_periphotostim_avg(arr=x, expobj=expobj, stim_duration=expobj.stim_du
                               post_stim=expobj.post_stim,
                               title=(experiment + '- responses of all photostim targets'),
                               y_label=y_label, x_label='Time post-stimulation (seconds)')
-
 
 # %% PLOT ENTIRE TRIAL - targeted suite2p cells plotted individually as subplots
 
@@ -136,7 +135,14 @@ for i in range(0, expobj.n_targets_total):
     # plt.show()
 
 
+# x = np.asarray([i for i in expobj.good_photostim_cells_stim_responses_dFF[0]])
+x = np.asarray([i for i in expobj.SLMTargets_stims_dfstdF_avg])
+y_label = 'dF/prestim_stdF'
 
+aoplot.plot_periphotostim_avg(arr=x, expobj=expobj, stim_duration=expobj.stim_duration_frames, pre_stim=expobj.pre_stim,
+                              post_stim=expobj.post_stim, figsize=[5, 4], y_lims=[-0.25, 3.1],
+                              title=(experiment + '- responses of all photostim targets'),
+                              y_label=y_label, x_label='Time post-stimulation (seconds)')
 
 
 # %% photostim. SUCCESS RATE MEASUREMENTS and PLOT - PHOTOSTIM TARGETED CELLS
@@ -299,7 +305,7 @@ SLMtarget_ids = list(range(len(expobj.SLMTargets_stims_dfstdF)))
 target_colors = pj.make_random_color_array(SLMtarget_ids)
 
 # --- plot with mean FOV fluorescence signal
-fig, ax1 = plt.subplots(figsize=[60, 6])
+fig, ax1 = plt.subplots(figsize=[20, 3])
 fig, ax1 = aoplot.plotMeanRawFluTrace(expobj=expobj, stim_span_color='white', x_axis='frames', figsize=[20, 3], show=False,
                                       fig=fig, ax=ax1)
 ax2 = ax1.twinx()
@@ -330,11 +336,11 @@ for target in expobj.responses_SLMtargets.keys():
     # calculate response magnitude at each stim time for selected target
     for i in range(len(expobj.stim_times)):
         # the response magnitude of the current SLM target at the current stim time (relative to the mean of the responses of the target over this trial)
-        response = expobj.responses_SLMtargets[target][i] / mean_response  # changed to division by mean response instead of substracting
+        response = expobj.responses_SLMtargets[target][i] - mean_response  # changed to division by mean response instead of substracting
         min_distance = pj.calc_distance_2points((0, 0), (expobj.frame_x,
                                                          expobj.frame_y))  # maximum distance possible between two points within the FOV, used as the starting point when the sz has not invaded FOV yet
 
-        if expobj.stim_start_frames[i] in list(expobj.cells_sz_stim.keys()):  # calculate distance to sz only for stims where cell locations in or out of sz boundary are defined in the seizures
+        if hasattr(expobj, 'cells_sz_stim') and expobj.stim_start_frames[i] in list(expobj.cells_sz_stim.keys()):  # calculate distance to sz only for stims where cell locations in or out of sz boundary are defined in the seizures
             if expobj.stim_start_frames[i] in expobj.stims_in_sz:
             # if (expobj.stim_start_frames[i] not in expobj.stims_bf_sz) and (expobj.stim_start_frames[i] not in expobj.stims_af_sz):  # also calculate distance for stims before and after
                 # collect cells from this stim that are in sz
@@ -391,9 +397,13 @@ for target in expobj.responses_SLMtargets.keys():
             0]  # * 1/(abs(response)**1/2)  # used for adding random jitter to the x loc scatter point
         x.append(expobj.stim_times[i] - expobj.frame_start_time_actual + rand * 1e3)
         y.append(response)
-    ax2.scatter(x=x, y=y, c=distance_to_sz, cmap='RdYlBu_r',
-                alpha=0.5, s=10,
-                zorder=4)  # use cmap correlated to distance from seizure to define colors of each target at each individual stim times
+    if np.std(distance_to_sz) > 0.1:
+        ax2.scatter(x=x, y=y, c=distance_to_sz, cmap='RdYlBu_r',
+                    alpha=0.5, s=10,
+                    zorder=4)  # use cmap correlated to distance from seizure to define colors of each target at each individual stim times
+    else:
+        ax2.scatter(x=x, y=y, facecolor='#BA1C32', alpha=0.5, s=10,
+                    zorder=4)  # use cmap correlated to distance from seizure to define colors of each target at each individual stim times
     # fig1.show()
     # ax2.scatter(x=x, y=y, c=distance_to_sz, cmap='RdYlBu_r',
     #             alpha=0.70, s=15,
@@ -401,6 +411,7 @@ for target in expobj.responses_SLMtargets.keys():
     # ax2.scatter(x=expobj.stim_times[i] + rand * 1e3, y=response, edgecolor=target_colors[target], alpha=0.70, s=15, zorder=4)  # use same edgecolor for each target at all stim times
 # for i in expobj.stim_start_frames:
 #     plt.axvline(i)
+plt.xlim([expobj.stim_times[0] - 4e5, expobj.stim_times[-1] + 1e5])
 fig1.show()
 
 # %% plot response magnitude vs. distance
@@ -422,7 +433,7 @@ for target in expobj.responses_SLMtargets.keys():
         min_distance = pj.calc_distance_2points((0, 0), (expobj.frame_x,
                                                          expobj.frame_y))  # maximum distance possible between two points within the FOV, used as the starting point when the sz has not invaded FOV yet
 
-        if expobj.stim_start_frames[i] in list(expobj.cells_sz_stim.keys()):  # calculate distance to sz only for stims where cell locations in or out of sz boundary are defined in the seizures
+        if hasattr(expobj, 'cells_sz_stim') and expobj.stim_start_frames[i] in list(expobj.cells_sz_stim.keys()):  # calculate distance to sz only for stims where cell locations in or out of sz boundary are defined in the seizures
             if expobj.stim_start_frames[i] in expobj.stims_in_sz:
                 # collect cells from this stim that are in sz
                 s2pcells_sz = expobj.cells_sz_stim[expobj.stim_start_frames[i]]
@@ -465,7 +476,6 @@ for target in expobj.responses_SLMtargets.keys():
             responses.append(response)
 
 # calculate linear regression line
-
 ax1.plot(range(int(min(distance_to_sz)), int(max(distance_to_sz))), np.poly1d(np.polyfit(distance_to_sz, responses, 1))(range(int(min(distance_to_sz)), int(max(distance_to_sz)))),
          color='black')
 

@@ -6,10 +6,12 @@ import pandas as pd
 from scipy import stats, ndimage, io
 import itertools
 import matplotlib.pyplot as plt
+import matplotlib.patches as patches
 import random
 from sklearn.decomposition import PCA
 import tifffile as tf
 import math
+
 
 # plotting settings
 # fig = plt.figure()
@@ -48,6 +50,7 @@ def calc_distance_2points(p1: tuple, p2: tuple):
     :return:
     """
     return math.hypot(p2[0] - p1[0], p2[1] - p1[1])
+
 
 # random func for rotating images and calculating the image intensity along one axis of the image
 def rotate_img_avg(input_img, angle):
@@ -127,6 +130,7 @@ def pca_decomp_image(input_img, components: int = 3, plot_quant: bool = False):
 # grouped average / smoothing of a 1dim array (basically the same as grouped average on imageJ)
 def smooth_signal(signal, w):
     return np.convolve(signal, np.ones(w), 'valid') / w
+
 
 ############### CALCIUM IMAGING RELATED STUFF ##########################################################################
 # paq2py by Llyod Russel
@@ -253,6 +257,83 @@ def dff(flu, baseline=None):
     return flu_dff
 
 
+# simple ZProfile function for any sized square in the frame (equivalent to ZProfile function in Fiji)
+def ZProfile(movie, area_center_coords: tuple = None, area_size: int = -1, plot_trace: bool = True,
+             plot_image: bool = True, plot_frame: int = 1, vasc_image: np.array = None, **kwargs):
+    """
+    from Sarah Armstrong
+
+    Plot a z-profile of a movie, averaged over space inside a square area
+
+    movie = can be np.array of the TIFF stack or a tiff path from which it is read in
+    area_center_coords = coordinates of pixel at center of box (x,y)
+    area_size = int, length and width of the square in pixels
+    plot_frame = which movie frame to take as a reference to plot the area boundaries on
+    vasc_image = optionally include a vasculature image tif of the correct dimensions to plot the coordinates on.
+    """
+
+    if type(movie) is str:
+        movie = tf.imread(movie)
+    print('zprofile for TIFF of shape: ', movie.shape)
+
+    # assume 15fps for 1024x1024 movies and 30fps imaging for 512x512 movies
+    if movie.shape[1] == 1024:
+        img_fps = 15
+    elif movie.shape[1] == 512:
+        img_fps = 30
+    else:
+        img_fps = None
+
+    assert area_size <= movie.shape[1] and area_size <= movie.shape[2], "area_size must be smaller than the image"
+    if area_size == -1:  # this parameter used to plot whole FOV area
+        area_size = movie.shape[1]
+        area_center_coords = (movie.shape[1]/2, movie.shape[2]/2)
+    assert area_size % 2 == 0, "pls give an even area size"
+
+    x = area_center_coords[0]
+    y = area_center_coords[1]
+    x1 = int(x - 1 / 2 * area_size)
+    x2 = int(x + 1 / 2 * area_size)
+    y1 = int(y - 1 / 2 * area_size)
+    y2 = int(y + 1 / 2 * area_size)
+    smol_movie = movie[:, y1:y2, x1:x2]
+    smol_mean = np.nanmean(smol_movie, axis=(1, 2))
+    print('Output shape =', smol_mean.shape)
+
+    if plot_image:
+        f, ax1 = plt.subplots()
+        ref_frame = movie[plot_frame, :, :]
+        if vasc_image is not None:
+            assert vasc_image.shape == movie.shape[1:], 'vasculature image has incompatible dimensions'
+            ax1.imshow(vasc_image, cmap="binary_r")
+        else:
+            ax1.imshow(ref_frame, cmap="binary_r")
+
+        rect1 = patches.Rectangle(
+            (x1, y1), area_size, area_size, linewidth=1.5, edgecolor='r', facecolor="none")
+
+        ax1.add_patch(rect1)
+        ax1.set_title("Z-profile area")
+        plt.show()
+
+    if plot_trace:
+        if 'figsize' in kwargs:
+            figsize = kwargs['figsize']
+        else:
+            figsize = [10, 4]
+        fig, ax2 = plt.subplots(figsize=figsize)
+        if img_fps is not None:
+            ax2.plot(smol_mean.index/img_fps, linewidth=0.5, color='black')
+            ax2.set_xlabel('Time (sec)')
+        else:
+            ax2.plot(smol_mean, linewidth=0.5, color='black')
+            ax2.set_xlabel('frames')
+        ax2.set_ylabel('Flu (a.u.)')
+        plt.show()
+
+    return smol_mean
+
+
 ############### GENERALLY USEFUL FUNCTIONS #############################################################################
 
 # reporting sizes of variables
@@ -264,8 +345,10 @@ def _sizeof_fmt(num, suffix='B'):
         num /= 1024.0
     return "%.1f %s%s" % (num, 'Yi', suffix)
 
+
 def print_size_of(var):
     print(_sizeof_fmt(sys.getsizeof(var)))
+
 
 def print_size_vars():
     for name, size in sorted(((name, sys.getsizeof(value)) for name, value in locals().items()),
@@ -375,8 +458,12 @@ def make_colormap(seq):
 # generate an array of random colors, based on previous
 def _get_random_color(pastel_factor=0.5):
     return [(x + pastel_factor) / (1.0 + pastel_factor) for x in [random.uniform(0, 1.0) for i in [1, 2, 3]]]
+
+
 def _color_distance(c1, c2):
     return sum([abs(x[0] - x[1]) for x in zip(c1, c2)])
+
+
 def _generate_new_color(existing_colors, pastel_factor=0.5):
     max_distance = None
     best_color = None
@@ -389,6 +476,8 @@ def _generate_new_color(existing_colors, pastel_factor=0.5):
             max_distance = best_distance
             best_color = color
     return best_color
+
+
 def make_random_color_array(array_of_ids):
     "array_of_ids: an array containing neuron IDs (the length of this array will be the number of colors returned)"
     colors = []
@@ -494,6 +583,7 @@ def bar_with_points(data, title='', x_tick_labels=[], points=True, bar=True, col
         plt.xticks(rotation=45)
         # plt.setp(ax.get_xticklabels(), rotation=45)
     plt.show()
+
 
 # imshow gray plot for a single frame tiff
 def plot_single_tiff(tiff_path: str, title: str = None):

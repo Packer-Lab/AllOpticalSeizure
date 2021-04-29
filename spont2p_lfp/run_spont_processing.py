@@ -5,7 +5,7 @@ import sys; sys.path.append('/home/pshah/Documents/code/Vape/utils/')
 import alloptical_utils_pj as ao
 import numpy as np
 # import utils_funcs as uf
-# import funcs_pj as pjf
+# import funcs_pj as pj
 import pickle
 from utils.paq_utils import frames_discard, paq_read
 

@@ -45,15 +45,7 @@ import tifffile as tf
 
 #%%
 
-###### IMPORT pkl file containing data in form of expobj
-trial = 't-012'
-date = '2021-01-19'
-# pkl_path = "/home/pshah/mnt/qnap/Data/%s/%s_%s/%s_%s.pkl" % (date, date, trial, date, trial)
-
-expobj, experiment = aoutils.import_expobj(trial=trial, date=date)
-
-
-aoplot.plot_1pstim_avg_trace(expobj, x_axis='time', individual_traces=True, stim_span_color=None, y_axis='dff')
+## save downsampled TIFF
 
 # %%
 # expobj.raw_traces_from_targets()
