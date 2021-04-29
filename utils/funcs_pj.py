@@ -339,6 +339,7 @@ def ZProfile(movie, area_center_coords: tuple = None, area_size: int = -1, plot_
 
     return smol_mean
 
+
 def SaveDownsampledTiff(tiff_path: str = None, stack: np.array = None, group_by: int = 4, save_as: str = None, plot_zprofile: bool = True):
     """
     Create and save a downsampled version of the original tiff file. Original tiff file can be given as a numpy array stack
@@ -390,6 +391,7 @@ def SaveDownsampledTiff(tiff_path: str = None, stack: np.array = None, group_by:
                avgd_stack, photometric='minisblack')
 
     return avgd_stack
+
 
 def subselect_tiff(tiff_stack, select_frames, save_as):
     stack_cropped = tiff_stack[select_frames[0]:select_frames[1]]
