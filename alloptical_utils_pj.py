@@ -5,23 +5,15 @@
 #      more importantly to avoid risk of calculating it differently at various stages.
 
 
-import os
-import numpy as np
-import matplotlib.pyplot as plt
-import seaborn as sns
-
-import tifffile as tf
-import csv
-import bisect
 import re
 import glob
 import pandas as pd
 import itertools
 
-from scipy import stats
 import sys
 
 import alloptical_plotting
+from utils.funcs_pj import SaveDownsampledTiff, subselect_tiff, make_tiff_stack, convert_to_8bit
 
 sys.path.append('/home/pshah/Documents/code/')
 from Vape.utils.paq2py import *
@@ -35,7 +27,7 @@ from utils.paq_utils import paq_read, frames_discard
 import alloptical_plotting as aoplot
 import pickle
 
-from numba import njit, jit
+from numba import njit
 
 
 # %%
@@ -2875,103 +2867,6 @@ def normalize_dff_jit(arr, threshold=20):
 
     return new_array
 
-
-def make_tiff_stack(sorted_paths: list, save_as: str):
-    """
-    read in a bunch of tiffs and stack them together, and save the output as the save_as
-
-    :param sorted_paths: list of string paths for tiffs to stack
-    :param save_as: .tif file path to where the tif should be saved
-    """
-
-    num_tiffs = len(sorted_paths)
-    print('working on tifs to stack: ', num_tiffs)
-
-    with tf.TiffWriter(save_as, bigtiff=True) as tif:
-        for i, tif_ in enumerate(sorted_paths):
-            with tf.TiffFile(tif_, multifile=True) as input_tif:
-                data = input_tif.asarray()
-            msg = ' -- Writing tiff: ' + str(i + 1) + ' out of ' + str(num_tiffs)
-            print(msg, end='\r')
-            tif.save(data)
-
-
-def convert_to_8bit(img, target_type_min=0, target_type_max=255):
-    """
-    :param img:
-    :param target_type:
-    :param target_type_min:
-    :param target_type_max:
-    :return:
-    """
-    imin = img.min()
-    imax = img.max()
-
-    a = (target_type_max - target_type_min) / (imax - imin)
-    b = target_type_max - a * imax
-    new_img = (a * img + b).astype(np.uint8)
-    return new_img
-
-
-def SaveDownsampledTiff(tiff_path: str = None, stack: np.array = None, save_as: str = None, plot_zprofile: bool = True):
-    """
-    Create and save a downsampled version of the original tiff file. Original tiff file can be given as a numpy array stack
-    or a str path to the tiff.
-
-    :param tiff_path: path to the tiff to downsample
-    :param stack: numpy array stack of the tiff file already read in
-    :param save_as: path to save the downsampled tiff to, if none provided it will save to the same directory as the provided tiff_path
-    :param plot_zprofile: if True, plot the zaxis profile using the full TIFF stack provided.
-    :return: numpy array containing the downsampled TIFF stack
-    """
-    print('downsampling of tiff stack...')
-
-    if save_as is None:
-        assert tiff_path is not None, "please provide a save path to save_as"
-        save_as = tiff_path[:-4] + '_downsampled.tif'
-
-    if stack is None:
-        # open tiff file
-        print('|- working on... %s' % tiff_path)
-        stack = tf.imread(tiff_path)
-
-    resolution = stack.shape[1]
-
-    # plot zprofile of full TIFF stack
-    if plot_zprofile:
-        pj.ZProfile(movie=stack, plot_image=True)
-
-    # downsample to 8-bit
-    stack8 = np.full_like(stack, fill_value=0)
-    for frame in np.arange(stack.shape[0]):
-        stack8[frame] = convert_to_8bit(stack[frame], 0, 255)
-
-    # grouped average by specified interval
-    group_by = 4
-    num_frames = stack8.shape[0] // group_by
-    avgd_stack = np.empty((num_frames, resolution, resolution), dtype='uint16')
-    # avgd_stack = np.empty((num_frames, resolution, resolution), dtype='uint8')
-    frame_count = np.arange(0, stack8.shape[0], group_by)
-
-    for i in np.arange(num_frames):
-        frame = frame_count[i]
-        avgd_stack[i] = np.mean(stack8[frame:frame + group_by], axis=0)
-
-
-    # write output
-    print("saving to... %s" % save_as)
-    tf.imwrite(save_as,
-               avgd_stack, photometric='minisblack')
-
-    return avgd_stack
-
-
-def subselect_tiff(tiff_stack, select_frames, save_as):
-    stack_cropped = tiff_stack[select_frames[0]:select_frames[1]]
-
-    stack8 = convert_to_8bit(stack_cropped)
-
-    tf.imwrite(save_as, stack8, photometric='minisblack')
 
 # used for creating tiffs that remove artifacts from alloptical experiments with photostim artifacts
 def rm_artifacts_tiffs(expobj, tiffs_loc, new_tiffs):

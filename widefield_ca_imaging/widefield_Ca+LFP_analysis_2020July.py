@@ -2,7 +2,11 @@
 # experiment details: transgenic calcium imaging animals imaged with widefield Calcium imaging and injected with 4AP to generate focal seizures,
 # also recorded with LFP
 
-import sys; sys.path.append('/home/pshah/Documents/code/Vape/utils')
+import sys;
+
+import utils.funcs_pj
+
+sys.path.append('/home/pshah/Documents/code/Vape/utils')
 import alloptical_utils_pj as ao
 from utils import funcs_pj as pjf
 import numpy as np
@@ -45,8 +49,8 @@ plt.imshow(stack[101], cmap='gist_gray', vmin=0, vmax=3000); plt.show()
 i = 5
 tiff_path = '/mnt/qnap_Root/apacker/Data/2020-07-17/WF/HF098/2020-07-16_HF098_00400001/2020-07-16_HF098_00400001(%s).tif' % i
 save_as = '/home/pshah/mnt/qnap/Analysis/2020-07-17/HF98/004/2020-07-16_HF098_004_%s_downsampled.tif' % i
-ao.SaveDownsampledTiff(tiff_path="/home/pshah/mnt/qnap/Analysis/2020-07-17/HF98/003/2020-07-17_HF098_003_last50pct.tif",
-                       save_as="/home/pshah/mnt/qnap/Analysis/2020-07-17/HF98/003/2020-07-17_HF098_003_last50pct_downsampled.tif")
+utils.funcs_pj.SaveDownsampledTiff(tiff_path="/home/pshah/mnt/qnap/Analysis/2020-07-17/HF98/003/2020-07-17_HF098_003_last50pct.tif",
+                                   save_as="/home/pshah/mnt/qnap/Analysis/2020-07-17/HF98/003/2020-07-17_HF098_003_last50pct_downsampled.tif")
 
 
 
@@ -82,7 +86,7 @@ del(stack)
 #%% MERGING INDIVIDUAL TIFFS FROM HF95
 
 tiff_paths = '/mnt/qnap_Root/apacker/Data/2020-07-16/WF/wide4X4ap_010*.tif'
-ao.make_tiff_stack(tiff_paths, save_as='/home/pshah/mnt/qnap/Analysis/2020-07-16/HF95/wide4x4ap_010.tif')
+utils.funcs_pj.make_tiff_stack(tiff_paths, save_as='/home/pshah/mnt/qnap/Analysis/2020-07-16/HF95/wide4x4ap_010.tif')
 
 #%% IMPORT back in the merged tiff and measure avg signal across the whole field
 

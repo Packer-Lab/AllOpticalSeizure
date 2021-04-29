@@ -1,8 +1,10 @@
 import os
 import sys
 
+import numpy
 import numpy as np
 import pandas as pd
+import tifffile
 from scipy import stats, ndimage, io
 import itertools
 import matplotlib.pyplot as plt
@@ -25,6 +27,8 @@ import math
 
 ############### STATS/DATA ANALYSIS FUNCTIONS ##########################################################################
 # calculate correlation across all cells
+
+
 def corrcoef_array(array):
     df = pd.DataFrame(array)
     correlations = {}
@@ -274,7 +278,7 @@ def ZProfile(movie, area_center_coords: tuple = None, area_size: int = -1, plot_
 
     if type(movie) is str:
         movie = tf.imread(movie)
-    print('zprofile for TIFF of shape: ', movie.shape)
+    print('plotting zprofile for TIFF of shape: ', movie.shape)
 
     # assume 15fps for 1024x1024 movies and 30fps imaging for 512x512 movies
     if movie.shape[1] == 1024:
@@ -323,16 +327,113 @@ def ZProfile(movie, area_center_coords: tuple = None, area_size: int = -1, plot_
             figsize = [10, 4]
         fig, ax2 = plt.subplots(figsize=figsize)
         if img_fps is not None:
-            ax2.plot(smol_mean.index/img_fps, linewidth=0.5, color='black')
+            ax2.plot(np.arange(smol_mean.shape[0])/img_fps, smol_mean, linewidth=0.5, color='black')
             ax2.set_xlabel('Time (sec)')
         else:
             ax2.plot(smol_mean, linewidth=0.5, color='black')
             ax2.set_xlabel('frames')
         ax2.set_ylabel('Flu (a.u.)')
+        if 'title' in kwargs:
+            ax2.set_title(kwargs['title'])
         plt.show()
 
     return smol_mean
 
+def SaveDownsampledTiff(tiff_path: str = None, stack: np.array = None, group_by: int = 4, save_as: str = None, plot_zprofile: bool = True):
+    """
+    Create and save a downsampled version of the original tiff file. Original tiff file can be given as a numpy array stack
+    or a str path to the tiff.
+
+    :param tiff_path: path to the tiff to downsample
+    :param stack: numpy array stack of the tiff file already read in
+    :param group_by: specified interval for grouped averaging of the TIFF
+    :param save_as: path to save the downsampled tiff to, if none provided it will save to the same directory as the provided tiff_path
+    :param plot_zprofile: if True, plot the zaxis profile using the full TIFF stack provided.
+    :return: numpy array containing the downsampled TIFF stack
+    """
+    print('downsampling of tiff stack...')
+
+    if save_as is None:
+        assert tiff_path is not None, "please provide a save path to save_as"
+        save_as = tiff_path[:-4] + '_downsampled.tif'
+
+    if stack is None:
+        # open tiff file
+        print('|- working on... %s' % tiff_path)
+        stack = tf.imread(tiff_path)
+
+    resolution = stack.shape[1]
+
+    # plot zprofile of full TIFF stack
+    if plot_zprofile:
+        ZProfile(movie=stack, plot_image=True, title=tiff_path)
+
+    # downsample to 8-bit
+    stack8 = np.full_like(stack, fill_value=0)
+    for frame in np.arange(stack.shape[0]):
+        stack8[frame] = convert_to_8bit(stack[frame], 0, 255)
+
+    # grouped average by specified interval
+    num_frames = stack8.shape[0] // group_by
+    avgd_stack = np.empty((num_frames, resolution, resolution), dtype='uint16')
+    # avgd_stack = np.empty((num_frames, resolution, resolution), dtype='uint8')
+    frame_count = np.arange(0, stack8.shape[0], group_by)
+
+    for i in np.arange(num_frames):
+        frame = frame_count[i]
+        avgd_stack[i] = np.mean(stack8[frame:frame + group_by], axis=0)
+
+
+    # write output
+    print("\nsaving to... %s" % save_as)
+    tf.imwrite(save_as,
+               avgd_stack, photometric='minisblack')
+
+    return avgd_stack
+
+def subselect_tiff(tiff_stack, select_frames, save_as):
+    stack_cropped = tiff_stack[select_frames[0]:select_frames[1]]
+
+    stack8 = convert_to_8bit(stack_cropped)
+
+    tf.imwrite(save_as, stack8, photometric='minisblack')
+
+
+def make_tiff_stack(sorted_paths: list, save_as: str):
+    """
+    read in a bunch of tiffs and stack them together, and save the output as the save_as
+
+    :param sorted_paths: list of string paths for tiffs to stack
+    :param save_as: .tif file path to where the tif should be saved
+    """
+
+    num_tiffs = len(sorted_paths)
+    print('working on tifs to stack: ', num_tiffs)
+
+    with tf.TiffWriter(save_as, bigtiff=True) as tif:
+        for i, tif_ in enumerate(sorted_paths):
+            with tf.TiffFile(tif_, multifile=True) as input_tif:
+                data = input_tif.asarray()
+            msg = ' -- Writing tiff: ' + str(i + 1) + ' out of ' + str(num_tiffs)
+            print(msg, end='\r')
+            tif.save(data)
+
+
+def convert_to_8bit(img, target_type_min=0, target_type_max=255):
+    """
+    :param img:
+    :param target_type:
+    :param target_type_min:
+    :param target_type_max:
+    :return:
+    """
+    imin = img.min()
+    imax = img.max()
+
+    a = (target_type_max - target_type_min) / (imax - imin)
+    b = target_type_max - a * imax
+    new_img = (a * img + b).astype(np.uint8)
+    return new_img
 
 ############### GENERALLY USEFUL FUNCTIONS #############################################################################
 
@@ -609,3 +710,4 @@ def load_matlab_array(path):
     """
     return io.loadmat(path)
 #######
+
