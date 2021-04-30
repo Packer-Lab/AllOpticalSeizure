@@ -16,7 +16,7 @@ def prep4suite2p(expobj, trial, paths, discard_all):
     paq_path = paths[2]
     # expobj = ao.TwoPhotonImaging(tiff_path_dir, paq_path)
 
-    if paths[3] is not None:
+    if paths[3] is not None or discard_all is False:
         paq = paq_read(file_path=paq_path, plot=False)
         print(paq[0]['data'][0])
         bad_frames = frames_discard(paq=paq[0], input_array=paths[3] % (trial[2:]), total_frames=expobj.n_frames)
@@ -74,9 +74,9 @@ def run_spont_processing(trial, paths, analysis_save_path, metainfo, discard_all
 
 #%% make sure to run EphysViewer.m from MATLAB if you need to specify any bad frames!
 # trial = 't-001'
-trials = ['t-019', 't-020']
-data_path_base = '/home/pshah/mnt/qnap/Data/2021-01-09'
-animal_prep = 'PS04'
+trials = ['t-003', 't-005']
+data_path_base = '/home/pshah/mnt/qnap/Data/2021-01-08'
+animal_prep = 'PS05'
 date = data_path_base[-10:]
 exp_type = 'spont imaging'
 comments = 'spont imaging period before running alloptical experiment'
@@ -99,7 +99,7 @@ for trial in trials:
     pkl_path = "/home/pshah/mnt/qnap/Analysis/%s/%s_%s/%s_%s.pkl" % (date, date, trial, date, trial)  # specify path in Analysis folder to save pkl object
     # matlab_loc = '/home/pshah/mnt/qnap/Data/2020-12-18/paired_measurements/2020-12-18_RL108_%s.mat'
     matlab_loc = None
-    discard_all = True
+    discard_all = False
     analysis_save_path = tiffs_loc[:21] + 'Analysis/' + tiffs_loc_dir[26:]
 
 
