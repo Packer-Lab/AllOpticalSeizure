@@ -4,8 +4,6 @@ import os
 import sys; sys.path.append('/home/pshah/Documents/code/Vape/utils/')
 import alloptical_utils_pj as ao
 import numpy as np
-# import utils_funcs as uf
-# import funcs_pj as pj
 import pickle
 from utils.paq_utils import frames_discard, paq_read
 
@@ -66,9 +64,9 @@ def run_spont_processing(trial, paths, analysis_save_path, metainfo):
 
 #%% make sure to run EphysViewer.m from MATLAB if you need to specify any bad frames!
 # trial = 't-001'
-trials = ['t-002', 't-006']
-data_path_base = '/home/pshah/mnt/qnap/Data/2021-01-19'
-animal_prep = 'PS07'
+trials = ['t-004', 't-006']
+data_path_base = '/home/pshah/mnt/qnap/Data/2021-01-09'
+animal_prep = 'PS04'
 date = data_path_base[-10:]
 exp_type = 'spont imaging'
 comments = 'spont imaging period before running alloptical experiment'

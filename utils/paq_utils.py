@@ -283,9 +283,10 @@ def frames_discard(paq, input_array, total_frames, discard_all=False):
             begin = int(measurements['PairedMeasures'][set_][3][0][0] * paq['rate'])
             end = int(measurements['PairedMeasures'][set_][5][0][0] * paq['rate'])
             frames_ = list(np.where(np.logical_and(frame_times >= begin, frame_times <= end))[0])
-            all_btwn_paired_frames.append(frames_)
-            paired_frames_first.append(frames_[0])
-            paired_frames_last.append(frames_[-1])
+            if len(frames_) > 0:
+                all_btwn_paired_frames.append(frames_)
+                paired_frames_first.append(frames_[0])
+                paired_frames_last.append(frames_[-1])
 
         all_btwn_paired_frames = [item for x in all_btwn_paired_frames for item in x]
 

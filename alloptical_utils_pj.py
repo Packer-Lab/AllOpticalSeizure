@@ -10,6 +10,7 @@ import glob
 import pandas as pd
 import itertools
 
+import os
 import sys
 
 import alloptical_plotting
@@ -18,9 +19,14 @@ from utils.funcs_pj import SaveDownsampledTiff, subselect_tiff, make_tiff_stack,
 sys.path.append('/home/pshah/Documents/code/')
 from Vape.utils.paq2py import *
 from Vape.utils.utils_funcs import *
+import scipy.stats as stats
 from suite2p.run_s2p import run_s2p
-
+import matplotlib.pyplot as plt
+import seaborn as sns
+import numpy as np
 import xml.etree.ElementTree as ET
+import tifffile as tf
+import csv
 
 from utils import funcs_pj as pj
 from utils.paq_utils import paq_read, frames_discard
@@ -886,7 +892,7 @@ class alloptical(TwoPhotonImaging):
         stim_times = pj.threshold_detect(stim_volts, 1)
         # self.stim_times = stim_times
         self.stim_start_times = stim_times
-        print('# of stims found on %s: %s' % (self.stim_channel, len(self.stim_times)))
+        print('# of stims found on %s: %s' % (self.stim_channel, len(self.stim_start_times)))
 
         # correct this based on txt file
         duration_ms = self.stim_dur

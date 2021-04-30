@@ -1,9 +1,4 @@
 # Step #1) in all optical experiment analysis - preprocessing the data to prep for suite2p analysis and creating some starter experiment objects
-import os
-import numpy as np
-import pickle
-import tifffile as tf
-import sys
 
 # sys.path.append('/home/pshah/Documents/code/PackerLab_pycharm/')
 import alloptical_utils_pj as aoutils
@@ -11,16 +6,16 @@ import alloptical_utils_pj as aoutils
 
 
 # %% prepare trial and photostim experiment information below before running run_photostim_processing()
-data_path_base = '/home/pshah/mnt/qnap/Data/2021-01-19'
-animal_prep = 'PS07'
+data_path_base = '/home/pshah/mnt/qnap/Data/2021-01-09'
+animal_prep = 'PS04'
 date = data_path_base[-10:]
 # specify location of the naparm export for the trial(s) - ensure that this export was used for all trials, if # of trials > 1
 # paqs_loc = '%s/%s_RL109_%s.paq' % (data_path_base, date, trial[2:])  # path to the .paq files for the selected trials
 
 # need to update these 4 things for every trial
-trial = 't-011'  # note that %s magic command in the code below will be using these trials listed here
-naparms_loc = '/photostim/2021-01-19_PS07_photostim_013/'  # make sure to include '/' at the end to indicate the child directory
-comments = '18 cells x 3 groups; 7mW per cell preset: 2021-01-07_PS_250ms-stim-40hz-multi_interleaved.mat (prot. #3)'
+trial = 't-018'  # note that %s magic command in the code below will be using these trials listed here
+naparms_loc = '/photostim/2021-01-09_PS04_020/'  # make sure to include '/' at the end to indicate the child directory
+comments = '6 events, starts mid sz and 1 sz after end of photostim; FOV had moved - check carefully; 14 cells x 2 groups; 7mW per cell preset: 250ms multi_interleaved 30 trials'
 exp_type = 'post 4ap 2p all optical'  # use 'post' and '4ap' in the description to create the appropriate post4ap exp object
 # paqs_loc = '%s/%s_RL111_%s.paq' % (data_path_base, date, '008')  # path to the .paq files for the selected trials
 ######
