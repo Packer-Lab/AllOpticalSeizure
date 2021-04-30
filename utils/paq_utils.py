@@ -257,7 +257,7 @@ def plot_paq_interactive_line(paq_df, input_path, channels_to_plot=None):
     fig.show()
 
 
-def frames_discard(paq, input_array, total_frames, discard_all=False):
+def frames_discard(paq: dict, input_array, total_frames, discard_all=False):
     '''
     calculate which 2P imaging frames to discard (or use as bad frames input into suite2p) based on the bad frames
     identified by manually inspecting the paq files in EphysViewer.m

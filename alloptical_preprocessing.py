@@ -6,17 +6,17 @@ import alloptical_utils_pj as aoutils
 
 
 # %% prepare trial and photostim experiment information below before running run_photostim_processing()
-data_path_base = '/home/pshah/mnt/qnap/Data/2021-01-09'
-animal_prep = 'PS04'
+data_path_base = '/home/pshah/mnt/qnap/Data/2021-01-08'
+animal_prep = 'PS05'
 date = data_path_base[-10:]
 # specify location of the naparm export for the trial(s) - ensure that this export was used for all trials, if # of trials > 1
 # paqs_loc = '%s/%s_RL109_%s.paq' % (data_path_base, date, trial[2:])  # path to the .paq files for the selected trials
 
 # need to update these 4 things for every trial
-trial = 't-018'  # note that %s magic command in the code below will be using these trials listed here
+trial = 't-017'  # note that %s magic command in the code below will be using these trials listed here
 naparms_loc = '/photostim/2021-01-09_PS04_020/'  # make sure to include '/' at the end to indicate the child directory
-comments = '6 events, starts mid sz and 1 sz after end of photostim; FOV had moved - check carefully; 14 cells x 2 groups; 7mW per cell preset: 250ms multi_interleaved 30 trials'
-exp_type = 'post 4ap 2p all optical'  # use 'post' and '4ap' in the description to create the appropriate post4ap exp object
+comments = '14 cells x 2 groups; 7mW per cell preset: 250ms multi_interleaved 30 trials'
+exp_type = 'pre 4ap 2p all optical'  # use 'post' and '4ap' in the description to create the appropriate post4ap exp object
 # paqs_loc = '%s/%s_RL111_%s.paq' % (data_path_base, date, '008')  # path to the .paq files for the selected trials
 ######
 
@@ -30,8 +30,8 @@ new_tiffs = tiffs_loc[:-19]  # where new tiffs from rm_artifacts_tiffs will be s
 # make the necessary Analysis saving subfolder as well
 analysis_save_path = tiffs_loc[:21] + 'Analysis/' + tiffs_loc_dir[26:]
 
-matlab_badframes_path = '%s/paired_measurements/%s_%s_%s.mat' % (analysis_save_path[:-17], date, animal_prep, trial[2:])  # choose matlab path if need to use or use None for no additional bad frames
-# matlab_badframes_path = None
+# matlab_badframes_path = '%s/paired_measurements/%s_%s_%s.mat' % (analysis_save_path[:-17], date, animal_prep, trial[2:])  # choose matlab path if need to use or use None for no additional bad frames
+matlab_badframes_path = None
 
 metainfo = {
     'animal prep.': animal_prep,
@@ -60,12 +60,12 @@ if cont:
     import pickle
     import numpy as np
 
-    date = '2021-01-10'
-    data_path_base = '/home/pshah/mnt/qnap/Data/2021-01-10'
+    date = '2021-01-09'
+    data_path_base = '/home/pshah/mnt/qnap/Data/2021-01-09'
     base_path_save = '/home/pshah/mnt/qnap/Analysis/%s/suite2p/' % date
 
-    to_suite2p = ['t-002', 't-003', 't-005', 't-007', 't-008', 't-009', 't-010', 't-011', 't-012',
-                  't-013', 't-014', 't-015', 't-016']  # specify all trials that were used in the suite2p run
+    to_suite2p = ['t-004', 't-006', 't-012', 't-013', 't-014', 't-015', 't-017', 't-018'
+                  ]  # specify all trials that were used in the suite2p run
     # to_suite2p = ['t-011', 't-012', 't-013']
     # note ^^^ this only works currently when the spont baseline trials all come first, and also back to back
     total_frames_stitched = 0

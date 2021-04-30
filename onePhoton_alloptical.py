@@ -7,8 +7,8 @@ import os
 import alloptical_utils_pj as aoutils
 import alloptical_plotting as aoplot
 
-animal_prep = 'PS07'
-data_path_base = '/home/pshah/mnt/qnap/Data/2021-01-19'
+animal_prep = 'PS04'
+data_path_base = '/home/pshah/mnt/qnap/Data/2021-01-09'
 date = data_path_base[-10:]
 
 # need to update these 3 things for every trial

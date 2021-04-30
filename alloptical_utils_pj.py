@@ -2053,6 +2053,10 @@ class OnePhotonStim(TwoPhotonImaging):
         # self.meanRawFluTrace = np.mean(np.mean(im_stack, axis=1), axis=1)
         # TwoPhotonImaging.mean_raw_flu_trace(self)
 
+        # add all frames as bad frames incase want to include this trial in suite2p run
+        paq = paq_read(file_path=self.paq_path, plot=False)
+        self.bad_frames = frames_discard(paq=paq[0], input_array=None, total_frames=self.n_frames, discard_all=True)
+
         if os.path.exists(self.analysis_save_path):
             pass
         elif os.path.exists(self.analysis_save_path[:-17]):

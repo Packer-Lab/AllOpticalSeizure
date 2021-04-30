@@ -2,7 +2,7 @@
 
 import os
 import sys; sys.path.append('/home/pshah/Documents/code/Vape/utils/')
-import alloptical_utils_pj as ao
+import alloptical_utils_pj as aoutils
 import numpy as np
 import pickle
 from utils.paq_utils import frames_discard, paq_read
@@ -10,7 +10,7 @@ from utils.paq_utils import frames_discard, paq_read
 
 #%% functions for processing SPONT. IMAGING experiments, used only for making a bad_frames output to use during suite2p
 
-def prep4suite2p(expobj, trial, paths):
+def prep4suite2p(expobj, trial, paths, discard_all):
 
     tiff_path_dir = paths[0]
     paq_path = paths[2]
@@ -22,7 +22,12 @@ def prep4suite2p(expobj, trial, paths):
         bad_frames = frames_discard(paq=paq[0], input_array=paths[3] % (trial[2:]), total_frames=expobj.n_frames)
         print('\n', bad_frames)
         print('Total photostim and/or seizure/CSD frames: ', len(bad_frames))
-
+    elif discard_all:
+        # add all frames as bad frames incase want to include this trial in suite2p run
+        paq = paq_read(file_path=paq_path, plot=False)
+        bad_frames = frames_discard(paq=paq[0], input_array=None, total_frames=expobj.n_frames, discard_all=True)
+        print('\n', bad_frames)
+        print('Total photostim and/or seizure/CSD frames: ', len(bad_frames))
     else:
         bad_frames = []
         print('No bad frames needed for', tiff_path_dir)
@@ -30,8 +35,9 @@ def prep4suite2p(expobj, trial, paths):
     if len(bad_frames) > 0:
         np.save('%s/bad_frames.npy' % tiff_path_dir,
                 bad_frames)  # save to npy file and remember to move npy file to tiff folder before running with suite2p
+    return bad_frames
 
-def run_spont_processing(trial, paths, analysis_save_path, metainfo):
+def run_spont_processing(trial, paths, analysis_save_path, metainfo, discard_all):
 
     tiff_path_dir = paths[0]
     tiff_path = paths[1]
@@ -39,9 +45,13 @@ def run_spont_processing(trial, paths, analysis_save_path, metainfo):
 
     print('\n Processing spont. trial # %s' % trial)
 
-    expobj = ao.TwoPhotonImaging(tiff_path_dir, tiff_path, paq_path, metainfo, analysis_save_path=analysis_save_path)
+    expobj = aoutils.TwoPhotonImaging(tiff_path_dir, tiff_path, paq_path, metainfo, analysis_save_path=analysis_save_path)
 
-    prep4suite2p(expobj, trial, paths)
+    # add all frames as bad frames incase want to include this trial in suite2p run
+    paq = paq_read(file_path=paq_path, plot=False)
+    expobj.bad_frames = frames_discard(paq=paq[0], input_array=None, total_frames=expobj.n_frames, discard_all=discard_all)
+
+    expobj.bad_frames = prep4suite2p(expobj, trial, paths, discard_all=discard_all)
 
     # set analysis save path for expobj
     # make the necessary Analysis saving subfolder as well
@@ -64,7 +74,7 @@ def run_spont_processing(trial, paths, analysis_save_path, metainfo):
 
 #%% make sure to run EphysViewer.m from MATLAB if you need to specify any bad frames!
 # trial = 't-001'
-trials = ['t-004', 't-006']
+trials = ['t-019', 't-020']
 data_path_base = '/home/pshah/mnt/qnap/Data/2021-01-09'
 animal_prep = 'PS04'
 date = data_path_base[-10:]
@@ -89,9 +99,10 @@ for trial in trials:
     pkl_path = "/home/pshah/mnt/qnap/Analysis/%s/%s_%s/%s_%s.pkl" % (date, date, trial, date, trial)  # specify path in Analysis folder to save pkl object
     # matlab_loc = '/home/pshah/mnt/qnap/Data/2020-12-18/paired_measurements/2020-12-18_RL108_%s.mat'
     matlab_loc = None
+    discard_all = True
     analysis_save_path = tiffs_loc[:21] + 'Analysis/' + tiffs_loc_dir[26:]
 
 
     paths = [tiffs_loc_dir, tiffs_loc, paqs_loc, matlab_loc, pkl_path]
 
-    run_spont_processing(trial, paths, analysis_save_path=analysis_save_path, metainfo=metainfo)
+    run_spont_processing(trial, paths, analysis_save_path=analysis_save_path, metainfo=metainfo, discard_all=discard_all)

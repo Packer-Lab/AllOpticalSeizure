@@ -1,8 +1,8 @@
 import utils.funcs_pj as pj
 
 #%% CREATE AND SAVE DOWNSAMPLED TIFF
-trial = 't-011'
-date = '2021-01-11'
+trial = 't-007'
+date = '2021-01-08'
 pj.SaveDownsampledTiff(tiff_path="/home/pshah/mnt/qnap/Data/%s/%s_%s/%s_%s_Cycle00001_Ch3.tif" % (date, date, trial, date, trial))
 
 #%% PLOT THE ZPROFILE OF A TIFF STACK
