@@ -409,11 +409,11 @@ def plot_lfp_stims(expobj, title='LFP signal with photostim. shown (in different
         ax.scatter(x=x, y=[pct75] * len(x), edgecolors='red', facecolors='black', marker="|", zorder=3, s=60, linewidths=2.0)
 
 
-    # set x ticks at every 30 seconds
-    labels = list(range(0, len(expobj.lfp_signal)//expobj.paq_rate, 30))
-    plt.xticks(ticks=[(label * expobj.paq_rate) for label in labels], labels=labels)
-    ax.tick_params(axis='both', which='both', length=3)
-    ax.set_xlabel('Time (secs)')
+    # # set x ticks at every 30 seconds
+    # labels = list(range(0, len(expobj.lfp_signal)//expobj.paq_rate, 30))
+    # plt.xticks(ticks=[(label * expobj.paq_rate) for label in labels], labels=labels)
+    # ax.tick_params(axis='both', which='both', length=3)
+    # ax.set_xlabel('Time (secs)')
 
     # ax.set_xticks([(label * expobj.paq_rate) for label in labels])#, labels=range(0, len(expobj.lfp_signal)//expobj.paq_rate, 30))
     # ax.set_xticklabels(labels); plt.show()
@@ -633,7 +633,7 @@ def plotLfpSignal(expobj, stim_span_color='powderblue', stim_lines: bool = True,
     # change x axis ticks to seconds
     if x_axis == 'time':
         # set x ticks at every 30 seconds
-        labels = list(range(0, len(expobj.lfp_signal) // expobj.paq_rate, 30))
+        labels = list(range(0, len(expobj.lfp_signal[expobj.frame_start_time_actual: expobj.frame_end_time_actual]) // expobj.paq_rate, 30))
         ax.set_xticks(ticks=[(label * expobj.paq_rate) for label in labels])
         ax.set_xticklabels(labels)
         ax.tick_params(axis='both', which='both', length=3)

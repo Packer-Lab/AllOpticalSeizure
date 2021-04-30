@@ -16,7 +16,7 @@ def prep4suite2p(expobj, trial, paths, discard_all):
     paq_path = paths[2]
     # expobj = ao.TwoPhotonImaging(tiff_path_dir, paq_path)
 
-    if paths[3] is not None or discard_all is False:
+    if paths[3] is not None:
         paq = paq_read(file_path=paq_path, plot=False)
         print(paq[0]['data'][0])
         bad_frames = frames_discard(paq=paq[0], input_array=paths[3] % (trial[2:]), total_frames=expobj.n_frames)
@@ -46,10 +46,6 @@ def run_spont_processing(trial, paths, analysis_save_path, metainfo, discard_all
     print('\n Processing spont. trial # %s' % trial)
 
     expobj = aoutils.TwoPhotonImaging(tiff_path_dir, tiff_path, paq_path, metainfo, analysis_save_path=analysis_save_path)
-
-    # add all frames as bad frames incase want to include this trial in suite2p run
-    paq = paq_read(file_path=paq_path, plot=False)
-    expobj.bad_frames = frames_discard(paq=paq[0], input_array=None, total_frames=expobj.n_frames, discard_all=discard_all)
 
     expobj.bad_frames = prep4suite2p(expobj, trial, paths, discard_all=discard_all)
 
