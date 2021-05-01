@@ -3345,6 +3345,7 @@ def plot_single_tiff(tiff_path: str, title: str = None):
     if title is not None:
         plt.suptitle(title)
     plt.show()
+    return stack
 
 #### archive
 

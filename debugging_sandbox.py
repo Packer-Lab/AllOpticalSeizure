@@ -47,102 +47,22 @@ import tifffile as tf
 
 ## save downsampled TIFF
 
-# %%
-# expobj.raw_traces_from_targets()
-# expobj.save()
-#
-# def get_alltargets_stim_traces_norm(expobj, targets_idx=None, subselect_cells=None, pre_stim=15, post_stim=200):
-#     """
-#     primary function to measure the dFF traces for photostimulated targets.
-#     :param expobj:
-#     :param normalize_to: str; either "baseline" or "pre-stim"
-#     :param pre_stim: number of frames to use as pre-stim
-#     :param post_stim: number of frames to use as post-stim
-#     :return: lists of individual targets dFF traces, and averaged targets dFF over all stims for each target
-#     """
-#     stim_timings = expobj.stim_start_frames
-#
-#     if subselect_cells:
-#         num_cells = len(expobj.SLMTargets_stims_raw[subselect_cells])
-#         targets_trace = expobj.SLMTargets_stims_raw[subselect_cells]
-#     else:
-#         num_cells = len(expobj.SLMTargets_stims_raw)
-#         targets_trace = expobj.SLMTargets_stims_raw
-#
-#     # collect photostim timed average dff traces of photostim targets
-#     targets_dff = np.zeros([num_cells, len(expobj.stim_start_frames), pre_stim + post_stim])
-#     targets_dff_avg = np.zeros([num_cells, pre_stim + post_stim])
-#
-#     targets_dfstdF = np.zeros([num_cells, len(expobj.stim_start_frames), pre_stim + post_stim])
-#     targets_dfstdF_avg = np.zeros([num_cells, pre_stim + post_stim])
-#
-#     SLMTargets_stims_raw = np.zeros([num_cells, len(expobj.stim_start_frames), pre_stim + post_stim])
-#     targets_raw_avg = np.zeros([num_cells, pre_stim + post_stim])
-#
-#     if targets_idx is not None:
-#         flu = [targets_trace[targets_idx][stim - pre_stim: stim + post_stim] for stim in stim_timings if
-#                stim not in expobj.seizure_frames]
-#
-#         # flu_dfstdF = []
-#         # flu_dff = []
-#         for i in range(len(flu)):
-#             trace = flu[i]
-#             mean_pre = np.mean(trace[0:pre_stim])
-#             trace_dff = ((trace - mean_pre) / mean_pre) * 100
-#             std_pre = np.std(trace[0:pre_stim])
-#             dFstdF = (trace - mean_pre) / std_pre  # make dF divided by std of pre-stim F trace
-#
-#             SLMTargets_stims_raw[targets_idx, i] = trace
-#             targets_dff[targets_idx, i] = trace_dff
-#             targets_dfstdF[targets_idx, i] = dFstdF
-#         return SLMTargets_stims_raw[targets_idx], targets_dff[targets_idx], targets_dfstdF[targets_idx]
-#
-#     else:
-#         for cell_idx in range(num_cells):
-#             # print('considering cell # %s' % cell)
-#             flu = [targets_trace[cell_idx][stim - pre_stim: stim + post_stim] for stim in stim_timings if
-#                    stim not in expobj.seizure_frames]
-#
-#             # flu_dfstdF = []
-#             # flu_dff = []
-#             for i in range(len(flu)):
-#                 trace = flu[i]
-#                 mean_pre = np.mean(trace[0:pre_stim])
-#                 trace_dff = ((trace - mean_pre) / mean_pre) * 100
-#                 std_pre = np.std(trace[0:pre_stim])
-#                 dFstdF = (trace - mean_pre) / std_pre  # make dF divided by std of pre-stim F trace
-#
-#                 SLMTargets_stims_raw[cell_idx, i] = trace
-#                 targets_dff[cell_idx, i] = trace_dff
-#                 targets_dfstdF[cell_idx, i] = dFstdF
-#                 # flu_dfstdF.append(dFstdF)
-#                 # flu_dff.append(trace_dff)
-#
-#             # targets_dff.append(flu_dff)  # contains all individual dFF traces for all stim times
-#             # targets_dff_avg.append(np.nanmean(flu_dff, axis=0))  # contains the dFF trace averaged across all stim times
-#
-#             # targets_dfstdF.append(flu_dfstdF)
-#             # targets_dfstdF_avg.append(np.nanmean(flu_dfstdF, axis=0))
-#
-#             # SLMTargets_stims_raw.append(flu)
-#             # targets_raw_avg.append(np.nanmean(flu, axis=0))
-#
-#         targets_dff_avg = np.mean(targets_dff, axis=1)
-#         targets_dfstdF_avg = np.mean(targets_dfstdF, axis=1)
-#         targets_raw_avg = np.mean(SLMTargets_stims_raw, axis=1)
-#
-#         return targets_dff, targets_dff_avg, targets_dfstdF, targets_dfstdF_avg, SLMTargets_stims_raw, targets_raw_avg
-#
-# # targets_dff, targets_dff_avg, targets_dfstdF, targets_dfstdF_avg, SLMTargets_stims_raw, targets_raw_avg = get_alltargets_stim_traces_norm(expobj)
-# # array = (np.convolve(SLMTargets_stims_raw[targets_idx], np.ones(w), 'valid') / w)
-#
-#
-# targets_idx = 0
-# pre_stim = int(expobj.fps) // 2
-# post_stim = 3 * int(expobj.fps)
-# SLMTargets_stims_raw, targets_dff, targets_dfstdF = get_alltargets_stim_traces_norm(expobj, targets_idx=targets_idx, pre_stim=pre_stim,
-#                                                                            post_stim=post_stim)
+stack = aoutils.plot_single_tiff(tiff_path='/home/pshah/mnt/qnap/Data/2021-01-08/2021-01-08_t-007/2021-01-08_t-007_Cycle00001_Ch3_downsampled.tif')
 
+
+# Downscale images by half​
+stack = tf.imread('/home/pshah/mnt/qnap/Data/2021-01-08/2021-01-08_t-007/2021-01-08_t-007_Cycle00001_Ch3_downsampled.tif')
+
+shape = np.shape(stack)
+
+input_size = stack.shape[1]
+output_size = 512
+bin_size = input_size // output_size
+small_image = stack.reshape((shape[0], output_size, bin_size,
+                                      output_size, bin_size)).mean(4).mean(2)
+
+plt.imshow(stack[0], cmap='gray'); plt.show()
+plt.imshow(small_image[0], cmap='gray'); plt.show()
 
 # %%
 # original = '/home/pshah/mnt/qnap/Analysis/2021-01-10/suite2p/alloptical-2p-08x-alltrials-reg_tiff/plane0/reg_tif/file021_chan0.tif'

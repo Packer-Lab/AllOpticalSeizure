@@ -379,26 +379,43 @@ def SaveDownsampledTiff(tiff_path: str = None, stack: np.array = None, group_by:
     avgd_stack = np.empty((num_frames, resolution, resolution), dtype='uint16')
     # avgd_stack = np.empty((num_frames, resolution, resolution), dtype='uint8')
     frame_count = np.arange(0, stack8.shape[0], group_by)
-
     for i in np.arange(num_frames):
         frame = frame_count[i]
         avgd_stack[i] = np.mean(stack8[frame:frame + group_by], axis=0)
 
+    # bin down to 512 x 512 resolution if higher resolution
+    shape = np.shape(avgd_stack)
+
+    if shape[1] == 512:
+        input_size = avgd_stack.shape[1]
+        output_size = 512
+        bin_size = input_size // output_size
+        final_stack = avgd_stack.reshape((shape[0], output_size, bin_size,
+                                          output_size, bin_size)).mean(4).mean(2)
+    else:
+        final_stack = avgd_stack
 
     # write output
-    print("\nsaving %s to... %s" % (avgd_stack.shape, save_as))
-    tf.imwrite(save_as,
-               avgd_stack, photometric='minisblack')
+    print("\nsaving %s to... %s" % (final_stack.shape, save_as))
+    tf.imwrite(save_as, final_stack, photometric='minisblack')
 
-    return avgd_stack
+    return final_stack
 
 
-def subselect_tiff(tiff_stack, select_frames, save_as):
+def subselect_tiff(tiff_path: str = None, tiff_stack: np.array = None, select_frames: tuple = (0,0), save_as: str = None):
+    if tiff_stack is None:
+        # open tiff file
+        print('|- working on... %s' % tiff_path)
+        tiff_stack = tf.imread(tiff_path)
+
     stack_cropped = tiff_stack[select_frames[0]:select_frames[1]]
 
-    stack8 = convert_to_8bit(stack_cropped)
+    # stack8 = convert_to_8bit(stack_cropped)
 
-    tf.imwrite(save_as, stack8, photometric='minisblack')
+    if save_as is not None:
+        tf.imwrite(save_as, stack_cropped, photometric='minisblack')
+
+    return stack_cropped
 
 
 def make_tiff_stack(sorted_paths: list, save_as: str):
