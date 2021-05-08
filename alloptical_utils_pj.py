@@ -104,8 +104,7 @@ class TwoPhotonImaging:
 
 
         # create pkl path and save expobj to pkl object
-        pkl_path = "/home/pshah/mnt/qnap/Analysis/%s/%s_%s/%s_%s.pkl" % (
-        metainfo['date'], metainfo['date'], metainfo['trial'], metainfo['date'], metainfo['trial'])  # specify path in Analysis folder to save pkl object
+        pkl_path = "%s/%s_%s.pkl" % (self.analysis_save_path, metainfo['date'], metainfo['trial'])  # specify path in Analysis folder to save pkl object
         self.save_pkl(pkl_path=pkl_path)
 
     def s2pRun(self, ops, db, user_batch_size):
