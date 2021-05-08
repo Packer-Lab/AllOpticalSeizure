@@ -83,7 +83,7 @@ class TwoPhotonImaging:
         self.analysis_save_path = analysis_save_path
 
         self._parsePVMetadata()
-        stack = self.mean_raw_flu_trace()
+        stack = self.mean_raw_flu_trace(save_pkl=False)
         if save_downsampled_tiff:
             SaveDownsampledTiff(stack=stack, save_as=analysis_save_path + '/%s_%s_downsampled.tif' % (
             metainfo['date'], metainfo['trial']))  # specify path in Analysis folder to save pkl object')
@@ -386,7 +386,7 @@ class TwoPhotonImaging:
             voltage_idx = paq['chan_names'].index('voltage')
             self.lfp_signal = paq['data'][voltage_idx]
 
-    def mean_raw_flu_trace(self, plot: bool = False):
+    def mean_raw_flu_trace(self, plot: bool = False, save_pkl: bool = True):
         print('\n-----collecting mean raw flu trace from tiff file...')
         print(self.tiff_path)
         im_stack = tf.imread(self.tiff_path, key=range(self.n_frames))
@@ -395,8 +395,11 @@ class TwoPhotonImaging:
         self.meanFluImg = np.mean(im_stack, axis=0)
         self.meanRawFluTrace = np.mean(np.mean(im_stack, axis=1), axis=1)
 
-        if hasattr(self, 'pkl_path'):
-            self.save_pkl(pkl_path=self.pkl_path)
+        if save_pkl:
+            if hasattr(self, 'pkl_path'):
+                self.save_pkl(pkl_path=self.pkl_path)
+            else:
+                print('pkl file not saved yet because .pkl_path attr not found')
 
         if plot:
             aoplot.plotMeanRawFluTrace(expobj=self, stim_span_color=None, x_axis='frames', figsize=[20, 3],
@@ -2025,7 +2028,7 @@ class OnePhotonStim(TwoPhotonImaging):
     def __init__(self, data_path_base, date, animal_prep, trial, metainfo):
         paqs_loc = '%s/%s_%s_%s.paq' % (
             data_path_base, date, animal_prep, trial[2:])  # path to the .paq files for the selected trials
-        tiffs_loc_dir = '%s/%s_%s' % (data_path_base, date, trial)
+        tiffs_loc_dir = '%s%s_%s' % (data_path_base, date, trial)
         tiffs_loc = '%s/%s_%s_Cycle00001_Ch3.tif' % (tiffs_loc_dir, date, trial)
         self.pkl_path = "/home/pshah/mnt/qnap/Analysis/%s/%s_%s/%s_%s.pkl" % (
             date, date, trial, date, trial)  # specify path in Analysis folder to save pkl object
@@ -2045,14 +2048,6 @@ class OnePhotonStim(TwoPhotonImaging):
         TwoPhotonImaging.__init__(self, self.tiff_path_dir, self.tiff_path, self.paq_path, metainfo=metainfo,
                                   save_downsampled_tiff=True, analysis_save_path=analysis_save_path)
         self.paqProcessing()
-
-        # print(self.tiff_path)
-        # print('\n-----processing tiff file for 1p photostim...')
-        # im_stack = tf.imread(self.tiff_path, key=range(self.n_frames))
-        # print('Loaded experiment tiff of shape: ', im_stack.shape)
-        #
-        # self.meanRawFluTrace = np.mean(np.mean(im_stack, axis=1), axis=1)
-        # TwoPhotonImaging.mean_raw_flu_trace(self)
 
         # add all frames as bad frames incase want to include this trial in suite2p run
         paq = paq_read(file_path=self.paq_path, plot=False)

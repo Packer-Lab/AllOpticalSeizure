@@ -12,10 +12,10 @@ date = '2021-01-24'
 # paqs_loc = '%s/%s_RL109_%s.paq' % (data_path_base, date, trial[2:])  # path to the .paq files for the selected trials
 
 # need to update these 4 things for every trial
-trial = 't-009'  # note that %s magic command in the code below will be using these trials listed here
-comments = '12 cells x 4 groups; 6mW per cell; 250ms multi_interleaved (prot. #3)'
-naparms_loc = '/photostim/2021-01-24_PS09_photostim_010/'  # make sure to include '/' at the end to indicate the child directory
-exp_type = 'pre 4ap 2p all optical'  # use 'post' and '4ap' in the description to create the appropriate post4ap exp object
+trial = 't-010'  # note that %s magic command in the code below will be using these trials listed here
+comments = '2 seizures, start of trial mid sz; 12 cells x 4 groups; 6mW per cell; 250ms multi_interleaved (prot. #3) - no extra activity from 4ap?'
+naparms_loc = '/photostim/2021-01-24_PS09_photostim_012/'  # make sure to include '/' at the end to indicate the child directory
+exp_type = 'post 4ap 2p all optical'  # use 'post' and '4ap' in the description to create the appropriate post4ap exp object
 # paqs_loc = '%s/%s_RL111_%s.paq' % (data_path_base, date, '008')  # path to the .paq files for the selected trials
 ######
 
