@@ -3,19 +3,17 @@
 # sys.path.append('/home/pshah/Documents/code/PackerLab_pycharm/')
 import alloptical_utils_pj as aoutils
 
-
-
 # %% prepare trial and photostim experiment information below before running run_photostim_processing()
-data_path_base = '/home/pshah/mnt/qnap/Data/2021-01-08'
-animal_prep = 'PS05'
+data_path_base = '/home/pshah/mnt/qnap/Data/2021-01-19'
+animal_prep = 'PS07'
 date = data_path_base[-10:]
 # specify location of the naparm export for the trial(s) - ensure that this export was used for all trials, if # of trials > 1
 # paqs_loc = '%s/%s_RL109_%s.paq' % (data_path_base, date, trial[2:])  # path to the .paq files for the selected trials
 
 # need to update these 4 things for every trial
-trial = 't-012'  # note that %s magic command in the code below will be using these trials listed here
-comments = '6 sz total, trial starts and ends both mid-sz, 1 sz after end of trial; lots of movement artifacts. 32 cells x 1 groups; 7mW per cell, 250ms stim (prot. #1b).'
-naparms_loc = '/photostim/2021-01-08_PS05_003/'  # make sure to include '/' at the end to indicate the child directory
+trial = 't-017'  # note that %s magic command in the code below will be using these trials listed here
+comments = '18 cells x 3 groups; 5mW per cell; 100ms stim multi group (prot. #3b); definitely less cells that are responsive. but nice that there are still a few cells that are responsive and hanging around. 17 x ~10sec seizures (very short seizure admist lots of rhythmic activity)'
+naparms_loc = '/photostim/2021-01-19_PS07_photostim_014/'  # make sure to include '/' at the end to indicate the child directory
 exp_type = 'post 4ap 2p all optical'  # use 'post' and '4ap' in the description to create the appropriate post4ap exp object
 # paqs_loc = '%s/%s_RL111_%s.paq' % (data_path_base, date, '008')  # path to the .paq files for the selected trials
 ######

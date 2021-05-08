@@ -100,6 +100,8 @@ class TwoPhotonImaging:
             os.mkdir(self.analysis_save_path)
         elif os.path.exists(self.analysis_save_path[:-27]):
             os.mkdir(self.analysis_save_path[:-17])
+            os.mkdir(self.analysis_save_path)
+
 
         # create pkl path and save expobj to pkl object
         pkl_path = "/home/pshah/mnt/qnap/Analysis/%s/%s_%s/%s_%s.pkl" % (
