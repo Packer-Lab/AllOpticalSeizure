@@ -70,10 +70,10 @@ def run_spont_processing(trial, paths, analysis_save_path, metainfo, discard_all
 
 #%% make sure to run EphysViewer.m from MATLAB if you need to specify any bad frames!
 # trial = 't-002'
-trials = ['t-002', 't-005']
-data_path_base = '/home/pshah/mnt/qnap/Data/2021-01-24/PS09'
-animal_prep = 'PS09'
-date = data_path_base[-15:-5]
+trials = ['t-003', 't-006']
+data_path_base = '/home/pshah/mnt/qnap/Data/2021-01-24'
+animal_prep = 'PS11'
+date = data_path_base[-10:]
 exp_type = 'spont imaging'
 comments = 'spont imaging period before running alloptical experiment'
 
@@ -95,7 +95,8 @@ for trial in trials:
     # matlab_loc = '/home/pshah/mnt/qnap/Data/2020-12-18/paired_measurements/2020-12-18_RL108_%s.mat'
     matlab_loc = None
     discard_all = False
-    analysis_save_path = tiffs_loc[:21] + 'Analysis/' + tiffs_loc_dir[26:]
+    # analysis_save_path = tiffs_loc[:21] + 'Analysis/' + tiffs_loc_dir[26:]
+    analysis_save_path='/home/pshah/mnt/qnap/Analysis/2021-01-24/PS11/' + tiffs_loc_dir[-16:]
     pkl_path = "%s/%s_%s.pkl" % (analysis_save_path, date, trial)  # specify path in Analysis folder to save pkl object
 
 

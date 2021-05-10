@@ -13,7 +13,7 @@ data_path_base = '/home/pshah/mnt/qnap/Data/2021-01-24/'
 date = data_path_base[-11:-1]
 
 # need to update these 3 things for every trial
-trial = 't-004'  # note that %s magic command in the code below will be using these trials listed here
+trial = 't-009'  # note that %s magic command in the code below will be using these trials listed here
 exp_type = '1p photostim, pre 4ap'
 comments = '20x trials of 1p stim'
 
@@ -26,7 +26,8 @@ metainfo = {
     'comments': comments
 }
 
-expobj = aoutils.OnePhotonStim(data_path_base, date, animal_prep, trial, metainfo, analysis_save_path='/home/pshah/mnt/qnap/Analysis/2021-01-24/PS11')
+expobj = aoutils.OnePhotonStim(data_path_base, date, animal_prep, trial, metainfo,
+                               analysis_save_path_base='/home/pshah/mnt/qnap/Analysis/2021-01-24/PS11/')
 
 
 #%%

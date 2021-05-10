@@ -2029,7 +2029,7 @@ class Post4ap(alloptical):
 
 
 class OnePhotonStim(TwoPhotonImaging):
-    def __init__(self, data_path_base, date, animal_prep, trial, metainfo, analysis_save_path: str = None):
+    def __init__(self, data_path_base, date, animal_prep, trial, metainfo, analysis_save_path_base: str = None):
         paqs_loc = '%s/%s_%s_%s.paq' % (
             data_path_base, date, animal_prep, trial[2:])  # path to the .paq files for the selected trials
         tiffs_loc_dir = '%s%s_%s' % (data_path_base, date, trial)
@@ -2040,8 +2040,10 @@ class OnePhotonStim(TwoPhotonImaging):
         new_tiffs = tiffs_loc[:-19]  # where new tiffs from rm_artifacts_tiffs will be saved
 
         # make the necessary Analysis saving subfolder as well
-        if analysis_save_path is None:
+        if analysis_save_path_base is None:
             analysis_save_path = tiffs_loc[:21] + 'Analysis/' + tiffs_loc_dir[26:]
+        else:
+            analysis_save_path = analysis_save_path_base + tiffs_loc_dir[-16:]
 
         # if os.path.exists(self.analysis_save_path):
         #     pass
