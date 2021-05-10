@@ -82,6 +82,18 @@ class TwoPhotonImaging:
         self.metainfo = metainfo
         self.analysis_save_path = analysis_save_path
 
+        # create analysis save path location
+        self.analysis_save_path = analysis_save_path
+        if os.path.exists(self.analysis_save_path):
+            pass
+        elif os.path.exists(self.analysis_save_path[:-17]):
+            print('making analysis save folder at: \n  %s' % self.analysis_save_path)
+            os.mkdir(self.analysis_save_path)
+        elif os.path.exists(self.analysis_save_path[:-27]):
+            print('making analysis save folder at: \n  %s \n and %s' % (self.analysis_save_path[:-17], self.analysis_save_path))
+            os.mkdir(self.analysis_save_path[:-17])
+            os.mkdir(self.analysis_save_path)
+
         self._parsePVMetadata()
         stack = self.mean_raw_flu_trace(save_pkl=False)
         if save_downsampled_tiff:
@@ -92,15 +104,7 @@ class TwoPhotonImaging:
             self.suite2p_path = suite2p_path
             self.s2pProcessing(s2p_path=self.suite2p_path)
 
-        # create analysis save path location
-        self.analysis_save_path = analysis_save_path
-        if os.path.exists(self.analysis_save_path):
-            pass
-        elif os.path.exists(self.analysis_save_path[:-17]):
-            os.mkdir(self.analysis_save_path)
-        elif os.path.exists(self.analysis_save_path[:-27]):
-            os.mkdir(self.analysis_save_path[:-17])
-            os.mkdir(self.analysis_save_path)
+
 
 
         # create pkl path and save expobj to pkl object
@@ -2025,7 +2029,7 @@ class Post4ap(alloptical):
 
 
 class OnePhotonStim(TwoPhotonImaging):
-    def __init__(self, data_path_base, date, animal_prep, trial, metainfo):
+    def __init__(self, data_path_base, date, animal_prep, trial, metainfo, analysis_save_path: str = None):
         paqs_loc = '%s/%s_%s_%s.paq' % (
             data_path_base, date, animal_prep, trial[2:])  # path to the .paq files for the selected trials
         tiffs_loc_dir = '%s%s_%s' % (data_path_base, date, trial)
@@ -2034,8 +2038,18 @@ class OnePhotonStim(TwoPhotonImaging):
             date, date, trial, date, trial)  # specify path in Analysis folder to save pkl object
         # paqs_loc = '%s/%s_RL109_010.paq' % (data_path_base, date)  # path to the .paq files for the selected trials
         new_tiffs = tiffs_loc[:-19]  # where new tiffs from rm_artifacts_tiffs will be saved
+
         # make the necessary Analysis saving subfolder as well
-        analysis_save_path = tiffs_loc[:21] + 'Analysis/' + tiffs_loc_dir[26:]
+        if analysis_save_path is not None:
+            analysis_save_path = tiffs_loc[:21] + 'Analysis/' + tiffs_loc_dir[26:]
+
+        # if os.path.exists(self.analysis_save_path):
+        #     pass
+        # elif os.path.exists(self.analysis_save_path[:-17]):
+        #     os.mkdir(self.analysis_save_path)
+        # elif os.path.exists(self.analysis_save_path[:-27]):
+        #     os.mkdir(self.analysis_save_path[:-17])
+        #     os.mkdir(self.analysis_save_path)
 
         print('\n-----Processing trial # %s-----' % trial)
 
@@ -2053,13 +2067,7 @@ class OnePhotonStim(TwoPhotonImaging):
         paq = paq_read(file_path=self.paq_path, plot=False)
         self.bad_frames = frames_discard(paq=paq[0], input_array=None, total_frames=self.n_frames, discard_all=True)
 
-        if os.path.exists(self.analysis_save_path):
-            pass
-        elif os.path.exists(self.analysis_save_path[:-17]):
-            os.mkdir(self.analysis_save_path)
-        elif os.path.exists(self.analysis_save_path[:-27]):
-            os.mkdir(self.analysis_save_path[:-17])
-            os.mkdir(self.analysis_save_path)
+
 
         self.save_pkl(pkl_path=self.pkl_path)
 

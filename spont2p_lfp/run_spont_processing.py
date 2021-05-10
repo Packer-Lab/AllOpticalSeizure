@@ -69,11 +69,11 @@ def run_spont_processing(trial, paths, analysis_save_path, metainfo, discard_all
 
 
 #%% make sure to run EphysViewer.m from MATLAB if you need to specify any bad frames!
-# trial = 't-001'
+# trial = 't-002'
 trials = ['t-002', 't-005']
-data_path_base = '/home/pshah/mnt/qnap/Data/2021-01-24'
+data_path_base = '/home/pshah/mnt/qnap/Data/2021-01-24/PS09'
 animal_prep = 'PS09'
-date = data_path_base[-10:]
+date = data_path_base[-15:-5]
 exp_type = 'spont imaging'
 comments = 'spont imaging period before running alloptical experiment'
 
