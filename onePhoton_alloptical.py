@@ -26,7 +26,7 @@ metainfo = {
     'comments': comments
 }
 
-expobj = aoutils.OnePhotonStim(data_path_base, date, animal_prep, trial, metainfo, analysis_save_path)
+expobj = aoutils.OnePhotonStim(data_path_base, date, animal_prep, trial, metainfo, analysis_save_path='/home/pshah/mnt/qnap/Analysis/2021-01-24/PS11')
 
 
 #%%

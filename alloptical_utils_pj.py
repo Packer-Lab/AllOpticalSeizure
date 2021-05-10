@@ -2040,7 +2040,7 @@ class OnePhotonStim(TwoPhotonImaging):
         new_tiffs = tiffs_loc[:-19]  # where new tiffs from rm_artifacts_tiffs will be saved
 
         # make the necessary Analysis saving subfolder as well
-        if analysis_save_path is not None:
+        if analysis_save_path is None:
             analysis_save_path = tiffs_loc[:21] + 'Analysis/' + tiffs_loc_dir[26:]
 
         # if os.path.exists(self.analysis_save_path):

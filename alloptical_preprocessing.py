@@ -4,18 +4,18 @@
 import alloptical_utils_pj as aoutils
 
 # %% prepare trial and photostim experiment information below before running run_photostim_processing()
-data_path_base = '/home/pshah/mnt/qnap/Data/2021-01-24/PS09'
-animal_prep = 'PS09'
-date = '2021-01-24'
-# date = data_path_base[-10:]
+data_path_base = '/home/pshah/mnt/qnap/Data/2021-01-24'
+animal_prep = 'PS11'
+# date = '2021-01-24'
+date = data_path_base[-10:]
 # specify location of the naparm export for the trial(s) - ensure that this export was used for all trials, if # of trials > 1
 # paqs_loc = '%s/%s_RL109_%s.paq' % (data_path_base, date, trial[2:])  # path to the .paq files for the selected trials
 
 # need to update these 4 things for every trial
-trial = 't-010'  # note that %s magic command in the code below will be using these trials listed here
-comments = '2 seizures, start of trial mid sz; 12 cells x 4 groups; 6mW per cell; 250ms multi_interleaved (prot. #3) - no extra activity from 4ap?'
-naparms_loc = '/photostim/2021-01-24_PS09_photostim_012/'  # make sure to include '/' at the end to indicate the child directory
-exp_type = 'post 4ap 2p all optical'  # use 'post' and '4ap' in the description to create the appropriate post4ap exp object
+trial = 't-007'  # note that %s magic command in the code below will be using these trials listed here
+comments = '12 cells x 4 groups; 7mW per cell; 250 ms stim multi group (prot #2)'
+naparms_loc = '/photostim/2021-01-24_photostim_006/'  # make sure to include '/' at the end to indicate the child directory
+exp_type = 'pre 4ap 2p all optical'  # use 'post' and '4ap' in the description to create the appropriate post4ap exp object
 # paqs_loc = '%s/%s_RL111_%s.paq' % (data_path_base, date, '008')  # path to the .paq files for the selected trials
 ######
 

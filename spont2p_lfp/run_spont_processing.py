@@ -92,11 +92,11 @@ for trial in trials:
 
     tiffs_loc_dir = '%s/%s_%s' % (data_path_base, date, trial)
     tiffs_loc = '%s/%s_%s_Cycle00001_Ch3.tif' % (tiffs_loc_dir, date, trial)
-    pkl_path = "/home/pshah/mnt/qnap/Analysis/%s/%s_%s/%s_%s.pkl" % (date, date, trial, date, trial)  # specify path in Analysis folder to save pkl object
     # matlab_loc = '/home/pshah/mnt/qnap/Data/2020-12-18/paired_measurements/2020-12-18_RL108_%s.mat'
     matlab_loc = None
     discard_all = False
     analysis_save_path = tiffs_loc[:21] + 'Analysis/' + tiffs_loc_dir[26:]
+    pkl_path = "%s/%s_%s.pkl" % (analysis_save_path, date, trial)  # specify path in Analysis folder to save pkl object
 
 
     paths = [tiffs_loc_dir, tiffs_loc, paqs_loc, matlab_loc, pkl_path]
