@@ -731,7 +731,9 @@ def plot_lfp_1pstim_avg_trace(expobj, title='Average LFP peri- stims', individua
     stim_duration = int(np.mean([expobj.stim_end_times[idx] - expobj.stim_start_times[idx] for idx in range(len(expobj.stim_start_times))]) + 0.01*expobj.paq_rate)
     pre_stim = pre_stim  # seconds
     post_stim = post_stim  # seconds
+
     fig, ax = plt.subplots()
+
     x = [expobj.lfp_signal[stim - int(pre_stim * expobj.paq_rate): stim + int(post_stim * expobj.paq_rate)] for stim in expobj.stim_start_times]
     x_ = np.mean(x, axis=0)
     ax.plot(x_, color='black', zorder=3, linewidth=1.75)
@@ -760,7 +762,7 @@ def plot_lfp_1pstim_avg_trace(expobj, title='Average LFP peri- stims', individua
         if not hasattr(expobj, 'opto_loopback'):
             print('loading', expobj.paq_path)
 
-            paq, _ = paq_read(expobj.paq_path, plot=True)
+            paq, _ = paq_read(expobj.paq_path, plot=False)
             expobj.paq_rate = paq['rate']
 
             # find voltage channel and save as lfp_signal attribute
@@ -772,6 +774,7 @@ def plot_lfp_1pstim_avg_trace(expobj, title='Average LFP peri- stims', individua
              in expobj.stim_start_times]
         y_avg = np.mean(x, axis=0)
         ax2.plot(y_avg, color='lightgray', zorder=3, linewidth=1.75)
+        ax2.set_ylim([-3, 30])
 
     if x_axis == 'time':
         # change x axis ticks to seconds
