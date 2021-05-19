@@ -7,13 +7,14 @@ import alloptical_utils_pj as aoutils
 import alloptical_plotting as aoplot
 
 
+
 ###### IMPORT pkl file containing data in form of expobj
-trial = 't-008'
-date = '2021-02-02'
+trial = 't-010'
+date = '2021-01-19'
 # pkl_path = "/home/pshah/mnt/qnap/Data/%s/%s_%s/%s_%s.pkl" % (date, date, trial, date, trial)
 
 expobj, experiment = aoutils.import_expobj(trial=trial, date=date,
-                                           pkl_path='/home/pshah/mnt/qnap/Analysis/2021-02-02/PS17/%s_%s/%s_%s.pkl' % (date, trial, date, trial))
+                                           pkl_path='/home/pshah/mnt/qnap/Analysis/%s/%s_%s/%s_%s.pkl' % (date, date, trial, date, trial))
 
 
 # %% # look at the average Ca Flu trace pre and post stim, just calculate the average of the whole frame and plot as continuous timeseries
@@ -30,7 +31,7 @@ expobj, experiment = aoutils.import_expobj(trial=trial, date=date,
 aoplot.plotMeanRawFluTrace(expobj, stim_span_color='white', x_axis='frames', xlims=[0, 3000])
 aoplot.plotLfpSignal(expobj, x_axis='paq')
 
-aoplot.plot_1pstim_avg_trace(expobj, x_axis='time', individual_traces=True, stim_span_color=None, y_axis='dff')
+aoplot.plot_flu_1pstim_avg_trace(expobj, x_axis='time', individual_traces=True, stim_span_color=None, y_axis='dff')
 
 aoplot.plot_lfp_1pstim_avg_trace(expobj, x_axis='time', individual_traces=False, pre_stim=0.25, post_stim=0.75,
                                  optoloopback=True)
