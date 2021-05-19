@@ -683,18 +683,18 @@ def plot_flu_1pstim_avg_trace(expobj, title='Average trace of stims', individual
     pre_stim = 1  # seconds
     post_stim = 4  # seconds
     fig, ax = plt.subplots()
-    x = [expobj.meanRawFluTrace[stim - int(pre_stim * expobj.fps): stim + int(post_stim * expobj.fps)] for stim in expobj.stim_start_frames]
+    flu_list = [expobj.meanRawFluTrace[stim - int(pre_stim * expobj.fps): stim + int(post_stim * expobj.fps)] for stim in expobj.stim_start_frames]
     # convert to dFF normalized to pre-stim F
     if y_axis == 'dff':  # otherwise default param is raw Flu
-        x = [pj.dff(trace, baseline=np.mean(trace[:int(pre_stim * expobj.fps) - 2])) for trace in x]
+        flu_list = [pj.dff(trace, baseline=np.mean(trace[:int(pre_stim * expobj.fps) - 2])) for trace in flu_list]
 
-    avg_flu_trace = np.mean(x, axis=0)
+    avg_flu_trace = np.mean(flu_list, axis=0)
     ax.plot(avg_flu_trace, color='black', zorder=2, linewidth=2.2)
     ax.margins(0)
 
     if individual_traces:
         # individual traces
-        for trace in x:
+        for trace in flu_list:
             ax.plot(trace, color='forestgreen', zorder=1, alpha=0.25)
         if stim_span_color is not None:
             ax.axvspan(int(pre_stim * expobj.fps) - 2, int(pre_stim * expobj.fps) + expobj.stim_duration_frames + 1, color='skyblue', zorder=1, alpha=0.7)
@@ -703,7 +703,7 @@ def plot_flu_1pstim_avg_trace(expobj, title='Average trace of stims', individual
             plt.axvline(x=int(pre_stim * expobj.fps) + expobj.stim_duration_frames + 1, color='black', linestyle='--', linewidth=1)
     else:
         # plot standard deviation of the traces array as a span above and below the mean
-        std_ = np.std(x, axis=0)
+        std_ = np.std(flu_list, axis=0)
         ax.fill_between(x=range(len(avg_flu_trace)), y1=avg_flu_trace + std_, y2=avg_flu_trace - std_, alpha=0.3, zorder=1, color='forestgreen')
         if stim_span_color is not None:
             ax.axvspan(int(pre_stim * expobj.fps) - 3, int(pre_stim * expobj.fps) + expobj.stim_duration_frames + 1.5, color=stim_span_color, zorder=3)
@@ -731,9 +731,14 @@ def plot_flu_1pstim_avg_trace(expobj, title='Average trace of stims', individual
     # quantification of the stim response (compared to prestim baseline)
     if quantify:
         response_len = 0.5  # post-stim response period in sec
-        x1 = int(pre_stim * expobj.fps) + expobj.stim_duration_frames + 2
-        x2 = x1 + int(response_len * expobj.fps)
-        response = np.mean(avg_flu_trace[x1:x2]) - np.mean(avg_flu_trace[:int(pre_stim * expobj.fps) - 2])
+        poststim_1 = int(pre_stim * expobj.fps) + expobj.stim_duration_frames + 2
+        poststim_2 = poststim_1 + int(response_len * expobj.fps)
+        baseline = int(pre_stim * expobj.fps) - 2
+        ax.axvspan(poststim_1, poststim_2,
+                   color='#ffd700', zorder=1, alpha=0.35)
+        ax.axvspan(0, baseline,
+                   color='#5e5d5d', zorder=1, alpha=0.15)
+        response = np.mean(avg_flu_trace[poststim_1:poststim_2]) - np.mean(avg_flu_trace[:baseline])
         print('Average response %s: %s' % (y_axis, '{:,.4f}'.format(response)))
 
         # add the response value to the top right of the plot
@@ -744,6 +749,8 @@ def plot_flu_1pstim_avg_trace(expobj, title='Average trace of stims', individual
 
     ax.set_ylim([-0.5, 1.0])
     plt.show()
+
+    return flu_list
 
 
 def plot_lfp_1pstim_avg_trace(expobj, title='Average LFP peri- stims', individual_traces=False, x_axis='time', pre_stim=1.0, post_stim=5.0,

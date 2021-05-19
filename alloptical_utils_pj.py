@@ -37,14 +37,6 @@ from numba import njit
 
 
 # %%
-def points_in_circle_np(radius, x0=0, y0=0, ):
-    x_ = np.arange(x0 - radius - 1, x0 + radius + 1, dtype=int)
-    y_ = np.arange(y0 - radius - 1, y0 + radius + 1, dtype=int)
-    x, y = np.where((x_[:, np.newaxis] - x0) ** 2 + (y_ - y0) ** 2 <= radius ** 2)
-    for x, y in zip(x_[x], y_[y]):
-        yield x, y
-
-
 def import_expobj(trial, date, pkl_path: str = None):
     if pkl_path is None:
         pkl_path = "/home/pshah/mnt/qnap/Analysis/%s/%s_%s/%s_%s.pkl" % (date, date, trial, date, trial)
@@ -64,6 +56,13 @@ def import_expobj(trial, date, pkl_path: str = None):
         expobj.save_pkl()
 
     return expobj, experiment
+
+def import_resultsobj(pkl_path: str):
+    with open(pkl_path, 'rb') as f:
+        print('\nimporting resultsobj from: %s' % pkl_path)
+        resultsobj = pickle.load(f)
+        print('\n\nDONE IMPORT of %s resultsobj' % (type(resultsobj)))
+    return resultsobj
 
 
 ## this should technically be the biggest super class lol
@@ -2229,7 +2228,15 @@ class OnePhotonStim(TwoPhotonImaging):
         voltage_idx = paq['chan_names'].index('voltage')
         self.lfp_signal = paq['data'][voltage_idx]
 
+class OnePhotonResults:
+    def __init__(self, save_path: str):
+        # just create an empty class object that you will throw results and analyses into
+        self.pkl_path = save_path
 
+        self.save(pkl_path=self.pkl_path)
+
+    def save(self, pkl_path: str = None):
+        TwoPhotonImaging.save_pkl(self, pkl_path=pkl_path)
 
 
 # main functions used to initiate and run processing of experiments
@@ -3359,6 +3366,14 @@ def plot_single_tiff(tiff_path: str, title: str = None):
         plt.suptitle(title)
     plt.show()
     return stack
+
+def points_in_circle_np(radius, x0=0, y0=0, ):
+    x_ = np.arange(x0 - radius - 1, x0 + radius + 1, dtype=int)
+    y_ = np.arange(y0 - radius - 1, y0 + radius + 1, dtype=int)
+    x, y = np.where((x_[:, np.newaxis] - x0) ** 2 + (y_ - y0) ** 2 <= radius ** 2)
+    for x, y in zip(x_[x], y_[y]):
+        yield x, y
+
 
 #### archive
 
