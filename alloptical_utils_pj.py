@@ -37,12 +37,13 @@ from numba import njit
 
 
 # %%
-def import_expobj(trial, date, pkl_path: str = None):
+def import_expobj(trial: str = None, date: str = None, pkl_path: str = None):
     if pkl_path is None:
         pkl_path = "/home/pshah/mnt/qnap/Analysis/%s/%s_%s/%s_%s.pkl" % (date, date, trial, date, trial)
 
-    with open(pkl_path, 'rb') as f:
+    if trial is not None and date is not None:
         print('\nimporting expobj for "%s, %s" from: %s' % (date, trial, pkl_path))
+    with open(pkl_path, 'rb') as f:
         expobj = pickle.load(f)
         experiment = '%s: %s, %s, %s' % (
             expobj.metainfo['animal prep.'], expobj.metainfo['trial'], expobj.metainfo['exptype'],
