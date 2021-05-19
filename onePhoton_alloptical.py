@@ -1,36 +1,4 @@
-### code for analysis of one photon photostim experiments
-
-import utils.funcs_pj as pjf
-import matplotlib.pyplot as plt
-import numpy as np
-import os
-import alloptical_utils_pj as aoutils
-import alloptical_plotting as aoplot
-
-animal_prep = 'PS11'
-data_path_base = '/home/pshah/mnt/qnap/Data/2021-01-24/'
-# date = '2021-01-24'
-date = data_path_base[-11:-1]
-
-# need to update these 3 things for every trial
-trial = 't-009'  # note that %s magic command in the code below will be using these trials listed here
-exp_type = '1p photostim, pre 4ap'
-comments = '20x trials of 1p stim'
-
-metainfo = {
-    'animal prep.': animal_prep,
-    'trial': trial,
-    'date': date,
-    'exptype': exp_type,
-    'data_path_base': data_path_base,
-    'comments': comments
-}
-
-expobj = aoutils.OnePhotonStim(data_path_base, date, animal_prep, trial, metainfo,
-                               analysis_save_path_base='/home/pshah/mnt/qnap/Analysis/2021-01-24/PS11/')
-
-
-#%%
+#%% DATA ANALYSIS FOR ONE-P PHOTOSTIM EXPERIMENTS
 import utils.funcs_pj as pjf
 import matplotlib.pyplot as plt
 import numpy as np
@@ -40,11 +8,12 @@ import alloptical_plotting as aoplot
 
 
 ###### IMPORT pkl file containing data in form of expobj
-trial = 't-003'
-date = '2021-01-19'
+trial = 't-008'
+date = '2021-02-02'
 # pkl_path = "/home/pshah/mnt/qnap/Data/%s/%s_%s/%s_%s.pkl" % (date, date, trial, date, trial)
 
-expobj, experiment = aoutils.import_expobj(trial=trial, date=date)
+expobj, experiment = aoutils.import_expobj(trial=trial, date=date,
+                                           pkl_path='/home/pshah/mnt/qnap/Analysis/2021-02-02/PS17/%s_%s/%s_%s.pkl' % (date, trial, date, trial))
 
 
 # %% # look at the average Ca Flu trace pre and post stim, just calculate the average of the whole frame and plot as continuous timeseries
@@ -64,7 +33,6 @@ aoplot.plotLfpSignal(expobj, x_axis='paq')
 aoplot.plot_1pstim_avg_trace(expobj, x_axis='time', individual_traces=True, stim_span_color=None, y_axis='dff')
 aoplot.plot_lfp_1pstim_avg_trace(expobj, x_axis='time', individual_traces=False, pre_stim=0.25, post_stim=0.75)
 
-# TODO need to classify seizures in paq files for 1p photostim trials
 
 
 # %% make downsampled tiff for viewing raw data

@@ -89,10 +89,13 @@ class TwoPhotonImaging:
         elif os.path.exists(self.analysis_save_path[:-17]):
             print('making analysis save folder at: \n  %s' % self.analysis_save_path)
             os.mkdir(self.analysis_save_path)
-        elif os.path.exists(self.analysis_save_path[:-27]):
-            print('making analysis save folder at: \n  %s \n and %s' % (self.analysis_save_path[:-17], self.analysis_save_path))
-            os.mkdir(self.analysis_save_path[:-17])
-            os.mkdir(self.analysis_save_path)
+        else:
+            raise Exception('cannot find save folder path at: ', self.analysis_save_path[:-17])
+
+        # elif os.path.exists(self.analysis_save_path[:-27]):
+        #     print('making analysis save folder at: \n  %s \n and %s' % (self.analysis_save_path[:-17], self.analysis_save_path))
+        #     os.mkdir(self.analysis_save_path[:-17])
+        #     os.mkdir(self.analysis_save_path)
 
         self._parsePVMetadata()
         stack = self.mean_raw_flu_trace(save_pkl=False)
@@ -791,6 +794,8 @@ class alloptical(TwoPhotonImaging):
         title = root.get('Name')
         n_trials = int(root.get('Iterations'))
 
+        inter_point_delay = 0
+        spiral_duration = 20
         for elem in root:
             if int(elem[0].get('InterPointDelay')) > 0:
                 inter_point_delay = int(elem[0].get('InterPointDelay'))
@@ -2032,7 +2037,7 @@ class OnePhotonStim(TwoPhotonImaging):
     def __init__(self, data_path_base, date, animal_prep, trial, metainfo, analysis_save_path_base: str = None):
         paqs_loc = '%s/%s_%s_%s.paq' % (
             data_path_base, date, animal_prep, trial[2:])  # path to the .paq files for the selected trials
-        tiffs_loc_dir = '%s%s_%s' % (data_path_base, date, trial)
+        tiffs_loc_dir = '%s/%s_%s' % (data_path_base, date, trial)
         tiffs_loc = '%s/%s_%s_Cycle00001_Ch3.tif' % (tiffs_loc_dir, date, trial)
         self.pkl_path = "/home/pshah/mnt/qnap/Analysis/%s/%s_%s/%s_%s.pkl" % (
             date, date, trial, date, trial)  # specify path in Analysis folder to save pkl object
@@ -2223,6 +2228,8 @@ class OnePhotonStim(TwoPhotonImaging):
         # find voltage channel and save as lfp_signal attribute
         voltage_idx = paq['chan_names'].index('voltage')
         self.lfp_signal = paq['data'][voltage_idx]
+
+
 
 
 # main functions used to initiate and run processing of experiments

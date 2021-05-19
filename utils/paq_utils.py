@@ -132,6 +132,7 @@ def paq_read(file_path=None, plot=False):
             ax.set_xlabel('Time (secs)')
             # --
 
+        plt.suptitle(file_path)
         plt.tight_layout()
         plt.show()
 

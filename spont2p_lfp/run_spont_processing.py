@@ -1,5 +1,3 @@
-# turn this all into one .py file that you can run across all photostim. trials
-
 import os
 import sys; sys.path.append('/home/pshah/Documents/code/Vape/utils/')
 import alloptical_utils_pj as aoutils
@@ -49,17 +47,6 @@ def run_spont_processing(trial, paths, analysis_save_path, metainfo, discard_all
 
     expobj.bad_frames = prep4suite2p(expobj, trial, paths, discard_all=discard_all)
 
-    # set analysis save path for expobj
-    # make the necessary Analysis saving subfolder as well
-    expobj.analysis_save_path = analysis_save_path
-    if os.path.exists(expobj.analysis_save_path):
-        pass
-    elif os.path.exists(expobj.analysis_save_path[:-17]):
-        os.mkdir(expobj.analysis_save_path)
-    elif os.path.exists(expobj.analysis_save_path[:-27]):
-        os.mkdir(expobj.analysis_save_path[:-17])
-        os.mkdir(expobj.analysis_save_path)
-
 
     # Pickle the expobject output to save it for analysis
     pkl_path = paths[4]
@@ -70,13 +57,14 @@ def run_spont_processing(trial, paths, analysis_save_path, metainfo, discard_all
 
 #%% make sure to run EphysViewer.m from MATLAB if you need to specify any bad frames!
 # trial = 't-002'
-trials = ['t-003', 't-006']
-data_path_base = '/home/pshah/mnt/qnap/Data/2021-01-24'
-animal_prep = 'PS11'
-date = data_path_base[-10:]
+trials = ['t-004']
+data_path_base = '/home/pshah/mnt/qnap/Data/2021-02-02/PS18'
+animal_prep = 'PS18'
+# date = data_path_base[-10:]
+date = '2021-02-02'
 exp_type = 'spont imaging'
 comments = 'spont imaging period before running alloptical experiment'
-
+analysis_save = '/home/pshah/mnt/qnap/Analysis/2021-02-02/PS18/'
 
 for trial in trials:
     metainfo = {
@@ -96,7 +84,7 @@ for trial in trials:
     matlab_loc = None
     discard_all = False
     # analysis_save_path = tiffs_loc[:21] + 'Analysis/' + tiffs_loc_dir[26:]
-    analysis_save_path='/home/pshah/mnt/qnap/Analysis/2021-01-24/PS11/' + tiffs_loc_dir[-16:]
+    analysis_save_path = analysis_save + tiffs_loc_dir[-16:]
     pkl_path = "%s/%s_%s.pkl" % (analysis_save_path, date, trial)  # specify path in Analysis folder to save pkl object
 
 
