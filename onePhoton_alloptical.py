@@ -6,6 +6,7 @@ import os
 import alloptical_utils_pj as aoutils
 import alloptical_plotting as aoplot
 
+
 ###### IMPORT pkl file containing data in form of expobj
 trial = 't-008'
 date = '2021-02-02'
@@ -32,7 +33,7 @@ aoplot.plotLfpSignal(expobj, x_axis='paq')
 aoplot.plot_1pstim_avg_trace(expobj, x_axis='time', individual_traces=True, stim_span_color=None, y_axis='dff')
 
 aoplot.plot_lfp_1pstim_avg_trace(expobj, x_axis='time', individual_traces=False, pre_stim=0.25, post_stim=0.75,
-                          optoloopback=True)
+                                 optoloopback=True)
 
 
 

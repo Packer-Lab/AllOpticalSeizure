@@ -9,7 +9,8 @@ from matplotlib import pyplot as plt
 import utils.funcs_pj as pj
 import alloptical_utils_pj as aoutils
 import tifffile as tf
-from Vape.utils.paq2py import *
+from utils.paq_utils import paq_read, frames_discard
+
 
 # simple plot of the location of the given cell(s) against a black FOV
 def plot_cell_loc(expobj, cells: list, edgecolor: str = '#EDEDED', title=None, background: np.array = None,
@@ -768,12 +769,13 @@ def plot_lfp_1pstim_avg_trace(expobj, title='Average LFP peri- stims', individua
             # find voltage channel and save as lfp_signal attribute
             voltage_idx = paq['chan_names'].index('opto_loopback')
             expobj.opto_loopback = paq['data'][voltage_idx]
+            expobj.save()
         else:
             pass
         x = [expobj.opto_loopback[stim - int(pre_stim * expobj.paq_rate): stim + int(post_stim * expobj.paq_rate)] for stim
              in expobj.stim_start_times]
         y_avg = np.mean(x, axis=0)
-        ax2.plot(y_avg, color='lightgray', zorder=3, linewidth=1.75)
+        ax2.plot(y_avg, color='royalblue', zorder=3, linewidth=1.75)
         ax2.set_ylim([-3, 30])
 
     if x_axis == 'time':
