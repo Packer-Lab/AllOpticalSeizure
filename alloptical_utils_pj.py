@@ -17,7 +17,7 @@ import alloptical_plotting
 from utils.funcs_pj import SaveDownsampledTiff, subselect_tiff, make_tiff_stack, convert_to_8bit
 
 sys.path.append('/home/pshah/Documents/code/')
-from Vape.utils.paq2py import *
+# from Vape.utils.paq2py import *
 from Vape.utils.utils_funcs import *
 import scipy.stats as stats
 from suite2p.run_s2p import run_s2p
@@ -2035,7 +2035,7 @@ class Post4ap(alloptical):
 
 class OnePhotonStim(TwoPhotonImaging):
     def __init__(self, data_path_base, date, animal_prep, trial, metainfo, analysis_save_path_base: str = None):
-        paqs_loc = '%s/%s_%s_%s.paq' % (
+        paqs_loc = '%s%s_%s_%s.paq' % (
             data_path_base, date, animal_prep, trial[2:])  # path to the .paq files for the selected trials
         tiffs_loc_dir = '%s/%s_%s' % (data_path_base, date, trial)
         tiffs_loc = '%s/%s_%s_Cycle00001_Ch3.tif' % (tiffs_loc_dir, date, trial)

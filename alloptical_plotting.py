@@ -727,7 +727,7 @@ def plot_1pstim_avg_trace(expobj, title='Average trace of stims', individual_tra
 
 
 def plot_lfp_1pstim_avg_trace(expobj, title='Average LFP peri- stims', individual_traces=False, x_axis='time', pre_stim=1.0, post_stim=5.0,
-                              optoloopback: str = False):
+                              optoloopback: bool = False):
     stim_duration = int(np.mean([expobj.stim_end_times[idx] - expobj.stim_start_times[idx] for idx in range(len(expobj.stim_start_times))]) + 0.01*expobj.paq_rate)
     pre_stim = pre_stim  # seconds
     post_stim = post_stim  # seconds
@@ -771,7 +771,7 @@ def plot_lfp_1pstim_avg_trace(expobj, title='Average LFP peri- stims', individua
         x = [expobj.opto_loopback[stim - int(pre_stim * expobj.paq_rate): stim + int(post_stim * expobj.paq_rate)] for stim
              in expobj.stim_start_times]
         y_avg = np.mean(x, axis=0)
-        ax2.plot(y_avg, color='black', zorder=3, linewidth=1.75)
+        ax2.plot(y_avg, color='lightgray', zorder=3, linewidth=1.75)
 
     if x_axis == 'time':
         # change x axis ticks to seconds
