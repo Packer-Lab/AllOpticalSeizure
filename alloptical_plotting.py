@@ -386,7 +386,11 @@ def plot_flu_trace(expobj, cell, x_lims=None, slm_group=None, to_plot='raw', fig
 # make a plot with the paq file LFP signal to visualize these classifications
 def plot_lfp_stims(expobj, title='LFP signal with photostim. shown (in different colors relative to seizure timing',
                    x_axis: str = 'paq', sz_markings: bool = True):
-    fig, ax = plt.subplots(figsize=[20, 3])
+    if 'figsize' in kwargs.keys():
+        fig, ax = plt.subplots(figsize=kwargs['figsize'])
+        fig.tight_layout(pad=0)
+    else:
+        fig, ax = plt.subplots(figsize=[20, 3])
 
     # plot LFP signal
     # ax.plot(expobj.lfp_signal, zorder=0, linewidth=0.5)
