@@ -535,7 +535,7 @@ def xyloc_responses(expobj, to_plot='dfstdf', clim=[-10, +10], plot_target_coord
 
 
 # plots the raw trace for the Flu mean of the FOV (similar to the ZProject in Fiji)
-def plotMeanRawFluTrace(expobj, stim_span_color='white', stim_lines: bool = True, title='raw Flu trace', x_axis='time', figsize=None, xlims=None,
+def plotMeanRawFluTrace(expobj, stim_span_color='white', stim_lines: bool = True, title='raw Flu trace', x_axis='time',
                         **kwargs):
     """make plot of mean Ca trace averaged over the whole FOV"""
 
@@ -544,12 +544,12 @@ def plotMeanRawFluTrace(expobj, stim_span_color='white', stim_lines: bool = True
         fig = kwargs['fig']
         ax = kwargs['ax']
     else:
-        if figsize:
-            fig, ax = plt.subplots(figsize=figsize)
+        if 'figsize' in kwargs.keys():
+            fig, ax = plt.subplots(figsize=kwargs['figsize'])
             fig.tight_layout(pad=0)
         else:
-            if xlims:
-                fig, ax = plt.subplots(figsize=[10 * (xlims[1] - xlims[0]) / 2000, 3])
+            if 'xlims' in kwargs.keys():
+                fig, ax = plt.subplots(figsize=[10 * (kwargs['xlims'][1] - kwargs['xlims'][0]) / 2000, 3])
                 fig.tight_layout(pad=0)
             else:
                 fig, ax = plt.subplots(figsize=[10 * len(expobj.meanRawFluTrace) / 2000, 3])
@@ -584,8 +584,8 @@ def plotMeanRawFluTrace(expobj, stim_span_color='white', stim_lines: bool = True
     else:
         ax.set_xlabel('frame clock')
     ax.set_ylabel('Flu (a.u.)')
-    if xlims:
-        ax.set_xlim(xlims)
+    if 'xlims' in kwargs.keys():
+        ax.set_xlim(kwargs['xlims'])
 
     # add title
     fig.suptitle(
@@ -604,7 +604,7 @@ def plotMeanRawFluTrace(expobj, stim_span_color='white', stim_lines: bool = True
 
 
 # plots the raw trace for the Flu mean of the FOV
-def plotLfpSignal(expobj, stim_span_color='powderblue', stim_lines: bool = True, sz_markings: bool = False, title='LFP trace', x_axis='time', figsize=None, **kwargs):
+def plotLfpSignal(expobj, stim_span_color='powderblue', stim_lines: bool = True, sz_markings: bool = False, title='LFP trace', x_axis='time', **kwargs):
     """make plot of LFP with also showing stim locations"""
 
     # if there is a fig and ax provided in the function call then use those, otherwise start anew
@@ -612,8 +612,8 @@ def plotLfpSignal(expobj, stim_span_color='powderblue', stim_lines: bool = True,
         fig = kwargs['fig']
         ax = kwargs['ax']
     else:
-        if figsize:
-            fig, ax = plt.subplots(figsize=figsize)
+        if 'figsize' in kwargs.keys():
+            fig, ax = plt.subplots(figsize=kwargs['figsize'])
         else:
             fig, ax = plt.subplots(figsize=[60 * (expobj.stim_start_times[-1] + 1e5 - (expobj.stim_start_times[0] - 1e5)) / 1e7, 3])
 
