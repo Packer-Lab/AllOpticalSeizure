@@ -694,11 +694,14 @@ def plotLfpSignal(expobj, stim_span_color='powderblue', stim_lines: bool = True,
 
 
 def plot_flu_1pstim_avg_trace(expobj, title='Average trace of stims', individual_traces=False, x_axis='time', stim_span_color='white',
-                              y_axis: str = 'raw', quantify: bool = False):
+                              y_axis: str = 'raw', quantify: bool = False, stims_to_analyze: list = None):
     pre_stim = 1  # seconds
     post_stim = 4  # seconds
     fig, ax = plt.subplots()
-    flu_list = [expobj.meanRawFluTrace[stim - int(pre_stim * expobj.fps): stim + int(post_stim * expobj.fps)] for stim in expobj.stim_start_frames]
+
+    if stims_to_analyze is None:
+        stims_to_analyze = expobj.stim_start_frames
+    flu_list = [expobj.meanRawFluTrace[stim - int(pre_stim * expobj.fps): stim + int(post_stim * expobj.fps)] for stim in stims_to_analyze]
     # convert to dFF normalized to pre-stim F
     if y_axis == 'dff':  # otherwise default param is raw Flu
         flu_list = [pj.dff(trace, baseline=np.mean(trace[:int(pre_stim * expobj.fps) - 2])) for trace in flu_list]
@@ -769,14 +772,16 @@ def plot_flu_1pstim_avg_trace(expobj, title='Average trace of stims', individual
 
 
 def plot_lfp_1pstim_avg_trace(expobj, title='Average LFP peri- stims', individual_traces=False, x_axis='time', pre_stim=1.0, post_stim=5.0,
-                              optoloopback: bool = False):
+                              optoloopback: bool = False, stims_to_analyze: list = None):
     stim_duration = int(np.mean([expobj.stim_end_times[idx] - expobj.stim_start_times[idx] for idx in range(len(expobj.stim_start_times))]) + 0.01*expobj.paq_rate)
     pre_stim = pre_stim  # seconds
     post_stim = post_stim  # seconds
 
     fig, ax = plt.subplots()
 
-    x = [expobj.lfp_signal[stim - int(pre_stim * expobj.paq_rate): stim + int(post_stim * expobj.paq_rate)] for stim in expobj.stim_start_times]
+    if stims_to_analyze is None:
+        stims_to_analyze = expobj.stim_start_times
+    x = [expobj.lfp_signal[stim - int(pre_stim * expobj.paq_rate): stim + int(post_stim * expobj.paq_rate)] for stim in stims_to_analyze]
     x_ = np.mean(x, axis=0)
     ax.plot(x_, color='black', zorder=3, linewidth=1.75)
 
