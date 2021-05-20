@@ -38,7 +38,8 @@ aoplot.plot_lfp_1pstim_avg_trace(expobj, x_axis='time', individual_traces=False,
 
 
 # %% classifying stims as in or out of seizures
-from utils.paq_utils import paq_read, frames_discard
 
-expobj.collect_seizures_info(expobj, seizures_lfp_timing_matarray='/home/pshah/mnt/qnap/Analysis/%s/paired_measurements/%s_%s_%s.mat' % (date, date, expobj.metainfo['animal prep'], trial[-3:]),
+seizures_lfp_timing_matarray = '/home/pshah/mnt/qnap/Analysis/%s/paired_measurements/%s_%s_%s.mat' % (date, date, expobj.metainfo['animal prep.'], trial[-3:])
+
+expobj.collect_seizures_info(seizures_lfp_timing_matarray=seizures_lfp_timing_matarray,
                              discard_all=False)

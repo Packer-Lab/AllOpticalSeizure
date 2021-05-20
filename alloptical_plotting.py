@@ -556,6 +556,7 @@ def plotMeanRawFluTrace(expobj, stim_span_color='white', stim_lines: bool = True
                 fig.tight_layout(pad=0)
 
     ax.plot(expobj.meanRawFluTrace, c='forestgreen', zorder=1, linewidth=2)
+    ax.margins(0)
     if stim_span_color is not None:
         if hasattr(expobj, 'shutter_frames'):
             for start, end in zip(expobj.shutter_start_frames[0], expobj.shutter_end_frames[0]):
@@ -849,8 +850,11 @@ def plot_lfp_1pstim_avg_trace(expobj, title='Average LFP peri- stims', individua
     else:
         ax.set_xlabel('paq clock')
     ax.set_ylabel('Voltage')
-    plt.suptitle(
-        '%s %s %s %s' % (title, expobj.metainfo['exptype'], expobj.metainfo['animal prep.'], expobj.metainfo['trial']))
+    if title is None:
+        plt.suptitle(
+            '%s %s %s %s' % (title, expobj.metainfo['exptype'], expobj.metainfo['animal prep.'], expobj.metainfo['trial']))
+    else:
+        plt.suptitle(title)
     plt.show()
 
 ### below are plotting functions that I am still working on coding:
