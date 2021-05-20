@@ -697,7 +697,7 @@ def plotLfpSignal(expobj, stim_span_color='powderblue', stim_lines: bool = True,
 
 
 def plot_flu_1pstim_avg_trace(expobj, title='Average trace of stims', individual_traces=False, x_axis='time', stim_span_color='white',
-                              y_axis: str = 'raw', quantify: bool = False, stims_to_analyze: list = None):
+                              y_axis: str = 'raw', quantify: bool = False, stims_to_analyze: list = None, **kwargs):
     pre_stim = 1  # seconds
     post_stim = 4  # seconds
     fig, ax = plt.subplots()
@@ -776,7 +776,11 @@ def plot_flu_1pstim_avg_trace(expobj, title='Average trace of stims', individual
                 transform=ax.transAxes, fontweight='bold',
                 color='#d1ae00', fontsize=10)
 
-    ax.set_ylim([-0.5, 1.0])
+    if 'ylims' in kwargs:
+        ax.set_ylim([kwargs['ylims'][0], kwargs['ylims'][1]])
+    else:
+        ax.set_ylim([-0.5, 1.0])
+
     plt.show()
     return flu_list, round(response, 4)
 

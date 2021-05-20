@@ -41,6 +41,9 @@ def import_expobj(trial: str = None, date: str = None, pkl_path: str = None):
     if pkl_path is None:
         pkl_path = "/home/pshah/mnt/qnap/Analysis/%s/%s_%s/%s_%s.pkl" % (date, date, trial, date, trial)
 
+    if not os.path.exists(pkl_path):
+        raise Exception('pkl path NOT found: ', pkl_path)
+
     if trial is not None and date is not None:
         print('\nimporting expobj for "%s, %s" from: %s' % (date, trial, pkl_path))
     with open(pkl_path, 'rb') as f:
