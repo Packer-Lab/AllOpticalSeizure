@@ -385,10 +385,9 @@ def plot_flu_trace(expobj, cell, x_lims=None, slm_group=None, to_plot='raw', fig
 
 # make a plot with the paq file LFP signal to visualize these classifications
 def plot_lfp_stims(expobj, title='LFP signal with photostim. shown (in different colors relative to seizure timing',
-                   x_axis: str = 'paq', sz_markings: bool = True):
+                   x_axis: str = 'paq', sz_markings: bool = True, **kwargs):
     if 'figsize' in kwargs.keys():
         fig, ax = plt.subplots(figsize=kwargs['figsize'])
-        fig.tight_layout(pad=0)
     else:
         fig, ax = plt.subplots(figsize=[20, 3])
 
@@ -550,7 +549,6 @@ def plotMeanRawFluTrace(expobj, stim_span_color='white', stim_lines: bool = True
     else:
         if 'figsize' in kwargs.keys():
             fig, ax = plt.subplots(figsize=kwargs['figsize'])
-            fig.tight_layout(pad=0)
         else:
             if 'xlims' in kwargs.keys():
                 fig, ax = plt.subplots(figsize=[10 * (kwargs['xlims'][1] - kwargs['xlims'][0]) / 2000, 3])
