@@ -43,9 +43,9 @@ def import_expobj(trial: str = None, date: str = None, pkl_path: str = None):
 
     if not os.path.exists(pkl_path):
         raise Exception('pkl path NOT found: ', pkl_path)
-
-    if trial is not None and date is not None:
-        print('\nimporting expobj for "%s, %s" from: %s' % (date, trial, pkl_path))
+    else:
+        if trial is not None and date is not None:
+            print('\nimporting expobj for "%s, %s" from: %s' % (date, trial, pkl_path))
     with open(pkl_path, 'rb') as f:
         expobj = pickle.load(f)
         experiment = '%s: %s, %s, %s' % (
@@ -2249,6 +2249,7 @@ class OnePhotonStim(TwoPhotonImaging):
                 discard_all=discard_all)
         else:
             print('-- no matlab array given to use for finding seizures.')
+            self.seizure_frames = []
             bad_frames = frames_discard(paq=paq[0], input_array=seizures_lfp_timing_matarray,
                                         total_frames=self.n_frames,
                                         discard_all=discard_all)
@@ -2274,7 +2275,15 @@ class OnePhotonStim(TwoPhotonImaging):
                                               sz_start - stim) < 2 * self.fps]  # select stims that occur within 2 seconds afterof the sz offset
             print(' \n|- stims_in_sz:', self.stims_in_sz, ' \n|- stims_out_sz:', self.stims_out_sz,
                   ' \n|- stims_bf_sz:', self.stims_bf_sz, ' \n|- stims_af_sz:', self.stims_af_sz)
-            aoplot.plot_lfp_stims(self, x_axis='time')
+
+        else:
+            print('|- No matlab measurement array given so setting all stims as outside of sz ... ')
+            self.stims_in_sz = []
+            self.stims_out_sz = [stim for stim in self.stim_start_frames if stim not in self.seizure_frames]
+            self.stims_bf_sz = []
+            self.stims_af_sz = []
+
+        aoplot.plot_lfp_stims(self, x_axis='time')
         self.save_pkl()
 
 

@@ -5,11 +5,11 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.ticker as mticker
-from matplotlib import pyplot as plt
+from utils.paq_utils import paq_read, frames_discard
 import utils.funcs_pj as pj
+from matplotlib import pyplot as plt
 import alloptical_utils_pj as aoutils
 import tifffile as tf
-from utils.paq_utils import paq_read, frames_discard
 
 
 # simple plot of the location of the given cell(s) against a black FOV
@@ -414,7 +414,7 @@ def plot_lfp_stims(expobj, title='LFP signal with photostim. shown (in different
         ax2.scatter(x=x_af, y=[y_loc] * len(expobj.stims_af_sz), edgecolors='grey', facecolors='hotpink', marker="|", zorder=3, s=60, linewidths=2.0)
     else:
         ax2 = ax.twinx()
-        x = [(expobj.stim_start_times[np.where(expobj.stim_start_frames == stim)[0][0]] - expobj.frame_start_time_actual) for stim in expobj.stim_start_frames]
+        x = [(expobj.stim_start_times[expobj.stim_start_frames.index(stim)] - expobj.frame_start_time_actual) for stim in expobj.stim_start_frames]
         ax2.scatter(x=x, y=[y_loc] * len(x), edgecolors='red', facecolors='black', marker="|", zorder=3, s=60, linewidths=2.0)
 
     ax2.set_ylim([-0.0005, 0.1])
@@ -677,7 +677,7 @@ def plotLfpSignal(expobj, stim_span_color='powderblue', stim_lines: bool = True,
     if 'ylims' in kwargs:
         ax.set_ylim(kwargs['ylims'])
     else:
-        ax.set_ylim([np.mean(expobj.lfp_signal) - 5, np.mean(expobj.lfp_signal) + 5])
+        ax.set_ylim([np.mean(expobj.lfp_signal) - 10, np.mean(expobj.lfp_signal) + 10])
 
     # add title
     plt.suptitle(
@@ -751,8 +751,9 @@ def plot_flu_1pstim_avg_trace(expobj, title='Average trace of stims', individual
 
     # quantification of the stim response (compared to prestim baseline)
     if quantify:
+        # measure magnitude of response
         response_len = 0.5  # post-stim response period in sec
-        poststim_1 = int(pre_stim * expobj.fps) + expobj.stim_duration_frames + 2
+        poststim_1 = int(pre_stim * expobj.fps) + expobj.stim_duration_frames + 2  # starting just after the end of the shutter opening
         poststim_2 = poststim_1 + int(response_len * expobj.fps)
         baseline = int(pre_stim * expobj.fps) - 2
         ax.axvspan(poststim_1, poststim_2,
@@ -776,13 +777,25 @@ def plot_flu_1pstim_avg_trace(expobj, title='Average trace of stims', individual
                 transform=ax.transAxes, fontweight='bold',
                 color='#d1ae00', fontsize=10)
 
+        # measure the timescale of the decay
+        max_value = max(avg_flu_trace[poststim_1:])  # peak Flu value after stim
+        threshold = np.exp(-1) * max_value  # set threshod to be at 1/e x peak
+        x_ = np.where(avg_flu_trace[poststim_1:] < threshold)[0][0]  # find frame # where, after the stim period, avg_flu_trace reaches the threshold
+#         print(x_)
+        decay_constant = x_ / expobj.fps  # convert frame # to time
+        ax.plot(range(0, int(poststim_1 + x_) + 1), [avg_flu_trace[poststim_1 + x_]] * int(poststim_1 + x_ + 1), color='#ae00ff', linewidth = 3.2, zorder=1)
+        ax.text(0.98, 0.90, 'Decay constant (sec): %s' % ('{:,.4f}'.format(decay_constant)),
+                verticalalignment='top', horizontalalignment='right',
+                transform=ax.transAxes, fontweight='bold',
+                color='#ae00ff', fontsize=10)
+
     if 'ylims' in kwargs:
         ax.set_ylim([kwargs['ylims'][0], kwargs['ylims'][1]])
     else:
         ax.set_ylim([-0.5, 1.0])
 
     plt.show()
-    return flu_list, round(response, 4)
+    return flu_list, round(response, 4), decay_constant
 
 def plot_lfp_1pstim_avg_trace(expobj, title='Average LFP peri- stims', individual_traces=False, x_axis='time', pre_stim=1.0, post_stim=5.0,
                               optoloopback: bool = False, stims_to_analyze: list = None):

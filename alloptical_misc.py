@@ -1,4 +1,12 @@
 import utils.funcs_pj as pj
+from utils.paq_utils import paq_read, frames_discard
+
+
+#%%
+paq_path = '/home/pshah/mnt/qnap/Data/2021-01-19/2021-01-19_PS07_015.paq'
+paq, _ = paq_read(paq_path, plot=True)
+
+#%%
 
 # CREATE AND SAVE DOWNSAMPLED TIFF
 trial = 't-006'
