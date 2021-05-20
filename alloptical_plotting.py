@@ -384,7 +384,7 @@ def plot_flu_trace(expobj, cell, x_lims=None, slm_group=None, to_plot='raw', fig
 
 
 # make a plot with the paq file LFP signal to visualize these classifications
-def plot_lfp_stims(expobj, title='LFP signal with photostim. shown (in different colors relative to seizure timing',
+def plot_lfp_stims(expobj, title='LFP signal with photostim. shown (in different colors relative to seizure timing)',
                    x_axis: str = 'paq', sz_markings: bool = True, **kwargs):
     if 'figsize' in kwargs.keys():
         fig, ax = plt.subplots(figsize=kwargs['figsize'])
@@ -393,7 +393,7 @@ def plot_lfp_stims(expobj, title='LFP signal with photostim. shown (in different
 
     # plot LFP signal
     # ax.plot(expobj.lfp_signal, zorder=0, linewidth=0.5)
-    fig, ax = plotLfpSignal(expobj, fig=fig, ax=ax, stim_lines=False, show=False, stim_span_color='', x_axis=x_axis, sz_markings=sz_markings)
+    fig, ax = plotLfpSignal(expobj, fig=fig, ax=ax, stim_lines=False, show=False, stim_span_color='', x_axis=x_axis, sz_markings=sz_markings, color='slategray')
     # y_loc = np.percentile(expobj.lfp_signal, 75)
     y_loc = 0
 
@@ -408,18 +408,19 @@ def plot_lfp_stims(expobj, title='LFP signal with photostim. shown (in different
         x_bf = [(expobj.stim_start_times[expobj.stim_start_frames.index(stim)] - expobj.frame_start_time_actual) for stim in expobj.stims_bf_sz]
         x_af = [(expobj.stim_start_times[expobj.stim_start_frames.index(stim)] - expobj.frame_start_time_actual) for stim in expobj.stims_af_sz]
 
-        ax2.scatter(x=x, y=[y_loc] * len(expobj.stims_in_sz), edgecolors='red', facecolors='green', marker="|", zorder=3, s=60, linewidths=2.0)
-        ax2.scatter(x=x_out, y=[y_loc] * len(x_out), edgecolors='grey', facecolors='black', marker="|", zorder=3, s=60, linewidths=2.0)
-        ax2.scatter(x=x_bf, y=[y_loc] * len(expobj.stims_bf_sz), edgecolors='grey', facecolors='deeppink', marker="|", zorder=3, s=60, linewidths=2.0)
-        ax2.scatter(x=x_af, y=[y_loc] * len(expobj.stims_af_sz), edgecolors='grey', facecolors='hotpink', marker="|", zorder=3, s=60, linewidths=2.0)
+        ax2.scatter(x=x, y=[y_loc] * len(expobj.stims_in_sz), edgecolors='white', facecolors='purple', marker="^", zorder=3, s=100, linewidths=1.0, label='stims in sz')
+        ax2.scatter(x=x_out, y=[y_loc] * len(x_out), edgecolors='white', facecolors='green', marker="^", zorder=3, s=100, linewidths=1.0, label='stims out of sz')
+        # ax2.scatter(x=x_bf, y=[y_loc] * len(expobj.stims_bf_sz), edgecolors='grey', facecolors='deeppink', marker="|", zorder=3, s=60, linewidths=2.0)
+        # ax2.scatter(x=x_af, y=[y_loc] * len(expobj.stims_af_sz), edgecolors='grey', facecolors='hotpink', marker="|", zorder=3, s=60, linewidths=2.0)
     else:
         ax2 = ax.twinx()
         x = [(expobj.stim_start_times[expobj.stim_start_frames.index(stim)] - expobj.frame_start_time_actual) for stim in expobj.stim_start_frames]
         ax2.scatter(x=x, y=[y_loc] * len(x), edgecolors='red', facecolors='black', marker="|", zorder=3, s=60, linewidths=2.0)
 
-    ax2.set_ylim([-0.0005, 0.1])
+    ax2.set_ylim([-0.004, 0.1])
     ax2.yaxis.set_tick_params(right=False,
                               labelright=False)
+    ax2.legend()
 
     # # set x ticks at every 30 seconds
     # labels = list(range(0, len(expobj.lfp_signal)//expobj.paq_rate, 30))
@@ -434,6 +435,7 @@ def plot_lfp_stims(expobj, title='LFP signal with photostim. shown (in different
 
     plt.suptitle(title, wrap=True)
     plt.show()
+
 
 # plot the whole pre stim to post stim period as a cool heatmap
 def plot_traces_heatmap(data, vmin=None, vmax=None, stim_on=None, stim_off=None, figsize=None, title=None, xlims=(0,100),
@@ -583,8 +585,8 @@ def plotMeanRawFluTrace(expobj, stim_span_color='white', stim_lines: bool = True
         # ax.xaxis.set_major_locator(mticker.FixedLocator(ticks_loc))
         ax.set_xticklabels(labels)
         ax.set_xlabel('Time (secs)')
-    else:
-        ax.set_xlabel('frame clock')
+    elif x_axis == 'frames':
+        ax.set_xlabel('frame #s')
     ax.set_ylabel('Flu (a.u.)')
     if 'xlims' in kwargs.keys():
         ax.set_xlim(kwargs['xlims'])
