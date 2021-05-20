@@ -763,16 +763,22 @@ def plot_flu_1pstim_avg_trace(expobj, title='Average trace of stims', individual
         print('Average response %s: %s' % (y_axis, '{:,.4f}'.format(response)))
 
         # add the response value to the top right of the plot
-        ax.text(0.95, 0.95, 'Average response %s: %s' % (y_axis, '{:,.4f}'.format(response)),
+        ax.text(0.98, 0.97, 'Average response %s: %s' % (y_axis, '{:,.4f}'.format(response)),
                 verticalalignment='top', horizontalalignment='right',
                 transform=ax.transAxes, fontweight='bold',
                 color='green', fontsize=10)
+        ax.text(0.015, 0.97, 'pre-stim',
+                verticalalignment='top', horizontalalignment='left',
+                transform=ax.transAxes, fontweight='bold',
+                color='#5e5d5d', fontsize=10)
+        ax.text(0.265, 0.97, 'post.',
+                verticalalignment='top', horizontalalignment='left',
+                transform=ax.transAxes, fontweight='bold',
+                color='#d1ae00', fontsize=10)
 
     ax.set_ylim([-0.5, 1.0])
     plt.show()
-
     return flu_list, round(response, 4)
-
 
 def plot_lfp_1pstim_avg_trace(expobj, title='Average LFP peri- stims', individual_traces=False, x_axis='time', pre_stim=1.0, post_stim=5.0,
                               optoloopback: bool = False, stims_to_analyze: list = None):
