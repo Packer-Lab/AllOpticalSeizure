@@ -385,12 +385,12 @@ def plot_flu_trace(expobj, cell, x_lims=None, slm_group=None, to_plot='raw', fig
 
 # make a plot with the paq file LFP signal to visualize these classifications
 def plot_lfp_stims(expobj, title='LFP signal with photostim. shown (in different colors relative to seizure timing',
-                   x_axis: str = 'paq'):
+                   x_axis: str = 'paq', sz_markings: bool = True):
     fig, ax = plt.subplots(figsize=[20, 3])
 
     # plot LFP signal
     # ax.plot(expobj.lfp_signal, zorder=0, linewidth=0.5)
-    fig, ax = plotLfpSignal(expobj, fig=fig, ax=ax, stim_lines=False, show=False, stim_span_color='', x_axis=x_axis, sz_markings=True)
+    fig, ax = plotLfpSignal(expobj, fig=fig, ax=ax, stim_lines=False, show=False, stim_span_color='', x_axis=x_axis, sz_markings=sz_markings)
     # y_loc = np.percentile(expobj.lfp_signal, 75)
     y_loc = 0
 
@@ -572,14 +572,14 @@ def plotMeanRawFluTrace(expobj, stim_span_color='white', stim_lines: bool = True
             for line in expobj.stim_start_frames:
                 plt.axvline(x=line, color='black', linestyle='--', linewidth=0.6, zorder=0)
     if x_axis == 'time':
-        # change x axis ticks to seconds
-        label_format = '{:,.0f}'
-        labels = [item for item in ax.get_xticks()]
-        for item in labels:
-            labels[labels.index(item)] = int(round(item / expobj.fps))
-        ticks_loc = ax.get_xticks().tolist()
-        ax.xaxis.set_major_locator(mticker.FixedLocator(ticks_loc))
-        ax.set_xticklabels([label_format.format(x) for x in labels])
+        # change x axis ticks to every 30 seconds
+        labels = list(range(0, int(len(expobj.meanRawFluTrace) // expobj.fps), 30))
+        ax.set_xticks(ticks=[(label * expobj.fps) for label in labels])
+        # for item in labels:
+        #     labels[labels.index(item)] = int(round(item / expobj.fps))
+        # ticks_loc = ax.get_xticks().tolist()
+        # ax.xaxis.set_major_locator(mticker.FixedLocator(ticks_loc))
+        ax.set_xticklabels(labels)
         ax.set_xlabel('Time (secs)')
     else:
         ax.set_xlabel('frame clock')
@@ -588,7 +588,7 @@ def plotMeanRawFluTrace(expobj, stim_span_color='white', stim_lines: bool = True
         ax.set_xlim(kwargs['xlims'])
 
     # add title
-    fig.suptitle(
+    plt.suptitle(
         '%s %s %s %s' % (title, expobj.metainfo['exptype'], expobj.metainfo['animal prep.'], expobj.metainfo['trial']))
 
     if 'show' in kwargs.keys():
@@ -645,9 +645,9 @@ def plotLfpSignal(expobj, stim_span_color='powderblue', stim_lines: bool = True,
     if sz_markings:
         if hasattr(expobj, 'seizure_lfp_onsets'):
             for sz_onset in expobj.seizure_lfp_onsets:
-                plt.axvline(x=expobj.frame_clock_actual[sz_onset] - expobj.frame_start_time_actual, color='black', linestyle='--', linewidth=0.6, zorder=0)
+                plt.axvline(x=expobj.frame_clock_actual[sz_onset] - expobj.frame_start_time_actual, color='black', linestyle='--', linewidth=1.0, zorder=0)
             for sz_offset in expobj.seizure_lfp_offsets:
-                plt.axvline(x=expobj.frame_clock_actual[sz_offset] - expobj.frame_start_time_actual, color='black', linestyle='--', linewidth=0.6, zorder=0)
+                plt.axvline(x=expobj.frame_clock_actual[sz_offset] - expobj.frame_start_time_actual, color='black', linestyle='--', linewidth=1.0, zorder=0)
 
     # change x axis ticks to seconds
     if x_axis == 'time':
@@ -850,11 +850,10 @@ def plot_lfp_1pstim_avg_trace(expobj, title='Average LFP peri- stims', individua
     else:
         ax.set_xlabel('paq clock')
     ax.set_ylabel('Voltage')
-    if title is None:
-        plt.suptitle(
-            '%s %s %s %s' % (title, expobj.metainfo['exptype'], expobj.metainfo['animal prep.'], expobj.metainfo['trial']))
-    else:
-        plt.suptitle(title)
+
+    # add title
+    plt.suptitle(
+        '%s %s %s %s' % (title, expobj.metainfo['exptype'], expobj.metainfo['animal prep.'], expobj.metainfo['trial']))
     plt.show()
 
 ### below are plotting functions that I am still working on coding:
