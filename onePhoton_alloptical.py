@@ -9,9 +9,9 @@ import alloptical_plotting as aoplot
 
 
 ###### IMPORT pkl file containing data in form of expobj
-trial = 't-010'
+trial = 't-012'
 date = '2021-01-19'
-# pkl_path = "/home/pshah/mnt/qnap/Data/%s/%s_%s/%s_%s.pkl" % (date, date, trial, date, trial)
+pkl_path = "/home/pshah/mnt/qnap/Analysis/%s/%s_%s/%s_%s.pkl" % (date, date, trial, date, trial)
 
 expobj, experiment = aoutils.import_expobj(trial=trial, date=date,
                                            pkl_path='/home/pshah/mnt/qnap/Analysis/%s/%s_%s/%s_%s.pkl' % (date, date, trial, date, trial))
@@ -29,19 +29,16 @@ expobj, experiment = aoutils.import_expobj(trial=trial, date=date,
 #     [expobj.stim_end_frames[idx] - expobj.stim_start_frames[idx] for idx in range(len(expobj.stim_start_frames))]))
 
 aoplot.plotMeanRawFluTrace(expobj, stim_span_color='white', x_axis='frames', xlims=[0, 3000])
-aoplot.plotLfpSignal(expobj, x_axis='paq')
+aoplot.plotLfpSignal(expobj, x_axis='time')
 
-aoplot.plot_flu_1pstim_avg_trace(expobj, x_axis='time', individual_traces=True, stim_span_color=None, y_axis='dff')
+aoplot.plot_flu_1pstim_avg_trace(expobj, x_axis='time', individual_traces=True, stim_span_color=None, y_axis='dff', quantify=True)
 
 aoplot.plot_lfp_1pstim_avg_trace(expobj, x_axis='time', individual_traces=False, pre_stim=0.25, post_stim=0.75,
                                  optoloopback=True)
 
 
+# %% classifying stims as in or out of seizures
+from utils.paq_utils import paq_read, frames_discard
 
-# %% make downsampled tiff for viewing raw data
-
-trial = 't-012'
-date = '2021-01-19'
-
-expobj, experiment = aoutils.import_expobj(trial=trial, date=date, pkl_path=pkl_path)
-
+expobj.collect_seizures_info(expobj, seizures_lfp_timing_matarray='/home/pshah/mnt/qnap/Analysis/%s/paired_measurements/%s_%s_%s.mat' % (date, date, expobj.metainfo['animal prep'], trial[-3:]),
+                             discard_all=False)

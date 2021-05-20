@@ -70,7 +70,7 @@ def import_resultsobj(pkl_path: str):
 class TwoPhotonImaging:
 
     def __init__(self, tiff_path_dir, tiff_path, paq_path, metainfo, analysis_save_path, suite2p_path=None, suite2p_run=False,
-                 save_downsampled_tiff: bool = False):
+                 save_downsampled_tiff: bool = False, quick=False):
         """
         :param suite2p_path: path to the suite2p outputs (plane0 file? or ops file? not sure yet)
         :param suite2p_run: set to true if suite2p is already run for this trial
@@ -98,7 +98,8 @@ class TwoPhotonImaging:
         #     os.mkdir(self.analysis_save_path)
 
         self._parsePVMetadata()
-        stack = self.mean_raw_flu_trace(save_pkl=False)
+        if not quick:
+            stack = self.mean_raw_flu_trace(save_pkl=False)
         if save_downsampled_tiff:
             SaveDownsampledTiff(stack=stack, save_as=analysis_save_path + '/%s_%s_downsampled.tif' % (
             metainfo['date'], metainfo['trial']))  # specify path in Analysis folder to save pkl object')
@@ -2067,7 +2068,7 @@ class OnePhotonStim(TwoPhotonImaging):
         self.tiff_path = paths[1]
         self.paq_path = paths[2]
         TwoPhotonImaging.__init__(self, self.tiff_path_dir, self.tiff_path, self.paq_path, metainfo=metainfo,
-                                  save_downsampled_tiff=True, analysis_save_path=analysis_save_path)
+                                  save_downsampled_tiff=True, analysis_save_path=analysis_save_path, quick=False)
         self.paqProcessing()
 
         # add all frames as bad frames incase want to include this trial in suite2p run
@@ -2181,8 +2182,8 @@ class OnePhotonStim(TwoPhotonImaging):
                 self.stim_frames.append(stim_frames_)
 
         # if >1 1p stims per trial, find the start of all 1p trials
-        self.stim_start_frames = [stim_frames[0] for stim_frames in self.stim_frames]
-        self.stim_end_frames = [stim_frames[-1] for stim_frames in self.stim_frames]
+        self.stim_start_frames = [stim_frames[0] for stim_frames in self.stim_frames if len(stim_frames) > 0]
+        self.stim_end_frames = [stim_frames[-1] for stim_frames in self.stim_frames if len(stim_frames) > 0]
         self.stim_duration_frames = int(np.mean(
             [self.stim_end_frames[idx] - self.stim_start_frames[idx] for idx in range(len(self.stim_start_frames))]))
 
@@ -2228,6 +2229,52 @@ class OnePhotonStim(TwoPhotonImaging):
         # find voltage channel and save as lfp_signal attribute
         voltage_idx = paq['chan_names'].index('voltage')
         self.lfp_signal = paq['data'][voltage_idx]
+
+    def collect_seizures_info(self, seizures_lfp_timing_matarray=None, discard_all=True):
+        print('\ncollecting information about seizures...')
+        self.seizures_lfp_timing_matarray = seizures_lfp_timing_matarray  # path to the matlab array containing paired measurements of seizures onset and offsets
+
+        # retrieve seizure onset and offset times from the seizures info array input
+        paq = paq_read(file_path=self.paq_path, plot=False)
+
+        # print(paq[0]['data'][0])  # print the frame clock signal from the .paq file to make sure its being read properly
+        # NOTE: the output of all of the following function is in dimensions of the FRAME CLOCK (not official paq clock time)
+        if seizures_lfp_timing_matarray is not None:
+            print('-- using matlab array to collect seizures %s: ' % seizures_lfp_timing_matarray)
+            bad_frames, self.seizure_frames, self.seizure_lfp_onsets, self.seizure_lfp_offsets = frames_discard(
+                paq=paq[0], input_array=seizures_lfp_timing_matarray, total_frames=self.n_frames,
+                discard_all=discard_all)
+        else:
+            print('-- no matlab array given to use for finding seizures.')
+            bad_frames = frames_discard(paq=paq[0], input_array=seizures_lfp_timing_matarray,
+                                        total_frames=self.n_frames,
+                                        discard_all=discard_all)
+
+        print('\nTotal extra seizure/CSD or other frames to discard: ', len(bad_frames))
+        print('|- first and last 10 indexes of these frames', bad_frames[:10], bad_frames[-10:])
+
+        if seizures_lfp_timing_matarray is not None:
+            # print('|-now creating raw movies for each sz as well (saved to the /Analysis folder) ... ')
+            # self.subselect_tiffs_sz(onsets=self.seizure_lfp_onsets, offsets=self.seizure_lfp_offsets,
+            #                         on_off_type='lfp_onsets_offsets')
+
+            print('|-now classifying photostims at phases of seizures ... ')
+            self.stims_in_sz = [stim for stim in self.stim_start_frames if stim in self.seizure_frames]
+            self.stims_out_sz = [stim for stim in self.stim_start_frames if stim not in self.seizure_frames]
+            self.stims_bf_sz = [stim for stim in self.stim_start_frames
+                                  for sz_start in self.seizure_lfp_onsets
+                                  if -2 * self.fps < (
+                                              sz_start - stim) < 2 * self.fps]  # select stims that occur within 2 seconds before of the sz onset
+            self.stims_af_sz = [stim for stim in self.stim_start_frames
+                                  for sz_start in self.seizure_lfp_offsets
+                                  if -2 * self.fps < -1 * (
+                                              sz_start - stim) < 2 * self.fps]  # select stims that occur within 2 seconds afterof the sz offset
+            print(' \n|- stims_in_sz:', self.stims_in_sz, ' \n|- stims_out_sz:', self.stims_out_sz,
+                  ' \n|- stims_bf_sz:', self.stims_bf_sz, ' \n|- stims_af_sz:', self.stims_af_sz)
+            aoplot.plot_lfp_stims(self, x_axis='time')
+        self.save_pkl()
+
+
 
 class OnePhotonResults:
     def __init__(self, save_path: str):

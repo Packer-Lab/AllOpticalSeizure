@@ -384,32 +384,39 @@ def plot_flu_trace(expobj, cell, x_lims=None, slm_group=None, to_plot='raw', fig
 
 
 # make a plot with the paq file LFP signal to visualize these classifications
-def plot_lfp_stims(expobj, title='LFP signal with photostim. shown (in different colors relative to seizure timing'):
+def plot_lfp_stims(expobj, title='LFP signal with photostim. shown (in different colors relative to seizure timing',
+                   x_axis: str = 'paq'):
     fig, ax = plt.subplots(figsize=[20, 3])
 
     # plot LFP signal
     # ax.plot(expobj.lfp_signal, zorder=0, linewidth=0.5)
-    fig, ax = plotLfpSignal(expobj, fig=fig, ax=ax, stim_lines=False, show=False, stim_span_color='', x_axis='paq')
-    pct75 = np.percentile(expobj.lfp_signal, 75)
-    pct75 = 0
+    fig, ax = plotLfpSignal(expobj, fig=fig, ax=ax, stim_lines=False, show=False, stim_span_color='', x_axis=x_axis, sz_markings=True)
+    # y_loc = np.percentile(expobj.lfp_signal, 75)
+    y_loc = 0
+
 
     # collect and plot stim times (with coloring according to sz times if available)
     # note that there is a crop adjustment to the paq-times which is needed to sync up the stim times with the plot being returned from plotLfpSignal (which also on its own crops the LFP signal)
     if 'post' in expobj.metainfo['exptype'] and '4ap' in expobj.metainfo['exptype'] and hasattr(expobj, 'stims_in_sz'):
-        x = [(expobj.stim_start_times[np.where(expobj.stim_start_frames == stim)[0][0]] - expobj.frame_start_time_actual) for stim in expobj.stims_in_sz]
-        x_out = [(expobj.stim_start_times[np.where(expobj.stim_start_frames == stim)[0][0]] - expobj.frame_start_time_actual) for stim in expobj.stims_out_sz
+        ax2 = ax.twinx()
+        x = [(expobj.stim_start_times[expobj.stim_start_frames.index(stim)] - expobj.frame_start_time_actual) for stim in expobj.stims_in_sz]
+        x_out = [(expobj.stim_start_times[expobj.stim_start_frames.index(stim)] - expobj.frame_start_time_actual) for stim in expobj.stims_out_sz
                  if stim not in expobj.stims_bf_sz and stim not in expobj.stims_af_sz]
-        x_bf = [(expobj.stim_start_times[np.where(expobj.stim_start_frames == stim)[0][0]] - expobj.frame_start_time_actual) for stim in expobj.stims_bf_sz]
-        x_af = [(expobj.stim_start_times[np.where(expobj.stim_start_frames == stim)[0][0]] - expobj.frame_start_time_actual) for stim in expobj.stims_af_sz]
+        x_bf = [(expobj.stim_start_times[expobj.stim_start_frames.index(stim)] - expobj.frame_start_time_actual) for stim in expobj.stims_bf_sz]
+        x_af = [(expobj.stim_start_times[expobj.stim_start_frames.index(stim)] - expobj.frame_start_time_actual) for stim in expobj.stims_af_sz]
 
-        ax.scatter(x=x, y=[pct75] * len(expobj.stims_in_sz), edgecolors='red', facecolors='green', marker="|", zorder=3, s=60, linewidths=2.0)
-        ax.scatter(x=x_out, y=[pct75] * len(x_out), edgecolors='grey', facecolors='black', marker="|", zorder=3, s=60, linewidths=2.0)
-        ax.scatter(x=x_bf, y=[pct75] * len(expobj.stims_bf_sz), edgecolors='grey', facecolors='deeppink', marker="|", zorder=3, s=60, linewidths=2.0)
-        ax.scatter(x=x_af, y=[pct75] * len(expobj.stims_af_sz), edgecolors='grey', facecolors='hotpink', marker="|", zorder=3, s=60, linewidths=2.0)
+        ax2.scatter(x=x, y=[y_loc] * len(expobj.stims_in_sz), edgecolors='red', facecolors='green', marker="|", zorder=3, s=60, linewidths=2.0)
+        ax2.scatter(x=x_out, y=[y_loc] * len(x_out), edgecolors='grey', facecolors='black', marker="|", zorder=3, s=60, linewidths=2.0)
+        ax2.scatter(x=x_bf, y=[y_loc] * len(expobj.stims_bf_sz), edgecolors='grey', facecolors='deeppink', marker="|", zorder=3, s=60, linewidths=2.0)
+        ax2.scatter(x=x_af, y=[y_loc] * len(expobj.stims_af_sz), edgecolors='grey', facecolors='hotpink', marker="|", zorder=3, s=60, linewidths=2.0)
     else:
+        ax2 = ax.twinx()
         x = [(expobj.stim_start_times[np.where(expobj.stim_start_frames == stim)[0][0]] - expobj.frame_start_time_actual) for stim in expobj.stim_start_frames]
-        ax.scatter(x=x, y=[pct75] * len(x), edgecolors='red', facecolors='black', marker="|", zorder=3, s=60, linewidths=2.0)
+        ax2.scatter(x=x, y=[y_loc] * len(x), edgecolors='red', facecolors='black', marker="|", zorder=3, s=60, linewidths=2.0)
 
+    ax2.set_ylim([-0.0005, 0.1])
+    ax2.yaxis.set_tick_params(right=False,
+                              labelright=False)
 
     # # set x ticks at every 30 seconds
     # labels = list(range(0, len(expobj.lfp_signal)//expobj.paq_rate, 30))
@@ -596,7 +603,7 @@ def plotMeanRawFluTrace(expobj, stim_span_color='white', stim_lines: bool = True
 
 
 # plots the raw trace for the Flu mean of the FOV
-def plotLfpSignal(expobj, stim_span_color='powderblue', stim_lines: bool = True, title='LFP trace', x_axis='time', figsize=None, **kwargs):
+def plotLfpSignal(expobj, stim_span_color='powderblue', stim_lines: bool = True, sz_markings: bool = False, title='LFP trace', x_axis='time', figsize=None, **kwargs):
     """make plot of LFP with also showing stim locations"""
 
     # if there is a fig and ax provided in the function call then use those, otherwise start anew
@@ -632,6 +639,14 @@ def plotLfpSignal(expobj, stim_span_color='powderblue', stim_lines: bool = True,
             for line in expobj.stim_start_times:
                 line = line - expobj.frame_start_time_actual
                 plt.axvline(x=line+2, color='black', linestyle='--', linewidth=0.6, zorder=0)
+
+    # plot seizure onset and offset markings
+    if sz_markings:
+        if hasattr(expobj, 'seizure_lfp_onsets'):
+            for sz_onset in expobj.seizure_lfp_onsets:
+                plt.axvline(x=expobj.frame_clock_actual[sz_onset] - expobj.frame_start_time_actual, color='black', linestyle='--', linewidth=0.6, zorder=0)
+            for sz_offset in expobj.seizure_lfp_offsets:
+                plt.axvline(x=expobj.frame_clock_actual[sz_offset] - expobj.frame_start_time_actual, color='black', linestyle='--', linewidth=0.6, zorder=0)
 
     # change x axis ticks to seconds
     if x_axis == 'time':
@@ -750,7 +765,7 @@ def plot_flu_1pstim_avg_trace(expobj, title='Average trace of stims', individual
     ax.set_ylim([-0.5, 1.0])
     plt.show()
 
-    return flu_list
+    return flu_list, round(response, 4)
 
 
 def plot_lfp_1pstim_avg_trace(expobj, title='Average LFP peri- stims', individual_traces=False, x_axis='time', pre_stim=1.0, post_stim=5.0,
