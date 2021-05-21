@@ -700,9 +700,19 @@ def plotLfpSignal(expobj, stim_span_color='powderblue', stim_lines: bool = True,
 
 def plot_flu_1pstim_avg_trace(expobj, title='Average trace of stims', individual_traces=False, x_axis='time', stim_span_color='white',
                               y_axis: str = 'raw', quantify: bool = False, stims_to_analyze: list = None, **kwargs):
+    # fig, ax = plt.subplots()
+    # if there is a fig and ax provided in the function call then use those, otherwise start anew
+    if 'fig' in kwargs.keys():
+        fig = kwargs['fig']
+        ax = kwargs['ax']
+    else:
+        if 'figsize' in kwargs.keys():
+            fig, ax = plt.subplots(figsize=kwargs['figsize'])
+        else:
+            fig, ax = plt.subplots()
+
     pre_stim = 1  # seconds
     post_stim = 4  # seconds
-    fig, ax = plt.subplots()
 
     if stims_to_analyze is None:
         stims_to_analyze = expobj.stim_start_frames
@@ -796,16 +806,38 @@ def plot_flu_1pstim_avg_trace(expobj, title='Average trace of stims', individual
     else:
         ax.set_ylim([-0.5, 1.0])
 
-    plt.show()
-    return flu_list, round(response, 4), decay_constant
+    # options for showing plot or returning plot
+    if 'show' in kwargs.keys():
+        if kwargs['show'] is True:
+            plt.show()
+            return flu_list, round(response, 4), decay_constant
+        else:
+            pass
+    else:
+        plt.show()
+        return flu_list, round(response, 4), decay_constant
+
+    if 'fig' in kwargs.keys():
+        return fig, ax, flu_list, round(response, 4), decay_constant
+
 
 def plot_lfp_1pstim_avg_trace(expobj, title='Average LFP peri- stims', individual_traces=False, x_axis='time', pre_stim=1.0, post_stim=5.0,
-                              optoloopback: bool = False, stims_to_analyze: list = None):
+                              optoloopback: bool = False, stims_to_analyze: list = None, **kwargs):
+    # fig, ax = plt.subplots()
+    # if there is a fig and ax provided in the function call then use those, otherwise start anew
+    if 'fig' in kwargs.keys():
+        fig = kwargs['fig']
+        ax = kwargs['ax']
+    else:
+        if 'figsize' in kwargs.keys():
+            fig, ax = plt.subplots(figsize=kwargs['figsize'])
+        else:
+            fig, ax = plt.subplots()
+
     stim_duration = int(np.mean([expobj.stim_end_times[idx] - expobj.stim_start_times[idx] for idx in range(len(expobj.stim_start_times))]) + 0.01*expobj.paq_rate)
     pre_stim = pre_stim  # seconds
     post_stim = post_stim  # seconds
 
-    fig, ax = plt.subplots()
 
     if stims_to_analyze is None:
         stims_to_analyze = expobj.stim_start_times
@@ -881,7 +913,20 @@ def plot_lfp_1pstim_avg_trace(expobj, title='Average LFP peri- stims', individua
     # add title
     plt.suptitle(
         '%s %s %s %s' % (title, expobj.metainfo['exptype'], expobj.metainfo['animal prep.'], expobj.metainfo['trial']))
-    plt.show()
+
+    # options for showing plot or returning plot
+    if 'show' in kwargs.keys():
+        if kwargs['show'] is True:
+            plt.show()
+        else:
+            pass
+    else:
+        plt.show()
+
+    if 'fig' in kwargs.keys():
+        return fig, ax
+
+    # plt.show()
 
 ### below are plotting functions that I am still working on coding:
 

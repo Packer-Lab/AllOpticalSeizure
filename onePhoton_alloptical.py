@@ -8,7 +8,7 @@ import alloptical_plotting as aoplot
 
 
 
-###### IMPORT pkl file containing data in form of expobj
+# %% ###### IMPORT pkl file containing data in form of expobj
 trial = 't-012'
 date = '2021-01-19'
 pkl_path = "/home/pshah/mnt/qnap/Analysis/%s/%s_%s/%s_%s.pkl" % (date, date, trial, date, trial)
@@ -43,3 +43,33 @@ seizures_lfp_timing_matarray = '/home/pshah/mnt/qnap/Analysis/%s/paired_measurem
 
 expobj.collect_seizures_info(seizures_lfp_timing_matarray=seizures_lfp_timing_matarray,
                              discard_all=False)
+
+
+# %% ANALYSIS/PLOTTING STUFF
+# create onePstim superobject that will collect analyses from various individual experiments
+
+results_object_path = '/home/pshah/mnt/qnap/Analysis/onePstim_results_superobject.pkl'
+onePresults = aoutils.import_resultsobj(pkl_path=results_object_path)
+
+
+# %%
+nrows = 7
+ncols = 3
+fig, axs = plt.subplots(nrows=nrows, ncols=ncols, figsize=(ncols * 3, nrows * 3))
+
+counter = 0
+for pkl_path in onePresults.mean_stim_responses['pkl_list']:
+
+    expobj, experiment = aoutils.import_expobj(pkl_path=pkl_path)
+    ax = axs[counter//ncols, counter % ncols]
+
+    fig, ax, flu_list, mean_response, decay_constant = aoplot.plot_flu_1pstim_avg_trace(expobj, x_axis='time', individual_traces=True, stim_span_color=None, y_axis='dff', quantify=True,
+                                                                                        show=False, fig=fig, ax=ax)
+    # fig, ax = aoplot.plot_lfp_1pstim_avg_trace(expobj, x_axis='time', individual_traces=False, pre_stim=0.25, post_stim=0.75, optoloopback=True, show=False)
+
+    axs[counter // ncols, counter % ncols] = ax
+
+    counter += 1
+
+
+fig.show()
