@@ -699,7 +699,8 @@ def plotLfpSignal(expobj, stim_span_color='powderblue', stim_lines: bool = True,
 
 
 def plot_flu_1pstim_avg_trace(expobj, title='Average trace of stims', individual_traces=False, x_axis='time', stim_span_color='white',
-                              y_axis: str = 'raw', quantify: bool = False, stims_to_analyze: list = None, **kwargs):
+                              y_axis: str = 'raw', quantify: bool = False, stims_to_analyze: list = None, write_full_text: bool = True,
+                              **kwargs):
     # fig, ax = plt.subplots()
     # if there is a fig and ax provided in the function call then use those, otherwise start anew
     if 'fig' in kwargs.keys():
@@ -710,6 +711,11 @@ def plot_flu_1pstim_avg_trace(expobj, title='Average trace of stims', individual
             fig, ax = plt.subplots(figsize=kwargs['figsize'])
         else:
             fig, ax = plt.subplots()
+
+    if 'shrink_text' in kwargs.keys():
+        shrink_text = 1 / kwargs['shrink_text']
+    else:
+        shrink_text = 1
 
     pre_stim = 1  # seconds
     post_stim = 4  # seconds
@@ -757,8 +763,10 @@ def plot_flu_1pstim_avg_trace(expobj, title='Average trace of stims', individual
     else:
         ax.set_xlabel('frame clock')
     ax.set_ylabel(y_axis)
-    fig.suptitle(
-        '%s %s %s %s' % (title, expobj.metainfo['exptype'], expobj.metainfo['animal prep.'], expobj.metainfo['trial']))
+    ax.set_title(
+        '%s %s %s %s' % (title, expobj.metainfo['exptype'], expobj.metainfo['animal prep.'], expobj.metainfo['trial']), fontsize = 10 * shrink_text)
+    # fig.suptitle(
+    #     '%s %s %s %s' % (title, expobj.metainfo['exptype'], expobj.metainfo['animal prep.'], expobj.metainfo['trial']))
 
 
     # quantification of the stim response (compared to prestim baseline)
@@ -779,15 +787,16 @@ def plot_flu_1pstim_avg_trace(expobj, title='Average trace of stims', individual
         ax.text(0.98, 0.97, 'Average response %s: %s' % (y_axis, '{:,.4f}'.format(response)),
                 verticalalignment='top', horizontalalignment='right',
                 transform=ax.transAxes, fontweight='bold',
-                color='green', fontsize=10)
-        ax.text(0.015, 0.97, 'pre-stim',
-                verticalalignment='top', horizontalalignment='left',
-                transform=ax.transAxes, fontweight='bold',
-                color='#5e5d5d', fontsize=10)
-        ax.text(0.265, 0.97, 'post.',
-                verticalalignment='top', horizontalalignment='left',
-                transform=ax.transAxes, fontweight='bold',
-                color='#d1ae00', fontsize=10)
+                color='green', fontsize=10 * shrink_text)
+        if write_full_text:
+            ax.text(0.015, 0.97, 'pre-stim',
+                    verticalalignment='top', horizontalalignment='left',
+                    transform=ax.transAxes, fontweight='bold',
+                    color='#5e5d5d', fontsize=10 * shrink_text)
+            ax.text(0.265, 0.97, 'post.',
+                    verticalalignment='top', horizontalalignment='left',
+                    transform=ax.transAxes, fontweight='bold',
+                    color='#d1ae00', fontsize=10 * shrink_text)
 
         # measure the timescale of the decay
         max_value = max(avg_flu_trace[poststim_1:])  # peak Flu value after stim
@@ -799,7 +808,7 @@ def plot_flu_1pstim_avg_trace(expobj, title='Average trace of stims', individual
         ax.text(0.98, 0.90, 'Decay constant (sec): %s' % ('{:,.4f}'.format(decay_constant)),
                 verticalalignment='top', horizontalalignment='right',
                 transform=ax.transAxes, fontweight='bold',
-                color='#ae00ff', fontsize=10)
+                color='#ae00ff', fontsize=10 * shrink_text)
 
     if 'ylims' in kwargs:
         ax.set_ylim([kwargs['ylims'][0], kwargs['ylims'][1]])
@@ -812,13 +821,18 @@ def plot_flu_1pstim_avg_trace(expobj, title='Average trace of stims', individual
             plt.show()
             return flu_list, round(response, 4), decay_constant
         else:
-            pass
+            if 'fig' in kwargs.keys():
+                return fig, ax, flu_list, round(response, 4), decay_constant
+            else:
+                return flu_list, round(response, 4), decay_constant
     else:
         plt.show()
-        return flu_list, round(response, 4), decay_constant
+        if 'fig' in kwargs.keys():
+            return fig, ax, flu_list, round(response, 4), decay_constant
+        else:
+            return flu_list, round(response, 4), decay_constant
 
-    if 'fig' in kwargs.keys():
-        return fig, ax, flu_list, round(response, 4), decay_constant
+
 
 
 def plot_lfp_1pstim_avg_trace(expobj, title='Average LFP peri- stims', individual_traces=False, x_axis='time', pre_stim=1.0, post_stim=5.0,
