@@ -384,24 +384,32 @@ def plot_flu_trace(expobj, cell, x_lims=None, slm_group=None, to_plot='raw', fig
 
 
 # make a plot with the paq file LFP signal to visualize these classifications
-def plot_lfp_stims(expobj, title='LFP signal with photostim. shown (in different colors relative to seizure timing)',
+def plot_lfp_stims(expobj, title='LFP signal with photostim. shown (in different colors relative to seizure timing)', shrink_text = 1,
                    x_axis: str = 'paq', sz_markings: bool = True, **kwargs):
-    if 'figsize' in kwargs.keys():
-        fig, ax = plt.subplots(figsize=kwargs['figsize'])
+
+    if 'fig' in kwargs.keys():
+        fig = kwargs['fig']
+        ax = kwargs['ax']
     else:
-        fig, ax = plt.subplots(figsize=[20, 3])
+        if 'figsize' in kwargs.keys():
+            fig, ax = plt.subplots(figsize=kwargs['figsize'])
+        else:
+            fig, ax = plt.subplots(figsize=[20, 3])
 
     # plot LFP signal
     # ax.plot(expobj.lfp_signal, zorder=0, linewidth=0.5)
     fig, ax = plotLfpSignal(expobj, fig=fig, ax=ax, stim_lines=False, show=False, stim_span_color='', x_axis=x_axis, sz_markings=sz_markings, color='slategray')
     # y_loc = np.percentile(expobj.lfp_signal, 75)
-    y_loc = 0
+    y_loc = 0 # location of where to place the stim markers on the plot
 
 
     # collect and plot stim times (with coloring according to sz times if available)
     # note that there is a crop adjustment to the paq-times which is needed to sync up the stim times with the plot being returned from plotLfpSignal (which also on its own crops the LFP signal)
     if 'post' in expobj.metainfo['exptype'] and '4ap' in expobj.metainfo['exptype'] and hasattr(expobj, 'stims_in_sz'):
-        ax2 = ax.twinx()
+        if 'ax2' not in kwargs.keys():
+            ax2 = ax.twinx()
+        else:
+            ax2 = kwargs['ax2']
         x = [(expobj.stim_start_times[expobj.stim_start_frames.index(stim)] - expobj.frame_start_time_actual) for stim in expobj.stims_in_sz]
         x_out = [(expobj.stim_start_times[expobj.stim_start_frames.index(stim)] - expobj.frame_start_time_actual) for stim in expobj.stims_out_sz
                  if stim not in expobj.stims_bf_sz and stim not in expobj.stims_af_sz]
@@ -413,14 +421,19 @@ def plot_lfp_stims(expobj, title='LFP signal with photostim. shown (in different
         # ax2.scatter(x=x_bf, y=[y_loc] * len(expobj.stims_bf_sz), edgecolors='grey', facecolors='deeppink', marker="|", zorder=3, s=60, linewidths=2.0)
         # ax2.scatter(x=x_af, y=[y_loc] * len(expobj.stims_af_sz), edgecolors='grey', facecolors='hotpink', marker="|", zorder=3, s=60, linewidths=2.0)
     else:
-        ax2 = ax.twinx()
+        if 'ax2' not in kwargs.keys():
+            ax2 = ax.twinx()
+        else:
+            ax2 = kwargs['ax2']
         x = [(expobj.stim_start_times[expobj.stim_start_frames.index(stim)] - expobj.frame_start_time_actual) for stim in expobj.stim_start_frames]
-        ax2.scatter(x=x, y=[y_loc] * len(x), edgecolors='red', facecolors='black', marker="|", zorder=3, s=60, linewidths=2.0)
+        ax2.scatter(x=x, y=[y_loc] * len(x), edgecolors='white', facecolors='black', marker="^", zorder=3, s=100, linewidths=1.0)
 
     ax2.set_ylim([-0.004, 0.1])
     ax2.yaxis.set_tick_params(right=False,
                               labelright=False)
-    ax2.legend()
+    if 'ax2' not in kwargs.keys():
+        ax2.legend()
+
 
     # # set x ticks at every 30 seconds
     # labels = list(range(0, len(expobj.lfp_signal)//expobj.paq_rate, 30))
@@ -433,8 +446,24 @@ def plot_lfp_stims(expobj, title='LFP signal with photostim. shown (in different
 
     ax.set_ylabel('LFP - voltage (mV)')
 
-    plt.suptitle(title, wrap=True)
-    plt.show()
+    if not 'fig' in kwargs.keys():
+        ax.set_title(title, wrap=True)
+
+    # show or return axes objects
+    if 'show' in kwargs.keys():
+        if kwargs['show'] is True:
+            plt.show()
+        else:
+            pass
+    else:
+        plt.show()
+
+    if 'fig' in kwargs.keys():
+        ax.text(0.98, 0.95, '%s %s %s' % (expobj.metainfo['exptype'], expobj.metainfo['animal prep.'], expobj.metainfo['trial']),
+                verticalalignment='top', horizontalalignment='right',
+                transform=ax.transAxes, fontweight='bold',
+                color='black', fontsize=10 * shrink_text)
+        return fig, ax, ax2
 
 
 # plot the whole pre stim to post stim period as a cool heatmap
@@ -540,7 +569,7 @@ def xyloc_responses(expobj, to_plot='dfstdf', clim=[-10, +10], plot_target_coord
 
 
 # plots the raw trace for the Flu mean of the FOV (similar to the ZProject in Fiji)
-def plotMeanRawFluTrace(expobj, stim_span_color='white', stim_lines: bool = True, title='raw Flu trace', x_axis='time',
+def plotMeanRawFluTrace(expobj, stim_span_color='white', stim_lines: bool = True, title='raw Flu trace', x_axis='time', shrink_text=1,
                         **kwargs):
     """make plot of mean Ca trace averaged over the whole FOV"""
 
@@ -571,10 +600,10 @@ def plotMeanRawFluTrace(expobj, stim_span_color='white', stim_lines: bool = True
     if stim_lines:
         if stim_span_color is not None:
             for line in expobj.stim_start_frames:
-                plt.axvline(x=line, color='black', linestyle='--', linewidth=0.6, zorder=2)
+                ax.axvline(x=line, color='black', linestyle='--', linewidth=0.6, zorder=2)
         else:
             for line in expobj.stim_start_frames:
-                plt.axvline(x=line, color='black', linestyle='--', linewidth=0.6, zorder=0)
+                ax.axvline(x=line, color='black', linestyle='--', linewidth=0.6, zorder=0)
     if x_axis == 'time':
         # change x axis ticks to every 30 seconds
         labels = list(range(0, int(len(expobj.meanRawFluTrace) // expobj.fps), 30))
@@ -592,8 +621,9 @@ def plotMeanRawFluTrace(expobj, stim_span_color='white', stim_lines: bool = True
         ax.set_xlim(kwargs['xlims'])
 
     # add title
-    plt.suptitle(
-        '%s %s %s %s' % (title, expobj.metainfo['exptype'], expobj.metainfo['animal prep.'], expobj.metainfo['trial']))
+    if not 'fig' in kwargs.keys():
+        ax.set_title(
+            '%s %s %s %s' % (title, expobj.metainfo['exptype'], expobj.metainfo['animal prep.'], expobj.metainfo['trial']))
 
     if 'show' in kwargs.keys():
         if kwargs['show'] is True:
@@ -604,6 +634,11 @@ def plotMeanRawFluTrace(expobj, stim_span_color='white', stim_lines: bool = True
         plt.show()
 
     if 'fig' in kwargs.keys():
+        # adding text because adding title doesn't seem to want to work when piping subplots
+        ax.text(0.98, 0.97, '%s %s %s' % (expobj.metainfo['exptype'], expobj.metainfo['animal prep.'], expobj.metainfo['trial']),
+                verticalalignment='top', horizontalalignment='right',
+                transform=ax.transAxes, fontweight='bold',
+                color='black', fontsize=10 * shrink_text)
         return fig, ax
 
 
@@ -781,7 +816,7 @@ def plot_flu_1pstim_avg_trace(expobj, title='Average trace of stims', individual
         ax.axvspan(0, baseline,
                    color='#5e5d5d', zorder=1, alpha=0.15)
         response = np.mean(avg_flu_trace[poststim_1:poststim_2]) - np.mean(avg_flu_trace[:baseline])
-        print('Average response %s: %s' % (y_axis, '{:,.4f}'.format(response)))
+        # print('Average response %s: %s' % (y_axis, '{:,.4f}'.format(response)))
 
         # add the response value to the top right of the plot
         ax.text(0.98, 0.97, 'Average response %s: %s' % (y_axis, '{:,.4f}'.format(response)),

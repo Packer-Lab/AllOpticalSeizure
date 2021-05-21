@@ -46,15 +46,14 @@ expobj.collect_seizures_info(seizures_lfp_timing_matarray=seizures_lfp_timing_ma
 
 
 # %% ANALYSIS/PLOTTING STUFF
-# create onePstim superobject that will collect analyses from various individual experiments
-
+# import onePstim superobject that will collect analyses from various individual experiments
 results_object_path = '/home/pshah/mnt/qnap/Analysis/onePstim_results_superobject.pkl'
 onePresults = aoutils.import_resultsobj(pkl_path=results_object_path)
 
 
 # %% collection plots of many trials sub divided as specified
 
-
+## avg flu trace 1p stim plots
 # pre-4ap trials plot
 nrows = 4
 ncols = 3
@@ -131,9 +130,31 @@ for pkl_path in onePresults.mean_stim_responses['pkl_list']:
 fig.suptitle('Post-4ap trials, stims out of sz, avg flu trace for 1p stim', y=0.995)
 fig.show()
 
+# %%
+# LFP + stims plots
+# aoplot.plot_lfp_stims(expobj, x_axis='time', figsize=[30, 3], sz_markings=True)
+
+
+# Mean Raw Flu whole trace plots
+nrows = 21
+ncols = 1
+fig, axs = plt.subplots(nrows=nrows, ncols=ncols, figsize=(ncols * 15, nrows * 3))
+counter = 0
+for pkl_path in onePresults.mean_stim_responses['pkl_list']:
+    expobj, experiment = aoutils.import_expobj(pkl_path=pkl_path, verbose=False)
+    ax = axs[counter]
+
+    fig, ax = aoplot.plotMeanRawFluTrace(expobj, stim_span_color='lightgrey', x_axis='time', title='raw Flu trace, stims shown - ',
+                                         show=False, fig=fig, ax=ax, stim_lines=False)
+
+    counter += 1
+fig.suptitle('All trials, 1p photostim experiments', y=0.995)
+fig.show()
+
+
 # %% ADD DECAY CONSTANTS TO THE mean_stim_responses dataframe
 
-# pre-4ap trials plot
+# pre-4ap trials
 for pkl_path in onePresults.mean_stim_responses['pkl_list']:
     if list(onePresults.mean_stim_responses.loc[onePresults.mean_stim_responses['pkl_list'] == pkl_path, 'pre-4ap response'])[0] != '-':
 
@@ -147,7 +168,7 @@ onePresults.save()
 
 
 
-# post-4ap stims out of sz trials plot
+# post-4ap stims out of sz trials
 for pkl_path in onePresults.mean_stim_responses['pkl_list']:
     if list(onePresults.mean_stim_responses.loc[onePresults.mean_stim_responses['pkl_list'] == pkl_path, 'post-4ap response (outside sz)'])[0] != '-':
 
@@ -160,7 +181,7 @@ onePresults.save()
 
 
 
-# post-4ap stims during sz trials plot
+# post-4ap stims during sz trials
 for pkl_path in onePresults.mean_stim_responses['pkl_list']:
     if list(onePresults.mean_stim_responses.loc[onePresults.mean_stim_responses['pkl_list'] == pkl_path, 'post-4ap response (during sz)'])[0] != '-':
 
