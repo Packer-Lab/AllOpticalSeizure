@@ -892,7 +892,7 @@ def plot_lfp_1pstim_avg_trace(expobj, title='Average LFP peri- stims', individua
     if stims_to_analyze is None:
         stims_to_analyze = expobj.stim_start_times
     else:
-        stims_to_analyze = [expobj.frame_clock[stim] for stim in stims_to_analyze]
+        stims_to_analyze = [(expobj.frame_clock_actual[stim] - expobj.frame_start_time_actual) for stim in stims_to_analyze]
     x = [expobj.lfp_signal[stim - int(pre_stim * expobj.paq_rate): stim + int(post_stim * expobj.paq_rate)] for stim in stims_to_analyze]
     x_ = np.mean(x, axis=0)
     ax.plot(x_, color='black', zorder=3, linewidth=1.75)
