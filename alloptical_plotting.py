@@ -398,7 +398,7 @@ def plot_lfp_stims(expobj, title='LFP signal with photostim. shown (in different
 
     # plot LFP signal
     # ax.plot(expobj.lfp_signal, zorder=0, linewidth=0.5)
-    fig, ax = plotLfpSignal(expobj, fig=fig, ax=ax, stim_lines=False, show=False, stim_span_color='', x_axis=x_axis, sz_markings=sz_markings, color='slategray')
+    fig, ax = plotLfpSignal(expobj, fig=fig, ax=ax, stim_lines=False, show=False, stim_span_color='', x_axis=x_axis, sz_markings=sz_markings, color='slategray', hide_xlabel=True)
     # y_loc = np.percentile(expobj.lfp_signal, 75)
     y_loc = 0 # location of where to place the stim markers on the plot
 
@@ -426,7 +426,7 @@ def plot_lfp_stims(expobj, title='LFP signal with photostim. shown (in different
         else:
             ax2 = kwargs['ax2']
         x = [(expobj.stim_start_times[expobj.stim_start_frames.index(stim)] - expobj.frame_start_time_actual) for stim in expobj.stim_start_frames]
-        ax2.scatter(x=x, y=[y_loc] * len(x), edgecolors='white', facecolors='black', marker="^", zorder=3, s=100, linewidths=1.0)
+        ax2.scatter(x=x, y=[y_loc] * len(x), edgecolors='white', facecolors='black', marker="^", zorder=3, s=100, linewidths=1.0, label='Pre-4ap stims')
 
     ax2.set_ylim([-0.004, 0.1])
     ax2.yaxis.set_tick_params(right=False,
@@ -459,7 +459,7 @@ def plot_lfp_stims(expobj, title='LFP signal with photostim. shown (in different
         plt.show()
 
     if 'fig' in kwargs.keys():
-        ax.text(0.98, 0.95, '%s %s %s' % (expobj.metainfo['exptype'], expobj.metainfo['animal prep.'], expobj.metainfo['trial']),
+        ax.text(0.99, 0.95, '%s %s %s' % (expobj.metainfo['exptype'], expobj.metainfo['animal prep.'], expobj.metainfo['trial']),
                 verticalalignment='top', horizontalalignment='right',
                 transform=ax.transAxes, fontweight='bold',
                 color='black', fontsize=10 * shrink_text)
@@ -643,7 +643,7 @@ def plotMeanRawFluTrace(expobj, stim_span_color='white', stim_lines: bool = True
 
 
 # plots the raw trace for the Flu mean of the FOV
-def plotLfpSignal(expobj, stim_span_color='powderblue', stim_lines: bool = True, sz_markings: bool = False, title='LFP trace', x_axis='time', **kwargs):
+def plotLfpSignal(expobj, stim_span_color='powderblue', stim_lines: bool = True, sz_markings: bool = False, title='LFP trace', x_axis='time', hide_xlabel=False, **kwargs):
     """make plot of LFP with also showing stim locations"""
 
     # if there is a fig and ax provided in the function call then use those, otherwise start anew
@@ -695,7 +695,8 @@ def plotLfpSignal(expobj, stim_span_color='powderblue', stim_lines: bool = True,
         ax.set_xticks(ticks=[(label * expobj.paq_rate) for label in labels])
         ax.set_xticklabels(labels)
         ax.tick_params(axis='both', which='both', length=3)
-        ax.set_xlabel('Time (secs)')
+        if not hide_xlabel:
+            ax.set_xlabel('Time (secs)')
 
         # label_format = '{:,.2f}'
         # labels = [item for item in ax.get_xticks()]
@@ -871,7 +872,7 @@ def plot_flu_1pstim_avg_trace(expobj, title='Average trace of stims', individual
 
 
 def plot_lfp_1pstim_avg_trace(expobj, title='Average LFP peri- stims', individual_traces=False, x_axis='time', pre_stim=1.0, post_stim=5.0,
-                              optoloopback: bool = False, stims_to_analyze: list = None, **kwargs):
+                              optoloopback: bool = False, stims_to_analyze: list = None, shrink_text: int = 1, write_full_text: bool = False, **kwargs):
     # fig, ax = plt.subplots()
     # if there is a fig and ax provided in the function call then use those, otherwise start anew
     if 'fig' in kwargs.keys():
@@ -890,6 +891,8 @@ def plot_lfp_1pstim_avg_trace(expobj, title='Average LFP peri- stims', individua
 
     if stims_to_analyze is None:
         stims_to_analyze = expobj.stim_start_times
+    else:
+        stims_to_analyze = [expobj.frame_clock[stim] for stim in stims_to_analyze]
     x = [expobj.lfp_signal[stim - int(pre_stim * expobj.paq_rate): stim + int(post_stim * expobj.paq_rate)] for stim in stims_to_analyze]
     x_ = np.mean(x, axis=0)
     ax.plot(x_, color='black', zorder=3, linewidth=1.75)
@@ -934,9 +937,10 @@ def plot_lfp_1pstim_avg_trace(expobj, title='Average LFP peri- stims', individua
              in expobj.stim_start_times]
         y_avg = np.mean(x, axis=0)
         ax2.plot(y_avg, color='royalblue', zorder=3, linewidth=1.75)
-        ax2.text(0.98, 0.12, 'Widefield LED TTL',
-                 transform=ax.transAxes, fontweight='bold', horizontalalignment='right',
-                 color='royalblue', fontsize=10)
+        if write_full_text:
+            ax2.text(0.98, 0.12, 'Widefield LED TTL',
+                     transform=ax.transAxes, fontweight='bold', horizontalalignment='right',
+                     color='royalblue', fontsize=10)
         # ax2.set_ylabel('Widefield LED TTL', color='royalblue', fontweight='bold')
         ax2.yaxis.set_tick_params(right=False,
                                   labelright=False)
@@ -973,6 +977,10 @@ def plot_lfp_1pstim_avg_trace(expobj, title='Average LFP peri- stims', individua
         plt.show()
 
     if 'fig' in kwargs.keys():
+        ax.text(0.98, 0.97, '%s %s' % (expobj.metainfo['animal prep.'], expobj.metainfo['trial']),
+                verticalalignment='top', horizontalalignment='right',
+                transform=ax.transAxes, fontweight='bold',
+                color='black', fontsize=10 * shrink_text)
         return fig, ax
 
     # plt.show()

@@ -131,6 +131,83 @@ fig.suptitle('Post-4ap trials, stims out of sz, avg flu trace for 1p stim', y=0.
 fig.show()
 
 # %%
+
+## avg LFP trace 1p stim plots
+# pre-4ap trials plot
+nrows = 4
+ncols = 3
+fig, axs = plt.subplots(nrows=nrows, ncols=ncols, figsize=(ncols * 5, nrows * 5))
+counter = 0; write_full_text=True
+for pkl_path in onePresults.mean_stim_responses['pkl_list']:
+    if list(onePresults.mean_stim_responses.loc[onePresults.mean_stim_responses['pkl_list'] == pkl_path, 'pre-4ap response'])[0] != '-':
+
+        expobj, experiment = aoutils.import_expobj(pkl_path=pkl_path, verbose=False)
+        ax = axs[counter//ncols, counter % ncols]
+
+        fig, ax = aoplot.plot_lfp_1pstim_avg_trace(expobj, x_axis='time', individual_traces=False, pre_stim=0.25, post_stim=0.75, optoloopback=True, show=False, fig=fig, ax=ax,
+                                                   write_full_text=write_full_text)
+
+        axs[counter // ncols, counter % ncols] = ax
+
+        counter += 1
+        write_full_text = False  # switch off write full text option after the first plot
+
+fig.suptitle('Pre-4ap trials only, avg LFP trace for 1p stim', y=0.995)
+fig.show()
+
+
+# post-4ap stims out of sz trials plot
+nrows = 4
+ncols = 3
+fig, axs = plt.subplots(nrows=nrows, ncols=ncols, figsize=(ncols * 5, nrows * 5))
+counter = 0; write_full_text=True
+for pkl_path in onePresults.mean_stim_responses['pkl_list']:
+    if list(onePresults.mean_stim_responses.loc[onePresults.mean_stim_responses['pkl_list'] == pkl_path, 'post-4ap response (outside sz)'])[0] != '-':
+        expobj, experiment = aoutils.import_expobj(pkl_path=pkl_path)
+        ax = axs[counter//ncols, counter % ncols]
+
+        title = 'Avg. trace - stims out of sz -'
+
+        fig, ax = aoplot.plot_lfp_1pstim_avg_trace(expobj, x_axis='time', individual_traces=False, pre_stim=0.25, post_stim=0.75, optoloopback=True, show=False, fig=fig, ax=ax,
+                                                   write_full_text=write_full_text, stims_to_analyze=expobj.stims_out_sz)
+
+        axs[counter // ncols, counter % ncols] = ax
+
+        counter += 1
+        write_full_text = False  # switch off write full text option after the first plot
+
+fig.suptitle('Post-4ap trials, stims out of sz, avg LFP trace for 1p stim', y=0.995)
+fig.show()
+
+
+
+# post-4ap stims during sz trials plot
+nrows = 4
+ncols = 3
+fig, axs = plt.subplots(nrows=nrows, ncols=ncols, figsize=(ncols * 5, nrows * 5))
+counter = 0; write_full_text = True
+for pkl_path in onePresults.mean_stim_responses['pkl_list']:
+    if list(onePresults.mean_stim_responses.loc[onePresults.mean_stim_responses['pkl_list'] == pkl_path, 'post-4ap response (during sz)'])[0] != '-':
+        expobj, experiment = aoutils.import_expobj(pkl_path=pkl_path, verbose=False)
+        ax = axs[counter//ncols, counter % ncols]
+
+        title = 'Avg. trace - stims in sz -'
+
+        fig, ax = aoplot.plot_lfp_1pstim_avg_trace(expobj, x_axis='time', individual_traces=False, pre_stim=0.25, post_stim=0.75, optoloopback=True, show=False, fig=fig, ax=ax,
+                                                   write_full_text=write_full_text, stims_to_analyze=expobj.stims_in_sz)
+
+        axs[counter // ncols, counter % ncols] = ax
+
+        counter += 1
+        write_full_text = False  # switch off write full text option after the first plot
+
+fig.suptitle('Post-4ap trials, stims in sz, avg LFP trace for 1p stim', y=0.995)
+fig.show()
+
+
+
+
+# %%
 # LFP + stims plots
 # aoplot.plot_lfp_stims(expobj, x_axis='time', figsize=[30, 3], sz_markings=True)
 
