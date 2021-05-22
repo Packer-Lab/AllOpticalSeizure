@@ -1,11 +1,11 @@
-#%% DATA ANALYSIS FOR ONE-P PHOTOSTIM EXPERIMENTS
+#%% DATA ANALYSIS + PLOTTING FOR ONE-P PHOTOSTIM EXPERIMENTS
+import numpy as np
 import matplotlib.pyplot as plt
 import alloptical_utils_pj as aoutils
 import alloptical_plotting_utils as aoplot
+import utils.funcs_pj as pj
 
 
-
-# %% ANALYSIS/PLOTTING STUFF
 # import onePstim superobject that will collect analyses from various individual experiments
 results_object_path = '/home/pshah/mnt/qnap/Analysis/onePstim_results_superobject.pkl'
 onePresults = aoutils.import_resultsobj(pkl_path=results_object_path)
@@ -196,8 +196,7 @@ for pkl_path in onePresults.mean_stim_responses['pkl_list']:
 
         flu_list, mean_response, decay_constant = aoplot.plot_flu_1pstim_avg_trace(expobj, x_axis='time', y_axis='dff', show=False, quantify=True)
         onePresults.mean_stim_responses.loc[onePresults.mean_stim_responses[
-                                                'pkl_list'] == expobj.pkl_path, 'Decay constant (secs.)'] = decay_constant
-onePresults.save()
+                                                'pkl_list'] == expobj.pkl_path, 'Decay constant pre-4ap (secs.)'] = decay_constant
 
 
 
@@ -210,8 +209,7 @@ for pkl_path in onePresults.mean_stim_responses['pkl_list']:
 
         flu_list, mean_response, decay_constant = aoplot.plot_flu_1pstim_avg_trace(expobj, x_axis='time', y_axis='dff', stims_to_analyze=expobj.stims_out_sz, show=False, quantify=True)
         onePresults.mean_stim_responses.loc[onePresults.mean_stim_responses[
-                                                'pkl_list'] == expobj.pkl_path, 'Decay constant (secs.)'] = decay_constant
-onePresults.save()
+                                                'pkl_list'] == expobj.pkl_path, 'Decay constant post-4ap outside sz (secs.)'] = decay_constant
 
 
 
@@ -223,8 +221,29 @@ for pkl_path in onePresults.mean_stim_responses['pkl_list']:
 
         flu_list, mean_response, decay_constant = aoplot.plot_flu_1pstim_avg_trace(expobj, x_axis='time', y_axis='dff', stims_to_analyze=expobj.stims_in_sz, show=False, quantify=True)
         onePresults.mean_stim_responses.loc[onePresults.mean_stim_responses[
-                                                'pkl_list'] == expobj.pkl_path, 'Decay constant (secs.)'] = decay_constant
+                                                'pkl_list'] == expobj.pkl_path, 'Decay constant post-4ap during sz (secs.)'] = decay_constant
 onePresults.save()
 
 # %% BAR PLOT OF RESPONSE MAGNITUDE FOR 1P STIM EXPERIMENTS
 
+data = [[rp for rp in onePresults.mean_stim_responses.iloc[:, 1] if rp != '-']]
+data.append([rp for rp in onePresults.mean_stim_responses.iloc[:,2] if rp != '-'])
+data.append([rp for rp in onePresults.mean_stim_responses.iloc[:,3] if rp != '-'])
+
+
+pj.plot_bar_with_points(data=data, title='response magnitudes - 1p stim experiments', legend_labels=list(onePresults.mean_stim_responses.columns[1:4]),
+                        points=True, bar=False, colors=['black', 'green', 'purple'],
+                        x_label='experiment groups', y_label='Avg. dFF (across all stim trials)', alpha=0.4,
+                        expand_size_x=0.81, expand_size_y=1.2, shrink_text=1.35)
+
+# %% BAR PLOT OF DECAY CONSTANT FOR 1P STIM EXPERIMENTS
+
+data = [list(onePresults.mean_stim_responses[onePresults.mean_stim_responses.iloc[:, -3].notnull()].iloc[:, -3])]
+data.append(list(onePresults.mean_stim_responses[onePresults.mean_stim_responses.iloc[:, -2].notnull()].iloc[:, -2]))
+data.append(list(onePresults.mean_stim_responses[onePresults.mean_stim_responses.iloc[:, -1].notnull()].iloc[:, -1]))
+
+
+pj.plot_bar_with_points(data=data, title='decay constants - 1p stim experiments', legend_labels=list(onePresults.mean_stim_responses.columns[-3:]),
+                        points=True, bar=False, colors=['black', 'green', 'purple'],
+                        x_label='experiment groups', y_label='Avg. Decay constant (secs.)', alpha=0.4,
+                        expand_size_x=0.9, expand_size_y=1.2, shrink_text=1.35)

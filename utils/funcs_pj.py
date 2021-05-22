@@ -607,17 +607,17 @@ def make_random_color_array(array_of_ids):
 
 
 # plotting function for plotting a bar graph with the individual data points shown as well
-def plot_bar_with_points(data, title='', x_tick_labels=[], points=True, bar=True, colors=['black'], ylims=None, xlims=None,
-                         x_label=None, y_label=None, alpha=0.2, savepath=None, expand_size_x=1, expand_size_y=1):
+def plot_bar_with_points(data, title='', x_tick_labels=[], legend_labels: list = [], points=True, bar=True, colors=['black'], ylims=None, xlims=None,
+                         x_label=None, y_label=None, alpha=0.2, savepath=None, expand_size_x=1, expand_size_y=1, shrink_text: float = 1):
     """
     general purpose function for plotting a bar graph of multiple categories with the individual datapoints shown
     as well. The latter is achieved by adding a scatter plot with the datapoints randomly jittered around the central
     x location of the bar graph.
 
-    :param expand_size: factor to use for expanding figure size
     :param data: list; provide data from each category as a list and then group all into one list
     :param title: str; title of the graph
     :param x_tick_labels: labels to use for categories on x axis
+    :param legend_labels:
     :param points: bool; if True plot individual data points for each category in data using scatter function
     :param bar: bool, if True plot the bar, if False plot only the mean line
     :param colors: colors (by category) to use for each x group
@@ -627,6 +627,8 @@ def plot_bar_with_points(data, title='', x_tick_labels=[], points=True, bar=True
     :param y_label: y axis label
     :param alpha: transparency of the individual points when plotted in the scatter
     :param savepath: .svg file path; if given, the plot will be saved to the provided file path
+    :param expand_size_x: factor to use for expanding figure size
+    :param expand_size_y: factor to use for expanding figure size
     :return: matplotlib plot
     """
 
@@ -638,6 +640,8 @@ def plot_bar_with_points(data, title='', x_tick_labels=[], points=True, bar=True
 
     # plt.figure(figsize=(2, 10))
     fig, ax = plt.subplots(figsize=((2 * len(x) / 2) * expand_size_x, 3 * expand_size_y))
+    if len(legend_labels) > 0:
+        fig, ax = plt.subplots(figsize=((5 * len(x) / 2) * expand_size_x, 3 * expand_size_y))
     if not bar:
         for i in x:
             # ax.plot(np.linspace(x[i] - w / 2, x[i] + w / 2, 3), [np.mean(yi) for yi in y] * 3, edgecolor=colors[i])
@@ -671,7 +675,7 @@ def plot_bar_with_points(data, title='', x_tick_labels=[], points=True, bar=True
     if points:
         for i in x:
             # distribute scatter randomly across whole width of bar
-            ax.scatter(x[i] * w * 2 + np.random.random(len(y[i])) * w - w / 2, y[i], color=colors[i], alpha=alpha)
+            ax.scatter(x[i] * w * 2 + np.random.random(len(y[i])) * w - w / 2, y[i], color=colors[i], alpha=alpha, label=legend_labels[i])
 
     if ylims:
         ax.set_ylim(ylims)
@@ -684,7 +688,7 @@ def plot_bar_with_points(data, title='', x_tick_labels=[], points=True, bar=True
     ax.spines['top'].set_visible(False)
 
     ax.set_title((title), horizontalalignment='center', verticalalignment='top', pad=25,
-                 fontsize=10, wrap=True)
+                 fontsize=8*shrink_text, wrap=True)
 
     # ax.spines['top'].set_visible(False)
     # ax.spines['right'].set_visible(False)
@@ -695,13 +699,17 @@ def plot_bar_with_points(data, title='', x_tick_labels=[], points=True, bar=True
     ax.yaxis.set_ticks_position('left')
     ax.xaxis.set_ticks_position('bottom')
 
-    ax.set_xlabel(x_label)
-    ax.set_ylabel(y_label)
+    ax.set_xlabel(x_label, fontsize=8*shrink_text)
+    ax.set_ylabel(y_label, fontsize=8*shrink_text)
     if savepath:
         plt.savefig(savepath)
     if len(x) > 1:
         plt.xticks(rotation=45)
         # plt.setp(ax.get_xticklabels(), rotation=45)
+
+    if len(legend_labels) > 0:
+        ax.legend(bbox_to_anchor=(1.01, 0.90), fontsize=8*shrink_text)
+
     plt.show()
 
 
