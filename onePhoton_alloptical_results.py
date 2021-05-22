@@ -11,7 +11,7 @@ results_object_path = '/home/pshah/mnt/qnap/Analysis/onePstim_results_superobjec
 onePresults = aoutils.import_resultsobj(pkl_path=results_object_path)
 
 
-# %% collection plots of many trials sub divided as specified
+# %% ## collection plots of many trials sub divided as specified
 
 ## avg flu trace 1p stim plots
 # pre-4ap trials plot
@@ -90,9 +90,7 @@ for pkl_path in onePresults.mean_stim_responses['pkl_list']:
 fig.suptitle('Post-4ap trials, stims out of sz, avg flu trace for 1p stim', y=0.995)
 fig.show()
 
-# %%
-
-## avg LFP trace 1p stim plots
+# %% ## avg LFP trace 1p stim plots
 # pre-4ap trials plot
 nrows = 4
 ncols = 3
@@ -167,8 +165,7 @@ fig.show()
 
 
 
-# %%
-# LFP + stims plots
+# %% ## LFP + stims plots
 # aoplot.plot_lfp_stims(expobj, x_axis='time', figsize=[30, 3], sz_markings=True)
 
 
@@ -189,7 +186,7 @@ fig.suptitle('All trials, 1p photostim experiments', y=0.995)
 fig.show()
 
 
-# %% ADD DECAY CONSTANTS TO THE mean_stim_responses dataframe
+# %% ## ADD DECAY CONSTANTS TO THE mean_stim_responses dataframe
 
 # pre-4ap trials
 for pkl_path in onePresults.mean_stim_responses['pkl_list']:

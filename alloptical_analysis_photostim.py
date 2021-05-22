@@ -161,8 +161,8 @@ expobj.save()
 
 # %% ########## BAR PLOT showing average success rate of photostimulation
 
-pj.bar_with_points(data=[list(expobj.StimSuccessRate_SLMtargets.values())], x_tick_labels=['t-013'], ylims=[0, 100], bar=False, y_label='% success stims.',
-                   title='%s success rate of stim responses' % trial, expand_size_x=2)
+pj.plot_bar_with_points(data=[list(expobj.StimSuccessRate_SLMtargets.values())], x_tick_labels=['t-013'], ylims=[0, 100], bar=False, y_label='% success stims.',
+                        title='%s success rate of stim responses' % trial, expand_size_x=2)
 
 
 # plot across different groups
@@ -170,9 +170,9 @@ t009_pre_4ap_reliability = list(expobj.StimSuccessRate_SLMtargets.values())
 # t011_post_4ap_reliabilty = list(expobj.StimSuccessRate_cells.values())  # reimport another expobj for post4ap trial
 t013_post_4ap_reliabilty = list(expobj.StimSuccessRate_SLMtargets.values())  # reimport another expobj for post4ap trial
 #
-pj.bar_with_points(data=[t009_pre_4ap_reliability, t013_post_4ap_reliabilty], xlims=[0.25, 0.3],
-                   x_tick_labels=['pre-4ap', 'post-4ap'], colors=['green', 'deeppink'], y_label='% success stims.',
-                   ylims=[0, 100], bar=False, title='success rate of stim. responses', expand_size_y=1.2, expand_size_x=1.2)
+pj.plot_bar_with_points(data=[t009_pre_4ap_reliability, t013_post_4ap_reliabilty], xlims=[0.25, 0.3],
+                        x_tick_labels=['pre-4ap', 'post-4ap'], colors=['green', 'deeppink'], y_label='% success stims.',
+                        ylims=[0, 100], bar=False, title='success rate of stim. responses', expand_size_y=1.2, expand_size_x=1.2)
 
 
 # %% PLOT AVG PHOTOSTIM PRE- POST- TRACE AVGed OVER ALL PHOTOSTIM. TRIALS - NON - TARGETS
@@ -222,10 +222,10 @@ group1 = list(expobj.average_responses_dfstdf[expobj.average_responses_dfstdf['g
                   'Avg. dF/stdF response'])
 group2 = list(
     expobj.average_responses_dfstdf[expobj.average_responses_dfstdf['group'] == 'non-target']['Avg. dF/stdF response'])
-pj.bar_with_points(data=[group1, group2], x_tick_labels=['photostim target', 'non-target'], xlims=[0, 0.6],
-                   ylims=[0, 1.5], bar=False,
-                   colors=['red', 'black'], title=experiment, y_label='Avg dF/stdF response', expand_size_y=1.3,
-                   expand_size_x=1.4)
+pj.plot_bar_with_points(data=[group1, group2], x_tick_labels=['photostim target', 'non-target'], xlims=[0, 0.6],
+                        ylims=[0, 1.5], bar=False,
+                        colors=['red', 'black'], title=experiment, y_label='Avg dF/stdF response', expand_size_y=1.3,
+                        expand_size_x=1.4)
 
 # %% PLOT HEATMAP OF PHOTOSTIM. RESPONSES TO PHOTOSTIM FOR ALL CELLS
 # - need to find a way to sort these responses that similar cells are sorted together

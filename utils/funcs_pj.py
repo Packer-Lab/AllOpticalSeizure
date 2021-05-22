@@ -607,8 +607,8 @@ def make_random_color_array(array_of_ids):
 
 
 # plotting function for plotting a bar graph with the individual data points shown as well
-def bar_with_points(data, title='', x_tick_labels=[], points=True, bar=True, colors=['black'], ylims=None, xlims=None,
-                    x_label=None, y_label=None, alpha=0.2, savepath=None, expand_size_x=1, expand_size_y=1):
+def plot_bar_with_points(data, title='', x_tick_labels=[], points=True, bar=True, colors=['black'], ylims=None, xlims=None,
+                         x_label=None, y_label=None, alpha=0.2, savepath=None, expand_size_x=1, expand_size_y=1):
     """
     general purpose function for plotting a bar graph of multiple categories with the individual datapoints shown
     as well. The latter is achieved by adding a scatter plot with the datapoints randomly jittered around the central
