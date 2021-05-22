@@ -13,7 +13,7 @@ import itertools
 import os
 import sys
 
-import alloptical_plotting
+import alloptical_plotting_utils
 from utils.funcs_pj import SaveDownsampledTiff, subselect_tiff, make_tiff_stack, convert_to_8bit
 
 sys.path.append('/home/pshah/Documents/code/')
@@ -30,7 +30,7 @@ import csv
 
 from utils import funcs_pj as pj
 from utils.paq_utils import paq_read, frames_discard
-import alloptical_plotting as aoplot
+import alloptical_plotting_utils as aoplot
 import pickle
 
 from numba import njit
@@ -1264,8 +1264,8 @@ class alloptical(TwoPhotonImaging):
         print('\nTarget cells found in suite2p: ', self.s2p_cell_targets,
               ' -- %s cells (out of %s target coords)' % (len(self.s2p_cell_targets), len(self.target_coords_all)))
 
-        alloptical_plotting.plot_cell_loc(self, cells=self.s2p_cell_targets, show=False,
-                                          title='s2p cell targets and all target coords %s/%s' % (
+        alloptical_plotting_utils.plot_cell_loc(self, cells=self.s2p_cell_targets, show=False,
+                                                title='s2p cell targets and all target coords %s/%s' % (
                               self.metainfo['trial'], self.metainfo['animal prep.']), invert_y=True)
         for (x, y) in self.target_coords_all:
             plt.scatter(x=x, y=y, edgecolors='yellowgreen', facecolors='none', linewidths=1.0)
@@ -2017,7 +2017,7 @@ class Post4ap(alloptical):
             out_sz = in_sz_2
 
         if to_plot:
-            alloptical_plotting.plot_cell_loc(self, cells=in_sz, title=title, show=False)
+            alloptical_plotting_utils.plot_cell_loc(self, cells=in_sz, title=title, show=False)
             plt.gca().invert_yaxis()
             plt.show()  # the indiviual cells were plotted in ._InOutSz
 

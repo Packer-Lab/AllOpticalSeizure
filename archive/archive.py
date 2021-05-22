@@ -307,7 +307,7 @@ for group in cell_groups:
                 df.at[cell, 'group'] = group
 
 
-# moved to the alloptical_plotting.py file
+# moved to the alloptical_plotting_utils.py file
 def bar_with_points(data, title='', x_tick_labels=[], points=True, bar=True, colors=['black'], ylims=None, xlims=None,
                     x_label=None, y_label=None, alpha=0.2, savepath=None):
     """

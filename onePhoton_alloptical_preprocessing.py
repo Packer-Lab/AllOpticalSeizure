@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import os
 import alloptical_utils_pj as aoutils
-import alloptical_plotting as aoplot
+import alloptical_plotting_utils as aoplot
 
 animal_prep = 'PS09'
 data_path_base = '/home/pshah/mnt/qnap/Data/2021-01-24/PS09/'

@@ -13,7 +13,7 @@ import sys
 # sys.path.append('/home/pshah/Documents/code/PackerLab_pycharm/')
 # sys.path.append('/home/pshah/Documents/code/')
 import alloptical_utils_pj as aoutils
-import alloptical_plotting as aoplot
+import alloptical_plotting_utils as aoplot
 import utils.funcs_pj as pj
 
 import pickle

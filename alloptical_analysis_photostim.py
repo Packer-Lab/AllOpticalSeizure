@@ -1,12 +1,12 @@
 # %% IMPORT MODULES AND TRIAL expobj OBJECT
 import sys
 
-import alloptical_plotting
+import alloptical_plotting_utils
 
 sys.path.append('/home/pshah/Documents/code/PackerLab_pycharm/')
 sys.path.append('/home/pshah/Documents/code/')
 import alloptical_utils_pj as aoutils
-import alloptical_plotting as aoplot
+import alloptical_plotting_utils as aoplot
 import utils.funcs_pj as pj
 
 import numpy as np
