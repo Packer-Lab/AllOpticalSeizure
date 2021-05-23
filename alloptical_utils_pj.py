@@ -13,7 +13,6 @@ import itertools
 import os
 import sys
 
-import alloptical_plotting_utils
 from utils.funcs_pj import SaveDownsampledTiff, subselect_tiff, make_tiff_stack, convert_to_8bit
 
 sys.path.append('/home/pshah/Documents/code/')
@@ -1264,12 +1263,13 @@ class alloptical(TwoPhotonImaging):
         print('\nTarget cells found in suite2p: ', self.s2p_cell_targets,
               ' -- %s cells (out of %s target coords)' % (len(self.s2p_cell_targets), len(self.target_coords_all)))
 
-        alloptical_plotting_utils.plot_cell_loc(self, cells=self.s2p_cell_targets, show=False,
-                                                title='s2p cell targets and all target coords %s/%s' % (
+        fig, ax = plt.subplots(figsize=[6,6])
+        fig, ax = aoplot.plot_cell_loc(self, cells=self.s2p_cell_targets, show=False, fig=fig, ax=ax,
+                                                title='s2p cell targets (red-filled) and all target coords (green) %s/%s' % (
                               self.metainfo['trial'], self.metainfo['animal prep.']), invert_y=True)
         for (x, y) in self.target_coords_all:
-            plt.scatter(x=x, y=y, edgecolors='yellowgreen', facecolors='none', linewidths=1.0)
-        plt.show()
+            ax.scatter(x=x, y=y, edgecolors='yellowgreen', facecolors='none', linewidths=1.0)
+        fig.show()
 
         # print('Target cells SLM Group #1: ', self.s2p_cell_targets_1)
         # print('Target cells SLM Group #2: ', self.s2p_cell_targets_2)
@@ -2017,7 +2017,7 @@ class Post4ap(alloptical):
             out_sz = in_sz_2
 
         if to_plot:
-            alloptical_plotting_utils.plot_cell_loc(self, cells=in_sz, title=title, show=False)
+            aoplot.plot_cell_loc(self, cells=in_sz, title=title, show=False)
             plt.gca().invert_yaxis()
             plt.show()  # the indiviual cells were plotted in ._InOutSz
 

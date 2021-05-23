@@ -13,8 +13,8 @@ import utils.funcs_pj as pj
 import tifffile as tf
 
 ###### IMPORT pkl file containing expobj
-trial = 't-009'
-date = '2020-12-18'
+trial = 't-012'
+date = '2021-01-09'
 pkl_path = "/home/pshah/mnt/qnap/Analysis/%s/%s_%s/%s_%s.pkl" % (date, date, trial, date, trial)
 # pkl_path = "/home/pshah/mnt/qnap/Data/%s/%s_%s/%s_%s.pkl" % (date, date, trial, date, trial)
 
@@ -23,7 +23,7 @@ expobj, experiment = aoutils.import_expobj(trial=trial, date=date, pkl_path=pkl_
 expobj.sz_boundary_csv_done = True  # i know this is a rather very precarious thing here...
 
 if not hasattr(expobj, 's2p_path'):
-    expobj.s2p_path = '/home/pshah/mnt/qnap/Analysis/2020-12-18/suite2p/alloptical-2p-1x-alltrials/plane0'
+    expobj.s2p_path = '/home/pshah/mnt/qnap/Analysis/%s/suite2p/alloptical-2p-1_25x-alltrials/plane0' % date
 
 if not hasattr(expobj, 'meanRawFluTrace'):
     expobj.mean_raw_flu_trace(plot=True)
@@ -51,9 +51,9 @@ if not hasattr(expobj, 'suite2p_trials'):
 expobj.subset_frames_current_trial(trial=trial, to_suite2p=expobj.suite2p_trials, baseline_trials=expobj.baseline_trials, force_redo=True)
 expobj.s2pProcessing(s2p_path=expobj.s2p_path, subset_frames=expobj.curr_trial_frames, subtract_neuropil=True,
                      baseline_frames=expobj.baseline_frames, force_redo=True)
-aoutils.s2pMaskStack(obj=expobj, pkl_list=[pkl_path], s2p_path=expobj.s2p_path, parent_folder=expobj.analysis_save_path, force_redo=True)
 expobj.target_coords_all = expobj.target_coords
 expobj.s2p_targets()
+aoutils.s2pMaskStack(obj=expobj, pkl_list=[pkl_path], s2p_path=expobj.s2p_path, parent_folder=expobj.analysis_save_path, force_redo=True)
 
 
 expobj.raw_traces_from_targets(force_redo=True)

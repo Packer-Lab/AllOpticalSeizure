@@ -5,8 +5,8 @@ import alloptical_plotting_utils as aoplot
 
 
 # %% ###### IMPORT pkl file containing data in form of expobj
-trial = 't-012'
-date = '2021-01-19'
+trial = 't-024'
+date = '2021-01-09'
 pkl_path = "/home/pshah/mnt/qnap/Analysis/%s/%s_%s/%s_%s.pkl" % (date, date, trial, date, trial)
 
 expobj, experiment = aoutils.import_expobj(trial=trial, date=date,
@@ -29,7 +29,7 @@ aoplot.plotLfpSignal(expobj, x_axis='time')
 
 aoplot.plot_flu_1pstim_avg_trace(expobj, x_axis='time', individual_traces=True, stim_span_color=None, y_axis='dff', quantify=True)
 
-aoplot.plot_lfp_1pstim_avg_trace(expobj, x_axis='time', individual_traces=False, pre_stim=0.25, post_stim=0.75,
+aoplot.plot_lfp_1pstim_avg_trace(expobj, x_axis='time', individual_traces=False, pre_stim=1, post_stim=4,
                                  optoloopback=True)
 
 

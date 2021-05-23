@@ -7,17 +7,16 @@ import os
 import alloptical_utils_pj as aoutils
 import alloptical_plotting_utils as aoplot
 
-animal_prep = 'PS09'
-data_path_base = '/home/pshah/mnt/qnap/Data/2021-01-24/PS09/'
-date = '2021-01-24'
+animal_prep = 'PS04'
+data_path_base = '/home/pshah/mnt/qnap/Data/2021-01-09/'
+date = '2021-01-09'
 # date = data_path_base[-11:-1]
 
 # need to update these 3 things for every trial
 # trial = 't-012'  # note that %s magic command in the code below will be using these trials listed here
-trials = ['t-013', 't-015']  # note that %s magic command in the code below will be using these trials listed here
+trials = ['t-024']  # note that %s magic command in the code below will be using these trials listed here
 exp_type = '1p photostim, post 4ap'
-comments = ['2 seizures, start of trial mid sz; 2nd sz seems to be very clearly induced by the 1p stim; 20x 1p stims',
-            '1 seziure, seems to be spurred on by 1p stim; 20x 1p stim; sequential 1p stims are able to induce spreading activity']
+comments = ['status epilepticus the whole time, 100% LED power, manual stims (50shots at 25Hz)']
 
 
 for trial in trials:

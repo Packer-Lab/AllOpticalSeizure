@@ -930,7 +930,7 @@ def plot_lfp_1pstim_avg_trace(expobj, title='Average LFP peri- stims', individua
             # find voltage channel and save as lfp_signal attribute
             voltage_idx = paq['chan_names'].index('opto_loopback')
             expobj.opto_loopback = paq['data'][voltage_idx]
-            expobj.save()
+            #expobj.save()
         else:
             pass
         x = [expobj.opto_loopback[stim - int(pre_stim * expobj.paq_rate): stim + int(post_stim * expobj.paq_rate)] for stim
