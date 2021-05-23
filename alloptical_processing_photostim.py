@@ -63,6 +63,44 @@ if plot:
     aoplot.plotSLMtargetsLocs(expobj, background=expobj.meanFluImg)
     aoplot.plotSLMtargetsLocs(expobj, background=expobj.meanFluImg_registered)
 
+#%%#####################################################################################################################
+########################################################################################################################
+########################################################################################################################
+########################################################################################################################
+##### ------------------- processing for SLM targets Flu traces ########################################################
+########################################################################################################################
+########################################################################################################################
+########################################################################################################################
+########################################################################################################################
+
+# collect SLM photostim individual targets -- individual, full traces, dff normalized
+expobj.dff_SLMTargets = aoutils.normalize_dff(np.array(expobj.raw_SLMTargets))
+expobj.save()
+
+# collect and plot peri- photostim traces for individual SLM target, incl. individual traces for each stim
+
+expobj.pre_stim = int(0.5 * expobj.fps)
+expobj.post_stim = int(4 * expobj.fps)
+expobj.SLMTargets_stims_dff, expobj.SLMTargets_stims_dffAvg, expobj.SLMTargets_stims_dfstdF, \
+expobj.SLMTargets_stims_dfstdF_avg, expobj.SLMTargets_stims_raw, expobj.SLMTargets_stims_rawAvg = \
+    expobj.get_alltargets_stim_traces_norm(pre_stim=expobj.pre_stim, post_stim=expobj.post_stim)
+
+
+# %% photostim. SUCCESS RATE MEASUREMENTS and PLOT - SLM PHOTOSTIM TARGETED CELLS
+# measure, for each cell, the pct of trials in which the dFF > 20% post stim (normalized to pre-stim avgF for the trial and cell)
+# can plot this as a bar plot for now showing the distribution of the reliability measurement
+
+SLMtarget_ids = list(range(len(expobj.SLMTargets_stims_dfstdF)))
+
+expobj.StimSuccessRate_SLMtargets, expobj.hits_SLMtargets, expobj.responses_SLMtargets = \
+    aoutils.calculate_StimSuccessRate(expobj, cell_ids=SLMtarget_ids, raw_traces_stims=expobj.SLMTargets_stims_raw,
+                                      dfstdf_threshold=0.3, pre_stim=expobj.pre_stim, sz_filter=False,
+                                      verbose=True, plot=False)
+
+expobj.save()
+
+
+
 
 # %% (quick) plot individual fluorescence traces - see InteractiveMatplotlibExample to make these plots interactively
 # plot raw fluorescence traces
@@ -71,7 +109,6 @@ for i in expobj.s2p_cell_targets:
     plt.plot(expobj.baseline_raw[expobj.cell_id.index(i)], linewidth=0.1)
 plt.xlim(0, len(expobj.baseline_raw[0]))
 plt.show()
-
 
 # %% plotting the distribution of radius and aspect ratios - should this be running before the filtering step which is right below????????
 
@@ -220,7 +257,19 @@ expobj.save()
 ########################################################################################################################
 ########################################################################################################################
 
-# Collect pre to post stim traces for PHOTOSTIM TARGETED CELLS, FILTER FOR GOOD PHOTOSTIM. TARGETED CELLS with responses above threshold = 1 std of the prestim std
+# %% collect ENTIRE TRIAL Flu - PHOTOSTIM targeted suite2p ROIs cells plotted individually entire Flu trace
+
+expobj.raw_s2ptargets = [expobj.raw[expobj.cell_id.index(i)] for i in expobj.s2p_cell_targets if i in expobj.good_photostim_cells_all]
+expobj.dff_s2ptargets = aoutils.normalize_dff(np.array(expobj.raw_s2ptargets))
+# expobj.targets_dff_base = aoutils.normalize_dff_baseline(
+#     arr=expobj.raw_df.loc[[str(x) for x in expobj.s2p_cell_targets]],
+#     baseline_array=expobj.baseline_raw_df)
+# plot_photostim_subplots(dff_array=SLMTargets_dff,
+#                 title=(experiment + '%s responses of responsive cells' % len(expobj.good_photostim_cells_stim_responses_dFF)))
+
+
+
+# %% Collect pre to post stim traces for PHOTOSTIM TARGETED CELLS, FILTER FOR GOOD PHOTOSTIM. TARGETED CELLS with responses above threshold = 1 std of the prestim std
 
 expobj.pre_stim = 1*int(expobj.fps)  # specify pre-stim and post-stim periods of analysis and plotting
 expobj.post_stim = 3*int(expobj.fps)

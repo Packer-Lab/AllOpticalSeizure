@@ -53,13 +53,6 @@ aoplot.plot_periphotostim_avg(arr=x, expobj=expobj, stim_duration=expobj.stim_du
 
 # %% PLOT ENTIRE TRIAL - PHOTOSTIM targeted suite2p ROIs cells plotted individually entire Flu trace
 
-expobj.raw_s2ptargets = [expobj.raw[expobj.cell_id.index(i)] for i in expobj.s2p_cell_targets if i in expobj.good_photostim_cells_all]
-expobj.dff_s2ptargets = aoutils.normalize_dff(np.array(expobj.raw_s2ptargets))
-# expobj.targets_dff_base = aoutils.normalize_dff_baseline(
-#     arr=expobj.raw_df.loc[[str(x) for x in expobj.s2p_cell_targets]],
-#     baseline_array=expobj.baseline_raw_df)
-# plot_photostim_subplots(dff_array=SLMTargets_dff,
-#                 title=(experiment + '%s responses of responsive cells' % len(expobj.good_photostim_cells_stim_responses_dFF)))
 to_plot = expobj.dff_s2ptargets
 
 aoplot.plot_photostim_traces_overlap(array=to_plot, expobj=expobj, exclude_id=[expobj.s2p_cell_targets.index(cell) for cell in [211, 400, 542]],
@@ -83,13 +76,6 @@ aoplot.plot_photostim_traces(array=to_plot, expobj=expobj, x_label='Frames',
 
 # %% plot SLM photostim individual targets -- individual, full traces, dff normalized
 
-# aoplot.plot_photostim_traces(array=expobj.SLMTargets_stims_raw, expobj=expobj, x_label='Frames',
-#                                y_label='Raw Flu',
-#                                title=(experiment))
-
-expobj.dff_SLMTargets = aoutils.normalize_dff(np.array(expobj.raw_SLMTargets))
-expobj.save()
-
 # make rolling average for these plots to smooth out the traces a little more
 w = 3
 to_plot = np.asarray([(np.convolve(trace, np.ones(w), 'valid') / w) for trace in expobj.dff_SLMTargets])
@@ -97,8 +83,12 @@ to_plot = np.asarray([(np.convolve(trace, np.ones(w), 'valid') / w) for trace in
 aoplot.plot_photostim_traces(array=to_plot, expobj=expobj, x_label='Frames',
                              y_label='dFF Flu', title=experiment)
 
-aoplot.plot_photostim_traces_overlap(array=to_plot, expobj=expobj, x_label='Frames',
-                                     title='%s - dFF Flu photostims' % experiment, figsize=(20, len(to_plot)*0.15))
+aoplot.plot_photostim_traces_overlap(array=expobj.dff_SLMTargets, expobj=expobj, x_axis='Time (secs.)',
+                                     title='%s - dFF Flu photostims' % experiment, figsize=(2*20, 2*len(to_plot)*0.15))
+
+
+
+
 
 # len_ = len(array)
 # fig, axs = plt.subplots(nrows=len_, sharex=True, figsize=(30, 3 * len_))
@@ -110,54 +100,30 @@ aoplot.plot_photostim_traces_overlap(array=to_plot, expobj=expobj, x_label='Fram
 #         axs[i].set_title('Cell # %s' % expobj.s2p_cell_targets[i])
 # plt.show()
 
-# %% collect and plot peri- photostim traces for individual SLM target, incl. individual traces for each stim
-
-pre_stim = int(0.5 * expobj.fps)
-post_stim = int(5 * expobj.fps)
-expobj.SLMTargets_stims_dff, expobj.SLMTargets_stims_dffAvg, expobj.SLMTargets_stims_dfstdF, \
-expobj.SLMTargets_stims_dfstdF_avg, expobj.SLMTargets_stims_raw, expobj.SLMTargets_stims_rawAvg = \
-    expobj.get_alltargets_stim_traces_norm(pre_stim=pre_stim, post_stim=post_stim)
-
-
 # array = (np.convolve(SLMTargets_stims_raw[targets_idx], np.ones(w), 'valid') / w)
 
-# targets_idx = 0
-plot = True
-for i in range(0, expobj.n_targets_total):
-    SLMTargets_stims_raw, SLMTargets_stims_dff, SLMtargets_stims_dfstdF = expobj.get_alltargets_stim_traces_norm(targets_idx=i, pre_stim=pre_stim,
-                                                                                                                 post_stim=post_stim)
-    if plot:
-        w = 2
-        array = [(np.convolve(trace, np.ones(w), 'valid') / w) for trace in SLMTargets_stims_raw]
-        random_sub = np.random.randint(0,100,10)
-        aoplot.plot_periphotostim_avg(arr=SLMtargets_stims_dfstdF[random_sub], expobj=expobj, stim_duration=expobj.stim_duration_frames,
-                                      title='Target ' + str(i), pre_stim=pre_stim, post_stim=post_stim, color='steelblue', y_lims=[-0.5, 2.5])
-    # plt.show()
+# # targets_idx = 0
+# plot = True
+# for i in range(0, expobj.n_targets_total):
+#     SLMTargets_stims_raw, SLMTargets_stims_dff, SLMtargets_stims_dfstdF = expobj.get_alltargets_stim_traces_norm(targets_idx=i, pre_stim=pre_stim,
+#                                                                                                                  post_stim=post_stim)
+#     if plot:
+#         w = 2
+#         array = [(np.convolve(trace, np.ones(w), 'valid') / w) for trace in SLMTargets_stims_raw]
+#         random_sub = np.random.randint(0,100,10)
+#         aoplot.plot_periphotostim_avg(arr=SLMtargets_stims_dfstdF[random_sub], expobj=expobj, stim_duration=expobj.stim_duration_frames,
+#                                       title='Target ' + str(i), pre_stim=pre_stim, post_stim=post_stim, color='steelblue', y_lims=[-0.5, 2.5])
+#     # plt.show()
 
 
 # x = np.asarray([i for i in expobj.good_photostim_cells_stim_responses_dFF[0]])
-x = np.asarray([i for i in expobj.SLMTargets_stims_dfstdF_avg])
-y_label = 'dF/prestim_stdF'
+# x = np.asarray([i for i in expobj.SLMTargets_stims_dfstdF_avg])
 
-aoplot.plot_periphotostim_avg(arr=x, expobj=expobj, stim_duration=expobj.stim_duration_frames, pre_stim=pre_stim,
-                              post_stim=post_stim, figsize=[5, 4], y_lims=[-0.25, 1.1],
+y_label = 'dF/prestim_stdF'
+aoplot.plot_periphotostim_avg(arr=expobj.SLMTargets_stims_dfstdF_avg, expobj=expobj, stim_duration=expobj.stim_duration_frames,
+                              figsize=[5, 4], y_lims=[-0.5, 3],
                               title=(experiment + '- responses of all photostim targets'),
                               y_label=y_label, x_label='Time post-stimulation (seconds)')
-
-
-# %% photostim. SUCCESS RATE MEASUREMENTS and PLOT - PHOTOSTIM TARGETED CELLS
-# measure, for each cell, the pct of trials in which the dFF > 20% post stim (normalized to pre-stim avgF for the trial and cell)
-# can plot this as a bar plot for now showing the distribution of the reliability measurement
-
-SLMtarget_ids = list(range(len(expobj.SLMTargets_stims_dfstdF)))
-
-expobj.StimSuccessRate_SLMtargets, expobj.hits_SLMtargets, expobj.responses_SLMtargets = \
-    aoutils.calculate_StimSuccessRate(expobj, cell_ids=SLMtarget_ids, raw_traces_stims=expobj.SLMTargets_stims_raw,
-                                      dfstdf_threshold=0.3, pre_stim=expobj.pre_stim, sz_filter=False,
-                                      verbose=True, plot=False)
-
-expobj.save()
-
 
 # %% ########## BAR PLOT showing average success rate of photostimulation
 

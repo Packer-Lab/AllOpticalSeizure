@@ -1,10 +1,17 @@
 import utils.funcs_pj as pj
 from utils.paq_utils import paq_read, frames_discard
+import alloptical_utils_pj as aoutils
+
+###### IMPORT pkl file containing data in form of expobj
+trial = 't-012'
+date = '2021-01-09'
+
+expobj, experiment = aoutils.import_expobj(trial=trial, date=date)
 
 
 #%%
-paq_path = '/home/pshah/mnt/qnap/Data/2021-01-19/2021-01-19_PS07_015.paq'
-paq, _ = paq_read(paq_path, plot=True)
+# paq_path = '/home/pshah/mnt/qnap/Data/2021-01-19/2021-01-19_PS07_015.paq'
+paq, _ = paq_read(expobj.paq_path, plot=True)
 
 #%%
 

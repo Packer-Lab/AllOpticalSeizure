@@ -196,7 +196,7 @@ def plot_photostim_traces(array, expobj, title='', y_min=None, y_max=None, x_lab
 
 
 def plot_photostim_traces_overlap(array, expobj, exclude_id=[], spacing=1, title='', y_lims=None,
-                                  x_label='Time (seconds)', save_fig=None, figsize=(20, 10)):
+                                  x_axis='Time (seconds)', save_fig=None, figsize=(20, 10)):
     '''
     :param array:
     :param expobj:
@@ -223,18 +223,29 @@ def plot_photostim_traces_overlap(array, expobj, exclude_id=[], spacing=1, title
 
     ax.margins(0)
     # change x axis ticks to seconds
-    if 'Time' in x_label:
+    if 'Time' in x_axis or 'time' in x_axis:
+        # change x axis ticks to every 30 seconds
+        labels = list(range(0, int(array.shape[1] // expobj.fps), 30))
+        ax.set_xticks(ticks=[(label * expobj.fps) for label in labels])
+        # for item in labels:
+        #     labels[labels.index(item)] = int(round(item / expobj.fps))
+        # ticks_loc = ax.get_xticks().tolist()
+        # ax.xaxis.set_major_locator(mticker.FixedLocator(ticks_loc))
+        ax.set_xticklabels(labels)
+        ax.set_xlabel('Time (secs)')
+
         labels = [item for item in ax.get_xticks()]
         for item in labels:
             labels[labels.index(item)] = int(round(item / expobj.fps))
         ax.set_xticklabels(labels)
         ax.set_title((title + ' - %s' % len_ + ' cells'), horizontalalignment='center', verticalalignment='top', pad=20,
                      fontsize=15)
+        ax.set_xlabel('Time (secs.)')
 
     ax.spines['top'].set_visible(False)
     ax.spines['right'].set_visible(False)
     ax.spines['left'].set_visible(False)
-    ax.set_xlabel(x_label)
+    ax.set_xlabel(x_axis)
 
     if y_lims is not None:
         ax.set_ylim(y_lims)
@@ -266,11 +277,7 @@ def plot_periphotostim_avg(arr, expobj, stim_duration, pre_stim=10, post_stim=20
             'show': bool = to show the plot or not
     :return:
     """
-    if pre_stim and post_stim:
-        arr = arr[:, expobj.pre_stim - pre_stim: expobj.pre_stim + post_stim]
-        x = list(range(-pre_stim, post_stim))
-    else:
-        x = list(range(arr.shape[1]))
+    x = list(range(arr.shape[1]))
 
     len_ = len(arr)
     flu_avg = np.mean(arr, axis=0)
@@ -281,7 +288,7 @@ def plot_periphotostim_avg(arr, expobj, stim_duration, pre_stim=10, post_stim=20
         figsize = [5, 5]
     fig, ax = plt.subplots(figsize=figsize)
     ax.margins(0)
-    ax.axvspan(0, stim_duration, alpha=0.2, color='tomato')
+    ax.axvspan(expobj.pre_stim, expobj.pre_stim + expobj.stim_duration_frames, alpha=0.2, color='tomato')
     for cell_trace in arr:
         if 'edgecolor' in kwargs.keys():
             ax.plot(x, cell_trace, linewidth=1, alpha=0.6, c=kwargs['edgecolor'], zorder=1)
@@ -607,7 +614,7 @@ def plotMeanRawFluTrace(expobj, stim_span_color='white', stim_lines: bool = True
         else:
             for line in expobj.stim_start_frames:
                 ax.axvline(x=line, color='black', linestyle='--', linewidth=0.6, zorder=0)
-    if x_axis == 'time':
+    if 'time' in x_axis or 'Time' in x_axis:
         # change x axis ticks to every 30 seconds
         labels = list(range(0, int(len(expobj.meanRawFluTrace) // expobj.fps), 30))
         ax.set_xticks(ticks=[(label * expobj.fps) for label in labels])

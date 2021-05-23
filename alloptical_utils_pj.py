@@ -692,7 +692,7 @@ class alloptical(TwoPhotonImaging):
     def get_alltargets_stim_traces_norm(self, targets_idx: int = None, subselect_cells: list = None, pre_stim=15,
                                         post_stim=200, filter_sz: bool = False):
         """
-        primary function to measure the dFF traces for photostimulated targets.
+        primary function to measure the dFF and dF/setdF traces for photostimulated targets.
         :param targets_idx: integer for the index of target cell to process
         :param subselect_cells: list of cells to subset from the overall set of traces (use in place of targets_idx if desired)
         :param pre_stim: number of frames to use as pre-stim
@@ -714,22 +714,29 @@ class alloptical(TwoPhotonImaging):
             targets_trace = self.raw_SLMTargets
 
         # collect photostim timed average dff traces of photostim targets
-        targets_dff = np.zeros([num_cells, len(self.stim_start_frames), pre_stim + post_stim])
-        targets_dff_avg = np.zeros([num_cells, pre_stim + post_stim])
+        targets_dff = np.zeros(
+            [num_cells, len(self.stim_start_frames), pre_stim + self.stim_duration_frames + post_stim])
+        # targets_dff_avg = np.zeros([num_cells, pre_stim + post_stim])
 
-        targets_dfstdF = np.zeros([num_cells, len(self.stim_start_frames), pre_stim + post_stim])
-        targets_dfstdF_avg = np.zeros([num_cells, pre_stim + post_stim])
+        targets_dfstdF = np.zeros(
+            [num_cells, len(self.stim_start_frames), pre_stim + self.stim_duration_frames + post_stim])
+        # targets_dfstdF_avg = np.zeros([num_cells, pre_stim + post_stim])
 
-        targets_raw = np.zeros([num_cells, len(self.stim_start_frames), pre_stim + post_stim])
-        targets_raw_avg = np.zeros([num_cells, pre_stim + post_stim])
+        targets_raw = np.zeros(
+            [num_cells, len(self.stim_start_frames), pre_stim + self.stim_duration_frames + post_stim])
+        # targets_raw_avg = np.zeros([num_cells, pre_stim + post_stim])
 
         if targets_idx is not None:
             print('collecting stim traces for cell ', targets_idx + 1)
             if filter_sz:
-                flu = [targets_trace[targets_idx][stim - pre_stim: stim + post_stim] for stim in stim_timings if
+                flu = [targets_trace[targets_idx][stim - pre_stim: stim + self.stim_duration_frames + post_stim] for
+                       stim in
+                       stim_timings if
                        stim not in self.seizure_frames]
             else:
-                flu = [targets_trace[targets_idx][stim - pre_stim: stim + post_stim] for stim in stim_timings]
+                flu = [targets_trace[targets_idx][stim - pre_stim: stim + self.stim_duration_frames + post_stim] for
+                       stim in
+                       stim_timings]
             # flu_dfstdF = []
             # flu_dff = []
             for i in range(len(flu)):
@@ -751,10 +758,14 @@ class alloptical(TwoPhotonImaging):
                 else:
                     print('collecting stim traces for cell # %s out of %s' % (cell_idx + 1, num_cells))
                 if filter_sz:
-                    flu = [targets_trace[cell_idx][stim - pre_stim: stim + post_stim] for stim in stim_timings if
+                    flu = [targets_trace[cell_idx][stim - pre_stim: stim + self.stim_duration_frames + post_stim] for
+                           stim
+                           in stim_timings if
                            stim not in self.seizure_frames]
                 else:
-                    flu = [targets_trace[cell_idx][stim - pre_stim: stim + post_stim] for stim in stim_timings]
+                    flu = [targets_trace[cell_idx][stim - pre_stim: stim + self.stim_duration_frames + post_stim] for
+                           stim
+                           in stim_timings]
 
                 # flu_dfstdF = []
                 # flu_dff = []
@@ -783,6 +794,8 @@ class alloptical(TwoPhotonImaging):
             targets_dff_avg = np.mean(targets_dff, axis=1)
             targets_dfstdF_avg = np.mean(targets_dfstdF, axis=1)
             targets_raw_avg = np.mean(targets_raw, axis=1)
+
+            print(targets_dfstdF_avg.shape)
 
             return targets_dff, targets_dff_avg, targets_dfstdF, targets_dfstdF_avg, targets_raw, targets_raw_avg
 
@@ -2291,6 +2304,17 @@ class OnePhotonStim(TwoPhotonImaging):
 
 
 class OnePhotonResults:
+    def __init__(self, save_path: str):
+        # just create an empty class object that you will throw results and analyses into
+        self.pkl_path = save_path
+
+        self.save(pkl_path=self.pkl_path)
+
+    def save(self, pkl_path: str = None):
+        TwoPhotonImaging.save_pkl(self, pkl_path=pkl_path)
+
+
+class AllOpticalResults:
     def __init__(self, save_path: str):
         # just create an empty class object that you will throw results and analyses into
         self.pkl_path = save_path
