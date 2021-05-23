@@ -88,14 +88,17 @@ aoplot.plot_photostim_traces(array=to_plot, expobj=expobj, x_label='Frames',
 #                                title=(experiment))
 
 expobj.dff_SLMTargets = aoutils.normalize_dff(np.array(expobj.raw_SLMTargets))
-
+expobj.save()
 
 # make rolling average for these plots to smooth out the traces a little more
-w = 10
-to_plot = [(np.convolve(trace, np.ones(w), 'valid') / w) for trace in expobj.dff_SLMTargets[:3]]
+w = 3
+to_plot = np.asarray([(np.convolve(trace, np.ones(w), 'valid') / w) for trace in expobj.dff_SLMTargets])
 
 aoplot.plot_photostim_traces(array=to_plot, expobj=expobj, x_label='Frames',
                              y_label='dFF Flu', title=experiment)
+
+aoplot.plot_photostim_traces_overlap(array=to_plot, expobj=expobj, x_label='Frames',
+                                     title='%s - dFF Flu photostims' % experiment, figsize=(20, len(to_plot)*0.15))
 
 # len_ = len(array)
 # fig, axs = plt.subplots(nrows=len_, sharex=True, figsize=(30, 3 * len_))
@@ -107,7 +110,7 @@ aoplot.plot_photostim_traces(array=to_plot, expobj=expobj, x_label='Frames',
 #         axs[i].set_title('Cell # %s' % expobj.s2p_cell_targets[i])
 # plt.show()
 
-# %% collect and plot peri- photostim traces for individual SLM target individual, incl. individual traces for each stim
+# %% collect and plot peri- photostim traces for individual SLM target, incl. individual traces for each stim
 
 pre_stim = int(0.5 * expobj.fps)
 post_stim = int(5 * expobj.fps)

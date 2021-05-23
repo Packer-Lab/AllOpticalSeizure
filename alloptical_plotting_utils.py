@@ -196,7 +196,7 @@ def plot_photostim_traces(array, expobj, title='', y_min=None, y_max=None, x_lab
 
 
 def plot_photostim_traces_overlap(array, expobj, exclude_id=[], spacing=1, title='', y_lims=None,
-                                  x_label='Time (seconds)', save_fig=None):
+                                  x_label='Time (seconds)', save_fig=None, figsize=(20, 10)):
     '''
     :param array:
     :param expobj:
@@ -209,26 +209,27 @@ def plot_photostim_traces_overlap(array, expobj, exclude_id=[], spacing=1, title
     :output: matplotlib plot
     '''
     # make rolling average for these plots
-    w = 30
-    array = np.asarray([(np.convolve(trace, np.ones(w), 'valid') / w) for trace in array])
+    # w = 30
+    # array = np.asarray([(np.convolve(trace, np.ones(w), 'valid') / w) for trace in array])
 
     len_ = len(array)
-    fig, ax = plt.subplots(figsize=(40, 6))
+    fig, ax = plt.subplots(figsize=figsize)
     for i in range(len_):
         if i not in exclude_id:
-            ax.plot(array[i] + i * 100 * spacing, linewidth=1)
+            ax.plot(array[i] + i * 40 * spacing, linewidth=1)
     for j in expobj.stim_start_frames:
         if j <= array.shape[1]:
             ax.axvline(x=j, c='gray', alpha=0.3)
 
     ax.margins(0)
     # change x axis ticks to seconds
-    labels = [item for item in ax.get_xticks()]
-    for item in labels:
-        labels[labels.index(item)] = int(round(item / expobj.fps))
-    ax.set_xticklabels(labels)
-    ax.set_title((title + ' - %s' % len_ + ' cells'), horizontalalignment='center', verticalalignment='top', pad=20,
-                 fontsize=15)
+    if 'Time' in x_label:
+        labels = [item for item in ax.get_xticks()]
+        for item in labels:
+            labels[labels.index(item)] = int(round(item / expobj.fps))
+        ax.set_xticklabels(labels)
+        ax.set_title((title + ' - %s' % len_ + ' cells'), horizontalalignment='center', verticalalignment='top', pad=20,
+                     fontsize=15)
 
     ax.spines['top'].set_visible(False)
     ax.spines['right'].set_visible(False)
