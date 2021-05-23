@@ -2914,7 +2914,8 @@ def normalize_dff_baseline(arr, baseline_array):
 
 
 def normalize_dff(arr, threshold=20):
-    """normalize given array (cells x time) to the mean of the fluorescence values below given threshold"""
+    """normalize given array (cells x time) to the mean of the fluorescence values below given threshold. Threshold
+    will refer to the that lower percentile of the given trace."""
 
     if arr.ndim == 1:
         a = np.percentile(arr, threshold)
@@ -2926,7 +2927,7 @@ def normalize_dff(arr, threshold=20):
         for i in range(len(arr)):
             a = np.percentile(arr[i], threshold)
             mean_ = np.mean(arr[i][arr[i] < a])
-            new_array[i] = (arr[i] - mean_) / abs(mean_) * 100  # TODO fix this to return dF over F
+            new_array[i] = (arr[i] - mean_) / abs(mean_) * 100
 
             if np.isnan(new_array[i]).any() == True:
                 print('Warning:')

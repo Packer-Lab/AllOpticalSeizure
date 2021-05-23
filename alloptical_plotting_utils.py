@@ -186,13 +186,13 @@ def plot_photostim_traces(array, expobj, title='', y_min=None, y_max=None, x_lab
 
     axs[0].set_title((title + ' - %s' % len_ + ' cells'), loc='left', verticalalignment='top', pad=20,
                      fontsize=15)
-    axs[-1].set_xlabel(x_label)
+    axs[0].set_xlabel(x_label)
     axs[0].set_ylabel(y_label)
 
     if save_fig is not None:
         plt.savefig(save_fig)
 
-    plt.show()
+    fig.show()
 
 
 def plot_photostim_traces_overlap(array, expobj, exclude_id=[], spacing=1, title='', y_lims=None,
@@ -425,6 +425,8 @@ def plot_lfp_stims(expobj, title='LFP signal with photostim. shown (in different
             ax2 = ax.twinx()
         else:
             ax2 = kwargs['ax2']
+        if type(expobj.stim_start_frames) != list:
+            expobj.stim_start_frames = list(expobj.stim_start_frames)
         x = [(expobj.stim_start_times[expobj.stim_start_frames.index(stim)] - expobj.frame_start_time_actual) for stim in expobj.stim_start_frames]
         ax2.scatter(x=x, y=[y_loc] * len(x), edgecolors='white', facecolors='black', marker="^", zorder=3, s=100, linewidths=1.0, label='Pre-4ap stims')
 

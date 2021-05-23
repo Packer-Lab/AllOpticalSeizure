@@ -1,8 +1,5 @@
 # %% IMPORT MODULES AND TRIAL expobj OBJECT
 import sys
-
-import alloptical_plotting_utils
-
 sys.path.append('/home/pshah/Documents/code/PackerLab_pycharm/')
 sys.path.append('/home/pshah/Documents/code/')
 import alloptical_utils_pj as aoutils
@@ -17,13 +14,13 @@ import seaborn as sns
 from skimage import draw
 
 ###### IMPORT pkl file containing data in form of expobj
-trial = 't-013'
-date = '2020-12-18'
+trial = 't-012'
+date = '2021-01-09'
 
 expobj, experiment = aoutils.import_expobj(trial=trial, date=date)
 
-if not hasattr(expobj, 's2p_path'):
-    expobj.s2p_path = '/home/pshah/mnt/qnap/Analysis/2020-12-18/suite2p/alloptical-2p-1x-alltrials/plane0'
+# if not hasattr(expobj, 's2p_path'):
+#     expobj.s2p_path = '/home/pshah/mnt/qnap/Analysis/2020-12-18/suite2p/alloptical-2p-1x-alltrials/plane0'
 
 if not hasattr(expobj, 'meanRawFluTrace'):
     expobj.mean_raw_flu_trace(plot=True)
@@ -42,7 +39,7 @@ if plot:
 
 ########################################################################################################################
 
-# %% PLOT AVG PHOTOSTIM PRE- POST- TRACE AVGed OVER ALL PHOTOSTIM. TRIALS - PHOTOSTIM TARGETTED suite2p cells
+# %% PLOT AVG PHOTOSTIM PRE- POST- TRACE AVGed OVER ALL PHOTOSTIM. TRIALS - PHOTOSTIM TARGETTED suite2p ROIs cells
 
 # x = np.asarray([i for i in expobj.good_photostim_cells_stim_responses_dFF[0]])
 x = np.asarray([i for i in expobj.targets_dfstdF_avg])
@@ -54,7 +51,7 @@ aoplot.plot_periphotostim_avg(arr=x, expobj=expobj, stim_duration=expobj.stim_du
                               title=(experiment + '- responses of all photostim targets'),
                               y_label=y_label, x_label='Time post-stimulation (seconds)')
 
-# %% PLOT ENTIRE TRIAL - targeted suite2p cells plotted individually as subplots
+# %% PLOT ENTIRE TRIAL - PHOTOSTIM targeted suite2p ROIs cells plotted individually entire Flu trace
 
 expobj.raw_s2ptargets = [expobj.raw[expobj.cell_id.index(i)] for i in expobj.s2p_cell_targets if i in expobj.good_photostim_cells_all]
 expobj.dff_s2ptargets = aoutils.normalize_dff(np.array(expobj.raw_s2ptargets))
@@ -84,7 +81,7 @@ aoplot.plot_photostim_traces(array=to_plot, expobj=expobj, x_label='Frames',
 
 
 
-# %% plot SLM photostim individual targets -- full traces, dff normalized
+# %% plot SLM photostim individual targets -- individual, full traces, dff normalized
 
 # aoplot.plot_photostim_traces(array=expobj.SLMTargets_stims_raw, expobj=expobj, x_label='Frames',
 #                                y_label='Raw Flu',
@@ -112,8 +109,8 @@ aoplot.plot_photostim_traces(array=to_plot, expobj=expobj, x_label='Frames',
 
 # %% collect and plot peri- photostim traces for individual SLM target individual, incl. individual traces for each stim
 
-pre_stim = expobj.pre_stim
-post_stim = expobj.post_stim
+pre_stim = int(0.5 * expobj.fps)
+post_stim = int(5 * expobj.fps)
 expobj.SLMTargets_stims_dff, expobj.SLMTargets_stims_dffAvg, expobj.SLMTargets_stims_dfstdF, \
 expobj.SLMTargets_stims_dfstdF_avg, expobj.SLMTargets_stims_raw, expobj.SLMTargets_stims_rawAvg = \
     expobj.get_alltargets_stim_traces_norm(pre_stim=pre_stim, post_stim=post_stim)
@@ -122,10 +119,10 @@ expobj.SLMTargets_stims_dfstdF_avg, expobj.SLMTargets_stims_raw, expobj.SLMTarge
 # array = (np.convolve(SLMTargets_stims_raw[targets_idx], np.ones(w), 'valid') / w)
 
 # targets_idx = 0
-plot = False
+plot = True
 for i in range(0, expobj.n_targets_total):
     SLMTargets_stims_raw, SLMTargets_stims_dff, SLMtargets_stims_dfstdF = expobj.get_alltargets_stim_traces_norm(targets_idx=i, pre_stim=pre_stim,
-                                                                                               post_stim=post_stim)
+                                                                                                                 post_stim=post_stim)
     if plot:
         w = 2
         array = [(np.convolve(trace, np.ones(w), 'valid') / w) for trace in SLMTargets_stims_raw]
@@ -139,8 +136,8 @@ for i in range(0, expobj.n_targets_total):
 x = np.asarray([i for i in expobj.SLMTargets_stims_dfstdF_avg])
 y_label = 'dF/prestim_stdF'
 
-aoplot.plot_periphotostim_avg(arr=x, expobj=expobj, stim_duration=expobj.stim_duration_frames, pre_stim=expobj.pre_stim,
-                              post_stim=expobj.post_stim, figsize=[5, 4], y_lims=[-0.25, 3.1],
+aoplot.plot_periphotostim_avg(arr=x, expobj=expobj, stim_duration=expobj.stim_duration_frames, pre_stim=pre_stim,
+                              post_stim=post_stim, figsize=[5, 4], y_lims=[-0.25, 1.1],
                               title=(experiment + '- responses of all photostim targets'),
                               y_label=y_label, x_label='Time post-stimulation (seconds)')
 
