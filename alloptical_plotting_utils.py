@@ -418,6 +418,8 @@ def plot_lfp_stims(expobj, title='LFP signal with photostim. shown (in different
             ax2 = ax.twinx()
         else:
             ax2 = kwargs['ax2']
+        if type(expobj.stim_start_frames) != list:
+            expobj.stim_start_frames = list(expobj.stim_start_frames)
         x = [(expobj.stim_start_times[expobj.stim_start_frames.index(stim)] - expobj.frame_start_time_actual) for stim in expobj.stims_in_sz]
         x_out = [(expobj.stim_start_times[expobj.stim_start_frames.index(stim)] - expobj.frame_start_time_actual) for stim in expobj.stims_out_sz
                  if stim not in expobj.stims_bf_sz and stim not in expobj.stims_af_sz]

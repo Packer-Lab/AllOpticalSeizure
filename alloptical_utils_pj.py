@@ -934,6 +934,7 @@ class alloptical(TwoPhotonImaging):
         plt.figure(figsize=(10, 5))
         plt.plot(stim_volts)
         plt.plot(stim_times, np.ones(len(stim_times)), '.')
+        plt.suptitle('stim times')
         sns.despine()
         plt.show()
 

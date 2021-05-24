@@ -29,64 +29,25 @@ import tifffile as tf
 
 ########
 
-# %% ###### IMPORT pkl file containing data in form of expobj
-trial = 't-012'
-date = '2021-01-19'
-pkl_path = "/home/pshah/mnt/qnap/Analysis/%s/%s_%s/%s_%s.pkl" % (date, date, trial, date, trial)
+#%%
+###### IMPORT pkl file containing data in form of expobj
+trial = 't-015'
+date = '2021-01-09'
 
-expobj, experiment = aoutils.import_expobj(trial=trial, date=date,
-                                           pkl_path='/home/pshah/mnt/qnap/Analysis/%s/%s_%s/%s_%s.pkl' % (date, date, trial, date, trial))
+expobj, experiment = aoutils.import_expobj(trial=trial, date=date)
+
+expobj.paqProcessing()
+
+expobj.stim_start_frames = expobj.stim_start_frames
+aoplot.plotMeanRawFluTrace(expobj=expobj, stim_span_color=None, x_axis='frames', figsize=[20, 3])
 
 
-# %% classifying stims as in or out of seizures
-from utils.paq_utils import paq_read, frames_discard
+# fig, ax = plt.subplots(figsize=[20, 3])
+# for i in range(0, 100):
+#     ax.plot(expobj.raw[i], alpha=0.4, linewidth=0.5)
+# ax.axvline(x=[47], color='black', linestyle='--', linewidth=0.6, zorder=2)
+# fig.show()
 
-def collect_seizures_info(expobj, seizures_lfp_timing_matarray=None, discard_all=True):
-    print('\ncollecting information about seizures...')
-    expobj.seizures_lfp_timing_matarray = seizures_lfp_timing_matarray  # path to the matlab array containing paired measurements of seizures onset and offsets
-
-    # retrieve seizure onset and offset times from the seizures info array input
-    paq = paq_read(file_path=expobj.paq_path, plot=False)
-
-    # print(paq[0]['data'][0])  # print the frame clock signal from the .paq file to make sure its being read properly
-    # NOTE: the output of all of the following function is in dimensions of the FRAME CLOCK (not official paq clock time)
-    if seizures_lfp_timing_matarray is not None:
-        print('-- using matlab array to collect seizures %s: ' % seizures_lfp_timing_matarray)
-        bad_frames, expobj.seizure_frames, expobj.seizure_lfp_onsets, expobj.seizure_lfp_offsets = frames_discard(
-            paq=paq[0], input_array=seizures_lfp_timing_matarray, total_frames=expobj.n_frames,
-            discard_all=discard_all)
-    else:
-        print('-- no matlab array given to use for finding seizures.')
-        bad_frames = frames_discard(paq=paq[0], input_array=seizures_lfp_timing_matarray,
-                                    total_frames=expobj.n_frames,
-                                    discard_all=discard_all)
-
-    print('\nTotal extra seizure/CSD or other frames to discard: ', len(bad_frames))
-    print('|- first and last 10 indexes of these frames', bad_frames[:10], bad_frames[-10:])
-
-    if seizures_lfp_timing_matarray is not None:
-        # print('|-now creating raw movies for each sz as well (saved to the /Analysis folder) ... ')
-        # expobj.subselect_tiffs_sz(onsets=expobj.seizure_lfp_onsets, offsets=expobj.seizure_lfp_offsets,
-        #                         on_off_type='lfp_onsets_offsets')
-
-        print('|-now classifying photostims at phases of seizures ... ')
-        expobj.stims_in_sz = [stim for stim in expobj.stim_start_frames if stim in expobj.seizure_frames]
-        expobj.stims_out_sz = [stim for stim in expobj.stim_start_frames if stim not in expobj.seizure_frames]
-        expobj.stims_bf_sz = [stim for stim in expobj.stim_start_frames
-                            for sz_start in expobj.seizure_lfp_onsets
-                            if 0 < (
-                                    sz_start - stim) < 2 * expobj.fps]  # select stims that occur within 2 seconds before of the sz onset
-        expobj.stims_af_sz = [stim for stim in expobj.stim_start_frames
-                            for sz_start in expobj.seizure_lfp_offsets
-                            if 0 < -1 * (
-                                    sz_start - stim) < 2 * expobj.fps]  # select stims that occur within 2 seconds afterof the sz offset
-        print(' \n|- stims_in_sz:', expobj.stims_in_sz, ' \n|- stims_out_sz:', expobj.stims_out_sz,
-              ' \n|- stims_bf_sz:', expobj.stims_bf_sz, ' \n|- stims_af_sz:', expobj.stims_af_sz)
-        aoplot.plot_lfp_stims(expobj)
-    expobj.save_pkl()
-
-collect_seizures_info(expobj, seizures_lfp_timing_matarray='/home/pshah/mnt/qnap/Analysis/2021-01-19/paired_measurements/2021-01-19_PS07_012.mat',
-                      discard_all=False)
 #%%
 
 ## save downsampled TIFF

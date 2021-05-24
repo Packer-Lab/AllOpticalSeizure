@@ -14,7 +14,7 @@ import tifffile as tf
 
 ###### IMPORT pkl file containing expobj
 trial = 't-012'
-date = '2021-01-09'
+date = '2021-01-08'
 pkl_path = "/home/pshah/mnt/qnap/Analysis/%s/%s_%s/%s_%s.pkl" % (date, date, trial, date, trial)
 # pkl_path = "/home/pshah/mnt/qnap/Data/%s/%s_%s/%s_%s.pkl" % (date, date, trial, date, trial)
 
@@ -32,15 +32,15 @@ plot = False
 if plot:
     aoplot.plotMeanRawFluTrace(expobj=expobj, stim_span_color=None, x_axis='frames', figsize=[20, 3])
     # aoplot.plotLfpSignal(expobj, stim_span_color=None, x_axis='frames', figsize=[20, 3])
-    aoplot.plotSLMtargetsLocs(expobj, background=expobj.meanFluImg_registered)
+    aoplot.plotSLMtargetsLocs(expobj)
     aoplot.plot_lfp_stims(expobj)
 
 # %% prep for importing data from suite2p for this whole experiment
 # determine which frames to retrieve from the overall total s2p output
 
 if not hasattr(expobj, 'suite2p_trials'):
-    to_suite2p = ['t-005', 't-006', 't-008', 't-009', 't-010', 't-011', 't-012', 't-013']  # specify all trials that were used in the suite2p runtotal_frames_stitched = 0
-    baseline_trials = ['t-005', 't-006', 't-008']  # specify which trials to use as spont baseline
+    to_suite2p = ['t-003', 't-005', 't-010', 't-011', 't-012']  # specify all trials that were used in the suite2p runtotal_frames_stitched = 0
+    baseline_trials = ['t-003', 't-005']  # specify which trials to use as spont baseline
     # note ^^^ this only works currently when the spont baseline trials all come first, and also back to back
 
     expobj.suite2p_trials = to_suite2p
@@ -58,7 +58,7 @@ aoutils.s2pMaskStack(obj=expobj, pkl_list=[pkl_path], s2p_path=expobj.s2p_path, 
 
 expobj.raw_traces_from_targets(force_redo=True)
 
-plot = False
+plot = True
 if plot:
     aoplot.plotSLMtargetsLocs(expobj, background=expobj.meanFluImg)
     aoplot.plotSLMtargetsLocs(expobj, background=expobj.meanFluImg_registered)

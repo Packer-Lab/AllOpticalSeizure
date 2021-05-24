@@ -15,7 +15,7 @@ from skimage import draw
 
 ###### IMPORT pkl file containing data in form of expobj
 trial = 't-012'
-date = '2021-01-09'
+date = '2021-01-08'
 
 expobj, experiment = aoutils.import_expobj(trial=trial, date=date)
 
@@ -25,9 +25,9 @@ expobj, experiment = aoutils.import_expobj(trial=trial, date=date)
 if not hasattr(expobj, 'meanRawFluTrace'):
     expobj.mean_raw_flu_trace(plot=True)
 
-plot = False
+plot = True
 if plot:
-    aoplot.plotMeanRawFluTrace(expobj=expobj, stim_span_color=None, x_axis='frames', figsize=[20, 3])
+    aoplot.plotMeanRawFluTrace(expobj=expobj, stim_span_color=None, x_axis='Time', figsize=[20, 3])
     aoplot.plotLfpSignal(expobj, stim_span_color='', x_axis='frames', figsize=[20, 3])
     aoplot.plotSLMtargetsLocs(expobj, background=expobj.meanFluImg_registered)
     aoplot.plot_lfp_stims(expobj)
@@ -79,6 +79,7 @@ aoplot.plot_photostim_traces(array=to_plot, expobj=expobj, x_label='Frames',
 # make rolling average for these plots to smooth out the traces a little more
 w = 3
 to_plot = np.asarray([(np.convolve(trace, np.ones(w), 'valid') / w) for trace in expobj.dff_SLMTargets])
+# to_plot = expobj.dff_SLMTargets
 
 aoplot.plot_photostim_traces(array=to_plot, expobj=expobj, x_label='Frames',
                              y_label='dFF Flu', title=experiment)
