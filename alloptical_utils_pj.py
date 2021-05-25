@@ -3151,18 +3151,22 @@ def calculate_StimSuccessRate(expobj, cell_ids: list, raw_traces_stims=None, dfs
 
                 # calculate dFF (noramlized to pre-stim) for each trace
                 pre_stim_mean = np.mean(trace[0:pre_stim])
-                if dff_threshold:  # calculate dFF response for each stim trace
-                    response_trace = ((trace - pre_stim_mean) / pre_stim_mean) * 100
-                else:  # calculate dF_stdF response for each stim trace
-                    std_pre = np.std(trace[0:expobj.pre_stim])
-                    response_trace = (trace - pre_stim_mean)
+                std_pre = np.std(trace[0:expobj.pre_stim])
+                response_trace = (trace - pre_stim_mean)
+                # if dff_threshold:  # calculate dFF response for each stim trace
+                #     response_trace = ((trace - pre_stim_mean)) #/ pre_stim_mean) * 100
+                # else:  # calculate dF_stdF response for each stim trace
+                #     pass
 
                 # calculate if the current trace beats the threshold for calculating reliability (note that this happens over a specific window just after the photostim)
                 response = np.nanmean(response_trace[
                                       pre_stim + expobj.stim_duration_frames:pre_stim + 3 * expobj.stim_duration_frames])  # calculate the dF over pre-stim mean F response within the response window
-                response_std = response / std_pre  # normalize the delta F above pre-stim mean using std of the pre-stim
-                responses.append(round(response_std, 2))
-                if response_std >= threshold:
+                if dfstdf_threshold:
+                    response_result = response / std_pre  # normalize the delta F above pre-stim mean using std of the pre-stim
+                else:
+                    response_result = (response / pre_stim_mean) * 100  # calculate dFF response for each stim trace
+                responses.append(round(response_result, 2))
+                if response_result >= threshold:
                     success += 1
                     hits.append(counter)
                 counter += 1

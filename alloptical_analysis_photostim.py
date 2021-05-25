@@ -87,10 +87,6 @@ aoplot.plot_photostim_traces(array=to_plot, expobj=expobj, x_label='Frames',
 aoplot.plot_photostim_traces_overlap(array=expobj.dff_SLMTargets, expobj=expobj, x_axis='Time (secs.)',
                                      title='%s - dFF Flu photostims' % experiment, figsize=(2*20, 2*len(to_plot)*0.15))
 
-
-
-
-
 # len_ = len(array)
 # fig, axs = plt.subplots(nrows=len_, sharex=True, figsize=(30, 3 * len_))
 # for i in range(len(axs)):

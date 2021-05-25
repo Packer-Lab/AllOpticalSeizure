@@ -78,7 +78,6 @@ expobj.dff_SLMTargets = aoutils.normalize_dff(np.array(expobj.raw_SLMTargets))
 expobj.save()
 
 # collect and plot peri- photostim traces for individual SLM target, incl. individual traces for each stim
-
 expobj.pre_stim = int(0.5 * expobj.fps)
 expobj.post_stim = int(4 * expobj.fps)
 expobj.SLMTargets_stims_dff, expobj.SLMTargets_stims_dffAvg, expobj.SLMTargets_stims_dfstdF, \
@@ -87,20 +86,50 @@ expobj.SLMTargets_stims_dfstdF_avg, expobj.SLMTargets_stims_raw, expobj.SLMTarge
 
 
 # %% photostim. SUCCESS RATE MEASUREMENTS and PLOT - SLM PHOTOSTIM TARGETED CELLS
-# measure, for each cell, the pct of trials in which the dFF > 20% post stim (normalized to pre-stim avgF for the trial and cell)
+# measure, for each cell, the pct of trials in which the dF_stdF > 20% post stim (normalized to pre-stim avgF for the trial and cell)
 # can plot this as a bar plot for now showing the distribution of the reliability measurement
 
 SLMtarget_ids = list(range(len(expobj.SLMTargets_stims_dfstdF)))
 
 expobj.StimSuccessRate_SLMtargets, expobj.hits_SLMtargets, expobj.responses_SLMtargets = \
-    aoutils.calculate_StimSuccessRate(expobj, cell_ids=SLMtarget_ids, raw_traces_stims=expobj.SLMTargets_stims_raw,
-                                      dfstdf_threshold=0.3, pre_stim=expobj.pre_stim, sz_filter=False,
+    aoutils.calculate_StimSuccessRate(expobj, cell_ids=SLMtarget_ids, raw_traces_stims=expobj.SLMTargets_stims_raw, dff_threshold=20,
+                                      pre_stim=expobj.pre_stim, sz_filter=False,
                                       verbose=True, plot=False)
 
 expobj.save()
 
+# %% SAVE RESULTS TO SUPEROBJECT
+
+results_object_path = '/home/pshah/mnt/qnap/Analysis/alloptical_results_superobject.pkl'
+allOpticalresults = aoutils.import_resultsobj(pkl_path=results_object_path)
+
+# %%
+mean_reliability_rate = round(np.mean(list(expobj.StimSuccessRate_SLMtargets.values())), 2)
+mean_response_dfstdf = round(np.mean(list(expobj.responses_SLMtargets)), 2)
+mean_response_dff = np.nan
+
+prep_trial = '%s %s' % (expobj.metainfo['animal prep.'], expobj.metainfo['trial'])
+# stim_setup = '32 cells x 1 groups; 5mW per cell, 100ms stim (prot. #1)'
+stim_setup = '32 cells x 1 groups; 7mW per cell, 250ms stim (prot. #1b)'
+if prep_trial not in list(allOpticalresults.slmtargets_stim_responses['prep_trial']):
+    allOpticalresults.slmtargets_stim_responses.loc[allOpticalresults.slmtargets_stim_responses.shape[0]+1] = [prep_trial] + ['-'] * (allOpticalresults.slmtargets_stim_responses.shape[1] - 1)
+allOpticalresults.slmtargets_stim_responses.loc[allOpticalresults.slmtargets_stim_responses['prep_trial'] == prep_trial, 'date'] = expobj.metainfo['date']
+allOpticalresults.slmtargets_stim_responses.loc[allOpticalresults.slmtargets_stim_responses['prep_trial'] == prep_trial, 'exptype'] = expobj.metainfo['exptype']
+allOpticalresults.slmtargets_stim_responses.loc[allOpticalresults.slmtargets_stim_responses['prep_trial'] == prep_trial, 'stim_setup'] = stim_setup
+allOpticalresults.slmtargets_stim_responses.loc[allOpticalresults.slmtargets_stim_responses['prep_trial'] == prep_trial, 'mean response (dF/stdF all targets)'] = mean_response_dfstdf
+allOpticalresults.slmtargets_stim_responses.loc[allOpticalresults.slmtargets_stim_responses['prep_trial'] == prep_trial, 'mean response (dFF all targets)'] = mean_response_dff
+allOpticalresults.slmtargets_stim_responses.loc[allOpticalresults.slmtargets_stim_responses['prep_trial'] == prep_trial, 'mean reliability (>0.3 dF/stdF)'] = mean_reliability_rate
 
 
+# %%
+allOpticalresults.save()
+
+# %%
+########################################################################################################################
+########################################################################################################################
+########################################################################################################################
+########################################################################################################################
+########################################################################################################################
 
 # %% (quick) plot individual fluorescence traces - see InteractiveMatplotlibExample to make these plots interactively
 # plot raw fluorescence traces
