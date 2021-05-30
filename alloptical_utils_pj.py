@@ -2119,7 +2119,7 @@ class Post4ap(alloptical):
                 'cannot check for cell inside sz boundary because cell sz classification hasnot been performed yet')
 
 
-class OnePhotonStim(TwoPhotonImaging, alloptical):
+class OnePhotonStim(TwoPhotonImaging):
     def __init__(self, data_path_base, date, animal_prep, trial, metainfo, analysis_save_path_base: str = None):
         paqs_loc = '%s%s_%s_%s.paq' % (
             data_path_base, date, animal_prep, trial[2:])  # path to the .paq files for the selected trials

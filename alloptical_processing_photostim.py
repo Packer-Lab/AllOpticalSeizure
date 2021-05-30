@@ -55,7 +55,7 @@ expobj.target_coords_all = expobj.target_coords
 expobj.s2p_targets()
 aoutils.s2pMaskStack(obj=expobj, pkl_list=[pkl_path], s2p_path=expobj.s2p_path, parent_folder=expobj.analysis_save_path, force_redo=True)
 
-
+# collect raw Flu data from SLM targets
 expobj.raw_traces_from_targets(force_redo=True)
 
 plot = True
@@ -121,11 +121,22 @@ allOpticalresults.slmtargets_stim_responses.loc[allOpticalresults.slmtargets_sti
 allOpticalresults.slmtargets_stim_responses.loc[allOpticalresults.slmtargets_stim_responses['prep_trial'] == prep_trial, 'mean reliability (>0.3 dF/stdF)'] = mean_reliability_rate
 
 
-# %%
+# %% save to superobject
 allOpticalresults.save()
 
-# %%
+# %% SAVE THE UPDATED expobj OBJECT IN THE ORIGINAL PKL PATH TO USE NEXT
+
+expobj.save_pkl(pkl_path=pkl_path)
+
+
+print("\n COMPLETED RUNNING ALL OPTICAL PROCESSING PHOTOSTIM.")
+
+
+#%%#####################################################################################################################
 ########################################################################################################################
+########################################################################################################################
+########################################################################################################################
+##### ------------------- processing for suite2p ROIs traces ###########################################################
 ########################################################################################################################
 ########################################################################################################################
 ########################################################################################################################
@@ -144,7 +155,7 @@ plt.show()
 radius_list = aoplot.plot_cell_radius_aspectr(expobj, expobj.stat, to_plot='radius')
 
 
-# %% FILTER ALL CELLS THAT ARE ACTIVE AT LEAST ONCE FOR >2.5*std
+# %% FILTER ALL SUITE2P_ROIs THAT ARE ACTIVE AT LEAST ONCE FOR >2.5*std
 
 # pull out needed variables because numba doesn't work with custom classes (such as this all-optical class object)
 cell_ids = expobj.cell_id
@@ -172,13 +183,13 @@ for cell in list(stds_sorted.keys())[-5:]:
     plt.scatter(x=events_loc_cells[cell], y=flu_events_cells[cell], s=0.5, c='darkgreen')
     plt.show()
 
-
 # %% SAVE THE UPDATED expobj OBJECT IN THE ORIGINAL PKL PATH TO USE NEXT
 
 expobj.save_pkl(pkl_path=pkl_path)
 
 
 print("\n COMPLETED RUNNING ALL OPTICAL PROCESSING PHOTOSTIM.")
+
 
 
 #%%#####################################################################################################################
