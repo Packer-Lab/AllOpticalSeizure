@@ -712,6 +712,46 @@ def plot_bar_with_points(data, title='', x_tick_labels=[], legend_labels: list =
 
     plt.show()
 
+# histogram density plot with gaussian best fit line
+def plot_hist_density(data, colors: list = None, fill_color: list = None, **kwargs):
+
+    fig, ax = plt.subplots()
+
+    if len(data) == 1:
+        colors = ['black']
+        fill_color = ['steelblue']
+    else:
+        assert len(data) == len(colors)
+        assert len(data) == len(fill_color)
+
+    for i in range(len(data)):
+        # the histogram of the data
+        num_bins = 10
+        n, bins, patches = ax.hist(data[i], num_bins, density=1, alpha=0.2)  # histogram hidden currently
+
+        # add a 'best fit' line
+        mu = np.mean(data[i])  # mean of distribution
+        sigma = np.std(data[i])  # standard deviation of distribution
+
+        x = np.linspace(bins[0], bins[-1], 50)
+        y1 = ((1 / (np.sqrt(2 * np.pi) * sigma)) *
+             np.exp(-0.5 * (1 / sigma * (x - mu))**2))
+        ax.plot(x, y1, linewidth=2, c=colors[i], zorder=2)
+        ax.fill_between(x, y1, color=fill_color[i], zorder=2)
+        if 'x_label' in kwargs:
+            ax.set_xlabel(kwargs['x_label'])
+        if 'y_label' in kwargs:
+            ax.set_ylabel(kwargs['y_label'])
+        else:
+            ax.set_ylabel('Probability density')
+        if 'title' in kwargs:
+            ax.set_title(kwargs['title'] + r': $\mu=%s$, $\sigma=%s$' % (round(mu, 2), round(sigma, 2)))
+        else:
+            ax.set_title(r'Histogram: $\mu=%s$, $\sigma=%s$' % (round(mu, 2), round(sigma, 2)))
+
+    # Tweak spacing to prevent clipping of ylabel
+    fig.tight_layout()
+    fig.show()
 
 # imshow gray plot for a single frame tiff
 def plot_single_tiff(tiff_path: str, title: str = None):

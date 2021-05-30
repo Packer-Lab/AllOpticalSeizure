@@ -35,6 +35,7 @@ if plot:
     aoplot.plotSLMtargetsLocs(expobj)
     aoplot.plot_lfp_stims(expobj)
 
+
 # %% prep for importing data from suite2p for this whole experiment
 # determine which frames to retrieve from the overall total s2p output
 
@@ -55,13 +56,18 @@ expobj.target_coords_all = expobj.target_coords
 expobj.s2p_targets()
 aoutils.s2pMaskStack(obj=expobj, pkl_list=[pkl_path], s2p_path=expobj.s2p_path, parent_folder=expobj.analysis_save_path, force_redo=True)
 
+
+# %% STA - raw SLM targets processing
+
 # collect raw Flu data from SLM targets
 expobj.raw_traces_from_targets(force_redo=True)
 
 plot = True
 if plot:
-    aoplot.plotSLMtargetsLocs(expobj, background=expobj.meanFluImg)
-    aoplot.plotSLMtargetsLocs(expobj, background=expobj.meanFluImg_registered)
+    aoplot.plotSLMtargetsLocs(expobj, background=expobj.meanFluImg, title='SLM targets location w/ mean Flu img')
+    aoplot.plotSLMtargetsLocs(expobj, background=expobj.meanFluImg_registered, title='SLM targets location w/ registered mean Flu img')
+
+
 
 #%%#####################################################################################################################
 ########################################################################################################################

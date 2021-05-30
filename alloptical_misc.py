@@ -5,8 +5,8 @@ import alloptical_plotting_utils as aoplot
 import matplotlib.pyplot as plt
 
 ###### IMPORT pkl file containing data in form of expobj
-trial = 't-012'
-date = '2021-01-09'
+trial = 't-010'
+date = '2021-01-08'
 
 expobj, experiment = aoutils.import_expobj(trial=trial, date=date)
 

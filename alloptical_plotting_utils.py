@@ -135,7 +135,10 @@ def plotSLMtargetsLocs(expobj, background: np.ndarray = None, **kwargs):
     for (x, y) in expobj.target_coords_all:
         plt.scatter(x=x, y=y, edgecolors='yellowgreen', facecolors='none', linewidths=1.0)
 
-    plt.suptitle('SLM targets location')
+    if 'title' in kwargs.keys():
+        plt.suptitle(kwargs['title'])
+    else:
+        plt.suptitle('SLM targets location')
 
     if 'show' in kwargs.keys():
         if kwargs['show'] is True:

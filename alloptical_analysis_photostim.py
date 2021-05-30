@@ -14,7 +14,7 @@ import seaborn as sns
 from skimage import draw
 
 ###### IMPORT pkl file containing data in form of expobj
-trial = 't-012'
+trial = 't-010'
 date = '2021-01-08'
 
 expobj, experiment = aoutils.import_expobj(trial=trial, date=date)
@@ -121,6 +121,13 @@ aoplot.plot_periphotostim_avg(arr=expobj.SLMTargets_stims_dfstdF_avg, expobj=exp
                               figsize=[5, 4], y_lims=[-0.5, 3],
                               title=(experiment + '- responses of all photostim targets'),
                               y_label=y_label, x_label='Time post-stimulation (seconds)')
+
+# %% histogram plotting of photostim. success rate
+
+data = [np.mean(expobj.responses_SLMtargets[i]) for i in range(expobj.n_targets_total)]
+
+x_label = 'response magnitude (dF/stdF)'
+
 
 # %% ########## BAR PLOT showing average success rate of photostimulation
 
