@@ -5,18 +5,19 @@ import alloptical_plotting_utils as aoplot
 import matplotlib.pyplot as plt
 
 ###### IMPORT pkl file containing data in form of expobj
-trial = 't-013'
+trial = 't-012'
 date = '2021-01-09'
 
 expobj, experiment = aoutils.import_expobj(trial=trial, date=date)
 
-expobj.paqProcessing()
-
-expobj.stim_start_frames = expobj.stim_start_frames + 3
-aoplot.plotMeanRawFluTrace(expobj=expobj, stim_span_color=None, x_axis='frames', figsize=[20, 3])
+paq, _ = paq_read(expobj.paq_path, plot=True)
 
 
-fig, ax = plt.subplots(figsize=[20, 3])
+# expobj.stim_start_frames = expobj.stim_start_frames + 3
+# aoplot.plotMeanRawFluTrace(expobj=expobj, stim_span_color=None, x_axis='frames', figsize=[20, 3])
+#
+#
+# fig, ax = plt.subplots(figsize=[20, 3])
 
 
 #

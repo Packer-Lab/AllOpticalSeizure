@@ -92,7 +92,7 @@ expobj.SLMTargets_stims_dfstdF_avg, expobj.SLMTargets_stims_raw, expobj.SLMTarge
 SLMtarget_ids = list(range(len(expobj.SLMTargets_stims_dfstdF)))
 
 expobj.StimSuccessRate_SLMtargets, expobj.hits_SLMtargets, expobj.responses_SLMtargets = \
-    aoutils.calculate_StimSuccessRate(expobj, cell_ids=SLMtarget_ids, raw_traces_stims=expobj.SLMTargets_stims_raw, dff_threshold=20,
+    aoutils.calculate_StimSuccessRate(expobj, cell_ids=SLMtarget_ids, raw_traces_stims=expobj.SLMTargets_stims_raw, dfstdf_threshold=0.3,
                                       pre_stim=expobj.pre_stim, sz_filter=False,
                                       verbose=True, plot=False)
 
@@ -105,17 +105,17 @@ allOpticalresults = aoutils.import_resultsobj(pkl_path=results_object_path)
 
 # %%
 mean_reliability_rate = round(np.mean(list(expobj.StimSuccessRate_SLMtargets.values())), 2)
-mean_response_dfstdf = round(np.mean(list(expobj.responses_SLMtargets)), 2)
+mean_response_dfstdf = round(np.mean(list(expobj.responses_SLMtargets.values())), 2)
 mean_response_dff = np.nan
 
 prep_trial = '%s %s' % (expobj.metainfo['animal prep.'], expobj.metainfo['trial'])
-# stim_setup = '32 cells x 1 groups; 5mW per cell, 100ms stim (prot. #1)'
-stim_setup = '32 cells x 1 groups; 7mW per cell, 250ms stim (prot. #1b)'
+stim_setup = '32 cells x 1 groups; 5mW per cell, 100ms stim (prot. #1)'
+# stim_setup = '32 cells x 1 groups; 7mW per cell, 250ms stim (prot. #1b)'
 if prep_trial not in list(allOpticalresults.slmtargets_stim_responses['prep_trial']):
     allOpticalresults.slmtargets_stim_responses.loc[allOpticalresults.slmtargets_stim_responses.shape[0]+1] = [prep_trial] + ['-'] * (allOpticalresults.slmtargets_stim_responses.shape[1] - 1)
-allOpticalresults.slmtargets_stim_responses.loc[allOpticalresults.slmtargets_stim_responses['prep_trial'] == prep_trial, 'date'] = expobj.metainfo['date']
-allOpticalresults.slmtargets_stim_responses.loc[allOpticalresults.slmtargets_stim_responses['prep_trial'] == prep_trial, 'exptype'] = expobj.metainfo['exptype']
-allOpticalresults.slmtargets_stim_responses.loc[allOpticalresults.slmtargets_stim_responses['prep_trial'] == prep_trial, 'stim_setup'] = stim_setup
+    allOpticalresults.slmtargets_stim_responses.loc[allOpticalresults.slmtargets_stim_responses['prep_trial'] == prep_trial, 'date'] = expobj.metainfo['date']
+    allOpticalresults.slmtargets_stim_responses.loc[allOpticalresults.slmtargets_stim_responses['prep_trial'] == prep_trial, 'exptype'] = expobj.metainfo['exptype']
+    allOpticalresults.slmtargets_stim_responses.loc[allOpticalresults.slmtargets_stim_responses['prep_trial'] == prep_trial, 'stim_setup'] = stim_setup
 allOpticalresults.slmtargets_stim_responses.loc[allOpticalresults.slmtargets_stim_responses['prep_trial'] == prep_trial, 'mean response (dF/stdF all targets)'] = mean_response_dfstdf
 allOpticalresults.slmtargets_stim_responses.loc[allOpticalresults.slmtargets_stim_responses['prep_trial'] == prep_trial, 'mean response (dFF all targets)'] = mean_response_dff
 allOpticalresults.slmtargets_stim_responses.loc[allOpticalresults.slmtargets_stim_responses['prep_trial'] == prep_trial, 'mean reliability (>0.3 dF/stdF)'] = mean_reliability_rate

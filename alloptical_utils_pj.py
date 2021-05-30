@@ -18,6 +18,7 @@ from utils.funcs_pj import SaveDownsampledTiff, subselect_tiff, make_tiff_stack,
 sys.path.append('/home/pshah/Documents/code/')
 # from Vape.utils.paq2py import *
 from Vape.utils.utils_funcs import *
+from Vape.utils import STAMovieMaker_noGUI as STAMM
 import scipy.stats as stats
 from suite2p.run_s2p import run_s2p
 import matplotlib.pyplot as plt
@@ -1672,6 +1673,71 @@ class alloptical(TwoPhotonImaging):
         else:
             print('skipping remaking of avg stim images')
 
+    def run_stamm_nogui(self, numDiffStims, startOnStim, everyXStims, preSeconds=0.75, postSeconds=1.25):
+        """run STAmoviemaker for the expobj's trial"""
+        qnap_path = os.path.expanduser('/home/pshah/mnt/qnap')
+
+        ## data path
+        movie_path = self.tiff_path
+        sync_path = self.paq_path
+
+        ## stamm save path
+        stam_save_path = os.path.join(qnap_path, 'Analysis', self.metainfo['date'], 'STA_Movies',
+                                      '%s_%s_%s' % (self.metainfo['date'],
+                                                    self.metainfo['animal prep.'],
+                                                    self.metainfo['trial']))
+        os.makedirs(stam_save_path, exist_ok=True)
+
+        ##
+        assert os.path.exists(stam_save_path)
+
+        print('QNAP_path:', qnap_path,
+              '\ndata path:', movie_path,
+              '\nsync path:', sync_path,
+              '\nSTA movie save path:', stam_save_path)
+
+
+        # define STAmm parameters
+        frameRate = int(self.fps)
+
+        arg_dict = {'moviePath': movie_path,  # hard-code this
+                    'savePath': stam_save_path,
+                    'syncFrameChannel': 'frame_clock',
+                    'syncStimChannel': 'packio2markpoints',
+                    'syncStartSec': 0,
+                    'syncStopSec': 0,
+                    'numDiffStims': numDiffStims,
+                    'startOnStim': startOnStim,
+                    'everyXStims': everyXStims,
+                    'preSeconds': preSeconds,
+                    'postSeconds': postSeconds,
+                    'frameRate': frameRate,
+                    'averageImageStart': 0.5,
+                    'averageImageStop': 1.5,
+                    'methodDF': False,
+                    'methodDFF': True,
+                    'methodZscore': False,
+                    'syncPath': sync_path,
+                    'zPlanes': 1,
+                    'useStimOrder': False,
+                    'stimOrder': [],
+                    'useSingleTrials': False,
+                    'doThreshold': False,
+                    'threshold': 0,
+                    'colourByTime': False,
+                    'useCorrelationImage': False,
+                    'blurHandS': False,
+                    'makeMaxImage': True,
+                    'makeColourImage': False
+                    }
+
+        # run STAmm
+        STAMM.STAMovieMaker(arg_dict)
+
+        # show the MaxResponseImage
+        img = glob.glob(stam_save_path + '/*MaxResponseImage.tif')[0]
+        plot_single_tiff(img)
+
     # def _good_cells(self, min_radius_pix, max_radius_pix):
     #     '''
     #     This function filters each cell for two criteria. 1) at least 1 flu change greater than 2.5std above mean,
@@ -2053,7 +2119,7 @@ class Post4ap(alloptical):
                 'cannot check for cell inside sz boundary because cell sz classification hasnot been performed yet')
 
 
-class OnePhotonStim(TwoPhotonImaging):
+class OnePhotonStim(TwoPhotonImaging, alloptical):
     def __init__(self, data_path_base, date, animal_prep, trial, metainfo, analysis_save_path_base: str = None):
         paqs_loc = '%s%s_%s_%s.paq' % (
             data_path_base, date, animal_prep, trial[2:])  # path to the .paq files for the selected trials
@@ -3164,7 +3230,7 @@ def calculate_StimSuccessRate(expobj, cell_ids: list, raw_traces_stims=None, dfs
                 if dfstdf_threshold:
                     response_result = response / std_pre  # normalize the delta F above pre-stim mean using std of the pre-stim
                 else:
-                    response_result = (response / pre_stim_mean) * 100  # calculate dFF response for each stim trace
+                    response_result = (response / pre_stim_mean) * 100  # calculate % of dFF response for each stim trace
                 responses.append(round(response_result, 2))
                 if response_result >= threshold:
                     success += 1
