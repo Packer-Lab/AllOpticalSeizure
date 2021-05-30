@@ -122,27 +122,15 @@ aoplot.plot_periphotostim_avg(arr=expobj.SLMTargets_stims_dfstdF_avg, expobj=exp
                               title=(experiment + '- responses of all photostim targets'),
                               y_label=y_label, x_label='Time post-stimulation (seconds)')
 
-# %% histogram plotting of photostim. success rate
+# %% plotting of photostim. success rate
 
 data = [np.mean(expobj.responses_SLMtargets[i]) for i in range(expobj.n_targets_total)]
 
-x_label = 'response magnitude (dF/stdF)'
-
-
-# %% ########## BAR PLOT showing average success rate of photostimulation
-
-pj.plot_bar_with_points(data=[list(expobj.StimSuccessRate_SLMtargets.values())], x_tick_labels=['t-013'], ylims=[0, 100], bar=False, y_label='% success stims.',
+pj.plot_hist_density(data, x_label='response magnitude (dF/stdF)')
+pj.plot_bar_with_points(data=[list(expobj.StimSuccessRate_SLMtargets.values())], x_tick_labels=['t-010'], ylims=[0, 100], bar=False, y_label='% success stims.',
                         title='%s success rate of stim responses' % trial, expand_size_x=2)
 
 
-# plot across different groups
-t009_pre_4ap_reliability = list(expobj.StimSuccessRate_SLMtargets.values())
-# t011_post_4ap_reliabilty = list(expobj.StimSuccessRate_cells.values())  # reimport another expobj for post4ap trial
-t013_post_4ap_reliabilty = list(expobj.StimSuccessRate_SLMtargets.values())  # reimport another expobj for post4ap trial
-#
-pj.plot_bar_with_points(data=[t009_pre_4ap_reliability, t013_post_4ap_reliabilty], xlims=[0.25, 0.3],
-                        x_tick_labels=['pre-4ap', 'post-4ap'], colors=['green', 'deeppink'], y_label='% success stims.',
-                        ylims=[0, 100], bar=False, title='success rate of stim. responses', expand_size_y=1.2, expand_size_x=1.2)
 
 
 # %% PLOT AVG PHOTOSTIM PRE- POST- TRACE AVGed OVER ALL PHOTOSTIM. TRIALS - NON - TARGETS

@@ -10,7 +10,10 @@ date = '2021-01-08'
 
 expobj, experiment = aoutils.import_expobj(trial=trial, date=date)
 
-paq, _ = paq_read(expobj.paq_path, plot=True)
+# paq, _ = paq_read(expobj.paq_path, plot=True)
+
+pj.plot_bar_with_points(data=[list(expobj.StimSuccessRate_SLMtargets.values())], x_tick_labels=[trial], ylims=[0, 100], bar=False,
+                        y_label='% success stims.', title='%s success rate of stim responses' % trial, expand_size_x=2)
 
 
 # expobj.stim_start_frames = expobj.stim_start_frames + 3

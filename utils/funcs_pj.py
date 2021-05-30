@@ -642,6 +642,9 @@ def plot_bar_with_points(data, title='', x_tick_labels=[], legend_labels: list =
     fig, ax = plt.subplots(figsize=((2 * len(x) / 2) * expand_size_x, 3 * expand_size_y))
     if len(legend_labels) > 0:
         fig, ax = plt.subplots(figsize=((5 * len(x) / 2) * expand_size_x, 3 * expand_size_y))
+    else:
+        legend_labels = x_tick_labels
+        assert len(legend_labels) > 0
     if not bar:
         for i in x:
             # ax.plot(np.linspace(x[i] - w / 2, x[i] + w / 2, 3), [np.mean(yi) for yi in y] * 3, edgecolor=colors[i])
