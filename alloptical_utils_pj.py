@@ -88,14 +88,20 @@ class TwoPhotonImaging:
         self.analysis_save_path = analysis_save_path
 
         # create analysis save path location
-        self.analysis_save_path = analysis_save_path
-        if os.path.exists(self.analysis_save_path):
-            pass
-        elif os.path.exists(self.analysis_save_path[:-17]):
-            print('making analysis save folder at: \n  %s' % self.analysis_save_path)
-            os.mkdir(self.analysis_save_path)
+        if os.path.exists(analysis_save_path):
+            self.analysis_save_path = analysis_save_path
         else:
-            raise Exception('cannot find save folder path at: ', self.analysis_save_path[:-17])
+            self.analysis_save_path = analysis_save_path
+            print('making analysis save folder at: \n  %s' % self.analysis_save_path)
+            os.makedirs(self.analysis_save_path)
+
+        # if os.path.exists(self.analysis_save_path):
+        #     pass
+        # elif os.path.exists(self.analysis_save_path[:-17]):
+        #     print('making analysis save folder at: \n  %s' % self.analysis_save_path)
+        #     os.mkdir(self.analysis_save_path)
+        # else:
+        #     raise Exception('cannot find save folder path at: ', self.analysis_save_path[:-17])
 
         # elif os.path.exists(self.analysis_save_path[:-27]):
         #     print('making analysis save folder at: \n  %s \n and %s' % (self.analysis_save_path[:-17], self.analysis_save_path))
@@ -2461,6 +2467,76 @@ def run_photostim_processing(trial, exp_type, tiffs_loc_dir, tiffs_loc, naparms_
     print(metainfo)
 
     return expobj
+
+
+def run_alloptical_processing_photostim(expobj, to_suite2p, baseline_trials, plots: bool = True, force_redo: bool = False):
+    if not hasattr(expobj, 'target_coords_all'):
+        expobj.target_coords_all = expobj.target_coords
+
+    if not hasattr(expobj, 'meanRawFluTrace'):
+        expobj.mean_raw_flu_trace(plot=True)
+
+    if plots:
+        aoplot.plotMeanRawFluTrace(expobj=expobj, stim_span_color=None, x_axis='frames', figsize=[20, 3])
+        # aoplot.plotLfpSignal(expobj, stim_span_color=None, x_axis='frames', figsize=[20, 3])
+        aoplot.plotSLMtargetsLocs(expobj)
+        aoplot.plot_lfp_stims(expobj)
+
+    ####################################################################################################################
+    # prep for importing data from suite2p for this whole experiment
+    # determine which frames to retrieve from the overall total s2p output
+
+    if not hasattr(expobj, 'suite2p_trials'):
+        expobj.suite2p_trials = to_suite2p
+        expobj.baseline_trials = baseline_trials
+        expobj.save()
+
+    # main function that imports suite2p data and adds attributes to the expobj
+    expobj.subset_frames_current_trial(trial=expobj.metainfo['trial'], to_suite2p=expobj.suite2p_trials,
+                                       baseline_trials=expobj.baseline_trials, force_redo=force_redo)
+    expobj.s2pProcessing(s2p_path=expobj.s2p_path, subset_frames=expobj.curr_trial_frames, subtract_neuropil=True,
+                         baseline_frames=expobj.baseline_frames, force_redo=force_redo)
+    expobj.target_coords_all = expobj.target_coords
+    expobj.s2p_targets()
+    s2pMaskStack(obj=expobj, pkl_list=[expobj.pkl_path], s2p_path=expobj.s2p_path,
+                         parent_folder=expobj.analysis_save_path, force_redo=force_redo)
+
+    ####################################################################################################################
+    # STA - raw SLM targets processing
+
+    # collect raw Flu data from SLM targets
+    expobj.raw_traces_from_targets(force_redo=False)
+
+    plot = True
+    if plot:
+        aoplot.plotSLMtargetsLocs(expobj, background=expobj.meanFluImg, title='SLM targets location w/ mean Flu img')
+        aoplot.plotSLMtargetsLocs(expobj, background=expobj.meanFluImg_registered,
+                                  title='SLM targets location w/ registered mean Flu img')
+
+    # collect SLM photostim individual targets -- individual, full traces, dff normalized
+    expobj.dff_SLMTargets = normalize_dff(np.array(expobj.raw_SLMTargets))
+    # expobj.save()
+
+    # collect and plot peri- photostim traces for individual SLM target, incl. individual traces for each stim
+    expobj.pre_stim = int(0.5 * expobj.fps)
+    expobj.post_stim = int(4 * expobj.fps)
+    expobj.SLMTargets_stims_dff, expobj.SLMTargets_stims_dffAvg, expobj.SLMTargets_stims_dfstdF, \
+    expobj.SLMTargets_stims_dfstdF_avg, expobj.SLMTargets_stims_raw, expobj.SLMTargets_stims_rawAvg = \
+        expobj.get_alltargets_stim_traces_norm(pre_stim=expobj.pre_stim, post_stim=expobj.post_stim)
+
+    # photostim. SUCCESS RATE MEASUREMENTS and PLOT - SLM PHOTOSTIM TARGETED CELLS
+    # measure, for each cell, the pct of trials in which the dF_stdF > 20% post stim (normalized to pre-stim avgF for the trial and cell)
+    # can plot this as a bar plot for now showing the distribution of the reliability measurement
+
+    SLMtarget_ids = list(range(len(expobj.SLMTargets_stims_dfstdF)))
+
+    expobj.StimSuccessRate_SLMtargets, expobj.hits_SLMtargets, expobj.responses_SLMtargets = \
+        calculate_StimSuccessRate(expobj, cell_ids=SLMtarget_ids, raw_traces_stims=expobj.SLMTargets_stims_raw,
+                                          dfstdf_threshold=0.3,
+                                          pre_stim=expobj.pre_stim, sz_filter=False,
+                                          verbose=True, plot=False)
+
+    expobj.save()
 
 
 ########
