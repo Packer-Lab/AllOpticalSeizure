@@ -30,17 +30,23 @@ import tifffile as tf
 ########
 
 #%%
-###### IMPORT pkl file containing data in form of expobj
-trial = 't-015'
-date = '2021-01-09'
 
-expobj, experiment = aoutils.import_expobj(trial=trial, date=date)
+to_suite2p = ['t-005', 't-006', 't-008', 't-009', 't-010', 't-011', 't-012', 't-013']  # specify all trials that were used in the suite2p runtotal_frames_stitched = 0
+baseline_trials = ['t-005', 't-006', 't-008']  # specify which trials to use as spont baseline
+# note ^^^ this only works currently when the spont baseline trials all come first, and also back to back
 
-expobj.paqProcessing()
 
-expobj.stim_start_frames = expobj.stim_start_frames
-aoplot.plotMeanRawFluTrace(expobj=expobj, stim_span_color=None, x_axis='frames', figsize=[20, 3])
+trials = ['t-009', 't-010']
 
+for trial in trials:
+    ###### IMPORT pkl file containing expobj
+    date = '2020-12-18'
+    pkl_path = "/home/pshah/mnt/qnap/Analysis/%s/RL108/%s_%s/%s_%s.pkl" % (date, date, trial, date, trial)
+
+    expobj, experiment = aoutils.import_expobj(trial=trial, date=date, pkl_path=pkl_path)
+    expobj.s2p_path = '/home/pshah/mnt/qnap/Analysis/2020-12-18/suite2p/alloptical-2p-1x-alltrials/plane0'
+    aoutils.run_alloptical_processing_photostim(expobj, to_suite2p=to_suite2p, baseline_trials=baseline_trials,
+                                                force_redo=True)
 
 # fig, ax = plt.subplots(figsize=[20, 3])
 # for i in range(0, 100):
@@ -50,24 +56,24 @@ aoplot.plotMeanRawFluTrace(expobj=expobj, stim_span_color=None, x_axis='frames',
 
 #%%
 
-## save downsampled TIFF
-
-stack = aoutils.plot_single_tiff(tiff_path='/home/pshah/mnt/qnap/Data/2021-01-08/2021-01-08_t-007/2021-01-08_t-007_Cycle00001_Ch3_downsampled.tif')
-
-
-# Downscale images by half​
-stack = tf.imread('/home/pshah/mnt/qnap/Data/2021-01-08/2021-01-08_t-007/2021-01-08_t-007_Cycle00001_Ch3_downsampled.tif')
-
-shape = np.shape(stack)
-
-input_size = stack.shape[1]
-output_size = 512
-bin_size = input_size // output_size
-small_image = stack.reshape((shape[0], output_size, bin_size,
-                                      output_size, bin_size)).mean(4).mean(2)
-
-plt.imshow(stack[0], cmap='gray'); plt.show()
-plt.imshow(small_image[0], cmap='gray'); plt.show()
+# ## save downsampled TIFF
+#
+# stack = aoutils.plot_single_tiff(tiff_path='/home/pshah/mnt/qnap/Data/2021-01-08/2021-01-08_t-007/2021-01-08_t-007_Cycle00001_Ch3_downsampled.tif')
+#
+#
+# # Downscale images by half​
+# stack = tf.imread('/home/pshah/mnt/qnap/Data/2021-01-08/2021-01-08_t-007/2021-01-08_t-007_Cycle00001_Ch3_downsampled.tif')
+#
+# shape = np.shape(stack)
+#
+# input_size = stack.shape[1]
+# output_size = 512
+# bin_size = input_size // output_size
+# small_image = stack.reshape((shape[0], output_size, bin_size,
+#                                       output_size, bin_size)).mean(4).mean(2)
+#
+# plt.imshow(stack[0], cmap='gray'); plt.show()
+# plt.imshow(small_image[0], cmap='gray'); plt.show()
 
 # %%
 # original = '/home/pshah/mnt/qnap/Analysis/2021-01-10/suite2p/alloptical-2p-08x-alltrials-reg_tiff/plane0/reg_tif/file021_chan0.tif'

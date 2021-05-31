@@ -110,7 +110,7 @@ class TwoPhotonImaging:
 
         self._parsePVMetadata()
         if not quick:
-            stack = self.mean_raw_flu_trace(save_pkl=False)
+            stack = self.mean_raw_flu_trace(save_pkl=True)
         if save_downsampled_tiff:
             SaveDownsampledTiff(stack=stack, save_as=analysis_save_path + '/%s_%s_downsampled.tif' % (
             metainfo['date'], metainfo['trial']))  # specify path in Analysis folder to save pkl object')
@@ -445,19 +445,26 @@ class TwoPhotonImaging:
 
 class alloptical(TwoPhotonImaging):
 
-    def __init__(self, paths, metainfo, stimtype):
-        TwoPhotonImaging.__init__(self, tiff_path_dir=paths[0], tiff_path=paths[1], paq_path=paths[3],
-                                  metainfo=metainfo, analysis_save_path=paths[4],
-                                  suite2p_path=None, suite2p_run=False)
+    def __init__(self, paths, metainfo, stimtype, quick=False):
         # self.metainfo = metainfo
         self.stim_type = stimtype
-
-        # self.tiff_path_dir = paths[0]
-        # self.tiff_path = paths[1]
         self.naparm_path = paths[2]
         self.paq_path = paths[3]
 
+
+        assert os.path.exists(self.naparm_path)
+        assert os.path.exists(self.paq_path)
+
         self.seizure_frames = []
+
+        TwoPhotonImaging.__init__(self, tiff_path_dir=paths[0], tiff_path=paths[1], paq_path=paths[3],
+                                  metainfo=metainfo, analysis_save_path=paths[4],
+                                  suite2p_path=None, suite2p_run=False, quick=quick)
+
+
+        # self.tiff_path_dir = paths[0]
+        # self.tiff_path = paths[1]
+
 
         # self._parsePVMetadata()
 
@@ -594,7 +601,7 @@ class alloptical(TwoPhotonImaging):
             curr_trial_frames = None
             self.baseline_frames = [0, 0]
             for t in to_suite2p:
-                pkl_path_2 = self.pkl_path[:57] + t + '/' + self.metainfo['date'] + '_' + t + '.pkl'
+                pkl_path_2 = self.pkl_path[:58] + t + '/' + self.metainfo['date'] + '_' + t + '.pkl'
                 with open(pkl_path_2, 'rb') as f:
                     _expobj = pickle.load(f)
                     # import suite2p data
@@ -1285,7 +1292,7 @@ class alloptical(TwoPhotonImaging):
 
         fig, ax = plt.subplots(figsize=[6,6])
         fig, ax = aoplot.plot_cell_loc(self, cells=self.s2p_cell_targets, show=False, fig=fig, ax=ax,
-                                                title='s2p cell targets (red-filled) and all target coords (green) %s/%s' % (
+                                       title='s2p cell targets (red-filled) and all target coords (green) %s/%s' % (
                               self.metainfo['trial'], self.metainfo['animal prep.']), invert_y=True)
         for (x, y) in self.target_coords_all:
             ax.scatter(x=x, y=y, edgecolors='yellowgreen', facecolors='none', linewidths=1.0)
@@ -2400,7 +2407,7 @@ class AllOpticalResults:
 # main functions used to initiate and run processing of experiments
 # for processing PHOTOSTIM. experiments, creates the all-optical expobj saved in a pkl files at imaging tiff's loc
 def run_photostim_processing(trial, exp_type, tiffs_loc_dir, tiffs_loc, naparms_loc, paqs_loc, pkl_path, metainfo,
-                             new_tiffs, matlab_badframes_path=None, processed_tiffs=True, discard_all=False,
+                             new_tiffs, matlab_badframes_path=None, processed_tiffs=True, discard_all=False, quick=False,
                              analysis_save_path=''):
     print('\n-----Processing trial # %s-----' % trial)
 
@@ -2410,7 +2417,7 @@ def run_photostim_processing(trial, exp_type, tiffs_loc_dir, tiffs_loc, naparms_
     if 'post' in exp_type and '4ap' in exp_type:
         expobj = Post4ap(paths[0], metainfo=metainfo, stimtype='2pstim', discard_all=discard_all)
     else:
-        expobj = alloptical(paths[0], metainfo=metainfo, stimtype='2pstim')
+        expobj = alloptical(paths[0], metainfo=metainfo, stimtype='2pstim', quick=quick)
 
     # for key, values in vars(expobj).items():
     #     print(key)
@@ -2468,7 +2475,8 @@ def run_photostim_processing(trial, exp_type, tiffs_loc_dir, tiffs_loc, naparms_
     return expobj
 
 
-def run_alloptical_processing_photostim(expobj, to_suite2p, baseline_trials, plots: bool = True, force_redo: bool = False):
+def run_alloptical_processing_photostim(expobj, to_suite2p, baseline_trials, plots: bool = True, force_redo: bool = False,
+                                        post_stim_response_window_msec=500):
     if not hasattr(expobj, 'target_coords_all'):
         expobj.target_coords_all = expobj.target_coords
 
@@ -2496,7 +2504,7 @@ def run_alloptical_processing_photostim(expobj, to_suite2p, baseline_trials, plo
     expobj.s2pProcessing(s2p_path=expobj.s2p_path, subset_frames=expobj.curr_trial_frames, subtract_neuropil=True,
                          baseline_frames=expobj.baseline_frames, force_redo=force_redo)
     expobj.target_coords_all = expobj.target_coords
-    expobj.s2p_targets()
+    expobj.s2p_targets(force_redo=True)
     s2pMaskStack(obj=expobj, pkl_list=[expobj.pkl_path], s2p_path=expobj.s2p_path,
                          parent_folder=expobj.analysis_save_path, force_redo=force_redo)
 
@@ -2519,6 +2527,8 @@ def run_alloptical_processing_photostim(expobj, to_suite2p, baseline_trials, plo
     # collect and plot peri- photostim traces for individual SLM target, incl. individual traces for each stim
     expobj.pre_stim = int(0.5 * expobj.fps)
     expobj.post_stim = int(4 * expobj.fps)
+    expobj.post_stim_response_window_msec = post_stim_response_window_msec
+    expobj.post_stim_response_frames_window = int(expobj.fps * expobj.post_stim_response_window_msec)
     expobj.SLMTargets_stims_dff, expobj.SLMTargets_stims_dffAvg, expobj.SLMTargets_stims_dfstdF, \
     expobj.SLMTargets_stims_dfstdF_avg, expobj.SLMTargets_stims_raw, expobj.SLMTargets_stims_rawAvg = \
         expobj.get_alltargets_stim_traces_norm(pre_stim=expobj.pre_stim, post_stim=expobj.post_stim)
@@ -2531,9 +2541,9 @@ def run_alloptical_processing_photostim(expobj, to_suite2p, baseline_trials, plo
 
     expobj.StimSuccessRate_SLMtargets, expobj.hits_SLMtargets, expobj.responses_SLMtargets = \
         calculate_StimSuccessRate(expobj, cell_ids=SLMtarget_ids, raw_traces_stims=expobj.SLMTargets_stims_raw,
-                                          dfstdf_threshold=0.3,
-                                          pre_stim=expobj.pre_stim, sz_filter=False,
-                                          verbose=True, plot=False)
+                                  dfstdf_threshold=0.3, post_stim_response_frames_window=expobj.post_stim_response_frames_window,
+                                  pre_stim=expobj.pre_stim, sz_filter=False,
+                                  verbose=True, plot=False)
 
     expobj.save()
 
@@ -3221,7 +3231,7 @@ def corrcoef_array(array):
 
 
 # calculate reliability of photostim responsiveness of all of the targeted cells (found in s2p output)
-def calculate_StimSuccessRate(expobj, cell_ids: list, raw_traces_stims=None, dfstdf_threshold=None,
+def calculate_StimSuccessRate(expobj, cell_ids: list, raw_traces_stims=None, dfstdf_threshold=None, post_stim_response_frames_window=10,
                               dff_threshold=None, pre_stim=10, sz_filter=False, verbose=False, plot=False):
     """calculates the percentage of successful photoresponsive trials for each targeted cell, where success is post
      stim response over the dff_threshold. the filter_for_sz argument is set to True when needing to filter out stim timings
@@ -3301,7 +3311,7 @@ def calculate_StimSuccessRate(expobj, cell_ids: list, raw_traces_stims=None, dfs
 
                 # calculate if the current trace beats the threshold for calculating reliability (note that this happens over a specific window just after the photostim)
                 response = np.nanmean(response_trace[
-                                      pre_stim + expobj.stim_duration_frames:pre_stim + 3 * expobj.stim_duration_frames])  # calculate the dF over pre-stim mean F response within the response window
+                                      pre_stim + expobj.stim_duration_frames:pre_stim + 1 + expobj.post_stim_response_frames_window])  # calculate the dF over pre-stim mean F response within the response window
                 if dfstdf_threshold:
                     response_result = response / std_pre  # normalize the delta F above pre-stim mean using std of the pre-stim
                 else:
