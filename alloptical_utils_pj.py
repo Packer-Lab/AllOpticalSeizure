@@ -2522,7 +2522,7 @@ def run_alloptical_processing_photostim(expobj, to_suite2p, baseline_trials, plo
 
     # collect SLM photostim individual targets -- individual, full traces, dff normalized
     expobj.dff_SLMTargets = normalize_dff(np.array(expobj.raw_SLMTargets))
-    # expobj.save()
+    expobj.save()
 
     # collect and plot peri- photostim traces for individual SLM target, incl. individual traces for each stim
     expobj.pre_stim = int(0.5 * expobj.fps)
@@ -2539,17 +2539,33 @@ def run_alloptical_processing_photostim(expobj, to_suite2p, baseline_trials, plo
 
     SLMtarget_ids = list(range(len(expobj.SLMTargets_stims_dfstdF)))
 
-    if 'post' in expobj.metainfo['exptype']:
+    if hasattr(expobj, 'stims_in_sz'):
         seizure_filter = True
+
+        stims = [expobj.stim_start_frames.index(stim) for stim in expobj.stims_out_sz]
+        raw_traces_stims = expobj.SLMTargets_stims_raw[:, stims, :]
+        if len(raw_traces_stims) > 0:
+            expobj.outsz_StimSuccessRate_SLMtargets, expobj.outsz_hits_SLMtargets, expobj.outsz_responses_SLMtargets = \
+                calculate_StimSuccessRate(expobj, cell_ids=SLMtarget_ids, raw_traces_stims=raw_traces_stims,
+                                          dfstdf_threshold=0.3, post_stim_response_frames_window=expobj.post_stim_response_frames_window,
+                                          pre_stim=expobj.pre_stim, sz_filter=seizure_filter,
+                                          verbose=True, plot=False)
+        if len(raw_traces_stims) > 0:
+            stims = [expobj.stim_start_frames.index(stim) for stim in expobj.stims_in_sz]
+            raw_traces_stims = expobj.SLMTargets_stims_raw[:, stims, :]
+            expobj.insz_StimSuccessRate_SLMtargets, expobj.insz_hits_SLMtargets, expobj.insz_responses_SLMtargets = \
+                calculate_StimSuccessRate(expobj, cell_ids=SLMtarget_ids, raw_traces_stims=raw_traces_stims,
+                                          dfstdf_threshold=0.3, post_stim_response_frames_window=expobj.post_stim_response_frames_window,
+                                          pre_stim=expobj.pre_stim, sz_filter=seizure_filter,
+                                          verbose=True, plot=False)
     else:
         seizure_filter = False
-
-
-    expobj.StimSuccessRate_SLMtargets, expobj.hits_SLMtargets, expobj.responses_SLMtargets = \
-        calculate_StimSuccessRate(expobj, cell_ids=SLMtarget_ids, raw_traces_stims=expobj.SLMTargets_stims_raw,
-                                  dfstdf_threshold=0.3, post_stim_response_frames_window=expobj.post_stim_response_frames_window,
-                                  pre_stim=expobj.pre_stim, sz_filter=seizure_filter,
-                                  verbose=True, plot=False)
+        expobj.StimSuccessRate_SLMtargets, expobj.hits_SLMtargets, expobj.responses_SLMtargets = \
+            calculate_StimSuccessRate(expobj, cell_ids=SLMtarget_ids, raw_traces_stims=expobj.SLMTargets_stims_raw,
+                                      dfstdf_threshold=0.3,
+                                      post_stim_response_frames_window=expobj.post_stim_response_frames_window,
+                                      pre_stim=expobj.pre_stim, sz_filter=seizure_filter,
+                                      verbose=True, plot=False)
 
     expobj.save()
 
@@ -3296,8 +3312,8 @@ def calculate_StimSuccessRate(expobj, cell_ids: list, raw_traces_stims=None, dfs
 
     elif raw_traces_stims is not None:
         if sz_filter:
-            raise Exception(
-                "the seizure filtering by stims + cells functionality is only available for s2p defined cell targets as of now")
+            raise Warning(
+                "the seizure filtering by *cells* functionality is only available for s2p defined cell targets as of now")
 
         for idx in range(len(cell_ids)):
             success = 0
