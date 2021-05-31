@@ -27,6 +27,7 @@ import numpy as np
 import xml.etree.ElementTree as ET
 import tifffile as tf
 import csv
+import warnings
 
 from utils import funcs_pj as pj
 from utils.paq_utils import paq_read, frames_discard
@@ -3312,7 +3313,7 @@ def calculate_StimSuccessRate(expobj, cell_ids: list, raw_traces_stims=None, dfs
 
     elif raw_traces_stims is not None:
         if sz_filter:
-            raise Warning(
+            warnings.warn(
                 "the seizure filtering by *cells* functionality is only available for s2p defined cell targets as of now")
 
         for idx in range(len(cell_ids)):

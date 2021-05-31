@@ -431,8 +431,8 @@ def plot_lfp_stims(expobj, title='LFP signal with photostim. shown (in different
 
         ax2.scatter(x=x, y=[y_loc] * len(expobj.stims_in_sz), edgecolors='white', facecolors='purple', marker="^", zorder=3, s=100, linewidths=1.0, label='stims in sz')
         ax2.scatter(x=x_out, y=[y_loc] * len(x_out), edgecolors='white', facecolors='green', marker="^", zorder=3, s=100, linewidths=1.0, label='stims out of sz')
-        # ax2.scatter(x=x_bf, y=[y_loc] * len(expobj.stims_bf_sz), edgecolors='grey', facecolors='deeppink', marker="|", zorder=3, s=60, linewidths=2.0)
-        # ax2.scatter(x=x_af, y=[y_loc] * len(expobj.stims_af_sz), edgecolors='grey', facecolors='hotpink', marker="|", zorder=3, s=60, linewidths=2.0)
+        ax2.scatter(x=x_bf, y=[y_loc] * len(expobj.stims_bf_sz), edgecolors='grey', facecolors='green', marker="^", zorder=3, s=100, linewidths=1.0, label='stims out of sz')
+        ax2.scatter(x=x_af, y=[y_loc] * len(expobj.stims_af_sz), edgecolors='grey', facecolors='green', marker="^", zorder=3, s=100, linewidths=1.0, label='stims out of sz')
     else:
         if 'ax2' not in kwargs.keys():
             ax2 = ax.twinx()
