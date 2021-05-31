@@ -2539,10 +2539,16 @@ def run_alloptical_processing_photostim(expobj, to_suite2p, baseline_trials, plo
 
     SLMtarget_ids = list(range(len(expobj.SLMTargets_stims_dfstdF)))
 
+    if 'post' in expobj.metainfo['exptype']:
+        seizure_filter = True
+    else:
+        seizure_filter = False
+
+
     expobj.StimSuccessRate_SLMtargets, expobj.hits_SLMtargets, expobj.responses_SLMtargets = \
         calculate_StimSuccessRate(expobj, cell_ids=SLMtarget_ids, raw_traces_stims=expobj.SLMTargets_stims_raw,
                                   dfstdf_threshold=0.3, post_stim_response_frames_window=expobj.post_stim_response_frames_window,
-                                  pre_stim=expobj.pre_stim, sz_filter=False,
+                                  pre_stim=expobj.pre_stim, sz_filter=seizure_filter,
                                   verbose=True, plot=False)
 
     expobj.save()

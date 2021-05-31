@@ -198,7 +198,7 @@ def plot_photostim_traces(array, expobj, title='', y_min=None, y_max=None, x_lab
     fig.show()
 
 
-def plot_photostim_traces_overlap(array, expobj, exclude_id=[], spacing=1, title='', y_lims=None,
+def plot_photostim_traces_overlap(array, expobj, exclude_id=[], y_spacing_factor=1, title='', y_lims=None,
                                   x_axis='Time (seconds)', save_fig=None, figsize=(20, 10)):
     '''
     :param array:
@@ -219,7 +219,7 @@ def plot_photostim_traces_overlap(array, expobj, exclude_id=[], spacing=1, title
     fig, ax = plt.subplots(figsize=figsize)
     for i in range(len_):
         if i not in exclude_id:
-            ax.plot(array[i] + i * 40 * spacing, linewidth=1)
+            ax.plot(array[i] + i * 40 * y_spacing_factor, linewidth=1)
     for j in expobj.stim_start_frames:
         if j <= array.shape[1]:
             ax.axvline(x=j, c='gray', alpha=0.3)
