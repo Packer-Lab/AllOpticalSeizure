@@ -5,13 +5,13 @@ import alloptical_plotting_utils as aoplot
 import matplotlib.pyplot as plt
 
 
-data_path_base = '/home/pshah/mnt/qnap/Data/2020-12-19'
-animal_prep = 'RL109'
+data_path_base = '/home/pshah/mnt/qnap/Data/2020-12-18'
+animal_prep = 'RL108'
 # date = '2021-01-10'
 # specify location of the naparm export for the trial(s) - ensure that this export was used for all trials, if # of trials > 1
 # paqs_loc = '%s/%s_RL109_%s.paq' % (data_path_base, date, trial[2:])  # path to the .paq files for the selected trials
 
-trials = ['t-010']
+trials = ['t-012']
 for trial in trials:
     ###### IMPORT pkl file containing data in form of expobj
     # trial = 't-009'  # note that %s magic command in the code below will be using these trials listed here

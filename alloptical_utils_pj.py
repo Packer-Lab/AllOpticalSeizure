@@ -602,7 +602,7 @@ class alloptical(TwoPhotonImaging):
             curr_trial_frames = None
             self.baseline_frames = [0, 0]
             for t in to_suite2p:
-                pkl_path_2 = self.pkl_path[:58] + t + '/' + self.metainfo['date'] + '_' + t + '.pkl'
+                pkl_path_2 = self.pkl_path[:-26] + t + '/' + self.metainfo['date'] + '_' + t + '.pkl'
                 with open(pkl_path_2, 'rb') as f:
                     _expobj = pickle.load(f)
                     # import suite2p data
