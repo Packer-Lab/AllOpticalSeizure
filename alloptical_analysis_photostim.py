@@ -46,30 +46,40 @@ def slm_targets_responses(expobj):
                                   y_label=y_label, x_label='Time post-stimulation (seconds)')
 
     if hasattr(expobj, 'stims_in_sz'):
+
+        # make response magnitude and response success rate figure
+        fig, (ax1, ax2, ax3, ax4) = plt.subplots(figsize=((5 * 4), 5), nrows=1, ncols=4)
         # stims out sz
         data = [[np.mean(expobj.outsz_responses_SLMtargets[i]) for i in range(expobj.n_targets_total)]]
-        pj.plot_hist_density(data, x_label='response magnitude (dF/stdF)', title='stims_out_sz - ')
-        pj.plot_bar_with_points(data=[list(expobj.outsz_StimSuccessRate_SLMtargets.values())], x_tick_labels=[trial],
-                                ylims=[0, 100], bar=False,
-                                y_label='% success stims.',
-                                title='%s success rate of stim responses (stims out sz)' % trial, expand_size_x=2)
-
+        fig, ax1 = pj.plot_hist_density(data, x_label='response magnitude (dF/stdF)', title='%s - stims_out_sz - ' % trial,
+                                     fig=fig, ax=ax1, show=False)
+        fig, ax2 = pj.plot_bar_with_points(data=[list(expobj.outsz_StimSuccessRate_SLMtargets.values())],
+                                        x_tick_labels=[trial],
+                                        ylims=[0, 100], bar=False, y_label='% success stims.',
+                                        title='target success rate (stims out sz)', expand_size_x=2,
+                                        show=False, fig=fig, ax=ax3)
         # stims in sz
         data = [[np.mean(expobj.insz_responses_SLMtargets[i]) for i in range(expobj.n_targets_total)]]
-        pj.plot_hist_density(data, x_label='response magnitude (dF/stdF)', title='stims_in_sz - ')
-        pj.plot_bar_with_points(data=[list(expobj.insz_StimSuccessRate_SLMtargets.values())], x_tick_labels=[trial],
-                                ylims=[0, 100], bar=False,
-                                y_label='% success stims.',
-                                title='%s success rate of stim responses (stims in sz)' % trial, expand_size_x=2)
+        fig, ax3 = pj.plot_hist_density(data, x_label='response magnitude (dF/stdF)', title='%s stims_in_sz - ' % trial,
+                                     fig=fig, ax=ax2, show=False)
+        fig, ax4 = pj.plot_bar_with_points(data=[list(expobj.insz_StimSuccessRate_SLMtargets.values())],
+                                        x_tick_labels=[trial],
+                                        ylims=[0, 100], bar=False, y_label='% success stims.',
+                                        title='target success rate (stims in sz)', expand_size_x=2,
+                                        show=False, fig=fig, ax=ax4)
+        fig.show()
 
     else:
         # no sz
+        fig, (ax1, ax2) = plt.subplots(figsize=((5 * 2), 5), nrows=1, ncols=2)
         data = [[np.mean(expobj.responses_SLMtargets[i]) for i in range(expobj.n_targets_total)]]
-        pj.plot_hist_density(data, x_label='response magnitude (dF/stdF)', title='no sz')
-        pj.plot_bar_with_points(data=[list(expobj.StimSuccessRate_SLMtargets.values())], x_tick_labels=[trial],
-                                ylims=[0, 100], bar=False,
+        fig, ax1 = pj.plot_hist_density(data, x_label='response magnitude (dF/stdF)', title='no sz', show=False, fig=fig, ax=ax1)
+        fig, ax2 = pj.plot_bar_with_points(data=[list(expobj.StimSuccessRate_SLMtargets.values())], x_tick_labels=[trial],
+                                ylims=[0, 100], bar=False, show=False, fig=fig, ax=ax2,
                                 y_label='% success stims.', title='%s success rate of stim responses (no sz)' % trial,
                                 expand_size_x=2)
+
+        fig.show()
 
 
 

@@ -632,6 +632,7 @@ def plot_bar_with_points(data, title='', x_tick_labels=[], legend_labels: list =
     :return: matplotlib plot
     """
 
+    # collect some info about data to plot
     w = 0.3  # bar width
     x = list(range(len(data)))
     y = data
@@ -639,19 +640,22 @@ def plot_bar_with_points(data, title='', x_tick_labels=[], legend_labels: list =
         colors = colors * len(x)
 
 
-    # if 'fig' in kwargs.keys():
-    #     fig = kwargs['fig']
-    #     ax = kwargs['ax']
-    # else:
-    #     fig, ax = plt.subplots(figsize=[20, 3])
-
-
-    if len(legend_labels) > 0:
-        f, ax = plt.subplots(figsize=((5 * len(x) / 2) * expand_size_x, 3 * expand_size_y))
-    else:
-        f, ax = plt.subplots(figsize=((2 * len(x) / 2) * expand_size_x, 3 * expand_size_y))
+    # initialize plot
+    if 'fig' in kwargs.keys():
+        f = kwargs['fig']
+        ax = kwargs['ax']
         legend_labels = x_tick_labels
         assert len(legend_labels) > 0
+    else:
+        if len(legend_labels) > 0:
+            f, ax = plt.subplots(figsize=((5 * len(x) / 2) * expand_size_x, 3 * expand_size_y))
+        else:
+            f, ax = plt.subplots(figsize=((2 * len(x) / 2) * expand_size_x, 3 * expand_size_y))
+            legend_labels = x_tick_labels
+            assert len(legend_labels) > 0
+
+
+    # start making plot
     if not bar:
         for i in x:
             # ax.plot(np.linspace(x[i] - w / 2, x[i] + w / 2, 3), [np.mean(yi) for yi in y] * 3, edgecolor=colors[i])
@@ -697,8 +701,7 @@ def plot_bar_with_points(data, title='', x_tick_labels=[], legend_labels: list =
     ax.spines['right'].set_visible(False)
     ax.spines['top'].set_visible(False)
 
-    # ax.set_title((title), horizontalalignment='center', verticalalignment='top', pad=25,
-    #              fontsize=8*shrink_text, wrap=True)
+
 
     # ax.spines['top'].set_visible(False)
     # ax.spines['right'].set_visible(False)
@@ -722,10 +725,10 @@ def plot_bar_with_points(data, title='', x_tick_labels=[], legend_labels: list =
 
     # add title
     if 'fig' not in kwargs.keys():
-        if 'title' in kwargs:
-            ax.set_title(kwargs['title'] + r': $\mu=%s$, $\sigma=%s$' % (round(mu, 2), round(sigma, 2)))
-        else:
-            ax.set_title(r'Histogram: $\mu=%s$, $\sigma=%s$' % (round(mu, 2), round(sigma, 2)))
+        ax.set_title((title), horizontalalignment='center', verticalalignment='top', pad=25,
+                     fontsize=8*shrink_text, wrap=True)
+    else:
+        ax.title.set_text((title))
 
     if 'show' in kwargs.keys():
         if kwargs['show'] is True:
@@ -733,24 +736,11 @@ def plot_bar_with_points(data, title='', x_tick_labels=[], legend_labels: list =
             f.tight_layout()
             f.show()
         else:
-            pass
+            return f, ax
     else:
         # Tweak spacing to prevent clipping of ylabel
         f.tight_layout()
         f.show()
-
-    if 'fig' in kwargs.keys():
-        # adding text because adding title doesn't seem to want to work when piping subplots
-        if 'shrink_text' in kwargs.keys():
-            shrink_text = kwargs['shrink_text']
-        else:
-            shrink_text = 1
-
-        ax.text(0.98, 0.97, kwargs['title'] + r': $\mu=%s$, $\sigma=%s$' % (round(mu, 2), round(sigma, 2)),
-                verticalalignment='top', horizontalalignment='right',
-                transform=ax.transAxes, fontweight='bold',
-                color='black', fontsize=10 * shrink_text)
-        return f, ax
 
 # histogram density plot with gaussian best fit line
 def plot_hist_density(data, colors: list = None, fill_color: list = None, **kwargs):
@@ -819,10 +809,11 @@ def plot_hist_density(data, colors: list = None, fill_color: list = None, **kwar
         else:
             shrink_text = 1
 
-        ax.text(0.98, 0.97, kwargs['title'] + r': $\mu=%s$, $\sigma=%s$' % (round(mu, 2), round(sigma, 2)),
-                verticalalignment='top', horizontalalignment='right',
-                transform=ax.transAxes, fontweight='bold',
-                color='black', fontsize=10 * shrink_text)
+        ax.title.set_text(kwargs['title'] + r': $\mu=%s$, $\sigma=%s$' % (round(mu, 2), round(sigma, 2)))
+        # ax.text(0.98, 0.97, kwargs['title'] + r': $\mu=%s$, $\sigma=%s$' % (round(mu, 2), round(sigma, 2)),
+        #         verticalalignment='top', horizontalalignment='right',
+        #         transform=ax.transAxes, fontweight='bold',
+        #         color='black', fontsize=10 * shrink_text)
         return fig, ax
 
 
