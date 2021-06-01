@@ -67,6 +67,8 @@ def import_expobj(trial: str = None, date: str = None, pkl_path: str = None, ver
         if expobj.pkl_path != pkl_path:
             expobj.pkl_path = pkl_path
             print('updated expobj.pkl_path ', pkl_path)
+            expobj.analysis_save_path = expobj.pkl_path[:-20]
+            print('updated expobj.analysis_save_path ', expobj.analysis_save_path)
             expobj.save()
 
     return expobj, experiment
@@ -3198,7 +3200,7 @@ def run_alloptical_processing_photostim(expobj, to_suite2p, baseline_trials, plo
     expobj.target_coords_all = expobj.target_coords
     expobj.s2p_targets(force_redo=True)
     s2pMaskStack(obj=expobj, pkl_list=[expobj.pkl_path], s2p_path=expobj.s2p_path,
-                         parent_folder=expobj.analysis_save_path, force_redo=force_redo)
+                 parent_folder=expobj.analysis_save_path, force_redo=force_redo)
 
     ####################################################################################################################
     # STA - raw SLM targets processing
