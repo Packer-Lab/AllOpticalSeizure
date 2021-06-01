@@ -198,7 +198,7 @@ def plot_photostim_traces(array, expobj, title='', y_min=None, y_max=None, x_lab
     fig.show()
 
 
-def plot_photostim_traces_overlap(array, expobj, exclude_id=[], y_spacing_factor=1, title='', y_lims=None,
+def plot_photostim_traces_overlap(array, expobj, exclude_id=[], y_spacing_factor=1, title='',
                                   x_axis='Time (seconds)', save_fig=None, **kwargs):
     '''
     :param array:
@@ -257,8 +257,11 @@ def plot_photostim_traces_overlap(array, expobj, exclude_id=[], y_spacing_factor
     ax.spines['left'].set_visible(False)
     ax.set_xlabel(x_axis)
 
-    if y_lims is not None:
-        ax.set_ylim(y_lims)
+    if 'y_lims' in kwargs.keys():
+        ax.set_ylim(kwargs['y_lims'])
+    else:
+        y_max = np.mean(array[-1] + len_ * 40 * y_spacing_factor) + 3 * np.mean(array[-1])
+        ax.set_ylim(0, y_max)
 
     if save_fig is not None:
         plt.savefig(save_fig)
