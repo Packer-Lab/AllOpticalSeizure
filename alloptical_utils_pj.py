@@ -28,6 +28,7 @@ import xml.etree.ElementTree as ET
 import tifffile as tf
 import csv
 import warnings
+import bisect
 
 from utils import funcs_pj as pj
 from utils.paq_utils import paq_read, frames_discard
@@ -3587,6 +3588,70 @@ def all_cell_responses_dFstdF(expobj):
     return df
 
 
+# %% functions to collate analysis
+
+# plots for SLM targets responses
+def slm_targets_responses(expobj, experiment, trial):
+    # plot SLM photostim individual targets -- individual, full traces, dff normalized
+
+    # make rolling average for these plots to smooth out the traces a little more
+    w = 3
+    to_plot = np.asarray([(np.convolve(trace, np.ones(w), 'valid') / w) for trace in expobj.dff_SLMTargets])
+    # to_plot = expobj.dff_SLMTargets
+
+    # aoplot.plot_photostim_traces(array=to_plot, expobj=expobj, x_label='Time (secs.)',
+    #                              y_label='dFF Flu', title=experiment)
+
+    aoplot.plot_photostim_traces_overlap(array=expobj.dff_SLMTargets, expobj=expobj, x_axis='Time (secs.)',
+                                         y_spacing_factor=2,
+                                         title='%s - dFF Flu photostims' % experiment,
+                                         figsize=(2 * 20, 2 * len(to_plot) * 0.15))
+
+    y_label = 'dF/prestim_stdF'
+    aoplot.plot_periphotostim_avg(arr=expobj.SLMTargets_stims_dfstdF_avg, expobj=expobj,
+                                  stim_duration=expobj.stim_duration_frames,
+                                  figsize=[5, 4], y_lims=[-0.5, 1.5],
+                                  title=('%s - responses of all photostim targets' % expobj.metainfo['trial']),
+                                  y_label=y_label, x_label='Time post-stimulation (seconds)')
+
+    if hasattr(expobj, 'stims_in_sz'):
+
+        # make response magnitude and response success rate figure
+        fig, (ax1, ax2, ax3, ax4) = plt.subplots(figsize=((5 * 4), 5), nrows=1, ncols=4)
+        # stims out sz
+        data = [[np.mean(expobj.outsz_responses_SLMtargets[i]) for i in range(expobj.n_targets_total)]]
+        fig, ax1 = pj.plot_hist_density(data, x_label='response magnitude (dF/stdF)', title='%s - stims_out_sz - ' % trial,
+                                     fig=fig, ax=ax1, show=False)
+        fig, ax2 = pj.plot_bar_with_points(data=[list(expobj.outsz_StimSuccessRate_SLMtargets.values())],
+                                        x_tick_labels=[trial],
+                                        ylims=[0, 100], bar=False, y_label='% success stims.',
+                                        title='target success rate (stims out sz)', expand_size_x=2,
+                                        show=False, fig=fig, ax=ax2)
+        # stims in sz
+        data = [[np.mean(expobj.insz_responses_SLMtargets[i]) for i in range(expobj.n_targets_total)]]
+        fig, ax3 = pj.plot_hist_density(data, x_label='response magnitude (dF/stdF)', title='%s stims_in_sz - ' % trial,
+                                     fig=fig, ax=ax3, show=False)
+        fig, ax4 = pj.plot_bar_with_points(data=[list(expobj.insz_StimSuccessRate_SLMtargets.values())],
+                                        x_tick_labels=[trial],
+                                        ylims=[0, 100], bar=False, y_label='% success stims.',
+                                        title='target success rate (stims in sz)', expand_size_x=2,
+                                        show=False, fig=fig, ax=ax4)
+        fig.show()
+
+    else:
+        # no sz
+        fig, (ax1, ax2) = plt.subplots(figsize=((5 * 2), 5), nrows=1, ncols=2)
+        data = [[np.mean(expobj.responses_SLMtargets[i]) for i in range(expobj.n_targets_total)]]
+        fig, ax1 = pj.plot_hist_density(data, x_label='response magnitude (dF/stdF)', title='no sz', show=False, fig=fig, ax=ax1)
+        fig, ax2 = pj.plot_bar_with_points(data=[list(expobj.StimSuccessRate_SLMtargets.values())], x_tick_labels=[trial],
+                                ylims=[0, 100], bar=False, show=False, fig=fig, ax=ax2,
+                                y_label='% success stims.', title='%s success rate of stim responses (no sz)' % trial,
+                                expand_size_x=2)
+
+        fig.show()
+
+
+
 # 2 functions for plotting photostimulation timed DFF, baseline DFF considered as pre-stim period
 def plot_photostim_avg(dff_array, stim_duration, pre_stim=10, post_stim=200, title='', y_min=None, y_max=None):
     flu_avg = np.median(dff_array, axis=0)
@@ -3639,7 +3704,6 @@ def points_in_circle_np(radius, x0=0, y0=0, ):
     x, y = np.where((x_[:, np.newaxis] - x0) ** 2 + (y_ - y0) ** 2 <= radius ** 2)
     for x, y in zip(x_[x], y_[y]):
         yield x, y
-
 
 #### archive
 
