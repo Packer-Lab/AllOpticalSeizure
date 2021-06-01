@@ -13,15 +13,10 @@ import seaborn as sns
 
 from skimage import draw
 
-# %% analysis for SLM targets responses
+# %% functions to collate analysis
 
-###### IMPORT pkl file containing data in form of expobj
-trial = 't-016'
-date = '2020-12-19'
-pkl_path = "/home/pshah/mnt/qnap/Analysis/%s/RL109/%s_%s/%s_%s.pkl" % (date, date, trial, date, trial)
 
-expobj, experiment = aoutils.import_expobj(trial=trial, date=date, pkl_path=pkl_path)
-
+# plots for SLM targets responses
 def slm_targets_responses(expobj):
     # plot SLM photostim individual targets -- individual, full traces, dff normalized
 
@@ -57,11 +52,11 @@ def slm_targets_responses(expobj):
                                         x_tick_labels=[trial],
                                         ylims=[0, 100], bar=False, y_label='% success stims.',
                                         title='target success rate (stims out sz)', expand_size_x=2,
-                                        show=False, fig=fig, ax=ax3)
+                                        show=False, fig=fig, ax=ax2)
         # stims in sz
         data = [[np.mean(expobj.insz_responses_SLMtargets[i]) for i in range(expobj.n_targets_total)]]
         fig, ax3 = pj.plot_hist_density(data, x_label='response magnitude (dF/stdF)', title='%s stims_in_sz - ' % trial,
-                                     fig=fig, ax=ax2, show=False)
+                                     fig=fig, ax=ax3, show=False)
         fig, ax4 = pj.plot_bar_with_points(data=[list(expobj.insz_StimSuccessRate_SLMtargets.values())],
                                         x_tick_labels=[trial],
                                         ylims=[0, 100], bar=False, y_label='% success stims.',
