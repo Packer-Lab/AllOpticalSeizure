@@ -717,7 +717,8 @@ def plotMeanRawFluTrace(expobj, stim_span_color='white', stim_lines: bool = True
 
 # plots the raw trace for the Flu mean of the FOV
 def plotLfpSignal(expobj, stim_span_color='powderblue', stim_lines: bool = True, sz_markings: bool = False, title='LFP trace', x_axis='time', hide_xlabel=False, **kwargs):
-    """make plot of LFP with also showing stim locations"""
+    """make plot of LFP with also showing stim locations
+    NOTE: ONLY PLOTTING LFP SIGNAL CROPPED TO 2P IMAGING FRAME START AND END TIMES - SO CUTTING OUT THE LFP SIGNAL BEFORE AND AFTER"""
 
     # if there is a fig and ax provided in the function call then use those, otherwise start anew
     if 'fig' in kwargs.keys():
@@ -739,7 +740,7 @@ def plotLfpSignal(expobj, stim_span_color='powderblue', stim_lines: bool = True,
         color = kwargs['color']
     else:
         color = 'steelblue'
-    ax.plot(expobj.lfp_signal[expobj.frame_start_time_actual: expobj.frame_end_time_actual], c=color, zorder=1, linewidth=0.4, alpha=alpha)
+    ax.plot(expobj.lfp_signal[expobj.frame_start_time_actual: expobj.frame_end_time_actual], c=color, zorder=1, linewidth=0.4, alpha=alpha)  ## NOTE: ONLY PLOTTING LFP SIGNAL RELATED TO
     ax.margins(0)
 
     # plot stims

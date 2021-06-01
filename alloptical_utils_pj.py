@@ -63,6 +63,12 @@ def import_expobj(trial: str = None, date: str = None, pkl_path: str = None, ver
         expobj.paqProcessing()
         expobj.save_pkl()
 
+    if pkl_path:
+        if expobj.pkl_path != pkl_path:
+            expobj.pkl_path = pkl_path
+            print('updated expobj.pkl_path ', pkl_path)
+            expobj.save()
+
     return expobj, experiment
 
 def import_resultsobj(pkl_path: str):
@@ -3601,7 +3607,6 @@ def slm_targets_responses(expobj, experiment, trial, y_spacing_factor=2, figsize
     w = smooth_overlap_traces
     to_plot = np.asarray([(np.convolve(trace, np.ones(w), 'valid') / w) for trace in expobj.dff_SLMTargets])
     # to_plot = expobj.dff_SLMTargets
-
     # aoplot.plot_photostim_traces(array=to_plot, expobj=expobj, x_label='Time (secs.)',
     #                              y_label='dFF Flu', title=experiment)
 
