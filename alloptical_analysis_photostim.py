@@ -13,6 +13,68 @@ import seaborn as sns
 
 from skimage import draw
 
+# %% analysis for SLM targets responses
+
+###### IMPORT pkl file containing data in form of expobj
+trial = 't-016'
+date = '2020-12-19'
+pkl_path = "/home/pshah/mnt/qnap/Analysis/%s/RL109/%s_%s/%s_%s.pkl" % (date, date, trial, date, trial)
+
+expobj, experiment = aoutils.import_expobj(trial=trial, date=date, pkl_path=pkl_path)
+
+def slm_targets_responses(expobj):
+    # plot SLM photostim individual targets -- individual, full traces, dff normalized
+
+    # make rolling average for these plots to smooth out the traces a little more
+    w = 3
+    to_plot = np.asarray([(np.convolve(trace, np.ones(w), 'valid') / w) for trace in expobj.dff_SLMTargets])
+    # to_plot = expobj.dff_SLMTargets
+
+    # aoplot.plot_photostim_traces(array=to_plot, expobj=expobj, x_label='Time (secs.)',
+    #                              y_label='dFF Flu', title=experiment)
+
+    aoplot.plot_photostim_traces_overlap(array=expobj.dff_SLMTargets, expobj=expobj, x_axis='Time (secs.)',
+                                         y_spacing_factor=2,
+                                         title='%s - dFF Flu photostims' % experiment,
+                                         figsize=(2 * 20, 2 * len(to_plot) * 0.15))
+
+    y_label = 'dF/prestim_stdF'
+    aoplot.plot_periphotostim_avg(arr=expobj.SLMTargets_stims_dfstdF_avg, expobj=expobj,
+                                  stim_duration=expobj.stim_duration_frames,
+                                  figsize=[5, 4], y_lims=[-0.5, 1.5],
+                                  title=('%s - responses of all photostim targets' % expobj.metainfo['trial']),
+                                  y_label=y_label, x_label='Time post-stimulation (seconds)')
+
+    if hasattr(expobj, 'stims_in_sz'):
+        # stims out sz
+        data = [[np.mean(expobj.outsz_responses_SLMtargets[i]) for i in range(expobj.n_targets_total)]]
+        pj.plot_hist_density(data, x_label='response magnitude (dF/stdF)', title='stims_out_sz - ')
+        pj.plot_bar_with_points(data=[list(expobj.outsz_StimSuccessRate_SLMtargets.values())], x_tick_labels=[trial],
+                                ylims=[0, 100], bar=False,
+                                y_label='% success stims.',
+                                title='%s success rate of stim responses (stims out sz)' % trial, expand_size_x=2)
+
+        # stims in sz
+        data = [[np.mean(expobj.insz_responses_SLMtargets[i]) for i in range(expobj.n_targets_total)]]
+        pj.plot_hist_density(data, x_label='response magnitude (dF/stdF)', title='stims_in_sz - ')
+        pj.plot_bar_with_points(data=[list(expobj.insz_StimSuccessRate_SLMtargets.values())], x_tick_labels=[trial],
+                                ylims=[0, 100], bar=False,
+                                y_label='% success stims.',
+                                title='%s success rate of stim responses (stims in sz)' % trial, expand_size_x=2)
+
+    else:
+        # no sz
+        data = [[np.mean(expobj.responses_SLMtargets[i]) for i in range(expobj.n_targets_total)]]
+        pj.plot_hist_density(data, x_label='response magnitude (dF/stdF)', title='no sz')
+        pj.plot_bar_with_points(data=[list(expobj.StimSuccessRate_SLMtargets.values())], x_tick_labels=[trial],
+                                ylims=[0, 100], bar=False,
+                                y_label='% success stims.', title='%s success rate of stim responses (no sz)' % trial,
+                                expand_size_x=2)
+
+
+
+
+# %%
 ###### IMPORT pkl file containing data in form of expobj
 trial = 't-010'
 date = '2021-01-08'
@@ -33,7 +95,14 @@ if plot:
     aoplot.plot_lfp_stims(expobj)
 
 
-#%%#####################################################################################################################
+
+
+
+
+
+
+
+#%% ####################################################################################################################
 
 #### -------------------- ALL OPTICAL PHOTOSTIM AND ETC. ANALYSIS STEPS ################################################
 

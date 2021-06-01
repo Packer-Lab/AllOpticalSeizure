@@ -718,7 +718,14 @@ def plot_bar_with_points(data, title='', x_tick_labels=[], legend_labels: list =
 # histogram density plot with gaussian best fit line
 def plot_hist_density(data, colors: list = None, fill_color: list = None, **kwargs):
 
-    fig, ax = plt.subplots()
+    if 'fig' in kwargs.keys():
+        fig = kwargs['fig']
+        ax = kwargs['ax']
+    else:
+        if 'figsize' in kwargs.keys():
+            fig, ax = plt.subplots(figsize=kwargs['figsize'])
+        else:
+            fig, ax = plt.subplots(figsize=[20, 3])
 
     if len(data) == 1:
         colors = ['black']
@@ -747,14 +754,41 @@ def plot_hist_density(data, colors: list = None, fill_color: list = None, **kwar
             ax.set_ylabel(kwargs['y_label'])
         else:
             ax.set_ylabel('Probability density')
+
+
+    # add title
+    if 'fig' not in kwargs.keys():
         if 'title' in kwargs:
             ax.set_title(kwargs['title'] + r': $\mu=%s$, $\sigma=%s$' % (round(mu, 2), round(sigma, 2)))
         else:
             ax.set_title(r'Histogram: $\mu=%s$, $\sigma=%s$' % (round(mu, 2), round(sigma, 2)))
 
-    # Tweak spacing to prevent clipping of ylabel
-    fig.tight_layout()
-    fig.show()
+    if 'show' in kwargs.keys():
+        if kwargs['show'] is True:
+            # Tweak spacing to prevent clipping of ylabel
+            fig.tight_layout()
+            fig.show()
+        else:
+            pass
+    else:
+        # Tweak spacing to prevent clipping of ylabel
+        fig.tight_layout()
+        fig.show()
+
+    if 'fig' in kwargs.keys():
+        # adding text because adding title doesn't seem to want to work when piping subplots
+        if 'shrink_text' in kwargs.keys():
+            shrink_text = kwargs['shrink_text']
+        else:
+            shrink_text = 1
+
+        ax.text(0.98, 0.97, kwargs['title'] + r': $\mu=%s$, $\sigma=%s$' % (round(mu, 2), round(sigma, 2)),
+                verticalalignment='top', horizontalalignment='right',
+                transform=ax.transAxes, fontweight='bold',
+                color='black', fontsize=10 * shrink_text)
+        return fig, ax
+
+
 
 # imshow gray plot for a single frame tiff
 def plot_single_tiff(tiff_path: str, title: str = None):
