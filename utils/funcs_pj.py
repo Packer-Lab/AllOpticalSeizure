@@ -710,7 +710,7 @@ def plot_bar_with_points(data, title='', x_tick_labels=[], legend_labels: list =
         plt.xticks(rotation=45)
         # plt.setp(ax.get_xticklabels(), rotation=45)
 
-    if len(legend_labels) > 0:
+    if len(legend_labels) > 1:
         ax.legend(bbox_to_anchor=(1.01, 0.90), fontsize=8*shrink_text)
 
     plt.show()
