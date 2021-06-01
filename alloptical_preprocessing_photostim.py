@@ -43,7 +43,7 @@ metainfo = {
     'comments': comments
 }
 
-expobj = aoutils.run_photostim_processing(trial, exp_type=exp_type, pkl_path=pkl_path, new_tiffs=new_tiffs, metainfo=metainfo,
-                                          tiffs_loc_dir=tiffs_loc_dir, tiffs_loc=tiffs_loc, naparms_loc=(data_path_base+naparms_loc),
-                                          paqs_loc=paqs_loc, matlab_badframes_path=matlab_badframes_path,
-                                          processed_tiffs=False, discard_all=True, analysis_save_path=analysis_save_path)
+expobj = aoutils.run_photostim_preprocessing(trial, exp_type=exp_type, pkl_path=pkl_path, new_tiffs=new_tiffs, metainfo=metainfo,
+                                             tiffs_loc_dir=tiffs_loc_dir, tiffs_loc=tiffs_loc, naparms_loc=(data_path_base+naparms_loc),
+                                             paqs_loc=paqs_loc, matlab_badframes_path=matlab_badframes_path,
+                                             processed_tiffs=False, discard_all=True, analysis_save_path=analysis_save_path)

@@ -46,10 +46,10 @@ for trial in trials:
         'comments': comments
     }
 
-    expobj = aoutils.run_photostim_processing(trial, exp_type=exp_type, pkl_path=pkl_path, new_tiffs=new_tiffs, metainfo=metainfo,
-                                              tiffs_loc_dir=tiffs_loc_dir, tiffs_loc=tiffs_loc, naparms_loc=naparms_loc,
-                                              paqs_loc=paqs_loc, matlab_badframes_path=matlab_badframes_path, quick=False,
-                                              processed_tiffs=False, discard_all=True, analysis_save_path=analysis_save_path)
+    expobj = aoutils.run_photostim_preprocessing(trial, exp_type=exp_type, pkl_path=pkl_path, new_tiffs=new_tiffs, metainfo=metainfo,
+                                                 tiffs_loc_dir=tiffs_loc_dir, tiffs_loc=tiffs_loc, naparms_loc=naparms_loc,
+                                                 paqs_loc=paqs_loc, matlab_badframes_path=matlab_badframes_path, quick=False,
+                                                 processed_tiffs=False, discard_all=True, analysis_save_path=analysis_save_path)
 
 # expobj.stim_start_frames = expobj.stim_start_frames + 3
 # aoplot.plotMeanRawFluTrace(expobj=expobj, stim_span_color=None, x_axis='frames', figsize=[20, 3])
