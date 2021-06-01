@@ -324,13 +324,13 @@ def plot_periphotostim_avg(arr, expobj, stim_duration, pre_stim=10, post_stim=20
     ax.set_ylim(y_lims)
 
 
-    # change x axis ticks to seconds
-    if 'time' in x_label or 'Time' in x_label:
-        label_format = '{:,.2f}'
-        labels = [item for item in ax.get_xticks()]
-        for item in labels:
-            labels[labels.index(item)] = round(item / expobj.fps, 2)
-        ax.set_xticklabels([label_format.format(x) for x in labels])
+    # # change x axis ticks to seconds
+    # if 'time' in x_label or 'Time' in x_label:
+    #     label_format = '{:,.2f}'
+    #     labels = [item for item in ax.get_xticks()]
+    #     for item in labels:
+    #         labels[labels.index(item)] = round(item / expobj.fps, 2)
+    #     ax.set_xticklabels([label_format.format(x) for x in labels])
 
     # change x axis ticks to seconds
     if 'Time' in x_label or 'time' in x_label:
