@@ -2529,7 +2529,7 @@ def run_alloptical_processing_photostim(expobj, to_suite2p, baseline_trials, plo
     expobj.pre_stim = int(0.5 * expobj.fps)
     expobj.post_stim = int(4 * expobj.fps)
     expobj.post_stim_response_window_msec = post_stim_response_window_msec
-    expobj.post_stim_response_frames_window = int(expobj.fps * expobj.post_stim_response_window_msec)
+    expobj.post_stim_response_frames_window = int(expobj.fps * expobj.post_stim_response_window_msec/1000)
     expobj.SLMTargets_stims_dff, expobj.SLMTargets_stims_dffAvg, expobj.SLMTargets_stims_dfstdF, \
     expobj.SLMTargets_stims_dfstdF_avg, expobj.SLMTargets_stims_raw, expobj.SLMTargets_stims_rawAvg = \
         expobj.get_alltargets_stim_traces_norm(pre_stim=expobj.pre_stim, post_stim=expobj.post_stim)
