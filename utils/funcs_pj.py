@@ -608,7 +608,7 @@ def make_random_color_array(array_of_ids):
 
 # plotting function for plotting a bar graph with the individual data points shown as well
 def plot_bar_with_points(data, title='', x_tick_labels=[], legend_labels: list = [], points=True, bar=True, colors=['black'], ylims=None, xlims=None,
-                         x_label=None, y_label=None, alpha=0.2, savepath=None, expand_size_x=1, expand_size_y=1, shrink_text: float = 1):
+                         x_label=None, y_label=None, alpha=0.2, savepath=None, expand_size_x=1, expand_size_y=1, shrink_text: float = 1, **kwargs):
     """
     general purpose function for plotting a bar graph of multiple categories with the individual datapoints shown
     as well. The latter is achieved by adding a scatter plot with the datapoints randomly jittered around the central
@@ -638,11 +638,18 @@ def plot_bar_with_points(data, title='', x_tick_labels=[], legend_labels: list =
     if len(colors) != len(x):
         colors = colors * len(x)
 
-    # plt.figure(figsize=(2, 10))
-    fig, ax = plt.subplots(figsize=((2 * len(x) / 2) * expand_size_x, 3 * expand_size_y))
+
+    # if 'fig' in kwargs.keys():
+    #     fig = kwargs['fig']
+    #     ax = kwargs['ax']
+    # else:
+    #     fig, ax = plt.subplots(figsize=[20, 3])
+
+
     if len(legend_labels) > 0:
-        fig, ax = plt.subplots(figsize=((5 * len(x) / 2) * expand_size_x, 3 * expand_size_y))
+        f, ax = plt.subplots(figsize=((5 * len(x) / 2) * expand_size_x, 3 * expand_size_y))
     else:
+        f, ax = plt.subplots(figsize=((2 * len(x) / 2) * expand_size_x, 3 * expand_size_y))
         legend_labels = x_tick_labels
         assert len(legend_labels) > 0
     if not bar:
@@ -690,8 +697,8 @@ def plot_bar_with_points(data, title='', x_tick_labels=[], legend_labels: list =
     ax.spines['right'].set_visible(False)
     ax.spines['top'].set_visible(False)
 
-    ax.set_title((title), horizontalalignment='center', verticalalignment='top', pad=25,
-                 fontsize=8*shrink_text, wrap=True)
+    # ax.set_title((title), horizontalalignment='center', verticalalignment='top', pad=25,
+    #              fontsize=8*shrink_text, wrap=True)
 
     # ax.spines['top'].set_visible(False)
     # ax.spines['right'].set_visible(False)
@@ -713,7 +720,37 @@ def plot_bar_with_points(data, title='', x_tick_labels=[], legend_labels: list =
     if len(legend_labels) > 1:
         ax.legend(bbox_to_anchor=(1.01, 0.90), fontsize=8*shrink_text)
 
-    plt.show()
+    # add title
+    if 'fig' not in kwargs.keys():
+        if 'title' in kwargs:
+            ax.set_title(kwargs['title'] + r': $\mu=%s$, $\sigma=%s$' % (round(mu, 2), round(sigma, 2)))
+        else:
+            ax.set_title(r'Histogram: $\mu=%s$, $\sigma=%s$' % (round(mu, 2), round(sigma, 2)))
+
+    if 'show' in kwargs.keys():
+        if kwargs['show'] is True:
+            # Tweak spacing to prevent clipping of ylabel
+            f.tight_layout()
+            f.show()
+        else:
+            pass
+    else:
+        # Tweak spacing to prevent clipping of ylabel
+        f.tight_layout()
+        f.show()
+
+    if 'fig' in kwargs.keys():
+        # adding text because adding title doesn't seem to want to work when piping subplots
+        if 'shrink_text' in kwargs.keys():
+            shrink_text = kwargs['shrink_text']
+        else:
+            shrink_text = 1
+
+        ax.text(0.98, 0.97, kwargs['title'] + r': $\mu=%s$, $\sigma=%s$' % (round(mu, 2), round(sigma, 2)),
+                verticalalignment='top', horizontalalignment='right',
+                transform=ax.transAxes, fontweight='bold',
+                color='black', fontsize=10 * shrink_text)
+        return f, ax
 
 # histogram density plot with gaussian best fit line
 def plot_hist_density(data, colors: list = None, fill_color: list = None, **kwargs):
