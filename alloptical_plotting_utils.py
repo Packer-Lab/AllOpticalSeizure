@@ -199,7 +199,7 @@ def plot_photostim_traces(array, expobj, title='', y_min=None, y_max=None, x_lab
 
 
 def plot_photostim_traces_overlap(array, expobj, exclude_id=[], y_spacing_factor=1, title='', y_lims=None,
-                                  x_axis='Time (seconds)', save_fig=None, figsize=(20, 10)):
+                                  x_axis='Time (seconds)', save_fig=None, **kwargs):
     '''
     :param array:
     :param expobj:
@@ -216,7 +216,16 @@ def plot_photostim_traces_overlap(array, expobj, exclude_id=[], y_spacing_factor
     # array = np.asarray([(np.convolve(trace, np.ones(w), 'valid') / w) for trace in array])
 
     len_ = len(array)
-    fig, ax = plt.subplots(figsize=figsize)
+
+    if 'fig' in kwargs.keys():
+        fig = kwargs['fig']
+        ax = kwargs['ax']
+    else:
+        if 'figsize' in kwargs.keys():
+            fig, ax = plt.subplots(figsize=kwargs['figsize'])
+        else:
+            fig, ax = plt.subplots(figsize=[20, 10])
+
     for i in range(len_):
         if i not in exclude_id:
             ax.plot(array[i] + i * 40 * y_spacing_factor, linewidth=1)
@@ -241,8 +250,6 @@ def plot_photostim_traces_overlap(array, expobj, exclude_id=[], y_spacing_factor
         for item in labels:
             labels[labels.index(item)] = int(round(item / expobj.fps))
         ax.set_xticklabels(labels)
-        ax.set_title((title + ' - %s' % len_ + ' cells'), horizontalalignment='center', verticalalignment='top', pad=20,
-                     fontsize=15)
         ax.set_xlabel('Time (secs.)')
 
     ax.spines['top'].set_visible(False)
@@ -256,7 +263,20 @@ def plot_photostim_traces_overlap(array, expobj, exclude_id=[], y_spacing_factor
     if save_fig is not None:
         plt.savefig(save_fig)
 
-    plt.show()
+    # finalize plot, set title, and show or return axes
+    if 'fig' in kwargs.keys():
+        ax.title.set_text((title + ' - %s' % len_ + ' cells'))
+        return fig, ax
+    else:
+        ax.set_title((title + ' - %s' % len_ + ' cells'), horizontalalignment='center', verticalalignment='top', pad=20,
+                     fontsize=15)
+    if 'show' in kwargs.keys():
+        if kwargs['show'] is True:
+            plt.show()
+        else:
+            pass
+    else:
+        plt.show()
 
 
 ### photostim analysis - PLOT avg over all photstim. trials traces from PHOTOSTIM TARGETTED cells
@@ -285,11 +305,16 @@ def plot_periphotostim_avg(arr, expobj, stim_duration, pre_stim=10, post_stim=20
     len_ = len(arr)
     flu_avg = np.mean(arr, axis=0)
 
-    if 'figsize' in kwargs:
-        figsize = kwargs['figsize']
+    if 'fig' in kwargs.keys():
+        fig = kwargs['fig']
+        ax = kwargs['ax']
     else:
-        figsize = [5, 5]
-    fig, ax = plt.subplots(figsize=figsize)
+        if 'figsize' in kwargs.keys():
+            fig, ax = plt.subplots(figsize=kwargs['figsize'])
+        else:
+            fig, ax = plt.subplots(figsize=[8, 6])
+
+
     ax.margins(0)
     ax.axvspan(expobj.pre_stim, expobj.pre_stim + expobj.stim_duration_frames, alpha=0.2, color='tomato')
     for cell_trace in arr:
@@ -299,8 +324,7 @@ def plot_periphotostim_avg(arr, expobj, stim_duration, pre_stim=10, post_stim=20
             ax.plot(x, cell_trace, linewidth=1, alpha=0.5, zorder=1)
     ax.plot(x, flu_avg, color='black', linewidth=2.3, zorder=2)  # plot average trace
     ax.set_ylim(y_lims)
-    ax.set_title((title + ' - %s' % len_ + ' traces'), horizontalalignment='center', verticalalignment='top', pad=60,
-                 fontsize=10, wrap=True)
+
 
     # change x axis ticks to seconds
     if 'time' in x_label or 'Time' in x_label:
@@ -320,11 +344,28 @@ def plot_periphotostim_avg(arr, expobj, stim_duration, pre_stim=10, post_stim=20
     if 'savepath' in kwargs.keys():
         plt.savefig(kwargs['savepath'])
 
+    # if 'show' in kwargs.keys():
+    #     if kwargs['show'] is True:
+    #         plt.show()
+    # else:
+    #     plt.show()
+
+    # finalize plot, set title, and show or return axes
+    if 'fig' in kwargs.keys():
+        ax.title.set_text((title + ' - %s' % len_ + ' traces'))
+        return fig, ax
+    else:
+        ax.set_title((title + ' - %s' % len_ + ' traces'), horizontalalignment='center', verticalalignment='top',
+                     pad=60,
+                     fontsize=10, wrap=True)
     if 'show' in kwargs.keys():
         if kwargs['show'] is True:
             plt.show()
+        else:
+            pass
     else:
         plt.show()
+
 
 
 def plot_s2p_raw(expobj, cell_id):
