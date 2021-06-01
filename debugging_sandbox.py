@@ -250,22 +250,34 @@ def plot_hist_density(data, colors: list = None, fill_color: list = None, **kwar
         return fig, ax
 
 
-# make response magnitude and response success rate figure
-fig, (ax1, ax2, ax3, ax4) = plt.subplots(figsize=((5 * 4), 5), nrows=1, ncols=4)
-# stims out sz
-data = [[np.mean(expobj.outsz_responses_SLMtargets[i]) for i in range(expobj.n_targets_total)]]
-fig, ax1 = plot_hist_density(data, x_label='response magnitude (dF/stdF)', title='%s - stims_out_sz - ' % trial, fig=fig, ax=ax1, show=False)
-fig, ax2 = plot_bar_with_points(data=[list(expobj.outsz_StimSuccessRate_SLMtargets.values())], x_tick_labels=[trial],
-                              ylims=[0, 100], bar=False, y_label='% success stims.', title='target success rate (stims out sz)', expand_size_x=2,
-                              show=False, fig=fig, ax=ax3)
-# stims in sz
-data = [[np.mean(expobj.insz_responses_SLMtargets[i]) for i in range(expobj.n_targets_total)]]
-fig, ax3 = plot_hist_density(data, x_label='response magnitude (dF/stdF)', title='%s stims_in_sz - ' % trial, fig=fig, ax=ax2, show=False)
-fig, ax4 = plot_bar_with_points(data=[list(expobj.insz_StimSuccessRate_SLMtargets.values())], x_tick_labels=[trial],
-                              ylims=[0, 100], bar=False, y_label='% success stims.', title='target success rate (stims in sz)', expand_size_x=2,
-                              show=False, fig=fig, ax=ax4)
-fig.show()
+# make rolling average for these plots to smooth out the traces a little more
+w = 3
+to_plot = np.asarray([(np.convolve(trace, np.ones(w), 'valid') / w) for trace in expobj.dff_SLMTargets])
+# to_plot = expobj.dff_SLMTargets
 
+# aoplot.plot_photostim_traces(array=to_plot, expobj=expobj, x_label='Time (secs.)',
+#                              y_label='dFF Flu', title=experiment)
+
+
+# initialize figure
+fig = plt.figure(constrained_layout=True, figsize=[20, 10])
+gs = fig.add_gridspec(2, 5)
+
+ax1 = fig.add_subplot(gs[0, :])
+aoplot.plot_photostim_traces_overlap(array=expobj.dff_SLMTargets, expobj=expobj, x_axis='Time (secs.)',
+                                     y_spacing_factor=3, fig=fig, ax=ax1, show=False,
+                                     title='%s - dFF Flu photostims' % experiment,
+                                     figsize=(2 * 20, 2 * len(to_plot) * 0.15))
+
+ax2 = fig.add_subplot(gs[1, 0])
+y_label = 'dF/prestim_stdF'
+aoplot.plot_periphotostim_avg(arr=expobj.SLMTargets_stims_dfstdF_avg, expobj=expobj,
+                              stim_duration=expobj.stim_duration_frames,
+                              figsize=[5, 4], y_lims=[-0.5, 1.5], fig=fig, ax=ax2, show=False,
+                              title=('responses of all photostim targets'),
+                              y_label=y_label, x_label='Time post-stimulation (seconds)')
+
+fig.show()
 
 #%%
 

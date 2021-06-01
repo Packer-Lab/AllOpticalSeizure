@@ -239,18 +239,14 @@ def plot_photostim_traces_overlap(array, expobj, exclude_id=[], y_spacing_factor
         # change x axis ticks to every 30 seconds
         labels = list(range(0, int(array.shape[1] // expobj.fps), 30))
         ax.set_xticks(ticks=[(label * expobj.fps) for label in labels])
-        # for item in labels:
-        #     labels[labels.index(item)] = int(round(item / expobj.fps))
-        # ticks_loc = ax.get_xticks().tolist()
-        # ax.xaxis.set_major_locator(mticker.FixedLocator(ticks_loc))
         ax.set_xticklabels(labels)
         ax.set_xlabel('Time (secs)')
 
-        labels = [item for item in ax.get_xticks()]
-        for item in labels:
-            labels[labels.index(item)] = int(round(item / expobj.fps))
-        ax.set_xticklabels(labels)
-        ax.set_xlabel('Time (secs.)')
+        # labels = [item for item in ax.get_xticks()]
+        # for item in labels:
+        #     labels[labels.index(item)] = int(round(item / expobj.fps))
+        # ax.set_xticklabels(labels)
+        # ax.set_xlabel('Time (secs.)')
 
     ax.spines['top'].set_visible(False)
     ax.spines['right'].set_visible(False)
@@ -265,11 +261,13 @@ def plot_photostim_traces_overlap(array, expobj, exclude_id=[], y_spacing_factor
 
     # finalize plot, set title, and show or return axes
     if 'fig' in kwargs.keys():
-        ax.title.set_text((title + ' - %s' % len_ + ' cells'))
+        ax.set_title((title + ' - %s' % len_ + ' cells'), horizontalalignment='center', verticalalignment='top', pad=20,
+                     fontsize=10, wrap=True)
+        # ax.title.set_text((title + ' - %s' % len_ + ' cells'), wrap=True)
         return fig, ax
     else:
         ax.set_title((title + ' - %s' % len_ + ' cells'), horizontalalignment='center', verticalalignment='top', pad=20,
-                     fontsize=15)
+                     fontsize=10, wrap=True)
     if 'show' in kwargs.keys():
         if kwargs['show'] is True:
             plt.show()
@@ -333,6 +331,20 @@ def plot_periphotostim_avg(arr, expobj, stim_duration, pre_stim=10, post_stim=20
         for item in labels:
             labels[labels.index(item)] = round(item / expobj.fps, 2)
         ax.set_xticklabels([label_format.format(x) for x in labels])
+
+    # change x axis ticks to seconds
+    if 'Time' in x_label or 'time' in x_label:
+        labels = list(np.linspace(0, int(arr.shape[1] / expobj.fps), 7))  # x axis tick label every 500 msec
+        ax.set_xticks(ticks=[(label * expobj.fps) for label in labels])
+        ax.set_xticklabels(labels)
+        ax.set_xlabel('Time (secs)')
+
+        # labels = [item for item in ax.get_xticks()]
+        # for item in labels:
+        #     labels[labels.index(item)] = int(round(item / expobj.fps))
+        # ax.set_xticklabels(labels)
+        # ax.set_xlabel('Time (secs.)')
+
 
     ax.spines['top'].set_visible(False)
     ax.spines['right'].set_visible(False)
