@@ -30,9 +30,22 @@ import tifffile as tf
 ########
 
 #%%
+to_suite2p = ['t-005', 't-006', 't-007', 't-008', 't-011', 't-012', 't-013', 't-014', 't-016',
+              't-017', 't-018', 't-019', 't-020', 't-021']
+baseline_trials = ['t-005', 't-006'] # specify which trials to use as spont baseline
+# note ^^^ this only works currently when the spont baseline trials all come first, and also back to back
 
-pkl = '/home/pshah/mnt/qnap/Analysis/2020-12-19/RL109/2020-12-19_t-016/2020-12-19_t-016.pkl'
-expobj, _ = aoutils.import_expobj(pkl_path=pkl)
+trials = ['t-007', 't-008', 't-011', 't-012', 't-013', 't-014']
+
+for trial in trials:
+    ###### IMPORT pkl file containing expobj
+    date = '2020-12-19'
+    pkl_path = "/home/pshah/mnt/qnap/Analysis/%s/RL109/%s_%s/%s_%s.pkl" % (date, date, trial, date, trial)
+
+    expobj, experiment = aoutils.import_expobj(trial=trial, date=date, pkl_path=pkl_path)
+    expobj.s2p_path = '/home/pshah/mnt/qnap/Analysis/2020-12-19/suite2p/alloptical-2p-1x-alltrials/plane0'
+    aoutils.run_alloptical_processing_photostim(expobj, to_suite2p=to_suite2p, baseline_trials=baseline_trials,
+                                                force_redo=True)
 
 # fig, ax = plt.subplots(figsize=[20, 3])
 # for i in range(0, 100):

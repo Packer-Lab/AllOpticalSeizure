@@ -2526,8 +2526,8 @@ def run_alloptical_processing_photostim(expobj, to_suite2p, baseline_trials, plo
     expobj.save()
 
     # collect and plot peri- photostim traces for individual SLM target, incl. individual traces for each stim
-    expobj.pre_stim = int(0.5 * expobj.fps)
-    expobj.post_stim = int(4 * expobj.fps)
+    expobj.pre_stim = int(0.5 * expobj.fps) # length of pre stim trace collected
+    expobj.post_stim = int(3 * expobj.fps)  # length of post stim trace collected
     expobj.post_stim_response_window_msec = post_stim_response_window_msec
     expobj.post_stim_response_frames_window = int(expobj.fps * expobj.post_stim_response_window_msec/1000)
     expobj.SLMTargets_stims_dff, expobj.SLMTargets_stims_dffAvg, expobj.SLMTargets_stims_dfstdF, \
@@ -3334,7 +3334,7 @@ def calculate_StimSuccessRate(expobj, cell_ids: list, raw_traces_stims=None, dfs
 
                 # calculate if the current trace beats the threshold for calculating reliability (note that this happens over a specific window just after the photostim)
                 response = np.nanmean(response_trace[
-                                      pre_stim + expobj.stim_duration_frames:pre_stim + 1 + expobj.post_stim_response_frames_window])  # calculate the dF over pre-stim mean F response within the response window
+                                      pre_stim + expobj.stim_duration_frames:pre_stim + expobj.stim_duration_frames + 1 + expobj.post_stim_response_frames_window])  # calculate the dF over pre-stim mean F response within the response window
                 if dfstdf_threshold:
                     response_result = response / std_pre  # normalize the delta F above pre-stim mean using std of the pre-stim
                 else:
