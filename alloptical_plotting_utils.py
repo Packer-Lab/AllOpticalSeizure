@@ -228,7 +228,11 @@ def plot_photostim_traces_overlap(array, expobj, exclude_id=[], y_spacing_factor
 
     for i in range(len_):
         if i not in exclude_id:
-            ax.plot(array[i] + i * 40 * y_spacing_factor, linewidth=1)
+            if 'linewidth' in kwargs.keys():
+                linewidth=kwargs['linewidth']
+            else:
+                linewidth=1
+            ax.plot(array[i] + i * 40 * y_spacing_factor, linewidth=linewidth)
     for j in expobj.stim_start_frames:
         if j <= array.shape[1]:
             ax.axvline(x=j, c='gray', alpha=0.3)
@@ -335,6 +339,7 @@ def plot_periphotostim_avg(arr, expobj, stim_duration, pre_stim=10, post_stim=20
     # change x axis ticks to seconds
     if 'Time' in x_label or 'time' in x_label:
         labels = list(np.linspace(0, int(arr.shape[1] / expobj.fps), 7))  # x axis tick label every 500 msec
+        labels = [round(label,1) for label in labels]
         ax.set_xticks(ticks=[(label * expobj.fps) for label in labels])
         ax.set_xticklabels(labels)
         ax.set_xlabel('Time (secs)')
@@ -500,7 +505,7 @@ def plot_lfp_stims(expobj, title='LFP signal with photostim. shown (in different
     ax2.yaxis.set_tick_params(right=False,
                               labelright=False)
     if 'ax2' not in kwargs.keys():
-        ax2.legend()
+        ax2.legend(loc='upper left')
 
 
     # # set x ticks at every 30 seconds
@@ -527,7 +532,7 @@ def plot_lfp_stims(expobj, title='LFP signal with photostim. shown (in different
         plt.show()
 
     if 'fig' in kwargs.keys():
-        ax.text(0.99, 0.95, '%s %s %s' % (expobj.metainfo['exptype'], expobj.metainfo['animal prep.'], expobj.metainfo['trial']),
+        ax.text(0.99, 0.95, 'LFP trace with stims %s %s %s' % (expobj.metainfo['exptype'], expobj.metainfo['animal prep.'], expobj.metainfo['trial']),
                 verticalalignment='top', horizontalalignment='right',
                 transform=ax.transAxes, fontweight='bold',
                 color='black', fontsize=10 * shrink_text)
@@ -786,7 +791,8 @@ def plotLfpSignal(expobj, stim_span_color='powderblue', stim_lines: bool = True,
         ax.set_ylim([np.mean(expobj.lfp_signal) - 10, np.mean(expobj.lfp_signal) + 10])
 
     # add title
-    plt.suptitle(
+    if not 'fig' in kwargs.keys():
+        ax.set_title(
         '%s - %s %s %s' % (title, expobj.metainfo['exptype'], expobj.metainfo['animal prep.'], expobj.metainfo['trial']))
 
     # options for showing plot or returning plot

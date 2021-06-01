@@ -3593,11 +3593,12 @@ def all_cell_responses_dFstdF(expobj):
 # %% main functions to collate analysis
 
 # plots for SLM targets responses
-def slm_targets_responses(expobj, experiment, trial, y_spacing_factor=2):
+def slm_targets_responses(expobj, experiment, trial, y_spacing_factor=2, figsize=[20, 20], smooth_overlap_traces=5, linewidth_overlap_traces=0.2,
+                          y_lims_periphotostim_trace=[-0.5, 2.0]):
     # plot SLM photostim individual targets -- individual, full traces, dff normalized
 
     # make rolling average for these plots to smooth out the traces a little more
-    w = 3
+    w = smooth_overlap_traces
     to_plot = np.asarray([(np.convolve(trace, np.ones(w), 'valid') / w) for trace in expobj.dff_SLMTargets])
     # to_plot = expobj.dff_SLMTargets
 
@@ -3606,20 +3607,23 @@ def slm_targets_responses(expobj, experiment, trial, y_spacing_factor=2):
 
 
     # initialize figure
-    fig = plt.figure(constrained_layout=True, figsize=[20,10])
-    gs = fig.add_gridspec(2, 5)
+    fig = plt.figure(constrained_layout=True, figsize=figsize)
+    gs = fig.add_gridspec(4, 5)
 
-    ax1 = fig.add_subplot(gs[0, :])
+    ax0 = fig.add_subplot(gs[0, :])
+    ax0 = aoplot.plot_lfp_stims(expobj, fig=fig, ax=ax0, show=False)
+
+    ax1 = fig.add_subplot(gs[1:3, :])
     aoplot.plot_photostim_traces_overlap(array=expobj.dff_SLMTargets, expobj=expobj, x_axis='Time (secs.)',
                                          y_spacing_factor=y_spacing_factor, fig=fig, ax=ax1, show=False,
-                                         title='%s - dFF Flu photostims' % experiment,
+                                         title='%s - dFF Flu photostims' % experiment, linewidth=linewidth_overlap_traces,
                                          figsize=(2 * 20, 2 * len(to_plot) * 0.15))
 
-    ax2 = fig.add_subplot(gs[1, 0])
+    ax2 = fig.add_subplot(gs[-1, 0])
     y_label = 'dF/prestim_stdF'
     aoplot.plot_periphotostim_avg(arr=expobj.SLMTargets_stims_dfstdF_avg, expobj=expobj,
                                   stim_duration=expobj.stim_duration_frames,
-                                  figsize=[5, 4], y_lims=[-0.5, 1.5], fig=fig, ax=ax2, show=False,
+                                  figsize=[5, 4], y_lims=y_lims_periphotostim_trace, fig=fig, ax=ax2, show=False,
                                   title=('responses of all photostim targets'),
                                   y_label=y_label, x_label='Time post-stimulation (seconds)')
 
@@ -3630,22 +3634,22 @@ def slm_targets_responses(expobj, experiment, trial, y_spacing_factor=2):
         # make response magnitude and response success rate figure
         # fig, (ax1, ax2, ax3, ax4) = plt.subplots(figsize=((5 * 4), 5), nrows=1, ncols=4)
         # stims out sz
-        ax3 = fig.add_subplot(gs[1, 1])
+        ax3 = fig.add_subplot(gs[-1, 1])
         data = [[np.mean(expobj.outsz_responses_SLMtargets[i]) for i in range(expobj.n_targets_total)]]
         fig, ax3 = pj.plot_hist_density(data, x_label='response magnitude (dF/stdF)', title='stims_out_sz - ',
                                      fig=fig, ax=ax3, show=False)
-        ax4 = fig.add_subplot(gs[1, 2])
+        ax4 = fig.add_subplot(gs[-1, 2])
         fig, ax4 = pj.plot_bar_with_points(data=[list(expobj.outsz_StimSuccessRate_SLMtargets.values())],
                                            x_tick_labels=[trial],
                                            ylims=[0, 100], bar=False, y_label='% success stims.',
                                            title='target success rate (stims out sz)', expand_size_x=2,
                                            show=False, fig=fig, ax=ax4)
         # stims in sz
-        ax5 = fig.add_subplot(gs[1, 3])
+        ax5 = fig.add_subplot(gs[-1, 3])
         data = [[np.mean(expobj.insz_responses_SLMtargets[i]) for i in range(expobj.n_targets_total)]]
         fig, ax5 = pj.plot_hist_density(data, x_label='response magnitude (dF/stdF)', title='stims_in_sz - ',
                                         fig=fig, ax=ax5, show=False)
-        ax6 = fig.add_subplot(gs[1, 4])
+        ax6 = fig.add_subplot(gs[-1, 4])
         fig, ax6 = pj.plot_bar_with_points(data=[list(expobj.insz_StimSuccessRate_SLMtargets.values())],
                                         x_tick_labels=[trial],
                                         ylims=[0, 100], bar=False, y_label='% success stims.',
@@ -3657,9 +3661,9 @@ def slm_targets_responses(expobj, experiment, trial, y_spacing_factor=2):
         # no sz
         # fig, (ax1, ax2) = plt.subplots(figsize=((5 * 2), 5), nrows=1, ncols=2)
         data = [[np.mean(expobj.responses_SLMtargets[i]) for i in range(expobj.n_targets_total)]]
-        ax3 = fig.add_subplot(gs[1, 1])
+        ax3 = fig.add_subplot(gs[-1, 1])
         fig, ax3 = pj.plot_hist_density(data, x_label='response magnitude (dF/stdF)', title='no sz', show=False, fig=fig, ax=ax3)
-        ax4 = fig.add_subplot(gs[1, 2])
+        ax4 = fig.add_subplot(gs[-1, 2])
         fig, ax4 = pj.plot_bar_with_points(data=[list(expobj.StimSuccessRate_SLMtargets.values())], x_tick_labels=[trial],
                                 ylims=[0, 100], bar=False, show=False, fig=fig, ax=ax4,
                                 y_label='% success stims.', title='success rate of stim responses (no sz)',

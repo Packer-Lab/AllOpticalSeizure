@@ -5,51 +5,20 @@ import alloptical_plotting_utils as aoplot
 import matplotlib.pyplot as plt
 
 
-data_path_base = '/home/pshah/mnt/qnap/Data/2020-12-18'
-animal_prep = 'RL108'
-# date = '2021-01-10'
+data_path_base = '/home/pshah/mnt/qnap/Data/2020-12-19'
+animal_prep = 'RL109'
+date = '2020-12-19'
 # specify location of the naparm export for the trial(s) - ensure that this export was used for all trials, if # of trials > 1
 # paqs_loc = '%s/%s_RL109_%s.paq' % (data_path_base, date, trial[2:])  # path to the .paq files for the selected trials
 
-trials = ['t-012']
+trials = ['t-007']
 for trial in trials:
     ###### IMPORT pkl file containing data in form of expobj
     # trial = 't-009'  # note that %s magic command in the code below will be using these trials listed here
-    date = data_path_base[-10:]
     expobj, experiment = aoutils.import_expobj(trial=trial, date=date)
 
+    aoutils.slm_targets_responses(expobj, experiment, trial, y_spacing_factor=3)
 
-    # need to update these 4 things for every trial
-    comments = expobj.metainfo['comments']
-    naparms_loc = expobj.naparm_path
-    exp_type = expobj.metainfo['exptype']
-
-    paqs_loc = expobj.paq_path
-    tiffs_loc_dir = expobj.tiff_path_dir
-    tiffs_loc = expobj.tiff_path
-    pkl_path = "/home/pshah/mnt/qnap/Analysis/%s/%s/%s_%s/%s_%s.pkl" % (date, animal_prep, date, trial, date, trial)  # specify path in Analysis folder to save pkl object
-    new_tiffs = tiffs_loc[:-19]  # where new tiffs from rm_artifacts_tiffs will be saved
-
-    # make the necessary Analysis saving subfolder as well
-    analysis_save_path = '/home/pshah/mnt/qnap/Analysis/%s/%s/' % (date, animal_prep)
-    analysis_save_path = analysis_save_path + tiffs_loc_dir[-16:]
-
-    # matlab_badframes_path = '%s/paired_measurements/%s_%s_%s.mat' % (analysis_save_path[:40], date, animal_prep, trial[2:])  # choose matlab path if need to use or use None for no additional bad frames
-    matlab_badframes_path = None
-
-    metainfo = {
-        'animal prep.': animal_prep,
-        'trial': trial,
-        'date': date,
-        'exptype': exp_type,
-        'data_path_base': data_path_base,
-        'comments': comments
-    }
-
-    expobj = aoutils.run_photostim_preprocessing(trial, exp_type=exp_type, pkl_path=pkl_path, new_tiffs=new_tiffs, metainfo=metainfo,
-                                                 tiffs_loc_dir=tiffs_loc_dir, tiffs_loc=tiffs_loc, naparms_loc=naparms_loc,
-                                                 paqs_loc=paqs_loc, matlab_badframes_path=matlab_badframes_path, quick=False,
-                                                 processed_tiffs=False, discard_all=True, analysis_save_path=analysis_save_path)
 
 # expobj.stim_start_frames = expobj.stim_start_frames + 3
 # aoplot.plotMeanRawFluTrace(expobj=expobj, stim_span_color=None, x_axis='frames', figsize=[20, 3])
