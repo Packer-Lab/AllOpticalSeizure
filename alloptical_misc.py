@@ -3,8 +3,9 @@ from utils.paq_utils import paq_read, frames_discard
 import alloptical_utils_pj as aoutils
 import alloptical_plotting_utils as aoplot
 import matplotlib.pyplot as plt
+import numpy as np
 
-
+# %%
 data_path_base = '/home/pshah/mnt/qnap/Data/2020-12-19'
 animal_prep = 'RL109'
 date = '2020-12-19'
@@ -18,6 +19,27 @@ for trial in trials:
     expobj, experiment = aoutils.import_expobj(trial=trial, date=date)
 
     aoutils.slm_targets_responses(expobj, experiment, trial, y_spacing_factor=3)
+
+
+
+# %%
+pkl_path = '/home/pshah/mnt/qnap/Analysis/2021-01-08/PS05/2021-01-08_t-010/2021-01-08_t-010.pkl'
+expobj, experiment = aoutils.import_expobj(pkl_path=pkl_path)
+
+
+
+# %%
+# x = np.asarray([i for i in expobj.SLMTargets_stims_dfstdF_avg])
+
+from matplotlib.colors import ColorConverter
+c = ColorConverter().to_rgb
+bwr_custom = pj.make_colormap([c('blue'), c('white'), 0.33, c('white'), c('red')])
+aoplot.plot_traces_heatmap(expobj.SLMTargets_stims_dfstdF_avg, vmin=-5, vmax=10, stim_on=expobj.pre_stim, stim_off=expobj.pre_stim + expobj.stim_duration_frames - 1,
+                           title=(expobj.metainfo['animal prep.'] + ' ' + expobj.metainfo['trial'] + ' - targets only'), xlims=(0, expobj.pre_stim +expobj.stim_duration_frames+ expobj.post_stim), cmap=bwr_custom)
+
+
+
+
 
 
 # expobj.stim_start_frames = expobj.stim_start_frames + 3

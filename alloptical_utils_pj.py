@@ -17,6 +17,7 @@ from utils.funcs_pj import SaveDownsampledTiff, subselect_tiff, make_tiff_stack,
 
 sys.path.append('/home/pshah/Documents/code/')
 # from Vape.utils.paq2py import *
+from matplotlib.colors import ColorConverter
 from Vape.utils.utils_funcs import *
 from Vape.utils import STAMovieMaker_noGUI as STAMM
 import scipy.stats as stats
@@ -63,7 +64,7 @@ def import_expobj(trial: str = None, date: str = None, pkl_path: str = None, ver
         expobj.paqProcessing()
         expobj.save_pkl()
 
-    if pkl_path:
+    if pkl_path is not None:
         if expobj.pkl_path != pkl_path:
             expobj.pkl_path = pkl_path
             print('updated expobj.pkl_path ', pkl_path)
@@ -3602,7 +3603,7 @@ def all_cell_responses_dFstdF(expobj):
 
 # plots for SLM targets responses
 def slm_targets_responses(expobj, experiment, trial, y_spacing_factor=2, figsize=[20, 20], smooth_overlap_traces=5, linewidth_overlap_traces=0.2,
-                          y_lims_periphotostim_trace=[-0.5, 2.0]):
+                          y_lims_periphotostim_trace=[-0.5, 2.0], v_lims_periphotostim_heatmap=[-5, 5]):
     # plot SLM photostim individual targets -- individual, full traces, dff normalized
 
     # make rolling average for these plots to smooth out the traces a little more
@@ -3615,7 +3616,7 @@ def slm_targets_responses(expobj, experiment, trial, y_spacing_factor=2, figsize
 
     # initialize figure
     fig = plt.figure(constrained_layout=True, figsize=figsize)
-    gs = fig.add_gridspec(4, 5)
+    gs = fig.add_gridspec(4, 8)
 
     ax0 = fig.add_subplot(gs[0, :])
     ax0 = aoplot.plot_lfp_stims(expobj, fig=fig, ax=ax0, show=False)
@@ -3626,7 +3627,7 @@ def slm_targets_responses(expobj, experiment, trial, y_spacing_factor=2, figsize
                                          title='%s - dFF Flu photostims' % experiment, linewidth=linewidth_overlap_traces,
                                          figsize=(2 * 20, 2 * len(to_plot) * 0.15))
 
-    ax2 = fig.add_subplot(gs[-1, 0])
+    ax2 = fig.add_subplot(gs[-1, 0:2])
     y_label = 'dF/prestim_stdF'
     aoplot.plot_periphotostim_avg(arr=expobj.SLMTargets_stims_dfstdF_avg, expobj=expobj,
                                   stim_duration=expobj.stim_duration_frames,
@@ -3641,22 +3642,22 @@ def slm_targets_responses(expobj, experiment, trial, y_spacing_factor=2, figsize
         # make response magnitude and response success rate figure
         # fig, (ax1, ax2, ax3, ax4) = plt.subplots(figsize=((5 * 4), 5), nrows=1, ncols=4)
         # stims out sz
-        ax3 = fig.add_subplot(gs[-1, 1])
+        ax3 = fig.add_subplot(gs[-1, 2:4])
         data = [[np.mean(expobj.outsz_responses_SLMtargets[i]) for i in range(expobj.n_targets_total)]]
         fig, ax3 = pj.plot_hist_density(data, x_label='response magnitude (dF/stdF)', title='stims_out_sz - ',
                                      fig=fig, ax=ax3, show=False)
-        ax4 = fig.add_subplot(gs[-1, 2])
+        ax4 = fig.add_subplot(gs[-1, 4])
         fig, ax4 = pj.plot_bar_with_points(data=[list(expobj.outsz_StimSuccessRate_SLMtargets.values())],
                                            x_tick_labels=[trial],
                                            ylims=[0, 100], bar=False, y_label='% success stims.',
                                            title='target success rate (stims out sz)', expand_size_x=2,
                                            show=False, fig=fig, ax=ax4)
         # stims in sz
-        ax5 = fig.add_subplot(gs[-1, 3])
+        ax5 = fig.add_subplot(gs[-1, 5:7])
         data = [[np.mean(expobj.insz_responses_SLMtargets[i]) for i in range(expobj.n_targets_total)]]
         fig, ax5 = pj.plot_hist_density(data, x_label='response magnitude (dF/stdF)', title='stims_in_sz - ',
                                         fig=fig, ax=ax5, show=False)
-        ax6 = fig.add_subplot(gs[-1, 4])
+        ax6 = fig.add_subplot(gs[-1, 7])
         fig, ax6 = pj.plot_bar_with_points(data=[list(expobj.insz_StimSuccessRate_SLMtargets.values())],
                                         x_tick_labels=[trial],
                                         ylims=[0, 100], bar=False, y_label='% success stims.',
@@ -3668,14 +3669,26 @@ def slm_targets_responses(expobj, experiment, trial, y_spacing_factor=2, figsize
         # no sz
         # fig, (ax1, ax2) = plt.subplots(figsize=((5 * 2), 5), nrows=1, ncols=2)
         data = [[np.mean(expobj.responses_SLMtargets[i]) for i in range(expobj.n_targets_total)]]
-        ax3 = fig.add_subplot(gs[-1, 1])
+        ax3 = fig.add_subplot(gs[-1, 2:4])
         fig, ax3 = pj.plot_hist_density(data, x_label='response magnitude (dF/stdF)', title='no sz', show=False, fig=fig, ax=ax3)
-        ax4 = fig.add_subplot(gs[-1, 2])
+        ax4 = fig.add_subplot(gs[-1, 4])
         fig, ax4 = pj.plot_bar_with_points(data=[list(expobj.StimSuccessRate_SLMtargets.values())], x_tick_labels=[trial],
-                                ylims=[0, 100], bar=False, show=False, fig=fig, ax=ax4,
-                                y_label='% success stims.', title='success rate of stim responses (no sz)',
-                                expand_size_x=2)
+                                           ylims=[0, 100], bar=False, show=False, fig=fig, ax=ax4,
+                                           y_label='% success stims.', title='success rate of stim responses (no sz)',
+                                           expand_size_x=2)
 
+        zero_point = abs(v_lims_periphotostim_heatmap[0]/v_lims_periphotostim_heatmap[1])
+        c = ColorConverter().to_rgb
+        bwr_custom = pj.make_colormap([c('blue'), c('white'), zero_point, c('white'), c('red')])
+        ax5 = fig.add_subplot(gs[-1, 5])
+        fig, ax5 = aoplot.plot_traces_heatmap(expobj.SLMTargets_stims_dfstdF_avg, vmin=-5, vmax=10, stim_on=expobj.pre_stim,
+                                   stim_off=expobj.pre_stim + expobj.stim_duration_frames - 1,
+                                   title=(expobj.metainfo['animal prep.'] + ' ' + expobj.metainfo[
+                                       'trial'] + ' - targets only'), show=False, fig=fig, ax=ax5,
+                                   xlims=(0, expobj.pre_stim + expobj.stim_duration_frames + expobj.post_stim),
+                                   cmap=bwr_custom)
+
+        fig.tight_layout()
         fig.show()
 
 
@@ -3732,108 +3745,3 @@ def points_in_circle_np(radius, x0=0, y0=0, ):
     x, y = np.where((x_[:, np.newaxis] - x0) ** 2 + (y_ - y0) ** 2 <= radius ** 2)
     for x, y in zip(x_[x], y_[y]):
         yield x, y
-
-#### archive
-
-# other useful functions written by me
-# paq2py by Llyod Russel
-# def paq_read(file_path=None, plot=False):
-#     """
-#     Read PAQ file (from PackIO) into python
-#     Lloyd Russell 2015
-#     Parameters
-#     ==========
-#     file_path : str, optional
-#         full path to file to read in. if none is supplied a load file dialog
-#         is opened, buggy on mac osx - Tk/matplotlib. Default: None.
-#     plot : bool, optional
-#         plot the data after reading? Default: False.
-#     Returns
-#     =======
-#     data : ndarray
-#         the data as a m-by-n array where m is the number of channels and n is
-#         the number of datapoints
-#     chan_names : list of str
-#         the names of the channels provided in PackIO
-#     hw_chans : list of str
-#         the hardware lines corresponding to each channel
-#     units : list of str
-#         the units of measurement for each channel
-#     rate : int
-#         the acquisition sample rate, in Hz
-#     """
-#
-#     # file load gui
-#     if file_path is None:
-#         import Tkinter
-#         import tkFileDialog
-#         root = Tkinter.Tk()
-#         root.withdraw()
-#         file_path = tkFileDialog.askopenfilename()
-#         root.destroy()
-#
-#     # open file
-#     fid = open(file_path, 'rb')
-#
-#     # get sample rate
-#     rate = int(np.fromfile(fid, dtype='>f', count=1))
-#
-#     # get number of channels
-#     num_chans = int(np.fromfile(fid, dtype='>f', count=1))
-#
-#     # get channel names
-#     chan_names = []
-#     for i in range(num_chans):
-#         num_chars = int(np.fromfile(fid, dtype='>f', count=1))
-#         chan_name = ''
-#         for j in range(num_chars):
-#             chan_name = chan_name + chr(np.fromfile(fid, dtype='>f', count=1))
-#         chan_names.append(chan_name)
-#
-#     # get channel hardware lines
-#     hw_chans = []
-#     for i in range(num_chans):
-#         num_chars = int(np.fromfile(fid, dtype='>f', count=1))
-#         hw_chan = ''
-#         for j in range(num_chars):
-#             hw_chan = hw_chan + chr(np.fromfile(fid, dtype='>f', count=1))
-#         hw_chans.append(hw_chan)
-#
-#     # get acquisition units
-#     units = []
-#     for i in range(num_chans):
-#         num_chars = int(np.fromfile(fid, dtype='>f', count=1))
-#         unit = ''
-#         for j in range(num_chars):
-#             unit = unit + chr(np.fromfile(fid, dtype='>f', count=1))
-#         units.append(unit)
-#
-#     # get data
-#     temp_data = np.fromfile(fid, dtype='>f', count=-1)
-#     num_datapoints = int(len(temp_data)/num_chans)
-#     data = np.reshape(temp_data, [num_datapoints, num_chans]).transpose()
-#
-#     # close file
-#     fid.close()
-#
-#     # plot
-#     if plot:
-#         # import matplotlib
-#         # matplotlib.use('QT4Agg')
-#         import matplotlib.pylab as plt
-#         f, axes = plt.subplots(num_chans, 1, sharex=True, figsize=(10,num_chans), frameon=False)
-#         for idx, ax in enumerate(axes):
-#             ax.plot(data[idx])
-#             ax.set_xlim([0, num_datapoints-1])
-#             ax.set_ylim([data[idx].min()-1, data[idx].max()+1])
-#             # ax.set_ylabel(units[idx])
-#             ax.set_title(chan_names[idx])
-#         plt.tight_layout()
-#         plt.show()
-#
-#     return {"data": data,
-#             "chan_names": chan_names,
-#             "hw_chans": hw_chans,
-#             "units": units,
-#             "rate": rate,
-#             "num_datapoints": num_datapoints}

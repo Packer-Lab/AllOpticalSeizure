@@ -26,17 +26,12 @@ expobj, experiment = aoutils.import_expobj(trial=trial, date=date)
 if not hasattr(expobj, 'meanRawFluTrace'):
     expobj.mean_raw_flu_trace(plot=True)
 
-plot = True
+plot = False
 if plot:
     aoplot.plotMeanRawFluTrace(expobj=expobj, stim_span_color=None, x_axis='Time', figsize=[20, 3])
     aoplot.plotLfpSignal(expobj, stim_span_color='', x_axis='frames', figsize=[20, 3])
     aoplot.plotSLMtargetsLocs(expobj, background=expobj.meanFluImg_registered)
     aoplot.plot_lfp_stims(expobj)
-
-
-
-
-
 
 
 
@@ -193,7 +188,7 @@ pj.plot_bar_with_points(data=[group1, group2], x_tick_labels=['photostim target'
                         colors=['red', 'black'], title=experiment, y_label='Avg dF/stdF response', expand_size_y=1.3,
                         expand_size_x=1.4)
 
-# %% PLOT HEATMAP OF PHOTOSTIM. RESPONSES TO PHOTOSTIM FOR ALL CELLS
+# %% PLOT HEATMAP OF PHOTOSTIM. RESPONSES TO PHOTOSTIM FOR ALL CELLS -- this is just the whole trace for each target, not avg over stims in any way
 # - need to find a way to sort these responses that similar cells are sorted together
 # - implement a heirarchical clustering method
 

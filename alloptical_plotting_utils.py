@@ -237,11 +237,13 @@ def plot_photostim_traces_overlap(array, expobj, exclude_id=[], y_spacing_factor
         if j <= array.shape[1]:
             ax.axvline(x=j, c='gray', alpha=0.3)
 
+    ax.set_xlim([0, expobj.n_frames-3000])
+
     ax.margins(0)
     # change x axis ticks to seconds
     if 'Time' in x_axis or 'time' in x_axis:
         # change x axis ticks to every 30 seconds
-        labels = list(range(0, int(array.shape[1] // expobj.fps), 30))
+        labels = list(range(0, int(expobj.n_frames // expobj.fps), 30))
         ax.set_xticks(ticks=[(label * expobj.fps) for label in labels])
         ax.set_xticklabels(labels)
         ax.set_xlabel('Time (secs)')
@@ -257,8 +259,8 @@ def plot_photostim_traces_overlap(array, expobj, exclude_id=[], y_spacing_factor
     ax.spines['left'].set_visible(False)
     ax.set_xlabel(x_axis)
 
-    if 'y_lims' in kwargs.keys():
-        ax.set_ylim(kwargs['y_lims'])
+    if 'y_lim' in kwargs.keys():
+        ax.set_ylim(kwargs['y_lim'])
     else:
         y_max = np.mean(array[-1] + len_ * 40 * y_spacing_factor) + 3 * np.mean(array[-1])
         ax.set_ylim(0, y_max)
@@ -277,11 +279,11 @@ def plot_photostim_traces_overlap(array, expobj, exclude_id=[], y_spacing_factor
                      fontsize=10, wrap=True)
     if 'show' in kwargs.keys():
         if kwargs['show'] is True:
-            plt.show()
+            fig.show()
         else:
             pass
     else:
-        plt.show()
+        fig.show()
 
 
 ### photostim analysis - PLOT avg over all photstim. trials traces from PHOTOSTIM TARGETTED cells
@@ -557,17 +559,26 @@ def plot_traces_heatmap(data, vmin=None, vmax=None, stim_on=None, stim_off=None,
     :param xlims:
     :return:
     """
-    if figsize:
-        fig = plt.subplots(figsize=figsize)
+    if 'fig' in kwargs.keys():
+        fig = kwargs['fig']
+        ax = kwargs['ax']
     else:
-        fig = plt.subplots(figsize=(5, 5))
-    plt.imshow(data, aspect='auto')
-    plt.set_cmap(cmap)
-    plt.clim(vmin, vmax)
+        if 'figsize' in kwargs.keys():
+            fig, ax = plt.subplots(figsize=kwargs['figsize'])
+        else:
+            fig, ax = plt.subplots(figsize=[5, 5])
+
+    # ax = ax.imshow(data, aspect='auto', cmap=cmap)
+    # # plt.set_cmap(cmap)
+    # ax.set_clim(vmin, vmax)
+
+    mesh1 = ax.pcolormesh(data, cmap=cmap)
+    mesh1.set_clim(vmin, vmax)
+
     if xlims is not None:
-        plt.xlim(xlims)
+        ax.set_xlim(xlims)
     if vmin and vmax:
-        cbar = plt.colorbar(boundaries=np.linspace(vmin, vmax, 1000), ticks=[vmin, 0, vmax])
+        cbar = fig.colorbar(mesh1, boundaries=np.linspace(vmin, vmax, 1000), ticks=[vmin, 0, vmax])
     if stim_on and stim_off:  # draw vertical dashed lines for stim period
         # plt.vlines(x=stim_on, ymin=0, ymax=len(data), colors='black')
         # plt.vlines(x=stim_off, ymin=0, ymax=len(data))
@@ -576,21 +587,29 @@ def plot_traces_heatmap(data, vmin=None, vmax=None, stim_on=None, stim_off=None,
             stim_on = [stim_on]
             stim_off = [stim_off]
         for line in stim_on:
-            plt.axvline(x=line, color='black', linestyle='--')
+            ax.axvline(x=line, color='black', linestyle='--')
         for line in stim_off:
-            plt.axvline(x=line, color='black', linestyle='--')
-        plt.ylim(0, len(data)-0.5)
+            ax.axvline(x=line, color='black', linestyle='--')
+        ax.set_ylim(0, len(data)-0.5)
 
     if 'lfp_signal' in kwargs.keys():
         x_c = np.linspace(0, data.shape[1] - 1, len(kwargs['lfp_signal']))
-        plt.plot(x_c, kwargs['lfp_signal'] * 50 + data.shape[0] - 100, c='black')
+        ax.plot(x_c, kwargs['lfp_signal'] * 50 + data.shape[0] - 100, c='black')
 
-    plt.suptitle(title)
 
-    if show:
-        plt.show()
+    # finalize plot, set title, and show or return axes
+    if 'fig' in kwargs.keys():
+        ax.title.set_text(title)
+        return fig, ax
     else:
-        pass
+        plt.suptitle(title)
+    if 'show' in kwargs.keys():
+        if kwargs['show'] is True:
+            plt.show()
+        else:
+            pass
+    else:
+        plt.show()
 
 # plot to show the response magnitude of each cell as the actual's filling in the cell's ROI pixels.
 def xyloc_responses(expobj, to_plot='dfstdf', clim=[-10, +10], plot_target_coords=True, save_fig: str = None):
