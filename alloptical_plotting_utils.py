@@ -985,18 +985,27 @@ def plot_flu_1pstim_avg_trace(expobj, title='Average trace of stims', individual
     if 'show' in kwargs.keys():
         if kwargs['show'] is True:
             plt.show()
-            return flu_list, round(response, 4), decay_constant
+            if quantify:
+                return flu_list, round(response, 4), decay_constant
         else:
             if 'fig' in kwargs.keys():
-                return fig, ax, flu_list, round(response, 4), decay_constant
+                if quantify:
+                    return fig, ax, flu_list, round(response, 4), decay_constant
+                else:
+                    return fig, ax
             else:
-                return flu_list, round(response, 4), decay_constant
+                if quantify:
+                    return flu_list, round(response, 4), decay_constant
     else:
         plt.show()
         if 'fig' in kwargs.keys():
-            return fig, ax, flu_list, round(response, 4), decay_constant
+            if quantify:
+                return fig, ax, flu_list, round(response, 4), decay_constant
+            else:
+                return fig, ax,
         else:
-            return flu_list, round(response, 4), decay_constant
+            if quantify:
+                return flu_list, round(response, 4), decay_constant
 
 
 
