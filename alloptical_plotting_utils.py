@@ -693,7 +693,13 @@ def plotMeanRawFluTrace(expobj, stim_span_color='white', stim_lines: bool = True
                 fig, ax = plt.subplots(figsize=[10 * len(expobj.meanRawFluTrace) / 2000, 3])
                 fig.tight_layout(pad=0)
 
-    ax.plot(expobj.meanRawFluTrace, c='forestgreen', zorder=1, linewidth=2)
+    # change linewidth
+    if 'linewidth' in kwargs:
+        lw = kwargs['linewidth']
+    else:
+        lw = 2
+
+    ax.plot(expobj.meanRawFluTrace, c='forestgreen', zorder=1, linewidth=lw)
     ax.margins(0)
     if stim_span_color is not None:
         if hasattr(expobj, 'shutter_frames'):
