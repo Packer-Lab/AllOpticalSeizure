@@ -545,8 +545,8 @@ def plot_lfp_stims(expobj, title='LFP signal with photostim. shown (in different
 
 
 # plot the whole pre stim to post stim period as a cool heatmap
-def plot_traces_heatmap(data, vmin=None, vmax=None, stim_on=None, stim_off=None, figsize=None, title=None, xlims=(0,100),
-                        cmap='bwr', show=True, **kwargs):
+def plot_traces_heatmap(data, expobj, vmin=None, vmax=None, stim_on=None, stim_off=None, figsize=None, title=None, xlims=(0,100), x_axis='Frames',
+                        cmap='bwr', show=True, cbar=False, **kwargs):
     """
     plot the whole pre stim to post stim period as a cool heatmap
     :param data:
@@ -577,8 +577,12 @@ def plot_traces_heatmap(data, vmin=None, vmax=None, stim_on=None, stim_off=None,
 
     if xlims is not None:
         ax.set_xlim(xlims)
-    if vmin and vmax:
+    if vmin is not None:
         cbar = fig.colorbar(mesh1, boundaries=np.linspace(vmin, vmax, 1000), ticks=[vmin, 0, vmax])
+        if cbar is True:
+            pass
+        else:
+            cbar.remove()
     if stim_on and stim_off:  # draw vertical dashed lines for stim period
         # plt.vlines(x=stim_on, ymin=0, ymax=len(data), colors='black')
         # plt.vlines(x=stim_off, ymin=0, ymax=len(data))
@@ -596,6 +600,12 @@ def plot_traces_heatmap(data, vmin=None, vmax=None, stim_on=None, stim_off=None,
         x_c = np.linspace(0, data.shape[1] - 1, len(kwargs['lfp_signal']))
         ax.plot(x_c, kwargs['lfp_signal'] * 50 + data.shape[0] - 100, c='black')
 
+    if 'Time' in x_axis or 'time' in x_axis:
+        # change x axis ticks to every 30 seconds
+        labels = list(np.linspace(0, int(data.shape[1] / expobj.fps), int(data.shape[1] / expobj.fps * 2)))
+        ax.set_xticks(ticks=[(label * expobj.fps) for label in labels])
+        ax.set_xticklabels(labels)
+        ax.set_xlabel('Time (secs)')
 
     # finalize plot, set title, and show or return axes
     if 'fig' in kwargs.keys():

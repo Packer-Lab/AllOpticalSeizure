@@ -60,7 +60,7 @@ def import_expobj(trial: str = None, date: str = None, pkl_path: str = None, ver
     if hasattr(expobj, 'paq_rate'):
         pass
     else:
-        print('\n-need to run paqProcessing to update paq attr.s in expobj')
+        print('\n-running paqProcessing to update paq attr.s in expobj')
         expobj.paqProcessing()
         expobj.save_pkl()
 
@@ -3599,11 +3599,11 @@ def all_cell_responses_dFstdF(expobj):
 
 
 
-# %% main functions to collate analysis
+# %% main functions to collect analysis
 
 # plots for SLM targets responses
 def slm_targets_responses(expobj, experiment, trial, y_spacing_factor=2, figsize=[20, 20], smooth_overlap_traces=5, linewidth_overlap_traces=0.2,
-                          y_lims_periphotostim_trace=[-0.5, 2.0], v_lims_periphotostim_heatmap=[-5, 5]):
+                          y_lims_periphotostim_trace=[-0.5, 2.0], v_lims_periphotostim_heatmap=[-5, 5], save=None):
     # plot SLM photostim individual targets -- individual, full traces, dff normalized
 
     # make rolling average for these plots to smooth out the traces a little more
@@ -3679,16 +3679,20 @@ def slm_targets_responses(expobj, experiment, trial, y_spacing_factor=2, figsize
 
         zero_point = abs(v_lims_periphotostim_heatmap[0]/v_lims_periphotostim_heatmap[1])
         c = ColorConverter().to_rgb
-        bwr_custom = pj.make_colormap([c('blue'), c('white'), zero_point, c('white'), c('red')])
-        ax5 = fig.add_subplot(gs[-1, 5])
-        fig, ax5 = aoplot.plot_traces_heatmap(expobj.SLMTargets_stims_dfstdF_avg, vmin=-5, vmax=10, stim_on=expobj.pre_stim,
-                                   stim_off=expobj.pre_stim + expobj.stim_duration_frames - 1,
-                                   title=(expobj.metainfo['animal prep.'] + ' ' + expobj.metainfo[
-                                       'trial'] + ' - targets only'), show=False, fig=fig, ax=ax5,
-                                   xlims=(0, expobj.pre_stim + expobj.stim_duration_frames + expobj.post_stim),
-                                   cmap=bwr_custom)
+        bwr_custom = pj.make_colormap([c('blue'), c('white'), zero_point - 0.12, c('white'), c('red')])
+        ax5 = fig.add_subplot(gs[-1, 5:])
+        fig, ax5 = aoplot.plot_traces_heatmap(expobj.SLMTargets_stims_dfstdF_avg, expobj, vmin=v_lims_periphotostim_heatmap[0], vmax=v_lims_periphotostim_heatmap[1],
+                                              stim_on=expobj.pre_stim, stim_off=expobj.pre_stim + expobj.stim_duration_frames + 1, cbar=False,
+                                              title=(expobj.metainfo['animal prep.'] + ' ' + expobj.metainfo[
+                                              'trial'] + ' - SLM targets raw Flu'), show=False, fig=fig, ax=ax5,
+                                              xlims=(0, expobj.pre_stim + expobj.stim_duration_frames + expobj.post_stim),
+                                              cmap=bwr_custom)
 
         fig.tight_layout()
+        if save is not None:
+            fig.savefig(fname=save, transparent=True, format='png')
+            fig.savefig(fname=save, transparent=True,  format='svg')
+
         fig.show()
 
 
