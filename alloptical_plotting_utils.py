@@ -772,24 +772,34 @@ def plotLfpSignal(expobj, stim_span_color='powderblue', downsample: bool = True,
         color = kwargs['color']
     else:
         color = 'steelblue'
+
+    # option for downsampling of data plot trace
     if downsample:
         signal = expobj.lfp_signal[expobj.frame_start_time_actual: expobj.frame_end_time_actual]
         signal = signal[::1000]
+        down = 1000
     else:
         signal = expobj.lfp_signal[expobj.frame_start_time_actual: expobj.frame_end_time_actual]
+        down = 1
 
-    ax.plot(signal, c=color, zorder=1, linewidth=0.4, alpha=alpha)  ## NOTE: ONLY PLOTTING LFP SIGNAL RELATED TO
+    # change linewidth
+    if 'linewidth' in kwargs:
+        lw = kwargs['linewidth']
+    else:
+        lw = 0.4
+
+    ax.plot(signal, c=color, zorder=1, linewidth=lw, alpha=alpha)  ## NOTE: ONLY PLOTTING LFP SIGNAL RELATED TO
     ax.margins(0)
 
     # plot stims
     if stim_span_color != '':
         for stim in expobj.stim_start_times:
-            stim = stim - expobj.frame_start_time_actual
-            ax.axvspan(stim - 8, 1 + stim + expobj.stim_duration_frames / expobj.fps * expobj.paq_rate, color=stim_span_color, zorder=1, alpha=0.5)
+            stim = (stim - expobj.frame_start_time_actual) / down
+            ax.axvspan(stim - 8, 1 + stim + expobj.stim_duration_frames / expobj.fps * expobj.paq_rate / down, color=stim_span_color, zorder=1, alpha=0.5)
     else:
         if stim_lines:
             for line in expobj.stim_start_times:
-                line = line - expobj.frame_start_time_actual
+                line = (line - expobj.frame_start_time_actual) / down
                 plt.axvline(x=line+2, color='black', linestyle='--', linewidth=0.6, zorder=0)
 
     # plot seizure onset and offset markings
@@ -803,8 +813,9 @@ def plotLfpSignal(expobj, stim_span_color='powderblue', downsample: bool = True,
     # change x axis ticks to seconds
     if x_axis == 'time':
         # set x ticks at every 30 seconds
-        labels = list(range(0, len(expobj.lfp_signal[expobj.frame_start_time_actual: expobj.frame_end_time_actual]) // expobj.paq_rate, 30))
-        ax.set_xticks(ticks=[(label * expobj.paq_rate) for label in labels])
+        labels = list(range(0, int(len(signal) / expobj.paq_rate * down), 30))
+        print('x_axis labels: ', labels)
+        ax.set_xticks(ticks=[(label * expobj.paq_rate / down) for label in labels])
         ax.set_xticklabels(labels)
         ax.tick_params(axis='both', which='both', length=3)
         if not hide_xlabel:
