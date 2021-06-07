@@ -3663,6 +3663,12 @@ def slm_targets_responses(expobj, experiment, trial, y_spacing_factor=2, figsize
                                         ylims=[0, 100], bar=False, y_label='% success stims.',
                                         title='target success rate (stims in sz)', expand_size_x=2,
                                         show=False, fig=fig, ax=ax6)
+        fig.tight_layout()
+        if save is not None:
+            print('saving png and svg to: %s' % save)
+            fig.savefig(fname=save + '.png', transparent=True, format='png')
+            fig.savefig(fname=save + '.svg', transparent=True, format='svg')
+
         fig.show()
 
     else:
@@ -3690,8 +3696,9 @@ def slm_targets_responses(expobj, experiment, trial, y_spacing_factor=2, figsize
 
         fig.tight_layout()
         if save is not None:
-            fig.savefig(fname=save, transparent=True, format='png')
-            fig.savefig(fname=save, transparent=True,  format='svg')
+            print('saving png and svg to: %s' % save)
+            fig.savefig(fname=save+'.png', transparent=True, format='png')
+            fig.savefig(fname=save+'.svg', transparent=True,  format='svg')
 
         fig.show()
 
