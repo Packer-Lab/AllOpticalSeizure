@@ -226,22 +226,34 @@ onePresults.save()
 
 data = [[rp for rp in onePresults.mean_stim_responses.iloc[:, 1] if rp != '-']]
 data.append([rp for rp in onePresults.mean_stim_responses.iloc[:,2] if rp != '-'])
-data.append([rp for rp in onePresults.mean_stim_responses.iloc[:,3] if rp != '-'])
+# data.append([rp for rp in onePresults.mean_stim_responses.iloc[:,3] if rp != '-'])
 
-
-pj.plot_bar_with_points(data=data, title='response magnitudes - 1p stim experiments', legend_labels=list(onePresults.mean_stim_responses.columns[1:4]),
-                        points=True, bar=False, colors=['black', 'green', 'purple'],
+fig, ax = plt.subplots(figsize=[3, 5])
+pj.plot_bar_with_points(data=data, title='response magnitudes - 1p stim experiments', x_tick_labels=['pre-4ap', 'post-4ap'],
+                        points=True, bar=False, colors=['black', 'green', 'purple'], fig=fig, ax=ax, show=False,
                         x_label='experiment groups', y_label='Avg. dFF (across all stim trials)', alpha=0.4,
-                        expand_size_x=0.81, expand_size_y=1.2, shrink_text=1.35)
+                        expand_size_x=0.5, expand_size_y=1.3, shrink_text=1.35)
+save_path = '/home/pshah/mnt/qnap/Analysis/' + 'onePstim_response_quant'
+print('saving fig to: ', save_path)
+fig.savefig(fname=save_path + '.png', transparent=True, format='png')
+fig.savefig(fname=save_path + '.svg', transparent=True, format='svg')
+
+
 
 # %% BAR PLOT OF DECAY CONSTANT FOR 1P STIM EXPERIMENTS
 
 data = [list(onePresults.mean_stim_responses[onePresults.mean_stim_responses.iloc[:, -3].notnull()].iloc[:, -3])]
 data.append(list(onePresults.mean_stim_responses[onePresults.mean_stim_responses.iloc[:, -2].notnull()].iloc[:, -2]))
-data.append(list(onePresults.mean_stim_responses[onePresults.mean_stim_responses.iloc[:, -1].notnull()].iloc[:, -1]))
+# data.append(list(onePresults.mean_stim_responses[onePresults.mean_stim_responses.iloc[:, -1].notnull()].iloc[:, -1]))
 
-
+fig, ax = plt.subplots(figsize=[3, 5])
 pj.plot_bar_with_points(data=data, title='decay constants - 1p stim experiments', legend_labels=list(onePresults.mean_stim_responses.columns[-3:]),
-                        points=True, bar=False, colors=['black', 'green', 'purple'],
+                        points=True, bar=False, colors=['black', 'green', 'purple'], fig=fig, ax=ax, show=False,
                         x_label='experiment groups', y_label='Avg. Decay constant (secs.)', alpha=0.4,
                         expand_size_x=0.9, expand_size_y=1.2, shrink_text=1.35)
+save_path = '/home/pshah/mnt/qnap/Analysis/' + 'onePstim_decay_quant'
+print('saving fig to: ', save_path)
+fig.savefig(fname=save_path + '.png', transparent=True, format='png')
+fig.savefig(fname=save_path + '.svg', transparent=True, format='svg')
+
+

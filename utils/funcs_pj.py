@@ -608,7 +608,8 @@ def make_random_color_array(array_of_ids):
 
 # plotting function for plotting a bar graph with the individual data points shown as well
 def plot_bar_with_points(data, title='', x_tick_labels=[], legend_labels: list = [], points=True, bar=True, colors=['black'], ylims=None, xlims=None,
-                         x_label=None, y_label=None, alpha=0.2, savepath=None, expand_size_x=1, expand_size_y=1, shrink_text: float = 1, **kwargs):
+                         x_label=None, y_label=None, alpha=0.2, savepath=None, expand_size_x=1, expand_size_y=1, shrink_text: float = 1, show_legend=False,
+                         **kwargs):
     """
     general purpose function for plotting a bar graph of multiple categories with the individual datapoints shown
     as well. The latter is achieved by adding a scatter plot with the datapoints randomly jittered around the central
@@ -644,16 +645,8 @@ def plot_bar_with_points(data, title='', x_tick_labels=[], legend_labels: list =
     if 'fig' in kwargs.keys():
         f = kwargs['fig']
         ax = kwargs['ax']
-        legend_labels = x_tick_labels
-        assert len(legend_labels) > 0
     else:
-        if len(legend_labels) > 0:
-            f, ax = plt.subplots(figsize=((5 * len(x) / 2) * expand_size_x, 3 * expand_size_y))
-        else:
-            f, ax = plt.subplots(figsize=((2 * len(x) / 2) * expand_size_x, 3 * expand_size_y))
-            legend_labels = x_tick_labels
-            assert len(legend_labels) > 0
-
+        f, ax = plt.subplots(figsize=((5 * len(x) / 2) * expand_size_x, 3 * expand_size_y))
 
     # start making plot
     if not bar:
@@ -686,6 +679,8 @@ def plot_bar_with_points(data, title='', x_tick_labels=[], legend_labels: list =
         xlims = [-1, 1]
         ax.set_xlim(xlims)
 
+    if len(legend_labels) == 0:
+        legend_labels = x_tick_labels
     if points:
         for i in x:
             # distribute scatter randomly across whole width of bar
@@ -721,7 +716,8 @@ def plot_bar_with_points(data, title='', x_tick_labels=[], legend_labels: list =
         # plt.setp(ax.get_xticklabels(), rotation=45)
 
     if len(legend_labels) > 1:
-        ax.legend(bbox_to_anchor=(1.01, 0.90), fontsize=8*shrink_text)
+        if show_legend:
+            ax.legend(bbox_to_anchor=(1.01, 0.90), fontsize=8*shrink_text)
 
     # add title
     if 'fig' not in kwargs.keys():
@@ -733,17 +729,17 @@ def plot_bar_with_points(data, title='', x_tick_labels=[], legend_labels: list =
     if 'show' in kwargs.keys():
         if kwargs['show'] is True:
             # Tweak spacing to prevent clipping of ylabel
-            f.tight_layout()
+            # f.tight_layout()
             f.show()
         else:
             return f, ax
     else:
         # Tweak spacing to prevent clipping of ylabel
-        f.tight_layout()
+        # f.tight_layout()
         f.show()
 
 # histogram density plot with gaussian best fit line
-def plot_hist_density(data, colors: list = None, fill_color: list = None, **kwargs):
+def plot_hist_density(data, colors: list = None, fill_color: list = None, legend_labels: list = [None], **kwargs):
 
     if 'fig' in kwargs.keys():
         fig = kwargs['fig']
@@ -764,7 +760,7 @@ def plot_hist_density(data, colors: list = None, fill_color: list = None, **kwar
     for i in range(len(data)):
         # the histogram of the data
         num_bins = 10
-        n, bins, patches = ax.hist(data[i], num_bins, density=1, alpha=0.2)  # histogram hidden currently
+        n, bins, patches = ax.hist(data[i], num_bins, density=1, alpha=0.0, color=fill_color[i], label=legend_labels[i])  # histogram hidden currently
 
         # add a 'best fit' line
         mu = np.mean(data[i])  # mean of distribution
@@ -774,7 +770,7 @@ def plot_hist_density(data, colors: list = None, fill_color: list = None, **kwar
         y1 = ((1 / (np.sqrt(2 * np.pi) * sigma)) *
              np.exp(-0.5 * (1 / sigma * (x - mu))**2))
         ax.plot(x, y1, linewidth=2, c=colors[i], zorder=2)
-        ax.fill_between(x, y1, color=fill_color[i], zorder=2)
+        ax.fill_between(x, y1, color=fill_color[i], zorder=2, alpha=0.3)
         if 'x_label' in kwargs:
             ax.set_xlabel(kwargs['x_label'])
         if 'y_label' in kwargs:
@@ -782,6 +778,7 @@ def plot_hist_density(data, colors: list = None, fill_color: list = None, **kwar
         else:
             ax.set_ylabel('Probability density')
 
+    ax.legend()
 
     # add title
     if 'fig' not in kwargs.keys():

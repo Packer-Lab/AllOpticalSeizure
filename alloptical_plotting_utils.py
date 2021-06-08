@@ -902,7 +902,7 @@ def plot_flu_1pstim_avg_trace(expobj, title='Average trace of stims', individual
         for trace in flu_list:
             ax.plot(trace, color='forestgreen', zorder=1, alpha=0.25)
         if stim_span_color is not None:
-            ax.axvspan(int(pre_stim * expobj.fps) - 2, int(pre_stim * expobj.fps) + expobj.stim_duration_frames + 1, color='skyblue', zorder=1, alpha=0.7)
+            ax.axvspan(int(pre_stim * expobj.fps) - 2.5, int(pre_stim * expobj.fps) + expobj.stim_duration_frames + 2.0, color=stim_span_color, zorder=4)
         elif stim_span_color is None:
             plt.axvline(x=int(pre_stim * expobj.fps) - 2, color='black', linestyle='--', linewidth=1)
             plt.axvline(x=int(pre_stim * expobj.fps) + expobj.stim_duration_frames + 1, color='black', linestyle='--', linewidth=1)
