@@ -598,10 +598,10 @@ def _generate_new_color(existing_colors, pastel_factor=0.5):
     return best_color
 
 
-def make_random_color_array(array_of_ids):
-    "array_of_ids: an array containing neuron IDs (the length of this array will be the number of colors returned)"
+def make_random_color_array(n):
+    "n: # of colors to generate"
     colors = []
-    for i in range(0, len(array_of_ids)):
+    for i in range(0, n):
         colors.append(_generate_new_color(colors, pastel_factor=0.2))
     return colors
 

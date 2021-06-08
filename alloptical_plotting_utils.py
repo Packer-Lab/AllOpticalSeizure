@@ -132,9 +132,10 @@ def plotSLMtargetsLocs(expobj, background: np.ndarray = None, **kwargs):
     else:
         plt.imshow(background, cmap='gray')
 
+    colors = pj.make_random_color_array(len(expobj.target_coords))
     for i in range(len(expobj.target_coords)):
         for (x, y) in expobj.target_coords[i]:
-            plt.scatter(x=x, y=y, facecolors='none', linewidths=1.0)
+            plt.scatter(x=x, y=y, edgecolors=colors[i], linewidths=1.0)
 
     # for (x, y) in expobj.target_coords_all:
     #     plt.scatter(x=x, y=y, edgecolors='yellowgreen', facecolors='none', linewidths=1.0)

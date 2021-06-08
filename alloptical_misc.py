@@ -18,6 +18,9 @@ for trial in trials:
     # trial = 't-009'  # note that %s magic command in the code below will be using these trials listed here
     expobj, experiment = aoutils.import_expobj(trial=trial, date=date)
 
+    expobj._findTargets()
+    expobj.save()
+    aoplot.plotSLMtargetsLocs(expobj)
 
 
 
