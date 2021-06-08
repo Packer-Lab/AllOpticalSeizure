@@ -817,7 +817,7 @@ def plotLfpSignal(expobj, stim_span_color='powderblue', downsample: bool = True,
                 plt.axvline(x=expobj.frame_clock_actual[sz_offset] - expobj.frame_start_time_actual, color='black', linestyle='--', linewidth=1.0, zorder=0)
 
     # change x axis ticks to seconds
-    if x_axis == 'time':
+    if 'time' in x_axis or 'Time' in x_axis:
         # set x ticks at every 30 seconds
         labels = list(range(0, int(len(signal) / expobj.paq_rate * down), 30))
         print('x_axis labels: ', labels)

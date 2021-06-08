@@ -7,16 +7,20 @@ import utils.funcs_pj as pj
 
 
 # import onePstim superobject that will collect analyses from various individual experiments
-results_object_path = '/home/pshah/mnt/qnap/Analysis/onePstim_results_superobject.pkl'
-onePresults = aoutils.import_resultsobj(pkl_path=results_object_path)
+results_object_path = '/home/pshah/mnt/qnap/Analysis/alloptical_results_superobject.pkl'
+allopticalResults = aoutils.import_resultsobj(pkl_path=results_object_path)
 
 
 # %%
 ###### IMPORT pkl file containing data in form of expobj
 trial = 't-010'
 date = '2021-01-08'
+animal_prep = 'PS05'
 
-expobj, experiment = aoutils.import_expobj(trial=trial, date=date)
+pkl_path = "/home/pshah/mnt/qnap/Analysis/%s/%s/%s_%s/%s_%s.pkl" % (
+date, animal_prep, date, trial, date, trial)  # specify path in Analysis folder to save pkl object
+
+expobj, experiment = aoutils.import_expobj(pkl_path=pkl_path)
 
 
 # %% ########## BAR PLOT showing average success rate of photostimulation

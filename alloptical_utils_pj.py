@@ -3603,7 +3603,7 @@ def all_cell_responses_dFstdF(expobj):
 
 # plots for SLM targets responses
 def slm_targets_responses(expobj, experiment, trial, y_spacing_factor=2, figsize=[20, 20], smooth_overlap_traces=5, linewidth_overlap_traces=0.2,
-                          y_lims_periphotostim_trace=[-0.5, 2.0], v_lims_periphotostim_heatmap=[-5, 5], save=None):
+                          y_lims_periphotostim_trace=[-0.5, 2.0], v_lims_periphotostim_heatmap=[-5, 5], save_results=True):
     # plot SLM photostim individual targets -- individual, full traces, dff normalized
 
     # make rolling average for these plots to smooth out the traces a little more
@@ -3619,7 +3619,7 @@ def slm_targets_responses(expobj, experiment, trial, y_spacing_factor=2, figsize
     gs = fig.add_gridspec(4, 8)
 
     ax0 = fig.add_subplot(gs[0, :])
-    ax0 = aoplot.plot_lfp_stims(expobj, fig=fig, ax=ax0, show=False)
+    ax0 = aoplot.plot_lfp_stims(expobj, fig=fig, ax=ax0, show=False, x_axis='Time (secs.)')
 
     ax1 = fig.add_subplot(gs[1:3, :])
     aoplot.plot_photostim_traces_overlap(array=expobj.dff_SLMTargets, expobj=expobj, x_axis='Time (secs.)',
@@ -3664,7 +3664,10 @@ def slm_targets_responses(expobj, experiment, trial, y_spacing_factor=2, figsize
                                         title='target success rate (stims in sz)', expand_size_x=2,
                                         show=False, fig=fig, ax=ax6)
         fig.tight_layout()
-        if save is not None:
+        if save_results:
+            save = expobj.analysis_save_path[:-17] + '/results/' + '%s_%s_slm_targets_responses' % (expobj.metainfo['animal prep.'], trial)
+            if not os.path.exists(expobj.analysis_save_path[:-17] + '/results'):
+                os.makedirs(expobj.analysis_save_path[:-17] + '/results')
             print('saving png and svg to: %s' % save)
             fig.savefig(fname=save + '.png', transparent=True, format='png')
             fig.savefig(fname=save + '.svg', transparent=True, format='svg')
@@ -3695,7 +3698,10 @@ def slm_targets_responses(expobj, experiment, trial, y_spacing_factor=2, figsize
                                               cmap=bwr_custom)
 
         fig.tight_layout()
-        if save is not None:
+        if save_results:
+            save = expobj.analysis_save_path[:-17] + '/results/' + '%s_%s_slm_targets_responses' % (expobj.metainfo['animal prep.'], trial)
+            if not os.path.exists(expobj.analysis_save_path[:-17] + '/results'):
+                os.makedirs(expobj.analysis_save_path[:-17] + '/results')
             print('saving png and svg to: %s' % save)
             fig.savefig(fname=save+'.png', transparent=True, format='png')
             fig.savefig(fname=save+'.svg', transparent=True,  format='svg')
