@@ -126,30 +126,47 @@ def plot_cell_radius_aspectr(expobj, stat, to_plot, min_vline: int = 4, max_vlin
 ### plot the location of all SLM targets, along with option for plotting the mean img of the current trial
 def plotSLMtargetsLocs(expobj, background: np.ndarray = None, **kwargs):
 
+    if 'fig' in kwargs.keys():
+        fig = kwargs['fig']
+        ax = kwargs['ax']
+    else:
+        if 'figsize' in kwargs.keys():
+            fig, ax = plt.subplots(figsize=kwargs['figsize'])
+        else:
+            fig, ax = plt.subplots()
+
     if background is None:
         black = np.zeros((expobj.frame_x, expobj.frame_y), dtype='uint16')
-        plt.imshow(black, cmap='gray')
+        ax.imshow(black, cmap='gray')
     else:
-        plt.imshow(background, cmap='gray')
+        ax.imshow(background, cmap='gray')
 
     colors = pj.make_random_color_array(len(expobj.target_coords))
     for i in range(len(expobj.target_coords)):
         for (x, y) in expobj.target_coords[i]:
-            plt.scatter(x=x, y=y, edgecolors=colors[i], linewidths=1.0)
+            ax.scatter(x=x, y=y, edgecolors=colors[i], facecolors='none', linewidths=1.0)
 
     # for (x, y) in expobj.target_coords_all:
     #     plt.scatter(x=x, y=y, edgecolors='yellowgreen', facecolors='none', linewidths=1.0)
 
     if 'title' in kwargs.keys():
-        plt.suptitle(kwargs['title'])
+        if kwargs['title'] is not None:
+            ax.set_title(kwargs['title'])
+        else:
+            pass
     else:
-        plt.suptitle('SLM targets location')
+        ax.set_title('SLM targets location')
 
     if 'show' in kwargs.keys():
         if kwargs['show'] is True:
-            plt.show()
+            fig.show()
+        else:
+            return fig, ax
     else:
-        plt.show()
+        fig.show()
+
+    if 'fig' in kwargs.keys():
+        return fig, ax
 
 
 ### plot entire trace of individual targeted cells as super clean subplots, with the same y-axis lims

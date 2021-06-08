@@ -20,7 +20,8 @@ for trial in trials:
 
     expobj._findTargets()
     expobj.save()
-    aoplot.plotSLMtargetsLocs(expobj)
+
+    aoplot.plotSLMtargetsLocs(expobj, title=trial)
 
 
 

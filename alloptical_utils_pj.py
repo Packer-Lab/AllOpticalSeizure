@@ -3634,7 +3634,11 @@ def slm_targets_responses(expobj, experiment, trial, y_spacing_factor=2, figsize
     fig = plt.figure(constrained_layout=True, figsize=figsize)
     gs = fig.add_gridspec(4, 8)
 
-    ax0 = fig.add_subplot(gs[0, :])
+    ax9 = fig.add_subplot(gs[0, 1])
+    ax9 = aoplot.plotSLMtargetsLocs(expobj, background=expobj.meanFluImg_registered, title=None, fig=fig, ax=ax9, show=False)
+
+
+    ax0 = fig.add_subplot(gs[0, 1:])
     ax0 = aoplot.plot_lfp_stims(expobj, fig=fig, ax=ax0, show=False, x_axis='Time (secs.)')
 
     ax1 = fig.add_subplot(gs[1:3, :])
