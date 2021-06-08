@@ -18,7 +18,10 @@ for trial in trials:
     # trial = 't-009'  # note that %s magic command in the code below will be using these trials listed here
     expobj, experiment = aoutils.import_expobj(trial=trial, date=date)
 
-    aoutils.slm_targets_responses(expobj, experiment, trial, y_spacing_factor=3)
+
+
+
+
 
 # %% re-running pre-processing on an expobj that already exists for a given trial
 

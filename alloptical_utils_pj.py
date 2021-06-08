@@ -1440,7 +1440,7 @@ class alloptical(TwoPhotonImaging):
         # targetCoordinates_2 = list(zip(targets_2[1], targets_2[0]))
         # print('Number of targets, SLM group #2:', len(targetCoordinates_2))
 
-        self.target_coords = targetCoordinates
+        self.target_coords_all = targetCoordinates
         # self.target_coords_1 = targetCoordinates_1
         # self.target_coords_2 = targetCoordinates_2
         self.n_targets_total = len(targetCoordinates)
@@ -1467,61 +1467,77 @@ class alloptical(TwoPhotonImaging):
         #     target_areas_2.append(target_area)
         # self.target_areas_2 = target_areas_2
 
-        print('Got targets...')
 
-    def _findTargets_naparm(self):
-
-        '''
-        For gathering coordinates and circular areas of targets from naparm
-        '''
+        # find targets by stim groups
+        target_files = []
+        for path in listdir:
+            if 'FOVTargets_00' in path:
+                target_files.append(path)
 
         self.target_coords = []
-        self.target_areas = []
-        self.target_coords_all = []
-
-        # load naparm targets file for this experiment
-        naparm_path = os.path.join(self.naparm_path, 'Targets')
-
-        listdir = os.listdir(naparm_path)
-
-        targets_path = []
-        for path in listdir:
-            if 'FOVTargets_0' in path:
-                targets_path.append(path)
-        targets_path = sorted(targets_path)
-
-        print(targets_path)
-
-        target_groups = []
-        scale_factor = self.frame_x / 512
-        for target_tiff in targets_path:
-            target_image_slm = tf.imread(os.path.join(naparm_path, target_tiff))
-
-            targets = np.where(target_image_slm > 0)
-
-            targetCoordinates = list(zip(targets[0] * scale_factor, targets[1] * scale_factor))
-            target_groups.append(targetCoordinates)
-
-        self.target_coords = target_groups
-        for group in self.target_coords:
-            for coord in group:
-                self.target_coords_all.append(coord)
-
-        self.n_targets = len(self.target_coords_all)
-
-        radius = self.spiral_size / self.pix_sz_x
-
-        target_areas = []
-        for group in self.target_coords:
-            a = []
-            for target in group:
-                target_area = ([item for item in points_in_circle_np(radius, x0=target[0], y0=target[1])])
-                a.append(target_area)
-            target_areas.append(a)
-
-        self.target_areas = target_areas
+        counter = 0
+        for slmgroup in target_files:
+            target_image = tf.imread(os.path.join(naparm_path, slmgroup))
+            targets = np.where(target_image > 0)
+            targetCoordinates = list(zip(targets[1] * scale_factor, targets[0] * scale_factor))
+            self.target_coords.append(targetCoordinates)
+            print('Number of targets (in SLM group %s): ' % (counter + 1), len(targetCoordinates))
 
         print('Got targets...')
+
+    # def _findTargets_naparm(self):
+    #
+    #     '''
+    #     For gathering coordinates and circular areas of targets from naparm
+    #     '''
+    #
+    #     self.target_coords = []
+    #     self.target_areas = []
+    #     self.target_coords_all = []
+    #
+    #     # load naparm targets file for this experiment
+    #     naparm_path = os.path.join(self.naparm_path, 'Targets')
+    #
+    #     listdir = os.listdir(naparm_path)
+    #
+    #     targets_path = []
+    #     for path in listdir:
+    #         if 'FOVTargets_0' in path:
+    #             targets_path.append(path)
+    #     targets_path = sorted(targets_path)
+    #
+    #     print(targets_path)
+    #
+    #     target_groups = []
+    #     scale_factor = self.frame_x / 512
+    #     for target_tiff in targets_path:
+    #         target_image_slm = tf.imread(os.path.join(naparm_path, target_tiff))
+    #
+    #         targets = np.where(target_image_slm > 0)
+    #
+    #         targetCoordinates = list(zip(targets[0] * scale_factor, targets[1] * scale_factor))
+    #         target_groups.append(targetCoordinates)
+    #
+    #     self.target_coords = target_groups
+    #     for group in self.target_coords:
+    #         for coord in group:
+    #             self.target_coords_all.append(coord)
+    #
+    #     self.n_targets = len(self.target_coords_all)
+    #
+    #     radius = self.spiral_size / self.pix_sz_x
+    #
+    #     target_areas = []
+    #     for group in self.target_coords:
+    #         a = []
+    #         for target in group:
+    #             target_area = ([item for item in points_in_circle_np(radius, x0=target[0], y0=target[1])])
+    #             a.append(target_area)
+    #         target_areas.append(a)
+    #
+    #     self.target_areas = target_areas
+    #
+    #     print('Got targets...')
 
     def find_s2p_targets_naparm(self):
         '''finding s2p cells that were SLM targets - naparm, lots of different SLM groups version'''
