@@ -16,13 +16,17 @@ trials = ['t-007']
 for trial in trials:
     ###### IMPORT pkl file containing data in form of expobj
     # trial = 't-009'  # note that %s magic command in the code below will be using these trials listed here
-    expobj, experiment = aoutils.import_expobj(trial=trial, date=date)
+    pkl_path = "/home/pshah/mnt/qnap/Analysis/%s/RL109/%s_%s/%s_%s.pkl" % (date, date, trial, date, trial)
+    expobj, experiment = aoutils.import_expobj(trial=trial, date=date, pkl_path=pkl_path, verbose=False)
 
-    expobj._findTargets()
-    expobj.save()
+    # expobj._findTargets()
+    # expobj.save()
 
-    aoplot.plotSLMtargetsLocs(expobj, title=trial)
+    # aoplot.plotSLMtargetsLocs(expobj, background=expobj.meanFluImg_registered, title=None)
 
+    aoutils.slm_targets_responses(expobj, experiment, trial, y_spacing_factor=4, smooth_overlap_traces=5, figsize=[30, 20],
+                                  linewidth_overlap_traces=0.2, y_lims_periphotostim_trace=[-0.5, 3.0], v_lims_periphotostim_heatmap=[-0.5, 1.0],
+                                  save_results=False)
 
 
 

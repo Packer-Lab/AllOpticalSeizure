@@ -149,6 +149,9 @@ def plotSLMtargetsLocs(expobj, background: np.ndarray = None, **kwargs):
     # for (x, y) in expobj.target_coords_all:
     #     plt.scatter(x=x, y=y, edgecolors='yellowgreen', facecolors='none', linewidths=1.0)
 
+    ax.margins(0)
+    fig.tight_layout()
+
     if 'title' in kwargs.keys():
         if kwargs['title'] is not None:
             ax.set_title(kwargs['title'])
