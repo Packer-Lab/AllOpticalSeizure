@@ -472,7 +472,8 @@ def plot_lfp_stims(expobj, title='LFP signal with photostim. shown (in different
 
     # plot LFP signal
     # ax.plot(expobj.lfp_signal, zorder=0, linewidth=0.5)
-    fig, ax = plotLfpSignal(expobj, fig=fig, ax=ax, stim_lines=False, show=False, stim_span_color='', x_axis=x_axis, sz_markings=sz_markings, color='slategray', hide_xlabel=True)
+    fig, ax = plotLfpSignal(expobj, fig=fig, ax=ax, stim_lines=False, show=False, stim_span_color='', x_axis=x_axis,
+                            sz_markings=sz_markings, color='slategray', hide_xlabel=True, downsample=False)
     # y_loc = np.percentile(expobj.lfp_signal, 75)
     y_loc = 0 # location of where to place the stim markers on the plot
 
@@ -754,7 +755,8 @@ def plotMeanRawFluTrace(expobj, stim_span_color='white', stim_lines: bool = True
 
 
 # plots the raw trace for the Flu mean of the FOV
-def plotLfpSignal(expobj, stim_span_color='powderblue', downsample: bool = True, stim_lines: bool = True, sz_markings: bool = False, title='LFP trace', x_axis='time', hide_xlabel=False, **kwargs):
+def plotLfpSignal(expobj, stim_span_color='powderblue', downsample: bool = True, stim_lines: bool = True, sz_markings: bool = False,
+                  title='LFP trace', x_axis='time', hide_xlabel=False, **kwargs):
     """make plot of LFP with also showing stim locations
     NOTE: ONLY PLOTTING LFP SIGNAL CROPPED TO 2P IMAGING FRAME START AND END TIMES - SO CUTTING OUT THE LFP SIGNAL BEFORE AND AFTER"""
 
