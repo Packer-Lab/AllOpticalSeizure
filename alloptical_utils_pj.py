@@ -704,8 +704,7 @@ class alloptical(TwoPhotonImaging):
 
             # final part, crop to the *exact* frames for current trial
             self.raw_SLMTargets = targets_trace_full[:,
-                                  self.curr_trial_frames[0] - start * 2000: self.curr_trial_frames[1] - (
-                                          self.curr_trial_frames[0] - start * 2000)]
+                                  self.curr_trial_frames[0] - start * 2000: self.curr_trial_frames[1] - (start * 2000)]
 
 
             self.meanFluImg_registered = np.mean(mean_img_stack, axis=0)

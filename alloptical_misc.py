@@ -6,6 +6,26 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 # %%
+
+prep = 'PS06'
+date = '2021-01-10'
+trials = ['t-008', 't-009', 't-010', 't-011']
+
+for trial in trials:
+    ###### IMPORT pkl file containing data in form of expobj
+    pkl_path = "/home/pshah/mnt/qnap/Analysis/%s/%s/%s_%s/%s_%s.pkl" % (date, prep, date, trial, date, trial)
+
+    expobj, experiment = aoutils.import_expobj(trial=trial, date=date, pkl_path=pkl_path, verbose=False)
+
+    print('\n%s' % trial)
+    print('frame clock count: ', len(expobj.frame_clock_actual))
+    print('raw Flu trace count: ', len(expobj.meanRawFluTrace))
+    print('xml nframes', expobj.n_frames)
+
+# paq_read(expobj.paq_path, plot=True)
+
+
+# %%
 data_path_base = '/home/pshah/mnt/qnap/Data/2020-12-19'
 animal_prep = 'RL109'
 date = '2020-12-19'
