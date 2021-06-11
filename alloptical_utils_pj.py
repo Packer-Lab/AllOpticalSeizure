@@ -3187,8 +3187,8 @@ def run_photostim_preprocessing(trial, exp_type, tiffs_loc_dir, tiffs_loc, napar
 # after running suite2p
 def run_alloptical_processing_photostim(expobj, to_suite2p, baseline_trials, plots: bool = True, force_redo: bool = False,
                                         post_stim_response_window_msec=500):
-    if not hasattr(expobj, 'target_coords_all'):
-        expobj.target_coords_all = expobj.target_coords
+
+    expobj._findTargets()
 
     if not hasattr(expobj, 'meanRawFluTrace'):
         expobj.mean_raw_flu_trace(plot=True)
@@ -3213,7 +3213,7 @@ def run_alloptical_processing_photostim(expobj, to_suite2p, baseline_trials, plo
                                        baseline_trials=expobj.baseline_trials, force_redo=force_redo)
     expobj.s2pProcessing(s2p_path=expobj.s2p_path, subset_frames=expobj.curr_trial_frames, subtract_neuropil=True,
                          baseline_frames=expobj.baseline_frames, force_redo=force_redo)
-    expobj.target_coords_all = expobj.target_coords
+    # expobj.target_coords_all = expobj.target_coords
     expobj.s2p_targets(force_redo=True)
     s2pMaskStack(obj=expobj, pkl_list=[expobj.pkl_path], s2p_path=expobj.s2p_path,
                  parent_folder=expobj.analysis_save_path, force_redo=force_redo)
@@ -3222,7 +3222,7 @@ def run_alloptical_processing_photostim(expobj, to_suite2p, baseline_trials, plo
     # STA - raw SLM targets processing
 
     # collect raw Flu data from SLM targets
-    expobj.raw_traces_from_targets(force_redo=False)
+    expobj.raw_traces_from_targets(force_redo=True)
 
     plot = True
     if plot:

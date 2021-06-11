@@ -609,7 +609,7 @@ def make_random_color_array(n):
 # plotting function for plotting a bar graph with the individual data points shown as well
 def plot_bar_with_points(data, title='', x_tick_labels=[], legend_labels: list = [], points=True, bar=True, colors=['black'], ylims=None, xlims=None,
                          x_label=None, y_label=None, alpha=0.2, savepath=None, expand_size_x=1, expand_size_y=1, shrink_text: float = 1, show_legend=False,
-                         **kwargs):
+                         paired=False, **kwargs):
     """
     general purpose function for plotting a bar graph of multiple categories with the individual datapoints shown
     as well. The latter is achieved by adding a scatter plot with the datapoints randomly jittered around the central
@@ -630,11 +630,12 @@ def plot_bar_with_points(data, title='', x_tick_labels=[], legend_labels: list =
     :param savepath: .svg file path; if given, the plot will be saved to the provided file path
     :param expand_size_x: factor to use for expanding figure size
     :param expand_size_y: factor to use for expanding figure size
+    :param paired: bool, if True then draw lines between data points of the same index location in each respective list in the data
     :return: matplotlib plot
     """
 
     # collect some info about data to plot
-    w = 0.3  # bar width
+    w = 0.3  # mean bar width
     x = list(range(len(data)))
     y = data
     if len(colors) != len(x):
@@ -647,6 +648,9 @@ def plot_bar_with_points(data, title='', x_tick_labels=[], legend_labels: list =
         ax = kwargs['ax']
     else:
         f, ax = plt.subplots(figsize=((5 * len(x) / 2) * expand_size_x, 3 * expand_size_y))
+
+    if paired:
+        assert len(x) > 1
 
     # start making plot
     if not bar:
@@ -669,6 +673,7 @@ def plot_bar_with_points(data, title='', x_tick_labels=[], legend_labels: list =
            # tick_label=x_tick_labels,
            edgecolor=edgecolor,
            color=(0, 0, 0, 0),  # face edgecolor transparent
+           zorder=2
            )
     ax.set_xticks([x * w * 2 for x in x])
     ax.set_xticklabels(x_tick_labels)
@@ -680,11 +685,25 @@ def plot_bar_with_points(data, title='', x_tick_labels=[], legend_labels: list =
         ax.set_xlim(xlims)
 
     if len(legend_labels) == 0:
+        if len(x_tick_labels) == 0:
+            x_tick_labels = [None] * len(x)
         legend_labels = x_tick_labels
+
     if points:
+        if not paired:  # dont scatter location of points if plotting paired lines
+            for i in x:
+                # distribute scatter randomly across whole width of bar
+                ax.scatter(x[i] * w * 2 + np.random.random(len(y[i])) * w - w / 2, y[i], color=colors[i], alpha=alpha, label=legend_labels[i])
+
+    if paired:
         for i in x:
-            # distribute scatter randomly across whole width of bar
-            ax.scatter(x[i] * w * 2 + np.random.random(len(y[i])) * w - w / 2, y[i], color=colors[i], alpha=alpha, label=legend_labels[i])
+            # plot points
+            ax.scatter([x[i] * w * 2] * len(y[i]), y[i], color=colors[i], alpha=alpha,
+                       label=legend_labels[i], zorder=3)
+            if i > 0:
+                for point_idx in range(len(y[i])):
+                    ax.plot([x[i-1] * w * 2, x[i] * w * 2], [y[i-1][point_idx], y[i][point_idx]], color='black', zorder=2)
+
 
     if ylims:
         ax.set_ylim(ylims)

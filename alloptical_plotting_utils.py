@@ -530,7 +530,7 @@ def plot_lfp_stims(expobj, title='LFP signal with photostim. shown (in different
         if type(expobj.stim_start_frames) != list:
             expobj.stim_start_frames = list(expobj.stim_start_frames)
         x = [(expobj.stim_start_times[expobj.stim_start_frames.index(stim)] - expobj.frame_start_time_actual) for stim in expobj.stim_start_frames]
-        ax2.scatter(x=x, y=[y_loc] * len(x), edgecolors='white', facecolors='black', marker="^", zorder=3, s=100, linewidths=1.0, label='Pre-4ap stims')
+        ax2.scatter(x=x, y=[y_loc] * len(x), edgecolors='white', facecolors='black', marker="^", zorder=3, s=100, linewidths=1.0, label='stims')
 
     ax2.set_ylim([-0.004, 0.1])
     ax2.yaxis.set_tick_params(right=False,
