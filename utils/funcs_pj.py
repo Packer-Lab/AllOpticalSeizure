@@ -607,7 +607,7 @@ def make_random_color_array(n):
 
 
 # plotting function for plotting a bar graph with the individual data points shown as well
-def plot_bar_with_points(data, title='', x_tick_labels=[], legend_labels: list = [], points=True, bar=True, colors=['black'], ylims=None, xlims=None,
+def plot_bar_with_points(data, title='', x_tick_labels=[], legend_labels: list = [], points=True, bar=True, colors=['black'], ylims=None, xlims=False,
                          x_label=None, y_label=None, alpha=0.2, savepath=None, expand_size_x=1, expand_size_y=1, shrink_text: float = 1, show_legend=False,
                          paired=False, **kwargs):
     """
@@ -656,7 +656,7 @@ def plot_bar_with_points(data, title='', x_tick_labels=[], legend_labels: list =
     if not bar:
         for i in x:
             # ax.plot(np.linspace(x[i] - w / 2, x[i] + w / 2, 3), [np.mean(yi) for yi in y] * 3, edgecolor=colors[i])
-            ax.plot(np.linspace(x[i] * w * 2 - w / 2, x[i] * w * 2 + w / 2, 3), [np.mean(y[i])] * 3, color='black')
+            ax.plot(np.linspace(x[i] * w * 2.5 - w / 2, x[i] * w * 2.5 + w / 2, 3), [np.mean(y[i])] * 3, color='black')
         lw = 0,
         edgecolor = None
     else:
@@ -664,7 +664,7 @@ def plot_bar_with_points(data, title='', x_tick_labels=[], legend_labels: list =
         lw = 1
 
     # plot bar graph, or if no bar (when lw = 0 from above) then use it to plot the error bars
-    ax.bar([x * w * 2 for x in x],
+    ax.bar([x * w * 2.5 for x in x],
            height=[np.mean(yi) for yi in y],
            yerr=[np.std(yi) for yi in y],  # error bars
            capsize=4.5,  # error bar cap width in points
@@ -675,11 +675,11 @@ def plot_bar_with_points(data, title='', x_tick_labels=[], legend_labels: list =
            color=(0, 0, 0, 0),  # face edgecolor transparent
            zorder=2
            )
-    ax.set_xticks([x * w * 2 for x in x])
+    ax.set_xticks([x * w * 2.5 for x in x])
     ax.set_xticklabels(x_tick_labels)
 
     if xlims:
-        ax.set_xlim([xlims[0] - 2 * w, xlims[1] + 2 * w])
+        ax.set_xlim([(x[0] * w * 2) - w * 1.20, (x[-1] * w * 2.5) + w * 1.20])
     elif len(x) == 1:  # set the x_lims for single bar case so that the bar isn't autoscaled
         xlims = [-1, 1]
         ax.set_xlim(xlims)
@@ -693,16 +693,16 @@ def plot_bar_with_points(data, title='', x_tick_labels=[], legend_labels: list =
         if not paired:  # dont scatter location of points if plotting paired lines
             for i in x:
                 # distribute scatter randomly across whole width of bar
-                ax.scatter(x[i] * w * 2 + np.random.random(len(y[i])) * w - w / 2, y[i], color=colors[i], alpha=alpha, label=legend_labels[i])
+                ax.scatter(x[i] * w * 2.5 + np.random.random(len(y[i])) * w - w / 2, y[i], color=colors[i], alpha=alpha, label=legend_labels[i])
 
     if paired:
         for i in x:
             # plot points
-            ax.scatter([x[i] * w * 2] * len(y[i]), y[i], color=colors[i], alpha=alpha,
+            ax.scatter([x[i] * w * 2.5] * len(y[i]), y[i], color=colors[i], alpha=alpha,
                        label=legend_labels[i], zorder=3)
             if i > 0:
                 for point_idx in range(len(y[i])):
-                    ax.plot([x[i-1] * w * 2, x[i] * w * 2], [y[i-1][point_idx], y[i][point_idx]], color='black', zorder=2)
+                    ax.plot([x[i-1] * w * 2 + 0.015, x[i] * w * 2.5 - 0.015], [y[i-1][point_idx], y[i][point_idx]], color='black', zorder=2, alpha=alpha)
 
 
     if ylims:
@@ -756,6 +756,7 @@ def plot_bar_with_points(data, title='', x_tick_labels=[], legend_labels: list =
         # Tweak spacing to prevent clipping of ylabel
         # f.tight_layout()
         f.show()
+
 
 # histogram density plot with gaussian best fit line
 def plot_hist_density(data, colors: list = None, fill_color: list = None, legend_labels: list = [None], **kwargs):

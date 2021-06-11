@@ -3222,7 +3222,7 @@ def run_alloptical_processing_photostim(expobj, to_suite2p, baseline_trials, plo
     # STA - raw SLM targets processing
 
     # collect raw Flu data from SLM targets
-    expobj.raw_traces_from_targets(force_redo=True)
+    expobj.raw_traces_from_targets(force_redo=force_redo)
 
     plot = True
     if plot:
@@ -3270,6 +3270,7 @@ def run_alloptical_processing_photostim(expobj, to_suite2p, baseline_trials, plo
                                           verbose=True, plot=False)
     else:
         seizure_filter = False
+        print('\n Calculating stim success rates and response magnitudes ***********')
         expobj.StimSuccessRate_SLMtargets, expobj.hits_SLMtargets, expobj.responses_SLMtargets = \
             calculate_StimSuccessRate(expobj, cell_ids=SLMtarget_ids, raw_traces_stims=expobj.SLMTargets_stims_raw,
                                       dfstdf_threshold=0.3,
