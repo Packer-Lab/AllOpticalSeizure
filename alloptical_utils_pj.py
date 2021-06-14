@@ -3450,7 +3450,7 @@ def calculate_SLMTarget_responses_dff(expobj, sz_filter=False, threshold=10, sti
 
     d = {}
     for stim in stims_to_use:
-        d['%s' % stim] = [None] * expobj.SLMTargets_stims_dff.shape[0]
+        d[stim] = [None] * expobj.SLMTargets_stims_dff.shape[0]
     df = pd.DataFrame(d, index=range(expobj.SLMTargets_stims_dff.shape[0]))  # population dataframe
 
     if sz_filter:
@@ -3468,9 +3468,8 @@ def calculate_SLMTarget_responses_dff(expobj, sz_filter=False, threshold=10, sti
         success = 0
         counter = 0
         responses = []
-        hits = []
-        for trace in expobj.SLMTargets_stims_dff[idx]:
-
+        for x in range(len(stims_to_use)):
+            trace = expobj.SLMTargets_stims_dff[idx][x]
             response_result = np.mean(trace[expobj.pre_stim + expobj.stim_duration_frames + 1:
                                             expobj.pre_stim + expobj.stim_duration_frames +
                                             expobj.post_stim_response_frames_window])  # calculate the dF over pre-stim mean F response within the response window
@@ -3479,15 +3478,10 @@ def calculate_SLMTarget_responses_dff(expobj, sz_filter=False, threshold=10, sti
                 success += 1
                 hits_slmtargets_df.loc[idx, expobj.stim_start_frames[0]] = 1
 
-            df.loc[idx, expobj.stim_start_frames[0]] = response_result
+            df.loc[idx, stims_to_use[x]] = response_result
             counter += 1
         reliability_slmtargets[idx] = round(success / counter * 100., 2)
 
-
-
-    print('Completed gathering dFF responses to photostim for %s cells' % len(
-        np.unique([expobj.good_cells + expobj.s2p_cell_targets])))
-    print('risky cells (with low Flu values to normalize with): ', risky_cells)
 
     return reliability_slmtargets, hits_slmtargets_df, df
 
