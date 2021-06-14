@@ -164,11 +164,15 @@ for i in pre_4ap_trials:
             date, j[:-6], date, j[-5:], date, j[-5:])  # specify path in Analysis folder to save pkl object
 
         expobj, _ = aoutils.import_expobj(pkl_path=pkl_path)
+        print('\n Calculating stim success rates and response magnitudes ***********')
+        expobj.StimSuccessRate_SLMtargets, expobj.hits_SLMtargets, expobj.responses_SLMtargets = \
+            aoutils.calculate_SLMTarget_responses_dff(expobj, threshold=10, stims_to_use=expobj.stim_start_frames)
+
         # raw_traces_stims = expobj.SLMTargets_stims_raw
 
         # expobj.post_stim_response_window_msec = 500
         # expobj.post_stim_response_frames_window = int(expobj.fps * expobj.post_stim_response_window_msec / 1000)
-        # expobj.save()
+        expobj.save()
 
         nrows = expobj.n_targets_total // 4
         if expobj.n_targets_total % 4 > 0:
