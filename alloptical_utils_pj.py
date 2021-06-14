@@ -3239,6 +3239,7 @@ def run_alloptical_processing_photostim(expobj, to_suite2p, baseline_trials, plo
     expobj.post_stim = int(3 * expobj.fps)  # length of post stim trace collected
     expobj.post_stim_response_window_msec = post_stim_response_window_msec
     expobj.post_stim_response_frames_window = int(expobj.fps * expobj.post_stim_response_window_msec/1000)
+
     expobj.SLMTargets_stims_dff, expobj.SLMTargets_stims_dffAvg, expobj.SLMTargets_stims_dfstdF, \
     expobj.SLMTargets_stims_dfstdF_avg, expobj.SLMTargets_stims_raw, expobj.SLMTargets_stims_rawAvg = \
         expobj.get_alltargets_stim_traces_norm(pre_stim=expobj.pre_stim, post_stim=expobj.post_stim)
@@ -3253,30 +3254,43 @@ def run_alloptical_processing_photostim(expobj, to_suite2p, baseline_trials, plo
         seizure_filter = True
 
         stims = [expobj.stim_start_frames.index(stim) for stim in expobj.stims_out_sz]
-        raw_traces_stims = expobj.SLMTargets_stims_raw[:, stims, :]
-        if len(raw_traces_stims) > 0:
+        # raw_traces_stims = expobj.SLMTargets_stims_raw[:, stims, :]
+        if len(stims) > 0:
+
             expobj.outsz_StimSuccessRate_SLMtargets, expobj.outsz_hits_SLMtargets, expobj.outsz_responses_SLMtargets = \
-                calculate_StimSuccessRate(expobj, cell_ids=SLMtarget_ids, raw_traces_stims=raw_traces_stims,
-                                          dfstdf_threshold=0.3, post_stim_response_frames_window=expobj.post_stim_response_frames_window,
-                                          pre_stim=expobj.pre_stim, sz_filter=seizure_filter,
-                                          verbose=True, plot=False)
-        if len(raw_traces_stims) > 0:
-            stims = [expobj.stim_start_frames.index(stim) for stim in expobj.stims_in_sz]
-            raw_traces_stims = expobj.SLMTargets_stims_raw[:, stims, :]
+                calculate_SLMTarget_responses_dff(expobj, threshold=10, stims_to_use=stims)
+
+            # expobj.outsz_StimSuccessRate_SLMtargets, expobj.outsz_hits_SLMtargets, expobj.outsz_responses_SLMtargets = \
+            #     calculate_StimSuccessRate(expobj, cell_ids=SLMtarget_ids, raw_traces_stims=raw_traces_stims,
+            #                               dff_threshold=10, post_stim_response_frames_window=expobj.post_stim_response_frames_window,
+            #                               pre_stim=expobj.pre_stim, sz_filter=seizure_filter,
+            #                               verbose=True, plot=False)
+
+
+        stims = [expobj.stim_start_frames.index(stim) for stim in expobj.stims_in_sz]
+        # raw_traces_stims = expobj.SLMTargets_stims_raw[:, stims, :]
+        if len(stims) > 0:
             expobj.insz_StimSuccessRate_SLMtargets, expobj.insz_hits_SLMtargets, expobj.insz_responses_SLMtargets = \
-                calculate_StimSuccessRate(expobj, cell_ids=SLMtarget_ids, raw_traces_stims=raw_traces_stims,
-                                          dfstdf_threshold=0.3, post_stim_response_frames_window=expobj.post_stim_response_frames_window,
-                                          pre_stim=expobj.pre_stim, sz_filter=seizure_filter,
-                                          verbose=True, plot=False)
+                calculate_SLMTarget_responses_dff(expobj, threshold=10, stims_to_use=stims)
+
+            # expobj.insz_StimSuccessRate_SLMtargets, expobj.insz_hits_SLMtargets, expobj.insz_responses_SLMtargets = \
+            #     calculate_StimSuccessRate(expobj, cell_ids=SLMtarget_ids, raw_traces_stims=raw_traces_stims,
+            #                               dff_threshold=10, post_stim_response_frames_window=expobj.post_stim_response_frames_window,
+            #                               pre_stim=expobj.pre_stim, sz_filter=seizure_filter,
+            #                               verbose=True, plot=False)
+
     else:
         seizure_filter = False
         print('\n Calculating stim success rates and response magnitudes ***********')
         expobj.StimSuccessRate_SLMtargets, expobj.hits_SLMtargets, expobj.responses_SLMtargets = \
-            calculate_StimSuccessRate(expobj, cell_ids=SLMtarget_ids, raw_traces_stims=expobj.SLMTargets_stims_raw,
-                                      dfstdf_threshold=0.3,
-                                      post_stim_response_frames_window=expobj.post_stim_response_frames_window,
-                                      pre_stim=expobj.pre_stim, sz_filter=seizure_filter,
-                                      verbose=True, plot=False)
+            calculate_SLMTarget_responses_dff(expobj, threshold=10, stims_to_use=expobj.stim_start_frames)
+
+
+        # expobj.StimSuccessRate_SLMtargets, expobj.hits_SLMtargets, expobj.responses_SLMtargets = \
+        #     calculate_StimSuccessRate(expobj, cell_ids=SLMtarget_ids, raw_traces_stims=expobj.SLMTargets_stims_raw,
+        #                               dff_threshold=10, post_stim_response_frames_window=expobj.post_stim_response_frames_window,
+        #                               pre_stim=expobj.pre_stim, sz_filter=seizure_filter,
+        #                               verbose=True, plot=False)
 
     expobj.save()
 
@@ -3338,60 +3352,62 @@ def calculate_StimSuccessRate(expobj, cell_ids: list, raw_traces_stims=None, dfs
             if verbose:
                 print(cell, reliability_cells[cell], 'calc over %s stims' % counter)
 
-    elif raw_traces_stims is not None:
-        if sz_filter:
-            warnings.warn(
-                "the seizure filtering by *cells* functionality is only available for s2p defined cell targets as of now")
+    # elif raw_traces_stims is not None:  # used primarily for calculating responses for SLM targets
+    #     if sz_filter:
+    #         warnings.warn(
+    #             "the seizure filtering by *cells* functionality is only available for s2p defined cell targets as of now")
+    #
+    #     for idx in range(len(cell_ids)):
+    #         success = 0
+    #         counter = 0
+    #         responses = []
+    #         hits = []
+    #         for trace in raw_traces_stims[idx]:
+    #
+    #             # calculate dFF (noramlized to pre-stim) for each trace
+    #             pre_stim_mean = np.mean(trace[0:pre_stim])
+    #             std_pre = np.std(trace[0:expobj.pre_stim])
+    #             response_trace = (trace - pre_stim_mean)
+    #             # if dff_threshold:  # calculate dFF response for each stim trace
+    #             #     response_trace = ((trace - pre_stim_mean)) #/ pre_stim_mean) * 100
+    #             # else:  # calculate dF_stdF response for each stim trace
+    #             #     pass
+    #
+    #             # calculate if the current trace beats the threshold for calculating reliability (note that this happens over a specific window just after the photostim)
+    #             response = np.nanmean(response_trace[
+    #                                   pre_stim + expobj.stim_duration_frames:pre_stim + expobj.stim_duration_frames + 1 + expobj.post_stim_response_frames_window])  # calculate the dF over pre-stim mean F response within the response window
+    #             if dfstdf_threshold:
+    #                 response_result = response / std_pre  # normalize the delta F above pre-stim mean using std of the pre-stim
+    #             else:
+    #                 response_result = (response / pre_stim_mean) * 100  # calculate % of dFF response for each stim trace
+    #             responses.append(round(response_result, 2))
+    #             if response_result >= threshold:
+    #                 success += 1
+    #                 hits.append(counter)
+    #             counter += 1
+    #
+    #         reliability_cells[idx] = round(success / counter * 100., 2)
+    #         hits_cells[idx] = hits
+    #         responses_cells[idx] = responses
+    #         if verbose:
+    #             print(
+    #                 '|- Target # %s: %s percent hits over %s stims' % (cell_ids[idx], reliability_cells[idx], counter))
+    #         if plot:
+    #             random_select = np.random.randint(0, raw_traces_stims.shape[1],
+    #                                               10)  # select just 10 random traces to show on the plot
+    #             aoplot.plot_periphotostim_avg(arr=expobj.SLMTargets_stims_dfstdF[idx][random_select], expobj=expobj,
+    #                                           stim_duration=expobj.stim_duration_frames,
+    #                                           x_label='frames', pre_stim=pre_stim, post_stim=expobj.post_stim,
+    #                                           color='steelblue',
+    #                                           y_lims=[-0.5, 2.5], show=False, title='Target ' + str(idx))
+    #             m = expobj.stim_duration_frames + (3 * expobj.stim_duration_frames) / 2 - pre_stim
+    #             x = np.random.randn(len(responses)) * 1.5 + m
+    #             plt.scatter(x, responses, c='chocolate', zorder=3, alpha=0.6)
+    #             plt.show()
 
-        for idx in range(len(cell_ids)):
-            success = 0
-            counter = 0
-            responses = []
-            hits = []
-            for trace in raw_traces_stims[idx]:
 
-                # calculate dFF (noramlized to pre-stim) for each trace
-                pre_stim_mean = np.mean(trace[0:pre_stim])
-                std_pre = np.std(trace[0:expobj.pre_stim])
-                response_trace = (trace - pre_stim_mean)
-                # if dff_threshold:  # calculate dFF response for each stim trace
-                #     response_trace = ((trace - pre_stim_mean)) #/ pre_stim_mean) * 100
-                # else:  # calculate dF_stdF response for each stim trace
-                #     pass
-
-                # calculate if the current trace beats the threshold for calculating reliability (note that this happens over a specific window just after the photostim)
-                response = np.nanmean(response_trace[
-                                      pre_stim + expobj.stim_duration_frames:pre_stim + expobj.stim_duration_frames + 1 + expobj.post_stim_response_frames_window])  # calculate the dF over pre-stim mean F response within the response window
-                if dfstdf_threshold:
-                    response_result = response / std_pre  # normalize the delta F above pre-stim mean using std of the pre-stim
-                else:
-                    response_result = (response / pre_stim_mean) * 100  # calculate % of dFF response for each stim trace
-                responses.append(round(response_result, 2))
-                if response_result >= threshold:
-                    success += 1
-                    hits.append(counter)
-                counter += 1
-
-            reliability_cells[idx] = round(success / counter * 100., 2)
-            hits_cells[idx] = hits
-            responses_cells[idx] = responses
-            if verbose:
-                print(
-                    '|- Target # %s: %s percent hits over %s stims' % (cell_ids[idx], reliability_cells[idx], counter))
-            if plot:
-                random_select = np.random.randint(0, raw_traces_stims.shape[1],
-                                                  10)  # select just 10 random traces to show on the plot
-                aoplot.plot_periphotostim_avg(arr=expobj.SLMTargets_stims_dfstdF[idx][random_select], expobj=expobj,
-                                              stim_duration=expobj.stim_duration_frames,
-                                              x_label='frames', pre_stim=pre_stim, post_stim=expobj.post_stim,
-                                              color='steelblue',
-                                              y_lims=[-0.5, 2.5], show=False, title='Target ' + str(idx))
-                m = expobj.stim_duration_frames + (3 * expobj.stim_duration_frames) / 2 - pre_stim
-                x = np.random.randn(len(responses)) * 1.5 + m
-                plt.scatter(x, responses, c='chocolate', zorder=3, alpha=0.6)
-                plt.show()
     else:
-        raise Exception("basically the error is that somehow the raw traces provided weren't detected")
+        raise Exception("basically the error is that the raw traces provided weren't detected, or not provided at all")
 
         # old version
         # for cell in expobj.s2p_cell_targets:
@@ -3425,8 +3441,58 @@ def calculate_StimSuccessRate(expobj, cell_ids: list, raw_traces_stims=None, dfs
     return reliability_cells, hits_cells, responses_cells
 
 
-# calculate the dFF responses of the non-targeted cells, create a pandas df of the post-stim dFF responses of all cells
+def calculate_SLMTarget_responses_dff(expobj, sz_filter=False, threshold=10, stims_to_use=None):
 
+    if stims_to_use is None:
+        stims_to_use = expobj.stim_start_frames
+    else:
+        pass
+
+    d = {}
+    for stim in stims_to_use:
+        d['%s' % stim] = [None] * expobj.SLMTargets_stims_dff.shape[0]
+    df = pd.DataFrame(d, index=range(expobj.SLMTargets_stims_dff.shape[0]))  # population dataframe
+
+    if sz_filter:
+        warnings.warn(
+            "the seizure filtering by *cells* functionality is only available for s2p defined cell targets as of now")
+
+    reliability_slmtargets = {}  # dict will be used to store the reliability results for each targeted cell
+    hits_slmtargets = {}  # to be converted in pandas df below - will contain 1 for every success stim, 0 for non success stims
+    for stim in expobj.stim_start_frames:
+        hits_slmtargets['%s' % stim] = [0] * expobj.SLMTargets_stims_dff.shape[0]  # start with 0 for all stims
+    hits_slmtargets_df = pd.DataFrame(hits_slmtargets, index=range(expobj.SLMTargets_stims_dff.shape[0]))  # population dataframe
+
+    cell_ids = df.index
+    for idx in range(len(cell_ids)):
+        success = 0
+        counter = 0
+        responses = []
+        hits = []
+        for trace in expobj.SLMTargets_stims_dff[idx]:
+
+            response_result = np.mean(trace[expobj.pre_stim + expobj.stim_duration_frames + 1:
+                                            expobj.pre_stim + expobj.stim_duration_frames +
+                                            expobj.post_stim_response_frames_window])  # calculate the dF over pre-stim mean F response within the response window
+            responses.append(round(response_result, 2))
+            if response_result >= threshold:
+                success += 1
+                hits_slmtargets_df.loc[idx, expobj.stim_start_frames[0]] = 1
+
+            df.loc[idx, expobj.stim_start_frames[0]] = response_result
+            counter += 1
+        reliability_slmtargets[idx] = round(success / counter * 100., 2)
+
+
+
+    print('Completed gathering dFF responses to photostim for %s cells' % len(
+        np.unique([expobj.good_cells + expobj.s2p_cell_targets])))
+    print('risky cells (with low Flu values to normalize with): ', risky_cells)
+
+    return reliability_slmtargets, hits_slmtargets_df, df
+
+
+# calculate the dFF responses of the non-targeted cells, create a pandas df of the post-stim dFF responses of all cells
 def all_cell_responses_dff(expobj, normalize_to=''):
     d = {}
     # d['group'] = [int(expobj.good_photostim_cells.index(x)) for x in expobj.good_photostim_cells for y in x]

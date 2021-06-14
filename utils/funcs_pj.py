@@ -727,7 +727,7 @@ def plot_bar_with_points(data, title='', x_tick_labels=[], legend_labels: list =
     ax.xaxis.set_ticks_position('bottom')
 
     ax.set_xlabel(x_label, fontsize=8*shrink_text)
-    ax.set_ylabel(y_label, fontsize=8*shrink_text)
+    ax.set_ylabel(y_label, fontsize=12*shrink_text)
     if savepath:
         plt.savefig(savepath)
     if len(x) > 1:
@@ -741,7 +741,7 @@ def plot_bar_with_points(data, title='', x_tick_labels=[], legend_labels: list =
     # add title
     if 'fig' not in kwargs.keys():
         ax.set_title((title), horizontalalignment='center', verticalalignment='top', pad=25,
-                     fontsize=8*shrink_text, wrap=True)
+                     fontsize=12*shrink_text, wrap=True)
     else:
         ax.title.set_text((title))
 
