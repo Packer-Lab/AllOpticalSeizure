@@ -3723,7 +3723,7 @@ def slm_targets_responses(expobj, experiment, trial, y_spacing_factor=2, figsize
         # fig, (ax1, ax2, ax3, ax4) = plt.subplots(figsize=((5 * 4), 5), nrows=1, ncols=4)
         # stims out sz
         ax3 = fig.add_subplot(gs[-1, 2:4])
-        data = [[np.mean(expobj.outsz_responses_SLMtargets[i]) for i in range(expobj.n_targets_total)]]
+        data = [[np.mean(expobj.outsz_responses_SLMtargets.loc[i]) for i in range(expobj.n_targets_total)]]
         fig, ax3 = pj.plot_hist_density(data, x_label='response magnitude (dF/stdF)', title='stims_out_sz - ',
                                      fig=fig, ax=ax3, show=False)
         ax4 = fig.add_subplot(gs[-1, 4])
@@ -3734,7 +3734,7 @@ def slm_targets_responses(expobj, experiment, trial, y_spacing_factor=2, figsize
                                            show=False, fig=fig, ax=ax4)
         # stims in sz
         ax5 = fig.add_subplot(gs[-1, 5:7])
-        data = [[np.mean(expobj.insz_responses_SLMtargets[i]) for i in range(expobj.n_targets_total)]]
+        data = [[np.mean(expobj.insz_responses_SLMtargets.loc[i]) for i in range(expobj.n_targets_total)]]
         fig, ax5 = pj.plot_hist_density(data, x_label='response magnitude (dF/stdF)', title='stims_in_sz - ',
                                         fig=fig, ax=ax5, show=False)
         ax6 = fig.add_subplot(gs[-1, 7])
@@ -3757,7 +3757,7 @@ def slm_targets_responses(expobj, experiment, trial, y_spacing_factor=2, figsize
     else:
         # no sz
         # fig, (ax1, ax2) = plt.subplots(figsize=((5 * 2), 5), nrows=1, ncols=2)
-        data = [[np.mean(expobj.responses_SLMtargets[i]) for i in range(expobj.n_targets_total)]]
+        data = [[np.mean(expobj.responses_SLMtargets.loc[i]) for i in range(expobj.n_targets_total)]]
         ax3 = fig.add_subplot(gs[-1, 2:4])
         fig, ax3 = pj.plot_hist_density(data, x_label='response magnitude (dF/stdF)', title='no sz', show=False, fig=fig, ax=ax3)
         ax4 = fig.add_subplot(gs[-1, 4])

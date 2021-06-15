@@ -86,7 +86,7 @@ allopticalResults.slmtargets_stim_responses
 
 # %% comparing avg. response magnitudes for pre4ap and post4ap within same experiment prep.
 
-pre_4ap_trials = [
+allopticalResults.pre_4ap_trials = [
     ['RL108 t-009'],
     ['RL108 t-010'],
     ['RL109 t-007'],
@@ -108,7 +108,7 @@ pre_4ap_trials = [
     ['PS18 t-006']
 ]
 
-post_4ap_trials = [
+allopticalResults.post_4ap_trials = [
     ['RL108 t-013'],
     ['RL108 t-011'],
     ['RL109 t-020'],
@@ -129,17 +129,19 @@ post_4ap_trials = [
     ['PS17 t-009'],
     ['PS18 t-008']
 ]
+allopticalResults.save()
+
 
 # %%
 pre4ap_response_magnitude = []
-for i in pre_4ap_trials:
+for i in allopticalResults.pre_4ap_trials:
     x = [allopticalResults.slmtargets_stim_responses.loc[
              allopticalResults.slmtargets_stim_responses[
                  'prep_trial'] == trial, 'mean response (dF/stdF all targets)'].values[0] for trial in i]
     pre4ap_response_magnitude.append(np.mean(x))
 
 post4ap_response_magnitude = []
-for i in post_4ap_trials:
+for i in allopticalResults.post_4ap_trials:
     x = [allopticalResults.slmtargets_stim_responses.loc[
              allopticalResults.slmtargets_stim_responses[
                  'prep_trial'] == trial, 'mean response (dF/stdF all targets)'].values[0] for trial in i]
@@ -155,24 +157,26 @@ pj.plot_bar_with_points(data=[pre4ap_response_magnitude, post4ap_response_magnit
 
 
 # make one figure for each prep/trial (one little plot for each cell in that prep)
-for i in pre_4ap_trials:
-# i = ['RL108 t-009']
-    for j in i:
+for exp in allopticalResults.pre_4ap_trials:
+    # exp = ['RL108 t-009']
+    calc_dff_stims = True
+    for j in exp:
         date = allopticalResults.slmtargets_stim_responses.loc[
             allopticalResults.slmtargets_stim_responses['prep_trial'] == j, 'date'].values[0]
         pkl_path = "/home/pshah/mnt/qnap/Analysis/%s/%s/%s_%s/%s_%s.pkl" % (
             date, j[:-6], date, j[-5:], date, j[-5:])  # specify path in Analysis folder to save pkl object
 
         expobj, _ = aoutils.import_expobj(pkl_path=pkl_path)
-        print('\n Calculating stim success rates and response magnitudes ***********')
-        expobj.StimSuccessRate_SLMtargets, expobj.hits_SLMtargets, expobj.responses_SLMtargets = \
-            aoutils.calculate_SLMTarget_responses_dff(expobj, threshold=10, stims_to_use=expobj.stim_start_frames)
+        if calc_dff_stims:
+            print('\n Calculating stim success rates and response magnitudes ***********')
+            expobj.StimSuccessRate_SLMtargets, expobj.hits_SLMtargets, expobj.responses_SLMtargets = \
+                aoutils.calculate_SLMTarget_responses_dff(expobj, threshold=10, stims_to_use=expobj.stim_start_frames)
+            expobj.save()
 
         # raw_traces_stims = expobj.SLMTargets_stims_raw
 
         # expobj.post_stim_response_window_msec = 500
         # expobj.post_stim_response_frames_window = int(expobj.fps * expobj.post_stim_response_window_msec / 1000)
-        expobj.save()
 
         nrows = expobj.n_targets_total // 4
         if expobj.n_targets_total % 4 > 0:
@@ -202,11 +206,11 @@ for i in pre_4ap_trials:
 
             success_stims = np.where(expobj.responses_SLMtargets.loc[cell] >= 0.1*100)
             fail_stims = np.where(expobj.responses_SLMtargets.loc[cell] < 0.1 * 100)
-            for i in success_stims:
+            for i in success_stims[0]:
                 trace = expobj.SLMTargets_stims_dff[cell][i]
                 axs[a, b].plot(trace, color='skyblue', zorder=2, alpha=0.05)
 
-            for i in fail_stims:
+            for i in fail_stims[0]:
                 trace = expobj.SLMTargets_stims_dff[cell][i]
                 axs[a, b].plot(trace, color='gray', zorder=3, alpha=0.05)
 
@@ -218,7 +222,7 @@ for i in pre_4ap_trials:
                               zorder=0)
 
             counter += 1
-        fig.suptitle((str(i) + ' %s - %s targets' % ('- % dff', len(expobj.SLMTargets_stims_dff))), y=0.995)
+        fig.suptitle((str(exp) + ' %s - %s targets' % ('- values: pct. dff', len(expobj.SLMTargets_stims_dff))), y=0.995)
         plt.savefig('/home/pshah/mnt/qnap/Analysis/%s/%s/results/%s_%s.png' % (date, j[:-6], date, j))
         fig.show()
 
