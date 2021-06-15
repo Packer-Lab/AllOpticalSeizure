@@ -3678,7 +3678,7 @@ def all_cell_responses_dFstdF(expobj):
 # %% main functions to collect analysis
 
 # plots for SLM targets responses
-def slm_targets_responses(expobj, experiment, trial, y_spacing_factor=2, figsize=[20, 20], smooth_overlap_traces=5, linewidth_overlap_traces=0.2,
+def slm_targets_responses(expobj, experiment, trial, y_spacing_factor=2, figsize=[20, 20], smooth_overlap_traces=5, linewidth_overlap_traces=0.2, dff_threshold=0.15,
                           y_lims_periphotostim_trace=[-0.5, 2.0], v_lims_periphotostim_heatmap=[-5, 5], save_results=True, force_redo=False, cmap=None):
     # plot SLM photostim individual targets -- individual, full traces, dff normalized
 
@@ -3697,7 +3697,7 @@ def slm_targets_responses(expobj, experiment, trial, y_spacing_factor=2, figsize
             # raw_traces_stims = expobj.SLMTargets_stims_raw[:, stims, :]
             if len(stims) > 0:
                 expobj.outsz_StimSuccessRate_SLMtargets, expobj.outsz_hits_SLMtargets, expobj.outsz_responses_SLMtargets = \
-                    calculate_SLMTarget_responses_dff(expobj, threshold=10, stims_to_use=stims)
+                    calculate_SLMTarget_responses_dff(expobj, threshold=dff_threshold, stims_to_use=stims)
 
                 # expobj.outsz_StimSuccessRate_SLMtargets, expobj.outsz_hits_SLMtargets, expobj.outsz_responses_SLMtargets = \
                 #     calculate_StimSuccessRate(expobj, cell_ids=SLMtarget_ids, raw_traces_stims=raw_traces_stims,
@@ -3709,7 +3709,7 @@ def slm_targets_responses(expobj, experiment, trial, y_spacing_factor=2, figsize
             # raw_traces_stims = expobj.SLMTargets_stims_raw[:, stims, :]
             if len(stims) > 0:
                 expobj.insz_StimSuccessRate_SLMtargets, expobj.insz_hits_SLMtargets, expobj.insz_responses_SLMtargets = \
-                    calculate_SLMTarget_responses_dff(expobj, threshold=10, stims_to_use=stims)
+                    calculate_SLMTarget_responses_dff(expobj, threshold=dff_threshold, stims_to_use=stims)
 
                 # expobj.insz_StimSuccessRate_SLMtargets, expobj.insz_hits_SLMtargets, expobj.insz_responses_SLMtargets = \
                 #     calculate_StimSuccessRate(expobj, cell_ids=SLMtarget_ids, raw_traces_stims=raw_traces_stims,
@@ -3721,7 +3721,7 @@ def slm_targets_responses(expobj, experiment, trial, y_spacing_factor=2, figsize
             seizure_filter = False
             print('\n Calculating stim success rates and response magnitudes ***********')
             expobj.StimSuccessRate_SLMtargets, expobj.hits_SLMtargets, expobj.responses_SLMtargets = \
-                calculate_SLMTarget_responses_dff(expobj, threshold=10, stims_to_use=expobj.stim_start_frames)
+                calculate_SLMTarget_responses_dff(expobj, threshold=dff_threshold, stims_to_use=expobj.stim_start_frames)
 
             # expobj.StimSuccessRate_SLMtargets, expobj.hits_SLMtargets, expobj.responses_SLMtargets = \
             #     calculate_StimSuccessRate(expobj, cell_ids=SLMtarget_ids, raw_traces_stims=expobj.SLMTargets_stims_raw,
@@ -3814,7 +3814,7 @@ def slm_targets_responses(expobj, experiment, trial, y_spacing_factor=2, figsize
         ax4 = fig.add_subplot(gs[-1, 4])
         fig, ax4 = pj.plot_bar_with_points(data=[list(expobj.StimSuccessRate_SLMtargets.values())], x_tick_labels=[trial],
                                            ylims=[0, 100], bar=False, show=False, fig=fig, ax=ax4,
-                                           y_label='% success stims.', title='success rate of stim responses (no sz)',
+                                           y_label='% success stims.', title='target success rate (pre4ap)',
                                            expand_size_x=2)
 
         zero_point = abs(v_lims_periphotostim_heatmap[0]/v_lims_periphotostim_heatmap[1])
