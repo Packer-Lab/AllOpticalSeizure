@@ -780,7 +780,7 @@ def plot_hist_density(data, colors: list = None, fill_color: list = None, legend
     for i in range(len(data)):
         # the histogram of the data
         num_bins = 10
-        n, bins, patches = ax.hist(data[i], num_bins, density=1, alpha=0.0, color=fill_color[i], label=legend_labels[i])  # histogram hidden currently
+        n, bins, patches = ax.hist(data[i], num_bins, density=1, alpha=0.4, color=fill_color[i], label=legend_labels[i])  # histogram hidden currently
 
         # add a 'best fit' line
         mu = np.mean(data[i])  # mean of distribution

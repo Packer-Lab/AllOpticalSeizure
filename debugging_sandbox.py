@@ -29,32 +29,44 @@ import tifffile as tf
 
 ########
 # %%
+from matplotlib.colors import LinearSegmentedColormap, ColorConverter
 
-trial = 't-009'
-date = '2020-12-18'
-pkl_path = "/home/pshah/mnt/qnap/Analysis/%s/RL108/%s_%s/%s_%s.pkl" % (date, date, trial, date, trial)
+trials = ['t-009']
 
-expobj, experiment = aoutils.import_expobj(trial=trial, date=date, pkl_path=pkl_path, verbose=False)
+v_lims_periphotostim_heatmap=[-0.1*100, 0.2*100]
+zero_point = abs(v_lims_periphotostim_heatmap[0]/v_lims_periphotostim_heatmap[1])
+c = ColorConverter().to_rgb
+bwr_custom = pj.make_colormap([c('blue'), c('white'), zero_point - 0.20, c('white'), c('red')])
 
-force_redo = False
-if force_redo:
-    expobj._findTargets()
-    expobj.raw_traces_from_targets(force_redo=force_redo, save=True)
-    expobj.save()
-aoutils.slm_targets_responses(expobj, experiment, trial, y_spacing_factor=4, smooth_overlap_traces=5, figsize=[30, 20],
-                              linewidth_overlap_traces=0.2, y_lims_periphotostim_trace=[-50, 150],
-                              v_lims_periphotostim_heatmap=[-50, 150],
-                              save_results=False)
+for trial in trials:
+    ###### IMPORT pkl file containing data in form of expobj
+    date = '2020-12-18'
+    pkl_path = "/home/pshah/mnt/qnap/Analysis/%s/RL108/%s_%s/%s_%s.pkl" % (date, date, trial, date, trial)
 
-#%%
+    expobj, experiment = aoutils.import_expobj(trial=trial, date=date, pkl_path=pkl_path, verbose=False)
 
-trial = 't-011'
-date = '2021-01-10'
-pkl_path = "/home/pshah/mnt/qnap/Analysis/%s/PS06/%s_%s/%s_%s.pkl" % (date, date, trial, date, trial)
+    aoutils.slm_targets_responses(expobj, experiment, trial, y_spacing_factor=4, smooth_overlap_traces=5,
+                                  figsize=[30, 20], force_redo=True,
+                                  linewidth_overlap_traces=0.2, y_lims_periphotostim_trace=[-0.1*100, 0.6*100],
+                                  v_lims_periphotostim_heatmap=v_lims_periphotostim_heatmap, cmap=bwr_custom,
+                                  save_results=False)
 
-expobj, experiment = aoutils.import_expobj(trial=trial, date=date, pkl_path=pkl_path)
 
-expobj.raw_traces_from_targets(force_redo=True, save=True)
+
+# %%
+from matplotlib.colors import LinearSegmentedColormap, ColorConverter
+
+v_lims_periphotostim_heatmap=[-0.2*100, 0.6*100]
+zero_point = abs(v_lims_periphotostim_heatmap[0]/v_lims_periphotostim_heatmap[1])
+c = ColorConverter().to_rgb
+bwr_custom = pj.make_colormap([c('blue'), c('white'), zero_point - 0.08, c('white'), c('red')])
+
+gradient = np.linspace(v_lims_periphotostim_heatmap[0], v_lims_periphotostim_heatmap[1], 256)
+gradient = np.vstack((gradient, gradient))
+plt.figure(figsize=(10, 3))
+plt.imshow(gradient, aspect='auto', cmap=bwr_custom)
+cbar = plt.colorbar(boundaries=np.linspace(v_lims_periphotostim_heatmap[0], v_lims_periphotostim_heatmap[1], 1000), ticks=[v_lims_periphotostim_heatmap[0], 0, v_lims_periphotostim_heatmap[1]])
+plt.show()
 
 
 #%%

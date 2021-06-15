@@ -571,7 +571,7 @@ def plot_lfp_stims(expobj, title='LFP signal with photostim. shown (in different
 
 
 # plot the whole pre stim to post stim period as a cool heatmap
-def plot_traces_heatmap(data, expobj, vmin=None, vmax=None, stim_on=None, stim_off=None, figsize=None, title=None, xlims=(0,100), x_axis='Frames',
+def plot_traces_heatmap(data, expobj, vmin=None, vmax=None, stim_on=None, stim_off=None, figsize=None, title=None, xlims=(0,100), x_label='Frames',
                         cmap='bwr', show=True, cbar=False, **kwargs):
     """
     plot the whole pre stim to post stim period as a cool heatmap
@@ -626,12 +626,17 @@ def plot_traces_heatmap(data, expobj, vmin=None, vmax=None, stim_on=None, stim_o
         x_c = np.linspace(0, data.shape[1] - 1, len(kwargs['lfp_signal']))
         ax.plot(x_c, kwargs['lfp_signal'] * 50 + data.shape[0] - 100, c='black')
 
-    if 'Time' in x_axis or 'time' in x_axis:
+    if 'Time' in x_label or 'time' in x_label:
         # change x axis ticks to every 30 seconds
         labels = list(np.linspace(0, int(data.shape[1] / expobj.fps), int(data.shape[1] / expobj.fps * 2)))
         ax.set_xticks(ticks=[(label * expobj.fps) for label in labels])
         ax.set_xticklabels(labels)
         ax.set_xlabel('Time (secs)')
+    else:
+        ax.set_xlabel(x_label)
+
+    if 'y_label' in kwargs.keys():
+        ax.set_ylabel(kwargs['y_label'])
 
     # finalize plot, set title, and show or return axes
     if 'fig' in kwargs.keys():
