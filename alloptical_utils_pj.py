@@ -436,7 +436,7 @@ class TwoPhotonImaging:
                                        title='Mean raw Flu trace -')
         return im_stack
 
-    def plot_single_tiff(self, frame_num: int = 0, title: str = None):
+    def plot_single_frame_tiff(self, frame_num: int = 0, title: str = None):
         """
         plots an image of a single specified tiff frame after reading using tifffile.
         :param frame_num: frame # from 2p imaging tiff to show (default is 0 - i.e. the first frame)

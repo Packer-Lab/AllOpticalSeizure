@@ -21,7 +21,7 @@ for trial in trials:
     print('stims in sz: ', expobj.stims_in_sz)
     print('all stims: ', expobj.stim_start_frames)
 
-    expobj.plot_single_tiff(frame_num=748)
+    expobj.plot_single_frame_tiff(frame_num=748)
 
 
 # %%
