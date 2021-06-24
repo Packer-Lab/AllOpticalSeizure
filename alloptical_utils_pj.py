@@ -436,6 +436,22 @@ class TwoPhotonImaging:
                                        title='Mean raw Flu trace -')
         return im_stack
 
+    def plot_single_tiff(self, frame_num: int = 0, title: str = None):
+        """
+        plots an image of a single specified tiff frame after reading using tifffile.
+        :param frame_num: frame # from 2p imaging tiff to show (default is 0 - i.e. the first frame)
+        :param title: give a string to use as title (optional)
+        :return: imshow plot
+        """
+        stack = tf.imread(self.tiff_path, key=frame_num)
+        plt.imshow(stack, cmap='gray')
+        if title is not None:
+            plt.suptitle(title)
+        else:
+            plt.suptitle('frame num: %s' % frame_num)
+        plt.show()
+        return stack
+
     def save_pkl(self, pkl_path: str = None):
         if pkl_path is None:
             if hasattr(self, 'pkl_path'):
@@ -1656,6 +1672,7 @@ class alloptical(TwoPhotonImaging):
             continu = True
 
         if continu:
+            print('making stim images...')
             if hasattr(self, 'stim_images'):
                 x = [0 for stim in stim_timings if stim not in self.stim_images.keys()]
             else:
@@ -1664,22 +1681,26 @@ class alloptical(TwoPhotonImaging):
             if 0 in x:
                 tiffs_loc = '%s/*Ch3.tif' % self.tiff_path_dir
                 tiff_path = glob.glob(tiffs_loc)[0]
-                print('loading up %s tiff from: ' % self.metainfo['trial'], tiff_path)
+                print('working on loading up %s tiff from: ' % self.metainfo['trial'], tiff_path)
                 im_stack = tf.imread(tiff_path, key=range(self.n_frames))
                 print('Processing seizures from experiment tiff (wait for all seizure comparisons to be processed), \n '
                       'total tiff shape: ', im_stack.shape)
 
             for stim in stim_timings:
+                message = '|- stim # %s out of %s' % (stim_timings.index(stim), len(stim_timings))
+                print(message, end='\r')
                 if stim in self.stim_images.keys():
                     avg_sub = self.stim_images[stim]
                 else:
+                    if stim < peri_frames:
+                        peri_frames = stim
                     im_sub = im_stack[stim - peri_frames: stim + peri_frames]
                     avg_sub = np.mean(im_sub, axis=0)
                     self.stim_images[stim] = avg_sub
 
                 if save_img:
                     # save in a subdirectory under the ANALYSIS folder path from whence t-series TIFF came from
-                    save_path = self.tiff_path[:21] + 'Analysis/' + self.tiff_path_dir[26:] + '/avg_stim_images'
+                    save_path = self.analysis_save_path + 'avg_stim_images'
                     save_path_stim = save_path + '/%s_%s_stim-%s.tif' % (
                         self.metainfo['date'], self.metainfo['trial'], stim)
                     if os.path.exists(save_path):
@@ -1689,7 +1710,7 @@ class alloptical(TwoPhotonImaging):
                         tf.imwrite(save_path_stim,
                                    avg_sub8, photometric='minisblack')
                     else:
-                        print('made new directory for saving images at:', save_path)
+                        print('making new directory for saving images at:', save_path)
                         os.mkdir(save_path)
                         print("saving as... %s" % save_path_stim)
                         avg_sub8 = convert_to_8bit(avg_sub, 0, 255)
@@ -3796,7 +3817,7 @@ def slm_targets_responses(expobj, experiment, trial, y_spacing_factor=2, figsize
                                         show=False, fig=fig, ax=ax6)
         fig.tight_layout()
         if save_results:
-            save = expobj.analysis_save_path[:-17] + '/results/' + '%s_%s_slm_targets_responses' % (expobj.metainfo['animal prep.'], trial)
+            save = expobj.analysis_save_path[:-17] + '/results/' + '%s_%s_slm_targets_responses_dFF' % (expobj.metainfo['animal prep.'], trial)
             if not os.path.exists(expobj.analysis_save_path[:-17] + '/results'):
                 os.makedirs(expobj.analysis_save_path[:-17] + '/results')
             print('saving png and svg to: %s' % save)
@@ -3831,7 +3852,7 @@ def slm_targets_responses(expobj, experiment, trial, y_spacing_factor=2, figsize
 
         fig.tight_layout()
         if save_results:
-            save = expobj.analysis_save_path[:-17] + '/results/' + '%s_%s_slm_targets_responses' % (expobj.metainfo['animal prep.'], trial)
+            save = expobj.analysis_save_path[:-17] + '/results/' + '%s_%s_slm_targets_responses_dFF' % (expobj.metainfo['animal prep.'], trial)
             if not os.path.exists(expobj.analysis_save_path[:-17] + '/results'):
                 os.makedirs(expobj.analysis_save_path[:-17] + '/results')
             print('saving png and svg to: %s' % save)
@@ -3874,20 +3895,6 @@ def plot_photostim_(dff_array, stim_duration, pre_stim=10, post_stim=200, title=
 
 
 ## kept in utils.funcs_pj
-def plot_single_tiff(tiff_path: str, title: str = None):
-    """
-    plots an image of a single tiff frame after reading using tifffile.
-    :param tiff_path: path to the tiff file
-    :param title: give a string to use as title (optional)
-    :return: imshow plot
-    """
-    stack = tf.imread(tiff_path, key=0)
-    plt.imshow(stack, cmap='gray')
-    if title is not None:
-        plt.suptitle(title)
-    plt.show()
-    return stack
-
 def points_in_circle_np(radius, x0=0, y0=0, ):
     x_ = np.arange(x0 - radius - 1, x0 + radius + 1, dtype=int)
     y_ = np.arange(y0 - radius - 1, y0 + radius + 1, dtype=int)

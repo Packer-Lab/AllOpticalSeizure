@@ -5,6 +5,25 @@ import alloptical_plotting_utils as aoplot
 import matplotlib.pyplot as plt
 import numpy as np
 
+import tifffile as tf
+
+# %%
+prep = 'PS05'
+date = '2021-01-08'
+trials = ['t-012']
+
+for trial in trials:
+    ###### IMPORT pkl file containing data in form of expobj
+    pkl_path = "/home/pshah/mnt/qnap/Analysis/%s/%s/%s_%s/%s_%s.pkl" % (date, prep, date, trial, date, trial)
+
+    expobj, experiment = aoutils.import_expobj(trial=trial, date=date, pkl_path=pkl_path, verbose=False)
+    print('\ntrial: ', trial)
+    print('stims in sz: ', expobj.stims_in_sz)
+    print('all stims: ', expobj.stim_start_frames)
+
+    expobj.plot_single_tiff(frame_num=748)
+
+
 # %%
 
 prep = 'PS06'

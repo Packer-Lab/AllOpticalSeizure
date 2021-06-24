@@ -836,19 +836,21 @@ def plot_hist_density(data, colors: list = None, fill_color: list = None, legend
 
 
 # imshow gray plot for a single frame tiff
-def plot_single_tiff(tiff_path: str, title: str = None):
+def plot_single_tiff(tiff_path: str, title: str = None, frame_num: int = 0):
     """
     plots an image of a single tiff frame after reading using tifffile.
     :param tiff_path: path to the tiff file
     :param title: give a string to use as title (optional)
     :return: imshow plot
     """
-    stack = tf.imread(tiff_path, key=0)
+    stack = tf.imread(tiff_path, key=frame_num)
     plt.imshow(stack, cmap='gray')
     if title is not None:
         plt.suptitle(title)
+    else:
+        plt.suptitle('frame num: %s' % frame_num)
     plt.show()
-
+    return stack
 
 # read matlab array
 def load_matlab_array(path):
