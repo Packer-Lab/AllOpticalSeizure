@@ -15,16 +15,10 @@ from skimage import draw
 
 # %%
 ###### IMPORT pkl file containing data in form of expobj
-trial = 't-010'
-date = '2021-01-08'
+trial = 't-016'
+date = '2020-12-19'
 
 expobj, experiment = aoutils.import_expobj(trial=trial, date=date)
-
-# if not hasattr(expobj, 's2p_path'):
-#     expobj.s2p_path = '/home/pshah/mnt/qnap/Analysis/2020-12-18/suite2p/alloptical-2p-1x-alltrials/plane0'
-
-if not hasattr(expobj, 'meanRawFluTrace'):
-    expobj.mean_raw_flu_trace(plot=True)
 
 plot = False
 if plot:
@@ -33,6 +27,38 @@ if plot:
     aoplot.plotSLMtargetsLocs(expobj, background=expobj.meanFluImg_registered)
     aoplot.plot_lfp_stims(expobj)
 
+# %% any preprocessing if needed
+
+# expobj.paqProcessing()
+# expobj._findTargets()
+
+
+# if not hasattr(expobj, 's2p_path'):
+#     expobj.s2p_path = '/home/pshah/mnt/qnap/Analysis/2020-12-18/suite2p/alloptical-2p-1x-alltrials/plane0'
+
+# expobj.s2pProcessing(s2p_path=expobj.s2p_path, subset_frames=expobj.curr_trial_frames, subtract_neuropil=True,
+#                      baseline_frames=expobj.baseline_frames, force_redo=True)
+expobj.s2p_targets(force_redo=True)
+# aoutils.s2pMaskStack(obj=expobj, pkl_list=[expobj.pkl_path], s2p_path=expobj.s2p_path, parent_folder=expobj.analysis_save_path, force_redo=True)
+#
+
+
+
+if not hasattr(expobj, 'meanRawFluTrace'):
+    expobj.mean_raw_flu_trace(plot=True)
+
+expobj.dff_traces, expobj.dff_traces_avg, expobj.dfstdF_traces, \
+    expobj.dfstdF_traces_avg, expobj.raw_traces, expobj.raw_traces_avg = \
+    aoutils.get_nontargets_stim_traces_norm(expobj=expobj, normalize_to='pre-stim', pre_stim=expobj.pre_stim,
+                                            post_stim=expobj.post_stim)
+
+expobj.targets_dff, expobj.targets_dff_avg, expobj.targets_dfstdF, \
+expobj.targets_dfstdF_avg, expobj.targets_stims_raw, expobj.targets_stims_raw_avg = \
+    aoutils.get_s2ptargets_stim_traces(expobj=expobj, normalize_to='pre-stim', pre_stim=expobj.pre_stim,
+                                       post_stim=expobj.post_stim)
+
+
+expobj.save()
 
 
 
@@ -49,10 +75,10 @@ x = np.asarray([i for i in expobj.targets_dfstdF_avg])
 # y_label = 'pct. dFF (normalized to prestim period)'
 y_label = 'dFstdF (normalized to prestim period)'
 
-aoplot.plot_periphotostim_avg(arr=x, expobj=expobj, stim_duration=expobj.stim_duration_frames, pre_stim=expobj.pre_stim,
-                              post_stim=expobj.post_stim,
-                              title=(experiment + '- responses of all photostim targets'),
-                              y_label=y_label, x_label='Time post-stimulation (seconds)')
+aoplot.plot_periphotostim_avg(arr=x, expobj=expobj, stim_duration=expobj.stim_duration_frames, pre_stim=0.5,
+                              post_stim=1.0, title=(experiment + '- responses of all photostim targets'), figsize=[5,4],
+                              y_label=y_label, x_label='post-stimulation (seconds)')
+
 
 # %% PLOT ENTIRE TRIAL - PHOTOSTIM targeted suite2p ROIs cells plotted individually entire Flu trace
 
@@ -121,9 +147,10 @@ aoplot.plot_photostim_traces_overlap(array=expobj.dff_SLMTargets, expobj=expobj,
 
 y_label = 'dF/prestim_stdF'
 aoplot.plot_periphotostim_avg(arr=expobj.SLMTargets_stims_dfstdF_avg, expobj=expobj, stim_duration=expobj.stim_duration_frames,
-                              figsize=[5, 4], y_lims=[-0.5, 3],
+                              figsize=[5, 4], y_lims=[-0.5, 3], pre_stim=0.5, post_stim=1.0,
                               title=(experiment + '- responses of all photostim targets'),
-                              y_label=y_label, x_label='Time post-stimulation (seconds)')
+                              y_label=y_label, x_label='post-stimulation (seconds)')
+
 
 # %% plotting of photostim. success rate
 
@@ -135,25 +162,24 @@ pj.plot_bar_with_points(data=[list(expobj.StimSuccessRate_SLMtargets.values())],
 
 
 
-
-# %% PLOT AVG PHOTOSTIM PRE- POST- TRACE AVGed OVER ALL PHOTOSTIM. TRIALS - NON - TARGETS
+# %% PLOT AVG PHOTOSTIM PRE- POST- TRACE AVGed OVER ALL PHOTOSTIM. TRIALS - s2p NON-TARGETS
 x = np.asarray([i for i in expobj.dfstdF_traces_avg])
 # y_label = 'pct. dFF (normalized to prestim period)'
 y_label = 'dFstdF (normalized to prestim period)'
 
-aoplot.plot_periphotostim_avg(dff_array=x, expobj=expobj, stim_duration=expobj.stim_duration_frames, pre_stim=expobj.pre_stim,
-                              post_stim=expobj.post_stim,
-                              title=(experiment + '- responses of all photostim targets'),
-                              y_label=y_label, x_label='Time post-stimulation (seconds)')
+aoplot.plot_periphotostim_avg(arr=x, expobj=expobj, stim_duration=expobj.stim_duration_frames, pre_stim=0.5,
+                              post_stim=1.5, title=(experiment + '- responses of s2p non-targets'),
+                              y_label=y_label, x_label='post-stimulation (seconds)', y_lims=[-1, 3])
+
 
 # %% PLOT HEATMAP OF AVG PRE- POST TRACE AVGed OVER ALL PHOTOSTIM. TRIALS - ALL CELLS (photostim targets at top) - Lloyd style :D
 
 x = np.asarray([i for i in expobj.targets_dfstdF_avg])
-aoplot.plot_traces_heatmap(x, vmin=-1, vmax=1, stim_on=expobj.pre_stim, stim_off=expobj.pre_stim + expobj.stim_duration_frames - 1,
+aoplot.plot_traces_heatmap(x, expobj=expobj, vmin=-1, vmax=1, stim_on=expobj.pre_stim, stim_off=expobj.pre_stim + expobj.stim_duration_frames - 1,
                            title=(experiment + ' - targets only'))
 
 x = np.asarray([i for i in expobj.dfstdF_traces_avg])
-aoplot.plot_traces_heatmap(x, vmin=-0.5, vmax=0.5, stim_on=expobj.pre_stim, stim_off=expobj.pre_stim + expobj.stim_duration_frames - 1,
+aoplot.plot_traces_heatmap(x, expobj=expobj, vmin=-1, vmax=1, stim_on=expobj.pre_stim, stim_off=expobj.pre_stim + expobj.stim_duration_frames - 1,
                            title=(experiment + ' - nontargets'))
 
 # %% BAR PLOT PHOTOSTIM RESPONSES SIZE - TARGETS vs. NON-TARGETS
@@ -188,7 +214,14 @@ pj.plot_bar_with_points(data=[group1, group2], x_tick_labels=['photostim target'
                         colors=['red', 'black'], title=experiment, y_label='Avg dF/stdF response', expand_size_y=1.3,
                         expand_size_x=1.4)
 
-# %% PLOT HEATMAP OF PHOTOSTIM. RESPONSES TO PHOTOSTIM FOR ALL CELLS -- this is just the whole trace for each target, not avg over stims in any way
+
+# %% PLOT imshow() XY area locations with COLORS AS average response of ALL cells in FOV
+expobj.good_cells = expobj.cell_id
+
+aoplot.xyloc_responses(expobj, to_plot='dfstdf', clim=[-1, +1], plot_target_coords=True)
+
+
+# %% PLOT INDIVIDUAL WHOLE TRACES AS HEATMAP OF PHOTOSTIM. RESPONSES TO PHOTOSTIM FOR ALL CELLS -- this is just the whole trace for each target, not avg over stims in any way
 # - need to find a way to sort these responses that similar cells are sorted together
 # - implement a heirarchical clustering method
 
@@ -203,12 +236,13 @@ sns.heatmap(df_, cmap='seismic', vmin=-5, vmax=5, cbar_kws={"shrink": 0.25});
 plt.show()
 
 
-# %% PLOT imshow() XY area locations with COLORS AS average response of ALL cells in FOV
-aoplot.xyloc_responses(expobj, to_plot='dfstdf', clim=[-1, +1], plot_target_coords=True)
 
 
+# %%
+################################# SEIZURE EVENTS PLOTTING ##############################################################
+########################################################################################################################
 
-# %% PLOT HEATMAP of SEIZURE EVENTS
+# PLOT HEATMAP of SEIZURE EVENTS
 
 sz = 2
 sz_onset, sz_offset = expobj.stims_bf_sz[sz], expobj.stims_af_sz[sz+1]

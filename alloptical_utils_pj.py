@@ -72,6 +72,13 @@ def import_expobj(trial: str = None, date: str = None, pkl_path: str = None, ver
             print('updated expobj.analysis_save_path ', expobj.analysis_save_path)
             expobj.save()
 
+
+    # other random things you want to do when importing expobj
+    if expobj.metainfo['animal prep.'] not in expobj.analysis_save_path:
+        expobj.analysis_save_path = "/home/pshah/mnt/qnap/Analysis/%s/%s/%s_%s" % (date, expobj.metainfo['animal prep.'], date, trial)
+        # expobj.analysis_save_path = expobj.analysis_save_path + '/' + expobj.metainfo['animal prep.'] + '/' + expobj.metainfo['date'] + '_' + expobj.metainfo['trial']
+        expobj.save()
+
     return expobj, experiment
 
 def import_resultsobj(pkl_path: str):
@@ -1497,6 +1504,7 @@ class alloptical(TwoPhotonImaging):
             targetCoordinates = list(zip(targets[1] * scale_factor, targets[0] * scale_factor))
             self.target_coords.append(targetCoordinates)
             print('Number of targets (in SLM group %s): ' % (counter + 1), len(targetCoordinates))
+            counter += 1
 
         print('Got targets...')
 
@@ -1901,7 +1909,9 @@ class Post4ap(alloptical):
 
     def collect_seizures_info(self, seizures_lfp_timing_matarray=None, discard_all=True):
         print('\ncollecting information about seizures...')
-        self.seizures_lfp_timing_matarray = seizures_lfp_timing_matarray  # path to the matlab array containing paired measurements of seizures onset and offsets
+        if seizures_lfp_timing_matarray is not None:
+            self.seizures_lfp_timing_matarray = seizures_lfp_timing_matarray  # path to the matlab array containing paired measurements of seizures onset and offsets
+
 
         # retrieve seizure onset and offset times from the seizures info array input
         paq = paq_read(file_path=self.paq_path, plot=False)
@@ -1924,7 +1934,7 @@ class Post4ap(alloptical):
         self.append_bad_frames(
             bad_frames=bad_frames)  # here only need to append the bad frames to the expobj.bad_frames property
 
-        if seizures_lfp_timing_matarray is not None:
+        if hasattr(self, 'seizures_lfp_timing_matarray'):
             print('|-now creating raw movies for each sz as well (saved to the /Analysis folder) ... ')
             self.subselect_tiffs_sz(onsets=self.seizure_lfp_onsets, offsets=self.seizure_lfp_offsets,
                                     on_off_type='lfp_onsets_offsets')
@@ -2027,19 +2037,19 @@ class Post4ap(alloptical):
                 plt.suptitle('avg of seizure from %s to %s frames' % (sz_on, sz_off))
                 plt.show()  # just plot for now to make sure that you are doing things correctly so far
 
-                im_diff = avg_sub - avg_baseline
-                plt.imshow(im_diff, cmap='gray')
-                plt.suptitle('diff of seizure from %s to %s frames' % (sz_on, sz_off))
-                plt.show()  # just plot for now to make sure that you are doing things correctly so far
+                # im_diff = avg_sub - avg_baseline
+                # plt.imshow(im_diff, cmap='gray')
+                # plt.suptitle('diff of seizure from %s to %s frames' % (sz_on, sz_off))
+                # plt.show()  # just plot for now to make sure that you are doing things correctly so far
 
                 avg_sub_list.append(avg_sub)
                 im_sub_list.append(im_sub)
-                im_diff_list.append(im_diff)
+                # im_diff_list.append(im_diff)
 
                 counter += 1
 
                 ## create downsampled TIFFs for each sz
-                # SaveDownsampledTiff(stack=im_sub, save_as=self.analysis_save_path + '%s_%s_sz%s_downsampled.tiff' % (self.metainfo['date'], self.metainfo['trial'], counter))
+                SaveDownsampledTiff(stack=im_sub, save_as=self.analysis_save_path + '%s_%s_sz%s_downsampled.tiff' % (self.metainfo['date'], self.metainfo['trial'], counter))
 
                 self.meanszimages_r = True
 
@@ -2742,7 +2752,8 @@ def get_s2ptargets_stim_traces(expobj, normalize_to='', pre_stim=10, post_stim=2
     :return: lists of individual targets dFF traces, and averaged targets dFF over all stims for each target
     """
     stim_timings = expobj.stim_start_frames
-    targeted_cells = [cell for cell in expobj.s2p_cell_targets if cell in expobj.good_cells]
+    # targeted_cells = [cell for cell in expobj.s2p_cell_targets if cell in expobj.good_cells]
+    targeted_cells = expobj.s2p_cell_targets
 
     # collect photostim timed average dff traces of photostim targets
     targets_dff = []
@@ -2813,7 +2824,7 @@ def get_nontargets_stim_traces_norm(expobj, normalize_to='', pre_stim=10, post_s
     :return: lists of individual targets dFF traces, and averaged targets dFF over all stims for each target
     """
     stim_timings = expobj.stim_start_frames
-    nontarget_cells = [cell for cell in expobj.good_cells if cell not in expobj.s2p_cell_targets]
+    expobj.s2p_cell_nontargets = [cell for cell in expobj.cell_id if cell not in expobj.s2p_cell_targets]
 
     # collect photostim timed average dff traces of photostim targets
     dff_traces = []
@@ -2824,7 +2835,7 @@ def get_nontargets_stim_traces_norm(expobj, normalize_to='', pre_stim=10, post_s
 
     raw_traces = []
     raw_traces_avg = []
-    for cell in nontarget_cells:
+    for cell in expobj.s2p_cell_nontargets:
         # print('considering cell # %s' % cell)
         if cell in expobj.cell_id:
             cell_idx = expobj.cell_id.index(cell)

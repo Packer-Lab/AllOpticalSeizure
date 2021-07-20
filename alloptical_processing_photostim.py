@@ -13,20 +13,27 @@ import utils.funcs_pj as pj
 import tifffile as tf
 
 ###### IMPORT pkl file containing expobj
-trial = 't-012'
-date = '2021-01-08'
+trial = 't-016'
+date = '2020-12-19'
 pkl_path = "/home/pshah/mnt/qnap/Analysis/%s/%s_%s/%s_%s.pkl" % (date, date, trial, date, trial)
 # pkl_path = "/home/pshah/mnt/qnap/Data/%s/%s_%s/%s_%s.pkl" % (date, date, trial, date, trial)
 
 expobj, experiment = aoutils.import_expobj(trial=trial, date=date, pkl_path=pkl_path)
 
-expobj.sz_boundary_csv_done = True  # i know this is a rather very precarious thing here...
+
+expobj.sz_boundary_csv_done = False  # i know this is a rather very precarious thing here...
 
 if not hasattr(expobj, 's2p_path'):
-    expobj.s2p_path = '/home/pshah/mnt/qnap/Analysis/%s/suite2p/alloptical-2p-1_25x-alltrials/plane0' % date
+    expobj.s2p_path = input('input the suite2p path for this trial (to the plane0 folder)!!')
+    expobj.save()
 
 if not hasattr(expobj, 'meanRawFluTrace'):
     expobj.mean_raw_flu_trace(plot=True)
+    expobj.save()
+
+if not hasattr(expobj, 'stims_in_sz'):
+    expobj.seizures_lfp_timing_matarray = expobj.seizures_info_array
+    expobj.collect_seizures_info()
 
 plot = False
 if plot:
@@ -222,7 +229,8 @@ expobj.MeanSeizureImages(baseline_tiff="/home/pshah/mnt/qnap/Data/2020-12-18/202
 #     plt.imshow(i); plt.suptitle('%s' % counter); plt.show()
 #     counter += 1
 
-expobj.avg_stim_images(stim_timings=expobj.stim_start_frames, peri_frames=50, to_plot=False, save_img=True)
+# MAKE AVG STIM IMAGES AROUND EACH PHOTOSTIM TIMINGS
+expobj.avg_stim_images(stim_timings=expobj.stims_in_sz, peri_frames=50, to_plot=False, save_img=True, force_redo=True)
 
 for i in range(len(expobj.avg_sub_l)):
     img = pj.rotate_img_avg(expobj.avg_sub_l[i], angle=90)
@@ -376,7 +384,7 @@ expobj.dff_responses_all_cells = aoutils.all_cell_responses_dff(expobj, normaliz
 # calculate the avg response values for all cells across all stims
 average_responses = np.mean(expobj.dff_responses_all_cells[expobj.dff_responses_all_cells.columns[1:]], axis=1)
 responses = {'cell_id': [], 'group': [], 'Avg. dFF response': []}
-for cell in expobj.good_cells:
+for cell in expobj.cell_id:
     if cell in expobj.s2p_cell_targets:
         responses['cell_id'].append(cell)
         responses['group'].append('photostim target')
@@ -398,7 +406,7 @@ expobj.dfstdf_all_cells = aoutils.all_cell_responses_dFstdF(expobj)
 # calculate the avg response values for all cells across all stims
 average_responses_dfstdf = np.mean(expobj.dfstdf_all_cells[expobj.dfstdf_all_cells.columns[1:]], axis=1)
 responses = {'cell_id': [], 'group': [], 'Avg. dF/stdF response': []}
-for cell in expobj.good_cells:
+for cell in expobj.cell_id:
     if cell in expobj.s2p_cell_targets:
         responses['cell_id'].append(cell)
         responses['group'].append('photostim target')

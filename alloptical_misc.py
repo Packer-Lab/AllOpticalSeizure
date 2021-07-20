@@ -8,20 +8,22 @@ import numpy as np
 import tifffile as tf
 
 # %%
-prep = 'PS05'
-date = '2021-01-08'
-trials = ['t-012']
+prep = 'PS06'
+date = '2021-01-10'
+trials = ['t-013']
 
 for trial in trials:
     ###### IMPORT pkl file containing data in form of expobj
     pkl_path = "/home/pshah/mnt/qnap/Analysis/%s/%s/%s_%s/%s_%s.pkl" % (date, prep, date, trial, date, trial)
 
     expobj, experiment = aoutils.import_expobj(trial=trial, date=date, pkl_path=pkl_path, verbose=False)
-    print('\ntrial: ', trial)
-    print('stims in sz: ', expobj.stims_in_sz)
-    print('all stims: ', expobj.stim_start_frames)
+    # expobj.collect_seizures_info()
+    # expobj.avg_stim_images(stim_timings=expobj.stims_in_sz, peri_frames=50, to_plot=False, save_img=True, force_redo=True)
+    expobj.MeanSeizureImages(
+        baseline_tiff="/home/pshah/mnt/qnap/Data/2020-12-18/2020-12-18_t-005/2020-12-18_t-005_Cycle00001_Ch3.tif",
+        frames_last=1000)
 
-    expobj.plot_single_frame_tiff(frame_num=748)
+
 
 
 # %%
@@ -135,23 +137,29 @@ aoplot.plot_traces_heatmap(expobj.SLMTargets_stims_dfstdF_avg, expobj, vmin=-2, 
 # # paq_path = '/home/pshah/mnt/qnap/Data/2021-01-19/2021-01-19_PS07_015.paq'
 # paq, _ = paq_read(expobj.paq_path, plot=True)
 #
-# #%%
-#
-# # CREATE AND SAVE DOWNSAMPLED TIFF
-# trial = 't-006'
-# date = '2021-01-08'
-#
-# stack = pj.subselect_tiff(tiff_path="/home/pshah/mnt/qnap/Data/%s/%s_%s/%s_%s_Cycle00001_Ch3.tif" % (date, date, trial, date, trial),
-#                           select_frames=(-2000, -1))
-#
-# # pj.SaveDownsampledTiff(tiff_path="/home/pshah/mnt/qnap/Data/%s/%s_%s/%s_%s_Cycle00001_Ch3.tif" % (date, date, trial, date, trial))
-# pj.SaveDownsampledTiff(stack=stack, save_as="/home/pshah/mnt/qnap/Data/%s/%s_%s/%s_%s_Cycle00001_Ch3_cropped_downsampled_2.tif" % (date, date, trial, date, trial))
-#
-#
-#
-# #%% PLOT THE ZPROFILE OF A TIFF STACK
-# trial = 't-015'
-# date = '2021-01-19'
-#
-# pj.ZProfile(movie="/home/pshah/mnt/qnap/Data/%s/%s_%s/%s_%s_Cycle00001_Ch3.tif" % (date, date, trial, date, trial),
-#             plot_image=True, figsize=[20, 4], title=(date + trial))
+#%%
+
+# CREATE AND SAVE DOWNSAMPLED TIFF
+prep = 'PS06'
+date = '2021-01-10'
+trials = ['t-008']
+
+for trial in trials:
+    ###### IMPORT pkl file containing data in form of expobj
+    pkl_path = "/home/pshah/mnt/qnap/Analysis/%s/%s/%s_%s/%s_%s.pkl" % (date, prep, date, trial, date, trial)
+
+    expobj, experiment = aoutils.import_expobj(trial=trial, date=date, pkl_path=pkl_path, verbose=False)
+    stack = pj.subselect_tiff(
+        tiff_path=expobj.tiff_path, select_frames=(-500, -1))
+    # stack = pj.subselect_tiff(tiff_path="/home/pshah/mnt/qnap/Data/%s/%s_%s/%s_%s_Cycle00001_Ch3.tif" % (date, date, trial, date, trial),
+    #                           select_frames=(-2000, -1))
+    pj.SaveDownsampledTiff(stack=stack, save_as="/home/pshah/mnt/qnap/Analysis/%s/%s/%s_%s/%s_%s_Cycle00001_Ch3_cropped_downsampled1.tif" % (date, prep, date, trial, date, trial))
+
+
+
+#%% PLOT THE ZPROFILE OF A TIFF STACK
+trial = 't-015'
+date = '2021-01-19'
+
+pj.ZProfile(movie="/home/pshah/mnt/qnap/Data/%s/%s_%s/%s_%s_Cycle00001_Ch3.tif" % (date, date, trial, date, trial),
+            plot_image=True, figsize=[20, 4], title=(date + trial))

@@ -376,17 +376,18 @@ def SaveDownsampledTiff(tiff_path: str = None, stack: np.array = None, group_by:
 
     # grouped average by specified interval
     num_frames = stack8.shape[0] // group_by
-    avgd_stack = np.empty((num_frames, resolution, resolution), dtype='uint16')
-    # avgd_stack = np.empty((num_frames, resolution, resolution), dtype='uint8')
+    # avgd_stack = np.empty((num_frames, resolution, resolution), dtype='uint16')
+    avgd_stack = np.empty((num_frames, resolution, resolution), dtype='uint8')
     frame_count = np.arange(0, stack8.shape[0], group_by)
     for i in np.arange(num_frames):
         frame = frame_count[i]
         avgd_stack[i] = np.mean(stack8[frame:frame + group_by], axis=0)
 
+    avgd_stack = avgd_stack.astype(np.uint8)
+
     # bin down to 512 x 512 resolution if higher resolution
     shape = np.shape(avgd_stack)
-
-    if shape[1] == 512:
+    if shape[1] != 512:
         input_size = avgd_stack.shape[1]
         output_size = 512
         bin_size = input_size // output_size

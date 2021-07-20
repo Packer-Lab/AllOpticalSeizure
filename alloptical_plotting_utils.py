@@ -13,7 +13,7 @@ import tifffile as tf
 
 
 # simple plot of the location of the given cell(s) against a black FOV
-def plot_cell_loc(expobj, cells: list, edgecolor: str = '#EDEDED', title=None, background: np.array = None,
+def plot_cell_loc(expobj, cells: list, edgecolor: str = 'none', title=None, background: np.array = None,
                   show_s2p_targets: bool = True, color_float_list: list = None, cmap: str = 'Reds', **kwargs):
     """
     plots an image of the FOV to show the locations of cells given in cells list.
@@ -158,7 +158,7 @@ def plotSLMtargetsLocs(expobj, background: np.ndarray = None, **kwargs):
         else:
             pass
     else:
-        ax.set_title('SLM targets location')
+        ax.set_title('SLM targets location - %s %s' % (expobj.metainfo['animal prep.'], expobj.metainfo['trial']))
 
     if 'show' in kwargs.keys():
         if kwargs['show'] is True:
@@ -312,15 +312,15 @@ def plot_photostim_traces_overlap(array, expobj, exclude_id=[], y_spacing_factor
 
 
 ### photostim analysis - PLOT avg over all photstim. trials traces from PHOTOSTIM TARGETTED cells
-def plot_periphotostim_avg(arr, expobj, stim_duration, pre_stim=10, post_stim=200, title='', y_lims=None,
+def plot_periphotostim_avg(arr, expobj, stim_duration, pre_stim=1.0, post_stim=3.0, title='', y_lims=None,
                            x_label=None, y_label=None, **kwargs):
     """
     plot trace across all stims
     :param arr:
     :param expobj:
     :param stim_duration:
-    :param pre_stim:
-    :param post_stim:
+    :param pre_stim: seconds of array to plot for pre-stim period
+    :param post_stim: seconds of array to plot for post-stim period
     :param title:
     :param y_lims:
     :param x_label:
@@ -356,7 +356,8 @@ def plot_periphotostim_avg(arr, expobj, stim_duration, pre_stim=10, post_stim=20
             ax.plot(x, cell_trace, linewidth=1, alpha=0.5, zorder=1)
     ax.plot(x, flu_avg, color='black', linewidth=2.3, zorder=2)  # plot average trace
     ax.set_ylim(y_lims)
-
+    if pre_stim and post_stim:
+        ax.set_xlim(expobj.pre_stim - int(pre_stim * expobj.fps), expobj.pre_stim + expobj.stim_duration_frames + post_stim * expobj.fps + 1)
 
     # # change x axis ticks to seconds
     # if 'time' in x_label or 'Time' in x_label:
@@ -373,6 +374,14 @@ def plot_periphotostim_avg(arr, expobj, stim_duration, pre_stim=10, post_stim=20
         ax.set_xticks(ticks=[(label * expobj.fps) for label in labels])
         ax.set_xticklabels(labels)
         ax.set_xlabel('Time (secs)')
+
+    else:
+        labels = list(np.linspace(-pre_stim, expobj.stim_duration_frames/expobj.fps + post_stim, 7))  # x axis tick label every 500 msec
+        labels = [round(label, 1) for label in labels]
+        labels_locs = np.linspace(expobj.pre_stim - int(pre_stim * expobj.fps), expobj.pre_stim + expobj.stim_duration_frames + post_stim * expobj.fps, 7)
+        ax.set_xticks(ticks=[int(label) for label in labels_locs])
+        ax.set_xticklabels(labels)
+        ax.set_xlabel('Time post stimulation (secs)')
 
         # labels = [item for item in ax.get_xticks()]
         # for item in labels:
@@ -571,7 +580,7 @@ def plot_lfp_stims(expobj, title='LFP signal with photostim. shown (in different
 
 
 # plot the whole pre stim to post stim period as a cool heatmap
-def plot_traces_heatmap(data, expobj, vmin=None, vmax=None, stim_on=None, stim_off=None, figsize=None, title=None, xlims=(0,100), x_label='Frames',
+def plot_traces_heatmap(data, vmin=None, vmax=None, stim_on=None, stim_off=None, figsize=None, title=None, xlims=(0,100), x_label='Frames',
                         cmap='bwr', show=True, cbar=False, **kwargs):
     """
     plot the whole pre stim to post stim period as a cool heatmap
@@ -643,7 +652,8 @@ def plot_traces_heatmap(data, expobj, vmin=None, vmax=None, stim_on=None, stim_o
         ax.title.set_text(title)
         return fig, ax
     else:
-        plt.suptitle(title)
+        ax.set_title(title, fontsize=10, wrap=True)
+
     if 'show' in kwargs.keys():
         if kwargs['show'] is True:
             plt.show()
@@ -651,6 +661,7 @@ def plot_traces_heatmap(data, expobj, vmin=None, vmax=None, stim_on=None, stim_o
             pass
     else:
         plt.show()
+
 
 # plot to show the response magnitude of each cell as the actual's filling in the cell's ROI pixels.
 def xyloc_responses(expobj, to_plot='dfstdf', clim=[-10, +10], plot_target_coords=True, save_fig: str = None):
