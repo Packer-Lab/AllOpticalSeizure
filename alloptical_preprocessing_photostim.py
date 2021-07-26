@@ -31,8 +31,8 @@ new_tiffs = tiffs_loc[:-19]  # where new tiffs from rm_artifacts_tiffs will be s
 # make the necessary Analysis saving subfolder as well
 # analysis_save_path = tiffs_loc[:21] + 'Analysis/' + tiffs_loc_dir[26:]
 
-# matlab_badframes_path = '%s/paired_measurements/%s_%s_%s.mat' % (analysis_save_path[:-23], date, animal_prep, trial[2:])  # choose matlab path if need to use or use None for no additional bad frames
-matlab_badframes_path = None
+matlab_pairedmeasurements_path = '%s/paired_measurements/%s_%s_%s.mat' % (analysis_save_path[:-23], date, animal_prep, trial[2:])  # choose matlab path if need to use or use None for no additional bad frames
+# matlab_pairedmeasurements_path = None
 
 metainfo = {
     'animal prep.': animal_prep,
@@ -45,7 +45,7 @@ metainfo = {
 
 expobj = aoutils.run_photostim_preprocessing(trial, exp_type=exp_type, pkl_path=pkl_path, new_tiffs=new_tiffs, metainfo=metainfo,
                                              tiffs_loc_dir=tiffs_loc_dir, tiffs_loc=tiffs_loc, naparms_loc=(data_path_base+naparms_loc),
-                                             paqs_loc=paqs_loc, matlab_badframes_path=matlab_badframes_path,
+                                             paqs_loc=paqs_loc, matlab_pairedmeasurements_path=matlab_pairedmeasurements_path,
                                              processed_tiffs=False, discard_all=True, analysis_save_path=analysis_save_path)
 
 to_suite2p = ['t-005', 't-006', 't-007', 't-008', 't-011', 't-012', 't-013', 't-014', 't-016',

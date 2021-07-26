@@ -771,8 +771,11 @@ def plot_hist_density(data, colors: list = None, fill_color: list = None, legend
         else:
             fig, ax = plt.subplots(figsize=[20, 3])
 
+    if legend_labels is None:
+        legend_labels = [None] * len(data)
+    if colors is None:
+        colors = ['black'] * len(data)
     if len(data) == 1:
-        colors = ['black']
         fill_color = ['steelblue']
     else:
         assert len(data) == len(colors)
@@ -789,7 +792,7 @@ def plot_hist_density(data, colors: list = None, fill_color: list = None, legend
 
         x = np.linspace(bins[0], bins[-1], 50)
         y1 = ((1 / (np.sqrt(2 * np.pi) * sigma)) *
-             np.exp(-0.5 * (1 / sigma * (x - mu))**2))
+              np.exp(-0.5 * (1 / sigma * (x - mu))**2))
         ax.plot(x, y1, linewidth=2, c=colors[i], zorder=2)
         ax.fill_between(x, y1, color=fill_color[i], zorder=2, alpha=0.3)
         if 'x_label' in kwargs:

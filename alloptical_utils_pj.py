@@ -40,9 +40,9 @@ from numba import njit
 
 
 # %%
-def import_expobj(trial: str = None, date: str = None, pkl_path: str = None, verbose: bool = True):
+def import_expobj(trial: str = None, prep: str = None, date: str = None, pkl_path: str = None, verbose: bool = True):
     if pkl_path is None:
-        pkl_path = "/home/pshah/mnt/qnap/Analysis/%s/%s_%s/%s_%s.pkl" % (date, date, trial, date, trial)
+        pkl_path = "/home/pshah/mnt/qnap/Analysis/%s/%s/%s_%s/%s_%s.pkl" % (date, prep, date, trial, date, trial)
 
     if not os.path.exists(pkl_path):
         raise Exception('pkl path NOT found: ', pkl_path)
@@ -1803,7 +1803,7 @@ class alloptical(TwoPhotonImaging):
 
         # show the MaxResponseImage
         img = glob.glob(stam_save_path + '/*MaxResponseImage.tif')[0]
-        plot_single_tiff(img)
+        pj.plot_single_tiff(img)
 
     # def _good_cells(self, min_radius_pix, max_radius_pix):
     #     '''
@@ -2119,7 +2119,7 @@ class Post4ap(alloptical):
         else:
             return False
 
-    def classify_cells_sz(self, sz_border_path, to_plot=True, title=None, flip=False):
+    def classify_cells_sz_bound(self, sz_border_path, to_plot=True, title=None, flip=False):
         """
         going to use Rob's suggestions to define boundary of the seizure in ImageJ and then read in the ImageJ output,
         and use this to classify cells as in seizure or out of seizure in a particular image (which will relate to stim time).
@@ -2141,23 +2141,23 @@ class Post4ap(alloptical):
             elif x is False:
                 out_sz.append(s['original_index'])
 
-            if to_plot:  # plot the sz boundary points
-                xline = []
-                yline = []
-                with open(sz_border_path) as csv_file:
-                    csv_file = csv.DictReader(csv_file, fieldnames=None, dialect='excel')
-                    for row in csv_file:
-                        xline.append(int(float(row['xcoords'])))
-                        yline.append(int(float(row['ycoords'])))
-                # assumption = line is monotonic
-                line_argsort = np.argsort(yline)
-                xline = np.array(xline)[line_argsort]
-                yline = np.array(yline)[line_argsort]
+        if to_plot:  # plot the sz boundary points
+            xline = []
+            yline = []
+            with open(sz_border_path) as csv_file:
+                csv_file = csv.DictReader(csv_file, fieldnames=None, dialect='excel')
+                for row in csv_file:
+                    xline.append(int(float(row['xcoords'])))
+                    yline.append(int(float(row['ycoords'])))
+            # assumption = line is monotonic
+            line_argsort = np.argsort(yline)
+            xline = np.array(xline)[line_argsort]
+            yline = np.array(yline)[line_argsort]
 
-                # pj.plot_cell_loc(self, cells=[cell], show=False)
-                plt.scatter(x=xline[0], y=yline[0], facecolors='#1A8B9D')
-                plt.scatter(x=xline[1], y=yline[1], facecolors='#B2D430')
-                # plt.show()
+            # pj.plot_cell_loc(self, cells=[cell], show=False)
+            plt.scatter(x=xline[0], y=yline[0], facecolors='#1A8B9D')
+            plt.scatter(x=xline[1], y=yline[1], facecolors='#B2D430')
+            # plt.show()
 
         if flip:
             # pass
@@ -2171,6 +2171,94 @@ class Post4ap(alloptical):
             plt.show()  # the indiviual cells were plotted in ._InOutSz
 
         return in_sz
+
+    def classify_slmtargets_sz_bound(self, sz_border_path, stim, to_plot=True, title=None, flip=False, fig=None, ax=None):
+        """
+        going to use Rob's suggestions to define boundary of the seizure in ImageJ and then read in the ImageJ output,
+        and use this to classify cells as in seizure or out of seizure in a particular image (which will relate to stim time).
+
+        :param sz_border_path: str; path to the .csv containing the points specifying the seizure border for a particular stim image
+        :param to_plot: make plot showing the boundary start, end and the location of the cell in question
+        :param title:
+        :param flip: use True if the seizure orientation is from bottom right to top left.
+        :return in_sz = list; containing the cell_ids of cells that are classified inside the seizure area
+        """
+
+        in_sz = []
+        out_sz = []
+        for cell in range(len(self.target_coords_all)):
+            x = self._InOutSz(cell_med=[self.target_coords_all[cell][1], self.target_coords_all[cell][0]], sz_border_path=sz_border_path, to_plot=to_plot)
+
+            if x is True:
+                in_sz.append(cell)
+            elif x is False:
+                out_sz.append(cell)
+
+        if flip:
+            in_sz_2 = in_sz
+            in_sz = out_sz
+            out_sz = in_sz_2
+
+
+        if to_plot:  # plot the sz boundary points
+            xline = []
+            yline = []
+            with open(sz_border_path) as csv_file:
+                csv_file = csv.DictReader(csv_file, fieldnames=None, dialect='excel')
+                for row in csv_file:
+                    xline.append(int(float(row['xcoords'])))
+                    yline.append(int(float(row['ycoords'])))
+            # assumption = line is monotonic
+            line_argsort = np.argsort(yline)
+            xline = np.array(xline)[line_argsort]
+            yline = np.array(yline)[line_argsort]
+
+            # pj.plot_cell_loc(self, cells=[cell], show=False)
+            # plot sz boundary points
+            if fig is None:
+                fig, ax = plt.subplots(figsize=[5,5])
+
+            ax.scatter(x=xline[0], y=yline[0], facecolors='#1A8B9D')
+            ax.scatter(x=xline[1], y=yline[1], facecolors='#B2D430')
+            # fig.show()
+
+            # plot SLM targets in sz boundary
+            coords_to_plot = [self.target_coords_all[cell] for cell in in_sz]
+            # read in avg stim image to use as the background
+            avg_stim_img_path = '%s/%s_%s_stim-%s.tif' % (self.analysis_save_path + 'avg_stim_images', self.metainfo['date'], self.metainfo['trial'], stim)
+            bg_img = tf.imread(avg_stim_img_path)
+            fig, ax = aoplot.plotSLMtargetsLocs(self, targets_coords=coords_to_plot, fig=fig, ax=ax, cells=in_sz, title=title,
+                                                show=False, background=bg_img)
+            # plt.gca().invert_yaxis()
+            # plt.show()  # the indiviual cells were plotted in ._InOutSz
+
+            # flip = input("do you need to flip the cell classification?? (ans: yes or no)")
+        # else:
+        #     flip = False
+        #
+        # # flip = True
+
+            # # plot again, to make sure that the flip worked
+            # fig, ax = plt.subplots(figsize=[5, 5])
+            # ax.scatter(x=xline[0], y=yline[0], facecolors='#1A8B9D')
+            # ax.scatter(x=xline[1], y=yline[1], facecolors='#B2D430')
+            # # fig.show()
+            #
+            # # plot SLM targets in sz boundary
+            # coords_to_plot = [self.target_coords_all[cell] for cell in in_sz]
+            # fig, ax = aoplot.plotSLMtargetsLocs(self, targets_coords=coords_to_plot, fig=fig, ax=ax, cells=in_sz, title=title + ' corrected',
+            #                           show=False)
+            # plt.gca().invert_yaxis()
+            # plt.show()  # the indiviual cells were plotted in ._InOutSz
+
+
+        else:
+            pass
+
+        if to_plot:
+            return in_sz, out_sz, fig, ax
+        else:
+            return in_sz, out_sz
 
     def is_cell_insz(self, cell, stim):
         """for a given cell and stim, return True if cell is inside the sz boundary."""
@@ -3147,13 +3235,14 @@ def corrcoef_array(array):
 
 
 # %% main functions used to initiate and run processing of experiments
+
 # for pre-processing PHOTOSTIM. experiments, creates the all-optical expobj saved in a pkl files at imaging tiff's loc - BEFORE running suite2p
 def run_photostim_preprocessing(trial, exp_type, tiffs_loc_dir, tiffs_loc, naparms_loc, paqs_loc, pkl_path, metainfo,
-                                new_tiffs, matlab_badframes_path=None, processed_tiffs=True, discard_all=False, quick=False,
+                                new_tiffs, matlab_pairedmeasurements_path=None, processed_tiffs=True, discard_all=False, quick=False,
                                 analysis_save_path=''):
     print('\n-----Processing trial # %s-----' % trial)
 
-    paths = [[tiffs_loc_dir, tiffs_loc, naparms_loc, paqs_loc, analysis_save_path, matlab_badframes_path]]
+    paths = [[tiffs_loc_dir, tiffs_loc, naparms_loc, paqs_loc, analysis_save_path, matlab_pairedmeasurements_path]]
     print('tiffs_loc_dir, naparms_loc, paqs_loc paths:\n', paths)
 
     if 'post' in exp_type and '4ap' in exp_type:
@@ -3174,17 +3263,17 @@ def run_photostim_preprocessing(trial, exp_type, tiffs_loc_dir, tiffs_loc, napar
 
     # # collect information about seizures
     # if 'post' in exp_type and '4ap' in exp_type:
-    #     expobj.collect_seizures_info(seizures_lfp_timing_matarray=matlab_badframes_path, discard_all=discard_all)
+    #     expobj.collect_seizures_info(seizures_lfp_timing_matarray=matlab_pairedmeasurements_path, discard_all=discard_all)
 
     if len(expobj.bad_frames) > 0:
         print('***  Collected a total of ', len(expobj.bad_frames),
               'photostim + seizure/CSD frames +  additional bad frames to bad_frames.npy  ***')
 
-    # if matlab_badframes_path is not None or discard_all is True:
+    # if matlab_pairedmeasurements_path is not None or discard_all is True:
     #     paq = paq_read(file_path=paqs_loc, plot=False)
     #     # print(paq[0]['data'][0])  # print the frame clock signal from the .paq file to make sure its being read properly
     #     bad_frames, expobj.seizure_frames, _, _ = \
-    #         frames_discard(paq=paq[0], input_array=matlab_badframes_path,
+    #         frames_discard(paq=paq[0], input_array=matlab_pairedmeasurements_path,
     #                        total_frames=expobj.n_frames, discard_all=discard_all)
     #     print('\nTotal extra seizure/CSD or other frames to discard: ', len(bad_frames))
     #     print('|\n -- first and last 10 indexes of these frames', bad_frames[:10], bad_frames[-10:])
@@ -3476,12 +3565,12 @@ def calculate_StimSuccessRate(expobj, cell_ids: list, raw_traces_stims=None, dfs
 def calculate_SLMTarget_responses_dff(expobj, sz_filter=False, threshold=10, stims_to_use=None):
 
     if stims_to_use is None:
-        stims_to_use = expobj.stim_start_frames
+        stims_to_use = range(len(expobj.stim_start_frames))
     else:
         pass
 
     d = {}
-    for stim in stims_to_use:
+    for stim in [expobj.stim_start_frames[stim_idx] for stim_idx in stims_to_use]:
         d[stim] = [None] * expobj.SLMTargets_stims_dff.shape[0]
     df = pd.DataFrame(d, index=range(expobj.SLMTargets_stims_dff.shape[0]))  # population dataframe
 
@@ -3500,7 +3589,7 @@ def calculate_SLMTarget_responses_dff(expobj, sz_filter=False, threshold=10, sti
         success = 0
         counter = 0
         responses = []
-        for x in range(len(stims_to_use)):
+        for x in stims_to_use:
             trace = expobj.SLMTargets_stims_dff[idx][x]
             response_result = np.mean(trace[expobj.pre_stim + expobj.stim_duration_frames + 1:
                                             expobj.pre_stim + expobj.stim_duration_frames +
@@ -3508,9 +3597,9 @@ def calculate_SLMTarget_responses_dff(expobj, sz_filter=False, threshold=10, sti
             responses.append(round(response_result, 2))
             if response_result >= threshold:
                 success += 1
-                hits_slmtargets_df.loc[idx, expobj.stim_start_frames[0]] = 1
+                hits_slmtargets_df.loc[idx, expobj.stim_start_frames[x]] = 1
 
-            df.loc[idx, stims_to_use[x]] = response_result
+            df.loc[idx, expobj.stim_start_frames[x]] = response_result
             counter += 1
         reliability_slmtargets[idx] = round(success / counter * 100., 2)
 
@@ -3729,7 +3818,7 @@ def slm_targets_responses(expobj, experiment, trial, y_spacing_factor=2, figsize
             # raw_traces_stims = expobj.SLMTargets_stims_raw[:, stims, :]
             if len(stims) > 0:
                 expobj.outsz_StimSuccessRate_SLMtargets, expobj.outsz_hits_SLMtargets, expobj.outsz_responses_SLMtargets = \
-                    calculate_SLMTarget_responses_dff(expobj, threshold=dff_threshold, stims_to_use=stims)
+                    calculate_SLMTarget_responses_dff(expobj, threshold=dff_threshold, stims_to_use=stims, sz_filter=False)
 
                 # expobj.outsz_StimSuccessRate_SLMtargets, expobj.outsz_hits_SLMtargets, expobj.outsz_responses_SLMtargets = \
                 #     calculate_StimSuccessRate(expobj, cell_ids=SLMtarget_ids, raw_traces_stims=raw_traces_stims,
@@ -3741,7 +3830,7 @@ def slm_targets_responses(expobj, experiment, trial, y_spacing_factor=2, figsize
             # raw_traces_stims = expobj.SLMTargets_stims_raw[:, stims, :]
             if len(stims) > 0:
                 expobj.insz_StimSuccessRate_SLMtargets, expobj.insz_hits_SLMtargets, expobj.insz_responses_SLMtargets = \
-                    calculate_SLMTarget_responses_dff(expobj, threshold=dff_threshold, stims_to_use=stims)
+                    calculate_SLMTarget_responses_dff(expobj, threshold=dff_threshold, stims_to_use=stims, sz_filter=seizure_filter)
 
                 # expobj.insz_StimSuccessRate_SLMtargets, expobj.insz_hits_SLMtargets, expobj.insz_responses_SLMtargets = \
                 #     calculate_StimSuccessRate(expobj, cell_ids=SLMtarget_ids, raw_traces_stims=raw_traces_stims,
@@ -3763,8 +3852,12 @@ def slm_targets_responses(expobj, experiment, trial, y_spacing_factor=2, figsize
 
         expobj.save()
 
+    else:
+        pass
+
 
     ####################################################################################################################
+    ## PLOTTING
     w = smooth_overlap_traces
     to_plot = np.asarray([(np.convolve(trace, np.ones(w), 'valid') / w) for trace in expobj.dff_SLMTargets])
     # to_plot = expobj.dff_SLMTargets

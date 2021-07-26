@@ -34,6 +34,7 @@ if not hasattr(expobj, 'meanRawFluTrace'):
 if not hasattr(expobj, 'stims_in_sz'):
     expobj.seizures_lfp_timing_matarray = expobj.seizures_info_array
     expobj.collect_seizures_info()
+    expobj.save()
 
 plot = False
 if plot:
@@ -256,8 +257,8 @@ for i in range(len(expobj.avg_sub_l)):
 
 
 # %% MAKE SUBSELECTED TIFFs OF EACH INVIDUAL SEIZURES BASED ON THEIR START AND STOP FRAMES
-# on_ = []
-on_ = [expobj.stim_start_frames[0]]  # uncomment if imaging is starting mid seizure
+on_ = []
+on_ = on_ + [expobj.stim_start_frames[0]]  # uncomment if imaging is starting mid seizure
 on_.extend(expobj.stims_bf_sz)
 # expobj.subselect_tiffs_sz(onsets=on_, offsets=expobj.stims_af_sz, on_off_type='StimsBfAfSz')
 
@@ -271,8 +272,6 @@ else:
     sys.exit()
 
 # import the CSV file in and classify cells by their location in or out of seizure
-
-# moved this to utils.funcs_pj
 
 # need to run this twice to correct for mis-assignment of cells (look at results and then find out which stims need to be flipped)
 expobj.not_flip_stims = [2107, 7146, 9222, 9666, 9815, 12779, 12928, 13076, 13224, 13372,
@@ -292,7 +291,7 @@ for on, off in zip(on_, expobj.stims_af_sz):
         else:
             flip = True
 
-        in_sz = expobj.classify_cells_sz(sz_border_path, to_plot=False, title='%s' % stim, flip=flip)
+        in_sz = expobj.classify_cells_sz_bound(sz_border_path, to_plot=False, title='%s' % stim, flip=flip)
         expobj.cells_sz_stim[stim] = in_sz  # for each stim, there will be a list of cells that will be classified as in seizure or out of seizure
 expobj.save()
 

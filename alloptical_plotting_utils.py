@@ -124,7 +124,16 @@ def plot_cell_radius_aspectr(expobj, stat, to_plot, min_vline: int = 4, max_vlin
 
 
 ### plot the location of all SLM targets, along with option for plotting the mean img of the current trial
-def plotSLMtargetsLocs(expobj, background: np.ndarray = None, **kwargs):
+def plotSLMtargetsLocs(expobj, targets_coords: list = None, background: np.ndarray = None, **kwargs):
+    """
+    plot SLM target coordinate locations
+
+    :param expobj:
+    :param targets_coords: list containing (x,y) coordinates of targets to plot
+    :param background:
+    :param kwargs:
+    :return:
+    """
 
     if 'fig' in kwargs.keys():
         fig = kwargs['fig']
@@ -142,12 +151,18 @@ def plotSLMtargetsLocs(expobj, background: np.ndarray = None, **kwargs):
         ax.imshow(background, cmap='gray')
 
     colors = pj.make_random_color_array(len(expobj.target_coords))
-    for i in range(len(expobj.target_coords)):
-        for (x, y) in expobj.target_coords[i]:
-            ax.scatter(x=x, y=y, edgecolors=colors[i], facecolors='none', linewidths=1.0)
+    if targets_coords is None:
+        if len(expobj.target_coords) > 1:
+            for i in range(len(expobj.target_coords)):
+                for (x, y) in expobj.target_coords[i]:
+                    ax.scatter(x=x, y=y, edgecolors=colors[i], facecolors='none', linewidths=1.0)
+        else:
+            for (x, y) in expobj.target_coords_all:
+                ax.scatter(x=x, y=y, edgecolors='yellowgreen', facecolors='none', linewidths=1.0)
+    else:
+        for (x, y) in targets_coords:
+            ax.scatter(x=x, y=y, edgecolors='yellowgreen', facecolors='none', linewidths=1.0)
 
-    # for (x, y) in expobj.target_coords_all:
-    #     plt.scatter(x=x, y=y, edgecolors='yellowgreen', facecolors='none', linewidths=1.0)
 
     ax.margins(0)
     fig.tight_layout()

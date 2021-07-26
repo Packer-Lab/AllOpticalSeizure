@@ -15,8 +15,8 @@ from skimage import draw
 
 # %%
 ###### IMPORT pkl file containing data in form of expobj
-trial = 't-016'
-date = '2020-12-19'
+trial = 't-011'
+date = '2020-12-18'
 
 expobj, experiment = aoutils.import_expobj(trial=trial, date=date)
 
@@ -27,7 +27,7 @@ if plot:
     aoplot.plotSLMtargetsLocs(expobj, background=expobj.meanFluImg_registered)
     aoplot.plot_lfp_stims(expobj)
 
-# %% any preprocessing if needed
+# %% any data processing -- if needed
 
 # expobj.paqProcessing()
 # expobj._findTargets()
@@ -63,12 +63,10 @@ expobj.save()
 
 
 #%% ####################################################################################################################
-
 #### -------------------- ALL OPTICAL PHOTOSTIM AND ETC. ANALYSIS STEPS ################################################
-
 ########################################################################################################################
 
-# %% PLOT AVG PHOTOSTIM PRE- POST- TRACE AVGed OVER ALL PHOTOSTIM. TRIALS - PHOTOSTIM TARGETTED suite2p ROIs cells
+# %% SUITE2P ROIS - PHOTOSTIM TARGETTED - PLOT AVG PHOTOSTIM PRE- POST- TRACE AVGed OVER ALL PHOTOSTIM. TRIALS
 
 # x = np.asarray([i for i in expobj.good_photostim_cells_stim_responses_dFF[0]])
 x = np.asarray([i for i in expobj.targets_dfstdF_avg])
@@ -80,7 +78,7 @@ aoplot.plot_periphotostim_avg(arr=x, expobj=expobj, stim_duration=expobj.stim_du
                               y_label=y_label, x_label='post-stimulation (seconds)')
 
 
-# %% PLOT ENTIRE TRIAL - PHOTOSTIM targeted suite2p ROIs cells plotted individually entire Flu trace
+# %% SUITE2P ROIS - PHOTOSTIM TARGETS - PLOT ENTIRE TRIAL - individual ROIs plotted individually entire Flu trace
 
 to_plot = expobj.dff_s2ptargets
 
@@ -103,7 +101,7 @@ aoplot.plot_photostim_traces(array=to_plot, expobj=expobj, x_label='Frames',
 
 
 
-# %% plot SLM photostim individual targets -- individual, full traces, dff normalized
+# %% SLM PHOTOSTIM TARGETS - plot individual, full traces, dff normalized
 
 # make rolling average for these plots to smooth out the traces a little more
 w = 3
@@ -162,7 +160,7 @@ pj.plot_bar_with_points(data=[list(expobj.StimSuccessRate_SLMtargets.values())],
 
 
 
-# %% PLOT AVG PHOTOSTIM PRE- POST- TRACE AVGed OVER ALL PHOTOSTIM. TRIALS - s2p NON-TARGETS
+# %% SUITE2P NON-TARGETS - PLOT AVG PHOTOSTIM PRE- POST- TRACE AVGed OVER ALL PHOTOSTIM. TRIALS
 x = np.asarray([i for i in expobj.dfstdF_traces_avg])
 # y_label = 'pct. dFF (normalized to prestim period)'
 y_label = 'dFstdF (normalized to prestim period)'
@@ -343,8 +341,8 @@ for target in expobj.responses_SLMtargets.keys():
 
                 # classify the SLM target as in or out of sz, if out then continue with mesauring distance to seizure wavefront,
                 # if in sz then assign negative value for distance to sz wavefront
-                sz_border_path = "%s/boundary_csv/2020-12-18_%s_stim-%s.tif_border.csv" % (
-                    expobj.analysis_save_path, trial, expobj.stim_start_frames[i])
+                sz_border_path = "%s/boundary_csv/%s_%s_stim-%s.tif_border.csv" % (
+                    expobj.metainfo['date'], expobj.analysis_save_path, trial, expobj.stim_start_frames[i])
 
                 in_sz_bool = expobj._InOutSz(cell_med=[target_coord[1], target_coord[0]],
                                              sz_border_path=sz_border_path)
