@@ -45,7 +45,7 @@ def import_expobj(trial: str = None, prep: str = None, date: str = None, pkl_pat
         pkl_path = "/home/pshah/mnt/qnap/Analysis/%s/%s/%s_%s/%s_%s.pkl" % (date, prep, date, trial, date, trial)
 
     if not os.path.exists(pkl_path):
-        raise Exception('pkl path NOT found: ', pkl_path)
+        raise Exception('pkl path NOT found: ' + pkl_path)
     else:
         if trial is not None and date is not None:
             if verbose:
@@ -1921,7 +1921,7 @@ class Post4ap(alloptical):
         if seizures_lfp_timing_matarray is not None:
             print('-- using matlab array to collect seizures %s: ' % seizures_lfp_timing_matarray)
             bad_frames, self.seizure_frames, self.seizure_lfp_onsets, self.seizure_lfp_offsets = frames_discard(
-                paq=paq[0], input_array=seizures_lfp_timing_matarray, total_frames=self.n_frames,
+                paq=paq[0], input_array=self.seizures_lfp_timing_matarray, total_frames=self.n_frames,
                 discard_all=discard_all)
         else:
             print('-- no matlab array given to use for finding seizures.')
@@ -1942,14 +1942,17 @@ class Post4ap(alloptical):
             print('|-now classifying photostims at phases of seizures ... ')
             self.stims_in_sz = [stim for stim in self.stim_start_frames if stim in self.seizure_frames]
             self.stims_out_sz = [stim for stim in self.stim_start_frames if stim not in self.seizure_frames]
+
+            # self.stims_bf_sz = [self.stim_start_frames[self.stim_start_frames.index(sz_start) - 1] for sz_start in self.seizure_lfp_onsets]
+
             self.stims_bf_sz = [stim for stim in self.stim_start_frames
                                 for sz_start in self.seizure_lfp_onsets
                                 if 0 < (
-                                        sz_start - stim) < 5 * self.fps]  # select stims that occur within 5 seconds before of the sz onset
+                                        sz_start - stim) < 10 * self.fps]  # select stims that occur within 5 seconds before of the sz onset
             self.stims_af_sz = [stim for stim in self.stim_start_frames
                                 for sz_start in self.seizure_lfp_offsets
                                 if 0 < -1 * (
-                                        sz_start - stim) < 5 * self.fps]  # select stims that occur within 5 seconds afterof the sz offset
+                                        sz_start - stim) < 10 * self.fps]  # select stims that occur within 5 seconds afterof the sz offset
             print(' \n|- stims_in_sz:', self.stims_in_sz, ' \n|- stims_out_sz:', self.stims_out_sz,
                   ' \n|- stims_bf_sz:', self.stims_bf_sz, ' \n|- stims_af_sz:', self.stims_af_sz)
             aoplot.plot_lfp_stims(self)

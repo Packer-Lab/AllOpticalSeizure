@@ -575,7 +575,7 @@ def plot_lfp_stims(expobj, title='LFP signal with photostim. shown (in different
     ax.set_ylabel('LFP - voltage (mV)')
 
     if not 'fig' in kwargs.keys():
-        ax.set_title(title, wrap=True)
+        ax.set_title((expobj.metainfo['animal prep.'] + ' ' + expobj.metainfo['trial'] + ' ' + title), wrap=True)
 
     # show or return axes objects
     if 'show' in kwargs.keys():

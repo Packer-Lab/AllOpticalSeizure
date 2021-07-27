@@ -15,12 +15,13 @@ from skimage import draw
 
 # %%
 ###### IMPORT pkl file containing data in form of expobj
+prep = 'RL108'
 trial = 't-011'
 date = '2020-12-18'
 
-expobj, experiment = aoutils.import_expobj(trial=trial, date=date)
+expobj, experiment = aoutils.import_expobj(trial=trial, date=date, prep=prep)
 
-plot = False
+plot = True
 if plot:
     aoplot.plotMeanRawFluTrace(expobj=expobj, stim_span_color=None, x_axis='Time', figsize=[20, 3])
     aoplot.plotLfpSignal(expobj, stim_span_color='', x_axis='frames', figsize=[20, 3])

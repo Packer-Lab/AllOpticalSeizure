@@ -240,66 +240,6 @@ for i in range(len(expobj.avg_sub_l)):
 
 
 
-# %% classifying stims as in_sz or out_sz or before_sz or after_sz
-
-# expobj.stims_in_sz = [stim for stim in expobj.stim_start_frames if stim in expobj.seizure_frames]
-# expobj.stims_out_sz = [stim for stim in expobj.stim_start_frames if stim not in expobj.seizure_frames]
-# expobj.stims_bf_sz = [stim for stim in expobj.stim_start_frames
-#                       for sz_start in expobj.seizure_lfp_onsets
-#                       if 0 < (sz_start - stim) < 5 * expobj.fps]  # select stims that occur within 5 seconds before of the sz onset
-# expobj.stims_af_sz = [stim for stim in expobj.stim_start_frames
-#                       for sz_start in expobj.seizure_lfp_offsets
-#                       if 0 < -1 * (sz_start - stim) < 5 * expobj.fps]  # select stims that occur within 5 seconds afterof the sz offset
-# print('\n|- stims_in_sz:', expobj.stims_in_sz, '\n|- stims_out_sz:', expobj.stims_out_sz,
-#       '\n|- stims_bf_sz:', expobj.stims_bf_sz, '\n|- stims_af_sz:', expobj.stims_af_sz)
-# expobj.save_pkl()
-
-
-
-# %% MAKE SUBSELECTED TIFFs OF EACH INVIDUAL SEIZURES BASED ON THEIR START AND STOP FRAMES
-on_ = []
-on_ = on_ + [expobj.stim_start_frames[0]]  # uncomment if imaging is starting mid seizure
-on_.extend(expobj.stims_bf_sz)
-# expobj.subselect_tiffs_sz(onsets=on_, offsets=expobj.stims_af_sz, on_off_type='StimsBfAfSz')
-
-
-# %% classifying cells as in or out of the current seizure location in the FOV
-
-# FRIST manually draw boundary on the image in ImageJ and save results as CSV to analysis folder under boundary_csv
-if expobj.sz_boundary_csv_done:
-    pass
-else:
-    sys.exit()
-
-# import the CSV file in and classify cells by their location in or out of seizure
-
-# need to run this twice to correct for mis-assignment of cells (look at results and then find out which stims need to be flipped)
-expobj.not_flip_stims = [2107, 7146, 9222, 9666, 9815, 12779, 12928, 13076, 13224, 13372,
-                         13521]  # specify here the stims where the flip=False leads to incorrect assignment
-# cont_inue2 = True
-
-print('working on classifying cells for stims start frames:')
-expobj.cells_sz_stim = {}
-for on, off in zip(on_, expobj.stims_af_sz):
-    stims_of_interest = [stim for stim in expobj.stim_start_frames if on <= stim <= off]
-    print('|-', stims_of_interest)
-
-    for stim in stims_of_interest:
-        sz_border_path = "%s/boundary_csv/2020-12-18_%s_stim-%s.tif_border.csv" % (expobj.analysis_save_path, trial, stim)
-        if stim in expobj.not_flip_stims:
-            flip = False
-        else:
-            flip = True
-
-        in_sz = expobj.classify_cells_sz_bound(sz_border_path, to_plot=False, title='%s' % stim, flip=flip)
-        expobj.cells_sz_stim[stim] = in_sz  # for each stim, there will be a list of cells that will be classified as in seizure or out of seizure
-expobj.save()
-
-# if cont_inue2:
-#     pass
-# else:
-#     sys.exit()
-
 #%%#####################################################################################################################
 ########################################################################################################################
 ########################################################################################################################
@@ -436,7 +376,7 @@ expobj.save()
 
 
 
-
+# %% convert stim responses to z-scores
 
 
 #%% ---- END --------
