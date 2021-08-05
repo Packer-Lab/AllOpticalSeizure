@@ -302,7 +302,7 @@ def ZProfile(movie, area_center_coords: tuple = None, area_size: int = -1, plot_
     y2 = int(y + 1 / 2 * area_size)
     smol_movie = movie[:, y1:y2, x1:x2]
     smol_mean = np.nanmean(smol_movie, axis=(1, 2))
-    print('Output shape =', smol_mean.shape)
+    print('|- Output shape for z profile: ', smol_mean.shape)
 
     if plot_image:
         f, ax1 = plt.subplots()
@@ -374,6 +374,8 @@ def SaveDownsampledTiff(tiff_path: str = None, stack: np.array = None, group_by:
     for frame in np.arange(stack.shape[0]):
         stack8[frame] = convert_to_8bit(stack[frame], 0, 255)
 
+    # stack8 = stack
+
     # grouped average by specified interval
     num_frames = stack8.shape[0] // group_by
     # avgd_stack = np.empty((num_frames, resolution, resolution), dtype='uint16')
@@ -388,11 +390,12 @@ def SaveDownsampledTiff(tiff_path: str = None, stack: np.array = None, group_by:
     # bin down to 512 x 512 resolution if higher resolution
     shape = np.shape(avgd_stack)
     if shape[1] != 512:
-        input_size = avgd_stack.shape[1]
-        output_size = 512
-        bin_size = input_size // output_size
-        final_stack = avgd_stack.reshape((shape[0], output_size, bin_size,
-                                          output_size, bin_size)).mean(4).mean(2)
+        # input_size = avgd_stack.shape[1]
+        # output_size = 512
+        # bin_size = input_size // output_size
+        # final_stack = avgd_stack.reshape((shape[0], output_size, bin_size,
+        #                                   output_size, bin_size)).mean(4).mean(2)
+        final_stack = avgd_stack
     else:
         final_stack = avgd_stack
 
@@ -403,9 +406,10 @@ def SaveDownsampledTiff(tiff_path: str = None, stack: np.array = None, group_by:
     return final_stack
 
 
-def subselect_tiff(tiff_path: str = None, tiff_stack: np.array = None, select_frames: tuple = (0,0), save_as: str = None):
+def subselect_tiff(tiff_path: str = None, tiff_stack: np.array = None, select_frames: tuple = (0, 0), save_as: str = None):
     if tiff_stack is None:
         # open tiff file
+        print('running subselecting tiffs')
         print('|- working on... %s' % tiff_path)
         tiff_stack = tf.imread(tiff_path)
 
@@ -548,8 +552,9 @@ def printProgressBar(iteration, total, prefix='', suffix='', decimals=1, length=
 def findClosest(list, input):
     subtract = list - input
     positive_values = abs(subtract)
-    closest_value = min(positive_values) + input
+    # closest_value = min(positive_values) + input
     index = np.where(positive_values == min(positive_values))[0][0]
+    closest_value = list[index]
 
     return closest_value, index
 
@@ -804,10 +809,16 @@ def plot_hist_density(data, colors: list = None, fill_color: list = None, legend
 
     ax.legend()
 
+    # setting shrinking factor for font size for title
+    if 'shrink_text' in kwargs.keys():
+        shrink_text = kwargs['shrink_text']
+    else:
+        shrink_text = 1
+
     # add title
     if 'fig' not in kwargs.keys():
         if 'title' in kwargs:
-            ax.set_title(kwargs['title'] + r': $\mu=%s$, $\sigma=%s$' % (round(mu, 2), round(sigma, 2)))
+            ax.set_title(kwargs['title'] + r': $\mu=%s$, $\sigma=%s$' % (round(mu, 2), round(sigma, 2)), wrap=True, fontsize=12*shrink_text)
         else:
             ax.set_title(r'Histogram: $\mu=%s$, $\sigma=%s$' % (round(mu, 2), round(sigma, 2)))
 
@@ -825,12 +836,7 @@ def plot_hist_density(data, colors: list = None, fill_color: list = None, legend
 
     if 'fig' in kwargs.keys():
         # adding text because adding title doesn't seem to want to work when piping subplots
-        if 'shrink_text' in kwargs.keys():
-            shrink_text = kwargs['shrink_text']
-        else:
-            shrink_text = 1
-
-        ax.title.set_text(kwargs['title'] + r': $\mu=%s$, $\sigma=%s$' % (round(mu, 2), round(sigma, 2)))
+        ax.title.set_text(kwargs['title'] + r': $\mu=%s$, $\sigma=%s$' % (round(mu, 2), round(sigma, 2)), fontsize=12*shrink_text)
         # ax.text(0.98, 0.97, kwargs['title'] + r': $\mu=%s$, $\sigma=%s$' % (round(mu, 2), round(sigma, 2)),
         #         verticalalignment='top', horizontalalignment='right',
         #         transform=ax.transAxes, fontweight='bold',

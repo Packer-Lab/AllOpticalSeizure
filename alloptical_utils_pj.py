@@ -418,6 +418,38 @@ class TwoPhotonImaging:
         sns.despine()
         plt.show()
 
+        # find start and stop frame_clock times -- there might be multiple 2p imaging starts/stops in the paq trial (hence multiple frame start and end times)
+        self.frame_start_times = [self.frame_clock[0]]  # initialize list
+        self.frame_end_times = []
+        i = len(self.frame_start_times)
+        for idx in range(1, len(self.frame_clock) - 1):
+            if (self.frame_clock[idx + 1] - self.frame_clock[idx]) > 2e3:
+                i += 1
+                self.frame_end_times.append(self.frame_clock[idx])
+                self.frame_start_times.append(self.frame_clock[idx + 1])
+        self.frame_end_times.append(self.frame_clock[-1])
+
+        # for frame in self.frame_clock[1:]:
+        #     if (frame - self.frame_start_times[i - 1]) > 2e3:
+        #         i += 1
+        #         self.frame_start_times.append(frame)
+        #         self.frame_end_times.append(self.frame_clock[np.where(self.frame_clock == frame)[0] - 1][0])
+        # self.frame_end_times.append(self.frame_clock[-1])
+
+        # handling cases where 2p imaging clock has been started/stopped >1 in the paq trial
+        if len(self.frame_start_times) > 1:
+            diff = [self.frame_end_times[idx] - self.frame_start_times[idx] for idx in
+                    range(len(self.frame_start_times))]
+            idx = diff.index(max(diff))
+            self.frame_start_time_actual = self.frame_start_times[idx]
+            self.frame_end_time_actual = self.frame_end_times[idx]
+            self.frame_clock_actual = [frame for frame in self.frame_clock if
+                                       self.frame_start_time_actual <= frame <= self.frame_end_time_actual]
+        else:
+            self.frame_start_time_actual = self.frame_start_times[0]
+            self.frame_end_time_actual = self.frame_end_times[0]
+            self.frame_clock_actual = self.frame_clock
+
         if lfp:
             # find voltage (LFP recording signal) channel and save as lfp_signal attribute
             voltage_idx = paq['chan_names'].index('voltage')
@@ -1912,6 +1944,7 @@ class Post4ap(alloptical):
         if seizures_lfp_timing_matarray is not None:
             self.seizures_lfp_timing_matarray = seizures_lfp_timing_matarray  # path to the matlab array containing paired measurements of seizures onset and offsets
 
+        assert self.seizures_lfp_timing_matarray is not None
 
         # retrieve seizure onset and offset times from the seizures info array input
         paq = paq_read(file_path=self.paq_path, plot=False)
@@ -3566,7 +3599,16 @@ def calculate_StimSuccessRate(expobj, cell_ids: list, raw_traces_stims=None, dfs
 
 
 def calculate_SLMTarget_responses_dff(expobj, sz_filter=False, threshold=10, stims_to_use=None):
+    """
+    calculations of dFF responses to photostimulation of SLM Targets. Includes calculating reliability of slm targets,
+    saving success stim locations, and saving stim response magnitudes as pandas dataframe.
 
+    :param expobj:
+    :param sz_filter:
+    :param threshold:
+    :param stims_to_use:
+    :return:
+    """
     if stims_to_use is None:
         stims_to_use = range(len(expobj.stim_start_frames))
     else:

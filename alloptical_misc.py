@@ -8,21 +8,51 @@ import numpy as np
 import tifffile as tf
 
 # %%
-prep = 'PS06'
-date = '2021-01-10'
-trials = ['t-013']
+prep = 'PS18'
+date = '2021-02-02'
+trials = ['t-002', 't-004', 't-005', 't-006', 't-007', 't-008', 't-009']
 
 for trial in trials:
     ###### IMPORT pkl file containing data in form of expobj
     pkl_path = "/home/pshah/mnt/qnap/Analysis/%s/%s/%s_%s/%s_%s.pkl" % (date, prep, date, trial, date, trial)
 
     expobj, experiment = aoutils.import_expobj(trial=trial, date=date, pkl_path=pkl_path, verbose=False)
-    expobj.collect_seizures_info()
+    pj.plot_single_tiff(expobj.tiff_path, frame_num=0, title='%s - frame# %s' % trial)
+
+    # cropped_tiff = aoutils.subselect_tiff(expobj.tiff_path, select_frames=(2668, 4471))#, save_as='/home/pshah/mnt/qnap/Analysis/%s/%s/%s_%s/%s_%s_2668-4471fr.tif' % (date, prep, date, trial, date, trial))
+    aoutils.SaveDownsampledTiff(tiff_path=expobj.tiff_path, #stack=cropped_tiff,
+                                save_as='/home/pshah/mnt/qnap/Analysis/%s/%s/%s_%s/%s_%s_2668-4471fr_downsampled.tif' % (date, prep, date, trial, date, trial))
+    # expobj.collect_seizures_info(seizures_lfp_timing_matarray='/home/pshah/mnt/qnap/Analysis/%s/%s/paired_measurements/%s_%s_%s.mat' % (date, prep, date, prep, trial[-3:]))
     # expobj.avg_stim_images(stim_timings=expobj.stims_in_sz, peri_frames=50, to_plot=False, save_img=True, force_redo=True)
+
     # expobj.MeanSeizureImages(
     #     baseline_tiff="/home/pshah/mnt/qnap/Data/2020-12-18/2020-12-18_t-005/2020-12-18_t-005_Cycle00001_Ch3.tif",
     #     frames_last=1000)
 
+
+
+
+# %% checking number of frames in paq file and the 2p tiff path
+
+prep = 'PS18'
+date = '2021-02-02'
+trials = ['t-002', 't-004', 't-005', 't-006', 't-007', 't-008', 't-009']
+
+for trial in trials:
+    ###### IMPORT pkl file containing data in form of expobj
+    pkl_path = "/home/pshah/mnt/qnap/Analysis/%s/%s/%s_%s/%s_%s.pkl" % (date, prep, date, trial, date, trial)
+
+    expobj, experiment = aoutils.import_expobj(trial=trial, date=date, pkl_path=pkl_path, verbose=False)
+    pj.plot_single_tiff(expobj.tiff_path, frame_num=0, title='%s - frame 0' % trial)
+    # open tiff file
+    print('\nWorking on... %s' % expobj.tiff_path)
+    tiffstack = tf.imread(expobj.tiff_path)
+    n_frames_tiff = len(tiffstack)
+    if not hasattr(expobj, 'frame_clock_actual'):
+        expobj.paqProcessing()
+    n_frames_paq = len(expobj.frame_clock_actual)
+
+    print('|- n_frames_tiff: %s      n_frames_paq: %s' % (n_frames_tiff, n_frames_paq))
 
 
 

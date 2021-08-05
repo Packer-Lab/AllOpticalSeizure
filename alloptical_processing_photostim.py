@@ -287,13 +287,6 @@ expobj.dff_traces, expobj.dff_traces_avg, expobj.dfstdF_traces, \
 
 
 
-
-# %% (full) plot individual cell's flu or dFF trace, with photostim. timings for that cell
-
-# plot flu trace of selected cell with the std threshold
-# aoplot.plot_flu_trace(expobj=expobj, cell=0, x_lims=None, to_plot='dff')
-
-
 #%% turn the important cell x time arrays into pandas dataframes
 
 # raw Flu traces of all good cells
@@ -373,10 +366,6 @@ for stim in expobj.dfstdf_all_cells.columns[1:]:
         expobj.dff_responses_all_cells.loc[cells_toko, str(stim)] = np.nan
 
 expobj.save()
-
-
-
-# %% convert stim responses to z-scores
 
 
 #%% ---- END --------
