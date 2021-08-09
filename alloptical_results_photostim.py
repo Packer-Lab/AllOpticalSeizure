@@ -6,7 +6,7 @@ import alloptical_utils_pj as aoutils
 import alloptical_plotting_utils as aoplot
 import utils.funcs_pj as pj
 
-# import onePstim superobject that will collect analyses from various individual experiments
+# import results superobject that will collect analyses from various individual experiments
 results_object_path = '/home/pshah/mnt/qnap/Analysis/alloptical_results_superobject.pkl'
 allopticalResults = aoutils.import_resultsobj(pkl_path=results_object_path)
 

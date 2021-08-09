@@ -17,7 +17,7 @@ for trial in trials:
     pkl_path = "/home/pshah/mnt/qnap/Analysis/%s/%s/%s_%s/%s_%s.pkl" % (date, prep, date, trial, date, trial)
 
     expobj, experiment = aoutils.import_expobj(trial=trial, date=date, pkl_path=pkl_path, verbose=False)
-    pj.plot_single_tiff(expobj.tiff_path, frame_num=0, title='%s - frame# %s' % trial)
+    pj.plot_single_tiff(expobj.tiff_path, frame_num=0, title='%s - frame# 0' % trial)
 
     # cropped_tiff = aoutils.subselect_tiff(expobj.tiff_path, select_frames=(2668, 4471))#, save_as='/home/pshah/mnt/qnap/Analysis/%s/%s/%s_%s/%s_%s_2668-4471fr.tif' % (date, prep, date, trial, date, trial))
     aoutils.SaveDownsampledTiff(tiff_path=expobj.tiff_path, #stack=cropped_tiff,
@@ -30,20 +30,66 @@ for trial in trials:
     #     frames_last=1000)
 
 
+# %% fixing squashing of images issue in PS18 trials
+
+import cv2
+
+
+prep = 'PS18'
+date = '2021-02-02'
+trial = 't-006'
+
+###### IMPORT pkl file containing data in form of expobj
+pkl_path = "/home/pshah/mnt/qnap/Analysis/%s/%s/%s_%s/%s_%s.pkl" % (date, prep, date, trial, date, trial)
+expobj, experiment = aoutils.import_expobj(trial=trial, date=date, pkl_path=pkl_path, verbose=False)
+fr = pj.plot_single_tiff(expobj.tiff_path, frame_num=238, title='%s - frame 238' % trial)
+
+# unsquash the bottom 2/3rd of the frame
+lw = fr.shape[0]
+fr_ = fr[int(1/3*lw):, ]
+res = cv2.resize(fr_, dsize=(512, 512), interpolation=cv2.INTER_CUBIC)
+
+# plot image
+plt.imshow(res, cmap='gray')
+plt.suptitle('%s' % trial)
+plt.show()
+
+
+
+# compare with spont trial that was correct
+trial = 't-002'
+
+###### IMPORT pkl file containing data in form of expobj
+pkl_path = "/home/pshah/mnt/qnap/Analysis/%s/%s/%s_%s/%s_%s.pkl" % (date, prep, date, trial, date, trial)
+expobj, experiment = aoutils.import_expobj(trial=trial, date=date, pkl_path=pkl_path, verbose=False)
+fr = pj.plot_single_tiff(expobj.tiff_path, frame_num=238, title='%s - frame 238' % trial)
+
+# plot image
+plt.imshow(fr, cmap='gray')
+plt.suptitle('%s' % trial)
+plt.show()
+
+
+
+
+# open tiff file
+print('\nWorking on... %s' % expobj.tiff_path)
+tiffstack = tf.imread(expobj.tiff_path)
+
 
 
 # %% checking number of frames in paq file and the 2p tiff path
 
 prep = 'PS18'
 date = '2021-02-02'
-trials = ['t-002', 't-004', 't-005', 't-006', 't-007', 't-008', 't-009']
+trials = ['t-008', 't-009']
 
 for trial in trials:
     ###### IMPORT pkl file containing data in form of expobj
     pkl_path = "/home/pshah/mnt/qnap/Analysis/%s/%s/%s_%s/%s_%s.pkl" % (date, prep, date, trial, date, trial)
 
     expobj, experiment = aoutils.import_expobj(trial=trial, date=date, pkl_path=pkl_path, verbose=False)
-    pj.plot_single_tiff(expobj.tiff_path, frame_num=0, title='%s - frame 0' % trial)
+    pj.plot_single_tiff(expobj.tiff_path, frame_num=238, title='%s - frame 238' % trial)
     # open tiff file
     print('\nWorking on... %s' % expobj.tiff_path)
     tiffstack = tf.imread(expobj.tiff_path)

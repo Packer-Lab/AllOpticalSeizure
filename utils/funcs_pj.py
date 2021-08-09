@@ -818,9 +818,16 @@ def plot_hist_density(data, colors: list = None, fill_color: list = None, legend
     # add title
     if 'fig' not in kwargs.keys():
         if 'title' in kwargs:
-            ax.set_title(kwargs['title'] + r': $\mu=%s$, $\sigma=%s$' % (round(mu, 2), round(sigma, 2)), wrap=True, fontsize=12*shrink_text)
+            if len(data) == 1:
+                ax.set_title(kwargs['title'] + r': $\mu=%s$, $\sigma=%s$' % (round(mu, 2), round(sigma, 2)), wrap=True, fontsize=12*shrink_text)
+            else:
+                ax.set_title(kwargs['title'], wrap=True, fontsize=12*shrink_text)
         else:
-            ax.set_title(r'Histogram: $\mu=%s$, $\sigma=%s$' % (round(mu, 2), round(sigma, 2)))
+            if len(data) == 1:
+                ax.set_title(r'Histogram: $\mu=%s$, $\sigma=%s$' % (round(mu, 2), round(sigma, 2)))
+            else:
+                ax.set_title('Histogram density plot')
+
 
     if 'show' in kwargs.keys():
         if kwargs['show'] is True:
