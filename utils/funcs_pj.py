@@ -765,7 +765,7 @@ def plot_bar_with_points(data, title='', x_tick_labels=[], legend_labels: list =
 
 
 # histogram density plot with gaussian best fit line
-def plot_hist_density(data, colors: list = None, fill_color: list = None, legend_labels: list = [None], **kwargs):
+def plot_hist_density(data, colors: list = None, fill_color: list = None, legend_labels: list = [None], num_bins=10, **kwargs):
 
     if 'fig' in kwargs.keys():
         fig = kwargs['fig']
@@ -788,14 +788,13 @@ def plot_hist_density(data, colors: list = None, fill_color: list = None, legend
 
     for i in range(len(data)):
         # the histogram of the data
-        num_bins = 10
         n, bins, patches = ax.hist(data[i], num_bins, density=1, alpha=0.4, color=fill_color[i], label=legend_labels[i])  # histogram hidden currently
 
         # add a 'best fit' line
         mu = np.mean(data[i])  # mean of distribution
         sigma = np.std(data[i])  # standard deviation of distribution
 
-        x = np.linspace(bins[0], bins[-1], 50)
+        x = np.linspace(bins[0], bins[-1], num_bins*5)
         y1 = ((1 / (np.sqrt(2 * np.pi) * sigma)) *
               np.exp(-0.5 * (1 / sigma * (x - mu))**2))
         ax.plot(x, y1, linewidth=2, c=colors[i], zorder=2)
@@ -806,6 +805,10 @@ def plot_hist_density(data, colors: list = None, fill_color: list = None, legend
             ax.set_ylabel(kwargs['y_label'])
         else:
             ax.set_ylabel('Probability density')
+
+    # set x limits
+    if 'x_lim' in kwargs:
+        ax.set_xlim(kwargs['x_lim'])
 
     ax.legend()
 

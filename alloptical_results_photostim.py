@@ -104,8 +104,8 @@ allopticalResults.pre_4ap_trials = [
     ['PS11 t-007'],
     ['PS11 t-010'],
     ['PS17 t-005'],
-    ['PS17 t-006', 'PS17 t-007'],
-    ['PS18 t-006']
+    # ['PS17 t-006', 'PS17 t-007'],
+    # ['PS18 t-006']
 ]
 
 allopticalResults.post_4ap_trials = [
@@ -125,9 +125,9 @@ allopticalResults.post_4ap_trials = [
     ['PS06 t-016'],
     ['PS11 t-016'],
     ['PS11 t-011'],
-    ['PS17 t-011'],
+    # ['PS17 t-011'],
     ['PS17 t-009'],
-    ['PS18 t-008']
+    # ['PS18 t-008']
 ]
 allopticalResults.save()
 
