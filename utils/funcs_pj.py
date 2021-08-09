@@ -784,7 +784,7 @@ def plot_hist_density(data, colors: list = None, fill_color: list = None, legend
         fill_color = ['steelblue']
     else:
         assert len(data) == len(colors)
-        assert len(data) == len(fill_color)
+        assert len(data) == len(fill_color), print('please provide a fill color for each dataset')
 
     for i in range(len(data)):
         # the histogram of the data
