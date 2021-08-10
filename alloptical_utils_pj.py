@@ -458,7 +458,11 @@ class TwoPhotonImaging:
     def mean_raw_flu_trace(self, plot: bool = False, save_pkl: bool = True):
         print('\n-----collecting mean raw flu trace from tiff file...')
         print(self.tiff_path)
-        im_stack = tf.imread(self.tiff_path, key=range(self.n_frames))
+        if len(self.tiff_path) == 2:  # this is to account for times when two channel imaging might be used for one t-series
+            tiff_path = self.tiff_path[0]
+        else:
+            tiff_path = self.tiff_path
+        im_stack = tf.imread(tiff_path, key=range(self.n_frames))
         print('|- Loaded experiment tiff of shape: ', im_stack.shape)
 
         self.meanFluImg = np.mean(im_stack, axis=0)

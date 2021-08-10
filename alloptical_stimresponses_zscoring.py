@@ -259,6 +259,33 @@ pj.plot_hist_density(data, x_label='z-score', title='All exps. stim responses zs
 
 
 
+# %% zscore of stim responses vs. TIME to seizure onset - original code for single experiments
+prep = 'RL108'
+date = '2020-12-18'
+trial = 't-013'
+expobj, experiment = aoutils.import_expobj(trial=trial, date=date, prep=prep)
+post_4ap_df = expobj.responses_SLMtargets_zscore
+
+# transform the rows of the stims responses dataframe to relative time to seizure
+
+stims = list(post_4ap_df.index)
+stims_relative_sz = []
+for stim_idx in stims:
+    stim_frame = expobj.stim_start_frames[stim_idx]
+    closest_sz_onset = pj.findClosest(list=expobj.seizure_lfp_onsets, input=stim_frame)[0]
+    time_diff = (closest_sz_onset - stim_frame) / expobj.fps  # time difference in seconds
+    stims_relative_sz.append(round(time_diff, 3))
+
+cols = [col for col in post_4ap_df.columns if 'z' in str(col)]
+post_4ap_df_zscore_stim_relative_to_sz = post_4ap_df[cols]
+post_4ap_df_zscore_stim_relative_to_sz.index = stims_relative_sz  # take the original zscored df and assign a new index where the col names are times relative to sz onset
+
+post_4ap_df_zscore_stim_relative_to_sz['avg'] = post_4ap_df_zscore_stim_relative_to_sz.T.mean()
+
+fig, ax = plt.subplots(figsize=(8,5))
+ax.scatter(x=post_4ap_df_zscore_stim_relative_to_sz.index, y=post_4ap_df_zscore_stim_relative_to_sz['avg'])
+fig.show()
+
 
 
 # %% zscore of stim responses vs. TIME to seizure onset - original code for single experiments
