@@ -10,6 +10,49 @@ import utils.funcs_pj as pj
 results_object_path = '/home/pshah/mnt/qnap/Analysis/alloptical_results_superobject.pkl'
 allopticalResults = aoutils.import_resultsobj(pkl_path=results_object_path)
 
+
+
+# %% TODO plot trial-averaged photostimulation response dFF curves for all experiments - broken down by pre-4ap, outsz and insz (excl. sz bound)
+
+dffTraces = []
+for i in allopticalResults.pre_4ap_trials:
+    prep = i[0][:-6]
+    trial = i[0][6:]
+    expobj, experiment = aoutils.import_expobj(trial=trial, prep=prep)
+
+    # x = np.asarray([i for i in expobj.good_photostim_cells_stim_responses_dFF[0]])
+    x = np.asarray([i for i in expobj.SLMTargets_stims_dffAvg])
+    y_label = 'pct. dFF (normalized to prestim period)'
+    # y_label = 'dFstdF (normalized to prestim period)'
+
+    aoplot.plot_periphotostim_avg(arr=expobj.SLMTargets_stims_dffAvg, expobj=expobj, stim_duration=expobj.stim_duration_frames, pre_stim=0.25,
+                                  post_stim=2.75, title=(experiment + '- responses of all photostim targets'),
+                                  figsize=[5, 4], y_label=y_label, x_label='post-stimulation (seconds)')
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 # %% ########## BAR PLOT showing average success rate of photostimulation
 
 trial = 't-010'
@@ -400,23 +443,6 @@ for i in allopticalResults.post_4ap_trials:
 
         expobj.avg_stim_images(stim_timings=expobj.stim_start_frames, peri_frames=50, to_plot=True, save_img=True)
 
-
-# %% TODO plot trial-averaged photostimulation response dFF curves for all experiments - broken down by pre-4ap, outsz and insz (excl. sz bound)
-
-for i in allopticalResults.pre_4ap_trials:
-    prep = i[0][:-6]
-    trial = i[0][6:]
-    expobj, experiment = aoutils.import_expobj(trial=trial, prep=prep)
-
-    # x = np.asarray([i for i in expobj.good_photostim_cells_stim_responses_dFF[0]])
-    x = np.asarray([i for i in expobj.targets_dfstdF_avg])
-    # y_label = 'pct. dFF (normalized to prestim period)'
-    y_label = 'dFstdF (normalized to prestim period)'
-
-    aoplot.plot_periphotostim_avg(arr=x, expobj=expobj, stim_duration=expobj.stim_duration_frames, pre_stim=0.5,
-                                  post_stim=1.0, title=(experiment + '- responses of all photostim targets'),
-                                  figsize=[5, 4],
-                                  y_label=y_label, x_label='post-stimulation (seconds)')
 
 
 

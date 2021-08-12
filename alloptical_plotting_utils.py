@@ -327,12 +327,11 @@ def plot_photostim_traces_overlap(array, expobj, exclude_id=[], y_spacing_factor
 
 
 ### photostim analysis - PLOT avg over all photstim. trials traces from PHOTOSTIM TARGETTED cells
-def plot_periphotostim_avg(arr, expobj, stim_duration, pre_stim=1.0, post_stim=3.0, title='', y_lims=None,
+def plot_periphotostim_avg(arr, stim_duration, fps, pre_stim=1.0, post_stim=3.0, title='', y_lims=None, expobj=None,
                            x_label=None, y_label=None, **kwargs):
     """
     plot trace across all stims
     :param arr:
-    :param expobj:
     :param stim_duration:
     :param pre_stim: seconds of array to plot for pre-stim period
     :param post_stim: seconds of array to plot for post-stim period
@@ -363,7 +362,8 @@ def plot_periphotostim_avg(arr, expobj, stim_duration, pre_stim=1.0, post_stim=3
 
 
     ax.margins(0)
-    ax.axvspan(expobj.pre_stim, expobj.pre_stim + expobj.stim_duration_frames, alpha=0.2, color='tomato')
+    # ax.axvspan(expobj.pre_stim, expobj.pre_stim + expobj.stim_duration_frames, alpha=0.2, color='tomato')
+    ax.axvspan(int(pre_stim * fps), int(pre_stim * fps) + int(stim_duration*fps), alpha=0.2, color='tomato')
     for cell_trace in arr:
         if 'edgecolor' in kwargs.keys():
             ax.plot(x, cell_trace, linewidth=1, alpha=0.6, c=kwargs['edgecolor'], zorder=1)
@@ -372,7 +372,7 @@ def plot_periphotostim_avg(arr, expobj, stim_duration, pre_stim=1.0, post_stim=3
     ax.plot(x, flu_avg, color='black', linewidth=2.3, zorder=2)  # plot average trace
     ax.set_ylim(y_lims)
     if pre_stim and post_stim:
-        ax.set_xlim(expobj.pre_stim - int(pre_stim * expobj.fps), expobj.pre_stim + expobj.stim_duration_frames + post_stim * expobj.fps + 1)
+        ax.set_xlim(int(pre_stim * fps) - int(pre_stim * fps), int(pre_stim * fps) + int(stim_duration*fps) + int(post_stim * fps) + 1)
 
     # # change x axis ticks to seconds
     # if 'time' in x_label or 'Time' in x_label:
@@ -384,16 +384,16 @@ def plot_periphotostim_avg(arr, expobj, stim_duration, pre_stim=1.0, post_stim=3
 
     # change x axis ticks to seconds
     if 'Time' in x_label or 'time' in x_label:
-        labels = list(np.linspace(0, int(arr.shape[1] / expobj.fps), 7))  # x axis tick label every 500 msec
+        labels = list(np.linspace(0, int(arr.shape[1] / fps), 7))  # x axis tick label every 500 msec
         labels = [round(label,1) for label in labels]
-        ax.set_xticks(ticks=[(label * expobj.fps) for label in labels])
+        ax.set_xticks(ticks=[(label * fps) for label in labels])
         ax.set_xticklabels(labels)
         ax.set_xlabel('Time (secs)')
 
     else:
-        labels = list(np.linspace(-pre_stim, expobj.stim_duration_frames/expobj.fps + post_stim, 7))  # x axis tick label every 500 msec
+        labels = list(np.linspace(-pre_stim, stim_duration + post_stim, 7))  # x axis tick label every 500 msec
         labels = [round(label, 1) for label in labels]
-        labels_locs = np.linspace(expobj.pre_stim - int(pre_stim * expobj.fps), expobj.pre_stim + expobj.stim_duration_frames + post_stim * expobj.fps, 7)
+        labels_locs = np.linspace(int(pre_stim * fps) - int(pre_stim * fps), int(pre_stim * fps) + int(stim_duration*fps) + int(post_stim * fps), 7)
         ax.set_xticks(ticks=[int(label) for label in labels_locs])
         ax.set_xticklabels(labels)
         ax.set_xlabel('Time post stimulation (secs)')
