@@ -581,14 +581,12 @@ def make_colormap(seq):
     return LinearSegmentedColormap('CustomMap', cdict)
 
 
-# generate an array of random colors, based on previous
+# generate an array of random colors
 def _get_random_color(pastel_factor=0.5):
     return [(x + pastel_factor) / (1.0 + pastel_factor) for x in [random.uniform(0, 1.0) for i in [1, 2, 3]]]
 
-
 def _color_distance(c1, c2):
     return sum([abs(x[0] - x[1]) for x in zip(c1, c2)])
-
 
 def _generate_new_color(existing_colors, pastel_factor=0.5):
     max_distance = None
@@ -603,11 +601,15 @@ def _generate_new_color(existing_colors, pastel_factor=0.5):
             best_color = color
     return best_color
 
+def make_random_color_array(n_colors):
+    """
+    Generates a list of random colors for an input number of colors required.
 
-def make_random_color_array(n):
-    "n: # of colors to generate"
+    :param n_colors: # of colors required
+    :return: list of colors in RGB
+    """
     colors = []
-    for i in range(0, n):
+    for i in range(0, n_colors):
         colors.append(_generate_new_color(colors, pastel_factor=0.2))
     return colors
 

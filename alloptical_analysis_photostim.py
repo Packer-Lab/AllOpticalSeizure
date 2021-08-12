@@ -67,7 +67,7 @@ expobj.save()
 #### -------------------- ALL OPTICAL PHOTOSTIM AND ETC. ANALYSIS STEPS ################################################
 ########################################################################################################################
 
-# %% SUITE2P ROIS - PHOTOSTIM TARGETTED - PLOT AVG PHOTOSTIM PRE- POST- TRACE AVGed OVER ALL PHOTOSTIM. TRIALS
+# %% SUITE2P ROIS - PHOTOSTIM TARGETTED - PLOT AVG PHOTOSTIM PRE- POST- STIM TRACE AVGed OVER ALL PHOTOSTIM. TRIALS
 
 # x = np.asarray([i for i in expobj.good_photostim_cells_stim_responses_dFF[0]])
 x = np.asarray([i for i in expobj.targets_dfstdF_avg])

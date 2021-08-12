@@ -41,8 +41,12 @@ from numba import njit
 
 # %%
 def import_expobj(trial: str = None, prep: str = None, date: str = None, pkl_path: str = None, verbose: bool = True):
+    if date is None:
+        date = allopticalResults.metainfo.loc[allopticalResults.metainfo['prep_trial'] == '%s %s' % (prep, trial), 'date'].values[0]
+
     if pkl_path is None:
         pkl_path = "/home/pshah/mnt/qnap/Analysis/%s/%s/%s_%s/%s_%s.pkl" % (date, prep, date, trial, date, trial)
+
 
     if not os.path.exists(pkl_path):
         raise Exception('pkl path NOT found: ' + pkl_path)
@@ -98,6 +102,8 @@ class TwoPhotonImaging:
         :param suite2p_path: path to the suite2p outputs (plane0 file? or ops file? not sure yet)
         :param suite2p_run: set to true if suite2p is already run for this trial
         """
+
+        print('***** CREATING NEW TwoPhotonImaging with the following metainfo: ', metainfo)
 
         self.tiff_path_dir = tiff_path_dir
         self.tiff_path = tiff_path
@@ -4054,3 +4060,8 @@ def points_in_circle_np(radius, x0=0, y0=0, ):
     x, y = np.where((x_[:, np.newaxis] - x0) ** 2 + (y_ - y0) ** 2 <= radius ** 2)
     for x, y in zip(x_[x], y_[y]):
         yield x, y
+
+
+# import results superobject that will collect analyses from various individual experiments
+results_object_path = '/home/pshah/mnt/qnap/Analysis/alloptical_results_superobject.pkl'
+allopticalResults = import_resultsobj(pkl_path=results_object_path)

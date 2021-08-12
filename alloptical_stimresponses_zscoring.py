@@ -12,13 +12,11 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 
 # import results superobject
-
 results_object_path = '/home/pshah/mnt/qnap/Analysis/alloptical_results_superobject.pkl'
 allopticalResults = aoutils.import_resultsobj(pkl_path=results_object_path)
 
 
-# %% convert stim responses to z-scores - relative to pre-4ap scores
-# make sure to compare the appropriate pre and post 4ap trial comparisons
+# %% convert stim responses to z-scores - relative to pre-4ap scores - make sure to compare the appropriate pre and post 4ap trial comparisons
 
 allopticalResults.outsz_missing = []
 allopticalResults.insz_missing = []
@@ -32,7 +30,7 @@ for i in range(len(allopticalResults.pre_4ap_trials)):
     print(i, date, prep)
 
     # load up pre-4ap trial
-    expobj, experiment = aoutils.import_expobj(trial=pre4aptrial, date=date, prep=prep)
+    expobj, experiment = aoutils.import_expobj(trial=pre4aptrial, date=date, prep=prep, verbose=False)
 
     df = expobj.responses_SLMtargets.T  # df == stim frame x cells (photostim targets)
     if len(allopticalResults.pre_4ap_trials[i]) > 1:
@@ -47,7 +45,7 @@ for i in range(len(allopticalResults.pre_4ap_trials)):
                                 prep, pre4aptrial), 'date'])[0]
 
             # load up pre-4ap trial
-            expobj, experiment = aoutils.import_expobj(trial=pre4aptrial, date=date, prep=prep)
+            expobj, experiment = aoutils.import_expobj(trial=pre4aptrial, date=date, prep=prep, verbose=False)
             df_ = expobj.responses_SLMtargets.T
 
             # append additional dataframe to the first dataframe
@@ -73,7 +71,7 @@ for i in range(len(allopticalResults.pre_4ap_trials)):
     allopticalResults.stim_responses_zscores[prep]['%s' % comparison_number] = {'pre-4ap': {}, 'post-4ap': {}, 'in sz': {}}
     allopticalResults.stim_responses_zscores[prep]['%s' % comparison_number]['pre-4ap'] = df
 
-    allopticalResults.save()
+    # allopticalResults.save()
 
 
     # expobj.responses_SLMtargets_zscore = df
@@ -86,70 +84,10 @@ for i in range(len(allopticalResults.pre_4ap_trials)):
     ##### POST-4ap trials - OUT OF SZ PHOTOSTIMS - zscore to the mean and std of the same SLM target calculated from the pre-4ap trial
     post4aptrial = allopticalResults.post_4ap_trials[i][0][-5:]
     # load up post-4ap trial and stim responses
-    expobj, experiment = aoutils.import_expobj(trial=post4aptrial, date=date, prep=prep)
+    print('importing %s %s' % (prep, post4aptrial))
+    expobj, experiment = aoutils.import_expobj(trial=post4aptrial, date=date, prep=prep, verbose=False)
     if hasattr(expobj, 'outsz_responses_SLMtargets'):
         df = expobj.outsz_responses_SLMtargets.T
-    else:
-        print('**** need to run collecting outsz responses SLMtargets attr for %s %s ****' % (post4aptrial, prep))
-        allopticalResults.outsz_missing.append('%s %s' % (post4aptrial, prep))
-
-    if len(allopticalResults.post_4ap_trials[i]) > 1:
-        for j in range(len(allopticalResults.post_4ap_trials[i]))[1:]:
-            print(i, j)
-            # if there are multiple trials for this comparison then append stim frames for repeat trials to the dataframe
-            prep = allopticalResults.post_4ap_trials[i][j][:-6]
-            post4aptrial = allopticalResults.post_4ap_trials[i][j][-5:]
-            print(post4aptrial)
-            date = list(allopticalResults.slmtargets_stim_responses.loc[
-                            allopticalResults.slmtargets_stim_responses['prep_trial'] == '%s %s' % (
-                                prep, pre4aptrial), 'date'])[0]
-
-            # load up post-4ap trial and stim responses
-            expobj, experiment = aoutils.import_expobj(trial=post4aptrial, date=date, prep=prep)
-            if hasattr(expobj, 'outsz_responses_SLMtargets'):
-                df_ = expobj.outsz_responses_SLMtargets.T
-            else:
-                print('**** need to run collecting outsz responses SLMtargets attr for %s %s ****' % (post4aptrial, prep))
-                allopticalResults.outsz_missing.append('%s %s' % (post4aptrial, prep))
-
-            # append additional dataframe to the first dataframe
-            df.append(df_, ignore_index=True)
-
-
-    cols = list(df.columns)
-    for col in cols:
-        col_zscore = str(col) + '_z'
-        df[col_zscore] = (df[col] - pre_4ap_df.loc['mean', col])/pre_4ap_df.loc['std', col]
-
-    allopticalResults.stim_responses_zscores[prep]['%s' % comparison_number]['post-4ap'] = df
-
-
-
-
-    ##### POST-4ap trials - IN SZ PHOTOSTIMS - only PENUMBRA cells - zscore to the mean and std of the same SLM target calculated from the pre-4ap trial
-    post4aptrial = allopticalResults.post_4ap_trials[i][0][-5:]
-    # load up post-4ap trial and stim responses
-    expobj, experiment = aoutils.import_expobj(trial=post4aptrial, date=date, prep=prep)
-    if hasattr(expobj, 'slmtargets_sz_stim'):
-        if hasattr(expobj, 'insz_responses_SLMtargets'):
-            df = expobj.insz_responses_SLMtargets.T
-        else:
-            print('**** need to run collecting outsz responses SLMtargets attr for %s %s ****' % (post4aptrial, prep))
-            allopticalResults.insz_missing.append('%s %s' % (post4aptrial, prep))
-
-
-        # switch to NA for stims for cells which are classified in the sz
-        # collect stim responses with stims excluded as necessary
-        for target in df.columns:
-            # stims = [expobj.stim_start_frames.index(stim) for stim in expobj.stims_in_sz]
-            for stim in list(expobj.slmtargets_sz_stim.keys()):
-                if target in expobj.slmtargets_sz_stim[stim]:
-                    df.loc[expobj.stim_start_frames.index(stim)][target] = np.nan
-
-            # responses = [expobj.insz_responses_SLMtargets.loc[col][expobj.stim_start_frames.index(stim)] for stim in expobj.stims_in_sz if
-            #              col not in expobj.slmtargets_sz_stim[stim]]
-            # targets_avgresponses_exclude_stims_sz[row] = np.mean(responses)
-
 
         if len(allopticalResults.post_4ap_trials[i]) > 1:
             for j in range(len(allopticalResults.post_4ap_trials[i]))[1:]:
@@ -163,31 +101,92 @@ for i in range(len(allopticalResults.pre_4ap_trials)):
                                     prep, pre4aptrial), 'date'])[0]
 
                 # load up post-4ap trial and stim responses
-                expobj, experiment = aoutils.import_expobj(trial=post4aptrial, date=date, prep=prep)
-                if hasattr(expobj, 'insz_responses_SLMtargets'):
-                    df_ = expobj.insz_responses_SLMtargets.T
+                expobj, experiment = aoutils.import_expobj(trial=post4aptrial, date=date, prep=prep, verbose=False)
+                if hasattr(expobj, 'outsz_responses_SLMtargets'):
+                    df_ = expobj.outsz_responses_SLMtargets.T
+                    # append additional dataframe to the first dataframe
+                    df.append(df_, ignore_index=True)
                 else:
-                    print(
-                        '**** need to run collecting in sz responses SLMtargets attr for %s %s ****' % (post4aptrial, prep))
-                    allopticalResults.insz_missing.append('%s %s' % (post4aptrial, prep))
-
-                # append additional dataframe to the first dataframe
-                # switch to NA for stims for cells which are classified in the sz
-                # collect stim responses with stims excluded as necessary
-                for target in df.columns:
-                    # stims = [expobj.stim_start_frames.index(stim) for stim in expobj.stims_in_sz]
-                    for stim in list(expobj.slmtargets_sz_stim.keys()):
-                        if target in expobj.slmtargets_sz_stim[stim]:
-                            df_.loc[expobj.stim_start_frames.index(stim)][target] = np.nan
-
-                df.append(df_, ignore_index=True)
+                    print('**** 2 need to run collecting outsz responses SLMtargets attr for %s %s ****' % (post4aptrial, prep))
+                    allopticalResults.outsz_missing.append('%s %s' % (post4aptrial, prep))
 
         cols = list(df.columns)
         for col in cols:
             col_zscore = str(col) + '_z'
-            df[col_zscore] = (df[col] - pre_4ap_df.loc['mean', col]) / pre_4ap_df.loc['std', col]
+            df[col_zscore] = (df[col] - pre_4ap_df.loc['mean', col])/pre_4ap_df.loc['std', col]
 
-        allopticalResults.stim_responses_zscores[prep]['%s' % comparison_number]['in sz'] = df
+        allopticalResults.stim_responses_zscores[prep]['%s' % comparison_number]['post-4ap'] = df
+
+    else:
+        print('**** 1 need to run collecting outsz responses SLMtargets attr for %s %s ****' % (post4aptrial, prep))
+        allopticalResults.outsz_missing.append('%s %s' % (post4aptrial, prep))
+
+
+
+
+    ##### POST-4ap trials - IN SZ PHOTOSTIMS - only PENUMBRA cells - zscore to the mean and std of the same SLM target calculated from the pre-4ap trial
+    post4aptrial = allopticalResults.post_4ap_trials[i][0][-5:]
+    # load up post-4ap trial and stim responses
+    expobj, experiment = aoutils.import_expobj(trial=post4aptrial, date=date, prep=prep, verbose=False)
+    if hasattr(expobj, 'slmtargets_sz_stim'):
+        if hasattr(expobj, 'insz_responses_SLMtargets'):
+            df = expobj.insz_responses_SLMtargets.T
+
+
+            # switch to NA for stims for cells which are classified in the sz
+            # collect stim responses with stims excluded as necessary
+            for target in df.columns:
+                # stims = [expobj.stim_start_frames.index(stim) for stim in expobj.stims_in_sz]
+                for stim in list(expobj.slmtargets_sz_stim.keys()):
+                    if target in expobj.slmtargets_sz_stim[stim]:
+                        df.loc[expobj.stim_start_frames.index(stim)][target] = np.nan
+
+                # responses = [expobj.insz_responses_SLMtargets.loc[col][expobj.stim_start_frames.index(stim)] for stim in expobj.stims_in_sz if
+                #              col not in expobj.slmtargets_sz_stim[stim]]
+                # targets_avgresponses_exclude_stims_sz[row] = np.mean(responses)
+
+
+            if len(allopticalResults.post_4ap_trials[i]) > 1:
+                for j in range(len(allopticalResults.post_4ap_trials[i]))[1:]:
+                    print(i, j)
+                    # if there are multiple trials for this comparison then append stim frames for repeat trials to the dataframe
+                    prep = allopticalResults.post_4ap_trials[i][j][:-6]
+                    post4aptrial = allopticalResults.post_4ap_trials[i][j][-5:]
+                    print(post4aptrial)
+                    date = list(allopticalResults.slmtargets_stim_responses.loc[
+                                    allopticalResults.slmtargets_stim_responses['prep_trial'] == '%s %s' % (
+                                        prep, pre4aptrial), 'date'])[0]
+
+                    # load up post-4ap trial and stim responses
+                    expobj, experiment = aoutils.import_expobj(trial=post4aptrial, date=date, prep=prep, verbose=False)
+                    if hasattr(expobj, 'insz_responses_SLMtargets'):
+                        df_ = expobj.insz_responses_SLMtargets.T
+
+                        # append additional dataframe to the first dataframe
+                        # switch to NA for stims for cells which are classified in the sz
+                        # collect stim responses with stims excluded as necessary
+                        for target in df.columns:
+                            # stims = [expobj.stim_start_frames.index(stim) for stim in expobj.stims_in_sz]
+                            for stim in list(expobj.slmtargets_sz_stim.keys()):
+                                if target in expobj.slmtargets_sz_stim[stim]:
+                                    df_.loc[expobj.stim_start_frames.index(stim)][target] = np.nan
+
+                        df.append(df_, ignore_index=True)
+                    else:
+                        print(
+                            '**** 4 need to run collecting in sz responses SLMtargets attr for %s %s ****' % (post4aptrial, prep))
+                        allopticalResults.insz_missing.append('%s %s' % (post4aptrial, prep))
+
+
+            cols = list(df.columns)
+            for col in cols:
+                col_zscore = str(col) + '_z'
+                df[col_zscore] = (df[col] - pre_4ap_df.loc['mean', col]) / pre_4ap_df.loc['std', col]
+
+            allopticalResults.stim_responses_zscores[prep]['%s' % comparison_number]['in sz'] = df
+        else:
+            print('**** 3 need to run collecting insz responses SLMtargets attr for %s %s ****' % (post4aptrial, prep))
+            allopticalResults.insz_missing.append('%s %s' % (post4aptrial, prep))
 
 allopticalResults.save()
 
@@ -259,31 +258,65 @@ pj.plot_hist_density(data, x_label='z-score', title='All exps. stim responses zs
 
 
 
-# %% zscore of stim responses vs. TIME to seizure onset - original code for single experiments
-prep = 'RL108'
-date = '2020-12-18'
-trial = 't-013'
-expobj, experiment = aoutils.import_expobj(trial=trial, date=date, prep=prep)
-post_4ap_df = expobj.responses_SLMtargets_zscore
+# %% zscore of stim responses vs. TIME to seizure onset - original code for single experiments TODO
 
-# transform the rows of the stims responses dataframe to relative time to seizure
+stim_relative_szonset_vs_avg_zscore_alltargets_atstim = {}
 
-stims = list(post_4ap_df.index)
-stims_relative_sz = []
-for stim_idx in stims:
-    stim_frame = expobj.stim_start_frames[stim_idx]
-    closest_sz_onset = pj.findClosest(list=expobj.seizure_lfp_onsets, input=stim_frame)[0]
-    time_diff = (closest_sz_onset - stim_frame) / expobj.fps  # time difference in seconds
-    stims_relative_sz.append(round(time_diff, 3))
+for prep in allopticalResults.stim_responses_zscores.keys():
+    # prep = 'PS07'
+    count = 0
+    trials = []
+    for i in allopticalResults.post_4ap_trials:
+        if prep in i[0]:
+            count += 1
+            trials.append(i)
 
-cols = [col for col in post_4ap_df.columns if 'z' in str(col)]
-post_4ap_df_zscore_stim_relative_to_sz = post_4ap_df[cols]
-post_4ap_df_zscore_stim_relative_to_sz.index = stims_relative_sz  # take the original zscored df and assign a new index where the col names are times relative to sz onset
+    for comp in range(count):
+        comp += 1
 
-post_4ap_df_zscore_stim_relative_to_sz['avg'] = post_4ap_df_zscore_stim_relative_to_sz.T.mean()
+        # comp = 2
+        post_4ap_df = allopticalResults.stim_responses_zscores[prep][str(comp)]['post-4ap']
+        if len(post_4ap_df) > 0:
+            date = list(allopticalResults.metainfo.loc[allopticalResults.metainfo['prep_trial'] == trials[comp-1][0], 'date'])[0]
+            print('working on.. ', trials[comp-1][0], date)
+            stim_relative_szonset_vs_avg_zscore_alltargets_atstim[trials[comp-1][0]] = [[], []]
+            post4aptrial = trials[comp-1][0][-5:]
+            expobj, experiment = aoutils.import_expobj(trial=post4aptrial, date=date, prep=prep, verbose=False)
 
-fig, ax = plt.subplots(figsize=(8,5))
-ax.scatter(x=post_4ap_df_zscore_stim_relative_to_sz.index, y=post_4ap_df_zscore_stim_relative_to_sz['avg'])
+            # transform the rows of the stims responses dataframe to relative time to seizure
+            stims = list(post_4ap_df.index)
+            stims_relative_sz = []
+            for stim_idx in stims:
+                stim_frame = expobj.stim_start_frames[stim_idx]
+                closest_sz_onset = pj.findClosest(list=expobj.seizure_lfp_onsets, input=stim_frame)[0]
+                time_diff = (closest_sz_onset - stim_frame) / expobj.fps  # time difference in seconds
+                stims_relative_sz.append(round(time_diff, 3))
+
+            cols = [col for col in post_4ap_df.columns if 'z' in str(col)]
+            post_4ap_df_zscore_stim_relative_to_sz = post_4ap_df[cols]
+            post_4ap_df_zscore_stim_relative_to_sz.index = stims_relative_sz  # take the original zscored df and assign a new index where the col names are times relative to sz onset
+
+            # take average of all targets at a specific time to seizure onset
+            post_4ap_df_zscore_stim_relative_to_sz['avg'] = post_4ap_df_zscore_stim_relative_to_sz.T.mean()
+
+            stim_relative_szonset_vs_avg_zscore_alltargets_atstim[trials[comp-1][0]][0].append(stims_relative_sz)
+            stim_relative_szonset_vs_avg_zscore_alltargets_atstim[trials[comp-1][0]][1].append(post_4ap_df_zscore_stim_relative_to_sz['avg'].tolist())
+
+allopticalResults.stim_relative_szonset_vs_avg_zscore_alltargets_atstim = stim_relative_szonset_vs_avg_zscore_alltargets_atstim
+
+# %% plotting of post_4ap zscore_stim_relative_to_sz onset
+
+preps = [prep[:-6] for prep in allopticalResults.stim_relative_szonset_vs_avg_zscore_alltargets_atstim.keys()]
+
+fig, ax = plt.subplots(figsize=(8, 5))
+colors = pj.make_random_color_array(n_colors=len(np.unique(preps)))
+for i in range(len(np.unique(preps))):
+    for key in allopticalResults.stim_relative_szonset_vs_avg_zscore_alltargets_atstim.keys():
+        if preps[i] in key:
+            sz_time = allopticalResults.stim_relative_szonset_vs_avg_zscore_alltargets_atstim[key][0]
+            z_scores = allopticalResults.stim_relative_szonset_vs_avg_zscore_alltargets_atstim[key][1]
+            ax.scatter(x=sz_time, y=z_scores, facecolors=colors[i])
+ax.set_xlim(0, 100)
 fig.show()
 
 
@@ -311,6 +344,6 @@ post_4ap_df_zscore_stim_relative_to_sz.index = stims_relative_sz  # take the ori
 
 post_4ap_df_zscore_stim_relative_to_sz['avg'] = post_4ap_df_zscore_stim_relative_to_sz.T.mean()
 
-fig, ax = plt.subplots(figsize=(8,5))
+fig, ax = plt.subplots(figsize=(8, 5))
 ax.scatter(x=post_4ap_df_zscore_stim_relative_to_sz.index, y=post_4ap_df_zscore_stim_relative_to_sz['avg'])
 fig.show()

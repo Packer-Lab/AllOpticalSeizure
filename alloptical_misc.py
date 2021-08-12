@@ -7,6 +7,11 @@ import numpy as np
 
 import tifffile as tf
 
+# import results superobject that will collect analyses from various individual experiments
+results_object_path = '/home/pshah/mnt/qnap/Analysis/alloptical_results_superobject.pkl'
+allopticalResults = aoutils.import_resultsobj(pkl_path=results_object_path)
+
+
 # %%
 prep = 'PS18'
 date = '2021-02-02'
@@ -28,6 +33,15 @@ for trial in trials:
     # expobj.MeanSeizureImages(
     #     baseline_tiff="/home/pshah/mnt/qnap/Data/2020-12-18/2020-12-18_t-005/2020-12-18_t-005_Cycle00001_Ch3.tif",
     #     frames_last=1000)
+
+# %% running processing of SLM targets responses outsz
+
+prep = 'RL108'
+trial = 't-013'
+date = list(allopticalResults.metainfo.loc[allopticalResults.metainfo['prep_trial'] == (prep + ' ' + trial), 'date'])[0]
+
+expobj, experiment = aoutils.import_expobj(trial=trial, date=date, prep=prep, verbose=False)
+hasattr(expobj, 'outsz_responses_SLMtargets')
 
 
 # %% fixing squashing of images issue in PS18 trials
@@ -239,3 +253,13 @@ date = '2021-01-19'
 
 pj.ZProfile(movie="/home/pshah/mnt/qnap/Data/%s/%s_%s/%s_%s_Cycle00001_Ch3.tif" % (date, date, trial, date, trial),
             plot_image=True, figsize=[20, 4], title=(date + trial))
+
+
+# %% PLOT LFP WITH STIM TIMINGS FOR ALL-OPTICAL EXPERIMENT
+
+prep = 'PS07'
+trial = 't-017'
+date = list(allopticalResults.metainfo.loc[allopticalResults.metainfo['prep_trial'] == (prep + ' ' + trial), 'date'])[0]
+
+expobj, experiment = aoutils.import_expobj(trial=trial, date=date, prep=prep)
+aoplot.plot_lfp_stims(expobj)

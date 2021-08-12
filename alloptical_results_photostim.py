@@ -65,13 +65,20 @@ for trial in pre4ap_trials + post4ap_trials:
         expobj.metainfo['animal prep.'], expobj.metainfo['trial'])
     allopticalResults.slmtargets_stim_responses.loc[counter, 'date'] = expobj.metainfo['date']
     allopticalResults.slmtargets_stim_responses.loc[counter, 'exptype'] = expobj.metainfo['exptype']
-    if hasattr(expobj, 'stims_in_sz'):
-        allopticalResults.slmtargets_stim_responses.loc[counter, 'mean response (dF/stdF all targets)'] = np.mean(
-            [[np.mean(expobj.outsz_responses_SLMtargets[i]) for i in range(expobj.n_targets_total)]])
-        allopticalResults.slmtargets_stim_responses.loc[counter, 'mean response (dF/stdF all targets)'] = np.mean(
-            [[np.mean(expobj.outsz_responses_SLMtargets[i]) for i in range(expobj.n_targets_total)]])
-        allopticalResults.slmtargets_stim_responses.loc[counter, 'mean reliability (>0.3 dF/stdF)'] = np.mean(
-            list(expobj.outsz_StimSuccessRate_SLMtargets.values()))
+    if 'post' in expobj.metainfo['exptype']:
+        if hasattr(expobj, 'stims_in_sz'):
+            allopticalResults.slmtargets_stim_responses.loc[counter, 'mean response (dF/stdF all targets)'] = np.mean(
+                [[np.mean(expobj.outsz_responses_SLMtargets[i]) for i in range(expobj.n_targets_total)]])
+            allopticalResults.slmtargets_stim_responses.loc[counter, 'mean response (dF/stdF all targets)'] = np.mean(
+                [[np.mean(expobj.outsz_responses_SLMtargets[i]) for i in range(expobj.n_targets_total)]])
+            allopticalResults.slmtargets_stim_responses.loc[counter, 'mean reliability (>0.3 dF/stdF)'] = np.mean(
+                list(expobj.outsz_StimSuccessRate_SLMtargets.values()))
+        else:
+            if not hasattr(expobj, 'seizure_lfp_onsets'):
+                raise AttributeError('stims have not been classified as in or out of sz, no seizure lfp onsets for this trial')
+            else:
+                raise AttributeError('stims have not been classified as in or out of sz, but seizure lfp onsets attr was found, so need to troubleshoot further')
+
     else:
         allopticalResults.slmtargets_stim_responses.loc[counter, 'mean response (dF/stdF all targets)'] = np.mean(
             [[np.mean(expobj.responses_SLMtargets[i]) for i in range(expobj.n_targets_total)]])
@@ -96,7 +103,6 @@ allopticalResults.pre_4ap_trials = [
     ['PS04 t-012', 'PS04 t-014', 'PS04 t-017'],
     ['PS05 t-010'],
     ['PS07 t-007'],
-    ['PS07 t-008'],
     ['PS07 t-009'],
     ['PS06 t-008', 'PS06 t-009', 'PS06 t-010'],
     ['PS06 t-011'],
@@ -118,7 +124,6 @@ allopticalResults.post_4ap_trials = [
     ['PS04 t-018'],
     ['PS05 t-012'],
     ['PS07 t-011'],
-    ['PS07 t-016'],
     ['PS07 t-017'],
     ['PS06 t-014', 'PS06 t-015'],
     ['PS06 t-013'],
@@ -130,6 +135,11 @@ allopticalResults.post_4ap_trials = [
     # ['PS18 t-008']
 ]
 allopticalResults.save()
+
+
+# %% make a metainfo attribute to store all metainfo types of info for all experiments/trials
+allopticalResults.metainfo = allopticalResults.slmtargets_stim_responses.loc[:, ['prep_trial', 'date', 'exptype']]
+
 
 
 # %% BAR PLOT FOR PHOTOSTIM RESPONSE MAGNITUDE B/W PRE AND POST 4AP TRIALS
@@ -389,3 +399,25 @@ for i in allopticalResults.post_4ap_trials:
             expobj, experiment = aoutils.import_expobj(trial=trial, date=date, pkl_path=pkl_path, verbose=False)
 
         expobj.avg_stim_images(stim_timings=expobj.stim_start_frames, peri_frames=50, to_plot=True, save_img=True)
+
+
+# %% TODO plot trial-averaged photostimulation response dFF curves for all experiments - broken down by pre-4ap, outsz and insz (excl. sz bound)
+
+for i in allopticalResults.pre_4ap_trials:
+    prep = i[0][:-6]
+    trial = i[0][6:]
+    expobj, experiment = aoutils.import_expobj(trial=trial, prep=prep)
+
+    # x = np.asarray([i for i in expobj.good_photostim_cells_stim_responses_dFF[0]])
+    x = np.asarray([i for i in expobj.targets_dfstdF_avg])
+    # y_label = 'pct. dFF (normalized to prestim period)'
+    y_label = 'dFstdF (normalized to prestim period)'
+
+    aoplot.plot_periphotostim_avg(arr=x, expobj=expobj, stim_duration=expobj.stim_duration_frames, pre_stim=0.5,
+                                  post_stim=1.0, title=(experiment + '- responses of all photostim targets'),
+                                  figsize=[5, 4],
+                                  y_label=y_label, x_label='post-stimulation (seconds)')
+
+
+
+
