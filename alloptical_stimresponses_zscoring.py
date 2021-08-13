@@ -190,37 +190,7 @@ for i in range(len(allopticalResults.pre_4ap_trials)):
 
 allopticalResults.save()
 
-# %% plot histogram of zscore stim responses pre and post 4ap
-# prep = 'RL109'
-# date = '2020-12-19'
-
-
-# # post 4ap df
-# posttrial = post4aptrial
-# expobj, experiment = aoutils.import_expobj(trial=posttrial, date=date, prep=prep)
-# post_4ap_df = expobj.responses_SLMtargets_zscore
-#
-# # pre 4ap df
-# pretrial = pre4aptrial
-# expobj, experiment = aoutils.import_expobj(trial=pretrial, date=date, prep=prep)
-# pre_4ap_df = expobj.responses_SLMtargets_zscore
-
-# pre_4ap_zscores = []
-# for col in pre_4ap_df.columns:
-#     if 'z' in str(col):
-#         pre_4ap_zscores = pre_4ap_zscores + list(pre_4ap_df[col][:-2])
-#
-# post_4ap_zscores = []
-# for col in post_4ap_df.columns:
-#     if 'z' in str(col):
-#         post_4ap_zscores = post_4ap_zscores + list(post_4ap_df[col][:-2])
-#
-# data = [pre_4ap_zscores, post_4ap_zscores]
-# pj.plot_hist_density(data, x_label='z-score', title='%s stim zscores (normalized to pre-4ap) - pre vs. post' % prep, fill_color=['blue', 'orange'],
-#                      figsize=(5,4), legend_labels=['pre-4ap %s' % pretrial, 'post-4ap %s' % posttrial])
-
-
-
+# %% plot histogram of zscore stim responses pre and post 4ap and in sz (excluding cells inside sz boundary)
 
 pre_4ap_zscores = []
 post_4ap_zscores = []
