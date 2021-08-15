@@ -3650,49 +3650,53 @@ def calculate_SLMTarget_responses_dff(expobj, sz_filter=False, threshold=10, sti
 
     :param expobj:
     :param sz_filter:
-    :param threshold:
+    :param threshold: dFF threshold above which a response for a photostim trial is considered a success.
     :param stims_to_use:
     :return:
     """
     if stims_to_use is None:
         stims_to_use = range(len(expobj.stim_start_frames))
     else:
-        pass
+        AssertionError('no stims set to analyse [1]')
 
+    if sz_filter:
+        print(
+            "the seizure filtering by *cells* functionality is only available for s2p defined cell targets as of now")
+
+    # initializing pandas df that collects responses of stimulations
     d = {}
-    for stim in [expobj.stim_start_frames[stim_idx] for stim_idx in stims_to_use]:
+    for stim in stims_to_use:
         d[stim] = [None] * expobj.SLMTargets_stims_dff.shape[0]
     df = pd.DataFrame(d, index=range(expobj.SLMTargets_stims_dff.shape[0]))  # population dataframe
 
-    if sz_filter:
-        warnings.warn(
-            "the seizure filtering by *cells* functionality is only available for s2p defined cell targets as of now")
-
+    # initializing pandas df for binary showing of success and fails (1= success, 0= fails)
     reliability_slmtargets = {}  # dict will be used to store the reliability results for each targeted cell
     hits_slmtargets = {}  # to be converted in pandas df below - will contain 1 for every success stim, 0 for non success stims
-    for stim in expobj.stim_start_frames:
-        hits_slmtargets['%s' % stim] = [0] * expobj.SLMTargets_stims_dff.shape[0]  # start with 0 for all stims
-    hits_slmtargets_df = pd.DataFrame(hits_slmtargets, index=range(expobj.SLMTargets_stims_dff.shape[0]))  # population dataframe
+    for stim in stims_to_use:
+        hits_slmtargets[stim] = [None] * expobj.SLMTargets_stims_dff.shape[0]  # start with 0 for all stims
+    hits_slmtargets_df = pd.DataFrame(hits_slmtargets,
+                                      index=range(expobj.SLMTargets_stims_dff.shape[0]))  # population dataframe
 
     cell_ids = df.index
     for idx in range(len(cell_ids)):
         success = 0
         counter = 0
         responses = []
-        for x in stims_to_use:
-            trace = expobj.SLMTargets_stims_dff[idx][x]
+        for stim_idx in stims_to_use:
+            trace = expobj.SLMTargets_stims_dff[idx][stim_idx]
             response_result = np.mean(trace[expobj.pre_stim + expobj.stim_duration_frames + 1:
                                             expobj.pre_stim + expobj.stim_duration_frames +
                                             expobj.post_stim_response_frames_window])  # calculate the dF over pre-stim mean F response within the response window
             responses.append(round(response_result, 2))
             if response_result >= threshold:
                 success += 1
-                hits_slmtargets_df.loc[idx, expobj.stim_start_frames[x]] = 1
+                hits_slmtargets_df.loc[idx, stim_idx] = 1
+            else:
+                hits_slmtargets_df.loc[idx, stim_idx] = 0
 
-            df.loc[idx, expobj.stim_start_frames[x]] = response_result
+            df.loc[idx, stim_idx] = response_result
             counter += 1
         reliability_slmtargets[idx] = round(success / counter * 100., 2)
-
 
     return reliability_slmtargets, hits_slmtargets_df, df
 

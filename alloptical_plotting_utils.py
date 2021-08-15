@@ -345,7 +345,7 @@ def plot_periphotostim_avg(arr, stim_duration, fps, exp_prestim, pre_stim=1.0, p
             'edgecolor': str, edgecolor of the individual traces behind the mean trace
             'savepath': str, path to save plot to
             'show': bool = to show the plot or not
-    :return:
+    :return: list containing some items about the traces
     """
     x = list(range(arr.shape[1]))
     # x range in time (secs)
@@ -364,13 +364,16 @@ def plot_periphotostim_avg(arr, stim_duration, fps, exp_prestim, pre_stim=1.0, p
         if 'figsize' in kwargs.keys():
             fig, ax = plt.subplots(figsize=kwargs['figsize'])
         else:
-            fig, ax = plt.subplots(figsize=[8, 6])
+            fig, ax = plt.subplots(figsize=[5, 4])
 
 
     ax.margins(0)
     # ax.axvspan(expobj.pre_stim, expobj.pre_stim + expobj.stim_duration_frames, alpha=0.2, color='tomato')
     if 'Time' in x_label or 'time' in x_label:
-        ax.axvspan(exp_prestim/fps - 1/fps, exp_prestim/fps + stim_duration, alpha=1, color='tomato', zorder=3)
+        if avg_only is True:
+            ax.axvspan(exp_prestim/fps - 1/fps, exp_prestim/fps + stim_duration, alpha=1, color='tomato', zorder=3)
+        else:
+            ax.axvspan(exp_prestim / fps - 1 / fps, exp_prestim / fps + stim_duration, alpha=0.2, color='tomato')
     else:
         ax.axvspan(exp_prestim, exp_prestim + int(stim_duration*fps), alpha=0.2, color='tomato')
         x_label = 'Frames'

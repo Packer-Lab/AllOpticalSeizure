@@ -10,22 +10,122 @@ import utils.funcs_pj as pj
 results_object_path = '/home/pshah/mnt/qnap/Analysis/alloptical_results_superobject.pkl'
 allopticalResults = aoutils.import_resultsobj(pkl_path=results_object_path)
 
+
+
+# %% - making sure that hits dataframes are being made correctly
+
+i = allopticalResults.post_4ap_trials[0]
+j = 0
+prep = i[j][:-6]
+trial = i[j][-5:]
+print('\nprogress @ ', prep, trial)
+expobj, experiment = aoutils.import_expobj(trial=trial, prep=prep, verbose=False)
+
+# if 'post' in expobj.metainfo['exptype']:
+
+
+
+
+
+
+    # def calculate_SLMTarget_responses_dff(expobj, sz_filter=False, threshold=10, stims_to_use=None):
+    #     """
+    #     calculations of dFF responses to photostimulation of SLM Targets. Includes calculating reliability of slm targets,
+    #     saving success stim locations, and saving stim response magnitudes as pandas dataframe.
+    #
+    #     :param expobj:
+    #     :param sz_filter:
+    #     :param threshold: dFF threshold above which a response for a photostim trial is considered a success.
+    #     :param stims_to_use:
+    #     :return:
+    #     """
+
+stims = [expobj.stim_start_frames.index(stim) for stim in expobj.stim_start_frames]
+
+threshold = 10
+sz_filter = True
+stims_to_use = stims
+
+if stims_to_use is None:
+    stims_to_use = range(len(expobj.stim_start_frames))
+else:
+    AssertionError('no stims set to analyse [1]')
+
+if sz_filter:
+    print(
+        "the seizure filtering by *cells* functionality is only available for s2p defined cell targets as of now")
+
+# initializing pandas df that collects responses of stimulations
+d = {}
+for stim in stims_to_use:
+    d[stim] = [None] * expobj.SLMTargets_stims_dff.shape[0]
+df = pd.DataFrame(d, index=range(expobj.SLMTargets_stims_dff.shape[0]))  # population dataframe
+
+
+# initializing pandas df for binary showing of success and fails (1= success, 0= fails)
+reliability_slmtargets = {}  # dict will be used to store the reliability results for each targeted cell
+hits_slmtargets = {}  # to be converted in pandas df below - will contain 1 for every success stim, 0 for non success stims
+for stim in stims_to_use:
+    hits_slmtargets[stim] = [None] * expobj.SLMTargets_stims_dff.shape[0]  # start with 0 for all stims
+hits_slmtargets_df = pd.DataFrame(hits_slmtargets, index=range(expobj.SLMTargets_stims_dff.shape[0]))  # population dataframe
+
+cell_ids = df.index
+for idx in range(len(cell_ids)):
+    success = 0
+    counter = 0
+    responses = []
+    for stim_idx in stims_to_use:
+        trace = expobj.SLMTargets_stims_dff[idx][stim_idx]
+        response_result = np.mean(trace[expobj.pre_stim + expobj.stim_duration_frames + 1:
+                                        expobj.pre_stim + expobj.stim_duration_frames +
+                                        expobj.post_stim_response_frames_window])  # calculate the dF over pre-stim mean F response within the response window
+        responses.append(round(response_result, 2))
+        if response_result >= threshold:
+            success += 1
+            hits_slmtargets_df.loc[idx, stim_idx] = 1
+        else:
+            hits_slmtargets_df.loc[idx, stim_idx] = 0
+
+        df.loc[idx, stim_idx] = response_result
+        counter += 1
+    reliability_slmtargets[idx] = round(success / counter * 100., 2)
+
+
+
+
+        # expobj.outsz_StimSuccessRate_SLMtargets, expobj.outsz_hits_SLMtargets, expobj.outsz_responses_SLMtargets = \
+        #     calculate_SLMTarget_responses_dff(expobj, threshold=10, stims_to_use=stims)
+
+
+
+
 # %% TODO plot trial-averaged photostimulation response dFF curves for all experiments - broken down by pre-4ap, outsz and insz (excl. sz bound)
+# - need to plot only successful stims!
+
+
+
 
 ### POST-4AP TRIALS (OUT SZ STIMS)
 dffTraces_outsz = []
-f, ax = plt.subplots(figsize=[5, 4])
+# f, ax = plt.subplots(figsize=[5, 4])
 for i in allopticalResults.post_4ap_trials:
     for j in range(len(i)):
         # pass
-        # i = allopticalResults.post_4ap_trials[0]
-        # j = 0
+        i = allopticalResults.post_4ap_trials[0]
+        j = 0
         prep = i[j][:-6]
         trial = i[j][-5:]
         print('\nprogress @ ', prep, trial)
         expobj, experiment = aoutils.import_expobj(trial=trial, prep=prep, verbose=False)
 
         if 'post' in expobj.metainfo['exptype']:
+
+            stims = [expobj.stim_start_frames.index(stim) for stim in expobj.stims_out_sz]
+            # raw_traces_stims = expobj.SLMTargets_stims_raw[:, stims, :]
+            if len(stims) > 0:
+                expobj.outsz_StimSuccessRate_SLMtargets, expobj.outsz_hits_SLMtargets, expobj.outsz_responses_SLMtargets = \
+                    aoutils.calculate_SLMTarget_responses_dff(expobj, threshold=10, stims_to_use=stims)
+
 
             stims = [stim for stim in expobj.stim_start_frames if stim not in expobj.seizure_frames]
             expobj.SLMTargets_stims_dff_outsz, expobj.SLMTargets_stims_dffAvg_outsz, expobj.SLMTargets_stims_dfstdF_outsz, \
@@ -44,32 +144,64 @@ for i in allopticalResults.post_4ap_trials:
 
         # x = np.asarray([i for i in expobj.good_photostim_cells_stim_responses_dFF[0]])
         x = np.asarray([i for i in expobj.SLMTargets_stims_dffAvg_outsz])
+        # x_insz = np.asarray([i for i in expobj.SLMTargets_stims_dffAvg_insz])
         y_label = 'pct. dFF (normalized to prestim period)'
         # y_label = 'dFstdF (normalized to prestim period)'
 
-        # modify matrix to exclude data from stim_dur period
-        data = []
-        for trace in x:
-            trace_ = trace[:expobj.pre_stim]
-            trace_ = np.append(trace_, [[15]*3])  # setting 5 frames as stimduration
-            trace_ = np.append(trace_, trace[-expobj.post_stim:])
-            data.append(trace_)
+        avg_only = False
+        if avg_only:
+            # modify matrix to exclude data from stim_dur period and replace with a flat line
+            data_traces = []
+            for trace in x:
+                trace_ = trace[:expobj.pre_stim]
+                trace_ = np.append(trace_, [[15]*3])  # setting 5 frames as stimduration
+                trace_ = np.append(trace_, trace[-expobj.post_stim:])
+                data_traces.append(trace_)
+            data_traces = np.array(data_traces)
+            stim_dur = 3 / expobj.fps
+        else:
+            data_traces = expobj.SLMTargets_stims_dffAvg_outsz
+            stim_dur = expobj.stim_duration_frames / expobj.fps
 
-        data = np.array(data)
-        stim_dur = 3 / expobj.fps
-        # stim_dur = expobj.stim_duration_frames / expobj.fps
-        d = aoplot.plot_periphotostim_avg(arr=data, fps=expobj.fps,
+        d = aoplot.plot_periphotostim_avg(arr=data_traces, fps=expobj.fps,
                                           stim_duration=stim_dur, y_lims=[0, 30],
-                                          pre_stim=0.25, exp_prestim=expobj.pre_stim, post_stim=2.75, avg_only=True,
-                                          title='All exps. - avg. responses of photostim targets - out sz stims',
-                                          y_label=y_label, x_label='Time (secs)', fig=f, ax=ax, show=False)
+                                          pre_stim=0.25, exp_prestim=expobj.pre_stim, post_stim=2.75, avg_only=avg_only,
+                                          title='All exps. - avg. responses of photostim targets - out sz stims %s %s' % (prep, trial),
+                                          y_label=y_label, x_label='Time (secs)')#, fig=f, ax=ax, show=False)
 
 
-        print('|- shape of dFF array: ', data.shape)
+        print('|- shape of dFF array: ', data_traces.shape)
         dffTraces_outsz.append(d)
         expobj.save()
+# f.show()
+allopticalResults.dffTraces_outsz = np.asarray(dffTraces_outsz)
+allopticalResults.save()
+
+
+# %%
+from scipy.interpolate import interp1d
+
+traces = []
+x_long = allopticalResults.dffTraces_outsz[0][1]
+f, ax = plt.subplots(figsize=(6, 5))
+for trace in allopticalResults.dffTraces_outsz:
+    if len(trace[1]) < len(x_long):
+        f2 = interp1d(trace[1], trace[2])
+        trace_plot = f2(x_long)
+        ax.plot(x_long, trace_plot, color='gray')
+    else:
+        trace_plot = trace[2]
+        ax.plot(trace[1], trace_plot, color='gray')
+    traces.append(trace_plot)
+ax.axvspan(0.4, 0.48 + 3 / 30, alpha=1, color='tomato', zorder=3)  # where 30 == fps for the fastest imaging experiments
+avgTrace = np.mean(np.array(traces), axis=0)
+ax.plot(x_long, avgTrace, color='black', lw=3)
+ax.set_title('avg of all targets per exp. for stims out_sz - each trace = t-series from allopticalResults.post_4ap_trials - dFF photostim',
+             horizontalalignment='center', verticalalignment='top', pad=35, fontsize=13, wrap=True)
+ax.set_xlabel('Time (secs)')
+ax.set_ylabel('dFF (norm. to pre-stim F)')
 f.show()
-dffTraces_outsz = np.asarray(dffTraces_outsz)
+
 
 
 
@@ -113,7 +245,7 @@ for i in allopticalResults.pre_4ap_trials:
         print('|- shape of dFF array: ', data.shape)
         dffTraces.append(d)
 f.show()
-dffTraces = np.asarray(dffTraces)
+allopticalResults.dffTraces = np.asarray(dffTraces)
 
 
 # %%
@@ -121,9 +253,9 @@ dffTraces = np.asarray(dffTraces)
 from scipy.interpolate import interp1d
 
 traces = []
-x_long = dffTraces[0][1]
+x_long = allopticalResults.dffTraces[0][1]
 f, ax = plt.subplots(figsize=(6, 5))
-for trace in dffTraces:
+for trace in allopticalResults.dffTraces:
     if len(trace[1]) < len(x_long):
         f2 = interp1d(trace[1], trace[2])
         trace_plot = f2(x_long)
@@ -265,12 +397,12 @@ allopticalResults.pre_4ap_trials = [
 
 allopticalResults.post_4ap_trials = [
     ['RL108 t-013'],
-    ['RL108 t-011'],
+    # ['RL108 t-011'], - problem with pickle data being truncated
     ['RL109 t-020'],
     ['RL109 t-021'],
     ['RL109 t-018'],
     ['RL109 t-016', 'RL109 t-017'],
-    ['PS04 t-018'],
+    # ['PS04 t-018'], - problem with pickle data being truncated
     ['PS05 t-012'],
     ['PS07 t-011'],
     ['PS07 t-017'],
