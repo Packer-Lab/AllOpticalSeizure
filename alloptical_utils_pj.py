@@ -3299,202 +3299,6 @@ def corrcoef_array(array):
 # %% main functions used to initiate and run processing of experiments
 
 # for pre-processing PHOTOSTIM. experiments, creates the all-optical expobj saved in a pkl files at imaging tiff's loc - BEFORE running suite2p
-def run_photostim_preprocessing(trial, exp_type, tiffs_loc_dir, tiffs_loc, naparms_loc, paqs_loc, pkl_path, metainfo,
-                                new_tiffs, matlab_pairedmeasurements_path=None, processed_tiffs=True, discard_all=False, quick=False,
-                                analysis_save_path=''):
-    print('\n-----Processing trial # %s-----' % trial)
-
-    paths = [[tiffs_loc_dir, tiffs_loc, naparms_loc, paqs_loc, analysis_save_path, matlab_pairedmeasurements_path]]
-    print('tiffs_loc_dir, naparms_loc, paqs_loc paths:\n', paths)
-
-    if 'post' in exp_type and '4ap' in exp_type:
-        expobj = Post4ap(paths[0], metainfo=metainfo, stimtype='2pstim', discard_all=discard_all)
-    else:
-        expobj = alloptical(paths[0], metainfo=metainfo, stimtype='2pstim', quick=quick)
-
-    # for key, values in vars(expobj).items():
-    #     print(key)
-
-    # # these functions are moved to the alloptical class init() location
-    # expobj._parseNAPARMxml()
-    # expobj._parseNAPARMgpl()
-    # expobj._parsePVMetadata()
-    # expobj.stimProcessing(stim_channel='markpoints2packio')
-    # expobj._findTargets()
-    # expobj.find_photostim_frames()
-
-    # # collect information about seizures
-    # if 'post' in exp_type and '4ap' in exp_type:
-    #     expobj.collect_seizures_info(seizures_lfp_timing_matarray=matlab_pairedmeasurements_path, discard_all=discard_all)
-
-    if len(expobj.bad_frames) > 0:
-        print('***  Collected a total of ', len(expobj.bad_frames),
-              'photostim + seizure/CSD frames +  additional bad frames to bad_frames.npy  ***')
-
-    # if matlab_pairedmeasurements_path is not None or discard_all is True:
-    #     paq = paq_read(file_path=paqs_loc, plot=False)
-    #     # print(paq[0]['data'][0])  # print the frame clock signal from the .paq file to make sure its being read properly
-    #     bad_frames, expobj.seizure_frames, _, _ = \
-    #         frames_discard(paq=paq[0], input_array=matlab_pairedmeasurements_path,
-    #                        total_frames=expobj.n_frames, discard_all=discard_all)
-    #     print('\nTotal extra seizure/CSD or other frames to discard: ', len(bad_frames))
-    #     print('|\n -- first and last 10 indexes of these frames', bad_frames[:10], bad_frames[-10:])
-    #     expobj.append_bad_frames(
-    #         bad_frames=bad_frames)  # here only need to append the bad frames to the expobj.bad_frames property
-    #
-    # else:
-    #     expobj.seizure_frames = []
-    #     print('\nNo additional bad (seizure) frames needed for', tiffs_loc_dir)
-    #
-    # if len(expobj.bad_frames) > 0:
-    #     print('***Saving a total of ', len(expobj.bad_frames),
-    #           'photostim + seizure/CSD frames +  additional bad frames to bad_frames.npy***')
-    #     np.save('%s/bad_frames.npy' % tiffs_loc_dir,
-    #             expobj.bad_frames)  # save to npy file and remember to move npy file to tiff folder before running with suite2p
-
-    # Pickle the expobject output to save it for analysis
-
-    # with open(pkl_path, 'wb') as f:
-    #     pickle.dump(expobj, f)
-    # print("\nPkl saved to %s" % pkl_path)
-
-    # make processed tiffs
-    if processed_tiffs:
-        rm_artifacts_tiffs(expobj, tiffs_loc=tiffs_loc, new_tiffs=new_tiffs)
-
-    print('\n----- COMPLETED RUNNING run_photostim_processing() *******')
-    print(metainfo)
-
-    return expobj
-
-# after running suite2p
-def run_alloptical_processing_photostim(expobj, to_suite2p, baseline_trials, plots: bool = True, force_redo: bool = False,
-                                        post_stim_response_window_msec=500):
-
-    if force_redo:
-        expobj._findTargets()
-
-        if not hasattr(expobj, 'meanRawFluTrace'):
-            expobj.mean_raw_flu_trace(plot=True)
-
-        if plots:
-            aoplot.plotMeanRawFluTrace(expobj=expobj, stim_span_color=None, x_axis='frames', figsize=[20, 3])
-            # aoplot.plotLfpSignal(expobj, stim_span_color=None, x_axis='frames', figsize=[20, 3])
-            aoplot.plotSLMtargetsLocs(expobj)
-            aoplot.plot_lfp_stims(expobj)
-
-        ####################################################################################################################
-        # prep for importing data from suite2p for this whole experiment
-        # determine which frames to retrieve from the overall total s2p output
-
-        if not hasattr(expobj, 'suite2p_trials'):
-            expobj.suite2p_trials = to_suite2p
-            expobj.baseline_trials = baseline_trials
-            expobj.save()
-
-        # main function that imports suite2p data and adds attributes to the expobj
-        expobj.subset_frames_current_trial(trial=expobj.metainfo['trial'], to_suite2p=expobj.suite2p_trials,
-                                           baseline_trials=expobj.baseline_trials, force_redo=force_redo)
-        expobj.s2pProcessing(s2p_path=expobj.s2p_path, subset_frames=expobj.curr_trial_frames, subtract_neuropil=True,
-                             baseline_frames=expobj.baseline_frames, force_redo=force_redo)
-        # expobj.target_coords_all = expobj.target_coords
-        expobj.s2p_targets(force_redo=True)
-        s2pMaskStack(obj=expobj, pkl_list=[expobj.pkl_path], s2p_path=expobj.s2p_path,
-                     parent_folder=expobj.analysis_save_path, force_redo=force_redo)
-
-        ####################################################################################################################
-        # STA - raw SLM targets processing
-
-        # collect raw Flu data from SLM targets
-        expobj.raw_traces_from_targets(force_redo=force_redo)
-
-    plot = True
-    if plot:
-        aoplot.plotSLMtargetsLocs(expobj, background=expobj.meanFluImg, title='SLM targets location w/ mean Flu img')
-        aoplot.plotSLMtargetsLocs(expobj, background=expobj.meanFluImg_registered,
-                                  title='SLM targets location w/ registered mean Flu img')
-
-    # collect SLM photostim individual targets -- individual, full traces, dff normalized
-    expobj.dff_SLMTargets = normalize_dff(np.array(expobj.raw_SLMTargets))
-    expobj.save()
-
-    # collect and plot peri- photostim traces for individual SLM target, incl. individual traces for each stim
-    expobj.pre_stim = int(0.5 * expobj.fps) # length of pre stim trace collected
-    expobj.post_stim = int(3 * expobj.fps)  # length of post stim trace collected
-    expobj.post_stim_response_window_msec = post_stim_response_window_msec
-    expobj.post_stim_response_frames_window = int(expobj.fps * expobj.post_stim_response_window_msec/1000)
-
-    # all stims (use for pre-4ap trials)
-    if 'pre' in expobj.metainfo['exptype']:
-        expobj.SLMTargets_stims_dff, expobj.SLMTargets_stims_dffAvg, expobj.SLMTargets_stims_dfstdF, \
-        expobj.SLMTargets_stims_dfstdF_avg, expobj.SLMTargets_stims_raw, expobj.SLMTargets_stims_rawAvg = \
-            expobj.get_alltargets_stim_traces_norm(pre_stim=expobj.pre_stim, post_stim=expobj.post_stim, stims=expobj.stim_start_frames)
-
-    # only out of sz stims (use for post-4ap trials)
-    elif 'post' in expobj.metainfo['exptype']:
-        stims = [stim for stim in expobj.stim_start_frames if stim not in expobj.seizure_frames]
-        expobj.SLMTargets_stims_dff_outsz, expobj.SLMTargets_stims_dffAvg_outsz, expobj.SLMTargets_stims_dfstdF_outsz, \
-        expobj.SLMTargets_stims_dfstdF_avg_outsz, expobj.SLMTargets_stims_raw_outsz, expobj.SLMTargets_stims_rawAvg_outsz = \
-            expobj.get_alltargets_stim_traces_norm(pre_stim=expobj.pre_stim, post_stim=expobj.post_stim, stims=stims)
-
-    # only in sz stims (use for post-4ap trials) - includes exclusion of cells inside of sz boundary
-        stims = [expobj.stim_start_frames.index(stim) for stim in expobj.stims_in_sz]
-        expobj.SLMTargets_stims_dff_insz, expobj.SLMTargets_stims_dffAvg_insz, expobj.SLMTargets_stims_dfstdF_insz, \
-        expobj.SLMTargets_stims_dfstdF_avg_insz, expobj.SLMTargets_stims_raw_insz, expobj.SLMTargets_stims_rawAvg_insz = \
-            expobj.get_alltargets_stim_traces_norm(pre_stim=expobj.pre_stim, post_stim=expobj.post_stim, stims=stims, filter_sz=True)
-
-    else:
-        raise Exception('something very weird has happened. exptype for expobj not defined as pre or post 4ap')
-
-    # photostim. SUCCESS RATE MEASUREMENTS and PLOT - SLM PHOTOSTIM TARGETED CELLS
-    # measure, for each cell, the pct of trials in which the dF_stdF > 20% post stim (normalized to pre-stim avgF for the trial and cell)
-    # can plot this as a bar plot for now showing the distribution of the reliability measurement
-
-    SLMtarget_ids = list(range(len(expobj.SLMTargets_stims_dfstdF)))
-
-    if hasattr(expobj, 'stims_in_sz'):
-        seizure_filter = True
-
-        stims = [expobj.stim_start_frames.index(stim) for stim in expobj.stims_out_sz]
-        # raw_traces_stims = expobj.SLMTargets_stims_raw[:, stims, :]
-        if len(stims) > 0:
-
-            expobj.outsz_StimSuccessRate_SLMtargets, expobj.outsz_hits_SLMtargets, expobj.outsz_responses_SLMtargets = \
-                calculate_SLMTarget_responses_dff(expobj, threshold=10, stims_to_use=stims)
-
-            # expobj.outsz_StimSuccessRate_SLMtargets, expobj.outsz_hits_SLMtargets, expobj.outsz_responses_SLMtargets = \
-            #     calculate_StimSuccessRate(expobj, cell_ids=SLMtarget_ids, raw_traces_stims=raw_traces_stims,
-            #                               dff_threshold=10, post_stim_response_frames_window=expobj.post_stim_response_frames_window,
-            #                               pre_stim=expobj.pre_stim, sz_filter=seizure_filter,
-            #                               verbose=True, plot=False)
-
-
-        stims = [expobj.stim_start_frames.index(stim) for stim in expobj.stims_in_sz]
-        # raw_traces_stims = expobj.SLMTargets_stims_raw[:, stims, :]
-        if len(stims) > 0:
-            expobj.insz_StimSuccessRate_SLMtargets, expobj.insz_hits_SLMtargets, expobj.insz_responses_SLMtargets = \
-                calculate_SLMTarget_responses_dff(expobj, threshold=10, stims_to_use=stims, sz_filter=True)
-
-            # expobj.insz_StimSuccessRate_SLMtargets, expobj.insz_hits_SLMtargets, expobj.insz_responses_SLMtargets = \
-            #     calculate_StimSuccessRate(expobj, cell_ids=SLMtarget_ids, raw_traces_stims=raw_traces_stims,
-            #                               dff_threshold=10, post_stim_response_frames_window=expobj.post_stim_response_frames_window,
-            #                               pre_stim=expobj.pre_stim, sz_filter=seizure_filter,
-            #                               verbose=True, plot=False)
-
-    else:
-        seizure_filter = False
-        print('\n Calculating stim success rates and response magnitudes ***********')
-        expobj.StimSuccessRate_SLMtargets, expobj.hits_SLMtargets, expobj.responses_SLMtargets = \
-            calculate_SLMTarget_responses_dff(expobj, threshold=10, stims_to_use=expobj.stim_start_frames)
-
-
-        # expobj.StimSuccessRate_SLMtargets, expobj.hits_SLMtargets, expobj.responses_SLMtargets = \
-        #     calculate_StimSuccessRate(expobj, cell_ids=SLMtarget_ids, raw_traces_stims=expobj.SLMTargets_stims_raw,
-        #                               dff_threshold=10, post_stim_response_frames_window=expobj.post_stim_response_frames_window,
-        #                               pre_stim=expobj.pre_stim, sz_filter=seizure_filter,
-        #                               verbose=True, plot=False)
-
-    expobj.save()
 
 # calculate reliability of photostim responsiveness of all of the targeted cells (found in s2p output)
 def calculate_StimSuccessRate(expobj, cell_ids: list, raw_traces_stims=None, dfstdf_threshold=None, post_stim_response_frames_window=10,
@@ -3643,7 +3447,7 @@ def calculate_StimSuccessRate(expobj, cell_ids: list, raw_traces_stims=None, dfs
     return reliability_cells, hits_cells, responses_cells
 
 
-def calculate_SLMTarget_responses_dff(expobj, sz_filter=False, threshold=10, stims_to_use=None):
+def calculate_SLMTarget_responses_dff(expobj, threshold=10, stims_to_use=None):
     """
     calculations of dFF responses to photostimulation of SLM Targets. Includes calculating reliability of slm targets,
     saving success stim locations, and saving stim response magnitudes as pandas dataframe.
@@ -3656,33 +3460,34 @@ def calculate_SLMTarget_responses_dff(expobj, sz_filter=False, threshold=10, sti
     """
     if stims_to_use is None:
         stims_to_use = range(len(expobj.stim_start_frames))
+        stims_idx = [expobj.stim_start_frames.index(stim) for stim in stims_to_use]
+    elif stims_to_use:
+        stims_idx = [expobj.stim_start_frames.index(stim) for stim in stims_to_use]
     else:
         AssertionError('no stims set to analyse [1]')
 
-    if sz_filter:
-        print(
-            "the seizure filtering by *cells* functionality is only available for s2p defined cell targets as of now")
-
     # initializing pandas df that collects responses of stimulations
     d = {}
-    for stim in stims_to_use:
+    for stim in stims_idx:
         d[stim] = [None] * expobj.SLMTargets_stims_dff.shape[0]
     df = pd.DataFrame(d, index=range(expobj.SLMTargets_stims_dff.shape[0]))  # population dataframe
 
+
     # initializing pandas df for binary showing of success and fails (1= success, 0= fails)
-    reliability_slmtargets = {}  # dict will be used to store the reliability results for each targeted cell
     hits_slmtargets = {}  # to be converted in pandas df below - will contain 1 for every success stim, 0 for non success stims
-    for stim in stims_to_use:
+    for stim in stims_idx:
         hits_slmtargets[stim] = [None] * expobj.SLMTargets_stims_dff.shape[0]  # start with 0 for all stims
     hits_slmtargets_df = pd.DataFrame(hits_slmtargets,
                                       index=range(expobj.SLMTargets_stims_dff.shape[0]))  # population dataframe
+
+    reliability_slmtargets = {}  # dict will be used to store the reliability results for each targeted cell
 
     cell_ids = df.index
     for idx in range(len(cell_ids)):
         success = 0
         counter = 0
         responses = []
-        for stim_idx in stims_to_use:
+        for stim_idx in stims_idx:
             trace = expobj.SLMTargets_stims_dff[idx][stim_idx]
             response_result = np.mean(trace[expobj.pre_stim + expobj.stim_duration_frames + 1:
                                             expobj.pre_stim + expobj.stim_duration_frames +
@@ -3699,6 +3504,203 @@ def calculate_SLMTarget_responses_dff(expobj, sz_filter=False, threshold=10, sti
         reliability_slmtargets[idx] = round(success / counter * 100., 2)
 
     return reliability_slmtargets, hits_slmtargets_df, df
+
+
+def calculate_SLMTarget_SuccessRate(hits_df, stims_idx_l: list):
+    """uses outputs of calculate_SLMTarget_responses_dff to calculate overall successrate of the specified stims"""
+
+    reliability_slmtargets = {}
+    for target_idx in hits_df.index:
+        success = 0
+        counter = 0
+        for stim in stims_idx_l:
+            counter += 1
+            if hits_df.loc[target_idx, stim] == 1:
+                success += 1
+            else:
+                success += 0
+
+        reliability_slmtargets[target_idx] = round(success / counter * 100., 2)
+
+    return reliability_slmtargets
+
+
+def run_photostim_preprocessing(trial, exp_type, tiffs_loc_dir, tiffs_loc, naparms_loc, paqs_loc, pkl_path, metainfo,
+                                new_tiffs, matlab_pairedmeasurements_path=None, processed_tiffs=True, discard_all=False, quick=False,
+                                analysis_save_path=''):
+    print('\n-----Processing trial # %s-----' % trial)
+
+    paths = [[tiffs_loc_dir, tiffs_loc, naparms_loc, paqs_loc, analysis_save_path, matlab_pairedmeasurements_path]]
+    print('tiffs_loc_dir, naparms_loc, paqs_loc paths:\n', paths)
+
+    if 'post' in exp_type and '4ap' in exp_type:
+        expobj = Post4ap(paths[0], metainfo=metainfo, stimtype='2pstim', discard_all=discard_all)
+    else:
+        expobj = alloptical(paths[0], metainfo=metainfo, stimtype='2pstim', quick=quick)
+
+    # for key, values in vars(expobj).items():
+    #     print(key)
+
+    # # these functions are moved to the alloptical class init() location
+    # expobj._parseNAPARMxml()
+    # expobj._parseNAPARMgpl()
+    # expobj._parsePVMetadata()
+    # expobj.stimProcessing(stim_channel='markpoints2packio')
+    # expobj._findTargets()
+    # expobj.find_photostim_frames()
+
+    # # collect information about seizures
+    # if 'post' in exp_type and '4ap' in exp_type:
+    #     expobj.collect_seizures_info(seizures_lfp_timing_matarray=matlab_pairedmeasurements_path, discard_all=discard_all)
+
+    if len(expobj.bad_frames) > 0:
+        print('***  Collected a total of ', len(expobj.bad_frames),
+              'photostim + seizure/CSD frames +  additional bad frames to bad_frames.npy  ***')
+
+    # if matlab_pairedmeasurements_path is not None or discard_all is True:
+    #     paq = paq_read(file_path=paqs_loc, plot=False)
+    #     # print(paq[0]['data'][0])  # print the frame clock signal from the .paq file to make sure its being read properly
+    #     bad_frames, expobj.seizure_frames, _, _ = \
+    #         frames_discard(paq=paq[0], input_array=matlab_pairedmeasurements_path,
+    #                        total_frames=expobj.n_frames, discard_all=discard_all)
+    #     print('\nTotal extra seizure/CSD or other frames to discard: ', len(bad_frames))
+    #     print('|\n -- first and last 10 indexes of these frames', bad_frames[:10], bad_frames[-10:])
+    #     expobj.append_bad_frames(
+    #         bad_frames=bad_frames)  # here only need to append the bad frames to the expobj.bad_frames property
+    #
+    # else:
+    #     expobj.seizure_frames = []
+    #     print('\nNo additional bad (seizure) frames needed for', tiffs_loc_dir)
+    #
+    # if len(expobj.bad_frames) > 0:
+    #     print('***Saving a total of ', len(expobj.bad_frames),
+    #           'photostim + seizure/CSD frames +  additional bad frames to bad_frames.npy***')
+    #     np.save('%s/bad_frames.npy' % tiffs_loc_dir,
+    #             expobj.bad_frames)  # save to npy file and remember to move npy file to tiff folder before running with suite2p
+
+    # Pickle the expobject output to save it for analysis
+
+    # with open(pkl_path, 'wb') as f:
+    #     pickle.dump(expobj, f)
+    # print("\nPkl saved to %s" % pkl_path)
+
+    # make processed tiffs
+    if processed_tiffs:
+        rm_artifacts_tiffs(expobj, tiffs_loc=tiffs_loc, new_tiffs=new_tiffs)
+
+    print('\n----- COMPLETED RUNNING run_photostim_processing() *******')
+    print(metainfo)
+
+    return expobj
+
+# after running suite2p
+def run_alloptical_processing_photostim(expobj, to_suite2p, baseline_trials, plots: bool = True, force_redo: bool = False,
+                                        post_stim_response_window_msec=500):
+
+    if force_redo:
+        expobj._findTargets()
+
+        if not hasattr(expobj, 'meanRawFluTrace'):
+            expobj.mean_raw_flu_trace(plot=True)
+
+        if plots:
+            aoplot.plotMeanRawFluTrace(expobj=expobj, stim_span_color=None, x_axis='frames', figsize=[20, 3])
+            # aoplot.plotLfpSignal(expobj, stim_span_color=None, x_axis='frames', figsize=[20, 3])
+            aoplot.plotSLMtargetsLocs(expobj)
+            aoplot.plot_lfp_stims(expobj)
+
+        ####################################################################################################################
+        # prep for importing data from suite2p for this whole experiment
+        # determine which frames to retrieve from the overall total s2p output
+
+        if not hasattr(expobj, 'suite2p_trials'):
+            expobj.suite2p_trials = to_suite2p
+            expobj.baseline_trials = baseline_trials
+            expobj.save()
+
+        # main function that imports suite2p data and adds attributes to the expobj
+        expobj.subset_frames_current_trial(trial=expobj.metainfo['trial'], to_suite2p=expobj.suite2p_trials,
+                                           baseline_trials=expobj.baseline_trials, force_redo=force_redo)
+        expobj.s2pProcessing(s2p_path=expobj.s2p_path, subset_frames=expobj.curr_trial_frames, subtract_neuropil=True,
+                             baseline_frames=expobj.baseline_frames, force_redo=force_redo)
+        # expobj.target_coords_all = expobj.target_coords
+        expobj.s2p_targets(force_redo=True)
+        s2pMaskStack(obj=expobj, pkl_list=[expobj.pkl_path], s2p_path=expobj.s2p_path,
+                     parent_folder=expobj.analysis_save_path, force_redo=force_redo)
+
+        ####################################################################################################################
+        # STA - raw SLM targets processing
+
+        # collect raw Flu data from SLM targets
+        expobj.raw_traces_from_targets(force_redo=force_redo)
+
+    plot = True
+    if plot:
+        aoplot.plotSLMtargetsLocs(expobj, background=expobj.meanFluImg, title='SLM targets location w/ mean Flu img')
+        aoplot.plotSLMtargetsLocs(expobj, background=expobj.meanFluImg_registered,
+                                  title='SLM targets location w/ registered mean Flu img')
+
+    # collect SLM photostim individual targets -- individual, full traces, dff normalized
+    expobj.dff_SLMTargets = normalize_dff(np.array(expobj.raw_SLMTargets))
+    expobj.save()
+
+    # collect and plot peri- photostim traces for individual SLM target, incl. individual traces for each stim
+    expobj.pre_stim = int(0.5 * expobj.fps) # length of pre stim trace collected
+    expobj.post_stim = int(3 * expobj.fps)  # length of post stim trace collected
+    expobj.post_stim_response_window_msec = post_stim_response_window_msec
+    expobj.post_stim_response_frames_window = int(expobj.fps * expobj.post_stim_response_window_msec/1000)
+
+    # all stims (use for pre-4ap trials)
+    if 'pre' in expobj.metainfo['exptype']:
+        expobj.SLMTargets_stims_dff, expobj.SLMTargets_stims_dffAvg, expobj.SLMTargets_stims_dfstdF, \
+        expobj.SLMTargets_stims_dfstdF_avg, expobj.SLMTargets_stims_raw, expobj.SLMTargets_stims_rawAvg = \
+            expobj.get_alltargets_stim_traces_norm(pre_stim=expobj.pre_stim, post_stim=expobj.post_stim, stims=expobj.stim_start_frames)
+
+    # only out of sz stims (use for post-4ap trials)
+    elif 'post' in expobj.metainfo['exptype']:
+        stims = [stim for stim in expobj.stim_start_frames if stim not in expobj.seizure_frames]
+        expobj.SLMTargets_stims_dff_outsz, expobj.SLMTargets_stims_dffAvg_outsz, expobj.SLMTargets_stims_dfstdF_outsz, \
+        expobj.SLMTargets_stims_dfstdF_avg_outsz, expobj.SLMTargets_stims_raw_outsz, expobj.SLMTargets_stims_rawAvg_outsz = \
+            expobj.get_alltargets_stim_traces_norm(pre_stim=expobj.pre_stim, post_stim=expobj.post_stim, stims=stims)
+
+    # only in sz stims (use for post-4ap trials) - includes exclusion of cells inside of sz boundary
+        stims = [expobj.stim_start_frames.index(stim) for stim in expobj.stims_in_sz]
+        expobj.SLMTargets_stims_dff_insz, expobj.SLMTargets_stims_dffAvg_insz, expobj.SLMTargets_stims_dfstdF_insz, \
+        expobj.SLMTargets_stims_dfstdF_avg_insz, expobj.SLMTargets_stims_raw_insz, expobj.SLMTargets_stims_rawAvg_insz = \
+            expobj.get_alltargets_stim_traces_norm(pre_stim=expobj.pre_stim, post_stim=expobj.post_stim, stims=stims, filter_sz=True)
+
+    else:
+        raise Exception('something very weird has happened. exptype for expobj not defined as pre or post 4ap [1]')
+
+    # photostim. SUCCESS RATE MEASUREMENTS and PLOT - SLM PHOTOSTIM TARGETED CELLS
+    # measure, for each cell, the pct of trials in which the dF_stdF > 20% post stim (normalized to pre-stim avgF for the trial and cell)
+    # can plot this as a bar plot for now showing the distribution of the reliability measurement
+
+    SLMtarget_ids = list(range(len(expobj.SLMTargets_stims_dfstdF)))
+
+    if 'post' in expobj.metainfo['exptype']:
+        seizure_filter = True
+
+        print('\n Calculating stim success rates and response magnitudes *********** [2]')
+        expobj.StimSuccessRate_SLMtargets, expobj.hits_SLMtargets, expobj.responses_SLMtargets = \
+            calculate_SLMTarget_responses_dff(expobj, threshold=10, stims_to_use=expobj.stim_start_frames)
+
+        stims_outsz_idx = [expobj.stim_start_frames.index(stim) for stim in expobj.stims_out_sz]
+        if len(stims_outsz_idx) > 0:
+            expobj.outsz_StimSuccessRate_SLMtargets = calculate_SLMTarget_SuccessRate(hits_df=expobj.hits_SLMtargets, stims_idx_l=stims_outsz_idx)
+
+        stims_insz_idx = [expobj.stim_start_frames.index(stim) for stim in expobj.stims_in_sz]
+        if len(stims_insz_idx) > 0:
+            expobj.insz_StimSuccessRate_SLMtargets = calculate_SLMTarget_SuccessRate(hits_df=expobj.hits_SLMtargets, stims_idx_l=stims_insz_idx)
+
+
+    else:
+        seizure_filter = False
+        print('\n Calculating stim success rates and response magnitudes *********** [3]')
+        expobj.StimSuccessRate_SLMtargets, expobj.hits_SLMtargets, expobj.responses_SLMtargets = \
+            calculate_SLMTarget_responses_dff(expobj, threshold=10, stims_to_use=expobj.stim_start_frames)
+
+    expobj.save()
 
 
 # calculate the dFF responses of the non-targeted cells, create a pandas df of the post-stim dFF responses of all cells
