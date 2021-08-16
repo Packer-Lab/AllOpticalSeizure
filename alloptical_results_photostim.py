@@ -16,9 +16,6 @@ allopticalResults = aoutils.import_resultsobj(pkl_path=results_object_path)
 # %% TODO plot trial-averaged photostimulation response dFF curves for all experiments - broken down by pre-4ap, outsz and insz (excl. sz bound)
 # - need to plot only successful stims!
 
-
-
-
 ### POST-4AP TRIALS (OUT SZ STIMS)
 dffTraces_outsz = []
 # f, ax = plt.subplots(figsize=[5, 4])
@@ -32,29 +29,16 @@ for i in allopticalResults.post_4ap_trials:
         print('\nprogress @ ', prep, trial)
         expobj, experiment = aoutils.import_expobj(trial=trial, prep=prep, verbose=False)
 
+        redo_processing = False  # flag to use when rerunning this whole for loop multiple times
         if 'post' in expobj.metainfo['exptype']:
+            if redo_processing:
+                aoutils.run_alloptical_processing_photostim(expobj, to_suite2p=expobj.suite2p_trials, baseline_trials=expobj.baseline_trials,
+                                                            plots=True, force_redo=False)
 
-            stims = [expobj.stim_start_frames.index(stim) for stim in expobj.stims_out_sz]
-            # raw_traces_stims = expobj.SLMTargets_stims_raw[:, stims, :]
-            if len(stims) > 0:
-                expobj.outsz_StimSuccessRate_SLMtargets, expobj.outsz_hits_SLMtargets, expobj.outsz_responses_SLMtargets = \
-                    aoutils.calculate_SLMTarget_responses_dff(expobj, threshold=10, stims_to_use=stims)
+#### use expobj.hits_SLMtargets for determining which photostim trials to use - setting this up to only plot successfull trials
 
+    # make a new average
 
-            stims = [stim for stim in expobj.stim_start_frames if stim not in expobj.seizure_frames]
-            expobj.SLMTargets_stims_dff_outsz, expobj.SLMTargets_stims_dffAvg_outsz, expobj.SLMTargets_stims_dfstdF_outsz, \
-            expobj.SLMTargets_stims_dfstdF_avg_outsz, expobj.SLMTargets_stims_raw_outsz, expobj.SLMTargets_stims_rawAvg_outsz = \
-                expobj.get_alltargets_stim_traces_norm(pre_stim=expobj.pre_stim, post_stim=expobj.post_stim,
-                                                       stims=stims)
-
-            if hasattr(expobj, 'stims_in_sz'):
-                # only in sz stims (use for post-4ap trials) - includes exclusion of cells inside of sz boundary
-                expobj.SLMTargets_stims_dff_insz, expobj.SLMTargets_stims_dffAvg_insz, expobj.SLMTargets_stims_dfstdF_insz, \
-                expobj.SLMTargets_stims_dfstdF_avg_insz, expobj.SLMTargets_stims_raw_insz, expobj.SLMTargets_stims_rawAvg_insz = \
-                    expobj.get_alltargets_stim_traces_norm(pre_stim=expobj.pre_stim, post_stim=expobj.post_stim,
-                                                           stims=expobj.stims_in_sz, filter_sz=True)
-            else:
-                print('no stims_in_sz attr., ', prep, trial)
 
         # x = np.asarray([i for i in expobj.good_photostim_cells_stim_responses_dFF[0]])
         x = np.asarray([i for i in expobj.SLMTargets_stims_dffAvg_outsz])
