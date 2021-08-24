@@ -10,62 +10,192 @@ import utils.funcs_pj as pj
 results_object_path = '/home/pshah/mnt/qnap/Analysis/alloptical_results_superobject.pkl'
 allopticalResults = aoutils.import_resultsobj(pkl_path=results_object_path)
 
+# %% plot responses of non-targets from suite2p ROIs in response to photostim trials
 
+### PRE-4AP TRIALS
+redo_processing = False  # flag to use when rerunning this whole for loop multiple times
+avg_only = True
 
-
-# %% TODO plot trial-averaged photostimulation response dFF curves for all experiments - broken down by pre-4ap, outsz and insz (excl. sz bound)
-# - need to plot only successful stims!
-
-### POST-4AP TRIALS (OUT SZ STIMS)
-dffTraces_outsz = []
-# f, ax = plt.subplots(figsize=[5, 4])
-for i in allopticalResults.post_4ap_trials:
+dffTraces = []
+f, ax = plt.subplots(figsize=[5, 4])
+for i in allopticalResults.pre_4ap_trials:
     for j in range(len(i)):
         # pass
-        i = allopticalResults.post_4ap_trials[0]
-        j = 0
+        # i = allopticalResults.pre_4ap_trials[0]
+        # j = 0
         prep = i[j][:-6]
         trial = i[j][-5:]
         print('\nprogress @ ', prep, trial)
         expobj, experiment = aoutils.import_expobj(trial=trial, prep=prep, verbose=False)
 
-        redo_processing = True  # flag to use when rerunning this whole for loop multiple times
-        if 'post' in expobj.metainfo['exptype']:
+        if 'pre' in expobj.metainfo['exptype']:
             if redo_processing:
                 aoutils.run_alloptical_processing_photostim(expobj, to_suite2p=expobj.suite2p_trials, baseline_trials=expobj.baseline_trials,
                                                             plots=False, force_redo=False)
+            expobj.save()
 
-        #### use expobj.hits_SLMtargets for determining which photostim trials to use - setting this up to only plot successfull trials
-
-        if hasattr(expobj, 'outsz_traces_SLMtargets_successes_avg'):
+        if hasattr(expobj, 'traces_SLMtargets_successes_avg'):
             y_label = 'pct. dFF (normalized to prestim period)'
 
-            avg_only = False
             if avg_only:
                 # modify matrix to exclude data from stim_dur period and replace with a flat line
                 data_traces = []
-                for trace in np.asarray([i for i in expobj.SLMTargets_stims_dffAvg_outsz]):
+                for trace in np.asarray([i for i in expobj.SLMTargets_stims_dffAvg]):
                     trace_ = trace[:expobj.pre_stim]
                     trace_ = np.append(trace_, [[15]*3])  # setting 5 frames as stimduration
                     trace_ = np.append(trace_, trace[-expobj.post_stim:])
                     data_traces.append(trace_)
                 data_traces = np.array(data_traces)
                 stim_dur = 3 / expobj.fps
+                title = 'Successfull stims only, all exps. - avg. responses of photostim targets - pre4ap stims'
             else:
-                data_traces = expobj.outsz_traces_SLMtargets_successes_avg
+                data_traces = expobj.traces_SLMtargets_successes_avg
                 stim_dur = expobj.stim_duration_frames / expobj.fps
+                title = 'Successfull stims only - avg. responses of photostim targets - pre4ap stims %s %s' % (prep, trial)
+
+            d = aoplot.plot_periphotostim_avg(arr=data_traces, fps=expobj.fps,
+                                              stim_duration=stim_dur, y_lims=[0, 100],
+                                              pre_stim=0.25, exp_prestim=expobj.pre_stim, post_stim=2.75, avg_only=avg_only,
+                                              title='Successfull stims only - avg. responses of photostim targets - pre4ap stims %s %s' % (prep, trial),
+                                              y_label=y_label, x_label='Time (secs)', fig=f, ax=ax, show=False)
+
+
+        print('|- shape of dFF array: ', data_traces.shape)
+        dffTraces.append(d)
+f.show()
+allopticalResults.dffTraces = np.asarray(dffTraces)
+allopticalResults.save()
+
+
+
+
+# %% plot trial-averaged photostimulation response dFF curves for all experiments - broken down by pre-4ap, outsz and insz (excl. sz bound)
+# - plot only successful stims!
+
+### POST-4AP TRIALS - IN SZ STIMS - EXCLUDE STIMS/CELLS INSIDE SZ BOUNDARY
+redo_processing = False  # flag to use when rerunning this whole for loop multiple times
+avg_only = True
+
+dffTraces_insz = []
+f, ax = plt.subplots(figsize=[5, 4])
+for i in allopticalResults.post_4ap_trials:
+    for j in range(len(i)):
+        # pass
+        # i = allopticalResults.post_4ap_trials[0]
+        # j = 0
+        # prep = 'RL109'
+        # trial = 't-016'
+        prep = i[j][:-6]
+        trial = i[j][-5:]
+        print('\nprogress @ ', prep, trial)
+        expobj, experiment = aoutils.import_expobj(trial=trial, prep=prep, verbose=False)
+
+        if 'post' in expobj.metainfo['exptype']:
+            if redo_processing:
+                aoutils.run_alloptical_processing_photostim(expobj, to_suite2p=expobj.suite2p_trials, baseline_trials=expobj.baseline_trials,
+                                                            plots=False, force_redo=False)
+            expobj.save()
+
+        #### use expobj.hits_SLMtargets for determining which photostim trials to use - setting this up to only plot successfull trials
+        if hasattr(expobj, 'insz_traces_SLMtargets_successes_avg'):
+            y_label = 'pct. dFF (normalized to prestim period)'
+
+            if avg_only:
+                # modify matrix to exclude data from stim_dur period and replace with a flat line
+                data_traces = []
+                for trace in np.asarray([expobj.insz_traces_SLMtargets_successes_avg[key] for key in expobj.insz_traces_SLMtargets_successes_avg.keys()]):
+                    trace_ = trace[:expobj.pre_stim]
+                    trace_ = np.append(trace_, [[15]*3])  # setting 5 frames as stimduration
+                    trace_ = np.append(trace_, trace[-expobj.post_stim:])
+                    data_traces.append(trace_)
+                data_traces = np.array(data_traces)
+                stim_dur = 3 / expobj.fps
+                title = 'Successfull stims only, all exps. - avg. responses of photostim targets - in sz stims'
+            else:
+                data_traces = np.asarray([expobj.insz_traces_SLMtargets_successes_avg[key] for key in expobj.insz_traces_SLMtargets_successes_avg.keys()])
+                stim_dur = expobj.stim_duration_frames / expobj.fps
+                title = 'Successfull stims only - avg. responses of photostim targets - in sz stims %s %s' % (prep, trial)
+
+            d = aoplot.plot_periphotostim_avg(arr=data_traces, fps=expobj.fps,
+                                              stim_duration=stim_dur, y_lims=[0, 100], title=title, avg_only=avg_only,
+                                              pre_stim=0.50, exp_prestim=expobj.pre_stim, post_stim=2.75,
+                                              y_label=y_label, x_label='Time (secs)', fig=f, ax=ax, show=False)
+
+
+            print('|- shape of dFF array: ', data_traces.shape)
+            dffTraces_insz.append(d)
+
+f.show()
+allopticalResults.dffTraces_outsz = np.asarray(dffTraces_insz)
+allopticalResults.save()
+
+ # %%
+
+### POST-4AP TRIALS (OUT SZ STIMS)
+
+redo_processing = False  # flag to use when rerunning this whole for loop multiple times
+avg_only = True
+
+dffTraces_outsz = []
+f, ax = plt.subplots(figsize=[5, 4])
+for i in allopticalResults.post_4ap_trials:
+    for j in range(len(i)):
+        # pass
+        # i = allopticalResults.post_4ap_trials[1]
+        # j = 0
+        prep = i[j][:-6]
+        trial = i[j][-5:]
+        print('\nprogress @ ', prep, trial)
+        expobj, experiment = aoutils.import_expobj(trial=trial, prep=prep, verbose=False)
+
+        if 'post' in expobj.metainfo['exptype']:
+            if redo_processing:
+                aoutils.run_alloptical_processing_photostim(expobj, to_suite2p=expobj.suite2p_trials, baseline_trials=expobj.baseline_trials,
+                                                            plots=False, force_redo=False)
+                expobj.save()
+#
+# for i in allopticalResults.post_4ap_trials:
+#     for j in range(len(i)):
+#         # pass
+#         # i = allopticalResults.post_4ap_trials[0]
+#         # j = 0
+#         prep = i[j][:-6]
+#         trial = i[j][-5:]
+#         print('\nprogress @ ', prep, trial)
+#         expobj, experiment = aoutils.import_expobj(trial=trial, prep=prep, verbose=False)
+
+        #### use expobj.hits_SLMtargets for determining which photostim trials to use - setting this up to only plot successfull trials
+        if hasattr(expobj, 'outsz_traces_SLMtargets_successes_avg'):
+            y_label = 'pct. dFF (normalized to prestim period)'
+
+            if avg_only:
+                # modify matrix to exclude data from stim_dur period and replace with a flat line
+                data_traces = []
+                for trace in np.asarray([expobj.outsz_traces_SLMtargets_successes_avg[key] for key in expobj.outsz_traces_SLMtargets_successes_avg.keys()]):
+                    trace_ = trace[:expobj.pre_stim]
+                    trace_ = np.append(trace_, [[15]*3])  # setting 5 frames as stimduration
+                    trace_ = np.append(trace_, trace[-expobj.post_stim:])
+                    data_traces.append(trace_)
+                data_traces = np.array(data_traces)
+                stim_dur = 3 / expobj.fps
+                title = 'Successfull stims only, all exps. - avg. responses of photostim targets - out sz stims'
+            else:
+                data_traces = np.asarray([expobj.outsz_traces_SLMtargets_successes_avg[key] for key in expobj.outsz_traces_SLMtargets_successes_avg.keys()])
+                stim_dur = expobj.stim_duration_frames / expobj.fps
+                title = 'Successfull stims only - avg. responses of photostim targets - out sz stims %s %s' % (prep, trial)
+
 
             d = aoplot.plot_periphotostim_avg(arr=data_traces, fps=expobj.fps,
                                               stim_duration=stim_dur, y_lims=[0, 100],
                                               pre_stim=0.25, exp_prestim=expobj.pre_stim, post_stim=2.75, avg_only=avg_only,
                                               title='Successfull stims only - avg. responses of photostim targets - out sz stims %s %s' % (prep, trial),
-                                              y_label=y_label, x_label='Time (secs)')#, fig=f, ax=ax, show=False)
+                                              y_label=y_label, x_label='Time (secs)', fig=f, ax=ax, show=False)
 
 
             print('|- shape of dFF array: ', data_traces.shape)
             dffTraces_outsz.append(d)
 
-# f.show()
+f.show()
 allopticalResults.dffTraces_outsz = np.asarray(dffTraces_outsz)
 allopticalResults.save()
 
@@ -99,6 +229,9 @@ f.show()
 
 # %%
 ### PRE-4AP TRIALS
+redo_processing = False  # flag to use when rerunning this whole for loop multiple times
+avg_only = True
+
 dffTraces = []
 f, ax = plt.subplots(figsize=[5, 4])
 for i in allopticalResults.pre_4ap_trials:
@@ -111,16 +244,15 @@ for i in allopticalResults.pre_4ap_trials:
         print('\nprogress @ ', prep, trial)
         expobj, experiment = aoutils.import_expobj(trial=trial, prep=prep, verbose=False)
 
-        redo_processing = True  # flag to use when rerunning this whole for loop multiple times
         if 'pre' in expobj.metainfo['exptype']:
             if redo_processing:
                 aoutils.run_alloptical_processing_photostim(expobj, to_suite2p=expobj.suite2p_trials, baseline_trials=expobj.baseline_trials,
                                                             plots=False, force_redo=False)
+            expobj.save()
 
         if hasattr(expobj, 'traces_SLMtargets_successes_avg'):
             y_label = 'pct. dFF (normalized to prestim period)'
 
-            avg_only = False
             if avg_only:
                 # modify matrix to exclude data from stim_dur period and replace with a flat line
                 data_traces = []
@@ -131,15 +263,17 @@ for i in allopticalResults.pre_4ap_trials:
                     data_traces.append(trace_)
                 data_traces = np.array(data_traces)
                 stim_dur = 3 / expobj.fps
+                title = 'Successfull stims only, all exps. - avg. responses of photostim targets - pre4ap stims'
             else:
                 data_traces = expobj.traces_SLMtargets_successes_avg
                 stim_dur = expobj.stim_duration_frames / expobj.fps
+                title = 'Successfull stims only - avg. responses of photostim targets - pre4ap stims %s %s' % (prep, trial)
 
             d = aoplot.plot_periphotostim_avg(arr=data_traces, fps=expobj.fps,
                                               stim_duration=stim_dur, y_lims=[0, 100],
                                               pre_stim=0.25, exp_prestim=expobj.pre_stim, post_stim=2.75, avg_only=avg_only,
-                                              title='Successfull stims only - avg. responses of photostim targets - out sz stims %s %s' % (prep, trial),
-                                              y_label=y_label, x_label='Time (secs)')#, fig=f, ax=ax, show=False)
+                                              title='Successfull stims only - avg. responses of photostim targets - pre4ap stims %s %s' % (prep, trial),
+                                              y_label=y_label, x_label='Time (secs)', fig=f, ax=ax, show=False)
 
 
         print('|- shape of dFF array: ', data_traces.shape)
@@ -282,7 +416,7 @@ allopticalResults.pre_4ap_trials = [
     ['RL109 t-014'],
     ['PS04 t-012',  # 'PS04 t-014',  - temp just until PS04 gets reprocessed
      'PS04 t-017'],
-    ['PS05 t-010'],
+    # ['PS05 t-010'], - problem with pickle data being truncated
     ['PS07 t-007'],
     ['PS07 t-009'],
     ['PS06 t-008', 'PS06 t-009', 'PS06 t-010'],

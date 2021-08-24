@@ -77,11 +77,19 @@ def import_expobj(trial: str = None, prep: str = None, date: str = None, pkl_pat
             expobj.save()
 
 
-    # other random things you want to do when importing expobj
+    # other random things you want to do when importing expobj -- should be temp code basically - not essential for actual importing of expobj
     if expobj.metainfo['animal prep.'] not in expobj.analysis_save_path:
         expobj.analysis_save_path = "/home/pshah/mnt/qnap/Analysis/%s/%s/%s_%s" % (date, expobj.metainfo['animal prep.'], date, trial)
         # expobj.analysis_save_path = expobj.analysis_save_path + '/' + expobj.metainfo['animal prep.'] + '/' + expobj.metainfo['date'] + '_' + expobj.metainfo['trial']
         expobj.save()
+
+    if not hasattr(expobj, 'subset_frames'):
+        expobj.subset_frames = expobj.curr_trial_frames
+        expobj.save()
+
+    if not hasattr(expobj, 'neuropil'):
+        expobj.s2pProcessing(s2p_path=expobj.s2p_path, subset_frames=expobj.curr_trial_frames, subtract_neuropil=True,
+                             baseline_frames=expobj.baseline_frames, force_redo=True)
 
     return expobj, experiment
 
@@ -327,20 +335,24 @@ class TwoPhotonImaging:
             self.mean_img = []
             self.radius = []
             self.s2p_path = s2p_path
+            self.subset_frames = subset_frames
 
             if self.n_planes == 1:
                 # s2p_path = os.path.join(self.tiff_path, 'suite2p', 'plane' + str(plane))
-                FminusFneu, self.spks, self.stat, self.neuropil = s2p_loader(s2p_path,
-                                                              subtract_neuropil)  # s2p_loader() is in utils_func
+                FminusFneu, spks, self.stat, neuropil = s2p_loader(s2p_path,
+                                                              subtract_neuropil)  # s2p_loader() is in Vape/utils_func
                 ops = np.load(os.path.join(s2p_path, 'ops.npy'), allow_pickle=True).item()
 
-                if subset_frames is None:
+                if self.subset_frames is None:
                     self.raw = FminusFneu
-                elif subset_frames is not None:
-                    self.raw = FminusFneu[:, subset_frames[0]:subset_frames[1]]
-                    self.spks = self.spks[:, subset_frames[0]:subset_frames[1]]
-                if len(baseline_frames) > 0:
-                    self.baseline_raw = FminusFneu[:, baseline_frames[0]:baseline_frames[1]]
+                    self.neuropil = neuropil
+                    self.spks = spks
+                elif self.subset_frames is not None:
+                    self.raw = FminusFneu[:, self.subset_frames[0]:self.subset_frames[1]]
+                    self.spks = spks[:, self.subset_frames[0]:self.subset_frames[1]]
+                    self.neuropil = neuropil[:, self.subset_frames[0]:self.subset_frames[1]]
+                if len(self.baseline_frames) > 0:
+                    self.baseline_raw = FminusFneu[:, self.baseline_frames[0]:self.baseline_frames[1]]
                 self.mean_img = ops['meanImg']
                 cell_id = []
                 cell_med = []
@@ -367,7 +379,7 @@ class TwoPhotonImaging:
             else:
                 for plane in range(self.n_planes):
                     # s2p_path = os.path.join(self.tiff_path, 'suite2p', 'plane' + str(plane))
-                    FminusFneu, self.spks, self.stat = s2p_loader(s2p_path,
+                    FminusFneu, self.spks, self.stat, self.neuro = s2p_loader(s2p_path,
                                                                   subtract_neuropil)  # s2p_loader() is in utils_func
                     ops = np.load(os.path.join(s2p_path, 'ops.npy'), allow_pickle=True).item()
 
@@ -397,6 +409,8 @@ class TwoPhotonImaging:
                     num_units = FminusFneu.shape[0]
                     cell_plane.extend([plane] * num_units)
                     self.cell_plane.append(cell_plane)
+
+            print('|- Loaded %s cells, recorded for %s secs' % (self.raw.shape[0], round(self.raw.shape[1]/self.fps, 2)))
 
             if save:
                 self.save()
@@ -1965,7 +1979,6 @@ class alloptical(TwoPhotonImaging):
 
         # dFF response traces for successful photostim trials
         traces_dff_successes = {}
-
         cell_ids = df.index
         for target_idx in range(len(cell_ids)):
             traces_dff_successes_l = []
@@ -1992,30 +2005,47 @@ class alloptical(TwoPhotonImaging):
 
         return reliability_slmtargets, hits_slmtargets_df, df, traces_dff_successes
 
-    def calculate_SLMTarget_SuccessTrials(self, hits_df, stims_idx_l: list,
-                                          traces_SLMtargets_successes: np.array = None):
-        """uses outputs of calculate_SLMTarget_responses_dff to calculate overall successrate of the specified stims"""
+    def calculate_SLMTarget_SuccessStims(self, hits_df, stims_idx_l: list, exclude_stims_targets: dict = {}):
+        """uses outputs of calculate_SLMTarget_responses_dff to calculate overall successrate of the specified stims
 
-        if traces_SLMtargets_successes is None:
-            traces_SLMtargets_successes = self.traces_SLMtargets_successes
-        traces_SLMtargets_successes_avg = []
+        :param hits_df: pandas dataframe of targets x stims where 1 denotes successful stim response (0 is failure)
+        :param stims_idx_l: list of stims to use for this function (useful when needing to filter out certain stims for in/out of sz)
+        :param exclude_stims_targets: dictionary of stims (keys) where the values for each stim contains the targets that should be excluded from counting in the analysis of Success/failure of trial
+
+        :return
+            reliability_slmtargets: dict; reliability (% of successful stims) for each SLM target
+            traces_SLMtargets_successes_avg: np.array; photostims avg traces for each SLM target (successful stims only)
+
+        """
+
+        traces_SLMtargets_successes_avg_dict = {}
         reliability_slmtargets = {}
         for target_idx in hits_df.index:
+            traces_SLMtargets_successes_l = []
             success = 0
             counter = 0
-            for stim in stims_idx_l:
-                counter += 1
-                if hits_df.loc[target_idx, stim] == 1:
-                    success += 1
+            for stim_idx in stims_idx_l:
+                if stim_idx in exclude_stims_targets.keys():
+                    if target_idx not in exclude_stims_targets[stim_idx]:
+                        continu_ = True
+                    else:
+                        continu_ = False
                 else:
-                    success += 0
-            reliability_slmtargets[target_idx] = round(success / counter * 100., 2)
+                    continu_ = True
+                if continu_:
+                    counter += 1
+                    if hits_df.loc[target_idx, stim_idx] == 1:
+                        success += 1
+                        dff_trace = self.SLMTargets_stims_dff[target_idx][stim_idx]
+                        traces_SLMtargets_successes_l.append(dff_trace)
+                    else:
+                        success += 0
+            if counter > 0:
+                reliability_slmtargets[target_idx] = round(success / counter * 100., 2)
             if success > 0:
-                traces_SLMtargets_successes_avg.append(np.mean(traces_SLMtargets_successes[target_idx], axis=0))
+                traces_SLMtargets_successes_avg_dict[target_idx] = np.mean(traces_SLMtargets_successes_l, axis=0)
 
-        traces_SLMtargets_successes_avg = np.array(traces_SLMtargets_successes_avg)
-
-        return reliability_slmtargets, traces_SLMtargets_successes_avg
+        return reliability_slmtargets, traces_SLMtargets_successes_avg_dict
 
 
 class Post4ap(alloptical):
@@ -3058,7 +3088,7 @@ def get_s2ptargets_stim_traces(expobj, normalize_to='', pre_stim=10, post_stim=2
 
 def get_nontargets_stim_traces_norm(expobj, normalize_to='', pre_stim=10, post_stim=200):
     """
-    primary function to measure the dFF traces for photostimulated targets.
+    primary function to measure the dFF traces for photostimulated non-targets (ROIs taken from suite2p processing).
     :param expobj: alloptical experiment object
     :param normalize_to: str; either "baseline" or "pre-stim"
     :param pre_stim: number of frames to use as pre-stim
@@ -3650,7 +3680,7 @@ def run_alloptical_processing_photostim(expobj, to_suite2p=None, baseline_trials
         expobj.subset_frames_current_trial(trial=expobj.metainfo['trial'], to_suite2p=expobj.suite2p_trials,
                                            baseline_trials=expobj.baseline_trials, force_redo=force_redo)
         expobj.s2pProcessing(s2p_path=expobj.s2p_path, subset_frames=expobj.curr_trial_frames, subtract_neuropil=True,
-                             baseline_frames=expobj.baseline_frames, force_redo=force_redo)
+                             baseline_frames=expobj.baseline_frames, force_redo=True)
         # expobj.target_coords_all = expobj.target_coords
         expobj.s2p_targets(force_redo=True)
         s2pMaskStack(obj=expobj, pkl_list=[expobj.pkl_path], s2p_path=expobj.s2p_path,
@@ -3693,7 +3723,7 @@ def run_alloptical_processing_photostim(expobj, to_suite2p=None, baseline_trials
                 expobj.get_alltargets_stim_traces_norm(pre_stim=expobj.pre_stim, post_stim=expobj.post_stim, stims=stims, filter_sz=True)
 
     else:
-        raise Exception('something very weird has happened. exptype for expobj not defined as pre or post 4ap [1]')
+        raise Exception('something very weird has happened. exptype for expobj not defined as pre or post 4ap [1.]')
 
     # photostim. SUCCESS RATE MEASUREMENTS and PLOT - SLM PHOTOSTIM TARGETED CELLS
     # measure, for each cell, the pct of trials in which the dF_stdF > 20% post stim (normalized to pre-stim avgF for the trial and cell)
@@ -3704,37 +3734,52 @@ def run_alloptical_processing_photostim(expobj, to_suite2p=None, baseline_trials
     if 'post' in expobj.metainfo['exptype']:
         seizure_filter = True
 
-        print('\n Calculating stim success rates and response magnitudes *********** [2]')
+        print('\n Calculating stim success rates and response magnitudes (of SLM targets) *********** [2.1]')
         expobj.StimSuccessRate_SLMtargets, expobj.hits_SLMtargets, expobj.responses_SLMtargets, expobj.traces_SLMtargets_successes = \
             expobj.calculate_SLMTarget_responses_dff(threshold=10, stims_to_use=expobj.stim_start_frames)
 
         if hasattr(expobj, 'stims_out_sz'):
             stims_outsz_idx = [expobj.stim_start_frames.index(stim) for stim in expobj.stims_out_sz]
             if len(stims_outsz_idx) > 0:
+                print('|- calculating stim success rates (outsz) - %s stims [2.2]' % len(stims_outsz_idx))
                 expobj.outsz_StimSuccessRate_SLMtargets, expobj.outsz_traces_SLMtargets_successes_avg = \
-                    expobj.calculate_SLMTarget_SuccessTrials(hits_df=expobj.hits_SLMtargets, stims_idx_l=stims_outsz_idx,
-                                                             traces_SLMtargets_successes=expobj.traces_SLMtargets_successes)
+                    expobj.calculate_SLMTarget_SuccessStims(hits_df=expobj.hits_SLMtargets, stims_idx_l=stims_outsz_idx)
 
         if hasattr(expobj, 'stims_in_sz'):
-            stims_insz_idx = [expobj.stim_start_frames.index(stim) for stim in expobj.stims_in_sz]
-            if len(stims_insz_idx) > 0:
-                expobj.insz_StimSuccessRate_SLMtargets, expobj.insz_traces_SLMtargets_successes_avg = \
-                    expobj.calculate_SLMTarget_SuccessTrials(hits_df=expobj.hits_SLMtargets, stims_idx_l=stims_insz_idx,
-                                                             traces_SLMtargets_successes=expobj.traces_SLMtargets_successes)
+            if hasattr(expobj, 'slmtargets_sz_stim'):
+                stims_insz_idx = [expobj.stim_start_frames.index(stim) for stim in expobj.stims_in_sz]
+                if len(stims_insz_idx) > 0:
+                    print('|- calculating stim success rates (insz) - %s stims [2.3]' % len(stims_insz_idx))
+                    expobj.insz_StimSuccessRate_SLMtargets, expobj.insz_traces_SLMtargets_successes_avg = \
+                        expobj.calculate_SLMTarget_SuccessStims(hits_df=expobj.hits_SLMtargets, stims_idx_l=stims_insz_idx,
+                                                                exclude_stims_targets=expobj.slmtargets_sz_stim)
+            else:
+                print('No slmtargets_sz_stim (sz boundary classification not done) for: %s %s' % (
+                expobj.metainfo['animal prep.'], expobj.metainfo['trial']), ' [2.4] ')
+                # delattr(expobj, 'insz_traces_SLMtargets_successes_avg')
+
         else:
-            print('No stims in sz for: %s %s' % (expobj.metainfo['animal prep.'], expobj.metainfo['trial']), ' [3] ')
+            print('No stims in sz for: %s %s' % (expobj.metainfo['animal prep.'], expobj.metainfo['trial']), ' [2.5] ')
 
 
     elif 'pre' in expobj.metainfo['exptype']:
         seizure_filter = False
-        print('\n Calculating stim success rates and response magnitudes *********** [4]')
+        print('\n Calculating stim success rates and response magnitudes (of SLM targets) *********** [3.]')
         expobj.StimSuccessRate_SLMtargets, expobj.hits_SLMtargets, expobj.responses_SLMtargets, expobj.traces_SLMtargets_successes = \
             expobj.calculate_SLMTarget_responses_dff(threshold=10, stims_to_use=expobj.stim_start_frames)
 
         expobj.stims_idx = [expobj.stim_start_frames.index(stim) for stim in expobj.stim_start_frames]
         expobj.StimSuccessRate_SLMtargets, expobj.traces_SLMtargets_successes_avg = \
-            expobj.calculate_SLMTarget_SuccessTrials(hits_df=expobj.hits_SLMtargets, stims_idx_l=expobj.stims_idx,
-                                                     traces_SLMtargets_successes=expobj.traces_SLMtargets_successes)
+            expobj.calculate_SLMTarget_SuccessStims(hits_df=expobj.hits_SLMtargets, stims_idx_l=expobj.stims_idx)
+
+
+        expobj.stims_idx = [expobj.stim_start_frames.index(stim) for stim in expobj.stim_start_frames]
+
+        expobj.dff_traces, expobj.dff_traces_avg, expobj.dfstdF_traces, \
+        expobj.dfstdF_traces_avg, expobj.raw_traces, expobj.raw_traces_avg = \
+            get_nontargets_stim_traces_norm(expobj=expobj, normalize_to='pre-stim', pre_stim=expobj.pre_stim,
+                                                    post_stim=expobj.post_stim)
+
 
     expobj.save()
 

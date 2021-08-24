@@ -22,8 +22,8 @@ for trial in trials:
     pkl_path = "/home/pshah/mnt/qnap/Analysis/%s/%s/%s_%s/%s_%s.pkl" % (date, prep, date, trial, date, trial)
 
     expobj, experiment = aoutils.import_expobj(trial=trial, date=date, pkl_path=pkl_path, verbose=False)
-    pj.plot_single_tiff(expobj.tiff_path, frame_num=201, title='%s - frame# 201' % trial)
 
+    # pj.plot_single_tiff(expobj.tiff_path, frame_num=201, title='%s - frame# 201' % trial)
     # cropped_tiff = aoutils.subselect_tiff(expobj.tiff_path, select_frames=(2668, 4471))#, save_as='/home/pshah/mnt/qnap/Analysis/%s/%s/%s_%s/%s_%s_2668-4471fr.tif' % (date, prep, date, trial, date, trial))
     # aoutils.SaveDownsampledTiff(tiff_path=expobj.tiff_path, #stack=cropped_tiff,
     #                             save_as='/home/pshah/mnt/qnap/Analysis/%s/%s/%s_%s/%s_%s_2668-4471fr_downsampled.tif' % (date, prep, date, trial, date, trial))
@@ -33,6 +33,29 @@ for trial in trials:
     # expobj.MeanSeizureImages(
     #     baseline_tiff="/home/pshah/mnt/qnap/Data/2020-12-18/2020-12-18_t-005/2020-12-18_t-005_Cycle00001_Ch3.tif",
     #     frames_last=1000)
+
+# %% plot signals of suite2p outputs of a cell with F-neuropil and neuropil -- trying to see if neuropil signal contains anything of predictive value for the cell's spiking activity?
+
+i = allopticalResults.post_4ap_trials[0]
+j = 0
+prep = i[j][:-6]
+trial = i[j][-5:]
+print('\nLoading up... ', prep, trial)
+expobj, experiment = aoutils.import_expobj(trial=trial, prep=prep, verbose=False)
+
+cell = 10
+# window = [0, expobj.n_frames]
+fig, ax = plt.subplots(figsize=(10, 3))
+ax2 = ax.twinx()
+ax.plot(expobj.frame_clock_actual[:expobj.n_frames], expobj.raw[cell], color='black', lw=0.2)
+# ax.plot(expobj.spks[cell], color='blue')
+ax.plot(expobj.frame_clock_actual[:expobj.n_frames], expobj.neuropil[cell], color='red', lw=0.2)
+ax2.plot(expobj.lfp_signal[expobj.frame_start_time_actual: expobj.frame_end_time_actual], color='steelblue', lw=0.2)
+# ax.set_xlim(window[0], window[1])
+fig.show()
+
+
+
 
 # %% running processing of SLM targets responses outsz
 
