@@ -13,8 +13,8 @@ import tifffile as tf
 
 
 # simple plot of the location of the given cell(s) against a black FOV
-def plot_cell_loc(expobj, cells: list, edgecolor: str = 'none', title=None, background: np.array = None,
-                  show_s2p_targets: bool = True, color_float_list: list = None, cmap: str = 'Reds', **kwargs):
+def plot_cells_loc(expobj, cells: list, edgecolor: str = 'yellowgreen', title=None, background: np.array = None,
+                   show_s2p_targets: bool = True, color_float_list: list = None, cmap: str = 'Reds', **kwargs):
     """
     plots an image of the FOV to show the locations of cells given in cells list.
     :param background: either 2dim numpy array to use as the backsplash or None (where black backsplash will be created)
@@ -43,7 +43,7 @@ def plot_cell_loc(expobj, cells: list, edgecolor: str = 'none', title=None, back
         black = np.zeros((expobj.frame_x, expobj.frame_y), dtype='uint16')
         ax.imshow(black, cmap='Greys_r', zorder=0)
     else:
-        ax.imshow(background)
+        ax.imshow(background, cmap='Greys_r', zorder=0)
 
     x_list = []
     y_list = []
@@ -80,6 +80,14 @@ def plot_cell_loc(expobj, cells: list, edgecolor: str = 'none', title=None, back
 
     if title is not None:
         plt.suptitle(title, wrap=True)
+
+    if 'text' in kwargs.keys():
+        if kwargs['text'] is not None:
+            ax.text(0.99, 0.95, kwargs['text'],
+                    verticalalignment='top', horizontalalignment='right',
+                    transform=ax.transAxes, fontweight='bold',
+                    color='white', fontsize=10)
+
 
     if 'invert_y' in kwargs.keys():
         if kwargs['invert_y']:
@@ -124,7 +132,7 @@ def plot_cell_radius_aspectr(expobj, stat, to_plot, min_vline: int = 4, max_vlin
 
 
 ### plot the location of all SLM targets, along with option for plotting the mean img of the current trial
-def plotSLMtargetsLocs(expobj, targets_coords: list = None, background: np.ndarray = None, **kwargs):
+def plot_SLMtargets_Locs(expobj, targets_coords: list = None, background: np.ndarray = None, **kwargs):
     """
     plot SLM target coordinate locations
 

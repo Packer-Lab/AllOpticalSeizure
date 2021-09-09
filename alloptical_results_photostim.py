@@ -440,9 +440,9 @@ allopticalResults.post_4ap_trials = [
     ['PS05 t-012'],
     ['PS07 t-011'],
     ['PS07 t-017'],
-    ['PS06 t-014', 'PS06 t-015'],
+    # ['PS06 t-014', 'PS06 t-015'], - missing seizure_lfp_onsets
     ['PS06 t-013'],
-    ['PS06 t-016'],
+    # ['PS06 t-016'], - missing seizure_lfp_onsets
     ['PS11 t-016'],
     ['PS11 t-011'],
     # ['PS17 t-011'],

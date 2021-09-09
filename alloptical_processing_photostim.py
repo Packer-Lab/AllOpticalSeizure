@@ -40,7 +40,7 @@ plot = False
 if plot:
     aoplot.plotMeanRawFluTrace(expobj=expobj, stim_span_color=None, x_axis='frames', figsize=[20, 3])
     # aoplot.plotLfpSignal(expobj, stim_span_color=None, x_axis='frames', figsize=[20, 3])
-    aoplot.plotSLMtargetsLocs(expobj)
+    aoplot.plot_SLMtargets_Locs(expobj)
     aoplot.plot_lfp_stims(expobj)
 
 
@@ -72,8 +72,8 @@ expobj.raw_traces_from_targets(force_redo=True)
 
 plot = True
 if plot:
-    aoplot.plotSLMtargetsLocs(expobj, background=expobj.meanFluImg, title='SLM targets location w/ mean Flu img')
-    aoplot.plotSLMtargetsLocs(expobj, background=expobj.meanFluImg_registered, title='SLM targets location w/ registered mean Flu img')
+    aoplot.plot_SLMtargets_Locs(expobj, background=expobj.meanFluImg, title='SLM targets location w/ mean Flu img')
+    aoplot.plot_SLMtargets_Locs(expobj, background=expobj.meanFluImg_registered, title='SLM targets location w/ registered mean Flu img')
 
 
 

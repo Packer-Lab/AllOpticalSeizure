@@ -25,7 +25,7 @@ plot = True
 if plot:
     aoplot.plotMeanRawFluTrace(expobj=expobj, stim_span_color=None, x_axis='Time', figsize=[20, 3])
     aoplot.plotLfpSignal(expobj, stim_span_color='', x_axis='time', figsize=[8, 2])
-    aoplot.plotSLMtargetsLocs(expobj, background=expobj.meanFluImg_registered)
+    aoplot.plot_SLMtargets_Locs(expobj, background=expobj.meanFluImg_registered)
     aoplot.plot_lfp_stims(expobj)
 
 # %% any data processing -- if needed
@@ -283,13 +283,13 @@ aoplot.plot_traces_heatmap(x_ordered, stim_on=stims, stim_off=stims_off, cmap='S
 # %% PLOT cell location with cmap based on their order of reaching top 5% signal during sz event
 
 cell_ids_ordered = list(np.array(expobj.cell_id)[new_order])
-aoplot.plot_cell_loc(expobj, cells=cell_ids_ordered, show_s2p_targets=False, color_float_list=list(range(len(cell_ids_ordered))),
-                     title='cell locations ordered by recruitment in sz # %s' % sz, invert_y=True, cmap='Purples')
+aoplot.plot_cells_loc(expobj, cells=cell_ids_ordered, show_s2p_targets=False, color_float_list=list(range(len(cell_ids_ordered))),
+                      title='cell locations ordered by recruitment in sz # %s' % sz, invert_y=True, cmap='Purples')
 
 # just the bottom half cells that seems to show more of an order
 cell_ids_ordered = list(np.array(expobj.cell_id)[new_order])
-aoplot.plot_cell_loc(expobj, cells=cell_ids_ordered[250:], show_s2p_targets=False, color_float_list=list(np.array(x_peak)[new_order][250:]),
-                     title='cell locations ordered by recruitment in sz # %s' % sz, invert_y=True, cmap='Purples')
+aoplot.plot_cells_loc(expobj, cells=cell_ids_ordered[250:], show_s2p_targets=False, color_float_list=list(np.array(x_peak)[new_order][250:]),
+                      title='cell locations ordered by recruitment in sz # %s' % sz, invert_y=True, cmap='Purples')
 
 # %% plot the target photostim responses for individual targets for each stim over the course of the trial
 #    (normalize to each target's overall mean response) and plot over the timecourse of the trial

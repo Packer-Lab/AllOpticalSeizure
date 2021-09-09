@@ -1401,8 +1401,8 @@ class alloptical(TwoPhotonImaging):
               ' -- %s cells (out of %s target coords)' % (len(self.s2p_cell_targets), len(self.target_coords_all)))
 
         fig, ax = plt.subplots(figsize=[6,6])
-        fig, ax = aoplot.plot_cell_loc(self, cells=self.s2p_cell_targets, show=False, fig=fig, ax=ax,
-                                       title='s2p cell targets (red-filled) and all target coords (green) %s/%s' % (
+        fig, ax = aoplot.plot_cells_loc(self, cells=self.s2p_cell_targets, show=False, fig=fig, ax=ax,
+                                        title='s2p cell targets (red-filled) and all target coords (green) %s/%s' % (
                               self.metainfo['trial'], self.metainfo['animal prep.']), invert_y=True)
         for (x, y) in self.target_coords_all:
             ax.scatter(x=x, y=y, edgecolors='yellowgreen', facecolors='none', linewidths=1.0)
@@ -1963,10 +1963,13 @@ class alloptical(TwoPhotonImaging):
             AssertionError('no stims set to analyse [1]')
 
         # initializing pandas df that collects responses of stimulations
-        d = {}
-        for stim in stims_idx:
-            d[stim] = [None] * self.SLMTargets_stims_dff.shape[0]
-        df = pd.DataFrame(d, index=range(self.SLMTargets_stims_dff.shape[0]))  # population dataframe
+        if hasattr(self, 'SLMTargets_stims_dff'):
+            d = {}
+            for stim in stims_idx:
+                d[stim] = [None] * self.SLMTargets_stims_dff.shape[0]
+            df = pd.DataFrame(d, index=range(self.SLMTargets_stims_dff.shape[0]))  # population dataframe
+        else:
+            AssertionError('no SLMTargets_stims_dff attr. [2]')
 
         # initializing pandas df for binary showing of success and fails (1= success, 0= fails)
         hits_slmtargets = {}  # to be converted in pandas df below - will contain 1 for every success stim, 0 for non success stims
@@ -2005,6 +2008,7 @@ class alloptical(TwoPhotonImaging):
 
         return reliability_slmtargets, hits_slmtargets_df, df, traces_dff_successes
 
+    # retrieves photostim avg traces for each SLM target, also calculates the reliability % for each SLM target
     def calculate_SLMTarget_SuccessStims(self, hits_df, stims_idx_l: list, exclude_stims_targets: dict = {}):
         """uses outputs of calculate_SLMTarget_responses_dff to calculate overall successrate of the specified stims
 
@@ -2047,6 +2051,189 @@ class alloptical(TwoPhotonImaging):
 
         return reliability_slmtargets, traces_SLMtargets_successes_avg_dict
 
+
+    def get_alltargets_stim_traces_norm(self, pre_stim=15, post_stim=200, filter_sz: bool = False, stims_idx_l: list = None):
+        """
+        primary function to measure the dFF and dF/setdF traces for photostimulated targets.
+        :param stims:
+        :param targets_idx: integer for the index of target cell to process
+        :param subselect_cells: list of cells to subset from the overall set of traces (use in place of targets_idx if desired)
+        :param pre_stim: number of frames to use as pre-stim
+        :param post_stim: number of frames to use as post-stim
+        :param filter_sz: whether to filter out stims that are occuring seizures
+        :return: lists of individual targets dFF traces, and averaged targets dFF over all stims for each target
+        """
+
+        if filter_sz:
+            print('\n -- working on getting stim traces for cells inside sz boundary --')
+
+        if stims_idx_l is None:
+            stim_timings = self.stim_start_frames
+        else:
+            stim_timings = [self.stim_start_frames[stim_idx] for stim_idx in stims_idx_l]
+
+        self.s2p_rois_nontargets = [cell for cell in self.cell_id if cell not in self.s2p_cell_targets]  # TODO need to also detect (and exclude) ROIs that are within some radius of the SLM targets
+        num_cells = len(self.s2p_rois_nontargets)
+        targets_trace = self.raw
+
+        # collect photostim timed average dff traces of photostim nontargets
+        nontargets_dff = np.zeros(
+            [num_cells, len(self.stim_start_frames), pre_stim + self.stim_duration_frames + post_stim])
+        # nontargets_dff_avg = np.zeros([num_cells, pre_stim + post_stim])
+
+        nontargets_dfstdF = np.zeros(
+            [num_cells, len(self.stim_start_frames), pre_stim + self.stim_duration_frames + post_stim])
+        # nontargets_dfstdF_avg = np.zeros([num_cells, pre_stim + post_stim])
+
+        nontargets_raw = np.zeros(
+            [num_cells, len(self.stim_start_frames), pre_stim + self.stim_duration_frames + post_stim])
+        # nontargets_raw_avg = np.zeros([num_cells, pre_stim + post_stim])
+
+
+        for cell_idx in range(num_cells):
+
+            if filter_sz:
+                if hasattr(self, 'slmtargets_sz_stim'):  ## TODO change to ROIs in sz for each stim -- has this classification been done for non-targets ROIs?
+                    flu = []
+                    for stim in stim_timings:
+                        if stim in self.slmtargets_sz_stim.keys():  # some stims dont have sz boundaries because of issues with their TIFFs not being made properly (not readable in Fiji), usually it is the first TIFF in a seizure
+                            if cell_idx not in self.slmtargets_sz_stim[stim]:
+                                flu.append(targets_trace[cell_idx][stim - pre_stim: stim + self.stim_duration_frames + post_stim])
+                else:
+                    flu = []
+                    print('classifying of sz boundaries not completed for this expobj', self.metainfo['animal prep.'], self.metainfo['trial'])
+                # flu = [targets_trace[cell_idx][stim - pre_stim: stim + self.stim_duration_frames + post_stim] for
+                #        stim
+                #        in stim_timings if
+                #        stim not in self.seizure_frames]
+            else:
+                flu = [targets_trace[cell_idx][stim - pre_stim: stim + self.stim_duration_frames + post_stim] for
+                       stim
+                       in stim_timings]
+
+            # flu_dfstdF = []
+            # flu_dff = []
+            # flu = []
+            if len(flu) > 0:
+                for i in range(len(flu)):
+                    trace = flu[i]
+                    mean_pre = np.mean(trace[0:pre_stim])
+                    trace_dff = ((trace - mean_pre) / mean_pre) * 100
+                    std_pre = np.std(trace[0:pre_stim])
+                    dFstdF = (trace - mean_pre) / std_pre  # make dF divided by std of pre-stim F trace
+
+                    targets_raw[cell_idx, i] = trace
+                    targets_dff[cell_idx, i] = trace_dff
+                    targets_dfstdF[cell_idx, i] = dFstdF
+                    # flu_dfstdF.append(dFstdF)
+                    # flu_dff.append(trace_dff)
+
+            # targets_dff.append(flu_dff)  # contains all individual dFF traces for all stim times
+            # targets_dff_avg.append(np.nanmean(flu_dff, axis=0))  # contains the dFF trace averaged across all stim times
+
+            # targets_dfstdF.append(flu_dfstdF)
+            # targets_dfstdF_avg.append(np.nanmean(flu_dfstdF, axis=0))
+
+            # SLMTargets_stims_raw.append(flu)
+            # targets_raw_avg.append(np.nanmean(flu, axis=0))
+
+        targets_dff_avg = np.mean(targets_dff, axis=1)
+        targets_dfstdF_avg = np.mean(targets_dfstdF, axis=1)
+        targets_raw_avg = np.mean(targets_raw, axis=1)
+
+        print(targets_dff_avg.shape)
+
+        return targets_dff, targets_dff_avg, targets_dfstdF, targets_dfstdF_avg, targets_raw, targets_raw_avg
+
+
+    def get_nontargets_stim_traces_norm(self, stims_idx_l: list):
+        """
+        primary function to measure the dFF traces for photostimulated non-targets (ROIs taken from suite2p processing).
+        :param self: alloptical experiment object
+        :param normalize_to: str; either "baseline" or "pre-stim"
+        :param pre_stim: number of frames to use as pre-stim
+        :param post_stim: number of frames to use as post-stim
+        :param stim_idx_l: list of indexes of stims to use for calculating avg stim response
+        :return: lists of individual targets dFF traces, and averaged targets dFF over all stims for each target
+        """
+
+        if stims_idx_l is None:
+            stims_idx = stims_idx_l
+        elif stims_idx_l:
+            stims_idx = stims_idx_l
+        else:
+            AssertionError('no stims set to analyse [1]')
+        self.s2p_rois_nontargets = [cell for cell in self.cell_id if cell not in self.s2p_cell_targets]  # TODO need to also detect (and exclude) ROIs that are within some radius of the SLM targets
+
+        # collect photostim timed average dff traces of photostim targets
+        dff_traces = []
+        dff_traces_avg = []
+
+        dfstdF_traces = []
+        dfstdF_traces_avg = []
+
+        raw_traces = []
+        raw_traces_avg = []
+        for cell in self.s2p_rois_nontargets:
+            # print('considering cell # %s' % cell)
+            if cell in self.cell_id:
+                cell_idx = self.cell_id.index(cell)
+                flu = [self.raw[cell_idx][self.stim_start_frames[stim_idx] - self.pre_stim: self.stim_start_frames[stim_idx] + self.post_stim] for stim_idx in stims_idx]
+
+                flu_dfstdF = []
+                flu_dff = []
+                # if normalize_to == 'baseline':
+                #     mean_spont_baseline = np.mean(self.baseline_raw[cell_idx])
+                #     for i in range(len(flu)):
+                #         trace_dff = ((flu[i] - mean_spont_baseline) / mean_spont_baseline) * 100
+                #
+                #         # add nan if cell is inside sz boundary for this stim
+                #         if hasattr(self, 'cells_sz_stim'):
+                #             if self.is_cell_insz(cell=cell, stim=stim_timings[i]):
+                #                 trace_dff = [np.nan] * len(flu[i])
+                #
+                #         flu_dff.append(trace_dff)
+
+                # elif normalize_to == 'pre-stim':
+                for i in range(len(flu)):
+                    trace = flu[i]
+                    mean_pre = np.mean(trace[0:self.pre_stim])
+                    trace_dff = ((trace - mean_pre) / mean_pre) * 100
+                    std_pre = np.std(trace[0:self.pre_stim])
+                    dFstdF = (trace - mean_pre) / std_pre  # make dF divided by std of pre-stim F trace
+
+                    # add nan if cell is inside sz boundary for this stim
+                    if hasattr(self, 'cells_sz_stim'):
+                        if self.is_cell_insz(cell=cell, stim=stim_timings[i]):
+                            trace_dff = [np.nan] * len(trace)
+                            dFstdF = [np.nan] * len(trace)
+
+                    flu_dfstdF.append(dFstdF)
+                    flu_dff.append(trace_dff)
+
+                # else:
+                #     TypeError(
+                #         'need to specify what to normalize to in get_targets_dFF (choose "baseline" or "pre-stim")')
+
+                dff_traces.append(flu_dff)  # contains all individual dFF traces for all stim times
+                dff_traces_avg.append(
+                    np.nanmean(flu_dff, axis=0))  # contains the dFF trace averaged across all stim times
+
+                dfstdF_traces.append(flu_dfstdF)
+                dfstdF_traces_avg.append(np.nanmean(flu_dfstdF, axis=0))
+
+                raw_traces.append(flu)
+                raw_traces_avg.append(np.nanmean(flu, axis=0))
+
+        # if normalize_to == 'baseline':
+        #     print(
+        #         '\nCompleted collecting pre to post stim traces -- normalized to spont imaging as baseline -- for %s cells' % len(
+        #             dff_traces_avg))
+        #     return dff_traces, dff_traces_avg
+        # elif normalize_to == 'pre-stim':
+        print('\nCompleted collecting pre to post stim traces -- normalized to pre-stim stdF -- for %s cells' % len(
+            dff_traces_avg))
+        return dff_traces, dff_traces_avg, dfstdF_traces, dfstdF_traces_avg, raw_traces, raw_traces_avg
 
 class Post4ap(alloptical):
     # TODO fix the superclass definitions and heirarchy which might require more rejigging of the code you are running later on as well
@@ -2246,7 +2433,7 @@ class Post4ap(alloptical):
         Returns True if the given cell's location is inside the seizure boundary which is defined as the coordinates
         given in the .csv sheet.
 
-        :param cell_med: from stat['med'] of the cell
+        :param cell_med: from stat['med'] of the cell (stat['med'] refers to a suite2p results obj); the y and x (respectively) coordinates
         :param sz_border_path: path to the csv file generated by ImageJ macro for the seizure boundary
         :param to_plot: make plot showing the boundary start, end and the location of the cell in question
         :return: bool
@@ -2303,7 +2490,7 @@ class Post4ap(alloptical):
         else:
             return False
 
-    def classify_cells_sz_bound(self, sz_border_path, to_plot=True, title=None, flip=False):
+    def classify_cells_sz_bound(self, sz_border_path, stim, to_plot=True, title=None, flip=False, fig=None, ax=None, text=None):
         """
         going to use Rob's suggestions to define boundary of the seizure in ImageJ and then read in the ImageJ output,
         and use this to classify cells as in seizure or out of seizure in a particular image (which will relate to stim time).
@@ -2318,12 +2505,21 @@ class Post4ap(alloptical):
         in_sz = []
         out_sz = []
         for cell, s in enumerate(self.stat):
-            x = self._InOutSz(cell_med=s['med'], sz_border_path=sz_border_path, to_plot=to_plot)
+            in_seizure = self._InOutSz(cell_med=s['med'], sz_border_path=sz_border_path, to_plot=to_plot)
 
-            if x is True:
+            if in_seizure is True:
                 in_sz.append(s['original_index'])
-            elif x is False:
+            elif in_seizure is False:
                 out_sz.append(s['original_index'])
+
+        if flip:
+            # pass
+            in_sz_2 = in_sz
+            in_sz_final = out_sz
+            out_sz_final = in_sz_2
+        else:
+            in_sz_final = in_sz
+            out_sz_final = out_sz
 
         if to_plot:  # plot the sz boundary points
             xline = []
@@ -2339,22 +2535,50 @@ class Post4ap(alloptical):
             yline = np.array(yline)[line_argsort]
 
             # pj.plot_cell_loc(self, cells=[cell], show=False)
-            plt.scatter(x=xline[0], y=yline[0], facecolors='#1A8B9D')
-            plt.scatter(x=xline[1], y=yline[1], facecolors='#B2D430')
-            # plt.show()
+            # plot sz boundary points
+            if fig is None:
+                fig, ax = plt.subplots(figsize=[5,5])
 
-        if flip:
-            # pass
-            in_sz_2 = in_sz
-            in_sz = out_sz
-            out_sz = in_sz_2
+            ax.scatter(x=xline[0], y=yline[0], facecolors='#1A8B9D')
+            ax.scatter(x=xline[1], y=yline[1], facecolors='#B2D430')
+            # fig.show()
+
+            # plot SLM targets in sz boundary
+            # coords_to_plot = [s['med'] for cell, s in enumerate(self.stat) if cell in in_sz_final]
+            # read in avg stim image to use as the background
+            avg_stim_img_path = '%s/%s_%s_stim-%s.tif' % (self.analysis_save_path + 'avg_stim_images', self.metainfo['date'], self.metainfo['trial'], stim)
+            bg_img = tf.imread(avg_stim_img_path)
+            fig, ax = aoplot.plot_cells_loc(self, cells=in_sz_final, fig=fig, ax=ax, title=title, show=False, background=bg_img, cmap='gray', text=text)
+
+            # plt.gca().invert_yaxis()
+            # plt.show()  # the indiviual cells were plotted in ._InOutSz
+
+            # flip = input("do you need to flip the cell classification?? (ans: yes or no)")
+        # else:
+        #     flip = False
+        #
+        # # flip = True
+
+            # # plot again, to make sure that the flip worked
+            # fig, ax = plt.subplots(figsize=[5, 5])
+            # ax.scatter(x=xline[0], y=yline[0], facecolors='#1A8B9D')
+            # ax.scatter(x=xline[1], y=yline[1], facecolors='#B2D430')
+            # # fig.show()
+            #
+            # # plot SLM targets in sz boundary
+            # coords_to_plot = [self.target_coords_all[cell] for cell in in_sz]
+            # fig, ax = aoplot.plotSLMtargetsLocs(self, targets_coords=coords_to_plot, fig=fig, ax=ax, cells=in_sz, title=title + ' corrected',
+            #                           show=False)
+            # plt.gca().invert_yaxis()
+            # plt.show()  # the indiviual cells were plotted in ._InOutSz
+
+        else:
+            pass
 
         if to_plot:
-            aoplot.plot_cell_loc(self, cells=in_sz, title=title, show=False)
-            plt.gca().invert_yaxis()
-            plt.show()  # the indiviual cells were plotted in ._InOutSz
-
-        return in_sz
+            return in_sz_final, out_sz_final, fig, ax
+        else:
+            return in_sz_final, out_sz_final
 
     def classify_slmtargets_sz_bound(self, sz_border_path, stim, to_plot=True, title=None, flip=False, fig=None, ax=None):
         """
@@ -2411,8 +2635,8 @@ class Post4ap(alloptical):
             # read in avg stim image to use as the background
             avg_stim_img_path = '%s/%s_%s_stim-%s.tif' % (self.analysis_save_path + 'avg_stim_images', self.metainfo['date'], self.metainfo['trial'], stim)
             bg_img = tf.imread(avg_stim_img_path)
-            fig, ax = aoplot.plotSLMtargetsLocs(self, targets_coords=coords_to_plot, fig=fig, ax=ax, cells=in_sz, title=title,
-                                                show=False, background=bg_img)
+            fig, ax = aoplot.plot_SLMtargets_Locs(self, targets_coords=coords_to_plot, fig=fig, ax=ax, cells=in_sz, title=title,
+                                                  show=False, background=bg_img)
             # plt.gca().invert_yaxis()
             # plt.show()  # the indiviual cells were plotted in ._InOutSz
 
@@ -3093,6 +3317,7 @@ def get_nontargets_stim_traces_norm(expobj, normalize_to='', pre_stim=10, post_s
     :param normalize_to: str; either "baseline" or "pre-stim"
     :param pre_stim: number of frames to use as pre-stim
     :param post_stim: number of frames to use as post-stim
+    :param stim_idx_l: list of indexes of stims to use for calculating avg stim response
     :return: lists of individual targets dFF traces, and averaged targets dFF over all stims for each target
     """
     stim_timings = expobj.stim_start_frames
@@ -3660,7 +3885,7 @@ def run_alloptical_processing_photostim(expobj, to_suite2p=None, baseline_trials
         if plots:
             aoplot.plotMeanRawFluTrace(expobj=expobj, stim_span_color=None, x_axis='frames', figsize=[20, 3])
             # aoplot.plotLfpSignal(expobj, stim_span_color=None, x_axis='frames', figsize=[20, 3])
-            aoplot.plotSLMtargetsLocs(expobj)
+            aoplot.plot_SLMtargets_Locs(expobj)
             aoplot.plot_lfp_stims(expobj)
 
         ####################################################################################################################
@@ -3693,9 +3918,9 @@ def run_alloptical_processing_photostim(expobj, to_suite2p=None, baseline_trials
         expobj.raw_traces_from_targets(force_redo=force_redo)
 
     if plots:
-        aoplot.plotSLMtargetsLocs(expobj, background=expobj.meanFluImg, title='SLM targets location w/ mean Flu img')
-        aoplot.plotSLMtargetsLocs(expobj, background=expobj.meanFluImg_registered,
-                                  title='SLM targets location w/ registered mean Flu img')
+        aoplot.plot_SLMtargets_Locs(expobj, background=expobj.meanFluImg, title='SLM targets location w/ mean Flu img')
+        aoplot.plot_SLMtargets_Locs(expobj, background=expobj.meanFluImg_registered,
+                                    title='SLM targets location w/ registered mean Flu img')
 
     # collect SLM photostim individual targets -- individual, full traces, dff normalized
     expobj.dff_SLMTargets = normalize_dff(np.array(expobj.raw_SLMTargets))
@@ -4047,7 +4272,7 @@ def slm_targets_responses(expobj, experiment, trial, y_spacing_factor=2, figsize
     gs = fig.add_gridspec(4, 8)
 
     ax9 = fig.add_subplot(gs[0, 0])
-    fig, ax9 = aoplot.plotSLMtargetsLocs(expobj, background=expobj.meanFluImg_registered, title=None, fig=fig, ax=ax9, show=False)
+    fig, ax9 = aoplot.plot_SLMtargets_Locs(expobj, background=expobj.meanFluImg_registered, title=None, fig=fig, ax=ax9, show=False)
 
 
     ax0 = fig.add_subplot(gs[0, 1:])
