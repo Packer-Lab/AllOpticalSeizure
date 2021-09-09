@@ -10,9 +10,55 @@ import utils.funcs_pj as pj
 results_object_path = '/home/pshah/mnt/qnap/Analysis/alloptical_results_superobject.pkl'
 allopticalResults = aoutils.import_resultsobj(pkl_path=results_object_path)
 
-# %% plot responses of non-targets from suite2p ROIs in response to photostim trials
+# %% 1) lists of trials to analyse for pre4ap and post4ap trials within experiments
 
-### PRE-4AP TRIALS
+allopticalResults.pre_4ap_trials = [
+    ['RL108 t-009'],
+    ['RL108 t-010'],
+    ['RL109 t-007'],
+    ['RL109 t-008'],
+    ['RL109 t-013'],
+    ['RL109 t-014'],
+    ['PS04 t-012',  # 'PS04 t-014',  - temp just until PS04 gets reprocessed
+     'PS04 t-017'],
+    # ['PS05 t-010'], - problem with pickle data being truncated
+    ['PS07 t-007'],
+    ['PS07 t-009'],
+    ['PS06 t-008', 'PS06 t-009', 'PS06 t-010'],
+    ['PS06 t-011'],
+    ['PS06 t-012'],
+    # ['PS11 t-007'],
+    ['PS11 t-010'],
+    ['PS17 t-005'],
+    # ['PS17 t-006', 'PS17 t-007'],
+    # ['PS18 t-006']
+]
+
+allopticalResults.post_4ap_trials = [
+    ['RL108 t-013'],
+    # ['RL108 t-011'], - problem with pickle data being truncated
+    # ['RL109 t-020'], - problem with pickle data being truncated
+    ['RL109 t-021'],
+    ['RL109 t-018'],
+    ['RL109 t-016', 'RL109 t-017'],
+    # ['PS04 t-018'], - problem with pickle data being truncated
+    ['PS05 t-012'],
+    ['PS07 t-011'],
+    ['PS07 t-017'],
+    # ['PS06 t-014', 'PS06 t-015'], - missing seizure_lfp_onsets
+    ['PS06 t-013'],
+    # ['PS06 t-016'], - missing seizure_lfp_onsets
+    ['PS11 t-016'],
+    ['PS11 t-011'],
+    # ['PS17 t-011'],
+    ['PS17 t-009'],
+    # ['PS18 t-008']
+]
+allopticalResults.save()
+
+# %% 2) plot responses of non-targets from suite2p ROIs in response to photostim trials
+
+### 2.1) PRE-4AP TRIALS
 redo_processing = False  # flag to use when rerunning this whole for loop multiple times
 avg_only = True
 
@@ -69,10 +115,10 @@ allopticalResults.save()
 
 
 
-# %% plot trial-averaged photostimulation response dFF curves for all experiments - broken down by pre-4ap, outsz and insz (excl. sz bound)
+# %% 2.2) plot trial-averaged photostimulation response dFF curves for all experiments - broken down by pre-4ap, outsz and insz (excl. sz bound)
 # - plot only successful stims!
 
-### POST-4AP TRIALS - IN SZ STIMS - EXCLUDE STIMS/CELLS INSIDE SZ BOUNDARY
+### 2.2.1) POST-4AP TRIALS - IN SZ STIMS - EXCLUDE STIMS/CELLS INSIDE SZ BOUNDARY
 redo_processing = False  # flag to use when rerunning this whole for loop multiple times
 avg_only = True
 
@@ -129,9 +175,9 @@ f.show()
 allopticalResults.dffTraces_outsz = np.asarray(dffTraces_insz)
 allopticalResults.save()
 
- # %%
+# %%
 
-### POST-4AP TRIALS (OUT SZ STIMS)
+### 2.2.2) POST-4AP TRIALS (OUT SZ STIMS)
 
 redo_processing = False  # flag to use when rerunning this whole for loop multiple times
 avg_only = True
@@ -227,93 +273,6 @@ f.show()
 
 
 
-# %%
-### PRE-4AP TRIALS
-redo_processing = False  # flag to use when rerunning this whole for loop multiple times
-avg_only = True
-
-dffTraces = []
-f, ax = plt.subplots(figsize=[5, 4])
-for i in allopticalResults.pre_4ap_trials:
-    for j in range(len(i)):
-        # pass
-        # i = allopticalResults.pre_4ap_trials[0]
-        # j = 0
-        prep = i[j][:-6]
-        trial = i[j][-5:]
-        print('\nprogress @ ', prep, trial)
-        expobj, experiment = aoutils.import_expobj(trial=trial, prep=prep, verbose=False)
-
-        if 'pre' in expobj.metainfo['exptype']:
-            if redo_processing:
-                aoutils.run_alloptical_processing_photostim(expobj, to_suite2p=expobj.suite2p_trials, baseline_trials=expobj.baseline_trials,
-                                                            plots=False, force_redo=False)
-            expobj.save()
-
-        if hasattr(expobj, 'traces_SLMtargets_successes_avg'):
-            y_label = 'pct. dFF (normalized to prestim period)'
-
-            if avg_only:
-                # modify matrix to exclude data from stim_dur period and replace with a flat line
-                data_traces = []
-                for trace in np.asarray([i for i in expobj.SLMTargets_stims_dffAvg]):
-                    trace_ = trace[:expobj.pre_stim]
-                    trace_ = np.append(trace_, [[15]*3])  # setting 5 frames as stimduration
-                    trace_ = np.append(trace_, trace[-expobj.post_stim:])
-                    data_traces.append(trace_)
-                data_traces = np.array(data_traces)
-                stim_dur = 3 / expobj.fps
-                title = 'Successfull stims only, all exps. - avg. responses of photostim targets - pre4ap stims'
-            else:
-                data_traces = expobj.traces_SLMtargets_successes_avg
-                stim_dur = expobj.stim_duration_frames / expobj.fps
-                title = 'Successfull stims only - avg. responses of photostim targets - pre4ap stims %s %s' % (prep, trial)
-
-            d = aoplot.plot_periphotostim_avg(arr=data_traces, fps=expobj.fps,
-                                              stim_duration=stim_dur, y_lims=[0, 100],
-                                              pre_stim=0.25, exp_prestim=expobj.pre_stim, post_stim=2.75, avg_only=avg_only,
-                                              title='Successfull stims only - avg. responses of photostim targets - pre4ap stims %s %s' % (prep, trial),
-                                              y_label=y_label, x_label='Time (secs)', fig=f, ax=ax, show=False)
-
-
-        print('|- shape of dFF array: ', data_traces.shape)
-        dffTraces.append(d)
-f.show()
-allopticalResults.dffTraces = np.asarray(dffTraces)
-allopticalResults.save()
-
-# %%
-
-from scipy.interpolate import interp1d
-
-traces = []
-x_long = allopticalResults.dffTraces[0][1]
-f, ax = plt.subplots(figsize=(6, 5))
-for trace in allopticalResults.dffTraces:
-    if len(trace[1]) < len(x_long):
-        f2 = interp1d(trace[1], trace[2])
-        trace_plot = f2(x_long)
-        ax.plot(x_long, trace_plot, color='gray')
-    else:
-        trace_plot = trace[2]
-        ax.plot(trace[1], trace_plot, color='gray')
-    traces.append(trace_plot)
-ax.axvspan(0.4, 0.48 + stim_dur, alpha=1, color='tomato', zorder=3)
-avgTrace = np.mean(np.array(traces), axis=0)
-ax.plot(x_long, avgTrace, color='black', lw=3)
-ax.set_title('avg of all targets per exp. - each trace = t-series from allopticalResults.pre_4ap_trials - dFF photostim',
-             horizontalalignment='center', verticalalignment='top', pad=35, fontsize=13, wrap=True)
-ax.set_xlabel('Time (secs)')
-ax.set_ylabel('dFF (norm. to pre-stim F)')
-f.show()
-
-
-
-# %%
-
-
-
-
 
 
 
@@ -404,52 +363,6 @@ for trial in pre4ap_trials + post4ap_trials:
 
 allopticalResults.save()
 allopticalResults.slmtargets_stim_responses
-
-# %% comparing avg. response magnitudes for pre4ap and post4ap within same experiment prep.
-
-allopticalResults.pre_4ap_trials = [
-    ['RL108 t-009'],
-    ['RL108 t-010'],
-    ['RL109 t-007'],
-    ['RL109 t-008'],
-    ['RL109 t-013'],
-    ['RL109 t-014'],
-    ['PS04 t-012',  # 'PS04 t-014',  - temp just until PS04 gets reprocessed
-     'PS04 t-017'],
-    # ['PS05 t-010'], - problem with pickle data being truncated
-    ['PS07 t-007'],
-    ['PS07 t-009'],
-    ['PS06 t-008', 'PS06 t-009', 'PS06 t-010'],
-    ['PS06 t-011'],
-    ['PS06 t-012'],
-    # ['PS11 t-007'],
-    ['PS11 t-010'],
-    ['PS17 t-005'],
-    # ['PS17 t-006', 'PS17 t-007'],
-    # ['PS18 t-006']
-]
-
-allopticalResults.post_4ap_trials = [
-    ['RL108 t-013'],
-    # ['RL108 t-011'], - problem with pickle data being truncated
-    ['RL109 t-020'],
-    ['RL109 t-021'],
-    ['RL109 t-018'],
-    ['RL109 t-016', 'RL109 t-017'],
-    # ['PS04 t-018'], - problem with pickle data being truncated
-    ['PS05 t-012'],
-    ['PS07 t-011'],
-    ['PS07 t-017'],
-    # ['PS06 t-014', 'PS06 t-015'], - missing seizure_lfp_onsets
-    ['PS06 t-013'],
-    # ['PS06 t-016'], - missing seizure_lfp_onsets
-    ['PS11 t-016'],
-    ['PS11 t-011'],
-    # ['PS17 t-011'],
-    ['PS17 t-009'],
-    # ['PS18 t-008']
-]
-allopticalResults.save()
 
 # %% make a metainfo attribute to store all metainfo types of info for all experiments/trials
 allopticalResults.metainfo = allopticalResults.slmtargets_stim_responses.loc[:, ['prep_trial', 'date', 'exptype']]
