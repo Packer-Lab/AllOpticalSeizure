@@ -40,18 +40,6 @@ from numba import njit
 
 
 # %%
-def import_resultsobj(pkl_path: str):
-    with open(pkl_path, 'rb') as f:
-        print('\nimporting resultsobj from: %s' % pkl_path)
-        resultsobj = pickle.load(f)
-        print('\n\nDONE IMPORT of %s resultsobj' % (type(resultsobj)))
-    return resultsobj
-
-# import results superobject that will collect analyses from various individual experiments
-results_object_path = '/home/pshah/mnt/qnap/Analysis/alloptical_results_superobject.pkl'
-allopticalResults = import_resultsobj(pkl_path=results_object_path)
-
-
 def import_expobj(allopticalResults=None, aoresults_map_id: str = None, trial: str = None, prep: str = None, date: str = None, pkl_path: str = None, verbose: bool = True):
 
     if aoresults_map_id is not None:
@@ -115,6 +103,12 @@ def import_expobj(allopticalResults=None, aoresults_map_id: str = None, trial: s
 
     return expobj, experiment
 
+def import_resultsobj(pkl_path: str):
+    with open(pkl_path, 'rb') as f:
+        print('\nimporting resultsobj from: %s' % pkl_path)
+        resultsobj = pickle.load(f)
+        print('\n\nDONE IMPORT of %s resultsobj' % (type(resultsobj)))
+    return resultsobj
 
 
 ## this should technically be the biggest super class lol
@@ -4435,3 +4429,6 @@ def points_in_circle_np(radius, x0=0, y0=0, ):
         yield x, y
 
 
+# import results superobject that will collect analyses from various individual experiments
+results_object_path = '/home/pshah/mnt/qnap/Analysis/alloptical_results_superobject.pkl'
+allopticalResults = import_resultsobj(pkl_path=results_object_path)

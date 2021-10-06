@@ -13,9 +13,9 @@ import seaborn as sns
 
 from skimage import draw
 
-# import results superobject that will collect analyses from various individual experiments
-results_object_path = '/home/pshah/mnt/qnap/Analysis/alloptical_results_superobject.pkl'
-allopticalResults = aoutils.import_resultsobj(pkl_path=results_object_path)
+# # import results superobject that will collect analyses from various individual experiments
+# results_object_path = '/home/pshah/mnt/qnap/Analysis/alloptical_results_superobject.pkl'
+# allopticalResults = aoutils.import_resultsobj(pkl_path=results_object_path)
 
 
 # %% 1) ###### IMPORT pkl file containing data in form of expobj
