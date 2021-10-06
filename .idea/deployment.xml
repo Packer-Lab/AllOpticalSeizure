@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
-  <component name="PublishConfigData" autoUpload="Always" serverName="pshah@packerserver1:22 key-pair">
+  <component name="PublishConfigData" autoUpload="Always" serverName="pshah@packerserver1:22 key-pair (1)">
     <serverData>
-      <paths name="pshah@packerserver1:22 key-pair">
+      <paths name="pshah@packerserver1:22 key-pair (1)">
         <serverdata>
           <mappings>
-            <mapping deploy="/Documents/code/PackerLab_pycharm" local="$PROJECT_DIR$" />
+            <mapping deploy="/Documents/code/PackerLab_pycharm" local="$PROJECT_DIR$" web="/" />
           </mappings>
         </serverdata>
       </paths>

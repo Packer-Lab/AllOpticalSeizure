@@ -13,13 +13,18 @@ import seaborn as sns
 
 from skimage import draw
 
-# %%
-###### IMPORT pkl file containing data in form of expobj
-prep = 'RL108'
-trial = 't-011'
-date = '2020-12-18'
+# import results superobject that will collect analyses from various individual experiments
+results_object_path = '/home/pshah/mnt/qnap/Analysis/alloptical_results_superobject.pkl'
+allopticalResults = aoutils.import_resultsobj(pkl_path=results_object_path)
 
-expobj, experiment = aoutils.import_expobj(trial=trial, date=date, prep=prep)
+
+# %% 1) ###### IMPORT pkl file containing data in form of expobj
+prep = 'PS07'
+trial = 't-011'
+
+aoresults_map_id = 'post i'
+
+expobj, experiment = aoutils.import_expobj(allopticalResults=allopticalResults, aoresults_map_id=aoresults_map_id)
 
 plot = True
 if plot:
@@ -28,7 +33,7 @@ if plot:
     aoplot.plot_SLMtargets_Locs(expobj, background=expobj.meanFluImg_registered)
     aoplot.plot_lfp_stims(expobj)
 
-# %% any data processing -- if needed
+# %% 2) any data processing -- if needed
 
 # expobj.paqProcessing()
 # expobj._findTargets()
@@ -60,6 +65,174 @@ expobj.targets_dfstdF_avg, expobj.targets_stims_raw, expobj.targets_stims_raw_av
 
 
 expobj.save()
+
+
+# %% 3) lists of trials to analyse for pre4ap and post4ap trials within experiments
+
+allopticalResults.pre_4ap_trials = [
+    ['RL108 t-009'],
+    ['RL108 t-010'],
+    ['RL109 t-007'],
+    ['RL109 t-008'],
+    ['RL109 t-013'],
+    ['RL109 t-014'],
+    ['PS04 t-012',  # 'PS04 t-014',  - temp just until PS04 gets reprocessed
+     'PS04 t-017'],
+    # ['PS05 t-010'], - problem with pickle data being truncated - fixed to Aug 13
+    ['PS07 t-007'],
+    ['PS07 t-009'],
+    ['PS06 t-008', 'PS06 t-009', 'PS06 t-010'],
+    ['PS06 t-011'],
+    ['PS06 t-012'],
+    # ['PS11 t-007'],
+    ['PS11 t-010'],
+    ['PS17 t-005'],
+    # ['PS17 t-006', 'PS17 t-007'],
+    # ['PS18 t-006']
+]
+
+allopticalResults.post_4ap_trials = [
+    ['RL108 t-013'],
+    # ['RL108 t-011'], - problem with pickle data being truncated
+    # ['RL109 t-020'], - problem with pickle data being truncated
+    ['RL109 t-021'],
+    ['RL109 t-018'],
+    ['RL109 t-016', 'RL109 t-017'],
+    # ['PS04 t-018'], - problem with pickle data being truncated
+    ['PS05 t-012'],
+    ['PS07 t-011'],
+    ['PS07 t-017'],
+    # ['PS06 t-014', 'PS06 t-015'], - missing seizure_lfp_onsets
+    ['PS06 t-013'],
+    # ['PS06 t-016'], - missing seizure_lfp_onsets
+    ['PS11 t-016'],
+    ['PS11 t-011'],
+    # ['PS17 t-011'],
+    ['PS17 t-009'],
+    # ['PS18 t-008']
+]
+
+
+
+
+allopticalResults.trial_maps = {'pre': {}, 'post': {}}
+allopticalResults.trial_maps['pre'] = {
+    'a': ['RL108 t-009'],
+    'b': ['RL108 t-010'],
+    'c': ['RL109 t-007'],
+    'd': ['RL109 t-008'],
+    'e': ['RL109 t-013'],
+    'f': ['RL109 t-014'],
+    'g': ['PS04 t-012',  # 'PS04 t-014',  - temp just until PS04 gets reprocessed
+     'PS04 t-017'],
+    # ['PS05 t-010'], - problem with pickle data being truncated - fixed to Aug 13
+    'h': ['PS07 t-007'],
+    'i': ['PS07 t-009'],
+    'j': ['PS06 t-008', 'PS06 t-009', 'PS06 t-010'],
+    'k': ['PS06 t-011'],
+    'l': ['PS06 t-012'],
+    #'m': ['PS11 t-007'],
+    'n': ['PS11 t-010'],
+    'o': ['PS17 t-005'],
+    # 'p': ['PS17 t-006', 'PS17 t-007'],
+    # 'q': ['PS18 t-006']
+}
+
+allopticalResults.trial_maps['post'] = {
+    'a': ['RL108 t-013'],
+    # 'b': ['RL108 t-011'], - problem with pickle data being truncated
+    # 'c': ['RL109 t-020'], - problem with pickle data being truncated
+    'd': ['RL109 t-021'],
+    'e': ['RL109 t-018'],
+    'f': ['RL109 t-016', 'RL109 t-017'],
+    # 'g': ['PS04 t-018'], - problem with pickle data being truncated
+    'h': ['PS05 t-012'],
+    'i': ['PS07 t-011'],
+    'j': ['PS07 t-017'],
+    # 'k': ['PS06 t-014', 'PS06 t-015'], - missing seizure_lfp_onsets
+    'l': ['PS06 t-013'],
+    # 'm': ['PS06 t-016'], - missing seizure_lfp_onsets
+    'n': ['PS11 t-016'],
+    'o': ['PS11 t-011'],
+    # 'p': ['PS17 t-011'],
+    'q': ['PS17 t-009'],
+    # 'r': ['PS18 t-008']
+}
+
+
+allopticalResults.save()
+
+
+
+
+
+# %% 4) adding slm targets responses to alloptical results superobject.slmtargets_stim_responses
+
+animal_prep = 'PS07'
+date = '2021-01-19'
+# trial = 't-009'
+
+pre4ap_trials = ['t-007', 't-008', 't-009']
+post4ap_trials = ['t-011', 't-016', 't-017']
+
+# pkl_path = "/home/pshah/mnt/qnap/Analysis/%s/%s/%s_%s/%s_%s.pkl" % (
+#     date, animal_prep, date, trial, date, trial)  # specify path in Analysis folder to save pkl object
+#
+# expobj, _ = aoutils.import_expobj(pkl_path=pkl_path)
+
+counter = allopticalResults.slmtargets_stim_responses.shape[0] + 1
+# counter = 6
+
+for trial in pre4ap_trials + post4ap_trials:
+    print(counter)
+    pkl_path = "/home/pshah/mnt/qnap/Analysis/%s/%s/%s_%s/%s_%s.pkl" % (
+        date, animal_prep, date, trial, date, trial)  # specify path in Analysis folder to save pkl object
+
+    expobj, _ = aoutils.import_expobj(pkl_path=pkl_path)
+
+    # add trials info to experiment
+    expobj.metainfo['pre4ap_trials'] = pre4ap_trials
+    expobj.metainfo['post4ap_trials'] = post4ap_trials
+    expobj.save()
+
+    # save to results object:
+    allopticalResults.slmtargets_stim_responses.loc[counter, 'prep_trial'] = '%s %s' % (
+        expobj.metainfo['animal prep.'], expobj.metainfo['trial'])
+    allopticalResults.slmtargets_stim_responses.loc[counter, 'date'] = expobj.metainfo['date']
+    allopticalResults.slmtargets_stim_responses.loc[counter, 'exptype'] = expobj.metainfo['exptype']
+    if 'post' in expobj.metainfo['exptype']:
+        if hasattr(expobj, 'stims_in_sz'):
+            allopticalResults.slmtargets_stim_responses.loc[counter, 'mean response (dF/stdF all targets)'] = np.mean(
+                [[np.mean(expobj.outsz_responses_SLMtargets[i]) for i in range(expobj.n_targets_total)]])
+            allopticalResults.slmtargets_stim_responses.loc[counter, 'mean response (dF/stdF all targets)'] = np.mean(
+                [[np.mean(expobj.outsz_responses_SLMtargets[i]) for i in range(expobj.n_targets_total)]])
+            allopticalResults.slmtargets_stim_responses.loc[counter, 'mean reliability (>0.3 dF/stdF)'] = np.mean(
+                list(expobj.outsz_StimSuccessRate_SLMtargets.values()))
+        else:
+            if not hasattr(expobj, 'seizure_lfp_onsets'):
+                raise AttributeError(
+                    'stims have not been classified as in or out of sz, no seizure lfp onsets for this trial')
+            else:
+                raise AttributeError(
+                    'stims have not been classified as in or out of sz, but seizure lfp onsets attr was found, so need to troubleshoot further')
+
+    else:
+        allopticalResults.slmtargets_stim_responses.loc[counter, 'mean response (dF/stdF all targets)'] = np.mean(
+            [[np.mean(expobj.responses_SLMtargets[i]) for i in range(expobj.n_targets_total)]])
+        allopticalResults.slmtargets_stim_responses.loc[counter, 'mean reliability (>0.3 dF/stdF)'] = np.mean(
+            list(expobj.StimSuccessRate_SLMtargets.values()))
+
+    allopticalResults.slmtargets_stim_responses.loc[counter, 'mean response (dFF all targets)'] = np.nan
+    counter += 1
+
+allopticalResults.save()
+allopticalResults.slmtargets_stim_responses
+
+# %% 5) make a metainfo attribute to store all metainfo types of info for all experiments/trials
+allopticalResults.metainfo = allopticalResults.slmtargets_stim_responses.loc[:, ['prep_trial', 'date', 'exptype']]
+
+
+
 
 
 

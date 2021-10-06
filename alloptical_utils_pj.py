@@ -40,7 +40,29 @@ from numba import njit
 
 
 # %%
-def import_expobj(trial: str = None, prep: str = None, date: str = None, pkl_path: str = None, verbose: bool = True):
+def import_resultsobj(pkl_path: str):
+    with open(pkl_path, 'rb') as f:
+        print('\nimporting resultsobj from: %s' % pkl_path)
+        resultsobj = pickle.load(f)
+        print('\n\nDONE IMPORT of %s resultsobj' % (type(resultsobj)))
+    return resultsobj
+
+# import results superobject that will collect analyses from various individual experiments
+results_object_path = '/home/pshah/mnt/qnap/Analysis/alloptical_results_superobject.pkl'
+allopticalResults = import_resultsobj(pkl_path=results_object_path)
+
+
+def import_expobj(allopticalResults=None, aoresults_map_id: str = None, trial: str = None, prep: str = None, date: str = None, pkl_path: str = None, verbose: bool = True):
+
+    if aoresults_map_id is not None:
+        if 'pre' in aoresults_map_id:
+            exp_type = 'pre'
+        elif 'post' in aoresults_map_id:
+            exp_type = 'post'
+        id = aoresults_map_id.split(' ')[1][0]
+        num_ = int(re.search(r"\d", aoresults_map_id)[0])
+        prep, trial = allopticalResults.trial_maps[exp_type][id][num_].split(' ')
+
     if date is None:
         date = allopticalResults.metainfo.loc[allopticalResults.metainfo['prep_trial'] == '%s %s' % (prep, trial), 'date'].values[0]
 
@@ -77,7 +99,7 @@ def import_expobj(trial: str = None, prep: str = None, date: str = None, pkl_pat
             expobj.save()
 
 
-    # other random things you want to do when importing expobj -- should be temp code basically - not essential for actual importing of expobj
+    # other misc. things you want to do when importing expobj -- should be temp code basically - not essential for actual importing of expobj
     if expobj.metainfo['animal prep.'] not in expobj.analysis_save_path:
         expobj.analysis_save_path = "/home/pshah/mnt/qnap/Analysis/%s/%s/%s_%s" % (date, expobj.metainfo['animal prep.'], date, trial)
         # expobj.analysis_save_path = expobj.analysis_save_path + '/' + expobj.metainfo['animal prep.'] + '/' + expobj.metainfo['date'] + '_' + expobj.metainfo['trial']
@@ -93,12 +115,6 @@ def import_expobj(trial: str = None, prep: str = None, date: str = None, pkl_pat
 
     return expobj, experiment
 
-def import_resultsobj(pkl_path: str):
-    with open(pkl_path, 'rb') as f:
-        print('\nimporting resultsobj from: %s' % pkl_path)
-        resultsobj = pickle.load(f)
-        print('\n\nDONE IMPORT of %s resultsobj' % (type(resultsobj)))
-    return resultsobj
 
 
 ## this should technically be the biggest super class lol
@@ -2023,9 +2039,11 @@ class alloptical(TwoPhotonImaging):
         """
 
         traces_SLMtargets_successes_avg_dict = {}
+        traces_SLMtargets_failures_avg_dict = {}
         reliability_slmtargets = {}
         for target_idx in hits_df.index:
             traces_SLMtargets_successes_l = []
+            traces_SLMtargets_failures_l = []
             success = 0
             counter = 0
             for stim_idx in stims_idx_l:
@@ -2044,12 +2062,17 @@ class alloptical(TwoPhotonImaging):
                         traces_SLMtargets_successes_l.append(dff_trace)
                     else:
                         success += 0
+                        dff_trace = self.SLMTargets_stims_dff[target_idx][stim_idx]
+                        traces_SLMtargets_failures_l.append(dff_trace)
+
             if counter > 0:
                 reliability_slmtargets[target_idx] = round(success / counter * 100., 2)
             if success > 0:
                 traces_SLMtargets_successes_avg_dict[target_idx] = np.mean(traces_SLMtargets_successes_l, axis=0)
+            if success < counter:  # this helps protect against cases where a trial is 100% successful (and there's no failures).
+                traces_SLMtargets_failures_avg_dict[target_idx] = np.mean(traces_SLMtargets_failures_l, axis=0)
 
-        return reliability_slmtargets, traces_SLMtargets_successes_avg_dict
+        return reliability_slmtargets, traces_SLMtargets_successes_avg_dict, traces_SLMtargets_failures_avg_dict
 
 
     def get_alltargets_stim_traces_norm(self, pre_stim=15, post_stim=200, filter_sz: bool = False, stims_idx_l: list = None):
@@ -3967,7 +3990,8 @@ def run_alloptical_processing_photostim(expobj, to_suite2p=None, baseline_trials
             stims_outsz_idx = [expobj.stim_start_frames.index(stim) for stim in expobj.stims_out_sz]
             if len(stims_outsz_idx) > 0:
                 print('|- calculating stim success rates (outsz) - %s stims [2.2]' % len(stims_outsz_idx))
-                expobj.outsz_StimSuccessRate_SLMtargets, expobj.outsz_traces_SLMtargets_successes_avg = \
+                expobj.outsz_StimSuccessRate_SLMtargets, expobj.outsz_traces_SLMtargets_successes_avg, \
+                expobj.outsz_traces_SLMtargets_failures_avg = \
                     expobj.calculate_SLMTarget_SuccessStims(hits_df=expobj.hits_SLMtargets, stims_idx_l=stims_outsz_idx)
 
         if hasattr(expobj, 'stims_in_sz'):
@@ -3975,7 +3999,8 @@ def run_alloptical_processing_photostim(expobj, to_suite2p=None, baseline_trials
                 stims_insz_idx = [expobj.stim_start_frames.index(stim) for stim in expobj.stims_in_sz]
                 if len(stims_insz_idx) > 0:
                     print('|- calculating stim success rates (insz) - %s stims [2.3]' % len(stims_insz_idx))
-                    expobj.insz_StimSuccessRate_SLMtargets, expobj.insz_traces_SLMtargets_successes_avg = \
+                    expobj.insz_StimSuccessRate_SLMtargets, expobj.insz_traces_SLMtargets_successes_avg,\
+                        expobj.insz_traces_SLMtargets_failures_avg = \
                         expobj.calculate_SLMTarget_SuccessStims(hits_df=expobj.hits_SLMtargets, stims_idx_l=stims_insz_idx,
                                                                 exclude_stims_targets=expobj.slmtargets_sz_stim)
             else:
@@ -3994,7 +4019,8 @@ def run_alloptical_processing_photostim(expobj, to_suite2p=None, baseline_trials
             expobj.calculate_SLMTarget_responses_dff(threshold=10, stims_to_use=expobj.stim_start_frames)
 
         expobj.stims_idx = [expobj.stim_start_frames.index(stim) for stim in expobj.stim_start_frames]
-        expobj.StimSuccessRate_SLMtargets, expobj.traces_SLMtargets_successes_avg = \
+        expobj.StimSuccessRate_SLMtargets, expobj.traces_SLMtargets_successes_avg, \
+        expobj.traces_SLMtargets_failures_avg = \
             expobj.calculate_SLMTarget_SuccessStims(hits_df=expobj.hits_SLMtargets, stims_idx_l=expobj.stims_idx)
 
 
@@ -4409,6 +4435,3 @@ def points_in_circle_np(radius, x0=0, y0=0, ):
         yield x, y
 
 
-# import results superobject that will collect analyses from various individual experiments
-results_object_path = '/home/pshah/mnt/qnap/Analysis/alloptical_results_superobject.pkl'
-allopticalResults = import_resultsobj(pkl_path=results_object_path)

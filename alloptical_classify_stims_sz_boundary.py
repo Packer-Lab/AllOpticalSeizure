@@ -1,4 +1,4 @@
-# %% 1) IMPORT MODULES AND TRIAL expobj OBJECT
+# %% 0) IMPORT MODULES AND TRIAL expobj OBJECT
 import sys
 import os
 sys.path.append('/home/pshah/Documents/code/PackerLab_pycharm/')
@@ -19,7 +19,7 @@ results_object_path = '/home/pshah/mnt/qnap/Analysis/alloptical_results_superobj
 allopticalResults = aoutils.import_resultsobj(pkl_path=results_object_path)
 
 
-#%% 2.1) defining trials to run for analysis
+#%% 1) defining trials to run for analysis
 
 ls = [
     # ['RL108 t-013'],
@@ -46,7 +46,7 @@ ls2 = [
     ['PS11 t-011'],
 ]
 
-# %% 2.2) classification of cells in/out of sz boundary
+# %% 2.1) classification of cells in/out of sz boundary
 
 # using post4ap experiments from allopticalResults attr. in for loop for processing:
 
@@ -101,7 +101,7 @@ for i in ls2:
         print('working on classifying cells for stims start frames...')
         expobj.slmtargets_sz_stim = {}
 
-#  2.2.1) ######## - all stims in sz are classified, with individual sz events labelled
+#  2.1.1) ######## - all stims in sz are classified, with individual sz events labelled
 
         stims_of_interest = [stim for stim in expobj.stims_in_sz[1:]]
         print('\n all stims in seizures: \n|-', stims_of_interest)
@@ -148,7 +148,7 @@ for i in ls2:
         # expobj.save()
 print('end end end.')
 
-# %% 2.3) need to repeat the above code
+# %% 2.2) need to repeat the above code
 # to correct for mis-assignment of cells (look at results and then find out which stims need to be flipped)
  # ['RL109 t-020'],
     # ['RL109 t-021'],
@@ -163,7 +163,7 @@ expobj.not_flip_stims = [5647, 7900, 12107
 
 expobj.save()
 
-# %% 2.4) re-run with new flip stims
+# %% 2.3) re-run with new flip stims
 expobj.slmtargets_sz_stim = {}
 sz_num = 0
 for on, off in zip(on_, end):
@@ -200,7 +200,7 @@ for on, off in zip(on_, end):
     sz_num += 1
 
 
-# %% 2.5) responses of targets during seizures, but EXCLUDE STIMS WHERE THE CELL IS INSIDE THE SZ BOUND
+# %% 3) responses of targets during seizures, but EXCLUDE STIMS WHERE THE CELL IS INSIDE THE SZ BOUND
 
 if hasattr(expobj, 'stims_in_sz'):
 
@@ -249,7 +249,7 @@ pj.plot_hist_density(data, x_label='response magnitude (dF/stdF)', title='stims_
                      colors=['black'] * 3, legend_labels=[None] * 3)
 
 
-# %% 2.6)
+
 
 
 
