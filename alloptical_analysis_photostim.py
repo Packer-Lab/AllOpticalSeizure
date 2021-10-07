@@ -191,7 +191,7 @@ allopticalResults.metainfo = allopticalResults.slmtargets_stim_responses.loc[:, 
 aoresults_map_id = 'post i'
 expobj, experiment = aoutils.import_expobj(allopticalResults=allopticalResults, aoresults_map_id=aoresults_map_id)
 
-plot = True
+plot = False
 if plot:
     aoplot.plotMeanRawFluTrace(expobj=expobj, stim_span_color=None, x_axis='Time', figsize=[20, 3])
     aoplot.plotLfpSignal(expobj, stim_span_color='', x_axis='time', figsize=[8, 2])
@@ -240,20 +240,27 @@ expobj.save()
 
 # %% suite2p ROIs - PHOTOSTIM TARGETS - PLOT AVG PHOTOSTIM PRE- POST- STIM TRACE AVGed OVER ALL PHOTOSTIM. TRIALS
 
-aoplot.plot_periphotostim_avg(to_plot='dFstdF', expobj=expobj, stim_duration=expobj.stim_duration_frames, pre_stim=0.5,
-                              post_stim=1.0, title=(experiment + '- responses of all photostim targets'), figsize=[5,4],
+to_plot = 'dFstdF'
+
+
+if to_plot == 'dFstdF':
+    arr = np.asarray([i for i in expobj.targets_dfstdF_avg])
+    y_label = 'dFstdF (normalized to prestim period)'
+elif to_plot == 'dFF':
+    arr = np.asarray([i for i in expobj.targets_dff_avg])
+    y_label = 'dFF (normalized to prestim period)'
+aoplot.plot_periphotostim_avg(arr=arr, expobj=expobj, pre_stim=0.5, post_stim=1.0,
+                              title=(experiment + '- responses of all photostim targets'), figsize=[5,4],
                               x_label='Time post-stimulation (seconds)')
 
 
 # %% SUITE2P ROIS - PHOTOSTIM TARGETS - PLOT ENTIRE TRIAL - individual ROIs plotted individually entire Flu trace
 
-to_plot = expobj.dff_s2ptargets
+to_plot = expobj.dff_SLMTargets
+aoplot.plot_photostim_traces_overlap(array=to_plot, expobj=expobj, y_lims=[0, 5000], title=(experiment + '-'))
 
-aoplot.plot_photostim_traces_overlap(array=to_plot, expobj=expobj, exclude_id=[expobj.s2p_cell_targets.index(cell) for cell in [211, 400, 542]],
-                                     y_lims=[0, 5000], title=(experiment + '-'))
-
-aoplot.plot_photostim_traces(array=to_plot, expobj=expobj, x_label='Frames',
-                             y_label='Raw Flu', title=experiment)
+aoplot.plot_photostim_traces(array=to_plot, expobj=expobj, x_label='Frames', y_label='dFF Flu',
+                             title='%s %s - dFF SLM Targets' % (expobj.metainfo['animal prep.'], expobj.metainfo['trial']))
 
 
 # # plot the photostim targeted cells as a heatmap
@@ -321,9 +328,9 @@ aoplot.plot_periphotostim_avg(arr=expobj.SLMTargets_stims_dfstdF_avg, expobj=exp
 
 data = [np.mean(expobj.responses_SLMtargets[i]) for i in range(expobj.n_targets_total)]
 
-pj.plot_hist_density(data, x_label='response magnitude (dF/stdF)')
-pj.plot_bar_with_points(data=[list(expobj.StimSuccessRate_SLMtargets.values())], x_tick_labels=['t-010'], ylims=[0, 100], bar=False, y_label='% success stims.',
-                        title='%s success rate of stim responses' % trial, expand_size_x=2)
+pj.plot_hist_density([data], x_label='response magnitude (dF/stdF)')
+pj.plot_bar_with_points(data=[list(expobj.StimSuccessRate_SLMtargets.values())], x_tick_labels=[expobj.metainfo['trial']], ylims=[0, 100], bar=False, y_label='% success stims.',
+                        title='%s success rate of stim responses' % expobj.metainfo['trial'], expand_size_x=2)
 
 
 
@@ -332,9 +339,9 @@ x = np.asarray([i for i in expobj.dfstdF_traces_avg])
 # y_label = 'pct. dFF (normalized to prestim period)'
 y_label = 'dFstdF (normalized to prestim period)'
 
-aoplot.plot_periphotostim_avg(arr=x, expobj=expobj, stim_duration=expobj.stim_duration_frames, pre_stim=0.5,
-                              post_stim=1.5, title=(experiment + '- responses of s2p non-targets'),
-                              y_label=y_label, x_label='post-stimulation (seconds)', y_lims=[-1, 3])
+aoplot.plot_periphotostim_avg(arr=x, expobj=expobj, pre_stim=0.5,
+                              post_stim=1.5, title='responses of s2p non-targets', y_label=y_label,
+                              x_label='Time post-stimulation (seconds)', y_lims=[-1, 3])
 
 
 # %% PLOT HEATMAP OF AVG PRE- POST TRACE AVGed OVER ALL PHOTOSTIM. TRIALS - ALL CELLS (photostim targets at top) - Lloyd style :D
