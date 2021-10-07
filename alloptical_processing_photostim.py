@@ -172,16 +172,8 @@ radius_list = aoplot.plot_cell_radius_aspectr(expobj, expobj.stat, to_plot='radi
 # %% FILTER ALL SUITE2P_ROIs THAT ARE ACTIVE AT LEAST ONCE FOR >2.5*std
 
 # pull out needed variables because numba doesn't work with custom classes (such as this all-optical class object)
-cell_ids = expobj.cell_id
-raws = expobj.raw
 # expobj.append_seizure_frames(bad_frames=None)
-photostim_frames = expobj.photostim_frames
-radiuses = expobj.radius
-
-# initial quick run to allow numba to compile the function - not sure if this is actually needed/creating time savings
-# _, _, _, _ = aoutils._good_cells(cell_ids=cell_ids[:3], raws=raws, photostim_frames=expobj.photostim_frames, radiuses=radiuses,
-#                         std_thresh=2, min_radius_pix=2.5, max_radius_pix=8.5)
-expobj.good_cells, events_loc_cells, flu_events_cells, stds = aoutils._good_cells(cell_ids=cell_ids, raws=raws, photostim_frames=expobj.photostim_frames, std_thresh=2.5)
+expobj.good_cells, events_loc_cells, flu_events_cells, stds = aoutils._good_cells(cell_ids=expobj.cell_id, raws=expobj.raw, photostim_frames=expobj.photostim_frames, std_thresh=2.5)
 expobj.save()
 
 # sort the stds dictionary in order of std
@@ -191,9 +183,12 @@ sorted_keys = sorted(stds, key=stds.get)  # [1, 3, 2]
 for w in sorted_keys:
     stds_sorted[w] = stds[w]
 
-#%% make a plot for the cells with high std. to make sure that they are not being unfairly excluded out
-for cell in list(stds_sorted.keys())[-5:]:
-    aoplot.plot_flu_trace(expobj,to_plot='dff',  cell=cell, show=False)
+# make a plot for the cells with high std. to make sure that they are not being unfairly excluded out
+
+ls = [1538]
+ls = list(stds_sorted.keys())[-5:]
+for cell in ls:
+    aoplot.plot_flu_trace(expobj, to_plot='dff',  cell=cell, show=False)
     plt.scatter(x=events_loc_cells[cell], y=flu_events_cells[cell], s=0.5, c='darkgreen')
     plt.show()
 

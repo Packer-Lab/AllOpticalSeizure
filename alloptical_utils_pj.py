@@ -3228,31 +3228,32 @@ def _good_cells(cell_ids: list, raws: np.ndarray, photostim_frames: list, std_th
 
         # print(i, " out of ", len(cell_ids), " cells")
         raw = raws[i]
-        raw_ = np.delete(raw, photostim_frames)
-        raw_dff = normalize_dff_jit(raw_)  # note that this function is defined in this file a little further down
-        std_ = raw_dff.std()
+        if np.mean(raw) > 1:  # exclude all negative raw traces and very small mean raw traces
+            raw_ = np.delete(raw, photostim_frames)
+            raw_dff = normalize_dff_jit(raw_)  # note that this function is defined in this file a little further down
+            std_ = raw_dff.std()
 
-        raw_dff_ = moving_average(raw_dff, n=4)
+            raw_dff_ = moving_average(raw_dff, n=4)
 
-        thr = np.mean(raw_dff) + std_thresh * std_
-        events = np.where(raw_dff_ > thr)
-        flu_values = raw_dff[events]
+            thr = np.mean(raw_dff) + std_thresh * std_
+            events = np.where(raw_dff_ > thr)
+            flu_values = raw_dff[events]
 
-        if radiuses is not None:
-            radius = radiuses[i]
-            if len(events[0]) > 0 and radius > min_radius_pix and radius < max_radius_pix:
+            if radiuses is not None:
+                radius = radiuses[i]
+                if len(events[0]) > 0 and radius > min_radius_pix and radius < max_radius_pix:
+                    events_loc_cells[cell_id] = events
+                    flu_events_cells[cell_id] = flu_values
+                    stds[cell_id] = std_
+                    good_cells.append(cell_id)
+            elif len(events[0]) > 0:
                 events_loc_cells[cell_id] = events
                 flu_events_cells[cell_id] = flu_values
-                stds[cell_id] = std_
                 good_cells.append(cell_id)
-        elif len(events[0]) > 0:
-            events_loc_cells[cell_id] = events
-            flu_events_cells[cell_id] = flu_values
-            good_cells.append(cell_id)
-            stds[cell_id] = std_
+                stds[cell_id] = std_
 
-        # if i == 465:  # just using this here if ever need to check back with specific cells if function seems to be misbehaving
-        #     print(events, len(events[0]), thr)
+            # if i == 465:  # just using this here if ever need to check back with specific cells if function seems to be misbehaving
+            #     print(events, len(events[0]), thr)
 
     print('# of good cells found: ', len(good_cells), ' (out of ', len(cell_ids), ' ROIs)')
     return good_cells, events_loc_cells, flu_events_cells, stds
@@ -3526,7 +3527,8 @@ def normalize_dff(arr, threshold=20):
 
     if arr.ndim == 1:
         a = np.percentile(arr, threshold)
-        mean_ = abs(arr[arr < a].mean())
+        # mean_ = abs(arr[arr < a].mean())
+        mean_ = arr[arr < a].mean()
         new_array = (arr - mean_) / mean_ * 100
         # print(mean)
     else:

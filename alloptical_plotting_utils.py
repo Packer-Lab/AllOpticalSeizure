@@ -488,7 +488,7 @@ def plot_flu_trace(expobj, cell, x_lims=None, slm_group=None, to_plot='raw', fig
     else:
         ValueError('specify to_plot as either "raw" or "dff"')
 
-    # make the plot either as just the raw trace or as a dFF trace with the std threshold drawn as well.
+    # make the plot either as just the raw trace or as a dFF trace with the std threshold line drawn as well.
     plt.figure(figsize=figsize)
     plt.plot(to_plot_, linewidth=linewidth)
     if to_plot == 'raw':
@@ -497,10 +497,9 @@ def plot_flu_trace(expobj, cell, x_lims=None, slm_group=None, to_plot='raw', fig
                      fontsize=15, y=1.00)
     elif to_plot == 'dff':
         plt.scatter(x, y=[0] * len(x), c='r', linewidth=0.1)
-        plt.axhline(y=np.mean(to_plot_) + 2.5 * to_thresh, c='green')
+        plt.axhline(y=np.mean(to_plot_) + 2.5 * to_thresh, c='green')  # plot threshold line
         plt.suptitle(('dff flu for cell #%s' % expobj.cell_id[idx]), horizontalalignment='center',
-                     verticalalignment='top',
-                     fontsize=15, y=0.95)
+                     verticalalignment='top', fontsize=15, y=0.95)
 
     if slm_group is not None:
         for i in expobj.stim_start_frames[slm_group::expobj.n_groups]:  # select SLM group specific stim trigger frames (may not exist by each individual SLM group though...)
@@ -510,8 +509,7 @@ def plot_flu_trace(expobj, cell, x_lims=None, slm_group=None, to_plot='raw', fig
             plt.axvline(x=i - 1, c='gray', alpha=0.1)
 
     if len(expobj.seizure_frames) > 0:
-        plt.scatter(expobj.seizure_frames, y=[-20] * len(x), c='g', linewidth=0.10)
-
+        plt.scatter(expobj.seizure_frames, y=[-20] * len(expobj.seizure_frames), c='g', linewidth=0.10)
 
     if x_lims:
         plt.xlim(x_lims)

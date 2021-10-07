@@ -188,10 +188,10 @@ allopticalResults.metainfo = allopticalResults.slmtargets_stim_responses.loc[:, 
 
 
 # %% 4) ###### IMPORT pkl file containing data in form of expobj
-aoresults_map_id = 'post i'
+aoresults_map_id = 'pre n'
 expobj, experiment = aoutils.import_expobj(allopticalResults=allopticalResults, aoresults_map_id=aoresults_map_id)
 
-plot = False
+plot = 0
 if plot:
     aoplot.plotMeanRawFluTrace(expobj=expobj, stim_span_color=None, x_axis='Time', figsize=[20, 3])
     aoplot.plotLfpSignal(expobj, stim_span_color='', x_axis='time', figsize=[8, 2])
@@ -218,11 +218,12 @@ expobj.s2p_targets(force_redo=True)
 if not hasattr(expobj, 'meanRawFluTrace'):
     expobj.mean_raw_flu_trace(plot=True)
 
+# for suite2p detected non-ROIs
 expobj.dff_traces, expobj.dff_traces_avg, expobj.dfstdF_traces, \
     expobj.dfstdF_traces_avg, expobj.raw_traces, expobj.raw_traces_avg = \
     aoutils.get_nontargets_stim_traces_norm(expobj=expobj, normalize_to='pre-stim', pre_stim=expobj.pre_stim,
                                             post_stim=expobj.post_stim)
-
+# for s2p detected target ROIs
 expobj.targets_dff, expobj.targets_dff_avg, expobj.targets_dfstdF, \
 expobj.targets_dfstdF_avg, expobj.targets_stims_raw, expobj.targets_stims_raw_avg = \
     aoutils.get_s2ptargets_stim_traces(expobj=expobj, normalize_to='pre-stim', pre_stim=expobj.pre_stim,
@@ -346,13 +347,16 @@ aoplot.plot_periphotostim_avg(arr=x, expobj=expobj, pre_stim=0.5,
 
 # %% PLOT HEATMAP OF AVG PRE- POST TRACE AVGed OVER ALL PHOTOSTIM. TRIALS - ALL CELLS (photostim targets at top) - Lloyd style :D
 
-x = np.asarray([i for i in expobj.targets_dfstdF_avg])
-aoplot.plot_traces_heatmap(x, expobj=expobj, vmin=-1, vmax=1, stim_on=expobj.pre_stim, stim_off=expobj.pre_stim + expobj.stim_duration_frames - 1,
-                           title=(experiment + ' - targets only'))
+arr = np.asarray([i for i in expobj.targets_dff_avg]); vmin = -1; vmax = 1
+arr = np.asarray([i for i in expobj.targets_dff_avg]); vmin = -20; vmax = 20
+aoplot.plot_traces_heatmap(arr, expobj=expobj, vmin=-20, vmax=20, stim_on=expobj.pre_stim, stim_off=expobj.pre_stim + expobj.stim_duration_frames - 1,
+                           title=('peristim avg trace heatmap' + ' - slm targets only'), x_label='Time')
 
-x = np.asarray([i for i in expobj.dfstdF_traces_avg])
-aoplot.plot_traces_heatmap(x, expobj=expobj, vmin=-1, vmax=1, stim_on=expobj.pre_stim, stim_off=expobj.pre_stim + expobj.stim_duration_frames - 1,
-                           title=(experiment + ' - nontargets'))
+arr = np.asarray([i for i in expobj.dfstdF_traces_avg]); vmin = -1; vmax = 1
+arr = np.asarray([i for i in expobj.dff_traces_avg]); vmin = -20; vmax = 20
+aoplot.plot_traces_heatmap(arr, expobj=expobj, vmin=vmin, vmax=vmax, stim_on=expobj.pre_stim, stim_off=expobj.pre_stim + expobj.stim_duration_frames - 1,
+                           title=('peristim avg trace heatmap' + ' - nontargets'), x_label='Time')
+
 
 # %% BAR PLOT PHOTOSTIM RESPONSES SIZE - TARGETS vs. NON-TARGETS
 # collect photostim timed average dff traces
@@ -374,17 +378,13 @@ good_std_cells = []
 # need to troubleshoot how these scripts are calculating the post stim responses for the non-targets because some of them seem ridiculously off
 # --->  this should be okay now since I've moved to df_stdf correct?
 
-
-
-## using pj.bar_with_points() for a nice bar graph
 group1 = list(expobj.average_responses_dfstdf[expobj.average_responses_dfstdf['group'] == 'photostim target'][
                   'Avg. dF/stdF response'])
 group2 = list(
     expobj.average_responses_dfstdf[expobj.average_responses_dfstdf['group'] == 'non-target']['Avg. dF/stdF response'])
 pj.plot_bar_with_points(data=[group1, group2], x_tick_labels=['photostim target', 'non-target'], xlims=[0, 0.6],
-                        ylims=[0, 1.5], bar=False,
-                        colors=['red', 'black'], title=experiment, y_label='Avg dF/stdF response', expand_size_y=1.3,
-                        expand_size_x=1.4)
+                        ylims=[0, 1.5], bar=False, colors=['red', 'black'], title=experiment, y_label='Avg dF/stdF response',
+                        expand_size_y=1.3, expand_size_x=1.4)
 
 
 # %% PLOT imshow() XY area locations with COLORS AS average response of ALL cells in FOV
