@@ -48,7 +48,10 @@ def import_expobj(allopticalResults=None, aoresults_map_id: str = None, trial: s
         elif 'post' in aoresults_map_id:
             exp_type = 'post'
         id = aoresults_map_id.split(' ')[1][0]
-        num_ = int(re.search(r"\d", aoresults_map_id)[0])
+        if len(allopticalResults.trial_maps[exp_type][id]) > 1:
+            num_ = int(re.search(r"\d", aoresults_map_id)[0])
+        else:
+            num_ = 0
         prep, trial = allopticalResults.trial_maps[exp_type][id][num_].split(' ')
 
     if date is None:
@@ -4429,6 +4432,6 @@ def points_in_circle_np(radius, x0=0, y0=0, ):
         yield x, y
 
 
-# import results superobject that will collect analyses from various individual experiments
-results_object_path = '/home/pshah/mnt/qnap/Analysis/alloptical_results_superobject.pkl'
-allopticalResults = import_resultsobj(pkl_path=results_object_path)
+# # import results superobject that will collect analyses from various individual experiments
+# results_object_path = '/home/pshah/mnt/qnap/Analysis/alloptical_results_superobject.pkl'
+# allopticalResults = import_resultsobj(pkl_path=results_object_path)

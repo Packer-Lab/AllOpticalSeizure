@@ -335,14 +335,12 @@ def plot_photostim_traces_overlap(array, expobj, exclude_id=[], y_spacing_factor
 
 
 ### photostim analysis - PLOT avg over all photstim. trials traces from PHOTOSTIM TARGETTED cells
-def plot_periphotostim_avg(arr: np.array, stim_duration, fps, exp_prestim, pre_stim=1.0, post_stim=3.0, title='', expobj=None,
+def plot_periphotostim_avg(arr=None, to_plot=None, pre_stim=1.0, post_stim=3.0, title='', expobj=None,
                            avg_only: bool = False, x_label=None, y_label=None, **kwargs):
     """
     plot trace across all stims
     :param arr: Flu traces to plot (will be plotted as individual traces unless avg_only is True) dimensions should be cells x stims x frames
-    :param stim_duration: seconds of stimulation duration
-    :param fps: frames per second rate of the imaging data collection for the data to be plotted
-    :param exp_prestim: frames of pre-stim data collected for each trace for this expobj (should be same as what's under expobj.pre_stim)
+    :param to_plot: string; options are 'dFstdF' or 'dFF'  (either dF - prestim F, normalized to std of prestim F or mean of prestim F)
     :param pre_stim: seconds of array to plot for pre-stim period
     :param post_stim: seconds of array to plot for post-stim period
     :param title: title to use for plot
@@ -357,6 +355,21 @@ def plot_periphotostim_avg(arr: np.array, stim_duration, fps, exp_prestim, pre_s
             'show': bool = to show the plot or not
     :return: list containing some items about the traces
     """
+
+    fps = expobj.fps  # frames per second rate of the imaging data collection for the data to be plotted
+    exp_prestim = expobj.pre_stim  # frames of pre-stim data collected for each trace for this expobj (should be same as what's under expobj.pre_stim)
+    stim_duration = expobj.stim_dur / 1000  # seconds of stimulation duration
+
+    if arr is None:
+        if to_plot == 'dFstdF':
+            arr = np.asarray([i for i in expobj.targets_dfstdF_avg])
+            y_label = 'dFstdF (normalized to prestim period)'
+        elif to_plot == 'dFF':
+            arr = np.asarray([i for i in expobj.targets_dff_avg])
+            y_label = 'dFF (normalized to prestim period)'
+    else:
+        pass
+
     x = list(range(arr.shape[1]))
     # x range in time (secs)
     x_time = np.linspace(0, arr.shape[1]/fps, arr.shape[1])  # x scale, but in time domain (transformed from frames based on the provided fps)
