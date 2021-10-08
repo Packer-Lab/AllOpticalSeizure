@@ -608,7 +608,7 @@ def plot_lfp_stims(expobj, title='LFP signal with photostim. shown (in different
 
 
 # plot the whole pre stim to post stim period as a cool heatmap
-def plot_traces_heatmap(data, vmin=None, vmax=None, stim_on=None, stim_off=None, figsize=None, title=None, xlims=(0,100), x_label='Frames',
+def plot_traces_heatmap(data, expobj, vmin=None, vmax=None, stim_on=None, stim_off=None, figsize=None, title=None, xlims=(0,100), x_label='Frames',
                         cmap='bwr', show=True, cbar=False, **kwargs):
     """
     plot the whole pre stim to post stim period as a cool heatmap

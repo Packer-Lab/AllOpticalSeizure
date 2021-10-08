@@ -10,13 +10,20 @@ import utils.funcs_pj as pj
 results_object_path = '/home/pshah/mnt/qnap/Analysis/alloptical_results_superobject.pkl'
 allopticalResults = aoutils.import_resultsobj(pkl_path=results_object_path)
 
-# %% 1) plot responses of non-targets from suite2p ROIs in response to photostim trials - broken down by pre-4ap, outsz and insz (excl. sz bound)
-# # - plot only successful stims!
+# %% 5) plot responses of non-targets from suite2p ROIs in response to photostim trials - broken down by pre-4ap, outsz and insz (excl. sz bound)
+# #  - with option to plot only successful or only failure stims!
+
+
+
+
+
+# %% 1) plot responses of SLM TARGETS in response to photostim trials - broken down by pre-4ap, outsz and insz (excl. sz bound)
+# #  - with option to plot only successful or only failure stims!
 
 ### 1.1) PRE-4AP TRIALS
 redo_processing = False  # flag to use when rerunning this whole for loop multiple times
 avg_only = True
-to_plot = 'failures'  # use for plotting either successful stim responses or failure stim responses
+to_plot = 'successes'  # use for plotting either 'successes' stim responses or 'failures' stim responses
 
 dffTraces = []
 f, ax = plt.subplots(figsize=[5, 4])
@@ -56,7 +63,7 @@ for i in allopticalResults.pre_4ap_trials:
                     stim_dur = expobj.stim_duration_frames / expobj.fps
                     title = 'Successfull stims only - avg. responses of photostim targets - pre4ap stims %s %s' % (prep, trial)
 
-                d = aoplot.plot_periphotostim_avg(arr=data_traces, fps=expobj.fps,
+                d = aoplot.plot_periphotostim_avg(arr=data_traces, expobj=expobj,
                                                   stim_duration=stim_dur, y_lims=[0, 100],
                                                   pre_stim=0.25, exp_prestim=expobj.pre_stim, post_stim=2.75, avg_only=avg_only,
                                                   title='Successfull stims only - avg. responses of photostim targets - pre4ap stims %s %s' % (prep, trial),
@@ -91,7 +98,7 @@ for i in allopticalResults.pre_4ap_trials:
                 title = 'Failures stims only - avg. responses of photostim targets - pre4ap stims %s %s' % (
                 prep, trial)
 
-            d = aoplot.plot_periphotostim_avg(arr=data_traces, fps=expobj.fps,
+            d = aoplot.plot_periphotostim_avg(arr=data_traces, expobj=expobj,
                                               stim_duration=stim_dur, y_lims=[0, 100],
                                               pre_stim=0.25, exp_prestim=expobj.pre_stim, post_stim=2.75,
                                               avg_only=avg_only, title=title, y_label=y_label, x_label='Time (secs)',
@@ -113,7 +120,7 @@ allopticalResults.save()
 # %% ## 1.2) POST-4AP TRIALS - IN SZ STIMS - EXCLUDE STIMS/CELLS INSIDE SZ BOUNDARY
 redo_processing = False  # flag to use when rerunning this whole for loop multiple times
 avg_only = True
-to_plot = 'failures'  # use for plotting either successful stim responses or failure stim responses
+to_plot = 'successes'  # use for plotting either 'successes' stim responses or 'failures' stim responses
 
 dffTraces_insz = []
 f, ax = plt.subplots(figsize=[5, 4])
@@ -156,7 +163,7 @@ for i in allopticalResults.post_4ap_trials:
                     stim_dur = expobj.stim_duration_frames / expobj.fps
                     title = 'Successfull stims only - avg. responses of photostim targets - in sz stims %s %s' % (prep, trial)
 
-                d = aoplot.plot_periphotostim_avg(arr=data_traces, fps=expobj.fps,
+                d = aoplot.plot_periphotostim_avg(arr=data_traces, expobj=expobj,
                                                   stim_duration=stim_dur, y_lims=[0, 100], title=title, avg_only=avg_only,
                                                   pre_stim=0.50, exp_prestim=expobj.pre_stim, post_stim=2.75,
                                                   y_label=y_label, x_label='Time (secs)', fig=f, ax=ax, show=False)
@@ -198,7 +205,7 @@ for i in allopticalResults.post_4ap_trials:
                 title = 'Failures stims only - avg. responses of photostim targets - in sz stims %s %s' % (
                 prep, trial)
 
-            d = aoplot.plot_periphotostim_avg(arr=data_traces, fps=expobj.fps,
+            d = aoplot.plot_periphotostim_avg(arr=data_traces, expobj=expobj,
                                               stim_duration=stim_dur, y_lims=[0, 100], title=title, avg_only=avg_only,
                                               pre_stim=0.25, exp_prestim=expobj.pre_stim, post_stim=2.75,
                                               y_label=y_label, x_label='Time (secs)', fig=f, ax=ax, show=False)
@@ -210,11 +217,13 @@ f.show()
 allopticalResults.dffTraces_outsz = np.asarray(dffTraces_insz)
 allopticalResults.save()
 
+
+
 # %% ## 1.3) POST-4AP TRIALS (OUT SZ STIMS)
 
 redo_processing = False  # flag to use when rerunning this whole for loop multiple times
 avg_only = True
-to_plot = 'failures'  # use for plotting either successful stim responses or failure stim responses
+to_plot = 'successes'  # use for plotting either 'successes' stim responses or 'failures' stim responses
 
 dffTraces_outsz = []
 f, ax = plt.subplots(figsize=[5, 4])
@@ -266,7 +275,7 @@ for i in allopticalResults.post_4ap_trials:
                     title = 'Successfull stims only - avg. responses of photostim targets - out sz stims %s %s' % (prep, trial)
 
 
-                d = aoplot.plot_periphotostim_avg(arr=data_traces, fps=expobj.fps,
+                d = aoplot.plot_periphotostim_avg(arr=data_traces, expobj=expobj,
                                                   stim_duration=stim_dur, y_lims=[0, 100],
                                                   pre_stim=0.25, exp_prestim=expobj.pre_stim, post_stim=2.75, avg_only=avg_only,
                                                   title='Successfull stims only - avg. responses of photostim targets - out sz stims %s %s' % (prep, trial),
@@ -307,7 +316,7 @@ for i in allopticalResults.post_4ap_trials:
                 title = 'Failures stims only - avg. responses of photostim targets - out sz stims %s %s' % (
                     prep, trial)
 
-            d = aoplot.plot_periphotostim_avg(arr=data_traces, fps=expobj.fps,
+            d = aoplot.plot_periphotostim_avg(arr=data_traces, expobj=expobj,
                                               stim_duration=stim_dur, y_lims=[0, 100], title=title, avg_only=avg_only,
                                               pre_stim=0.25, exp_prestim=expobj.pre_stim, post_stim=2.75,
                                               y_label=y_label, x_label='Time (secs)', fig=f, ax=ax, show=False)

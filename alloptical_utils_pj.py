@@ -40,7 +40,21 @@ from numba import njit
 
 
 # %%
-def import_expobj(allopticalResults=None, aoresults_map_id: str = None, trial: str = None, prep: str = None, date: str = None, pkl_path: str = None, verbose: bool = True):
+def import_expobj(aoresults_map_id: str = None, trial: str = None, prep: str = None, date: str = None, pkl_path: str = None, verbose: bool = True,
+                  do_processing: bool = True):
+
+    """
+    primary function for importing of saved expobj files saved pickel files.
+
+    :param aoresults_map_id:
+    :param trial:
+    :param prep:
+    :param date:
+    :param pkl_path:
+    :param verbose:
+    :param do_processing: whether to do extra misc. processing steps that are the end of the importing code here.
+    :return:
+    """
 
     if aoresults_map_id is not None:
         if 'pre' in aoresults_map_id:
@@ -74,12 +88,17 @@ def import_expobj(allopticalResults=None, aoresults_map_id: str = None, trial: s
             expobj.metainfo['comments'])
         if verbose:
             print('\n\nDONE IMPORT of %s' % experiment)
-    if hasattr(expobj, 'paq_rate'):
-        pass
-    else:
+
+
+    ### roping in some extraneous processing steps if there's expobj's that haven't completed for them
+    if not hasattr(expobj, 'paq_rate') or not hasattr(expobj, 'frame_start_time_actual'):
         print('\n-running paqProcessing to update paq attr.s in expobj')
         expobj.paqProcessing()
         expobj.save_pkl()
+
+    if not hasattr(expobj, 'post_stim_response_frames_window'):
+        expobj.post_stim_response_window_msec = 500  # msec
+        expobj.post_stim_response_frames_window = int(expobj.fps * expobj.post_stim_response_window_msec / 1000)
 
     if pkl_path is not None:
         if expobj.pkl_path != pkl_path:
@@ -96,13 +115,16 @@ def import_expobj(allopticalResults=None, aoresults_map_id: str = None, trial: s
         # expobj.analysis_save_path = expobj.analysis_save_path + '/' + expobj.metainfo['animal prep.'] + '/' + expobj.metainfo['date'] + '_' + expobj.metainfo['trial']
         expobj.save()
 
-    if not hasattr(expobj, 'subset_frames'):
-        expobj.subset_frames = expobj.curr_trial_frames
-        expobj.save()
+    if do_processing:
+        if not hasattr(expobj, 'subset_frames'):
+            expobj.subset_frames = expobj.curr_trial_frames
+            expobj.save()
 
-    if not hasattr(expobj, 'neuropil'):
-        expobj.s2pProcessing(s2p_path=expobj.s2p_path, subset_frames=expobj.curr_trial_frames, subtract_neuropil=True,
-                             baseline_frames=expobj.baseline_frames, force_redo=True)
+        if not hasattr(expobj, 'neuropil'):
+            # running s2p Processing
+            expobj.s2pProcessing(s2p_path=expobj.s2p_path, subset_frames=expobj.curr_trial_frames, subtract_neuropil=True,
+                                 baseline_frames=expobj.baseline_frames, force_redo=True)
+
 
     return expobj, experiment
 
@@ -582,7 +604,7 @@ class alloptical(TwoPhotonImaging):
 
         self.pre_stim = int(0.5 * self.fps)  # length of pre stim trace collected
         self.post_stim = int(3 * self.fps)  # length of post stim trace collected
-        self.post_stim_response_window_msec = 500 # msec
+        self.post_stim_response_window_msec = 500  # msec
         self.post_stim_response_frames_window = int(self.fps * self.post_stim_response_window_msec / 1000)
 
         self.save()
@@ -2072,98 +2094,98 @@ class alloptical(TwoPhotonImaging):
         return reliability_slmtargets, traces_SLMtargets_successes_avg_dict, traces_SLMtargets_failures_avg_dict
 
 
-    def get_alltargets_stim_traces_norm(self, pre_stim=15, post_stim=200, filter_sz: bool = False, stims_idx_l: list = None):
-        """
-        primary function to measure the dFF and dF/setdF traces for photostimulated targets.
-        :param stims:
-        :param targets_idx: integer for the index of target cell to process
-        :param subselect_cells: list of cells to subset from the overall set of traces (use in place of targets_idx if desired)
-        :param pre_stim: number of frames to use as pre-stim
-        :param post_stim: number of frames to use as post-stim
-        :param filter_sz: whether to filter out stims that are occuring seizures
-        :return: lists of individual targets dFF traces, and averaged targets dFF over all stims for each target
-        """
-
-        if filter_sz:
-            print('\n -- working on getting stim traces for cells inside sz boundary --')
-
-        if stims_idx_l is None:
-            stim_timings = self.stim_start_frames
-        else:
-            stim_timings = [self.stim_start_frames[stim_idx] for stim_idx in stims_idx_l]
-
-        self.s2p_rois_nontargets = [cell for cell in self.cell_id if cell not in self.s2p_cell_targets]  # TODO need to also detect (and exclude) ROIs that are within some radius of the SLM targets
-        num_cells = len(self.s2p_rois_nontargets)
-        targets_trace = self.raw
-
-        # collect photostim timed average dff traces of photostim nontargets
-        nontargets_dff = np.zeros(
-            [num_cells, len(self.stim_start_frames), pre_stim + self.stim_duration_frames + post_stim])
-        # nontargets_dff_avg = np.zeros([num_cells, pre_stim + post_stim])
-
-        nontargets_dfstdF = np.zeros(
-            [num_cells, len(self.stim_start_frames), pre_stim + self.stim_duration_frames + post_stim])
-        # nontargets_dfstdF_avg = np.zeros([num_cells, pre_stim + post_stim])
-
-        nontargets_raw = np.zeros(
-            [num_cells, len(self.stim_start_frames), pre_stim + self.stim_duration_frames + post_stim])
-        # nontargets_raw_avg = np.zeros([num_cells, pre_stim + post_stim])
-
-
-        for cell_idx in range(num_cells):
-
-            if filter_sz:
-                if hasattr(self, 'slmtargets_sz_stim'):  ## TODO change to ROIs in sz for each stim -- has this classification been done for non-targets ROIs?
-                    flu = []
-                    for stim in stim_timings:
-                        if stim in self.slmtargets_sz_stim.keys():  # some stims dont have sz boundaries because of issues with their TIFFs not being made properly (not readable in Fiji), usually it is the first TIFF in a seizure
-                            if cell_idx not in self.slmtargets_sz_stim[stim]:
-                                flu.append(targets_trace[cell_idx][stim - pre_stim: stim + self.stim_duration_frames + post_stim])
-                else:
-                    flu = []
-                    print('classifying of sz boundaries not completed for this expobj', self.metainfo['animal prep.'], self.metainfo['trial'])
-                # flu = [targets_trace[cell_idx][stim - pre_stim: stim + self.stim_duration_frames + post_stim] for
-                #        stim
-                #        in stim_timings if
-                #        stim not in self.seizure_frames]
-            else:
-                flu = [targets_trace[cell_idx][stim - pre_stim: stim + self.stim_duration_frames + post_stim] for
-                       stim
-                       in stim_timings]
-
-            # flu_dfstdF = []
-            # flu_dff = []
-            # flu = []
-            if len(flu) > 0:
-                for i in range(len(flu)):
-                    trace = flu[i]
-                    mean_pre = np.mean(trace[0:pre_stim])
-                    trace_dff = ((trace - mean_pre) / mean_pre) * 100
-                    std_pre = np.std(trace[0:pre_stim])
-                    dFstdF = (trace - mean_pre) / std_pre  # make dF divided by std of pre-stim F trace
-
-                    targets_raw[cell_idx, i] = trace
-                    targets_dff[cell_idx, i] = trace_dff
-                    targets_dfstdF[cell_idx, i] = dFstdF
-                    # flu_dfstdF.append(dFstdF)
-                    # flu_dff.append(trace_dff)
-
-            # targets_dff.append(flu_dff)  # contains all individual dFF traces for all stim times
-            # targets_dff_avg.append(np.nanmean(flu_dff, axis=0))  # contains the dFF trace averaged across all stim times
-
-            # targets_dfstdF.append(flu_dfstdF)
-            # targets_dfstdF_avg.append(np.nanmean(flu_dfstdF, axis=0))
-
-            # SLMTargets_stims_raw.append(flu)
-            # targets_raw_avg.append(np.nanmean(flu, axis=0))
-
-        targets_dff_avg = np.mean(targets_dff, axis=1)
-        targets_dfstdF_avg = np.mean(targets_dfstdF, axis=1)
-        targets_raw_avg = np.mean(targets_raw, axis=1)
-
-        print(targets_dff_avg.shape)
-
-        return targets_dff, targets_dff_avg, targets_dfstdF, targets_dfstdF_avg, targets_raw, targets_raw_avg
+    # def get_alltargets_stim_traces_norm(self, pre_stim=15, post_stim=200, filter_sz: bool = False, stims_idx_l: list = None):
+    #     """
+    #     primary function to measure the dFF and dF/setdF traces for photostimulated targets.
+    #     :param stims:
+    #     :param targets_idx: integer for the index of target cell to process
+    #     :param subselect_cells: list of cells to subset from the overall set of traces (use in place of targets_idx if desired)
+    #     :param pre_stim: number of frames to use as pre-stim
+    #     :param post_stim: number of frames to use as post-stim
+    #     :param filter_sz: whether to filter out stims that are occuring seizures
+    #     :return: lists of individual targets dFF traces, and averaged targets dFF over all stims for each target
+    #     """
+    #
+    #     if filter_sz:
+    #         print('\n -- working on getting stim traces for cells inside sz boundary --')
+    #
+    #     if stims_idx_l is None:
+    #         stim_timings = self.stim_start_frames
+    #     else:
+    #         stim_timings = [self.stim_start_frames[stim_idx] for stim_idx in stims_idx_l]
+    #
+    #     self.s2p_rois_nontargets = [cell for cell in self.cell_id if cell not in self.s2p_cell_targets]  # TODO need to also detect (and exclude) ROIs that are within some radius of the SLM targets
+    #     num_cells = len(self.s2p_rois_nontargets)
+    #     targets_trace = self.raw
+    #
+    #     # collect photostim timed average dff traces of photostim nontargets
+    #     nontargets_dff = np.zeros(
+    #         [num_cells, len(self.stim_start_frames), pre_stim + self.stim_duration_frames + post_stim])
+    #     # nontargets_dff_avg = np.zeros([num_cells, pre_stim + post_stim])
+    #
+    #     nontargets_dfstdF = np.zeros(
+    #         [num_cells, len(self.stim_start_frames), pre_stim + self.stim_duration_frames + post_stim])
+    #     # nontargets_dfstdF_avg = np.zeros([num_cells, pre_stim + post_stim])
+    #
+    #     nontargets_raw = np.zeros(
+    #         [num_cells, len(self.stim_start_frames), pre_stim + self.stim_duration_frames + post_stim])
+    #     # nontargets_raw_avg = np.zeros([num_cells, pre_stim + post_stim])
+    #
+    #
+    #     for cell_idx in range(num_cells):
+    #
+    #         if filter_sz:
+    #             if hasattr(self, 'slmtargets_sz_stim'):  ## TODO change to ROIs in sz for each stim -- has this classification been done for non-targets ROIs?
+    #                 flu = []
+    #                 for stim in stim_timings:
+    #                     if stim in self.slmtargets_sz_stim.keys():  # some stims dont have sz boundaries because of issues with their TIFFs not being made properly (not readable in Fiji), usually it is the first TIFF in a seizure
+    #                         if cell_idx not in self.slmtargets_sz_stim[stim]:
+    #                             flu.append(targets_trace[cell_idx][stim - pre_stim: stim + self.stim_duration_frames + post_stim])
+    #             else:
+    #                 flu = []
+    #                 print('classifying of sz boundaries not completed for this expobj', self.metainfo['animal prep.'], self.metainfo['trial'])
+    #             # flu = [targets_trace[cell_idx][stim - pre_stim: stim + self.stim_duration_frames + post_stim] for
+    #             #        stim
+    #             #        in stim_timings if
+    #             #        stim not in self.seizure_frames]
+    #         else:
+    #             flu = [targets_trace[cell_idx][stim - pre_stim: stim + self.stim_duration_frames + post_stim] for
+    #                    stim
+    #                    in stim_timings]
+    #
+    #         # flu_dfstdF = []
+    #         # flu_dff = []
+    #         # flu = []
+    #         if len(flu) > 0:
+    #             for i in range(len(flu)):
+    #                 trace = flu[i]
+    #                 mean_pre = np.mean(trace[0:pre_stim])
+    #                 trace_dff = ((trace - mean_pre) / mean_pre) * 100
+    #                 std_pre = np.std(trace[0:pre_stim])
+    #                 dFstdF = (trace - mean_pre) / std_pre  # make dF divided by std of pre-stim F trace
+    #
+    #                 targets_raw[cell_idx, i] = trace
+    #                 targets_dff[cell_idx, i] = trace_dff
+    #                 targets_dfstdF[cell_idx, i] = dFstdF
+    #                 # flu_dfstdF.append(dFstdF)
+    #                 # flu_dff.append(trace_dff)
+    #
+    #         # targets_dff.append(flu_dff)  # contains all individual dFF traces for all stim times
+    #         # targets_dff_avg.append(np.nanmean(flu_dff, axis=0))  # contains the dFF trace averaged across all stim times
+    #
+    #         # targets_dfstdF.append(flu_dfstdF)
+    #         # targets_dfstdF_avg.append(np.nanmean(flu_dfstdF, axis=0))
+    #
+    #         # SLMTargets_stims_raw.append(flu)
+    #         # targets_raw_avg.append(np.nanmean(flu, axis=0))
+    #
+    #     targets_dff_avg = np.mean(targets_dff, axis=1)
+    #     targets_dfstdF_avg = np.mean(targets_dfstdF, axis=1)
+    #     targets_raw_avg = np.mean(targets_raw, axis=1)
+    #
+    #     print(targets_dff_avg.shape)
+    #
+    #     return targets_dff, targets_dff_avg, targets_dfstdF, targets_dfstdF_avg, targets_raw, targets_raw_avg
 
 
     def get_nontargets_stim_traces_norm(self, stims_idx_l: list):
@@ -4132,9 +4154,9 @@ def all_cell_responses_dff(expobj, normalize_to=''):
 
     print('Completed gathering dFF responses to photostim for %s cells' % len(
         np.unique([expobj.good_cells + expobj.s2p_cell_targets])))
-    print('risky cells (with low Flu values to normalize with): ', risky_cells)
+    print('risky cells (with very low Flu values to normalize with) and very high dFF values: (%s)' % len(risky_cells), risky_cells)
 
-    return df
+    return df, risky_cells
 
 
 def all_cell_responses_dFstdF(expobj):
@@ -4244,8 +4266,8 @@ def slm_targets_responses(expobj, experiment, trial, y_spacing_factor=2, figsize
             stims = [expobj.stim_start_frames.index(stim) for stim in expobj.stims_out_sz]
             # raw_traces_stims = expobj.SLMTargets_stims_raw[:, stims, :]
             if len(stims) > 0:
-                expobj.outsz_StimSuccessRate_SLMtargets, expobj.outsz_hits_SLMtargets, expobj.outsz_responses_SLMtargets = \
-                    expobj.calculate_SLMTarget_responses_dff(threshold=dff_threshold, stims_to_use=stims, sz_filter=False)
+                expobj.outsz_StimSuccessRate_SLMtargets, expobj.outsz_hits_SLMtargets, expobj.outsz_traces_SLMtargets_successes = \
+                    expobj.calculate_SLMTarget_responses_dff(threshold=dff_threshold, stims_to_use=stims, sz_filter=seizure_filter)
 
                 # expobj.outsz_StimSuccessRate_SLMtargets, expobj.outsz_hits_SLMtargets, expobj.outsz_responses_SLMtargets = \
                 #     calculate_StimSuccessRate(expobj, cell_ids=SLMtarget_ids, raw_traces_stims=raw_traces_stims,
@@ -4434,6 +4456,6 @@ def points_in_circle_np(radius, x0=0, y0=0, ):
         yield x, y
 
 
-# # import results superobject that will collect analyses from various individual experiments
-# results_object_path = '/home/pshah/mnt/qnap/Analysis/alloptical_results_superobject.pkl'
-# allopticalResults = import_resultsobj(pkl_path=results_object_path)
+# # # import results superobject that will collect analyses from various individual experiments
+results_object_path = '/home/pshah/mnt/qnap/Analysis/alloptical_results_superobject.pkl'
+allopticalResults = import_resultsobj(pkl_path=results_object_path)

@@ -185,8 +185,7 @@ for w in sorted_keys:
 
 # make a plot for the cells with high std. to make sure that they are not being unfairly excluded out
 
-ls = [1538]
-ls = list(stds_sorted.keys())[-5:]
+ls = list(stds_sorted.keys())[:5]
 for cell in ls:
     aoplot.plot_flu_trace(expobj, to_plot='dff',  cell=cell, show=False)
     plt.scatter(x=events_loc_cells[cell], y=flu_events_cells[cell], s=0.5, c='darkgreen')
@@ -194,7 +193,7 @@ for cell in ls:
 
 # %% SAVE THE UPDATED expobj OBJECT IN THE ORIGINAL PKL PATH TO USE NEXT
 
-expobj.save_pkl(pkl_path=pkl_path)
+expobj.save()
 
 
 print("\n COMPLETED RUNNING ALL OPTICAL PROCESSING PHOTOSTIM.")
@@ -299,54 +298,62 @@ expobj.raw_df = pd.DataFrame(expobj.raw[idxs, :], columns=columns, index=index)
 
 
 
-# %% calculate dFF responses of all cells to photostimulation trials expobj
+# %% 5) calculate dFF responses of all cells to photostimulation trials expobj
 
 # non-targeted cells: calculate response of non-targeted cells in response to photostim. trials
 # - make a pandas dataframe that contains the post-stim response of all cells at each stim timepoint
 #   give group name 'non_targets' to the non-targetted cells, and the appropriate SLM group number to targetted cells
 
 
-expobj.dff_responses_all_cells = aoutils.all_cell_responses_dff(expobj, normalize_to='pre-stim')
+expobj.dff_responses_all_cells, expobj.risky_cells = aoutils.all_cell_responses_dff(expobj, normalize_to='pre-stim')
 
 # calculate the avg response values for all cells across all stims
 average_responses = np.mean(expobj.dff_responses_all_cells[expobj.dff_responses_all_cells.columns[1:]], axis=1)
 responses = {'cell_id': [], 'group': [], 'Avg. dFF response': []}
-for cell in expobj.cell_id:
-    if cell in expobj.s2p_cell_targets:
-        responses['cell_id'].append(cell)
-        responses['group'].append('photostim target')
-        responses['Avg. dFF response'].append(average_responses[cell])
-    else:
-        responses['cell_id'].append(cell)
-        responses['group'].append('non-target')
-        responses['Avg. dFF response'].append(average_responses[cell])
+for cell in expobj.good_cells:
+    if cell not in expobj.risky_cells:
+        if cell in expobj.s2p_cell_targets:
+            responses['cell_id'].append(cell)
+            responses['group'].append('photostim target')
+            responses['Avg. dFF response'].append(average_responses[cell])
+        else:
+            responses['cell_id'].append(cell)
+            responses['group'].append('non-target')
+            responses['Avg. dFF response'].append(average_responses[cell])
 
 expobj.average_responses_df = pd.DataFrame(responses)
 
 print('\nThe avg. dF/F responses of photostim targets is: %s' % np.mean(
     expobj.average_responses_df[expobj.average_responses_df.group == 'photostim target'])[1])
 
-# %% calculate dF_stdF responses of all cells to photostimulation trials expobj
+print('\nThe avg. dF/F responses of non-targets is: %s' % np.mean(
+    expobj.average_responses_df[expobj.average_responses_df.group == 'non-target'])[1])
+
+# %% 5.1) calculate dF_stdF responses of all cells to photostimulation trials expobj
 
 expobj.dfstdf_all_cells = aoutils.all_cell_responses_dFstdF(expobj)
 
 # calculate the avg response values for all cells across all stims
 average_responses_dfstdf = np.mean(expobj.dfstdf_all_cells[expobj.dfstdf_all_cells.columns[1:]], axis=1)
 responses = {'cell_id': [], 'group': [], 'Avg. dF/stdF response': []}
-for cell in expobj.cell_id:
-    if cell in expobj.s2p_cell_targets:
-        responses['cell_id'].append(cell)
-        responses['group'].append('photostim target')
-        responses['Avg. dF/stdF response'].append(average_responses_dfstdf[cell])
-    else:
-        responses['cell_id'].append(cell)
-        responses['group'].append('non-target')
-        responses['Avg. dF/stdF response'].append(average_responses_dfstdf[cell])
+for cell in expobj.good_cells:
+    if cell not in expobj.risky_cells:
+        if cell in expobj.s2p_cell_targets:
+            responses['cell_id'].append(cell)
+            responses['group'].append('photostim target')
+            responses['Avg. dF/stdF response'].append(average_responses_dfstdf[cell])
+        else:
+            responses['cell_id'].append(cell)
+            responses['group'].append('non-target')
+            responses['Avg. dF/stdF response'].append(average_responses_dfstdf[cell])
 
 expobj.average_responses_dfstdf = pd.DataFrame(responses)
 
 print('\nThe avg. dF/stdF responses of photostim targets is: %s' % np.mean(
     expobj.average_responses_dfstdf[expobj.average_responses_dfstdf.group == 'photostim target'])[1])
+
+print('\nThe avg. dF/stdF responses of non-targets is: %s' % np.mean(
+    expobj.average_responses_dfstdf[expobj.average_responses_dfstdf.group == 'non-target'])[1])
 
 
 

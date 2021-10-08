@@ -848,7 +848,7 @@ def plot_hist_density(data, colors: list = None, fill_color: list = None, legend
 
     if 'fig' in kwargs.keys():
         # adding text because adding title doesn't seem to want to work when piping subplots
-        ax.title.set_text(kwargs['title'] + r': $\mu=%s$, $\sigma=%s$' % (round(mu, 2), round(sigma, 2)), fontsize=12*shrink_text)
+        ax.set_title(kwargs['title'] + r': $\mu=%s$, $\sigma=%s$' % (round(mu, 2), round(sigma, 2)), wrap=True, fontsize=12*shrink_text)
         # ax.text(0.98, 0.97, kwargs['title'] + r': $\mu=%s$, $\sigma=%s$' % (round(mu, 2), round(sigma, 2)),
         #         verticalalignment='top', horizontalalignment='right',
         #         transform=ax.transAxes, fontweight='bold',

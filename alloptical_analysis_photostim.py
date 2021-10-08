@@ -28,9 +28,9 @@ allopticalResults.pre_4ap_trials = [
     ['RL109 t-008'],
     ['RL109 t-013'],
     ['RL109 t-014'],
-    ['PS04 t-012',  # 'PS04 t-014',  - temp just until PS04 gets reprocessed
+    ['PS04 t-012',  # 'PS04 t-014',  - temp comment out just until PS04 gets reprocessed
      'PS04 t-017'],
-    # ['PS05 t-010'], - problem with pickle data being truncated - fixed to Aug 13
+    # ['PS05 t-010'], - problem with pickle data being truncated - fixed to Aug 13 - processing done
     ['PS07 t-007'],
     ['PS07 t-009'],
     ['PS06 t-008', 'PS06 t-009', 'PS06 t-010'],
@@ -45,12 +45,12 @@ allopticalResults.pre_4ap_trials = [
 
 allopticalResults.post_4ap_trials = [
     ['RL108 t-013'],
-    # ['RL108 t-011'], - problem with pickle data being truncated
-    # ['RL109 t-020'], - problem with pickle data being truncated
+    # ['RL108 t-011'], - problem with pickle data being truncated - processing done
+    # ['RL109 t-020'], - problem with pickle data being truncated - ipr of fixing now
     ['RL109 t-021'],
     ['RL109 t-018'],
     ['RL109 t-016', 'RL109 t-017'],
-    # ['PS04 t-018'], - problem with pickle data being truncated
+    # ['PS04 t-018'], - problem with pickle data being truncated - processing done
     ['PS05 t-012'],
     ['PS07 t-011'],
     ['PS07 t-017'],
@@ -187,50 +187,60 @@ allopticalResults.metainfo = allopticalResults.slmtargets_stim_responses.loc[:, 
 
 
 
-# %% 4) ###### IMPORT pkl file containing data in form of expobj
-aoresults_map_id = 'pre n'
-expobj, experiment = aoutils.import_expobj(allopticalResults=allopticalResults, aoresults_map_id=aoresults_map_id)
+# %% 4) ###### IMPORT pkl file containing data in form of expobj, and run processing as needed (implemented as a loop currently)
 
-plot = 0
-if plot:
-    aoplot.plotMeanRawFluTrace(expobj=expobj, stim_span_color=None, x_axis='Time', figsize=[20, 3])
-    aoplot.plotLfpSignal(expobj, stim_span_color='', x_axis='time', figsize=[8, 2])
-    aoplot.plot_SLMtargets_Locs(expobj, background=expobj.meanFluImg_registered)
-    aoplot.plot_lfp_stims(expobj)
+for exptype in ['post', 'pre']:
+    for key in allopticalResults.trial_maps[exptype].keys():
+        if len(allopticalResults.trial_maps[exptype][key]) > 1:
+            aoresults_map_id = []
+            for i in range(len(allopticalResults.trial_maps[exptype][key])):
+                aoresults_map_id.append('%s %s.%s' % (exptype, key, i))
+        else:
+            aoresults_map_id = ['%s %s' % (exptype, key)]
 
-# %% 5) any data processing -- if needed
+        for mapid in aoresults_map_id:
+            expobj, experiment = aoutils.import_expobj(allopticalResults=allopticalResults, aoresults_map_id=mapid)
 
-# expobj.paqProcessing()
-# expobj._findTargets()
+            plot = 0
+            if plot:
+                aoplot.plotMeanRawFluTrace(expobj=expobj, stim_span_color=None, x_axis='Time', figsize=[20, 3])
+                aoplot.plotLfpSignal(expobj, stim_span_color='', x_axis='time', figsize=[8, 2])
+                aoplot.plot_SLMtargets_Locs(expobj, background=expobj.meanFluImg_registered)
+                aoplot.plot_lfp_stims(expobj)
 
+        # 5) any data processing -- if needed
 
-# if not hasattr(expobj, 's2p_path'):
-#     expobj.s2p_path = '/home/pshah/mnt/qnap/Analysis/2020-12-18/suite2p/alloptical-2p-1x-alltrials/plane0'
-
-# expobj.s2pProcessing(s2p_path=expobj.s2p_path, subset_frames=expobj.curr_trial_frames, subtract_neuropil=True,
-#                      baseline_frames=expobj.baseline_frames, force_redo=True)
-expobj.s2p_targets(force_redo=True)
-# aoutils.s2pMaskStack(obj=expobj, pkl_list=[expobj.pkl_path], s2p_path=expobj.s2p_path, parent_folder=expobj.analysis_save_path, force_redo=True)
-#
-
-
-
-if not hasattr(expobj, 'meanRawFluTrace'):
-    expobj.mean_raw_flu_trace(plot=True)
-
-# for suite2p detected non-ROIs
-expobj.dff_traces, expobj.dff_traces_avg, expobj.dfstdF_traces, \
-    expobj.dfstdF_traces_avg, expobj.raw_traces, expobj.raw_traces_avg = \
-    aoutils.get_nontargets_stim_traces_norm(expobj=expobj, normalize_to='pre-stim', pre_stim=expobj.pre_stim,
-                                            post_stim=expobj.post_stim)
-# for s2p detected target ROIs
-expobj.targets_dff, expobj.targets_dff_avg, expobj.targets_dfstdF, \
-expobj.targets_dfstdF_avg, expobj.targets_stims_raw, expobj.targets_stims_raw_avg = \
-    aoutils.get_s2ptargets_stim_traces(expobj=expobj, normalize_to='pre-stim', pre_stim=expobj.pre_stim,
-                                       post_stim=expobj.post_stim)
+        # expobj.paqProcessing()
+        # expobj._findTargets()
 
 
-expobj.save()
+        # if not hasattr(expobj, 's2p_path'):
+        #     expobj.s2p_path = '/home/pshah/mnt/qnap/Analysis/2020-12-18/suite2p/alloptical-2p-1x-alltrials/plane0'
+
+        # expobj.s2pProcessing(s2p_path=expobj.s2p_path, subset_frames=expobj.curr_trial_frames, subtract_neuropil=True,
+        #                      baseline_frames=expobj.baseline_frames, force_redo=True)
+            expobj.s2p_targets(force_redo=True)
+        # aoutils.s2pMaskStack(obj=expobj, pkl_list=[expobj.pkl_path], s2p_path=expobj.s2p_path, parent_folder=expobj.analysis_save_path, force_redo=True)
+        #
+
+
+
+            if not hasattr(expobj, 'meanRawFluTrace'):
+                expobj.mean_raw_flu_trace(plot=True)
+
+            # for suite2p detected non-ROIs
+            expobj.dff_traces, expobj.dff_traces_avg, expobj.dfstdF_traces, \
+                expobj.dfstdF_traces_avg, expobj.raw_traces, expobj.raw_traces_avg = \
+                aoutils.get_nontargets_stim_traces_norm(expobj=expobj, normalize_to='pre-stim', pre_stim=expobj.pre_stim,
+                                                        post_stim=expobj.post_stim)
+            # for s2p detected target ROIs
+            expobj.targets_dff, expobj.targets_dff_avg, expobj.targets_dfstdF, \
+            expobj.targets_dfstdF_avg, expobj.targets_stims_raw, expobj.targets_stims_raw_avg = \
+                aoutils.get_s2ptargets_stim_traces(expobj=expobj, normalize_to='pre-stim', pre_stim=expobj.pre_stim,
+                                                   post_stim=expobj.post_stim)
+
+
+            expobj.save()
 
 
 
@@ -242,7 +252,6 @@ expobj.save()
 # %% suite2p ROIs - PHOTOSTIM TARGETS - PLOT AVG PHOTOSTIM PRE- POST- STIM TRACE AVGed OVER ALL PHOTOSTIM. TRIALS
 
 to_plot = 'dFstdF'
-
 
 if to_plot == 'dFstdF':
     arr = np.asarray([i for i in expobj.targets_dfstdF_avg])
@@ -383,12 +392,11 @@ group1 = list(expobj.average_responses_dfstdf[expobj.average_responses_dfstdf['g
 group2 = list(
     expobj.average_responses_dfstdf[expobj.average_responses_dfstdf['group'] == 'non-target']['Avg. dF/stdF response'])
 pj.plot_bar_with_points(data=[group1, group2], x_tick_labels=['photostim target', 'non-target'], xlims=[0, 0.6],
-                        ylims=[0, 1.5], bar=False, colors=['red', 'black'], title=experiment, y_label='Avg dF/stdF response',
-                        expand_size_y=1.3, expand_size_x=1.4)
+                        ylims=[0, 3], bar=False, colors=['red', 'black'], title=experiment, y_label='Avg dF/stdF response',
+                        expand_size_y=2, expand_size_x=1)
 
 
 # %% PLOT imshow() XY area locations with COLORS AS average response of ALL cells in FOV
-expobj.good_cells = expobj.cell_id
 
 aoplot.xyloc_responses(expobj, to_plot='dfstdf', clim=[-1, +1], plot_target_coords=True)
 
@@ -406,6 +414,8 @@ df_ = df_[df_.columns].astype(float)
 plt.figure(figsize=(5, 15));
 sns.heatmap(df_, cmap='seismic', vmin=-5, vmax=5, cbar_kws={"shrink": 0.25});
 plt.show()
+
+
 
 
 
