@@ -37,10 +37,9 @@ for i in allopticalResults.pre_4ap_trials:
         print('\nprogress @ ', prep, trial, ' [1.1.0]')
         expobj, experiment = aoutils.import_expobj(trial=trial, prep=prep, verbose=False)
 
-        if 'pre' in expobj.metainfo['exptype']:
-            if redo_processing:
-                aoutils.run_alloptical_processing_photostim(expobj, to_suite2p=expobj.suite2p_trials, baseline_trials=expobj.baseline_trials,
-                                                            plots=False, force_redo=False)
+        if redo_processing:
+            aoutils.run_alloptical_processing_photostim(expobj, to_suite2p=expobj.suite2p_trials, baseline_trials=expobj.baseline_trials,
+                                                        plots=False, force_redo=False)
             expobj.save()
 
         if to_plot == 'successes':
@@ -61,37 +60,35 @@ for i in allopticalResults.pre_4ap_trials:
             array_to_plot = np.asarray([expobj.traces_SLMtargets_failures_avg[key] for key in
                                          expobj.traces_SLMtargets_failures_avg.keys()])
 
-
-
-            y_label = '% dFF (normalized to prestim period)'
-            x_label = 'Time (secs)'
-            if avg_only:
-                # modify matrix to exclude data from stim_dur period and replace with a flat line
-                data_traces = []
-                for trace in np.asarray([expobj.traces_SLMtargets_successes_avg[key] for key in expobj.traces_SLMtargets_successes_avg.keys()]):
-                    trace_ = trace[:expobj.pre_stim]
-                    trace_ = np.append(trace_, [[15]*3])  # setting 3 frames as stimduration
-                    trace_ = np.append(trace_, trace[expobj.pre_stim + expobj.stim_duration_frames + 3:])
-                    data_traces.append(trace_)
-                data_traces = np.array(data_traces)
-                stim_dur = 3 / expobj.fps
-                title = '%s stims only, all exps. - avg. responses of photostim targets - pre4ap stims' % to_plot
-            else:
-                data_traces = expobj.traces_SLMtargets_successes_avg
-                stim_dur = expobj.stim_duration_frames / expobj.fps
-                title = '%s stims only - avg. responses of photostim targets - pre4ap stims %s %s' % (to_plot, prep, trial)
-
-            f, ax, d = aoplot.plot_periphotostim_avg(arr=data_traces, expobj=expobj,
-                                              stim_duration=stim_dur, y_lims=[0, 50],
-                                              pre_stim=0.25, post_stim=2.75, avg_only=avg_only,
-                                              title='Successfull stims only - avg. responses of photostim targets - pre4ap stims %s %s' % (prep, trial),
-                                              y_label=y_label, x_label=x_label, fig=f, ax=ax, show=False)
-
+        # prepare data for plotting
+        y_label = '% dFF (normalized to prestim period)'
+        x_label = 'Time (secs)'
+        if avg_only:
+            # modify matrix to exclude data from stim_dur period and replace with a flat line
+            data_traces = []
+            for trace in array_to_plot:
+                trace_ = trace[:expobj.pre_stim]
+                trace_ = np.append(trace_, [[15]*3])  # setting 3 frames as stimduration
+                trace_ = np.append(trace_, trace[expobj.pre_stim + expobj.stim_duration_frames + 3:])
+                data_traces.append(trace_)
+            data_traces = np.array(data_traces)
+            stim_dur = 3 / expobj.fps
+            title = '%s stims only, all exps. - avg. responses of photostim targets - pre4ap stims' % to_plot
         else:
-            AssertionError('need to specify to_plot variable as either successes or failures - to plot either successful stim responses or failure stim responses [1.1.2]')
+            data_traces = expobj.traces_SLMtargets_successes_avg
+            stim_dur = expobj.stim_duration_frames / expobj.fps
+            title = '%s stims only - avg. responses of photostim targets - pre4ap stims %s %s' % (to_plot, prep, trial)
+        # make plot
+        f, ax, d = aoplot.plot_periphotostim_avg(arr=data_traces, expobj=expobj,
+                                          stim_duration=stim_dur, y_lims=[0, 50],
+                                          pre_stim=0.25, post_stim=2.75, avg_only=avg_only,
+                                          title='Successfull stims only - avg. responses of photostim targets - pre4ap stims %s %s' % (prep, trial),
+                                          y_label=y_label, x_label=x_label, fig=f, ax=ax, show=False)
+
 
         print('|- shape of dFF array: ', data_traces.shape, ' [1.1.3]')
-        dffTraces.append(d)
+        dffTraces.append(d[2])
+
 f.show()
 allopticalResults.dffTraces = np.asarray(dffTraces)
 allopticalResults.save()
