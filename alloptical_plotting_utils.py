@@ -357,15 +357,15 @@ def plot_periphotostim_avg(arr=None, pre_stim=1.0, post_stim=3.0, title='', expo
 
     fps = expobj.fps  # frames per second rate of the imaging data collection for the data to be plotted
     exp_prestim = expobj.pre_stim  # frames of pre-stim data collected for each trace for this expobj (should be same as what's under expobj.pre_stim)
-    stim_duration = expobj.stim_dur / 1000  # seconds of stimulation duration
+    if 'stim_duration' in kwargs.keys():
+        stim_duration = kwargs['stim_duration']
+    else:
+        stim_duration = expobj.stim_dur / 1000  # seconds of stimulation duration
 
 
     x = list(range(arr.shape[1]))
     # x range in time (secs)
     x_time = np.linspace(0, arr.shape[1]/fps, arr.shape[1])  # x scale, but in time domain (transformed from frames based on the provided fps)
-
-    if 'Time' in x_label or 'time' in x_label:
-        x = x_time
 
     len_ = len(arr)
     flu_avg = np.mean(arr, axis=0)
@@ -382,21 +382,28 @@ def plot_periphotostim_avg(arr=None, pre_stim=1.0, post_stim=3.0, title='', expo
 
     ax.margins(0)
     # ax.axvspan(expobj.pre_stim, expobj.pre_stim + expobj.stim_duration_frames, alpha=0.2, color='tomato')
+
     if 'Time' in x_label or 'time' in x_label:
+        x = x_time  # set the x plotting range
+
         if avg_only is True:
-            ax.axvspan(exp_prestim/fps - 1/fps, exp_prestim/fps + stim_duration, alpha=1, color='tomato', zorder=3)
+            ax.axvspan(exp_prestim/fps - 1/fps, exp_prestim/fps + stim_duration, alpha=0.1, color='tomato', zorder=0)
         else:
             ax.axvspan(exp_prestim / fps - 1 / fps, exp_prestim / fps + stim_duration, alpha=0.2, color='tomato')
     else:
         ax.axvspan(exp_prestim, exp_prestim + int(stim_duration*fps), alpha=0.2, color='tomato')
         x_label = 'Frames'
+
+
     if not avg_only:
         for cell_trace in arr:
             if 'color' in kwargs.keys():
                 ax.plot(x, cell_trace, linewidth=1, alpha=0.6, c=kwargs['color'], zorder=1)
             else:
                 ax.plot(x, cell_trace, linewidth=1, alpha=0.5, zorder=1)
+
     ax.plot(x, flu_avg, color='black', linewidth=2.3, zorder=2)  # plot average trace
+
     if 'y_lims' in kwargs.keys():
         ax.set_ylim(kwargs['y_lims'])
     if pre_stim and post_stim:

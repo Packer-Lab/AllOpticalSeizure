@@ -2295,7 +2295,7 @@ class Post4ap(alloptical):
         """subselect raw tiff movie over all seizures as marked by onset and offsets. save under analysis path for object.
         Note that the onsets and offsets definitions may vary, so check exactly what was used in those args."""
 
-        print('\n-----Making raw sz movies by cropping original raw tiff')
+        print('-----Making raw sz movies by cropping original raw tiff')
         if hasattr(self, 'analysis_save_path'):
             pass
         else:
@@ -2345,11 +2345,11 @@ class Post4ap(alloptical):
             bad_frames=bad_frames)  # here only need to append the bad frames to the expobj.bad_frames property
 
         if hasattr(self, 'seizures_lfp_timing_matarray'):
-            print('|-now creating raw movies for each sz as well (saved to the /Analysis folder) ... ')
+            print('\n|-now creating raw movies for each sz as well (saved to the /Analysis folder) ... ')
             self.subselect_tiffs_sz(onsets=self.seizure_lfp_onsets, offsets=self.seizure_lfp_offsets,
                                     on_off_type='lfp_onsets_offsets')
 
-            print('|-now classifying photostims at phases of seizures ... ')
+            print('\n|-now classifying photostims at phases of seizures ... ')
             self.stims_in_sz = [stim for stim in self.stim_start_frames if stim in self.seizure_frames]
             self.stims_out_sz = [stim for stim in self.stim_start_frames if stim not in self.seizure_frames]
 
@@ -3977,8 +3977,16 @@ def run_alloptical_processing_photostim(expobj, to_suite2p=None, baseline_trials
         expobj.SLMTargets_stims_dfstdF_avg, expobj.SLMTargets_stims_raw, expobj.SLMTargets_stims_rawAvg = \
             expobj.get_alltargets_stim_traces_norm(pre_stim=expobj.pre_stim, post_stim=expobj.post_stim, stims=expobj.stim_start_frames)
 
+        SLMtarget_ids = list(range(len(expobj.SLMTargets_stims_dfstdF)))
+
     # only out of sz stims (use for post-4ap trials)
     elif 'post' in expobj.metainfo['exptype']:
+
+        expobj.SLMTargets_stims_dff, expobj.SLMTargets_stims_dffAvg, expobj.SLMTargets_stims_dfstdF, \
+        expobj.SLMTargets_stims_dfstdF_avg, expobj.SLMTargets_stims_raw, expobj.SLMTargets_stims_rawAvg = \
+            expobj.get_alltargets_stim_traces_norm(pre_stim=expobj.pre_stim, post_stim=expobj.post_stim,
+                                                   stims=expobj.stim_start_frames)
+
         stims = [stim for stim in expobj.stim_start_frames if stim not in expobj.seizure_frames]
         expobj.SLMTargets_stims_dff_outsz, expobj.SLMTargets_stims_dffAvg_outsz, expobj.SLMTargets_stims_dfstdF_outsz, \
         expobj.SLMTargets_stims_dfstdF_avg_outsz, expobj.SLMTargets_stims_raw_outsz, expobj.SLMTargets_stims_rawAvg_outsz = \
@@ -3998,7 +4006,6 @@ def run_alloptical_processing_photostim(expobj, to_suite2p=None, baseline_trials
     # measure, for each cell, the pct of trials in which the dF_stdF > 20% post stim (normalized to pre-stim avgF for the trial and cell)
     # can plot this as a bar plot for now showing the distribution of the reliability measurement
 
-    SLMtarget_ids = list(range(len(expobj.SLMTargets_stims_dfstdF)))
 
     if 'post' in expobj.metainfo['exptype']:
         seizure_filter = True
@@ -4263,11 +4270,10 @@ def slm_targets_responses(expobj, experiment, trial, y_spacing_factor=2, figsize
         if hasattr(expobj, 'stims_in_sz'):
             seizure_filter = True
 
-            stims = [expobj.stim_start_frames.index(stim) for stim in expobj.stims_out_sz]
             # raw_traces_stims = expobj.SLMTargets_stims_raw[:, stims, :]
-            if len(stims) > 0:
-                expobj.outsz_StimSuccessRate_SLMtargets, expobj.outsz_hits_SLMtargets, expobj.outsz_traces_SLMtargets_successes = \
-                    expobj.calculate_SLMTarget_responses_dff(threshold=dff_threshold, stims_to_use=stims, sz_filter=seizure_filter)
+            if len(expobj.stims_out_sz) > 0:
+                expobj.StimSuccessRate_SLMtargets_outsz, expobj.hits_SLMtargets_outsz, expobj.responses_SLMtargets_outsz, expobj.traces_SLMtargets_successes_outsz = \
+                    expobj.calculate_SLMTarget_responses_dff(threshold=10, stims_to_use=expobj.stims_out_sz)
 
                 # expobj.outsz_StimSuccessRate_SLMtargets, expobj.outsz_hits_SLMtargets, expobj.outsz_responses_SLMtargets = \
                 #     calculate_StimSuccessRate(expobj, cell_ids=SLMtarget_ids, raw_traces_stims=raw_traces_stims,
@@ -4275,11 +4281,10 @@ def slm_targets_responses(expobj, experiment, trial, y_spacing_factor=2, figsize
                 #                               pre_stim=expobj.pre_stim, sz_filter=seizure_filter,
                 #                               verbose=True, plot=False)
 
-            stims = [expobj.stim_start_frames.index(stim) for stim in expobj.stims_in_sz]
             # raw_traces_stims = expobj.SLMTargets_stims_raw[:, stims, :]
-            if len(stims) > 0:
-                expobj.insz_StimSuccessRate_SLMtargets, expobj.insz_hits_SLMtargets, expobj.insz_responses_SLMtargets = \
-                    expobj.calculate_SLMTarget_responses_dff(threshold=dff_threshold, stims_to_use=stims, sz_filter=seizure_filter)
+            if len(expobj.stims_in_sz) > 0:
+                expobj.StimSuccessRate_SLMtargets_insz, expobj.hits_SLMtargets_insz, expobj.responses_SLMtargets_insz, expobj.traces_SLMtargets_successes_insz = \
+                    expobj.calculate_SLMTarget_responses_dff(threshold=10, stims_to_use=expobj.stims_in_sz)
 
                 # expobj.insz_StimSuccessRate_SLMtargets, expobj.insz_hits_SLMtargets, expobj.insz_responses_SLMtargets = \
                 #     calculate_StimSuccessRate(expobj, cell_ids=SLMtarget_ids, raw_traces_stims=raw_traces_stims,
@@ -4290,8 +4295,8 @@ def slm_targets_responses(expobj, experiment, trial, y_spacing_factor=2, figsize
         else:
             seizure_filter = False
             print('\n Calculating stim success rates and response magnitudes ***********')
-            expobj.StimSuccessRate_SLMtargets, expobj.hits_SLMtargets, expobj.responses_SLMtargets = \
-                expobj.calculate_SLMTarget_responses_dff(threshold=dff_threshold, stims_to_use=expobj.stim_start_frames)
+            expobj.StimSuccessRate_SLMtargets, expobj.hits_SLMtargets, expobj.responses_SLMtargets, expobj.traces_SLMtargets_successes = \
+                expobj.calculate_SLMTarget_responses_dff(threshold=10, stims_to_use=expobj.stim_start_frames)
 
             # expobj.StimSuccessRate_SLMtargets, expobj.hits_SLMtargets, expobj.responses_SLMtargets = \
             #     calculate_StimSuccessRate(expobj, cell_ids=SLMtarget_ids, raw_traces_stims=expobj.SLMTargets_stims_raw,
@@ -4348,22 +4353,22 @@ def slm_targets_responses(expobj, experiment, trial, y_spacing_factor=2, figsize
         # fig, (ax1, ax2, ax3, ax4) = plt.subplots(figsize=((5 * 4), 5), nrows=1, ncols=4)
         # stims out sz
         ax3 = fig.add_subplot(gs[-1, 2:4])
-        data = [[np.mean(expobj.outsz_responses_SLMtargets.loc[i]) for i in range(expobj.n_targets_total)]]
+        data = [[np.mean(expobj.responses_SLMtargets_outsz.loc[i]) for i in range(expobj.n_targets_total)]]
         fig, ax3 = pj.plot_hist_density(data, x_label='response magnitude (dF/F)', title='stims_out_sz - ',
                                      fig=fig, ax=ax3, show=False)
         ax4 = fig.add_subplot(gs[-1, 4])
-        fig, ax4 = pj.plot_bar_with_points(data=[list(expobj.outsz_StimSuccessRate_SLMtargets.values())],
+        fig, ax4 = pj.plot_bar_with_points(data=[list(expobj.StimSuccessRate_SLMtargets_outsz.values())],
                                            x_tick_labels=[trial],
                                            ylims=[0, 100], bar=False, y_label='% success stims.',
                                            title='target success rate (stims out sz)', expand_size_x=2,
                                            show=False, fig=fig, ax=ax4)
         # stims in sz
         ax5 = fig.add_subplot(gs[-1, 5:7])
-        data = [[np.mean(expobj.insz_responses_SLMtargets.loc[i]) for i in range(expobj.n_targets_total)]]
+        data = [[np.mean(expobj.responses_SLMtargets_insz.loc[i]) for i in range(expobj.n_targets_total)]]
         fig, ax5 = pj.plot_hist_density(data, x_label='response magnitude (dF/stdF)', title='stims_in_sz - ',
                                         fig=fig, ax=ax5, show=False)
         ax6 = fig.add_subplot(gs[-1, 7])
-        fig, ax6 = pj.plot_bar_with_points(data=[list(expobj.insz_StimSuccessRate_SLMtargets.values())],
+        fig, ax6 = pj.plot_bar_with_points(data=[list(expobj.StimSuccessRate_SLMtargets_insz.values())],
                                         x_tick_labels=[trial],
                                         ylims=[0, 100], bar=False, y_label='% success stims.',
                                         title='target success rate (stims in sz)', expand_size_x=2,

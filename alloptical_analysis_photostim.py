@@ -28,9 +28,9 @@ allopticalResults.pre_4ap_trials = [
     ['RL109 t-008'],
     ['RL109 t-013'],
     ['RL109 t-014'],
-    ['PS04 t-012',  # 'PS04 t-014',  - temp comment out just until PS04 gets reprocessed
+    ['PS04 t-012',  # 'PS04 t-014',  - not sure what's wrong with PS04, but the photostim and Flu are out of sync .21/10/09
      'PS04 t-017'],
-    # ['PS05 t-010'], - problem with pickle data being truncated - fixed to Aug 13 - processing done
+    ['PS05 t-010'],  # - problem with pickle data being truncated - analysis code run done .21/10/09
     ['PS07 t-007'],
     ['PS07 t-009'],
     ['PS06 t-008', 'PS06 t-009', 'PS06 t-010'],
@@ -45,18 +45,18 @@ allopticalResults.pre_4ap_trials = [
 
 allopticalResults.post_4ap_trials = [
     ['RL108 t-013'],
-    # ['RL108 t-011'], - problem with pickle data being truncated - processing done
-    # ['RL109 t-020'], - problem with pickle data being truncated - ipr of fixing now
+    ['RL108 t-011'],  # - problem with pickle data being truncated - analysis code run done .21/10/09
+    ['RL109 t-020'],  # - problem with pickle data being truncated - analysis code run done .21/10/09
     ['RL109 t-021'],
     ['RL109 t-018'],
     ['RL109 t-016', 'RL109 t-017'],
-    # ['PS04 t-018'], - problem with pickle data being truncated - processing done
+    ['PS04 t-018'],  # - problem with pickle data being truncated - analysis done
     ['PS05 t-012'],
     ['PS07 t-011'],
     ['PS07 t-017'],
-    # ['PS06 t-014', 'PS06 t-015'], - missing seizure_lfp_onsets
+    # ['PS06 t-014', 'PS06 t-015'], - missing seizure_lfp_onsets (no paired measurements mat file for trial .21/10/09)
     ['PS06 t-013'],
-    # ['PS06 t-016'], - missing seizure_lfp_onsets
+    # ['PS06 t-016'], - missing seizure_lfp_onsets (no paired measurements mat file for trial .21/10/09)
     ['PS11 t-016'],
     ['PS11 t-011'],
     # ['PS17 t-011'],
@@ -77,7 +77,7 @@ allopticalResults.trial_maps['pre'] = {
     'f': ['RL109 t-014'],
     'g': ['PS04 t-012',  # 'PS04 t-014',  - temp just until PS04 gets reprocessed
      'PS04 t-017'],
-    # ['PS05 t-010'], - problem with pickle data being truncated - fixed to Aug 13
+    # ['PS05 t-010'], # - problem with pickle data being truncated - analysis code run done .21/10/09
     'h': ['PS07 t-007'],
     'i': ['PS07 t-009'],
     'j': ['PS06 t-008', 'PS06 t-009', 'PS06 t-010'],
@@ -92,12 +92,12 @@ allopticalResults.trial_maps['pre'] = {
 
 allopticalResults.trial_maps['post'] = {
     'a': ['RL108 t-013'],
-    # 'b': ['RL108 t-011'], - problem with pickle data being truncated
-    # 'c': ['RL109 t-020'], - problem with pickle data being truncated
+    # 'b': ['RL108 t-011'], # - problem with pickle data being truncated - analysis code run done .21/10/09
+    # 'c': ['RL109 t-020'], # - problem with pickle data being truncated - analysis code run done .21/10/09
     'd': ['RL109 t-021'],
     'e': ['RL109 t-018'],
     'f': ['RL109 t-016', 'RL109 t-017'],
-    # 'g': ['PS04 t-018'], - problem with pickle data being truncated
+    # 'g': ['PS04 t-018'], # - problem with pickle data being truncated - analysis code run done .21/10/09
     'h': ['PS05 t-012'],
     'i': ['PS07 t-011'],
     'j': ['PS07 t-017'],
@@ -189,6 +189,16 @@ allopticalResults.metainfo = allopticalResults.slmtargets_stim_responses.loc[:, 
 
 # %% 4) ###### IMPORT pkl file containing data in form of expobj, and run processing as needed (implemented as a loop currently)
 
+
+expobj, experiment = aoutils.import_expobj(aoresults_map_id='pre g.1')
+
+plot = 1
+if plot:
+    aoplot.plotMeanRawFluTrace(expobj=expobj, stim_span_color=None, x_axis='Time', figsize=[20, 3])
+    aoplot.plotLfpSignal(expobj, stim_span_color='', x_axis='time', figsize=[8, 2])
+    aoplot.plot_SLMtargets_Locs(expobj, background=expobj.meanFluImg_registered)
+    aoplot.plot_lfp_stims(expobj)
+
 for exptype in ['post', 'pre']:
     for key in allopticalResults.trial_maps[exptype].keys():
         if len(allopticalResults.trial_maps[exptype][key]) > 1:
@@ -199,7 +209,7 @@ for exptype in ['post', 'pre']:
             aoresults_map_id = ['%s %s' % (exptype, key)]
 
         for mapid in aoresults_map_id:
-            expobj, experiment = aoutils.import_expobj(allopticalResults=allopticalResults, aoresults_map_id=mapid)
+            expobj, experiment = aoutils.import_expobj(aoresults_map_id=mapid)
 
             plot = 0
             if plot:
