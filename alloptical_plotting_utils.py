@@ -387,7 +387,7 @@ def plot_periphotostim_avg(arr=None, pre_stim=1.0, post_stim=3.0, title='', expo
         x = x_time  # set the x plotting range
 
         if avg_only is True:
-            ax.axvspan(exp_prestim/fps - 1/fps, exp_prestim/fps + stim_duration, alpha=0.1, color='tomato', zorder=0)
+            ax.axvspan(exp_prestim/fps - 1/fps, exp_prestim/fps + stim_duration + 1 / fps, alpha=1, color='plum', zorder = 3)
         else:
             ax.axvspan(exp_prestim / fps - 1 / fps, exp_prestim / fps + stim_duration, alpha=0.2, color='tomato')
     else:
