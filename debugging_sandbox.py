@@ -30,30 +30,25 @@ import tifffile as tf
 
 ########
 # %%
-# import results superobject that will collect analyses from various individual experiments
-to_suite2p = ['t-005', 't-006', 't-007', 't-008', 't-011', 't-012', 't-013', 't-014', 't-016',
-              't-017', 't-018', 't-019', 't-020', 't-021']
-baseline_trials = ['t-005', 't-006'] # specify which trials to use as spont baseline
-# note ^^^ this only works currently when the spont baseline trials all come first, and also back to back
+import matplotlib.pyplot as plt
+import numpy as np
+from matplotlib.ticker import (MultipleLocator, AutoMinorLocator)
 
 
-trials = ['t-020']
-trial = 't-020'
+t = np.arange(0.0, 100.0, 0.1)
+s = np.sin(0.1 * np.pi * t) * np.exp(-t * 0.01)
 
-for trial in trials:
-    ###### IMPORT pkl file containing expobj
-    date = '2020-12-19'
-    pkl_path = "/home/pshah/mnt/qnap/Analysis/%s/RL109/%s_%s/%s_%s.pkl" % (date, date, trial, date, trial)
+fig, ax = plt.subplots()
+ax.plot(t, s)
 
-    expobj, experiment = aoutils.import_expobj(trial=trial, date=date, pkl_path=pkl_path, do_processing=False)
-    expobj.s2p_path = '/home/pshah/mnt/qnap/Analysis/2020-12-19/suite2p/alloptical-2p-1x-alltrials/plane0'
-    expobj.seizures_lfp_timing_matarray = expobj.seizures_info_array
-    expobj.collect_seizures_info()
+# Make a plot with major ticks that are multiples of 20 and minor ticks that
+# are multiples of 5.  Label major ticks with '.0f' formatting but don't label
+# minor ticks.  The string is used directly, the `StrMethodFormatter` is
+# created automatically.
+ax.xaxis.set_major_locator(MultipleLocator(20))
+ax.xaxis.set_major_formatter('{x:.0f}')
 
-    expobj.pre_stim = int(0.5 * expobj.fps)  # length of pre stim trace collected
-    expobj.post_stim = int(3 * expobj.fps)  # length of post stim trace collected
-    expobj.post_stim_response_window_msec = 500  # msec
-    expobj.post_stim_response_frames_window = int(expobj.fps * expobj.post_stim_response_window_msec / 1000)
+# For the minor ticks, use no labels; default NullFormatter.
+ax.xaxis.set_minor_locator(MultipleLocator(5))
 
-    aoutils.run_alloptical_processing_photostim(expobj, to_suite2p=to_suite2p, baseline_trials=baseline_trials,
-                                                force_redo=True)
+plt.show()

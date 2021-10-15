@@ -55,6 +55,9 @@ def calc_distance_2points(p1: tuple, p2: tuple):
     """
     return math.hypot(p2[0] - p1[0], p2[1] - p1[1])
 
+# find percentile of a value within an array
+def find_percentile(d, threshold):
+    return sum(np.abs(d) < threshold) / float(len(d)) * 100
 
 # random func for rotating images and calculating the image intensity along one axis of the image
 def rotate_img_avg(input_img, angle):
@@ -615,13 +618,13 @@ def make_random_color_array(n_colors):
 
 
 # plotting function for plotting a bar graph with the individual data points shown as well
-def plot_bar_with_points(data, title='', x_tick_labels=[], legend_labels: list = [], points=True, bar=True, colors=['black'], ylims=None, xlims=False,
+def plot_bar_with_points(data, title='', x_tick_labels=[], legend_labels: list = [], points: bool = True, bar: bool = True, colors: list = ['black'], ylims=None, xlims=False,
                          x_label=None, y_label=None, alpha=0.2, savepath=None, expand_size_x=1, expand_size_y=1, shrink_text: float = 1, show_legend=False,
                          paired=False, **kwargs):
     """
-    general purpose function for plotting a bar graph of multiple categories with the individual datapoints shown
-    as well. The latter is achieved by adding a scatter plot with the datapoints randomly jittered around the central
-    x location of the bar graph.
+    all purpose function for plotting a bar graph of multiple categories with the option of individual datapoints shown
+    as well. The individual datapoints are drawn by adding a scatter plot with the datapoints randomly jittered around the central
+    x location of the bar graph. The individual points can also be paired in which case they will be centered. The bar can also be turned off.
 
     :param data: list; provide data from each category as a list and then group all into one list
     :param title: str; title of the graph
@@ -674,11 +677,10 @@ def plot_bar_with_points(data, title='', x_tick_labels=[], legend_labels: list =
     # plot bar graph, or if no bar (when lw = 0 from above) then use it to plot the error bars
     ax.bar([x * w * 2.5 for x in x],
            height=[np.mean(yi) for yi in y],
-           yerr=[np.std(yi) for yi in y],  # error bars
+           yerr=[np.std(yi, ddof=1) for yi in y],  # error bars
            capsize=4.5,  # error bar cap width in points
            width=w,  # bar width
            linewidth=lw,  # width of the bar edges
-           # tick_label=x_tick_labels,
            edgecolor=edgecolor,
            color=(0, 0, 0, 0),  # face edgecolor transparent
            zorder=2
@@ -689,8 +691,8 @@ def plot_bar_with_points(data, title='', x_tick_labels=[], legend_labels: list =
     if xlims:
         ax.set_xlim([(x[0] * w * 2) - w * 1.20, (x[-1] * w * 2.5) + w * 1.20])
     elif len(x) == 1:  # set the x_lims for single bar case so that the bar isn't autoscaled
-        xlims = [-1, 1]
-        ax.set_xlim(xlims)
+        xlims_ = [-1, 1]
+        ax.set_xlim(xlims_)
 
     if len(legend_labels) == 0:
         if len(x_tick_labels) == 0:
@@ -698,20 +700,27 @@ def plot_bar_with_points(data, title='', x_tick_labels=[], legend_labels: list =
         legend_labels = x_tick_labels
 
     if points:
-        if not paired:  # dont scatter location of points if plotting paired lines
+        if not paired:
             for i in x:
                 # distribute scatter randomly across whole width of bar
                 ax.scatter(x[i] * w * 2.5 + np.random.random(len(y[i])) * w - w / 2, y[i], color=colors[i], alpha=alpha, label=legend_labels[i])
 
-    if paired:
-        for i in x:
-            # plot points
-            ax.scatter([x[i] * w * 2.5] * len(y[i]), y[i], color=colors[i], alpha=alpha,
-                       label=legend_labels[i], zorder=3)
-            if i > 0:
-                for point_idx in range(len(y[i])):
-                    ax.plot([x[i-1] * w * 2 + 0.015, x[i] * w * 2.5 - 0.015], [y[i-1][point_idx], y[i][point_idx]], color='black', zorder=2, alpha=alpha)
+        else:  # connect lines to the paired scatter points in the list
+            if len(x) > 0:
+                for i in x:
+                    # plot points  # dont scatter location of points if plotting paired lines
+                    ax.scatter([x[i] * w * 2.5] * len(y[i]), y[i], color=colors[i], alpha=0.5,
+                               label=legend_labels[i], zorder=3)
+                for i in x[:-1]:
+                    for point_idx in range(len(y[i])):
+                        ax.plot([x[i] * w * 2.5 + 0.058, x[i+1] * w * 2.5 - 0.048], [y[i][point_idx], y[i+1][point_idx]], color='black', zorder=2, alpha=alpha)
 
+                # for point_idx in range(len(y[i])):  # slight design difference, with straight line going straight through the scatter points
+                #     ax.plot([x * w * 2.5 for x in x],
+                #             [y[i][point_idx] for i in x], color='black', zorder=0, alpha=alpha)
+
+            else:
+                ReferenceError('cannot do paired scatter plotting with only one data category')
 
     if ylims:
         ax.set_ylim(ylims)
@@ -723,11 +732,6 @@ def plot_bar_with_points(data, title='', x_tick_labels=[], legend_labels: list =
     ax.spines['right'].set_visible(False)
     ax.spines['top'].set_visible(False)
 
-
-
-    # ax.spines['top'].set_visible(False)
-    # ax.spines['right'].set_visible(False)
-    # ax.spines['left'].set_visible(False)
     ax.tick_params(axis='both', which='both', length=10)
 
     # Only show ticks on the left and bottom spines

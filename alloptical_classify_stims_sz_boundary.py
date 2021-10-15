@@ -43,7 +43,7 @@ ls = [
 ]
 
 ls2 = [
-    ['PS11 t-011'],
+    ['PS07 t-011'],
 ]
 
 # %% 2.1) classification of cells in/out of sz boundary
@@ -150,16 +150,17 @@ print('end end end.')
 
 # %% 2.2) need to repeat the above code
 # to correct for mis-assignment of cells (look at results and then find out which stims need to be flipped)
+
  # ['RL109 t-020'],
     # ['RL109 t-021'],
     # ['RL109 t-018'],
-prep = 'PS11'
-trial = 't-011'
-expobj, experiment = aoutils.import_expobj(trial=trial, prep=prep, verbose=True)
+# prep = 'PS11'
+# trial = 't-011'
+# expobj, experiment = aoutils.import_expobj(trial=trial, prep=prep, verbose=True)
 
 
-expobj.not_flip_stims = [5647, 7900, 12107
-                         ]  # specify here the stims where the flip=False leads to incorrect assignment
+# expobj.not_flip_stims = [expobj.stims_in_sz[1:]]  # specify here the stims where the flip=False leads to incorrect assignment
+expobj.not_flip_stims = expobj.stims_in_sz[1:]  # specify here the stims where the flip=False leads to incorrect assignment
 
 expobj.save()
 

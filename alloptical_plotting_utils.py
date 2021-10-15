@@ -389,7 +389,7 @@ def plot_periphotostim_avg(arr=None, pre_stim=1.0, post_stim=3.0, title='', expo
         if avg_only is True:
             ax.axvspan(exp_prestim/fps - 1/fps, exp_prestim/fps + stim_duration + 1 / fps, alpha=1, color='plum', zorder = 3)
         else:
-            ax.axvspan(exp_prestim / fps - 1 / fps, exp_prestim / fps + stim_duration, alpha=0.2, color='tomato')
+            ax.axvspan(pre_stim - 1/fps, pre_stim - 1/fps + stim_duration, alpha=0.5, color='plum', zorder = 3)
     else:
         ax.axvspan(exp_prestim, exp_prestim + int(stim_duration*fps), alpha=0.2, color='tomato')
         x_label = 'Frames'
@@ -400,7 +400,11 @@ def plot_periphotostim_avg(arr=None, pre_stim=1.0, post_stim=3.0, title='', expo
             if 'color' in kwargs.keys():
                 ax.plot(x, cell_trace, linewidth=1, alpha=0.6, c=kwargs['color'], zorder=1)
             else:
-                ax.plot(x, cell_trace, linewidth=1, alpha=0.5, zorder=1)
+                if arr.shape[0] > 50:
+                    alpha = 0.1
+                else:
+                    alpha = 0.5
+                ax.plot(x, cell_trace, linewidth=1, alpha=alpha, zorder=1)
 
     ax.plot(x, flu_avg, color='black', linewidth=2.3, zorder=2)  # plot average trace
 
@@ -615,15 +619,15 @@ def plot_lfp_stims(expobj, title='LFP signal with photostim. shown (in different
 
 
 # plot the whole pre stim to post stim period as a cool heatmap
-def plot_traces_heatmap(data, expobj, vmin=None, vmax=None, stim_on=None, stim_off=None, figsize=None, title=None, xlims=(0,100), x_label='Frames',
-                        cmap='bwr', show=True, cbar=False, **kwargs):
+def plot_traces_heatmap(arr, expobj, vmin=None, vmax=None, stim_on = None, stim_off= None, figsize=None, title=None, xlims=(0,100), x_label='Frames',
+                        cmap='bwr', show=True, cbar: bool = False, **kwargs):
     """
     plot the whole pre stim to post stim period as a cool heatmap
-    :param data:
-    :param vmin:
-    :param vmax:
-    :param stim_on:
-    :param stim_off:
+    :param arr: cells x frames array
+    :param vmin: colorbar limit min
+    :param vmax: colorbar limit max
+    :param stim_on: frame # (relative to frames axis of array)
+    :param stim_off: frames # (relative to frames axis of array)
     :param figsize:
     :param title:
     :param xlims:
@@ -638,11 +642,11 @@ def plot_traces_heatmap(data, expobj, vmin=None, vmax=None, stim_on=None, stim_o
         else:
             fig, ax = plt.subplots(figsize=[5, 5])
 
-    # ax = ax.imshow(data, aspect='auto', cmap=cmap)
+    # ax = ax.imshow(arr, aspect='auto', cmap=cmap)
     # # plt.set_cmap(cmap)
     # ax.set_clim(vmin, vmax)
 
-    mesh1 = ax.pcolormesh(data, cmap=cmap)
+    mesh1 = ax.pcolormesh(arr, cmap=cmap)
     mesh1.set_clim(vmin, vmax)
 
     if xlims is not None:
@@ -654,8 +658,8 @@ def plot_traces_heatmap(data, expobj, vmin=None, vmax=None, stim_on=None, stim_o
         else:
             cbar.remove()
     if stim_on and stim_off:  # draw vertical dashed lines for stim period
-        # plt.vlines(x=stim_on, ymin=0, ymax=len(data), colors='black')
-        # plt.vlines(x=stim_off, ymin=0, ymax=len(data))
+        # plt.vlines(x=stim_on, ymin=0, ymax=len(arr), colors='black')
+        # plt.vlines(x=stim_off, ymin=0, ymax=len(arr))
         # plt.axvline(x=stim_on, edgecolor='grey', linestyle='--')
         if type(stim_on) is int:
             stim_on = [stim_on]
@@ -664,15 +668,15 @@ def plot_traces_heatmap(data, expobj, vmin=None, vmax=None, stim_on=None, stim_o
             ax.axvline(x=line, color='black', linestyle='--')
         for line in stim_off:
             ax.axvline(x=line, color='black', linestyle='--')
-        ax.set_ylim(0, len(data)-0.5)
+        ax.set_ylim(0, len(arr)-0.5)
 
     if 'lfp_signal' in kwargs.keys():
-        x_c = np.linspace(0, data.shape[1] - 1, len(kwargs['lfp_signal']))
-        ax.plot(x_c, kwargs['lfp_signal'] * 50 + data.shape[0] - 100, c='black')
+        x_c = np.linspace(0, arr.shape[1] - 1, len(kwargs['lfp_signal']))
+        ax.plot(x_c, kwargs['lfp_signal'] * 50 + arr.shape[0] - 100, c='black')
 
     if 'Time' in x_label or 'time' in x_label:
-        # change x axis ticks to every 30 seconds
-        labels = list(np.linspace(0, int(data.shape[1] / expobj.fps), int(data.shape[1] / expobj.fps * 2)))
+        # labels = list(np.linspace(0, int(arr.shape[1] / expobj.fps), int(arr.shape[1] / expobj.fps * 2 / 2)))
+        labels = list(range(0, int(arr.shape[1] / expobj.fps), 1))  # tick label every one second
         ax.set_xticks(ticks=[(label * expobj.fps) for label in labels])
         ax.set_xticklabels(labels)
         ax.set_xlabel('Time (secs)')

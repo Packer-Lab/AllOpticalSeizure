@@ -33,12 +33,12 @@ allopticalResults.pre_4ap_trials = [
     ['PS05 t-010'],  # - problem with pickle data being truncated - analysis code run done .21/10/09
     ['PS07 t-007'],
     ['PS07 t-009'],
-    ['PS06 t-008', 'PS06 t-009', 'PS06 t-010'],
+    # ['PS06 t-008', 'PS06 t-009', 'PS06 t-010'],  # matching post4ap trial cannot be analysed
     ['PS06 t-011'],
-    ['PS06 t-012'],
+    # ['PS06 t-012'],  # matching post4ap trial cannot be analysed
     # ['PS11 t-007'],
     ['PS11 t-010'],
-    ['PS17 t-005'],
+    # ['PS17 t-005'],
     # ['PS17 t-006', 'PS17 t-007'],
     # ['PS18 t-006']
 ]
@@ -51,19 +51,20 @@ allopticalResults.post_4ap_trials = [
     ['RL109 t-018'],
     ['RL109 t-016', 'RL109 t-017'],
     ['PS04 t-018'],  # - problem with pickle data being truncated - analysis done
-    ['PS05 t-012'],
-    ['PS07 t-011'],
+    ['PS05 t-012'],  # - pickle truncated 21/10/10 - analysis done .21/10/12
+    ['PS07 t-011'],  # - pickle truncated 21/10/11 - analysis done .21/10/12
     ['PS07 t-017'],
     # ['PS06 t-014', 'PS06 t-015'], - missing seizure_lfp_onsets (no paired measurements mat file for trial .21/10/09)
     ['PS06 t-013'],
     # ['PS06 t-016'], - missing seizure_lfp_onsets (no paired measurements mat file for trial .21/10/09)
-    ['PS11 t-016'],
+    # ['PS11 t-016'],
     ['PS11 t-011'],
     # ['PS17 t-011'],
-    ['PS17 t-009'],
+    # ['PS17 t-009'],
     # ['PS18 t-008']
 ]
 
+assert len(allopticalResults.pre_4ap_trials) == len(allopticalResults.post_4ap_trials)
 
 
 
@@ -75,40 +76,40 @@ allopticalResults.trial_maps['pre'] = {
     'd': ['RL109 t-008'],
     'e': ['RL109 t-013'],
     'f': ['RL109 t-014'],
-    'g': ['PS04 t-012',  # 'PS04 t-014',  - temp just until PS04 gets reprocessed
+    'g': ['PS04 t-012',  # 'PS04 t-014',  # - temp just until PS04 gets reprocessed
      'PS04 t-017'],
-    # ['PS05 t-010'], # - problem with pickle data being truncated - analysis code run done .21/10/09
-    'h': ['PS07 t-007'],
-    'i': ['PS07 t-009'],
-    'j': ['PS06 t-008', 'PS06 t-009', 'PS06 t-010'],
-    'k': ['PS06 t-011'],
-    'l': ['PS06 t-012'],
-    #'m': ['PS11 t-007'],
-    'n': ['PS11 t-010'],
-    'o': ['PS17 t-005'],
-    # 'p': ['PS17 t-006', 'PS17 t-007'],
-    # 'q': ['PS18 t-006']
+    'h': ['PS05 t-010'],
+    'i': ['PS07 t-007'],
+    'j': ['PS07 t-009'],
+    'k': ['PS06 t-008', 'PS06 t-009', 'PS06 t-010'],
+    'l': ['PS06 t-011'],
+    'm': ['PS06 t-012'],
+    'n': ['PS11 t-007'],
+    'o': ['PS11 t-010'],
+    'p': ['PS17 t-005'],
+    'q': ['PS17 t-006', 'PS17 t-007'],
+    'r': ['PS18 t-006']
 }
 
 allopticalResults.trial_maps['post'] = {
     'a': ['RL108 t-013'],
-    # 'b': ['RL108 t-011'], # - problem with pickle data being truncated - analysis code run done .21/10/09
-    # 'c': ['RL109 t-020'], # - problem with pickle data being truncated - analysis code run done .21/10/09
+    'b': ['RL108 t-011'],
+    'c': ['RL109 t-020'],
     'd': ['RL109 t-021'],
     'e': ['RL109 t-018'],
     'f': ['RL109 t-016', 'RL109 t-017'],
-    # 'g': ['PS04 t-018'], # - problem with pickle data being truncated - analysis code run done .21/10/09
+    'g': ['PS04 t-018'],
     'h': ['PS05 t-012'],
     'i': ['PS07 t-011'],
     'j': ['PS07 t-017'],
-    # 'k': ['PS06 t-014', 'PS06 t-015'], - missing seizure_lfp_onsets
+    'k': ['PS06 t-014', 'PS06 t-015'], # - missing seizure_lfp_onsets
     'l': ['PS06 t-013'],
-    # 'm': ['PS06 t-016'], - missing seizure_lfp_onsets
+    'm': ['PS06 t-016'], # - missing seizure_lfp_onsets
     'n': ['PS11 t-016'],
     'o': ['PS11 t-011'],
-    # 'p': ['PS17 t-011'],
+    'p': ['PS17 t-011'],
     'q': ['PS17 t-009'],
-    # 'r': ['PS18 t-008']
+    'r': ['PS18 t-008']
 }
 
 
@@ -156,8 +157,6 @@ for trial in pre4ap_trials + post4ap_trials:
         if hasattr(expobj, 'stims_in_sz'):
             allopticalResults.slmtargets_stim_responses.loc[counter, 'mean response (dF/stdF all targets)'] = np.mean(
                 [[np.mean(expobj.outsz_responses_SLMtargets[i]) for i in range(expobj.n_targets_total)]])
-            allopticalResults.slmtargets_stim_responses.loc[counter, 'mean response (dF/stdF all targets)'] = np.mean(
-                [[np.mean(expobj.outsz_responses_SLMtargets[i]) for i in range(expobj.n_targets_total)]])
             allopticalResults.slmtargets_stim_responses.loc[counter, 'mean reliability (>0.3 dF/stdF)'] = np.mean(
                 list(expobj.outsz_StimSuccessRate_SLMtargets.values()))
         else:
@@ -179,6 +178,9 @@ for trial in pre4ap_trials + post4ap_trials:
 
 allopticalResults.save()
 allopticalResults.slmtargets_stim_responses
+
+
+
 
 # %% 3) make a metainfo attribute to store all metainfo types of info for all experiments/trials
 allopticalResults.metainfo = allopticalResults.slmtargets_stim_responses.loc[:, ['prep_trial', 'date', 'exptype']]

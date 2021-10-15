@@ -10,10 +10,71 @@ import utils.funcs_pj as pj
 results_object_path = '/home/pshah/mnt/qnap/Analysis/alloptical_results_superobject.pkl'
 allopticalResults = aoutils.import_resultsobj(pkl_path=results_object_path)
 
+
+# %% import expobj
+expobj, experiment = aoutils.import_expobj(aoresults_map_id='pre g.1')
+
+if not hasattr(expobj, 'good_cells'):
+    expobj.good_cells, events_loc_cells, flu_events_cells, stds = aoutils._good_cells(cell_ids=expobj.cell_id, raws=expobj.raw, photostim_frames=expobj.photostim_frames, std_thresh=2.5)
+    expobj.save()
+
+
 # %% 5) plot responses of non-targets from suite2p ROIs in response to photostim trials - broken down by pre-4ap, outsz and insz (excl. sz bound)
 # #  - with option to plot only successful or only failure stims!
+expobj.get_nontargets_stim_traces_norm(normalize_to='pre-stim', pre_stim=1, post_stim=8, plot='dFstdF')
+# expobj.dff_traces, expobj.dff_traces_avg, expobj.dfstdF_traces, \
+# expobj.dfstdF_traces_avg, expobj.raw_traces, expobj.raw_traces_avg = \
+#     aoutils.get_nontargets_stim_traces_norm(expobj=expobj, normalize_to='pre-stim', pre_stim=expobj.pre_stim,
+#                                             post_stim=expobj.post_stim)
 
 
+# SUITE2P NON-TARGETS - PLOT AVG PHOTOSTIM PRE- POST- TRACE AVGed OVER ALL PHOTOSTIM. TRIALS
+f = plt.figure(constrained_layout = True, figsize=[10,10])
+gs = f.add_gridspec(1, 3)
+a1 = f.add_subplot(gs[:, 0])
+x = expobj.dff_traces_avg
+y_label = 'pct. dFF (normalized to prestim period)'
+aoplot.plot_periphotostim_avg(arr=x, expobj=expobj, pre_stim=1, post_stim=8,
+                              title='', y_label=y_label, fig=f, ax=a1, show=False,
+                              x_label='Time post-stimulation (seconds)', y_lims=[-50, 200])
+a2 = f.add_subplot(gs[:, 1])
+x = expobj.dfstdF_traces_avg
+y_label = 'dFstdF (normalized to prestim period)'
+aoplot.plot_periphotostim_avg(arr=x, expobj=expobj, pre_stim=1, post_stim=8,
+                              title='', y_label=y_label, fig=f, ax=a2, show=False,
+                              x_label='Time post-stimulation (seconds)', y_lims=[-1, 3])
+a3 = f.add_subplot(gs[:, -1])
+arr = np.asarray([i for i in expobj.dfstdF_traces_avg]); vmin = -1; vmax = 1
+aoplot.plot_traces_heatmap(arr, expobj=expobj, vmin=vmin, vmax=vmax, stim_on=int(1*expobj.fps), stim_off=int(1*expobj.fps + expobj.stim_duration_frames - 1),
+                           title='', x_label='Time', cbar=True,
+                           fig=f, ax=a3, show=False)
+f.suptitle(('%s %s' % (expobj.metainfo['animal prep.'], expobj.metainfo['trial'])))
+f.show()
+
+
+
+# x = expobj.dfstdF_traces_avg
+# y_label = 'dFstdF (normalized to prestim period)'
+x = expobj.dff_traces_avg
+y_label = 'pct. dFF (normalized to prestim period)'
+# x = np.asarray([i for i in expobj.raw_traces_avg])
+# y_label = 'raw values avg'
+aoplot.plot_periphotostim_avg(arr=x, expobj=expobj, pre_stim=1,
+                              post_stim=8, title='responses of s2p non-targets', y_label=y_label,
+                              x_label='Time post-stimulation (seconds)', y_lims=[-50, 200])
+
+
+# PLOT HEATMAP OF AVG PRE- POST TRACE AVGed OVER ALL PHOTOSTIM. TRIALS - ALL CELLS (photostim targets at top) - Lloyd style :D
+
+arr = np.asarray([i for i in expobj.targets_dff_avg]); vmin = -1; vmax = 1
+arr = np.asarray([i for i in expobj.targets_dff_avg]); vmin = -20; vmax = 20
+aoplot.plot_traces_heatmap(arr, expobj=expobj, vmin=-20, vmax=20, stim_on=expobj.pre_stim, stim_off=expobj.pre_stim + expobj.stim_duration_frames - 1,
+                           title=('peristim avg trace heatmap' + ' - slm targets only'), x_label='Time')
+
+arr = np.asarray([i for i in expobj.dfstdF_traces_avg]); vmin = -1; vmax = 1
+# arr = np.asarray([i for i in expobj.dff_traces_avg]); vmin = -20; vmax = 20
+aoplot.plot_traces_heatmap(arr, expobj=expobj, vmin=vmin, vmax=vmax, stim_on=int(1*expobj.fps), stim_off=int(1*expobj.fps + expobj.stim_duration_frames - 1),
+                           title=('peristim avg trace heatmap' + ' - nontargets'), x_label='Time', cbar=True)
 
 
 
@@ -155,9 +216,9 @@ for i in allopticalResults.post_4ap_trials:
             title = '%s stims only - avg. responses of photostim targets - in sz stims %s %s' % (to_plot, prep, trial)
 
         f, ax, d = aoplot.plot_periphotostim_avg(arr=data_traces, expobj=expobj,
-                                          stim_duration=stim_dur, y_lims=[0, 50], title=title, avg_only=avg_only,
-                                          pre_stim=0.25, post_stim=2.75,
-                                          y_label=y_label, x_label='Time (secs)', fig=f, ax=ax, show=False)
+                                                 stim_duration=stim_dur, y_lims=[0, 50], title=title, avg_only=avg_only,
+                                                 pre_stim=0.25, post_stim=2.75,
+                                                 y_label=y_label, x_label='Time (secs)', fig=f, ax=ax, show=False)
 
         print('|- shape of dFF array: ', data_traces.shape, ' [1.2.4]')
         dffTraces_insz.append(d)
@@ -240,7 +301,7 @@ allopticalResults.dffTraces_outsz = np.asarray(dffTraces_outsz)
 allopticalResults.save()
 
 
-# %% 1.4) COMPARISON OF RESPONSE MAGNITUDE OF SUCCESS STIMS. FROM PRE-4AP, OUT-SZ AND IN-SZ
+
 
 
 
@@ -269,7 +330,150 @@ ax.set_ylabel('dFF (norm. to pre-stim F)')
 f.show()
 
 
+# %% 1.4) COMPARISON OF RESPONSE MAGNITUDE OF SUCCESS STIMS. FROM PRE-4AP, OUT-SZ AND IN-SZ
 
+run_processing = 0
+
+## collecting the response magnitudes of success stims
+if run_processing:
+    for i in allopticalResults.post_4ap_trials + allopticalResults.pre_4ap_trials:
+        for j in range(len(i)):
+            prep = i[j][:-6]
+            trial = i[j][-5:]
+            print('\nprogress @ ', prep, trial, ' [1.4.1]')
+            expobj, experiment = aoutils.import_expobj(trial=trial, prep=prep, verbose=False)
+
+            if 'post' in expobj.metainfo['exptype']:
+                # raw_traces_stims = expobj.SLMTargets_stims_raw[:, stims, :]
+                if len(expobj.stims_out_sz) > 0:
+                    print('\n Calculating stim success rates and response magnitudes (outsz) [1.4.2] ***********')
+                    expobj.StimSuccessRate_SLMtargets_outsz, expobj.hits_SLMtargets_outsz, expobj.responses_SLMtargets_outsz, expobj.traces_SLMtargets_successes_outsz = \
+                        expobj.calculate_SLMTarget_responses_dff(threshold=15, stims_to_use=expobj.stims_out_sz)
+                    success_responses = expobj.hits_SLMtargets_outsz * expobj.responses_SLMtargets_outsz
+                    success_responses = success_responses.replace(0, np.NaN).mean(axis=1)
+                    allopticalResults.slmtargets_stim_responses.loc[allopticalResults.slmtargets_stim_responses[
+                                                                        'prep_trial'] == i[j], 'mean dFF response outsz (hits, all targets)'] = success_responses.mean()
+                    print(success_responses.mean())
+
+                # raw_traces_stims = expobj.SLMTargets_stims_raw[:, stims, :]
+                if len(expobj.stims_in_sz) > 0:
+                    print('\n Calculating stim success rates and response magnitudes (insz) [1.4.3] ***********')
+                    expobj.StimSuccessRate_SLMtargets_insz, expobj.hits_SLMtargets_insz, expobj.responses_SLMtargets_insz, expobj.traces_SLMtargets_successes_insz = \
+                        expobj.calculate_SLMTarget_responses_dff(threshold=15, stims_to_use=expobj.stims_in_sz)
+
+                    success_responses = expobj.hits_SLMtargets_insz * expobj.responses_SLMtargets_insz
+                    success_responses = success_responses.replace(0, np.NaN).mean(axis=1)
+                    allopticalResults.slmtargets_stim_responses.loc[allopticalResults.slmtargets_stim_responses[
+                                                                        'prep_trial'] == i[j], 'mean dFF response insz (hits, all targets)'] = success_responses.mean()
+                    print(success_responses.mean())
+
+
+            elif 'pre' in expobj.metainfo['exptype']:
+                seizure_filter = False
+                print('\n Calculating stim success rates and response magnitudes [1.4.4] ***********')
+                expobj.StimSuccessRate_SLMtargets, expobj.hits_SLMtargets, expobj.responses_SLMtargets, expobj.traces_SLMtargets_successes = \
+                    expobj.calculate_SLMTarget_responses_dff(threshold=15, stims_to_use=expobj.stim_start_frames)
+
+                success_responses = expobj.hits_SLMtargets * expobj.responses_SLMtargets
+                success_responses = success_responses.replace(0, np.NaN).mean(axis=1)
+                allopticalResults.slmtargets_stim_responses.loc[allopticalResults.slmtargets_stim_responses[
+                                                                    'prep_trial'] == i[j], 'mean dFF response (hits, all targets)'] = success_responses.mean()
+                print(success_responses.mean())
+
+            expobj.save()
+    allopticalResults.save()
+
+
+## make bar plot using the collected response magnitudes
+pre4ap_response_magnitude = []
+for i in allopticalResults.pre_4ap_trials:
+    x = [allopticalResults.slmtargets_stim_responses.loc[
+             allopticalResults.slmtargets_stim_responses[
+                 'prep_trial'] == trial, 'mean dFF response (hits, all targets)'].values[0] for trial in i]
+    pre4ap_response_magnitude.append(np.mean(x))
+
+outsz_response_magnitude = []
+for i in allopticalResults.post_4ap_trials:
+    x = [allopticalResults.slmtargets_stim_responses.loc[
+             allopticalResults.slmtargets_stim_responses[
+                 'prep_trial'] == trial, 'mean dFF response outsz (hits, all targets)'].values[0] for trial in i]
+    outsz_response_magnitude.append(np.mean(x))
+
+insz_response_magnitude = []
+for i in allopticalResults.post_4ap_trials:
+    x = [allopticalResults.slmtargets_stim_responses.loc[
+             allopticalResults.slmtargets_stim_responses[
+                 'prep_trial'] == trial, 'mean dFF response insz (hits, all targets)'].values[0] for trial in i]
+    insz_response_magnitude.append(np.mean(x))
+
+pj.plot_bar_with_points(data=[pre4ap_response_magnitude, outsz_response_magnitude, insz_response_magnitude], paired=True,
+                        colors=['black', 'purple', 'red'], bar=False, expand_size_y=1.1, expand_size_x=0.6,
+                        xlims=True, x_tick_labels=['pre-4ap', 'outsz', 'insz'], title='Avg. Response magnitude of hits',
+                        y_label='response magnitude (dFF)')
+
+
+# %% 1.5) COMPARISON OF RESPONSE MAGNITUDE OF FAILURES STIMS. FROM PRE-4AP, OUT-SZ AND IN-SZ
+
+run_processing = 0
+
+## collecting the response magnitudes of success stims
+if run_processing:
+    for i in allopticalResults.pre_4ap_trials:
+        for j in range(len(i)):
+            prep = i[j][:-6]
+            trial = i[j][-5:]
+            print('\nprogress @ ', prep, trial, ' [1.4.1]')
+            expobj, experiment = aoutils.import_expobj(trial=trial, prep=prep, verbose=False)
+
+            if 'post' in expobj.metainfo['exptype']:
+                inverse = (expobj.hits_SLMtargets_outsz - 1) * -1
+                failure_responses = inverse * expobj.responses_SLMtargets_outsz
+                failure_responses = failure_responses.replace(0, np.NaN).mean(axis=1)
+                allopticalResults.slmtargets_stim_responses.loc[allopticalResults.slmtargets_stim_responses[
+                                                                    'prep_trial'] == i[j], 'mean dFF response outsz (failures, all targets)'] = failure_responses.mean()
+
+                inverse = (expobj.hits_SLMtargets_insz - 1) * -1
+                failure_responses = inverse * expobj.responses_SLMtargets_insz
+                failure_responses = failure_responses.replace(0, np.NaN).mean(axis=1)
+                allopticalResults.slmtargets_stim_responses.loc[allopticalResults.slmtargets_stim_responses[
+                                                                    'prep_trial'] == i[j], 'mean dFF response insz (failures, all targets)'] = failure_responses.mean()
+
+            elif 'pre' in expobj.metainfo['exptype']:
+                inverse = (expobj.hits_SLMtargets - 1) * -1
+                failure_responses = inverse * expobj.responses_SLMtargets
+                failure_responses = failure_responses.replace(0, np.NaN).mean(axis=1)
+                allopticalResults.slmtargets_stim_responses.loc[allopticalResults.slmtargets_stim_responses[
+                                                                    'prep_trial'] == i[j], 'mean dFF response (failures, all targets)'] = failure_responses.mean()
+    allopticalResults.save()
+
+
+## make bar plot using the collected response magnitudes
+pre4ap_response_magnitude = []
+for i in allopticalResults.pre_4ap_trials:
+    x = [allopticalResults.slmtargets_stim_responses.loc[
+             allopticalResults.slmtargets_stim_responses[
+                 'prep_trial'] == trial, 'mean dFF response (failures, all targets)'].values[0] for trial in i]
+    pre4ap_response_magnitude.append(np.mean(x))
+
+outsz_response_magnitude = []
+for i in allopticalResults.post_4ap_trials:
+    x = [allopticalResults.slmtargets_stim_responses.loc[
+             allopticalResults.slmtargets_stim_responses[
+                 'prep_trial'] == trial, 'mean dFF response outsz (failures, all targets)'].values[0] for trial in i]
+    outsz_response_magnitude.append(np.mean(x))
+
+insz_response_magnitude = []
+for i in allopticalResults.post_4ap_trials:
+    x = [allopticalResults.slmtargets_stim_responses.loc[
+             allopticalResults.slmtargets_stim_responses[
+                 'prep_trial'] == trial, 'mean dFF response insz (failures, all targets)'].values[0] for trial in i]
+    insz_response_magnitude.append(np.mean(x))
+
+
+pj.plot_bar_with_points(data=[pre4ap_response_magnitude, outsz_response_magnitude, insz_response_magnitude], paired=False,
+                        colors=['black', 'purple', 'red'], bar=False, expand_size_y=1.1, expand_size_x=0.6,
+                        xlims=True, x_tick_labels=['pre-4ap', 'outsz', 'insz'], title='Avg. Response magnitude of failures',
+                        y_label='response magnitude (dFF)')
 
 
 
@@ -514,18 +718,3 @@ for exp in allopticalResults.pre_4ap_trials:
 
 # plot barplot with points only comparing response magnitude of successes
 
-
-# %%
-
-for i in allopticalResults.post_4ap_trials:
-    #     if i = allopticalResults.post_4ap_trials[6]:
-    for j in i:
-        date = allopticalResults.slmtargets_stim_responses.loc[
-            allopticalResults.slmtargets_stim_responses[
-                'prep_trial'] == j, 'date'].values[0]
-        trial = j[-5:]
-        prep = j[:-6]
-        pkl_path = "/home/pshah/mnt/qnap/Analysis/%s/%s/%s_%s/%s_%s.pkl" % (date, prep, date, trial, date, trial)
-        expobj, experiment = aoutils.import_expobj(trial=trial, date=date, pkl_path=pkl_path, verbose=False)
-
-    expobj.avg_stim_images(stim_timings=expobj.stim_start_frames, peri_frames=50, to_plot=True, save_img=True)
