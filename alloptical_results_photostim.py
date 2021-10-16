@@ -24,14 +24,14 @@ if not hasattr(expobj, 'good_cells'):
 
 # %% 5) plot responses of non-targets from suite2p ROIs in response to photostim trials - broken down by pre-4ap, outsz and insz (excl. sz bound)
 # #  - with option to plot only successful or only failure stims!
-expobj.get_nontargets_stim_traces_norm(normalize_to='pre-stim', plot='dFstdF')
+expobj._get_nontargets_stim_traces_norm(normalize_to='pre-stim', plot='dFstdF')
 # expobj.dff_traces, expobj.dff_traces_avg, expobj.dfstdF_traces, \
 # expobj.dfstdF_traces_avg, expobj.raw_traces, expobj.raw_traces_avg = \
 #     aoutils.get_nontargets_stim_traces_norm(expobj=expobj, normalize_to='pre-stim', pre_stim_sec=expobj.pre_stim_sec,
 #                                             post_stim_sec=expobj.post_stim_sec)
 
 
-# SUITE2P NON-TARGETS
+# SUITE2P NON-TARGETS - PLOTTING OF AVG PERI-PHOTOSTIM RESPONSES
 f = plt.figure(constrained_layout=True, figsize=[15, 5])
 gs = f.add_gridspec(1, 3)
 
@@ -60,16 +60,16 @@ f.show()
 
 
 # %% 6) quantifying followers responses
-def allopticalAnalysis(expobj):
+def allopticalAnalysisNontargets(expobj):
     expobj.test_frames = int(expobj.fps*0.5) # test period for stats
     expobj.pre_stim_frames_test = np.s_[expobj.pre_stim - expobj.test_frames: expobj.pre_stim]
     stim_end = expobj.pre_stim + expobj.stim_duration_frames
     expobj.post_stim_frames_slice = np.s_[stim_end: stim_end + expobj.post_stim_response_frames_window]
 
-    _trialProcessing(expobj)
-    _sigTestAvgResponse(expobj, alpha=0.1)
+    _trialProcessing_nontargets(expobj)
+    _sigTestAvgResponse_nontargets(expobj, alpha=0.1)
 
-def _trialProcessing(expobj):
+def _trialProcessing_nontargets(expobj):
     '''
     Take dfof trace for entire timeseries and break it up in to individual trials, calculate
     the mean amplitudes of response and statistical significance across all trials
@@ -78,7 +78,7 @@ def _trialProcessing(expobj):
         plane             - imaging plane n
     '''
     # make trial arrays from dff data [plane x cell x frame x trial]
-    expobj.get_nontargets_stim_traces_norm(normalize_to='pre-stim', plot='dFstdF')
+    expobj._get_nontargets_stim_traces_norm(normalize_to='pre-stim', plot='dFstdF')
 
     # mean pre and post stimulus flu values for all cells, all trials
     trial_array = expobj.dfstdF_traces
@@ -97,7 +97,7 @@ def _trialProcessing(expobj):
     expobj.save()
 
 
-def _sigTestAvgResponse(expobj, alpha=0.1):
+def _sigTestAvgResponse_nontargets(expobj, alpha=0.1):
     '''
     Uses the p values and a threshold for the Benjamini-Hochberg correction to return which
     cells are still significant after correcting for multiple significance testing

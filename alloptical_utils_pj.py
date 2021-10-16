@@ -21,6 +21,8 @@ from matplotlib.colors import ColorConverter
 from Vape.utils.utils_funcs import *
 from Vape.utils import STAMovieMaker_noGUI as STAMM
 import scipy.stats as stats
+import statsmodels.api
+import statsmodels as sm
 from suite2p.run_s2p import run_s2p
 import matplotlib.pyplot as plt
 import seaborn as sns
@@ -2197,7 +2199,7 @@ class alloptical(TwoPhotonImaging):
     #
     #     return targets_dff, targets_dff_avg, targets_dfstdF, targets_dfstdF_avg, targets_raw, targets_raw_avg
 
-    def get_nontargets_stim_traces_norm(self, normalize_to='pre-stim', save=True, plot=False):
+    def _get_nontargets_stim_traces_norm(self, normalize_to='pre-stim', save=True, plot_subset: bool = True):
         """
         primary function to retrieve photostimulation trial timed Fluorescence traces for non-targets (ROIs taken from suite2p).
         :param self: alloptical experiment object
@@ -2298,24 +2300,107 @@ class alloptical(TwoPhotonImaging):
             self.raw_traces = np.asarray(raw_traces)
             self.raw_traces_avg = np.asarray([i for i in raw_traces_avg])
 
-        selection = np.random.randint(0, self.dff_traces_avg.shape[0], 100)
-        if plot == 'dFF':
-            arr = self.dff_traces_avg[selection]
-            y_lims = [-50, 200]
-            y_label = '% dFF'
-        elif plot == 'dFstdF':
-            arr = self.dfstdF_traces_avg[selection]
-            y_lims = [-1, 2]
-            y_label = 'dFstdF'
+        if plot_subset:
+            selection = np.random.randint(0, self.dff_traces_avg.shape[0], 100)
+        else:
+            selection = np.arange(self.dff_traces_avg.shape[0])
 
-        aoplot.plot_periphotostim_avg(arr=arr, expobj=self, pre_stim_sec=np.round(self.pre_stim / self.fps, 1),
-                                      post_stim_sec=np.round(self.post_stim / self.fps, 1), title='avg peristim responses of s2p non-targets',
-                                      y_label=y_label, x_label='Time post-stimulation (seconds)', y_lims=y_lims)
+
+        # SUITE2P NON-TARGETS - PLOTTING OF AVG PERI-PHOTOSTIM RESPONSES
+        f = plt.figure(constrained_layout=True, figsize=[20, 5])
+        gs = f.add_gridspec(1, 4)
+
+        # PLOT AVG PHOTOSTIM PRE- POST- TRACE AVGed OVER ALL PHOTOSTIM. TRIALS
+        a1 = f.add_subplot(gs[:, 0])
+        x = self.dff_traces_avg[selection]
+        y_label = 'pct. dFF (normalized to prestim period)'
+        aoplot.plot_periphotostim_avg(arr=x, expobj=self, pre_stim_sec=1, post_stim_sec=5,
+                                      title=None, y_label=y_label, fig=f, ax=a1, show=False,
+                                      x_label='Time (seconds)', y_lims=[-50, 200])
+        # PLOT AVG PHOTOSTIM PRE- POST- TRACE AVGed OVER ALL PHOTOSTIM. TRIALS
+        a2 = f.add_subplot(gs[:, 1])
+        x = self.dfstdF_traces_avg[selection]
+        y_label = 'dFstdF (normalized to prestim period)'
+        aoplot.plot_periphotostim_avg(arr=x, expobj=self, pre_stim_sec=1, post_stim_sec=5,
+                                      title=None, y_label=y_label, fig=f, ax=a2, show=False,
+                                      x_label='Time (seconds)', y_lims=[-1, 3])
+        # PLOT HEATMAP OF AVG PRE- POST TRACE AVGed OVER ALL PHOTOSTIM. TRIALS - ALL CELLS (photostim targets at top) - Lloyd style :D - df/f
+        a3 = f.add_subplot(gs[:, -1])
+        vmin = -1
+        vmax = 1
+        aoplot.plot_traces_heatmap(self.dfstdF_traces_avg, expobj=self, vmin=vmin, vmax=vmax, stim_on=int(1 * self.fps),
+                                   stim_off=int(1 * self.fps + self.stim_duration_frames - 1),
+                                   title='dF/F heatmap for all nontargets', x_label='Time', cbar=True,
+                                   fig=f, ax=a3, show=False)
+        # PLOT HEATMAP OF AVG PRE- POST TRACE AVGed OVER ALL PHOTOSTIM. TRIALS - ALL CELLS (photostim targets at top) - Lloyd style :D - df/stdf
+        a4 = f.add_subplot(gs[:, -1])
+        vmin = -50
+        vmax = 100
+        aoplot.plot_traces_heatmap(self.dff_traces_avg, expobj=self, vmin=vmin, vmax=vmax, stim_on=int(1 * self.fps),
+                                   stim_off=int(1 * self.fps + self.stim_duration_frames - 1),
+                                   title='dF/stdF heatmap for all nontargets', x_label='Time', cbar=True,
+                                   fig=f, ax=a4, show=False)
+
+        f.suptitle(
+            ('%s %s %s' % (self.metainfo['animal prep.'], self.metainfo['trial'], self.metainfo['exptype'])))
+        f.show()
 
         if save:
             self.save()
 
             # return dff_traces, dff_traces_avg, dfstdF_traces, dfstdF_traces_avg, raw_traces, raw_traces_avg
+
+    def _trialProcessing_nontargets(expobj):
+        '''
+        Take dfof trace for entire timeseries and break it up in to individual trials, calculate
+        the mean amplitudes of response and statistical significance across all trials
+
+        Inputs:
+            plane             - imaging plane n
+        '''
+        # make trial arrays from dff data [plane x cell x frame x trial]
+        expobj._get_nontargets_stim_traces_norm(normalize_to='pre-stim', plot='dFstdF')
+
+        # mean pre and post stimulus flu values for all cells, all trials
+        trial_array = expobj.dfstdF_traces
+        pre_array = np.mean(trial_array[:, :, expobj.pre_stim_frames_test], axis=1)
+        post_array = np.mean(trial_array[:, :, expobj.post_stim_frames_slice], axis=1)
+
+        # check if the two distributions of flu values (pre/post) are different
+        assert pre_array.shape == post_array.shape, 'shapes for pre_array and post_array need to be the same for wilcoxon test'
+        wilcoxons = np.empty(len(expobj.s2p_cell_nontargets))  # [cell (p-value)]
+
+        for cell in range(len(expobj.s2p_cell_nontargets)):
+            wilcoxons[cell] = stats.wilcoxon(post_array[cell], pre_array[cell])[1]
+
+        expobj.wilcoxons = wilcoxons
+
+        expobj.save()
+
+    def _sigTestAvgResponse_nontargets(expobj, alpha=0.1):
+        '''
+        Uses the p values and a threshold for the Benjamini-Hochberg correction to return which
+        cells are still significant after correcting for multiple significance testing
+        '''
+
+        p_vals = expobj.wilcoxons
+        expobj.sig_units = np.full_like(p_vals, False, dtype=bool)
+
+        try:
+            expobj.sig_units, _, _, _ = sm.stats.multitest.multipletests(p_vals, alpha=alpha, method='fdr_bh',
+                                                                         is_sorted=False, returnsorted=False)
+        except ZeroDivisionError:
+            print('no cells responding')
+
+        # p values without bonferroni correction
+        no_bonf_corr = [i for i, p in enumerate(p_vals) if p < 0.05]
+        expobj.nomulti_sig_units = np.zeros(len(expobj.s2p_cell_nontargets), dtype='bool')
+        expobj.nomulti_sig_units[no_bonf_corr] = True
+
+        # p values after bonferroni correction
+        #         bonf_corr = [i for i,p in enumerate(p_vals) if p < 0.05 / expobj.n_units[plane]]
+        #         sig_units = np.zeros(expobj.n_units[plane], dtype='bool')
+        #         sig_units[bonf_corr] = True
 
 
 class Post4ap(alloptical):
@@ -4121,6 +4206,16 @@ def run_alloptical_processing_photostim(expobj, to_suite2p=None, baseline_trials
 
     expobj.save()
 
+def allopticalAnalysisNontargets(expobj):
+    test_period = 0.5  # sec
+    expobj.test_frames = int(expobj.fps*test_period)  # test period for stats
+    expobj.pre_stim_frames_test = np.s_[expobj.pre_stim - expobj.test_frames: expobj.pre_stim]
+    stim_end = expobj.pre_stim + expobj.stim_duration_frames
+    expobj.post_stim_frames_slice = np.s_[stim_end: stim_end + expobj.post_stim_response_frames_window]
+
+    expobj._trialProcessing_nontargets(expobj)
+    expobj._sigTestAvgResponse_nontargets(expobj, alpha=0.1)
+
 
 # creates plots for SLM targets responses
 def slm_targets_responses(expobj, experiment, trial, y_spacing_factor=2, figsize=[20, 20], smooth_overlap_traces=5, linewidth_overlap_traces=0.2, dff_threshold=0.15,
@@ -4285,7 +4380,6 @@ def slm_targets_responses(expobj, experiment, trial, y_spacing_factor=2, figsize
             fig.savefig(fname=save+'.svg', transparent=True,  format='svg')
 
         fig.show()
-
 
 # # # import results superobject that will collect analyses from various individual experiments
 results_object_path = '/home/pshah/mnt/qnap/Analysis/alloptical_results_superobject.pkl'
