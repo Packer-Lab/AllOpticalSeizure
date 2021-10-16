@@ -50,13 +50,13 @@ def _trialProcessing_nontargets(expobj):
     Inputs:
         plane             - imaging plane n
     '''
-    # make trial arrays from dff data [plane x cell x frame x trial]
+    # make trial arrays from dff data shape: [cells x stims x frames]
     expobj._get_nontargets_stim_traces_norm(normalize_to='pre-stim', plot='dFstdF')
 
     # mean pre and post stimulus (within post-stim response window) flu trace values for all cells, all trials
     expobj.analysis_array = expobj.dfstdF_traces  # NOTE: USING dF/stdF TRACES
-    expobj.pre_array = np.mean(expobj.analysis_array[:, :, expobj.pre_stim_frames_test], axis=1)
-    expobj.post_array = np.mean(expobj.analysis_array[:, :, expobj.post_stim_frames_slice], axis=1)
+    expobj.pre_array = np.mean(expobj.analysis_array[:, :, expobj.pre_stim_frames_test], axis=1)  # [cells x prestim frames] (avg'd taken over all stims)
+    expobj.post_array = np.mean(expobj.analysis_array[:, :, expobj.post_stim_frames_slice], axis=1)  # [cells x poststim frames] (avg'd taken over all stims)
 
     # check if the two distributions of flu values (pre/post) are different
     assert expobj.pre_array.shape == expobj.post_array.shape, 'shapes for expobj.pre_array and expobj.post_array need to be the same for wilcoxon test'
@@ -67,8 +67,20 @@ def _trialProcessing_nontargets(expobj):
 
     expobj.wilcoxons = wilcoxons
 
-    # measure avg response value for each trial, all cells --> return array with 3 axes (cells x trials x response_magnitude)
-    expobj.post_array_responses = np.mean(expobj.post_array, axis=3)
+    # measure avg response value for each trial, all cells --> return array with 3 axes [cells x response_magnitude_per_stim (avg'd taken over response window)]
+    ar2 = expobj.analysis_array[18, :, expobj.post_stim_frames_slice]
+    ar3 = ar2[~np.isnan(ar2).any(axis=1)]
+    assert np.nanmean(ar2) == np.nanmean(ar3)
+    expobj.analysis_array = expobj.analysis_array[~np.isnan(expobj.analysis_array).any(axis=1)]
+
+    expobj.post_array_responses = []  ### this and the for loop below was implemented to try to root out stims with nan's but it's likley not necessary...
+    for i in np.arange(expobj.analysis_array.shape[0]):
+        a = expobj.analysis_array[i][~np.isnan(expobj.analysis_array[i]).any(axis=1)]
+        responses = a.mean(axis=1)
+        expobj.post_array_responses.append(responses)
+
+    expobj.post_array_responses = np.mean(expobj.analysis_array[:, :, expobj.post_stim_frames_slice], axis=2)
+
 
     expobj.save()
 
@@ -94,11 +106,16 @@ def _sigTestAvgResponse_nontargets(expobj, alpha=0.1):
     expobj.nomulti_sig_units = np.zeros(len(expobj.s2p_cell_nontargets), dtype='bool')
     expobj.nomulti_sig_units[no_bonf_corr] = True
 
+    expobj.save()
+
     # p values after bonferroni correction
     #         bonf_corr = [i for i,p in enumerate(p_vals) if p < 0.05 / expobj.n_units[plane]]
     #         sig_units = np.zeros(expobj.n_units[plane], dtype='bool')
     #         sig_units[bonf_corr] = True
 
+
+
+    #### MAKE PLOT OF PERI-STIM AVG TRACES FOR ALL SIGNIFICANT AND NON-SIGNIFICANT RESPONDERS
     f = plt.figure(figsize=[10, 5])
     gs = f.add_gridspec(1, 2)
 
@@ -119,13 +136,36 @@ def _sigTestAvgResponse_nontargets(expobj, alpha=0.1):
     f.show()
 
 
+# %%
+for i in range(len(expobj.post_array_responses)):
+    a = expobj.post_array_responses[i]
+    if np.isnan(np.mean(a)):
+        print(i, a)
+
+
 # %% 5.2) quantifying significance of responses of non targets to photostim
 
 # bar plot of avg post stim response quantified between responders and non-responders
+sig_responders_avgresponse = np.nanmean(expobj.post_array_responses[expobj.sig_units, :], axis=1)
+nonsig_responders_avgresponse = np.nanmean(expobj.post_array_responses[~expobj.sig_units], axis=1)
+data = np.asarray([sig_responders_avgresponse, nonsig_responders_avgresponse])
+pj.plot_bar_with_points(data=data, title='Avg stim response magnitude of cells', colors=['green', 'gray'], y_label='avg dF/stdF', bar=False,
+                        x_tick_labels=['significant', 'non-significant'], expand_size_y=1.5, expand_size_x=0.5)
 
+
+# bar plot of avg post stim response quantified between responders and non-responders
+sig_responders_avgresponse = np.nanmean(expobj.post_array_responses[expobj.sig_units, :], axis=1)
+nonsig_responders_avgresponse = np.nanmean(expobj.post_array_responses[~expobj.sig_units], axis=1)
+data = np.asarray([sig_responders_avgresponse, nonsig_responders_avgresponse])
+pj.plot_bar_with_points(data=data, title='Avg stim response magnitude of cells', colors=['green', 'gray'], y_label='avg dF/stdF', bar=False,
+                        x_tick_labels=['significant', 'non-significant'], expand_size_y=1.5, expand_size_x=0.5)
 
 
 # %% 5.3) creating large figures collating multiple plots describing responses of non targets to photostim for individual expobj's
+
+
+
+
 
 
 

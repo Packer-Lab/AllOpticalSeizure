@@ -625,7 +625,7 @@ def make_random_color_array(n_colors):
 
 
 # plotting function for plotting a bar graph with the individual data points shown as well
-def plot_bar_with_points(data, title='', x_tick_labels=[], legend_labels: list = [], points: bool = True, bar: bool = True, colors: list = ['black'], ylims=None, xlims=False,
+def plot_bar_with_points(data, title='', x_tick_labels=[], legend_labels: list = [], points: bool = True, bar: bool = True, colors: list = ['black'], ylims=None, xlims=True, text_list=None,
                          x_label=None, y_label=None, alpha=0.2, savepath=None, expand_size_x=1, expand_size_y=1, shrink_text: float = 1, show_legend=False,
                          paired=False, **kwargs):
     """
@@ -644,6 +644,8 @@ def plot_bar_with_points(data, title='', x_tick_labels=[], legend_labels: list =
     :param xlims: the x axis is used to position the bars, so use this to move the position of the bars left and right
     :param x_label: x axis label
     :param y_label: y axis label
+    :param text_list: list of text to add to each category of data on the plot
+    :param text_shift: float; number between 0.5 to 1 used to adjust precise positioning of the text in text_list
     :param alpha: transparency of the individual points when plotted in the scatter
     :param savepath: .svg file path; if given, the plot will be saved to the provided file path
     :param expand_size_x: factor to use for expanding figure size
@@ -673,13 +675,16 @@ def plot_bar_with_points(data, title='', x_tick_labels=[], legend_labels: list =
     # start making plot
     if not bar:
         for i in x:
-            # ax.plot(np.linspace(x[i] - w / 2, x[i] + w / 2, 3), [np.mean(yi) for yi in y] * 3, edgecolor=colors[i])
             ax.plot(np.linspace(x[i] * w * 2.5 - w / 2, x[i] * w * 2.5 + w / 2, 3), [np.mean(y[i])] * 3, color='black')
         lw = 0,
         edgecolor = None
     else:
-        edgecolor = 'black',
-        lw = 1
+        if not kwargs['edgecolor']:
+            edgecolor = 'black',
+            lw = 1
+        else:
+            edgecolor = kwargs['edgecolor'],
+            lw = 1
 
     # plot bar graph, or if no bar (when lw = 0 from above) then use it to plot the error bars
     ax.bar([x * w * 2.5 for x in x],
@@ -719,7 +724,7 @@ def plot_bar_with_points(data, title='', x_tick_labels=[], legend_labels: list =
                     ax.scatter([x[i] * w * 2.5] * len(y[i]), y[i], color=colors[i], alpha=0.5,
                                label=legend_labels[i], zorder=3)
                 for i in x[:-1]:
-                    for point_idx in range(len(y[i])):
+                    for point_idx in range(len(y[i])):  # draw the lines connecting pairs of data
                         ax.plot([x[i] * w * 2.5 + 0.058, x[i+1] * w * 2.5 - 0.048], [y[i][point_idx], y[i+1][point_idx]], color='black', zorder=2, alpha=alpha)
 
                 # for point_idx in range(len(y[i])):  # slight design difference, with straight line going straight through the scatter points
@@ -753,6 +758,16 @@ def plot_bar_with_points(data, title='', x_tick_labels=[], legend_labels: list =
         plt.xticks(rotation=45)
         # plt.setp(ax.get_xticklabels(), rotation=45)
 
+    # add text to the figure if given:
+    if text_list:
+        assert len(x) == len(text_list), 'please provide text_list of same len() as data'
+        if 'text_shift' in kwargs.keys():
+            text_shift = kwargs['text_shift']
+        else:
+            text_shift = 0.8
+        for i in x:
+            ax.text(x[i] * w * 2.5 - text_shift*w / 2, np.max(y[i]) * 0.75, text_list[i]),
+
     if len(legend_labels) > 1:
         if show_legend:
             ax.legend(bbox_to_anchor=(1.01, 0.90), fontsize=8*shrink_text)
@@ -775,7 +790,6 @@ def plot_bar_with_points(data, title='', x_tick_labels=[], legend_labels: list =
         # Tweak spacing to prevent clipping of ylabel
         # f.tight_layout()
         f.show()
-
 
 # histogram density plot with gaussian best fit line
 def plot_hist_density(data, colors: list = None, fill_color: list = None, legend_labels: list = [None], num_bins=10, **kwargs):
