@@ -2,7 +2,8 @@
 import numpy as np
 import pandas as pd
 from scipy import stats, signal
-import statsmodels.stats as smstats
+import statsmodels.api
+import statsmodels as sm
 import matplotlib.pyplot as plt
 import alloptical_utils_pj as aoutils
 import alloptical_plotting_utils as aoplot
@@ -66,7 +67,7 @@ def allopticalAnalysis(expobj):
     expobj.post_stim_frames_slice = np.s_[stim_end: stim_end + expobj.post_stim_response_frames_window]
 
     _trialProcessing(expobj)
-
+    _sigTestAvgResponse(expobj, alpha=0.1)
 
 def _trialProcessing(expobj):
     '''
@@ -93,68 +94,34 @@ def _trialProcessing(expobj):
 
     expobj.wilcoxons = wilcoxons
 
+    expobj.save()
 
-def _sigTestAvgDFF(expobj):
+
+def _sigTestAvgResponse(expobj, alpha=0.1):
     '''
     Uses the p values and a threshold for the Benjamini-Hochberg correction to return which
     cells are still significant after correcting for multiple significance testing
     '''
 
+
     p_vals = expobj.wilcoxons
-    ​
-    s1_cells = np.array(expobj.cell_s1)
-    s2_cells = np.array(expobj.cell_s2)
-    ​
-    if any(s in expobj.stim_type for s in ['pr', 'ps', 'none']):
-        targets = expobj.targeted_cells
-        s1_p = p_vals[~targets & s1_cells]
-        s2_p = p_vals[~targets & s2_cells]
-        target_p = p_vals[targets]
-    else:
-        s1_p = p_vals[s1_cells]
-        s2_p = p_vals[s2_cells]
-    ​
-    sig_units = np.full_like(p_vals, False, dtype=bool)
-    ​
-    alpha = 0.1
+    expobj.sig_units = np.full_like(p_vals, False, dtype=bool)
 
     try:
-        s1_sig, _, _, _ = smstats.multitest.multipletests(s1_p, alpha=alpha, method='fdr_bh',
+        expobj.sig_units, _, _, _ = sm.stats.multitest.multipletests(p_vals, alpha=alpha, method='fdr_bh',
                                                           is_sorted=False, returnsorted=False)
     except ZeroDivisionError:
-        print('no S1 cells responding')
-        s1_sig = sig_units[~targets & s1_cells]
+        print('no cells responding')
 
-    try:
-        s2_sig, _, _, _ = smstats.multitest.multipletests(s2_p, alpha=alpha, method='fdr_bh',
-                                                          is_sorted=False, returnsorted=False)
-    except ZeroDivisionError:
-        print('no S2 cells responding')
-        s2_sig = sig_units[~targets & s2_cells]
-
-    if any(s in expobj.stim_type for s in ['pr', 'ps', 'none']):
-        target_sig, _, _, _ = smstats.multitest.multipletests(target_p, alpha=alpha, method='fdr_bh',
-                                                              is_sorted=False, returnsorted=False)
-        sig_units[targets] = target_sig
-        sig_units[~targets & s1_cells] = s1_sig
-        sig_units[~targets & s2_cells] = s2_sig
-    else:
-        sig_units[s1_cells] = s1_sig
-        sig_units[s2_cells] = s2_sig
-    ​
     # p values without bonferroni correction
     no_bonf_corr = [i for i, p in enumerate(p_vals) if p < 0.05]
-    nomulti_sig_units = np.zeros(expobj.n_units, dtype='bool')
-    nomulti_sig_units[no_bonf_corr] = True
+    expobj.nomulti_sig_units = np.zeros(len(expobj.s2p_cell_nontargets), dtype='bool')
+    expobj.nomulti_sig_units[no_bonf_corr] = True
 
     # p values after bonferroni correction
     #         bonf_corr = [i for i,p in enumerate(p_vals) if p < 0.05 / expobj.n_units[plane]]
     #         sig_units = np.zeros(expobj.n_units[plane], dtype='bool')
     #         sig_units[bonf_corr] = True
-    ​
-    expobj.sta_sig.append(sig_units)
-    expobj.sta_sig_nomulti.append(nomulti_sig_units)
-
 
 
 # %% 1) plot responses of SLM TARGETS in response to photostim trials - broken down by pre-4ap, outsz and insz (excl. sz bound)

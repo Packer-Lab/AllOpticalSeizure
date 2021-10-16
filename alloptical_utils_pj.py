@@ -1593,21 +1593,21 @@ class alloptical(TwoPhotonImaging):
 
         target_areas = []
         for coord in targetCoordinates:
-            target_area = ([item for item in points_in_circle_np(radius, x0=coord[0], y0=coord[1])])
+            target_area = ([item for item in pj.points_in_circle_np(radius, x0=coord[0], y0=coord[1])])
             target_areas.append(target_area)
         self.target_areas = target_areas
 
         # # get areas for SLM group #1
         # target_areas_1 = []
         # for coord in targetCoordinates_1:
-        #     target_area = ([item for item in points_in_circle_np(radius, x0=coord[0], y0=coord[1])])
+        #     target_area = ([item for item in pj.points_in_circle_np(radius, x0=coord[0], y0=coord[1])])
         #     target_areas_1.append(target_area)
         # self.target_areas_1 = target_areas_1
         #
         # # get areas for SLM group #2
         # target_areas_2 = []
         # for coord in targetCoordinates_2:
-        #     target_area = ([item for item in points_in_circle_np(radius, x0=coord[0], y0=coord[1])])
+        #     target_area = ([item for item in pj.points_in_circle_np(radius, x0=coord[0], y0=coord[1])])
         #     target_areas_2.append(target_area)
         # self.target_areas_2 = target_areas_2
 
@@ -1676,7 +1676,7 @@ class alloptical(TwoPhotonImaging):
     #     for group in self.target_coords:
     #         a = []
     #         for target in group:
-    #             target_area = ([item for item in points_in_circle_np(radius, x0=target[0], y0=target[1])])
+    #             target_area = ([item for item in pj.points_in_circle_np(radius, x0=target[0], y0=target[1])])
     #             a.append(target_area)
     #         target_areas.append(a)
     #
@@ -3741,7 +3741,7 @@ def corrcoef_array(array):
 
 
 
-# %% main functions used to initiate and run processing of experiments -- these functions are run on expobj loaded from .pkl files
+# %% main functions used to initiate, run processing and analysis (including some plotting) of experiments -- these functions are run on expobj loaded from .pkl files
 
 # for pre-processing PHOTOSTIM. experiments, creates the all-optical expobj saved in a pkl files at imaging tiff's loc - BEFORE running suite2p
 def calculate_StimSuccessRate(expobj, cell_ids: list, raw_traces_stims=None, dfstdf_threshold=None,
@@ -4122,198 +4122,7 @@ def run_alloptical_processing_photostim(expobj, to_suite2p=None, baseline_trials
     expobj.save()
 
 
-# calculate the dFF responses of the non-targeted cells, create a pandas df of the post-stim dFF responses of all cells
-def all_cell_responses_dff(expobj, normalize_to=''):
-    d = {}
-    # d['group'] = [int(expobj.good_photostim_cells.index(x)) for x in expobj.good_photostim_cells for y in x]
-    d['group'] = ['non-target'] * (len(expobj.good_cells))  # start with all cell in the non-targets group
-    for stim in expobj.stim_start_frames:
-        d['%s' % stim] = [None] * len(expobj.good_cells)
-    df = pd.DataFrame(d, index=expobj.good_cells)  # population dataframe
-
-    risky_cells = []
-    for cell in np.unique([expobj.good_cells + expobj.s2p_cell_targets]):
-
-        if cell in expobj.s2p_cell_targets:
-            group = 'photostim target'
-            move_forward = True
-        elif cell in expobj.good_cells:
-            group = 'non-target'
-            move_forward = True
-        else:
-            move_forward = False
-
-        if move_forward:
-            if normalize_to == 'baseline':
-                mean_base = np.mean(expobj.baseline_raw_df.loc[str(cell), :])
-                for stim in expobj.stim_start_frames:
-                    cell_idx = expobj.cell_id.index(cell)
-                    trace = expobj.raw[cell_idx][
-                            stim - expobj.pre_stim:stim + expobj.stim_duration_frames + expobj.post_stim]
-                    trace_dff = ((trace - mean_base) / abs(mean_base)) * 100
-                    response = np.mean(trace_dff[
-                                       expobj.pre_stim + expobj.stim_duration_frames:expobj.pre_stim + 3 * expobj.stim_duration_frames])
-                    df.at[cell, '%s' % stim] = round(response, 3)
-                    df.at[cell, 'group'] = group
-                if mean_base < 50:
-                    risky_cells.append(cell)
-
-            elif normalize_to == 'pre-stim':
-                mean_pre_list = []
-                for stim in expobj.stim_start_frames:
-                    cell_idx = expobj.cell_id.index(cell)
-                    trace = expobj.raw[cell_idx][
-                            stim - expobj.pre_stim:stim + expobj.stim_duration_frames + expobj.post_stim]
-                    mean_pre = np.mean(trace[0:expobj.pre_stim]);
-                    mean_pre_list.append(mean_pre)
-                    trace_dff = ((trace - mean_pre) / abs(mean_pre)) * 100
-                    response = np.mean(trace_dff[
-                                       expobj.pre_stim + expobj.stim_duration_frames:expobj.pre_stim + 3 * expobj.stim_duration_frames])
-                    df.at[cell, '%s' % stim] = round(response, 3)
-                    df.at[cell, 'group'] = group
-                if np.mean(mean_pre_list) < 50:
-                    risky_cells.append(cell)
-            else:
-                raise Exception('use either normalize_to = "baseline" or "pre-stim"')
-
-                # how to solve the issue of very very large dFF values being caused by very small mean_pre_stim values?
-                # option #1) just remove all cells whose average dFF values are above 500 or 1000 %
-                # option #2) remove all cells who average mean pre values are less than some number (e.g 100)
-                # option #3) if the mean_pre_stim value is less than 10, just make it nan for this stim trial for this cell
-
-    # # getting rid of the for loop below that was used previously for more hard coded photostim target groups
-    # for group in cell_groups:
-    #     # hard coded number of stim. groups as the 0 and 1 in the list of this for loop
-    #     if group == 'non-targets':
-    #         for stim in expobj.stim_start_frames:
-    #             cells = [i for i in expobj.good_cells if i not in expobj.s2p_cell_targets]
-    #             for cell in cells:
-    #                 cell_idx = expobj.cell_id.index(cell)
-    #                 trace = expobj.raw[cell_idx][
-    #                         stim - expobj.pre_stim_sec:stim + expobj.stim_duration_frames + expobj.post_stim_sec]
-    #                 mean_pre = np.mean(trace[0:expobj.pre_stim_sec])
-    #                 trace_dff = ((trace - mean_pre) / abs(mean_pre))  * 100
-    #                 std_pre = np.std(trace[0:expobj.pre_stim_sec])
-    #                 # response = np.mean(trace_dff[pre_stim_sec + expobj.stim_duration_frames:pre_stim_sec + 3*expobj.stim_duration_frames])
-    #                 dF_stdF = (trace - mean_pre) / std_pre  # make dF divided by std of pre-stim F trace
-    #                 # response = np.mean(dF_stdF[pre_stim_sec + expobj.stim_duration_frames:pre_stim_sec + 1 + 2 * expobj.stim_duration_frames])
-    #                 response = np.mean(trace_dff[
-    #                                    expobj.pre_stim_sec + expobj.stim_duration_frames:expobj.pre_stim_sec + 1 + 2 * expobj.stim_duration_frames])
-    #                 df.at[cell, '%s' % stim] = round(response, 4)
-    #     elif 'photostim target' in group:
-    #         cells = expobj.s2p_cell_targets
-    #         for stim in expobj.stim_start_frames:
-    #             for cell in cells:
-    #                 cell_idx = expobj.cell_id.index(cell)
-    #                 trace = expobj.raw[cell_idx][
-    #                         stim - expobj.pre_stim_sec:stim + expobj.stim_duration_frames + expobj.post_stim_sec]
-    #                 mean_pre = np.mean(trace[0:expobj.pre_stim_sec])
-    #                 trace_dff = ((trace - mean_pre) / abs(mean_pre)) * 100
-    #                 std_pre = np.std(trace[0:expobj.pre_stim_sec])
-    #                 # response = np.mean(trace_dff[pre_stim_sec + expobj.stim_duration_frames:pre_stim_sec + 3*expobj.stim_duration_frames])
-    #                 dF_stdF = (trace - mean_pre) / std_pre  # make dF divided by std of pre-stim F trace
-    #                 # response = np.mean(dF_stdF[pre_stim_sec + expobj.stim_duration_frames:pre_stim_sec + 1 + 2 * expobj.stim_duration_frames])
-    #                 response = np.mean(trace_dff[
-    #                                    expobj.pre_stim_sec + expobj.stim_duration_frames:expobj.pre_stim_sec + 3 * expobj.stim_duration_frames])
-    #                 df.at[cell, '%s' % stim] = round(response, 4)
-    #                 df.at[cell, 'group'] = group
-
-    print('Completed gathering dFF responses to photostim for %s cells' % len(
-        np.unique([expobj.good_cells + expobj.s2p_cell_targets])))
-    print('risky cells (with very low Flu values to normalize with) and very high dFF values: (%s)' % len(risky_cells), risky_cells)
-
-    return df, risky_cells
-
-
-def all_cell_responses_dFstdF(expobj):
-    # TODO need to confirm that this code works properly
-    # normalizing post stim dF response to PRE-STIM std F
-
-    all_cells_stim_traces_dF_stdF_avg = []
-
-    d = {}
-    # d['group'] = [int(expobj.good_photostim_cells.index(x)) for x in expobj.good_photostim_cells for y in x]
-    d['group'] = ['non-target'] * (len(expobj.good_cells))  # start with all cell in the non-targets group
-    for stim in expobj.stim_start_frames:
-        d['%s' % stim] = [None] * len(expobj.good_cells)
-    df = pd.DataFrame(d, index=expobj.good_cells)
-    # population dataframe
-
-    for cell in np.unique([expobj.good_cells + expobj.s2p_cell_targets]):
-        if cell in expobj.s2p_cell_targets:
-            group = 'photostim target'
-            move_forward = True
-        elif cell in expobj.good_cells:
-            group = 'non-target'
-            move_forward = True
-        else:
-            move_forward = False
-
-        if move_forward:
-            stim_traces_dF_stdF = []
-            for stim in expobj.stim_start_frames:
-                cell_idx = expobj.cell_id.index(cell)
-                trace = expobj.raw[cell_idx][
-                        stim - expobj.pre_stim:stim + expobj.stim_duration_frames + expobj.post_stim]
-                mean_pre = np.mean(trace[0:expobj.pre_stim])
-                std_pre = np.std(trace[0:expobj.pre_stim])
-                dF_stdF = (trace - mean_pre) / std_pre  # make dF divided by std of pre-stim F trace
-                stim_traces_dF_stdF.append(dF_stdF)
-                response = np.mean(
-                    dF_stdF[
-                    expobj.pre_stim + expobj.stim_duration_frames:expobj.pre_stim + 1 + 2 * expobj.stim_duration_frames])
-
-                df.at[cell, '%s' % stim] = round(response, 4)
-                df.at[cell, 'group'] = group
-            all_cells_stim_traces_dF_stdF_avg.append(np.mean(stim_traces_dF_stdF, axis=0))
-
-    # # getting rid of the for loop below that was used previously for hard coded photostim target groups
-    # for group in cell_groups:
-    #     # hard coded number of stim. groups as the 0 and 1 in the list of this for loop
-    #     if group == 'non-targets':
-    #         for stim in expobj.stim_start_frames:
-    #             cells = [i for i in expobj.good_cells if i not in expobj.s2p_cell_targets]
-    #             for cell in cells:
-    #                 cell_idx = expobj.cell_id.index(cell)
-    #                 trace = expobj.raw[cell_idx][
-    #                         stim - expobj.pre_stim_sec:stim + expobj.stim_duration_frames + expobj.post_stim_sec]
-    #                 mean_pre = np.mean(trace[0:expobj.pre_stim_sec])
-    #                 trace_dff = ((trace - mean_pre) / abs(mean_pre))  * 100
-    #                 std_pre = np.std(trace[0:expobj.pre_stim_sec])
-    #                 # response = np.mean(trace_dff[pre_stim_sec + expobj.stim_duration_frames:pre_stim_sec + 3*expobj.stim_duration_frames])
-    #                 dF_stdF = (trace - mean_pre) / std_pre  # make dF divided by std of pre-stim F trace
-    #                 # response = np.mean(dF_stdF[pre_stim_sec + expobj.stim_duration_frames:pre_stim_sec + 1 + 2 * expobj.stim_duration_frames])
-    #                 response = np.mean(trace_dff[
-    #                                    expobj.pre_stim_sec + expobj.stim_duration_frames:expobj.pre_stim_sec + 1 + 2 * expobj.stim_duration_frames])
-    #                 df.at[cell, '%s' % stim] = round(response, 4)
-    #     elif 'photostim target' in group:
-    #         cells = expobj.s2p_cell_targets
-    #         for stim in expobj.stim_start_frames:
-    #             for cell in cells:
-    #                 cell_idx = expobj.cell_id.index(cell)
-    #                 trace = expobj.raw[cell_idx][
-    #                         stim - expobj.pre_stim_sec:stim + expobj.stim_duration_frames + expobj.post_stim_sec]
-    #                 mean_pre = np.mean(trace[0:expobj.pre_stim_sec])
-    #                 trace_dff = ((trace - mean_pre) / abs(mean_pre)) * 100
-    #                 std_pre = np.std(trace[0:expobj.pre_stim_sec])
-    #                 # response = np.mean(trace_dff[pre_stim_sec + expobj.stim_duration_frames:pre_stim_sec + 3*expobj.stim_duration_frames])
-    #                 dF_stdF = (trace - mean_pre) / std_pre  # make dF divided by std of pre-stim F trace
-    #                 # response = np.mean(dF_stdF[pre_stim_sec + expobj.stim_duration_frames:pre_stim_sec + 1 + 2 * expobj.stim_duration_frames])
-    #                 response = np.mean(trace_dff[
-    #                                    expobj.pre_stim_sec + expobj.stim_duration_frames:expobj.pre_stim_sec + 3 * expobj.stim_duration_frames])
-    #                 df.at[cell, '%s' % stim] = round(response, 4)
-    #                 df.at[cell, 'group'] = group
-
-    print('Completed gathering dF/stdF responses to photostim for %s cells' % len(
-        np.unique([expobj.good_cells + expobj.s2p_cell_targets])))
-
-    return df
-
-
-
-# %% main functions to collect analysis
-
-# plots for SLM targets responses
+# creates plots for SLM targets responses
 def slm_targets_responses(expobj, experiment, trial, y_spacing_factor=2, figsize=[20, 20], smooth_overlap_traces=5, linewidth_overlap_traces=0.2, dff_threshold=0.15,
                           y_lims_periphotostim_trace=[-0.5, 2.0], v_lims_periphotostim_heatmap=[-5, 5], save_results=True, force_redo=False, cmap=None):
     # plot SLM photostim individual targets -- individual, full traces, dff normalized
@@ -4478,6 +4287,196 @@ def slm_targets_responses(expobj, experiment, trial, y_spacing_factor=2, figsize
         fig.show()
 
 
+# # # import results superobject that will collect analyses from various individual experiments
+results_object_path = '/home/pshah/mnt/qnap/Analysis/alloptical_results_superobject.pkl'
+allopticalResults = import_resultsobj(pkl_path=results_object_path)
+
+# %% ARCHIVE
+
+# calculate the dFF responses of the non-targeted cells, create a pandas df of the post-stim dFF responses of all cells - THESE ARE OUTDATED FUNCS. - NEW CODE FOR COLLECTING AND QUANTIFYING RESPONSES OF NONTARGET RESPONSES .21/10/16
+def all_cell_responses_dff(expobj, normalize_to=''):
+    d = {}
+    # d['group'] = [int(expobj.good_photostim_cells.index(x)) for x in expobj.good_photostim_cells for y in x]
+    d['group'] = ['non-target'] * (len(expobj.good_cells))  # start with all cell in the non-targets group
+    for stim in expobj.stim_start_frames:
+        d['%s' % stim] = [None] * len(expobj.good_cells)
+    df = pd.DataFrame(d, index=expobj.good_cells)  # population dataframe
+
+    risky_cells = []
+    for cell in np.unique([expobj.good_cells + expobj.s2p_cell_targets]):
+
+        if cell in expobj.s2p_cell_targets:
+            group = 'photostim target'
+            move_forward = True
+        elif cell in expobj.good_cells:
+            group = 'non-target'
+            move_forward = True
+        else:
+            move_forward = False
+
+        if move_forward:
+            if normalize_to == 'baseline':
+                mean_base = np.mean(expobj.baseline_raw_df.loc[str(cell), :])
+                for stim in expobj.stim_start_frames:
+                    cell_idx = expobj.cell_id.index(cell)
+                    trace = expobj.raw[cell_idx][
+                            stim - expobj.pre_stim:stim + expobj.stim_duration_frames + expobj.post_stim]
+                    trace_dff = ((trace - mean_base) / abs(mean_base)) * 100
+                    response = np.mean(trace_dff[
+                                       expobj.pre_stim + expobj.stim_duration_frames:expobj.pre_stim + 3 * expobj.stim_duration_frames])
+                    df.at[cell, '%s' % stim] = round(response, 3)
+                    df.at[cell, 'group'] = group
+                if mean_base < 50:
+                    risky_cells.append(cell)
+
+            elif normalize_to == 'pre-stim':
+                mean_pre_list = []
+                for stim in expobj.stim_start_frames:
+                    cell_idx = expobj.cell_id.index(cell)
+                    trace = expobj.raw[cell_idx][
+                            stim - expobj.pre_stim:stim + expobj.stim_duration_frames + expobj.post_stim]
+                    mean_pre = np.mean(trace[0:expobj.pre_stim]);
+                    mean_pre_list.append(mean_pre)
+                    trace_dff = ((trace - mean_pre) / abs(mean_pre)) * 100
+                    response = np.mean(trace_dff[
+                                       expobj.pre_stim + expobj.stim_duration_frames:expobj.pre_stim + 3 * expobj.stim_duration_frames])
+                    df.at[cell, '%s' % stim] = round(response, 3)
+                    df.at[cell, 'group'] = group
+                if np.mean(mean_pre_list) < 50:
+                    risky_cells.append(cell)
+            else:
+                raise Exception('use either normalize_to = "baseline" or "pre-stim"')
+
+                # how to solve the issue of very very large dFF values being caused by very small mean_pre_stim values?
+                # option #1) just remove all cells whose average dFF values are above 500 or 1000 %
+                # option #2) remove all cells who average mean pre values are less than some number (e.g 100)
+                # option #3) if the mean_pre_stim value is less than 10, just make it nan for this stim trial for this cell
+
+    # # getting rid of the for loop below that was used previously for more hard coded photostim target groups
+    # for group in cell_groups:
+    #     # hard coded number of stim. groups as the 0 and 1 in the list of this for loop
+    #     if group == 'non-targets':
+    #         for stim in expobj.stim_start_frames:
+    #             cells = [i for i in expobj.good_cells if i not in expobj.s2p_cell_targets]
+    #             for cell in cells:
+    #                 cell_idx = expobj.cell_id.index(cell)
+    #                 trace = expobj.raw[cell_idx][
+    #                         stim - expobj.pre_stim_sec:stim + expobj.stim_duration_frames + expobj.post_stim_sec]
+    #                 mean_pre = np.mean(trace[0:expobj.pre_stim_sec])
+    #                 trace_dff = ((trace - mean_pre) / abs(mean_pre))  * 100
+    #                 std_pre = np.std(trace[0:expobj.pre_stim_sec])
+    #                 # response = np.mean(trace_dff[pre_stim_sec + expobj.stim_duration_frames:pre_stim_sec + 3*expobj.stim_duration_frames])
+    #                 dF_stdF = (trace - mean_pre) / std_pre  # make dF divided by std of pre-stim F trace
+    #                 # response = np.mean(dF_stdF[pre_stim_sec + expobj.stim_duration_frames:pre_stim_sec + 1 + 2 * expobj.stim_duration_frames])
+    #                 response = np.mean(trace_dff[
+    #                                    expobj.pre_stim_sec + expobj.stim_duration_frames:expobj.pre_stim_sec + 1 + 2 * expobj.stim_duration_frames])
+    #                 df.at[cell, '%s' % stim] = round(response, 4)
+    #     elif 'photostim target' in group:
+    #         cells = expobj.s2p_cell_targets
+    #         for stim in expobj.stim_start_frames:
+    #             for cell in cells:
+    #                 cell_idx = expobj.cell_id.index(cell)
+    #                 trace = expobj.raw[cell_idx][
+    #                         stim - expobj.pre_stim_sec:stim + expobj.stim_duration_frames + expobj.post_stim_sec]
+    #                 mean_pre = np.mean(trace[0:expobj.pre_stim_sec])
+    #                 trace_dff = ((trace - mean_pre) / abs(mean_pre)) * 100
+    #                 std_pre = np.std(trace[0:expobj.pre_stim_sec])
+    #                 # response = np.mean(trace_dff[pre_stim_sec + expobj.stim_duration_frames:pre_stim_sec + 3*expobj.stim_duration_frames])
+    #                 dF_stdF = (trace - mean_pre) / std_pre  # make dF divided by std of pre-stim F trace
+    #                 # response = np.mean(dF_stdF[pre_stim_sec + expobj.stim_duration_frames:pre_stim_sec + 1 + 2 * expobj.stim_duration_frames])
+    #                 response = np.mean(trace_dff[
+    #                                    expobj.pre_stim_sec + expobj.stim_duration_frames:expobj.pre_stim_sec + 3 * expobj.stim_duration_frames])
+    #                 df.at[cell, '%s' % stim] = round(response, 4)
+    #                 df.at[cell, 'group'] = group
+
+    print('Completed gathering dFF responses to photostim for %s cells' % len(
+        np.unique([expobj.good_cells + expobj.s2p_cell_targets])))
+    print('risky cells (with very low Flu values to normalize with) and very high dFF values: (%s)' % len(risky_cells), risky_cells)
+
+    return df, risky_cells
+def all_cell_responses_dFstdF(expobj):
+    # TODO need to confirm that this code works properly
+    # normalizing post stim dF response to PRE-STIM std F
+
+    all_cells_stim_traces_dF_stdF_avg = []
+
+    d = {}
+    # d['group'] = [int(expobj.good_photostim_cells.index(x)) for x in expobj.good_photostim_cells for y in x]
+    d['group'] = ['non-target'] * (len(expobj.good_cells))  # start with all cell in the non-targets group
+    for stim in expobj.stim_start_frames:
+        d['%s' % stim] = [None] * len(expobj.good_cells)
+    df = pd.DataFrame(d, index=expobj.good_cells)
+    # population dataframe
+
+    for cell in np.unique([expobj.good_cells + expobj.s2p_cell_targets]):
+        if cell in expobj.s2p_cell_targets:
+            group = 'photostim target'
+            move_forward = True
+        elif cell in expobj.good_cells:
+            group = 'non-target'
+            move_forward = True
+        else:
+            move_forward = False
+
+        if move_forward:
+            stim_traces_dF_stdF = []
+            for stim in expobj.stim_start_frames:
+                cell_idx = expobj.cell_id.index(cell)
+                trace = expobj.raw[cell_idx][
+                        stim - expobj.pre_stim:stim + expobj.stim_duration_frames + expobj.post_stim]
+                mean_pre = np.mean(trace[0:expobj.pre_stim])
+                std_pre = np.std(trace[0:expobj.pre_stim])
+                dF_stdF = (trace - mean_pre) / std_pre  # make dF divided by std of pre-stim F trace
+                stim_traces_dF_stdF.append(dF_stdF)
+                response = np.mean(
+                    dF_stdF[
+                    expobj.pre_stim + expobj.stim_duration_frames:expobj.pre_stim + 1 + 2 * expobj.stim_duration_frames])
+
+                df.at[cell, '%s' % stim] = round(response, 4)
+                df.at[cell, 'group'] = group
+            all_cells_stim_traces_dF_stdF_avg.append(np.mean(stim_traces_dF_stdF, axis=0))
+
+    # # getting rid of the for loop below that was used previously for hard coded photostim target groups
+    # for group in cell_groups:
+    #     # hard coded number of stim. groups as the 0 and 1 in the list of this for loop
+    #     if group == 'non-targets':
+    #         for stim in expobj.stim_start_frames:
+    #             cells = [i for i in expobj.good_cells if i not in expobj.s2p_cell_targets]
+    #             for cell in cells:
+    #                 cell_idx = expobj.cell_id.index(cell)
+    #                 trace = expobj.raw[cell_idx][
+    #                         stim - expobj.pre_stim_sec:stim + expobj.stim_duration_frames + expobj.post_stim_sec]
+    #                 mean_pre = np.mean(trace[0:expobj.pre_stim_sec])
+    #                 trace_dff = ((trace - mean_pre) / abs(mean_pre))  * 100
+    #                 std_pre = np.std(trace[0:expobj.pre_stim_sec])
+    #                 # response = np.mean(trace_dff[pre_stim_sec + expobj.stim_duration_frames:pre_stim_sec + 3*expobj.stim_duration_frames])
+    #                 dF_stdF = (trace - mean_pre) / std_pre  # make dF divided by std of pre-stim F trace
+    #                 # response = np.mean(dF_stdF[pre_stim_sec + expobj.stim_duration_frames:pre_stim_sec + 1 + 2 * expobj.stim_duration_frames])
+    #                 response = np.mean(trace_dff[
+    #                                    expobj.pre_stim_sec + expobj.stim_duration_frames:expobj.pre_stim_sec + 1 + 2 * expobj.stim_duration_frames])
+    #                 df.at[cell, '%s' % stim] = round(response, 4)
+    #     elif 'photostim target' in group:
+    #         cells = expobj.s2p_cell_targets
+    #         for stim in expobj.stim_start_frames:
+    #             for cell in cells:
+    #                 cell_idx = expobj.cell_id.index(cell)
+    #                 trace = expobj.raw[cell_idx][
+    #                         stim - expobj.pre_stim_sec:stim + expobj.stim_duration_frames + expobj.post_stim_sec]
+    #                 mean_pre = np.mean(trace[0:expobj.pre_stim_sec])
+    #                 trace_dff = ((trace - mean_pre) / abs(mean_pre)) * 100
+    #                 std_pre = np.std(trace[0:expobj.pre_stim_sec])
+    #                 # response = np.mean(trace_dff[pre_stim_sec + expobj.stim_duration_frames:pre_stim_sec + 3*expobj.stim_duration_frames])
+    #                 dF_stdF = (trace - mean_pre) / std_pre  # make dF divided by std of pre-stim F trace
+    #                 # response = np.mean(dF_stdF[pre_stim_sec + expobj.stim_duration_frames:pre_stim_sec + 1 + 2 * expobj.stim_duration_frames])
+    #                 response = np.mean(trace_dff[
+    #                                    expobj.pre_stim_sec + expobj.stim_duration_frames:expobj.pre_stim_sec + 3 * expobj.stim_duration_frames])
+    #                 df.at[cell, '%s' % stim] = round(response, 4)
+    #                 df.at[cell, 'group'] = group
+
+    print('Completed gathering dF/stdF responses to photostim for %s cells' % len(
+        np.unique([expobj.good_cells + expobj.s2p_cell_targets])))
+
+    return df
 
 # 2 functions for plotting photostimulation timed DFF, baseline DFF considered as pre-stim period
 def plot_photostim_avg(dff_array, stim_duration, pre_stim=10, post_stim=200, title='', y_min=None, y_max=None):
@@ -4496,8 +4495,6 @@ def plot_photostim_avg(dff_array, stim_duration, pre_stim=10, post_stim=200, tit
         ax.set_ylim([y_min, y_max])
     fig.suptitle(title, y=0.95)
     plt.show()
-
-
 def plot_photostim_(dff_array, stim_duration, pre_stim=10, post_stim=200, title='', y_min=None, y_max=None):
     x = list(range(-pre_stim, post_stim))
     fig, ax = plt.subplots()
@@ -4509,16 +4506,10 @@ def plot_photostim_(dff_array, stim_duration, pre_stim=10, post_stim=200, title=
     fig.suptitle(title, y=0.95)
     plt.show()
 
-
-## kept in utils.funcs_pj
+## moved to utils.funcs_pj .21/10/16
 def points_in_circle_np(radius, x0=0, y0=0, ):
     x_ = np.arange(x0 - radius - 1, x0 + radius + 1, dtype=int)
     y_ = np.arange(y0 - radius - 1, y0 + radius + 1, dtype=int)
     x, y = np.where((x_[:, np.newaxis] - x0) ** 2 + (y_ - y0) ** 2 <= radius ** 2)
     for x, y in zip(x_[x], y_[y]):
         yield x, y
-
-
-# # # import results superobject that will collect analyses from various individual experiments
-results_object_path = '/home/pshah/mnt/qnap/Analysis/alloptical_results_superobject.pkl'
-allopticalResults = import_resultsobj(pkl_path=results_object_path)
