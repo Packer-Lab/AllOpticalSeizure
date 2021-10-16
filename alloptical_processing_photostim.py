@@ -407,14 +407,14 @@ expobj.save()
 # problem_stims = []
 # for stim in expobj.stim_start_frames:
 #     cell_idx = expobj.cell_id.index(cell)
-#     trace = expobj.raw[cell_idx][stim - expobj.pre_stim:stim + expobj.stim_duration_frames + expobj.post_stim];
+#     trace = expobj.raw[cell_idx][stim - expobj.pre_stim_sec:stim + expobj.stim_duration_frames + expobj.post_stim_sec];
 #     trace_raw_list.append(trace)
-#     mean_pre = np.mean(trace[0:expobj.pre_stim]);
+#     mean_pre = np.mean(trace[0:expobj.pre_stim_sec]);
 #     mean_pre_list.append(mean_pre)
 #     trace_dff = ((trace - mean_pre) / abs(mean_pre)) * 100;
 #     trace_dff_list.append(trace_dff)
 #     response = np.mean(trace_dff[
-#                        expobj.pre_stim + expobj.stim_duration_frames:expobj.pre_stim + 3 * expobj.stim_duration_frames])
+#                        expobj.pre_stim_sec + expobj.stim_duration_frames:expobj.pre_stim_sec + 3 * expobj.stim_duration_frames])
 #     if response > 500:
 #         problem_stims.append(list(expobj.stim_start_frames).index(stim))
 #

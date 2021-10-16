@@ -325,7 +325,7 @@ def slm_targets_responses(expobj, experiment, trial, y_spacing_factor=2, figsize
                 # expobj.outsz_StimSuccessRate_SLMtargets, expobj.outsz_hits_SLMtargets, expobj.outsz_responses_SLMtargets = \
                 #     calculate_StimSuccessRate(expobj, cell_ids=SLMtarget_ids, raw_traces_stims=raw_traces_stims,
                 #                               dff_threshold=10, post_stim_response_frames_window=expobj.post_stim_response_frames_window,
-                #                               pre_stim=expobj.pre_stim, sz_filter=seizure_filter,
+                #                               pre_stim_sec=expobj.pre_stim_sec, sz_filter=seizure_filter,
                 #                               verbose=True, plot=False)
 
             stims = [expobj.stim_start_frames.index(stim) for stim in expobj.stims_in_sz]
@@ -337,7 +337,7 @@ def slm_targets_responses(expobj, experiment, trial, y_spacing_factor=2, figsize
                 # expobj.insz_StimSuccessRate_SLMtargets, expobj.insz_hits_SLMtargets, expobj.insz_responses_SLMtargets = \
                 #     calculate_StimSuccessRate(expobj, cell_ids=SLMtarget_ids, raw_traces_stims=raw_traces_stims,
                 #                               dff_threshold=10, post_stim_response_frames_window=expobj.post_stim_response_frames_window,
-                #                               pre_stim=expobj.pre_stim, sz_filter=seizure_filter,
+                #                               pre_stim_sec=expobj.pre_stim_sec, sz_filter=seizure_filter,
                 #                               verbose=True, plot=False)
 
         else:
@@ -349,7 +349,7 @@ def slm_targets_responses(expobj, experiment, trial, y_spacing_factor=2, figsize
             # expobj.StimSuccessRate_SLMtargets, expobj.hits_SLMtargets, expobj.responses_SLMtargets = \
             #     calculate_StimSuccessRate(expobj, cell_ids=SLMtarget_ids, raw_traces_stims=expobj.SLMTargets_stims_raw,
             #                               dff_threshold=10, post_stim_response_frames_window=expobj.post_stim_response_frames_window,
-            #                               pre_stim=expobj.pre_stim, sz_filter=seizure_filter,
+            #                               pre_stim_sec=expobj.pre_stim_sec, sz_filter=seizure_filter,
             #                               verbose=True, plot=False)
 
         expobj.save()

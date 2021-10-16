@@ -206,12 +206,12 @@ def _good_photostim_cells(exp_obj, std_thresh=1, dff_threshold=None, pre_stim=10
             trace = targets_dff[
                 targeted_cells.index(cell)]  # trace = averaged dff trace across all photostims. for this cell
             pre_stim_trace = trace[:pre_stim]
-            # post_stim_trace = trace[pre_stim + exp_obj.stim_duration_frames:post_stim]
+            # post_stim_trace = trace[pre_stim_sec + exp_obj.stim_duration_frames:post_stim_sec]
             mean_pre = np.mean(pre_stim_trace)
             std_pre = np.std(pre_stim_trace)
             # mean_post = np.mean(post_stim_trace[:10])
             dF_stdF = (trace - mean_pre) / std_pre  # make dF divided by std of pre-stim F trace
-            # response = np.mean(dF_stdF[pre_stim + exp_obj.stim_duration_frames:pre_stim + 3*exp_obj.stim_duration_frames])
+            # response = np.mean(dF_stdF[pre_stim_sec + exp_obj.stim_duration_frames:pre_stim_sec + 3*exp_obj.stim_duration_frames])
             response = np.mean(trace[pre_stim + exp_obj.stim_duration_frames:pre_stim + 3 * exp_obj.stim_duration_frames]) # calculate the dF over pre-stim mean F response within the response window
             if dff_threshold is None:
                 thresh_ = mean_pre + std_thresh * std_pre
@@ -381,9 +381,9 @@ for group in df['groups'].unique():
             mean = np.mean(trace[0:pre_stim])
             trace_dff = ((trace - mean) / abs(mean)) * 100
             std_pre = np.std(trace[0:pre_stim])
-            # response = np.mean(trace_dff[pre_stim + exp_obj.stim_duration_frames:pre_stim + 3*exp_obj.stim_duration_frames])
+            # response = np.mean(trace_dff[pre_stim_sec + exp_obj.stim_duration_frames:pre_stim_sec + 3*exp_obj.stim_duration_frames])
             dF_stdF = (trace - mean) / std_pre  # make dF divided by std of pre-stim F trace
-            # response = np.mean(dF_stdF[pre_stim + exp_obj.stim_duration_frames:pre_stim + 1 + 2 * exp_obj.stim_duration_frames])
+            # response = np.mean(dF_stdF[pre_stim_sec + exp_obj.stim_duration_frames:pre_stim_sec + 1 + 2 * exp_obj.stim_duration_frames])
             response = np.mean(trace_dff[pre_stim + exp_obj.stim_duration_frames:pre_stim + 1 + 2 * exp_obj.stim_duration_frames])
             df.at[cell, '%s' % stim] = response
 
@@ -739,7 +739,7 @@ def plot_photostim_(dff_array, stim_duration, pre_stim=10, post_stim=200, title=
         ax.set_ylim([y_min, y_max])
     fig.suptitle((title + ' - %s' % len_ + ' cells'), y=0.95)
     plt.show()
-# plot_photostim_(dff_array=targets_dff,pre_stim=pre_stim, post_stim=post_stim, title=title)
+# plot_photostim_(dff_array=targets_dff,pre_stim_sec=pre_stim_sec, post_stim_sec=post_stim_sec, title=title)
 
 # check to see what the filtered cells' photostim response look like
 plot_photostim_avg(dff_array=good_targets_dff, stim_duration=4, pre_stim=pre_stim, post_stim=post_stim, title=title + ' - filtered - avg of all cells')

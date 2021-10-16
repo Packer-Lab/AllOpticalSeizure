@@ -271,7 +271,7 @@ if to_plot == 'dFstdF':
 elif to_plot == 'dFF':
     arr = np.asarray([i for i in expobj.targets_dff_avg])
     y_label = 'dFF (normalized to prestim period)'
-aoplot.plot_periphotostim_avg(arr=arr, expobj=expobj, pre_stim=0.5, post_stim=1.0,
+aoplot.plot_periphotostim_avg(arr=arr, expobj=expobj, pre_stim_sec=0.5, post_stim_sec=1.0,
                               title=(experiment + '- responses of all photostim targets'), figsize=[5,4],
                               x_label='Time post-stimulation (seconds)')
 
@@ -325,14 +325,14 @@ aoplot.plot_photostim_traces_overlap(array=expobj.dff_SLMTargets, expobj=expobj,
 # # targets_idx = 0
 # plot = True
 # for i in range(0, expobj.n_targets_total):
-#     SLMTargets_stims_raw, SLMTargets_stims_dff, SLMtargets_stims_dfstdF = expobj.get_alltargets_stim_traces_norm(targets_idx=i, pre_stim=pre_stim,
-#                                                                                                                  post_stim=post_stim)
+#     SLMTargets_stims_raw, SLMTargets_stims_dff, SLMtargets_stims_dfstdF = expobj.get_alltargets_stim_traces_norm(targets_idx=i, pre_stim_sec=pre_stim_sec,
+#                                                                                                                  post_stim_sec=post_stim_sec)
 #     if plot:
 #         w = 2
 #         array = [(np.convolve(trace, np.ones(w), 'valid') / w) for trace in SLMTargets_stims_raw]
 #         random_sub = np.random.randint(0,100,10)
 #         aoplot.plot_periphotostim_avg(arr=SLMtargets_stims_dfstdF[random_sub], expobj=expobj, stim_duration=expobj.stim_duration_frames,
-#                                       title='Target ' + str(i), pre_stim=pre_stim, post_stim=post_stim, color='steelblue', y_lims=[-0.5, 2.5])
+#                                       title='Target ' + str(i), pre_stim_sec=pre_stim_sec, post_stim_sec=post_stim_sec, color='steelblue', y_lims=[-0.5, 2.5])
 #     # plt.show()
 
 
@@ -341,7 +341,7 @@ aoplot.plot_photostim_traces_overlap(array=expobj.dff_SLMTargets, expobj=expobj,
 
 y_label = 'dF/prestim_stdF'
 aoplot.plot_periphotostim_avg(arr=expobj.SLMTargets_stims_dfstdF_avg, expobj=expobj, stim_duration=expobj.stim_duration_frames,
-                              figsize=[5, 4], y_lims=[-0.5, 3], pre_stim=0.5, post_stim=1.0,
+                              figsize=[5, 4], y_lims=[-0.5, 3], pre_stim_sec=0.5, post_stim_sec=1.0,
                               title=(experiment + '- responses of all photostim targets'),
                               y_label=y_label, x_label='post-stimulation (seconds)')
 
@@ -361,8 +361,8 @@ x = np.asarray([i for i in expobj.dfstdF_traces_avg])
 # y_label = 'pct. dFF (normalized to prestim period)'
 y_label = 'dFstdF (normalized to prestim period)'
 
-aoplot.plot_periphotostim_avg(arr=x, expobj=expobj, pre_stim=0.5,
-                              post_stim=1.5, title='responses of s2p non-targets', y_label=y_label,
+aoplot.plot_periphotostim_avg(arr=x, expobj=expobj, pre_stim_sec=0.5,
+                              post_stim_sec=1.5, title='responses of s2p non-targets', y_label=y_label,
                               x_label='Time post-stimulation (seconds)', y_lims=[-1, 3])
 
 
@@ -998,7 +998,7 @@ for cell in expobj.good_cells:
             df_stdf = (trace - mean) / std
             flu_std.append(df_stdf)
 
-        # thresh = np.mean(np.mean(flu_std, axis=0)[pre_stim+10:pre_stim+30])
+        # thresh = np.mean(np.mean(flu_std, axis=0)[pre_stim_sec+10:pre_stim_sec+30])
         #
         # if thresh > 1*std:
         #     good_std_cells.append(cell)
@@ -1015,7 +1015,7 @@ for cell in expobj.good_cells:
         # flu_avg = np.mean(flu_dff, axis=0)
         # std = np.std(flu_dff, axis=0)
         # ci = 1.960 * (std/np.sqrt(len(flu_dff))) # 1.960 is z for 95% confidence interval, standard deviation divided by the sqrt of N samples (# traces in flu_dff)
-        # x = list(range(-pre_stim, post_stim))
+        # x = list(range(-pre_stim_sec, post_stim_sec))
         # y = flu_avg
         #
         # fig, ax = plt.subplots()

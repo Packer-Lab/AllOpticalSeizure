@@ -335,13 +335,13 @@ def plot_photostim_traces_overlap(array, expobj, exclude_id=[], y_spacing_factor
 
 
 ### photostim analysis - PLOT avg over all photstim. trials traces from PHOTOSTIM TARGETTED cells
-def plot_periphotostim_avg(arr=None, pre_stim=1.0, post_stim=3.0, title='', expobj=None,
+def plot_periphotostim_avg(arr=None, pre_stim_sec=1.0, post_stim_sec=3.0, title='', expobj=None,
                            avg_only: bool = False, x_label=None, y_label=None, **kwargs):
     """
     plot trace across all stims
     :param arr: Flu traces to plot (will be plotted as individual traces unless avg_only is True) dimensions should be cells x stims x frames
-    :param pre_stim: seconds of array to plot for pre-stim period
-    :param post_stim: seconds of array to plot for post-stim period
+    :param pre_stim_sec: seconds of array to plot for pre-stim period
+    :param post_stim_sec: seconds of array to plot for post-stim period
     :param title: title to use for plot
     :param avg_only: if True, only plot the mean trace calculated from the traces provided in arr
     :param x_label: x axis label
@@ -356,16 +356,15 @@ def plot_periphotostim_avg(arr=None, pre_stim=1.0, post_stim=3.0, title='', expo
     """
 
     fps = expobj.fps  # frames per second rate of the imaging data collection for the data to be plotted
-    exp_prestim = expobj.pre_stim  # frames of pre-stim data collected for each trace for this expobj (should be same as what's under expobj.pre_stim)
+    exp_prestim = expobj.pre_stim  # frames of pre-stim data collected for each trace for this expobj (should be same as what's under expobj.pre_stim_sec)
     if 'stim_duration' in kwargs.keys():
         stim_duration = kwargs['stim_duration']
     else:
         stim_duration = expobj.stim_dur / 1000  # seconds of stimulation duration
 
-
     x = list(range(arr.shape[1]))
     # x range in time (secs)
-    x_time = np.linspace(0, arr.shape[1]/fps, arr.shape[1])  # x scale, but in time domain (transformed from frames based on the provided fps)
+    x_time = np.linspace(0, arr.shape[1]/fps, arr.shape[1]) - pre_stim_sec  # x scale, but in time domain (transformed from frames based on the provided fps)
 
     len_ = len(arr)
     flu_avg = np.mean(arr, axis=0)
@@ -379,17 +378,17 @@ def plot_periphotostim_avg(arr=None, pre_stim=1.0, post_stim=3.0, title='', expo
         else:
             fig, ax = plt.subplots(figsize=[5, 4])
 
-
-    ax.margins(0)
-    # ax.axvspan(expobj.pre_stim, expobj.pre_stim + expobj.stim_duration_frames, alpha=0.2, color='tomato')
+    ax.margins(x=0.07)
 
     if 'Time' in x_label or 'time' in x_label:
         x = x_time  # set the x plotting range
+        x_label = x_label + 'post-stimulation relative'
 
         if avg_only is True:
-            ax.axvspan(exp_prestim/fps - 1/fps, exp_prestim/fps + stim_duration + 1 / fps, alpha=1, color='plum', zorder = 3)
+            ax.axvspan(0 - 1/fps, 0 + stim_duration + 1 / fps, alpha=1, color='plum', zorder = 3)
+            ax.axvspan(0 - 1/fps, 0 + stim_duration + 1 / fps, alpha=1, color='plum', zorder = 3)
         else:
-            ax.axvspan(pre_stim - 1/fps, pre_stim - 1/fps + stim_duration, alpha=0.5, color='plum', zorder = 3)
+            ax.axvspan(0 - 1/fps, 0 - 1/fps + stim_duration, alpha=0.5, color='plum', zorder = 3)  # note that we are setting 0 as the stimulation time
     else:
         ax.axvspan(exp_prestim, exp_prestim + int(stim_duration*fps), alpha=0.2, color='tomato')
         x_label = 'Frames'
@@ -410,35 +409,14 @@ def plot_periphotostim_avg(arr=None, pre_stim=1.0, post_stim=3.0, title='', expo
 
     if 'y_lims' in kwargs.keys():
         ax.set_ylim(kwargs['y_lims'])
-    if pre_stim and post_stim:
+    if pre_stim_sec and post_stim_sec:
         if 'Time' in x_label or 'time' in x_label:
-            ax.set_xlim(exp_prestim / fps - pre_stim, exp_prestim /fps + stim_duration + post_stim + 1)
+            ax.set_xlim(-pre_stim_sec, stim_duration + post_stim_sec)  # remember that x axis is set to be relative to the stim time (i.e. stim is at t = 0)
         else:
-            ax.set_xlim(exp_prestim - int(pre_stim * fps), exp_prestim + int(stim_duration*fps) + int(post_stim * fps) + 1)
-
-    # # change x axis ticks to seconds
-    # if 'Time' in x_label or 'time' in x_label:
-    #     labels = list(np.linspace(0, int(arr.shape[1] / fps), 7))  # x axis tick label every 500 msec
-    #     labels = [round(label,1) for label in labels]
-    #     ax.set_xticks(ticks=[(label * fps) for label in labels])
-    #     ax.set_xticklabels(labels)
-    #     ax.set_xlabel('Time (secs)')
-    #
-    #     if 'post' in x_label and 'stimulation' in x_label:
-    #         labels = list(np.linspace(-pre_stim, stim_duration + post_stim, 7))  # x axis tick label every 500 msec
-    #         labels = [round(label, 1) for label in labels]
-    #         labels_locs = np.linspace(exp_prestim - int(pre_stim * fps), exp_prestim + int(stim_duration*fps) + int(post_stim * fps), 7)
-    #         ax.set_xticks(ticks=[int(label) for label in labels_locs])
-    #         ax.set_xticklabels(labels)
-    #         ax.set_xlabel('Time post stimulation (secs)')
-    #     else:
-    #         ax.set_xlabel('Frames')
-    # else:
-    #     ax.set_xlabel('Frames')
+            ax.set_xlim(exp_prestim - int(pre_stim_sec * fps), exp_prestim + int(stim_duration * fps) + int(post_stim_sec * fps) + 1)
 
     ax.spines['top'].set_visible(False)
     ax.spines['right'].set_visible(False)
-    # ax.spines['left'].set_visible(False)
 
     ax.set_xlabel(x_label)
     ax.set_ylabel(y_label)
@@ -448,21 +426,22 @@ def plot_periphotostim_avg(arr=None, pre_stim=1.0, post_stim=3.0, title='', expo
 
     # finalize plot, set title, and show or return axes
     if 'fig' in kwargs.keys():
-        ax.set_title((title + ' - %s' % len_ + ' traces'), horizontalalignment='center', verticalalignment='top',
-                     pad=60, fontsize=10, wrap=True)
-        # ax.title.set_text((title + ' - %s' % len_ + ' traces'), wrap=True)
+        if title is not None:
+            ax.set_title((title + ' - %s' % len_ + ' traces'), horizontalalignment='center', verticalalignment='top',
+                         pad=20, fontsize=10, wrap=True)
+            # ax.title.set_text((title + ' - %s' % len_ + ' traces'), wrap=True)
         return fig, ax, [exp_prestim/fps, x, flu_avg]
     else:
-        ax.set_title((title + ' - %s' % len_ + ' traces'), horizontalalignment='center', verticalalignment='top',
-                     pad=60, fontsize=10, wrap=True)
+        if title is not None:
+            ax.set_title((title + ' - %s' % len_ + ' traces'), horizontalalignment='center', verticalalignment='top',
+                         pad=20, fontsize=10, wrap=True)
     if 'show' in kwargs.keys():
         if kwargs['show'] is True:
-            plt.show()
+            fig.show()
         else:
             pass
     else:
-        plt.show()
-
+        fig.show()
 
 
 def plot_s2p_raw(expobj, cell_id):
@@ -1125,8 +1104,8 @@ def plot_lfp_1pstim_avg_trace(expobj, title='Average LFP peri- stims', individua
         # individual traces
         for trace in x:
             ax.plot(trace, color='steelblue', zorder=1, alpha=0.25)
-            # ax.axvspan(int(pre_stim * expobj.paq_rate),
-            #            int(pre_stim * expobj.paq_rate) + stim_duration,
+            # ax.axvspan(int(pre_stim_sec * expobj.paq_rate),
+            #            int(pre_stim_sec * expobj.paq_rate) + stim_duration,
             #            edgecolor='powderblue', zorder=1, alpha=0.3)
         ax.axvspan(int(pre_stim * expobj.paq_rate),
                    int(pre_stim * expobj.paq_rate) + stim_duration,

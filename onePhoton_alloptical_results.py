@@ -25,7 +25,7 @@ for pkl_path in onePresults.mean_stim_responses['pkl_list']:
 
         fig, ax, flu_list, mean_response, decay_constant = aoplot.plot_flu_1pstim_avg_trace(expobj, x_axis='time', individual_traces=True, stim_span_color=None, y_axis='dff', quantify=True,
                                                                                             show=False, fig=fig, ax=ax, write_full_text=write_full_text, shrink_text=1.25)
-        # fig, ax = aoplot.plot_lfp_1pstim_avg_trace(expobj, x_axis='time', individual_traces=False, pre_stim=0.25, post_stim=0.75, optoloopback=True, show=False)
+        # fig, ax = aoplot.plot_lfp_1pstim_avg_trace(expobj, x_axis='time', individual_traces=False, pre_stim_sec=0.25, post_stim_sec=0.75, optoloopback=True, show=False)
 
         axs[counter // ncols, counter % ncols] = ax
 
@@ -51,7 +51,7 @@ for pkl_path in onePresults.mean_stim_responses['pkl_list']:
         fig, ax, flu_list, mean_response, decay_constant = aoplot.plot_flu_1pstim_avg_trace(expobj, x_axis='time', individual_traces=True, stim_span_color=None, y_axis='dff', quantify=True,
                                                                                             show=False, fig=fig, ax=ax, write_full_text=write_full_text, shrink_text=1.25, stims_to_analyze=expobj.stims_out_sz,
                                                                                             title=title)
-        # fig, ax = aoplot.plot_lfp_1pstim_avg_trace(expobj, x_axis='time', individual_traces=False, pre_stim=0.25, post_stim=0.75, optoloopback=True, show=False)
+        # fig, ax = aoplot.plot_lfp_1pstim_avg_trace(expobj, x_axis='time', individual_traces=False, pre_stim_sec=0.25, post_stim_sec=0.75, optoloopback=True, show=False)
 
         axs[counter // ncols, counter % ncols] = ax
 
@@ -78,7 +78,7 @@ for pkl_path in onePresults.mean_stim_responses['pkl_list']:
         fig, ax, flu_list, mean_response, decay_constant = aoplot.plot_flu_1pstim_avg_trace(expobj, x_axis='time', individual_traces=True, stim_span_color=None, y_axis='dff', quantify=True,
                                                                                             show=False, fig=fig, ax=ax, write_full_text=write_full_text, shrink_text=1.25, stims_to_analyze=expobj.stims_in_sz,
                                                                                             title=title)
-        # fig, ax = aoplot.plot_lfp_1pstim_avg_trace(expobj, x_axis='time', individual_traces=False, pre_stim=0.25, post_stim=0.75, optoloopback=True, show=False)
+        # fig, ax = aoplot.plot_lfp_1pstim_avg_trace(expobj, x_axis='time', individual_traces=False, pre_stim_sec=0.25, post_stim_sec=0.75, optoloopback=True, show=False)
 
         axs[counter // ncols, counter % ncols] = ax
 

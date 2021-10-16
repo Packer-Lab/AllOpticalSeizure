@@ -1,6 +1,8 @@
 # %% DATA ANALYSIS + PLOTTING FOR ALL-OPTICAL TWO-P PHOTOSTIM EXPERIMENTS
 import numpy as np
 import pandas as pd
+from scipy import stats, signal
+import statsmodels.stats as smstats
 import matplotlib.pyplot as plt
 import alloptical_utils_pj as aoutils
 import alloptical_plotting_utils as aoplot
@@ -11,7 +13,7 @@ results_object_path = '/home/pshah/mnt/qnap/Analysis/alloptical_results_superobj
 allopticalResults = aoutils.import_resultsobj(pkl_path=results_object_path)
 
 
-# %% import expobj
+# import expobj
 expobj, experiment = aoutils.import_expobj(aoresults_map_id='pre g.1')
 
 if not hasattr(expobj, 'good_cells'):
@@ -21,60 +23,137 @@ if not hasattr(expobj, 'good_cells'):
 
 # %% 5) plot responses of non-targets from suite2p ROIs in response to photostim trials - broken down by pre-4ap, outsz and insz (excl. sz bound)
 # #  - with option to plot only successful or only failure stims!
-expobj.get_nontargets_stim_traces_norm(normalize_to='pre-stim', pre_stim=1, post_stim=8, plot='dFstdF')
+expobj.get_nontargets_stim_traces_norm(normalize_to='pre-stim', plot='dFstdF')
 # expobj.dff_traces, expobj.dff_traces_avg, expobj.dfstdF_traces, \
 # expobj.dfstdF_traces_avg, expobj.raw_traces, expobj.raw_traces_avg = \
-#     aoutils.get_nontargets_stim_traces_norm(expobj=expobj, normalize_to='pre-stim', pre_stim=expobj.pre_stim,
-#                                             post_stim=expobj.post_stim)
+#     aoutils.get_nontargets_stim_traces_norm(expobj=expobj, normalize_to='pre-stim', pre_stim_sec=expobj.pre_stim_sec,
+#                                             post_stim_sec=expobj.post_stim_sec)
 
 
-# SUITE2P NON-TARGETS - PLOT AVG PHOTOSTIM PRE- POST- TRACE AVGed OVER ALL PHOTOSTIM. TRIALS
-f = plt.figure(constrained_layout = True, figsize=[10,10])
+# SUITE2P NON-TARGETS
+f = plt.figure(constrained_layout=True, figsize=[15, 5])
 gs = f.add_gridspec(1, 3)
+
+# PLOT AVG PHOTOSTIM PRE- POST- TRACE AVGed OVER ALL PHOTOSTIM. TRIALS
 a1 = f.add_subplot(gs[:, 0])
 x = expobj.dff_traces_avg
 y_label = 'pct. dFF (normalized to prestim period)'
-aoplot.plot_periphotostim_avg(arr=x, expobj=expobj, pre_stim=1, post_stim=8,
-                              title='', y_label=y_label, fig=f, ax=a1, show=False,
-                              x_label='Time post-stimulation (seconds)', y_lims=[-50, 200])
+aoplot.plot_periphotostim_avg(arr=x, expobj=expobj, pre_stim_sec=1, post_stim_sec=5,
+                              title=None, y_label=y_label, fig=f, ax=a1, show=False,
+                              x_label='Time (seconds)', y_lims=[-50, 200])
+# PLOT AVG PHOTOSTIM PRE- POST- TRACE AVGed OVER ALL PHOTOSTIM. TRIALS
 a2 = f.add_subplot(gs[:, 1])
 x = expobj.dfstdF_traces_avg
 y_label = 'dFstdF (normalized to prestim period)'
-aoplot.plot_periphotostim_avg(arr=x, expobj=expobj, pre_stim=1, post_stim=8,
-                              title='', y_label=y_label, fig=f, ax=a2, show=False,
-                              x_label='Time post-stimulation (seconds)', y_lims=[-1, 3])
+aoplot.plot_periphotostim_avg(arr=x, expobj=expobj, pre_stim_sec=1, post_stim_sec=5,
+                              title=None, y_label=y_label, fig=f, ax=a2, show=False,
+                              x_label='Time (seconds)', y_lims=[-1, 3])
+# PLOT HEATMAP OF AVG PRE- POST TRACE AVGed OVER ALL PHOTOSTIM. TRIALS - ALL CELLS (photostim targets at top) - Lloyd style :D
 a3 = f.add_subplot(gs[:, -1])
 arr = np.asarray([i for i in expobj.dfstdF_traces_avg]); vmin = -1; vmax = 1
 aoplot.plot_traces_heatmap(arr, expobj=expobj, vmin=vmin, vmax=vmax, stim_on=int(1*expobj.fps), stim_off=int(1*expobj.fps + expobj.stim_duration_frames - 1),
-                           title='', x_label='Time', cbar=True,
+                           title='dF/stdF heatmap for all nontargets', x_label='Time', cbar=True,
                            fig=f, ax=a3, show=False)
-f.suptitle(('%s %s' % (expobj.metainfo['animal prep.'], expobj.metainfo['trial'])))
+f.suptitle(('%s %s %s' % (expobj.metainfo['animal prep.'], expobj.metainfo['trial'], expobj.metainfo['exptype'])))
 f.show()
 
 
+# %% 6) quantifying followers responses
+def allopticalAnalysis(expobj):
+    expobj.test_frames = int(expobj.fps*0.5) # test period for stats
+    expobj.pre_stim_frames_test = np.s_[expobj.pre_stim - expobj.test_frames: expobj.pre_stim]
+    stim_end = expobj.pre_stim + expobj.stim_duration_frames
+    expobj.post_stim_frames_slice = np.s_[stim_end: stim_end + expobj.post_stim_response_frames_window]
 
-# x = expobj.dfstdF_traces_avg
-# y_label = 'dFstdF (normalized to prestim period)'
-x = expobj.dff_traces_avg
-y_label = 'pct. dFF (normalized to prestim period)'
-# x = np.asarray([i for i in expobj.raw_traces_avg])
-# y_label = 'raw values avg'
-aoplot.plot_periphotostim_avg(arr=x, expobj=expobj, pre_stim=1,
-                              post_stim=8, title='responses of s2p non-targets', y_label=y_label,
-                              x_label='Time post-stimulation (seconds)', y_lims=[-50, 200])
+    _trialProcessing(expobj)
 
 
-# PLOT HEATMAP OF AVG PRE- POST TRACE AVGed OVER ALL PHOTOSTIM. TRIALS - ALL CELLS (photostim targets at top) - Lloyd style :D
+def _trialProcessing(expobj):
+    '''
+    Take dfof trace for entire timeseries and break it up in to individual trials, calculate
+    the mean amplitudes of response and statistical significance across all trials
 
-arr = np.asarray([i for i in expobj.targets_dff_avg]); vmin = -1; vmax = 1
-arr = np.asarray([i for i in expobj.targets_dff_avg]); vmin = -20; vmax = 20
-aoplot.plot_traces_heatmap(arr, expobj=expobj, vmin=-20, vmax=20, stim_on=expobj.pre_stim, stim_off=expobj.pre_stim + expobj.stim_duration_frames - 1,
-                           title=('peristim avg trace heatmap' + ' - slm targets only'), x_label='Time')
+    Inputs:
+        plane             - imaging plane n
+    '''
+    # make trial arrays from dff data [plane x cell x frame x trial]
+    expobj.get_nontargets_stim_traces_norm(normalize_to='pre-stim', plot='dFstdF')
 
-arr = np.asarray([i for i in expobj.dfstdF_traces_avg]); vmin = -1; vmax = 1
-# arr = np.asarray([i for i in expobj.dff_traces_avg]); vmin = -20; vmax = 20
-aoplot.plot_traces_heatmap(arr, expobj=expobj, vmin=vmin, vmax=vmax, stim_on=int(1*expobj.fps), stim_off=int(1*expobj.fps + expobj.stim_duration_frames - 1),
-                           title=('peristim avg trace heatmap' + ' - nontargets'), x_label='Time', cbar=True)
+    # mean pre and post stimulus flu values for all cells, all trials
+    trial_array = expobj.dfstdF_traces
+    pre_array = np.mean(trial_array[:, :, expobj.pre_stim_frames_test], axis=1)
+    post_array = np.mean(trial_array[:, :, expobj.post_stim_frames_slice], axis=1)
+
+    # check if the two distributions of flu values (pre/post) are different
+    assert pre_array.shape == post_array.shape, 'shapes for pre_array and post_array need to be the same for wilcoxon test'
+    wilcoxons = np.empty(len(expobj.s2p_cell_nontargets))  # [cell (p-value)]
+
+    for cell in range(len(expobj.s2p_cell_nontargets)):
+        wilcoxons[cell] = stats.wilcoxon(post_array[cell], pre_array[cell])[1]
+
+    expobj.wilcoxons = wilcoxons
+
+
+def _sigTestAvgDFF(expobj):
+    '''
+    Uses the p values and a threshold for the Benjamini-Hochberg correction to return which
+    cells are still significant after correcting for multiple significance testing
+    '''
+
+    p_vals = expobj.wilcoxons
+    ​
+    s1_cells = np.array(expobj.cell_s1)
+    s2_cells = np.array(expobj.cell_s2)
+    ​
+    if any(s in expobj.stim_type for s in ['pr', 'ps', 'none']):
+        targets = expobj.targeted_cells
+        s1_p = p_vals[~targets & s1_cells]
+        s2_p = p_vals[~targets & s2_cells]
+        target_p = p_vals[targets]
+    else:
+        s1_p = p_vals[s1_cells]
+        s2_p = p_vals[s2_cells]
+    ​
+    sig_units = np.full_like(p_vals, False, dtype=bool)
+    ​
+    alpha = 0.1
+
+    try:
+        s1_sig, _, _, _ = smstats.multitest.multipletests(s1_p, alpha=alpha, method='fdr_bh',
+                                                          is_sorted=False, returnsorted=False)
+    except ZeroDivisionError:
+        print('no S1 cells responding')
+        s1_sig = sig_units[~targets & s1_cells]
+
+    try:
+        s2_sig, _, _, _ = smstats.multitest.multipletests(s2_p, alpha=alpha, method='fdr_bh',
+                                                          is_sorted=False, returnsorted=False)
+    except ZeroDivisionError:
+        print('no S2 cells responding')
+        s2_sig = sig_units[~targets & s2_cells]
+
+    if any(s in expobj.stim_type for s in ['pr', 'ps', 'none']):
+        target_sig, _, _, _ = smstats.multitest.multipletests(target_p, alpha=alpha, method='fdr_bh',
+                                                              is_sorted=False, returnsorted=False)
+        sig_units[targets] = target_sig
+        sig_units[~targets & s1_cells] = s1_sig
+        sig_units[~targets & s2_cells] = s2_sig
+    else:
+        sig_units[s1_cells] = s1_sig
+        sig_units[s2_cells] = s2_sig
+    ​
+    # p values without bonferroni correction
+    no_bonf_corr = [i for i, p in enumerate(p_vals) if p < 0.05]
+    nomulti_sig_units = np.zeros(expobj.n_units, dtype='bool')
+    nomulti_sig_units[no_bonf_corr] = True
+
+    # p values after bonferroni correction
+    #         bonf_corr = [i for i,p in enumerate(p_vals) if p < 0.05 / expobj.n_units[plane]]
+    #         sig_units = np.zeros(expobj.n_units[plane], dtype='bool')
+    #         sig_units[bonf_corr] = True
+    ​
+    expobj.sta_sig.append(sig_units)
+    expobj.sta_sig_nomulti.append(nomulti_sig_units)
 
 
 
@@ -140,7 +219,7 @@ for i in allopticalResults.pre_4ap_trials:
             title = '%s stims only - avg. responses of photostim targets - pre4ap stims %s %s' % (to_plot, prep, trial)
         # make plot
         f, ax, d = aoplot.plot_periphotostim_avg(arr=data_traces, expobj=expobj, stim_duration=stim_dur, y_lims=[0, 50],
-                                                 pre_stim=0.25, post_stim=2.75, avg_only=avg_only, title=title,
+                                                 pre_stim_sec=0.25, post_stim_sec=2.75, avg_only=avg_only, title=title,
                                                  y_label=y_label, x_label=x_label, fig=f, ax=ax, show=False)
 
 
@@ -217,7 +296,7 @@ for i in allopticalResults.post_4ap_trials:
 
         f, ax, d = aoplot.plot_periphotostim_avg(arr=data_traces, expobj=expobj,
                                                  stim_duration=stim_dur, y_lims=[0, 50], title=title, avg_only=avg_only,
-                                                 pre_stim=0.25, post_stim=2.75,
+                                                 pre_stim_sec=0.25, post_stim_sec=2.75,
                                                  y_label=y_label, x_label='Time (secs)', fig=f, ax=ax, show=False)
 
         print('|- shape of dFF array: ', data_traces.shape, ' [1.2.4]')
@@ -289,9 +368,9 @@ for i in allopticalResults.post_4ap_trials:
 
 
         f, ax, d = aoplot.plot_periphotostim_avg(arr=data_traces, expobj=expobj,
-                                          stim_duration=stim_dur, y_lims=[0, 50],
-                                          pre_stim=0.25, exp_prestim=expobj.pre_stim, post_stim=2.75, avg_only=avg_only,
-                                          title=title, y_label=y_label, x_label='Time (secs)', fig=f, ax=ax, show=False)
+                                                 stim_duration=stim_dur, y_lims=[0, 50],
+                                                 pre_stim_sec=0.25, exp_prestim=expobj.pre_stim, post_stim_sec=2.75, avg_only=avg_only,
+                                                 title=title, y_label=y_label, x_label='Time (secs)', fig=f, ax=ax, show=False)
 
         print('|- shape of dFF array: ', data_traces.shape, ' [1.3.4]')
         dffTraces_outsz.append(d)
@@ -613,8 +692,8 @@ for exp in allopticalResults.pre_4ap_trials:
         #     response = expobj.responses_SLMtargets.loc[cell, expobj.]
         #     trace = expobj.SLMTargets_stims_dff[cell][x]
         #
-        #     response = np.mean(trace[expobj.pre_stim + expobj.stim_duration_frames + 1:
-        #                                          expobj.pre_stim + expobj.stim_duration_frames +
+        #     response = np.mean(trace[expobj.pre_stim_sec + expobj.stim_duration_frames + 1:
+        #                                          expobj.pre_stim_sec + expobj.stim_duration_frames +
         #                                          expobj.post_stim_response_frames_window])  # calculate the dF over pre-stim mean F response within the response window
         #     if response >= 0.1*100:
         #         responses_magnitudes_successes[cell].append(round(response, 2))
@@ -630,7 +709,7 @@ for exp in allopticalResults.pre_4ap_trials:
         #     failures_plots = np.nanmean(response_traces_failures[cell][:-1], axis=0)
         #     axs[a, b].plot(success_plots, color='navy', linewidth=2, zorder=4)
         #     axs[a, b].plot(failures_plots, color='black', linewidth=2, zorder=4)
-        #     axs[a, b].axvspan(expobj.pre_stim, expobj.pre_stim + expobj.stim_duration_frames, color='mistyrose',
+        #     axs[a, b].axvspan(expobj.pre_stim_sec, expobj.pre_stim_sec + expobj.stim_duration_frames, color='mistyrose',
         #                       zorder=0)
         #     # ax.plot(response_traces_failures[cell][1:], color='black', zorder=1, alpha=0.1)
         #     # ax.plot(np.mean(expobj.SLMTargets_stims_raw[0], axis=0), color='black', zorder=1)
@@ -649,20 +728,20 @@ for exp in allopticalResults.pre_4ap_trials:
     #     for trace in raw_traces_stims[cell]:
     #         # calculate dFF (noramlized to pre-stim) for each trace
     #         # axs[0].plot(trace, color='black', alpha=0.1)
-    #         pre_stim_mean = np.mean(trace[0:expobj.pre_stim])
+    #         pre_stim_mean = np.mean(trace[0:expobj.pre_stim_sec])
     #         response_trace = (trace - pre_stim_mean)
     #         response_trace1 = response_trace / pre_stim_mean
     #         # if np.nanmax(response_trace) > 1e100 and np.nanmin(response_trace) < -1e100:
     #         #     print('\n%s' % np.nanmean(response_trace))
     #         #     print(np.nanmax(response_trace))
     #         #     print(np.nanmin(response_trace))
-    #         std_pre = np.std(trace[0:expobj.pre_stim])
+    #         std_pre = np.std(trace[0:expobj.pre_stim_sec])
     #         response_trace2 = response_trace / std_pre
     #         measure = 'dF/F'
     #         to_plot = response_trace1
     #         # axs[1].plot(response_trace, color='green', alpha=0.1)
     #         # axs[2].plot(response_trace2, color='purple', alpha=0.1)
-    #     # axs[2].axvspan(expobj.pre_stim + expobj.stim_duration_frames, expobj.pre_stim + expobj.stim_duration_frames + 1 + expobj.post_stim_response_frames_window, color='tomato')
+    #     # axs[2].axvspan(expobj.pre_stim_sec + expobj.stim_duration_frames, expobj.pre_stim_sec + expobj.stim_duration_frames + 1 + expobj.post_stim_response_frames_window, color='tomato')
     #         # response_trace = response_trace / std_pre
     #         # if dff_threshold:  # calculate dFF response for each stim trace
     #         #     response_trace = ((trace - pre_stim_mean)) #/ pre_stim_mean) * 100
@@ -670,8 +749,8 @@ for exp in allopticalResults.pre_4ap_trials:
     #         #     pass
     #
     #         # calculate if the current trace beats the threshold for calculating reliability (note that this happens over a specific window just after the photostim)
-    #         response = np.mean(to_plot[expobj.pre_stim + expobj.stim_duration_frames + 1:
-    #                                              expobj.pre_stim + expobj.stim_duration_frames +
+    #         response = np.mean(to_plot[expobj.pre_stim_sec + expobj.stim_duration_frames + 1:
+    #                                              expobj.pre_stim_sec + expobj.stim_duration_frames +
     #                                              expobj.post_stim_response_frames_window])  # calculate the dF over pre-stim mean F response within the response window
     #
     #         # response_result = response / std_pre  # normalize the delta F above pre-stim mean using std of the pre-stim
@@ -690,7 +769,7 @@ for exp in allopticalResults.pre_4ap_trials:
     #     failures_plots = np.nanmean(response_traces_failures[cell][:-1], axis=0)
     #     axs[a, b].plot(success_plots, color='darkgreen', linewidth=2, zorder=4)
     #     axs[a, b].plot(failures_plots, color='black', linewidth=2, zorder=4)
-    #     axs[a, b].axvspan(expobj.pre_stim, expobj.pre_stim + expobj.stim_duration_frames, color='mistyrose',
+    #     axs[a, b].axvspan(expobj.pre_stim_sec, expobj.pre_stim_sec + expobj.stim_duration_frames, color='mistyrose',
     #                       zorder=0)
     #     # ax.plot(response_traces_failures[cell][1:], color='black', zorder=1, alpha=0.1)
     #     # ax.plot(np.mean(expobj.SLMTargets_stims_raw[0], axis=0), color='black', zorder=1)

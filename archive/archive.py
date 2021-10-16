@@ -87,12 +87,12 @@ def _good_photostim_cells(expobj, groups_per_stim=1, std_thresh=1, dff_threshold
             trace = targets_dff[
                 targeted_cells.index(cell)]  # trace = averaged dff trace across all photostims. for this cell
             pre_stim_trace = trace[:pre_stim]
-            # post_stim_trace = trace[pre_stim + expobj.stim_duration_frames:post_stim]
+            # post_stim_trace = trace[pre_stim_sec + expobj.stim_duration_frames:post_stim_sec]
             mean_pre = np.mean(pre_stim_trace)
             std_pre = np.std(pre_stim_trace)
             # mean_post = np.mean(post_stim_trace[:10])
             dF_stdF = (trace - mean_pre) / std_pre  # make dF divided by std of pre-stim F trace
-            # response = np.mean(dF_stdF[pre_stim + expobj.stim_duration_frames:pre_stim + 3*expobj.stim_duration_frames])
+            # response = np.mean(dF_stdF[pre_stim_sec + expobj.stim_duration_frames:pre_stim_sec + 3*expobj.stim_duration_frames])
             response = np.mean(trace[
                                pre_stim + expobj.stim_duration_frames:pre_stim + 3 * expobj.stim_duration_frames])  # calculate the dF over pre-stim mean F response within the response window
             if dff_threshold is None:
@@ -283,9 +283,9 @@ for group in cell_groups:
                 mean_pre = np.mean(trace[0:expobj.pre_stim])
                 trace_dff = ((trace - mean_pre) / abs(mean_pre))  # * 100
                 std_pre = np.std(trace[0:expobj.pre_stim])
-                # response = np.mean(trace_dff[pre_stim + expobj.stim_duration_frames:pre_stim + 3*expobj.stim_duration_frames])
+                # response = np.mean(trace_dff[pre_stim_sec + expobj.stim_duration_frames:pre_stim_sec + 3*expobj.stim_duration_frames])
                 dF_stdF = (trace - mean_pre) / std_pre  # make dF divided by std of pre-stim F trace
-                # response = np.mean(dF_stdF[pre_stim + expobj.stim_duration_frames:pre_stim + 1 + 2 * expobj.stim_duration_frames])
+                # response = np.mean(dF_stdF[pre_stim_sec + expobj.stim_duration_frames:pre_stim_sec + 1 + 2 * expobj.stim_duration_frames])
                 response = np.mean(trace_dff[
                                    expobj.pre_stim + expobj.stim_duration_frames:expobj.pre_stim + 1 + 2 * expobj.stim_duration_frames])
                 df.at[cell, '%s' % stim] = round(response, 4)
@@ -298,9 +298,9 @@ for group in cell_groups:
                 mean_pre = np.mean(trace[0:expobj.pre_stim])
                 trace_dff = ((trace - mean_pre) / abs(mean_pre)) * 100
                 std_pre = np.std(trace[0:expobj.pre_stim])
-                # response = np.mean(trace_dff[pre_stim + expobj.stim_duration_frames:pre_stim + 3*expobj.stim_duration_frames])
+                # response = np.mean(trace_dff[pre_stim_sec + expobj.stim_duration_frames:pre_stim_sec + 3*expobj.stim_duration_frames])
                 dF_stdF = (trace - mean_pre) / std_pre  # make dF divided by std of pre-stim F trace
-                # response = np.mean(dF_stdF[pre_stim + expobj.stim_duration_frames:pre_stim + 1 + 2 * expobj.stim_duration_frames])
+                # response = np.mean(dF_stdF[pre_stim_sec + expobj.stim_duration_frames:pre_stim_sec + 1 + 2 * expobj.stim_duration_frames])
                 response = np.mean(trace_dff[
                                    expobj.pre_stim + expobj.stim_duration_frames:expobj.pre_stim + 1 + 2 * expobj.stim_duration_frames])
                 df.at[cell, '%s' % stim] = round(response, 4)
@@ -624,7 +624,7 @@ for cell in targets:
         # flu_avg = np.mean(flu_dff, axis=0)
         # std = np.std(flu_dff, axis=0)
         # ci = 1.960 * (std/np.sqrt(len(flu_dff))) # 1.960 is z for 95% confidence interval, standard deviation divided by the sqrt of N samples (# traces in flu_dff)
-        # x = list(range(-pre_stim, post_stim))
+        # x = list(range(-pre_stim_sec, post_stim_sec))
         # y = flu_avg
         #
         # fig, ax = plt.subplots()
@@ -634,7 +634,7 @@ for cell in targets:
         # fig.suptitle('Cell %s' % cell)
         # plt.show()
 
-aoutils.plot_periphotostim_avg(dff_array=targets_dff_filtered, pre_stim=pre_stim, post_stim=post_stim, title=title)
+aoutils.plot_periphotostim_avg(dff_array=targets_dff_filtered, pre_stim_sec=pre_stim, post_stim_sec=post_stim, title=title)
 aoutils.plot_photostim_(dff_array=targets_dff_filtered, pre_stim=pre_stim, post_stim=post_stim, title=title)
 
 # now plot to see what the dF_stdF trace looks like
@@ -707,14 +707,14 @@ plt.show()
 #%%
 
 # make plots of photostim targeted trials
-# def plot_photostim_avg(dff_array, stim_duration, pre_stim=10, post_stim=200, title='', y_min=None, y_max=None,
+# def plot_photostim_avg(dff_array, stim_duration, pre_stim_sec=10, post_stim_sec=200, title='', y_min=None, y_max=None,
 #                        x_label=None, y_label=None):
-#     dff_array = dff_array[:,:pre_stim + post_stim]
+#     dff_array = dff_array[:,:pre_stim_sec + post_stim_sec]
 #     len_ = len(dff_array)
 #     flu_avg = np.median(dff_array, axis=0)
 #     std = np.std(dff_array, axis=0)
 #     ci = 1.960 * (std / np.sqrt(len_))  # 1.960 is z for 95% confidence interval, standard deviation divided by the sqrt of N samples (# traces in flu_dff)
-#     x = list(range(-pre_stim, post_stim))
+#     x = list(range(-pre_stim_sec, post_stim_sec))
 #     y = flu_avg
 #
 #     fig, ax = plt.subplots()
@@ -737,7 +737,7 @@ plt.show()
 #     plt.show()
 #
 #
-# plot_photostim_avg(dff_array=x, stim_duration=expobj.stim_duration_frames, pre_stim=pre_stim, post_stim=post_stim,
+# plot_photostim_avg(dff_array=x, stim_duration=expobj.stim_duration_frames, pre_stim_sec=pre_stim_sec, post_stim_sec=post_stim_sec,
 #                    title=(experiment + '- %s avg. response of good responsive cells' % title), y_label=y_label, x_label='Time post-stimulation (seconds)')
 
 #%%

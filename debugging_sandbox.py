@@ -30,25 +30,16 @@ import tifffile as tf
 
 ########
 # %%
-# import matplotlib.pyplot as plt
-# import numpy as np
-from matplotlib.ticker import (MultipleLocator, AutoMinorLocator)
 
+pre_frames = 15*5
+post_frames = 15*10
+test_frames = int(15 * 0.5)
 
-t = np.arange(0.0, 100.0, 0.1)
-s = np.sin(0.1 * np.pi * t) * np.exp(-t * 0.01)
+s = np.s_[pre_frames - test_frames: pre_frames]
 
-fig, ax = plt.subplots()
-ax.plot(t, s)
+a = np.random.random([100,100,100])
+a_ = a[:, s, :]
 
-# Make a plot with major ticks that are multiples of 20 and minor ticks that
-# are multiples of 5.  Label major ticks with '.0f' formatting but don't label
-# minor ticks.  The string is used directly, the `StrMethodFormatter` is
-# created automatically.
-ax.xaxis.set_major_locator(MultipleLocator(20))
-ax.xaxis.set_major_formatter('{x:.0f}')
-
-# For the minor ticks, use no labels; default NullFormatter.
-ax.xaxis.set_minor_locator(MultipleLocator(5))
-
-plt.show()
+a = np.arange(10).reshape(2, 5)
+m = np.s_[3:4]
+a[:, m]

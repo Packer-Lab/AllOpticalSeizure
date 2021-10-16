@@ -113,7 +113,14 @@ def import_expobj(aoresults_map_id: str = None, trial: str = None, prep: str = N
     if expobj.metainfo['animal prep.'] not in expobj.analysis_save_path:
         expobj.analysis_save_path = "/home/pshah/mnt/qnap/Analysis/%s/%s/%s_%s" % (date, expobj.metainfo['animal prep.'], date, trial)
         # expobj.analysis_save_path = expobj.analysis_save_path + '/' + expobj.metainfo['animal prep.'] + '/' + expobj.metainfo['date'] + '_' + expobj.metainfo['trial']
-        expobj.save()
+
+    if not expobj.pre_stim == int(1.0 * expobj.fps):
+        print('updating expobj.pre_stim_sec to 1 sec')
+        expobj.pre_stim = int(1.0 * expobj.fps)
+
+    if not hasattr(expobj, 'pre_stim_response_frames_window'):
+        expobj.pre_stim_response_window_msec = 500  # msec
+        expobj.pre_stim_response_frames_window = int(expobj.fps * expobj.pre_stim_response_window_msec / 1000)  # length of the post stim response test window (in frames)
 
     if do_processing:
         if not hasattr(expobj, 'subset_frames') and hasattr(expobj, 'curr_trial_frames'):
@@ -125,14 +132,14 @@ def import_expobj(aoresults_map_id: str = None, trial: str = None, prep: str = N
             expobj.s2pProcessing(s2p_path=expobj.s2p_path, subset_frames=expobj.curr_trial_frames, subtract_neuropil=True,
                                  baseline_frames=expobj.baseline_frames, force_redo=True)
 
-
+    expobj.save()
     return expobj, experiment
 
 def import_resultsobj(pkl_path: str):
     with open(pkl_path, 'rb') as f:
-        print('\nimporting resultsobj from: %s' % pkl_path)
+        print('\nimporting resultsobj from: %s ... ' % pkl_path)
         resultsobj = pickle.load(f)
-        print('\n\nDONE IMPORT of %s resultsobj' % (type(resultsobj)))
+        print('|-DONE IMPORT of %s resultsobj. \n\n' % (type(resultsobj)))
     return resultsobj
 
 
@@ -603,10 +610,12 @@ class alloptical(TwoPhotonImaging):
         self._findTargets()
         self.find_photostim_frames()
 
-        self.pre_stim = int(0.5 * self.fps)  # length of pre stim trace collected
-        self.post_stim = int(3 * self.fps)  # length of post stim trace collected
+        self.pre_stim = int(1.0 * self.fps)  # length of pre stim trace collected (in frames)
+        self.post_stim = int(3.0 * self.fps)  # length of post stim trace collected (in frames)
         self.post_stim_response_window_msec = 500  # msec
-        self.post_stim_response_frames_window = int(self.fps * self.post_stim_response_window_msec / 1000)
+        self.post_stim_response_frames_window = int(self.fps * self.pre_stim_response_window_msec / 1000)  # length of the post stim response test window (in frames)
+        self.pre_stim_response_window_msec = 500  # msec
+        self.pre_stim_response_frames_window = int(self.fps * self.pre_stim_response_window_msec / 1000)  # length of the post stim response test window (in frames)
 
         self.save()
 
@@ -863,15 +872,15 @@ class alloptical(TwoPhotonImaging):
         # collect photostim timed average dff traces of photostim targets
         targets_dff = np.zeros(
             [num_cells, len(self.stim_start_frames), pre_stim + self.stim_duration_frames + post_stim])
-        # targets_dff_avg = np.zeros([num_cells, pre_stim + post_stim])
+        # targets_dff_avg = np.zeros([num_cells, pre_stim_sec + post_stim_sec])
 
         targets_dfstdF = np.zeros(
             [num_cells, len(self.stim_start_frames), pre_stim + self.stim_duration_frames + post_stim])
-        # targets_dfstdF_avg = np.zeros([num_cells, pre_stim + post_stim])
+        # targets_dfstdF_avg = np.zeros([num_cells, pre_stim_sec + post_stim_sec])
 
         targets_raw = np.zeros(
             [num_cells, len(self.stim_start_frames), pre_stim + self.stim_duration_frames + post_stim])
-        # targets_raw_avg = np.zeros([num_cells, pre_stim + post_stim])
+        # targets_raw_avg = np.zeros([num_cells, pre_stim_sec + post_stim_sec])
 
         if targets_idx is not None:
             print('collecting stim traces for cell ', targets_idx + 1)
@@ -915,7 +924,7 @@ class alloptical(TwoPhotonImaging):
                     else:
                         flu = []
                         print('classifying of sz boundaries not completed for this expobj', self.metainfo['animal prep.'], self.metainfo['trial'])
-                    # flu = [targets_trace[cell_idx][stim - pre_stim: stim + self.stim_duration_frames + post_stim] for
+                    # flu = [targets_trace[cell_idx][stim - pre_stim_sec: stim + self.stim_duration_frames + post_stim_sec] for
                     #        stim
                     #        in stim_timings if
                     #        stim not in self.seizure_frames]
@@ -1206,7 +1215,7 @@ class alloptical(TwoPhotonImaging):
                     post_obs = []
 
                     for stim in self.stim_start_frames[plane]:
-                        # get baseline values from pre_stim
+                        # get baseline values from pre_stim_sec
                         pre_stim_f = unit[stim - self.pre_frames: stim]
                         baseline = np.mean(pre_stim_f)
 
@@ -2095,14 +2104,14 @@ class alloptical(TwoPhotonImaging):
         return reliability_slmtargets, traces_SLMtargets_successes_avg_dict, traces_SLMtargets_failures_avg_dict
 
 
-    # def get_alltargets_stim_traces_norm(self, pre_stim=15, post_stim=200, filter_sz: bool = False, stims_idx_l: list = None):
+    # def get_alltargets_stim_traces_norm(self, pre_stim_sec=15, post_stim_sec=200, filter_sz: bool = False, stims_idx_l: list = None):
     #     """
     #     primary function to measure the dFF and dF/setdF traces for photostimulated targets.
     #     :param stims:
     #     :param targets_idx: integer for the index of target cell to process
     #     :param subselect_cells: list of cells to subset from the overall set of traces (use in place of targets_idx if desired)
-    #     :param pre_stim: number of frames to use as pre-stim
-    #     :param post_stim: number of frames to use as post-stim
+    #     :param pre_stim_sec: number of frames to use as pre-stim
+    #     :param post_stim_sec: number of frames to use as post-stim
     #     :param filter_sz: whether to filter out stims that are occuring seizures
     #     :return: lists of individual targets dFF traces, and averaged targets dFF over all stims for each target
     #     """
@@ -2121,16 +2130,16 @@ class alloptical(TwoPhotonImaging):
     #
     #     # collect photostim timed average dff traces of photostim nontargets
     #     nontargets_dff = np.zeros(
-    #         [num_cells, len(self.stim_start_frames), pre_stim + self.stim_duration_frames + post_stim])
-    #     # nontargets_dff_avg = np.zeros([num_cells, pre_stim + post_stim])
+    #         [num_cells, len(self.stim_start_frames), pre_stim_sec + self.stim_duration_frames + post_stim_sec])
+    #     # nontargets_dff_avg = np.zeros([num_cells, pre_stim_sec + post_stim_sec])
     #
     #     nontargets_dfstdF = np.zeros(
-    #         [num_cells, len(self.stim_start_frames), pre_stim + self.stim_duration_frames + post_stim])
-    #     # nontargets_dfstdF_avg = np.zeros([num_cells, pre_stim + post_stim])
+    #         [num_cells, len(self.stim_start_frames), pre_stim_sec + self.stim_duration_frames + post_stim_sec])
+    #     # nontargets_dfstdF_avg = np.zeros([num_cells, pre_stim_sec + post_stim_sec])
     #
     #     nontargets_raw = np.zeros(
-    #         [num_cells, len(self.stim_start_frames), pre_stim + self.stim_duration_frames + post_stim])
-    #     # nontargets_raw_avg = np.zeros([num_cells, pre_stim + post_stim])
+    #         [num_cells, len(self.stim_start_frames), pre_stim_sec + self.stim_duration_frames + post_stim_sec])
+    #     # nontargets_raw_avg = np.zeros([num_cells, pre_stim_sec + post_stim_sec])
     #
     #
     #     for cell_idx in range(num_cells):
@@ -2141,16 +2150,16 @@ class alloptical(TwoPhotonImaging):
     #                 for stim in stim_timings:
     #                     if stim in self.slmtargets_sz_stim.keys():  # some stims dont have sz boundaries because of issues with their TIFFs not being made properly (not readable in Fiji), usually it is the first TIFF in a seizure
     #                         if cell_idx not in self.slmtargets_sz_stim[stim]:
-    #                             flu.append(targets_trace[cell_idx][stim - pre_stim: stim + self.stim_duration_frames + post_stim])
+    #                             flu.append(targets_trace[cell_idx][stim - pre_stim_sec: stim + self.stim_duration_frames + post_stim_sec])
     #             else:
     #                 flu = []
     #                 print('classifying of sz boundaries not completed for this expobj', self.metainfo['animal prep.'], self.metainfo['trial'])
-    #             # flu = [targets_trace[cell_idx][stim - pre_stim: stim + self.stim_duration_frames + post_stim] for
+    #             # flu = [targets_trace[cell_idx][stim - pre_stim_sec: stim + self.stim_duration_frames + post_stim_sec] for
     #             #        stim
     #             #        in stim_timings if
     #             #        stim not in self.seizure_frames]
     #         else:
-    #             flu = [targets_trace[cell_idx][stim - pre_stim: stim + self.stim_duration_frames + post_stim] for
+    #             flu = [targets_trace[cell_idx][stim - pre_stim_sec: stim + self.stim_duration_frames + post_stim_sec] for
     #                    stim
     #                    in stim_timings]
     #
@@ -2160,9 +2169,9 @@ class alloptical(TwoPhotonImaging):
     #         if len(flu) > 0:
     #             for i in range(len(flu)):
     #                 trace = flu[i]
-    #                 mean_pre = np.mean(trace[0:pre_stim])
+    #                 mean_pre = np.mean(trace[0:pre_stim_sec])
     #                 trace_dff = ((trace - mean_pre) / mean_pre) * 100
-    #                 std_pre = np.std(trace[0:pre_stim])
+    #                 std_pre = np.std(trace[0:pre_stim_sec])
     #                 dFstdF = (trace - mean_pre) / std_pre  # make dF divided by std of pre-stim F trace
     #
     #                 targets_raw[cell_idx, i] = trace
@@ -2188,24 +2197,16 @@ class alloptical(TwoPhotonImaging):
     #
     #     return targets_dff, targets_dff_avg, targets_dfstdF, targets_dfstdF_avg, targets_raw, targets_raw_avg
 
-    def get_nontargets_stim_traces_norm(self, normalize_to='pre-stim', pre_stim=None, post_stim=None, save=True, plot=False):
+    def get_nontargets_stim_traces_norm(self, normalize_to='pre-stim', save=True, plot=False):
         """
         primary function to retrieve photostimulation trial timed Fluorescence traces for non-targets (ROIs taken from suite2p).
         :param self: alloptical experiment object
         :param normalize_to: str; either "baseline" or "pre-stim"
-        :param pre_stim: number of seconds to use as pre-stim
-        :param post_stim: number of seconds to use as post-stim
+        :param pre_stim_sec: optional, specify number of seconds to collect pre-stim Flu (if different than default)
+        :param post_stim_sec: optional, specify number of seconds to collect pre-stim Flu
         :return: plot of avg_dFF of 100 randomly selected nontargets
         """
         stim_timings = self.stim_start_frames
-        if pre_stim is None:
-            pre_stim = self.pre_stim
-        else:
-            pre_stim = int(pre_stim * self.fps)
-        if post_stim is None:
-            post_stim = self.post_stim
-        else:
-            post_stim = int(post_stim * self.fps)
 
         self.s2p_cell_nontargets = [cell for cell in self.good_cells if cell not in self.s2p_cell_targets]
 
@@ -2218,10 +2219,11 @@ class alloptical(TwoPhotonImaging):
 
         raw_traces = []
         raw_traces_avg = []
+
         for cell in self.s2p_cell_nontargets:
             # print('considering cell # %s' % cell)
             cell_idx = self.cell_id.index(cell)
-            flu = [self.raw[cell_idx][stim - pre_stim: stim + post_stim] for stim in stim_timings if
+            flu = [self.raw[cell_idx][stim - self.pre_stim: stim + self.stim_duration_frames + self.post_stim] for stim in stim_timings if
                    stim not in self.seizure_frames]
 
             flu_dfstdF = []
@@ -2241,7 +2243,7 @@ class alloptical(TwoPhotonImaging):
             elif normalize_to == 'pre-stim':
                 for i in range(len(flu)):
                     trace = flu[i]
-                    mean_pre = np.mean(trace[0:pre_stim])
+                    mean_pre = np.mean(trace[0:self.pre_stim])
                     if mean_pre < 1:
                         print('risky cell here at cell # %s, trial # %s, mean pre: %s ' % (cell, i+1, mean_pre))
                         trace_dff = [np.nan] * len(trace)
@@ -2249,7 +2251,7 @@ class alloptical(TwoPhotonImaging):
                     else:
                         # trace_dff = ((trace - mean_pre) / mean_pre) * 100
                         trace_dff = normalize_dff(trace, threshold_val=mean_pre)
-                        std_pre = np.std(trace[0:pre_stim], ddof=1)
+                        std_pre = np.std(trace[0:self.pre_stim], ddof=1)
                         # dFstdF = (((trace - mean_pre) / mean_pre) * 100) / std_pre  # make dF divided by std of pre-stim F trace
                         dFstdF = (trace - mean_pre) / std_pre  # make dF divided by std of pre-stim F trace
 
@@ -2263,8 +2265,8 @@ class alloptical(TwoPhotonImaging):
                             ReferenceError(
                                 'no cells_sz_stim attr, so classify cells in sz boundary hasnot been saved for this expobj')
 
-                    flu_dfstdF.append(dFstdF)
                     flu_dff.append(trace_dff)
+                    flu_dfstdF.append(dFstdF)
 
             else:
                 TypeError('need to specify what to normalize to in get_targets_dFF (choose "baseline" or "pre-stim")')
@@ -2289,11 +2291,11 @@ class alloptical(TwoPhotonImaging):
             print(
                 '\nCompleted collecting pre to post stim traces -- normalized to pre-stim period -- for %s cells' % len(
                     dff_traces_avg))
-            self.dff_traces = dff_traces
+            self.dff_traces = np.asarray(dff_traces)
             self.dff_traces_avg = np.asarray([i for i in dff_traces_avg])
-            self.dfstdF_traces = dfstdF_traces
+            self.dfstdF_traces = np.asarray(dfstdF_traces)
             self.dfstdF_traces_avg = np.asarray([i for i in dfstdF_traces_avg])
-            self.raw_traces = raw_traces
+            self.raw_traces = np.asarray(raw_traces)
             self.raw_traces_avg = np.asarray([i for i in raw_traces_avg])
 
         selection = np.random.randint(0, self.dff_traces_avg.shape[0], 100)
@@ -2306,8 +2308,8 @@ class alloptical(TwoPhotonImaging):
             y_lims = [-1, 2]
             y_label = 'dFstdF'
 
-        aoplot.plot_periphotostim_avg(arr=arr, expobj=self, pre_stim=np.round(pre_stim/self.fps, 1),
-                                      post_stim=np.round(post_stim/self.fps, 1), title='avg peristim responses of s2p non-targets',
+        aoplot.plot_periphotostim_avg(arr=arr, expobj=self, pre_stim_sec=np.round(self.pre_stim / self.fps, 1),
+                                      post_stim_sec=np.round(self.post_stim / self.fps, 1), title='avg peristim responses of s2p non-targets',
                                       y_label=y_label, x_label='Time post-stimulation (seconds)', y_lims=y_lims)
 
         if save:
@@ -3520,7 +3522,7 @@ def _good_photostim_cells(expobj, std_thresh=1, dff_threshold=None, pre_stim=10,
         std_pre = np.std(pre_stim_trace)
         # mean_post = np.mean(post_stim_trace[:10])
         dF_stdF = (trace - mean_pre) / std_pre  # make dF divided by std of pre-stim F trace
-        # response = np.mean(dF_stdF[pre_stim + expobj.stim_duration_frames:pre_stim + 3*expobj.stim_duration_frames])
+        # response = np.mean(dF_stdF[pre_stim_sec + expobj.stim_duration_frames:pre_stim_sec + 3*expobj.stim_duration_frames])
         response = np.mean(trace[
                            pre_stim + expobj.stim_duration_frames:pre_stim + 3 * expobj.stim_duration_frames])  # calculate the dF over pre-stim mean F response within the response window
 
@@ -3533,7 +3535,7 @@ def _good_photostim_cells(expobj, std_thresh=1, dff_threshold=None, pre_stim=10,
                                   facecolor='0.25')
                 axes[idx].title.set_text('Average trace (%s) across all photostims - cell #%s' % (x_, cell))
 
-        # post_stim_trace = trace[pre_stim + expobj.stim_duration_frames:post_stim]
+        # post_stim_trace = trace[pre_stim_sec + expobj.stim_duration_frames:post_stim_sec]
         if dff_threshold is None:
             thresh_ = mean_pre + std_thresh * std_pre
         else:
@@ -3813,8 +3815,8 @@ def calculate_StimSuccessRate(expobj, cell_ids: list, raw_traces_stims=None, dfs
     #         for trace in raw_traces_stims[idx]:
     #
     #             # calculate dFF (noramlized to pre-stim) for each trace
-    #             pre_stim_mean = np.mean(trace[0:pre_stim])
-    #             std_pre = np.std(trace[0:expobj.pre_stim])
+    #             pre_stim_mean = np.mean(trace[0:pre_stim_sec])
+    #             std_pre = np.std(trace[0:expobj.pre_stim_sec])
     #             response_trace = (trace - pre_stim_mean)
     #             # if dff_threshold:  # calculate dFF response for each stim trace
     #             #     response_trace = ((trace - pre_stim_mean)) #/ pre_stim_mean) * 100
@@ -3823,7 +3825,7 @@ def calculate_StimSuccessRate(expobj, cell_ids: list, raw_traces_stims=None, dfs
     #
     #             # calculate if the current trace beats the threshold for calculating reliability (note that this happens over a specific window just after the photostim)
     #             response = np.nanmean(response_trace[
-    #                                   pre_stim + expobj.stim_duration_frames:pre_stim + expobj.stim_duration_frames + 1 + expobj.post_stim_response_frames_window])  # calculate the dF over pre-stim mean F response within the response window
+    #                                   pre_stim_sec + expobj.stim_duration_frames:pre_stim_sec + expobj.stim_duration_frames + 1 + expobj.post_stim_response_frames_window])  # calculate the dF over pre-stim mean F response within the response window
     #             if dfstdf_threshold:
     #                 response_result = response / std_pre  # normalize the delta F above pre-stim mean using std of the pre-stim
     #             else:
@@ -3845,10 +3847,10 @@ def calculate_StimSuccessRate(expobj, cell_ids: list, raw_traces_stims=None, dfs
     #                                               10)  # select just 10 random traces to show on the plot
     #             aoplot.plot_periphotostim_avg(arr=expobj.SLMTargets_stims_dfstdF[idx][random_select], expobj=expobj,
     #                                           stim_duration=expobj.stim_duration_frames,
-    #                                           x_label='frames', pre_stim=pre_stim, post_stim=expobj.post_stim,
+    #                                           x_label='frames', pre_stim_sec=pre_stim_sec, post_stim_sec=expobj.post_stim_sec,
     #                                           color='steelblue',
     #                                           y_lims=[-0.5, 2.5], show=False, title='Target ' + str(idx))
-    #             m = expobj.stim_duration_frames + (3 * expobj.stim_duration_frames) / 2 - pre_stim
+    #             m = expobj.stim_duration_frames + (3 * expobj.stim_duration_frames) / 2 - pre_stim_sec
     #             x = np.random.randn(len(responses)) * 1.5 + m
     #             plt.scatter(x, responses, c='chocolate', zorder=3, alpha=0.6)
     #             plt.show()
@@ -3863,22 +3865,22 @@ def calculate_StimSuccessRate(expobj, cell_ids: list, raw_traces_stims=None, dfs
         #     if cell in expobj.cell_id:
         #         cell_idx = expobj.cell_id.index(cell)
         #         # collect a trace of prestim and poststim raw fluorescence for each stim time
-        #         flu_all_stims = [expobj.raw[cell_idx][stim - pre_stim: stim + post_stim] for stim in stim_timings]
+        #         flu_all_stims = [expobj.raw[cell_idx][stim - pre_stim_sec: stim + post_stim_sec] for stim in stim_timings]
         #         success = 0
         #         counter = 0
         #         for trace in flu_all_stims:
         #             counter += 1
         #             # calculate dFF (noramlized to pre-stim) for each trace
-        #             pre_stim_mean = np.mean(trace[0:pre_stim])
+        #             pre_stim_mean = np.mean(trace[0:pre_stim_sec])
         #             if dff:
         #                 response_trace = ((trace - pre_stim_mean) / pre_stim_mean) * 100
         #             elif not dff:
-        #                 std_pre = np.std(trace[0:expobj.pre_stim])
+        #                 std_pre = np.std(trace[0:expobj.pre_stim_sec])
         #                 response_trace = ((trace - pre_stim_mean) / std_pre) * 100
         #
         #             # calculate if the current trace beats dff_threshold for calculating reliability (note that this happens over a specific window just after the photostim)
         #             response = np.nanmean(response_trace[
-        #                                   pre_stim + expobj.stim_duration_frames:pre_stim + 3 * expobj.stim_duration_frames])  # calculate the dF over pre-stim mean F response within the response window
+        #                                   pre_stim_sec + expobj.stim_duration_frames:pre_stim_sec + 3 * expobj.stim_duration_frames])  # calculate the dF over pre-stim mean F response within the response window
         #             if response >= threshold:
         #                 success += 1
         #
@@ -4188,15 +4190,15 @@ def all_cell_responses_dff(expobj, normalize_to=''):
     #             for cell in cells:
     #                 cell_idx = expobj.cell_id.index(cell)
     #                 trace = expobj.raw[cell_idx][
-    #                         stim - expobj.pre_stim:stim + expobj.stim_duration_frames + expobj.post_stim]
-    #                 mean_pre = np.mean(trace[0:expobj.pre_stim])
+    #                         stim - expobj.pre_stim_sec:stim + expobj.stim_duration_frames + expobj.post_stim_sec]
+    #                 mean_pre = np.mean(trace[0:expobj.pre_stim_sec])
     #                 trace_dff = ((trace - mean_pre) / abs(mean_pre))  * 100
-    #                 std_pre = np.std(trace[0:expobj.pre_stim])
-    #                 # response = np.mean(trace_dff[pre_stim + expobj.stim_duration_frames:pre_stim + 3*expobj.stim_duration_frames])
+    #                 std_pre = np.std(trace[0:expobj.pre_stim_sec])
+    #                 # response = np.mean(trace_dff[pre_stim_sec + expobj.stim_duration_frames:pre_stim_sec + 3*expobj.stim_duration_frames])
     #                 dF_stdF = (trace - mean_pre) / std_pre  # make dF divided by std of pre-stim F trace
-    #                 # response = np.mean(dF_stdF[pre_stim + expobj.stim_duration_frames:pre_stim + 1 + 2 * expobj.stim_duration_frames])
+    #                 # response = np.mean(dF_stdF[pre_stim_sec + expobj.stim_duration_frames:pre_stim_sec + 1 + 2 * expobj.stim_duration_frames])
     #                 response = np.mean(trace_dff[
-    #                                    expobj.pre_stim + expobj.stim_duration_frames:expobj.pre_stim + 1 + 2 * expobj.stim_duration_frames])
+    #                                    expobj.pre_stim_sec + expobj.stim_duration_frames:expobj.pre_stim_sec + 1 + 2 * expobj.stim_duration_frames])
     #                 df.at[cell, '%s' % stim] = round(response, 4)
     #     elif 'photostim target' in group:
     #         cells = expobj.s2p_cell_targets
@@ -4204,15 +4206,15 @@ def all_cell_responses_dff(expobj, normalize_to=''):
     #             for cell in cells:
     #                 cell_idx = expobj.cell_id.index(cell)
     #                 trace = expobj.raw[cell_idx][
-    #                         stim - expobj.pre_stim:stim + expobj.stim_duration_frames + expobj.post_stim]
-    #                 mean_pre = np.mean(trace[0:expobj.pre_stim])
+    #                         stim - expobj.pre_stim_sec:stim + expobj.stim_duration_frames + expobj.post_stim_sec]
+    #                 mean_pre = np.mean(trace[0:expobj.pre_stim_sec])
     #                 trace_dff = ((trace - mean_pre) / abs(mean_pre)) * 100
-    #                 std_pre = np.std(trace[0:expobj.pre_stim])
-    #                 # response = np.mean(trace_dff[pre_stim + expobj.stim_duration_frames:pre_stim + 3*expobj.stim_duration_frames])
+    #                 std_pre = np.std(trace[0:expobj.pre_stim_sec])
+    #                 # response = np.mean(trace_dff[pre_stim_sec + expobj.stim_duration_frames:pre_stim_sec + 3*expobj.stim_duration_frames])
     #                 dF_stdF = (trace - mean_pre) / std_pre  # make dF divided by std of pre-stim F trace
-    #                 # response = np.mean(dF_stdF[pre_stim + expobj.stim_duration_frames:pre_stim + 1 + 2 * expobj.stim_duration_frames])
+    #                 # response = np.mean(dF_stdF[pre_stim_sec + expobj.stim_duration_frames:pre_stim_sec + 1 + 2 * expobj.stim_duration_frames])
     #                 response = np.mean(trace_dff[
-    #                                    expobj.pre_stim + expobj.stim_duration_frames:expobj.pre_stim + 3 * expobj.stim_duration_frames])
+    #                                    expobj.pre_stim_sec + expobj.stim_duration_frames:expobj.pre_stim_sec + 3 * expobj.stim_duration_frames])
     #                 df.at[cell, '%s' % stim] = round(response, 4)
     #                 df.at[cell, 'group'] = group
 
@@ -4274,15 +4276,15 @@ def all_cell_responses_dFstdF(expobj):
     #             for cell in cells:
     #                 cell_idx = expobj.cell_id.index(cell)
     #                 trace = expobj.raw[cell_idx][
-    #                         stim - expobj.pre_stim:stim + expobj.stim_duration_frames + expobj.post_stim]
-    #                 mean_pre = np.mean(trace[0:expobj.pre_stim])
+    #                         stim - expobj.pre_stim_sec:stim + expobj.stim_duration_frames + expobj.post_stim_sec]
+    #                 mean_pre = np.mean(trace[0:expobj.pre_stim_sec])
     #                 trace_dff = ((trace - mean_pre) / abs(mean_pre))  * 100
-    #                 std_pre = np.std(trace[0:expobj.pre_stim])
-    #                 # response = np.mean(trace_dff[pre_stim + expobj.stim_duration_frames:pre_stim + 3*expobj.stim_duration_frames])
+    #                 std_pre = np.std(trace[0:expobj.pre_stim_sec])
+    #                 # response = np.mean(trace_dff[pre_stim_sec + expobj.stim_duration_frames:pre_stim_sec + 3*expobj.stim_duration_frames])
     #                 dF_stdF = (trace - mean_pre) / std_pre  # make dF divided by std of pre-stim F trace
-    #                 # response = np.mean(dF_stdF[pre_stim + expobj.stim_duration_frames:pre_stim + 1 + 2 * expobj.stim_duration_frames])
+    #                 # response = np.mean(dF_stdF[pre_stim_sec + expobj.stim_duration_frames:pre_stim_sec + 1 + 2 * expobj.stim_duration_frames])
     #                 response = np.mean(trace_dff[
-    #                                    expobj.pre_stim + expobj.stim_duration_frames:expobj.pre_stim + 1 + 2 * expobj.stim_duration_frames])
+    #                                    expobj.pre_stim_sec + expobj.stim_duration_frames:expobj.pre_stim_sec + 1 + 2 * expobj.stim_duration_frames])
     #                 df.at[cell, '%s' % stim] = round(response, 4)
     #     elif 'photostim target' in group:
     #         cells = expobj.s2p_cell_targets
@@ -4290,15 +4292,15 @@ def all_cell_responses_dFstdF(expobj):
     #             for cell in cells:
     #                 cell_idx = expobj.cell_id.index(cell)
     #                 trace = expobj.raw[cell_idx][
-    #                         stim - expobj.pre_stim:stim + expobj.stim_duration_frames + expobj.post_stim]
-    #                 mean_pre = np.mean(trace[0:expobj.pre_stim])
+    #                         stim - expobj.pre_stim_sec:stim + expobj.stim_duration_frames + expobj.post_stim_sec]
+    #                 mean_pre = np.mean(trace[0:expobj.pre_stim_sec])
     #                 trace_dff = ((trace - mean_pre) / abs(mean_pre)) * 100
-    #                 std_pre = np.std(trace[0:expobj.pre_stim])
-    #                 # response = np.mean(trace_dff[pre_stim + expobj.stim_duration_frames:pre_stim + 3*expobj.stim_duration_frames])
+    #                 std_pre = np.std(trace[0:expobj.pre_stim_sec])
+    #                 # response = np.mean(trace_dff[pre_stim_sec + expobj.stim_duration_frames:pre_stim_sec + 3*expobj.stim_duration_frames])
     #                 dF_stdF = (trace - mean_pre) / std_pre  # make dF divided by std of pre-stim F trace
-    #                 # response = np.mean(dF_stdF[pre_stim + expobj.stim_duration_frames:pre_stim + 1 + 2 * expobj.stim_duration_frames])
+    #                 # response = np.mean(dF_stdF[pre_stim_sec + expobj.stim_duration_frames:pre_stim_sec + 1 + 2 * expobj.stim_duration_frames])
     #                 response = np.mean(trace_dff[
-    #                                    expobj.pre_stim + expobj.stim_duration_frames:expobj.pre_stim + 3 * expobj.stim_duration_frames])
+    #                                    expobj.pre_stim_sec + expobj.stim_duration_frames:expobj.pre_stim_sec + 3 * expobj.stim_duration_frames])
     #                 df.at[cell, '%s' % stim] = round(response, 4)
     #                 df.at[cell, 'group'] = group
 
@@ -4335,7 +4337,7 @@ def slm_targets_responses(expobj, experiment, trial, y_spacing_factor=2, figsize
                 # expobj.outsz_StimSuccessRate_SLMtargets, expobj.outsz_hits_SLMtargets, expobj.outsz_responses_SLMtargets = \
                 #     calculate_StimSuccessRate(expobj, cell_ids=SLMtarget_ids, raw_traces_stims=raw_traces_stims,
                 #                               dff_threshold=10, post_stim_response_frames_window=expobj.post_stim_response_frames_window,
-                #                               pre_stim=expobj.pre_stim, sz_filter=seizure_filter,
+                #                               pre_stim_sec=expobj.pre_stim_sec, sz_filter=seizure_filter,
                 #                               verbose=True, plot=False)
 
             # raw_traces_stims = expobj.SLMTargets_stims_raw[:, stims, :]
@@ -4346,7 +4348,7 @@ def slm_targets_responses(expobj, experiment, trial, y_spacing_factor=2, figsize
                 # expobj.insz_StimSuccessRate_SLMtargets, expobj.insz_hits_SLMtargets, expobj.insz_responses_SLMtargets = \
                 #     calculate_StimSuccessRate(expobj, cell_ids=SLMtarget_ids, raw_traces_stims=raw_traces_stims,
                 #                               dff_threshold=10, post_stim_response_frames_window=expobj.post_stim_response_frames_window,
-                #                               pre_stim=expobj.pre_stim, sz_filter=seizure_filter,
+                #                               pre_stim_sec=expobj.pre_stim_sec, sz_filter=seizure_filter,
                 #                               verbose=True, plot=False)
 
         else:
@@ -4358,7 +4360,7 @@ def slm_targets_responses(expobj, experiment, trial, y_spacing_factor=2, figsize
             # expobj.StimSuccessRate_SLMtargets, expobj.hits_SLMtargets, expobj.responses_SLMtargets = \
             #     calculate_StimSuccessRate(expobj, cell_ids=SLMtarget_ids, raw_traces_stims=expobj.SLMTargets_stims_raw,
             #                               dff_threshold=10, post_stim_response_frames_window=expobj.post_stim_response_frames_window,
-            #                               pre_stim=expobj.pre_stim, sz_filter=seizure_filter,
+            #                               pre_stim_sec=expobj.pre_stim_sec, sz_filter=seizure_filter,
             #                               verbose=True, plot=False)
 
         expobj.save()
