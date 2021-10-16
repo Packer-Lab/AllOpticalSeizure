@@ -24,6 +24,7 @@ if not hasattr(expobj, 'good_cells'):
 
 # %% 5) plot responses of non-targets from suite2p ROIs in response to photostim trials - broken down by pre-4ap, outsz and insz (excl. sz bound)
 # #  - with option to plot only successful or only failure stims!
+aoutils.non_targets_responses(expobj, plot_subset=True)
 expobj._get_nontargets_stim_traces_norm(normalize_to='pre-stim', plot='dFstdF')
 # expobj.dff_traces, expobj.dff_traces_avg, expobj.dfstdF_traces, \
 # expobj.dfstdF_traces_avg, expobj.raw_traces, expobj.raw_traces_avg = \
@@ -31,7 +32,7 @@ expobj._get_nontargets_stim_traces_norm(normalize_to='pre-stim', plot='dFstdF')
 #                                             post_stim_sec=expobj.post_stim_sec)
 
 
-# %% 6) quantifying followers responses
+# %% 5.1) finding statistically significant followers responses
 def allopticalAnalysisNontargets(expobj):
     expobj.test_frames = int(expobj.fps*0.5) # test period for stats
     expobj.pre_stim_frames_test = np.s_[expobj.pre_stim - expobj.test_frames: expobj.pre_stim]
@@ -52,19 +53,22 @@ def _trialProcessing_nontargets(expobj):
     # make trial arrays from dff data [plane x cell x frame x trial]
     expobj._get_nontargets_stim_traces_norm(normalize_to='pre-stim', plot='dFstdF')
 
-    # mean pre and post stimulus flu values for all cells, all trials
-    trial_array = expobj.dfstdF_traces  # NOTE: NOT USING dFF TRACES
-    pre_array = np.mean(trial_array[:, :, expobj.pre_stim_frames_test], axis=1)
-    post_array = np.mean(trial_array[:, :, expobj.post_stim_frames_slice], axis=1)
+    # mean pre and post stimulus (within post-stim response window) flu trace values for all cells, all trials
+    expobj.analysis_array = expobj.dfstdF_traces  # NOTE: USING dF/stdF TRACES
+    expobj.pre_array = np.mean(expobj.analysis_array[:, :, expobj.pre_stim_frames_test], axis=1)
+    expobj.post_array = np.mean(expobj.analysis_array[:, :, expobj.post_stim_frames_slice], axis=1)
 
     # check if the two distributions of flu values (pre/post) are different
-    assert pre_array.shape == post_array.shape, 'shapes for pre_array and post_array need to be the same for wilcoxon test'
+    assert expobj.pre_array.shape == expobj.post_array.shape, 'shapes for expobj.pre_array and expobj.post_array need to be the same for wilcoxon test'
     wilcoxons = np.empty(len(expobj.s2p_cell_nontargets))  # [cell (p-value)]
 
     for cell in range(len(expobj.s2p_cell_nontargets)):
-        wilcoxons[cell] = stats.wilcoxon(post_array[cell], pre_array[cell])[1]
+        wilcoxons[cell] = stats.wilcoxon(expobj.post_array[cell], expobj.pre_array[cell])[1]
 
     expobj.wilcoxons = wilcoxons
+
+    # measure avg response value for each trial, all cells --> return array with 3 axes (cells x trials x response_magnitude)
+    expobj.post_array_responses = np.mean(expobj.post_array, axis=3)
 
     expobj.save()
 
@@ -95,11 +99,34 @@ def _sigTestAvgResponse_nontargets(expobj, alpha=0.1):
     #         sig_units = np.zeros(expobj.n_units[plane], dtype='bool')
     #         sig_units[bonf_corr] = True
 
+    f = plt.figure(figsize=[10, 5])
+    gs = f.add_gridspec(1, 2)
+
     # plot responses of sig nontargets
+    a1 = f.add_subplot(gs[:, 0])
     x = expobj.dfstdF_traces_avg[expobj.sig_units]
-    y_label = 'dFstdF (normalized to prestim period)'
-    aoplot.plot_periphotostim_avg(arr=x, expobj=expobj, pre_stim_sec=1, post_stim_sec=3,
-                                  title=None, y_label=y_label, x_label='Time (seconds)', y_lims=[-1, 3])
+    aoplot.plot_periphotostim_avg(arr=x, expobj=expobj, pre_stim_sec=1, post_stim_sec=3, fig=f, ax=a1, show=False,
+                                  title='significant responders', y_label='dFstdF (normalized to prestim period)', x_label='Time (seconds)', y_lims=[-1, 3])
+
+    # plot responses of nonsig nontargets
+    a2 = f.add_subplot(gs[:, 1])
+    x = expobj.dfstdF_traces_avg[~expobj.sig_units]
+    aoplot.plot_periphotostim_avg(arr=x, expobj=expobj, pre_stim_sec=1, post_stim_sec=3, fig=f, ax=a2, show=False,
+                                  title='non-significant responders', y_label='dFstdF (normalized to prestim period)', x_label='Time (seconds)', y_lims=[-1, 3])
+
+    f.suptitle(
+        ('%s %s %s' % (expobj.metainfo['animal prep.'], expobj.metainfo['trial'], expobj.metainfo['exptype'])))
+    f.show()
+
+
+# %% 5.2) quantifying significance of responses of non targets to photostim
+
+# bar plot of avg post stim response quantified between responders and non-responders
+
+
+
+# %% 5.3) creating large figures collating multiple plots describing responses of non targets to photostim for individual expobj's
+
 
 
 # %% 1) plot responses of SLM TARGETS in response to photostim trials - broken down by pre-4ap, outsz and insz (excl. sz bound)

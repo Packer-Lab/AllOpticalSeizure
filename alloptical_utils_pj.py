@@ -2199,7 +2199,7 @@ class alloptical(TwoPhotonImaging):
     #
     #     return targets_dff, targets_dff_avg, targets_dfstdF, targets_dfstdF_avg, targets_raw, targets_raw_avg
 
-    def _get_nontargets_stim_traces_norm(self, normalize_to='pre-stim', save=True, plot_subset: bool = True):
+    def _get_nontargets_stim_traces_norm(self, normalize_to='pre-stim', save=True):
         """
         primary function to retrieve photostimulation trial timed Fluorescence traces for non-targets (ROIs taken from suite2p).
         :param self: alloptical experiment object
@@ -2301,50 +2301,6 @@ class alloptical(TwoPhotonImaging):
             self.raw_traces = np.asarray(raw_traces)
             self.raw_traces_avg = np.asarray([i for i in raw_traces_avg])
 
-        if plot_subset:
-            selection = np.random.randint(0, self.dff_traces_avg.shape[0], 100)
-        else:
-            selection = np.arange(self.dff_traces_avg.shape[0])
-
-
-        #### SUITE2P NON-TARGETS - PLOTTING OF AVG PERI-PHOTOSTIM RESPONSES
-        f = plt.figure(constrained_layout=True, figsize=[20, 5])
-        gs = f.add_gridspec(1, 4)
-
-        # PLOT AVG PHOTOSTIM PRE- POST- TRACE AVGed OVER ALL PHOTOSTIM. TRIALS
-        a1 = f.add_subplot(gs[:, 0])
-        x = self.dff_traces_avg[selection]
-        y_label = 'pct. dFF (normalized to prestim period)'
-        aoplot.plot_periphotostim_avg(arr=x, expobj=self, pre_stim_sec=1, post_stim_sec=4,
-                                      title=None, y_label=y_label, fig=f, ax=a1, show=False,
-                                      x_label='Time (seconds)', y_lims=[-50, 200])
-        # PLOT AVG PHOTOSTIM PRE- POST- TRACE AVGed OVER ALL PHOTOSTIM. TRIALS
-        a2 = f.add_subplot(gs[:, 1])
-        x = self.dfstdF_traces_avg[selection]
-        y_label = 'dFstdF (normalized to prestim period)'
-        aoplot.plot_periphotostim_avg(arr=x, expobj=self, pre_stim_sec=1, post_stim_sec=4,
-                                      title=None, y_label=y_label, fig=f, ax=a2, show=False,
-                                      x_label='Time (seconds)', y_lims=[-1, 3])
-        # PLOT HEATMAP OF AVG PRE- POST TRACE AVGed OVER ALL PHOTOSTIM. TRIALS - ALL CELLS (photostim targets at top) - Lloyd style :D - df/f
-        a3 = f.add_subplot(gs[:, -1])
-        vmin = -1
-        vmax = 1
-        aoplot.plot_traces_heatmap(self.dfstdF_traces_avg, expobj=self, vmin=vmin, vmax=vmax, stim_on=int(1 * self.fps),
-                                   stim_off=int(1 * self.fps + self.stim_duration_frames - 1),
-                                   title='dF/F heatmap for all nontargets', x_label='Time', cbar=True,
-                                   fig=f, ax=a3, show=False)
-        # PLOT HEATMAP OF AVG PRE- POST TRACE AVGed OVER ALL PHOTOSTIM. TRIALS - ALL CELLS (photostim targets at top) - Lloyd style :D - df/stdf
-        a4 = f.add_subplot(gs[:, -1])
-        vmin = -50
-        vmax = 100
-        aoplot.plot_traces_heatmap(self.dff_traces_avg, expobj=self, vmin=vmin, vmax=vmax, stim_on=int(1 * self.fps),
-                                   stim_off=int(1 * self.fps + self.stim_duration_frames - 1),
-                                   title='dF/stdF heatmap for all nontargets', x_label='Time', cbar=True,
-                                   fig=f, ax=a4, show=False)
-
-        f.suptitle(
-            ('%s %s %s' % (self.metainfo['animal prep.'], self.metainfo['trial'], self.metainfo['exptype'])))
-        f.show()
 
         if save:
             self.save()
@@ -4383,6 +4339,52 @@ def slm_targets_responses(expobj, experiment, trial, y_spacing_factor=2, figsize
             fig.savefig(fname=save+'.svg', transparent=True,  format='svg')
 
         fig.show()
+
+def non_targets_responses(expobj, plot_subset: bool = True):
+    if plot_subset:
+        selection = np.random.randint(0, expobj.dff_traces_avg.shape[0], 100)
+    else:
+        selection = np.arange(expobj.dff_traces_avg.shape[0])
+
+    #### SUITE2P NON-TARGETS - PLOTTING OF AVG PERI-PHOTOSTIM RESPONSES
+    f = plt.figure(figsize=[20, 5])
+    gs = f.add_gridspec(1, 4)
+
+    # PLOT AVG PHOTOSTIM PRE- POST- TRACE AVGed OVER ALL PHOTOSTIM. TRIALS
+    a1 = f.add_subplot(gs[:, 0])
+    x = expobj.dff_traces_avg[selection]
+    y_label = 'pct. dFF (normalized to prestim period)'
+    aoplot.plot_periphotostim_avg(arr=x, expobj=expobj, pre_stim_sec=1, post_stim_sec=4,
+                                  title=None, y_label=y_label, fig=f, ax=a1, show=False,
+                                  x_label='Time (seconds)', y_lims=[-50, 200])
+    # PLOT AVG PHOTOSTIM PRE- POST- TRACE AVGed OVER ALL PHOTOSTIM. TRIALS
+    a2 = f.add_subplot(gs[:, 1])
+    x = expobj.dfstdF_traces_avg[selection]
+    y_label = 'dFstdF (normalized to prestim period)'
+    aoplot.plot_periphotostim_avg(arr=x, expobj=expobj, pre_stim_sec=1, post_stim_sec=4,
+                                  title=None, y_label=y_label, fig=f, ax=a2, show=False,
+                                  x_label='Time (seconds)', y_lims=[-1, 3])
+    # PLOT HEATMAP OF AVG PRE- POST TRACE AVGed OVER ALL PHOTOSTIM. TRIALS - ALL CELLS (photostim targets at top) - Lloyd style :D - df/f
+    a3 = f.add_subplot(gs[:, 2])
+    vmin = -1
+    vmax = 1
+    aoplot.plot_traces_heatmap(expobj.dfstdF_traces_avg, expobj=expobj, vmin=vmin, vmax=vmax, stim_on=int(1 * expobj.fps),
+                               stim_off=int(1 * expobj.fps + expobj.stim_duration_frames - 1),
+                               title='dF/F heatmap for all nontargets', x_label='Time', cbar=True,
+                               fig=f, ax=a3, show=False)
+    # PLOT HEATMAP OF AVG PRE- POST TRACE AVGed OVER ALL PHOTOSTIM. TRIALS - ALL CELLS (photostim targets at top) - Lloyd style :D - df/stdf
+    a4 = f.add_subplot(gs[:, -1])
+    vmin = -50
+    vmax = 100
+    aoplot.plot_traces_heatmap(expobj.dff_traces_avg, expobj=expobj, vmin=vmin, vmax=vmax, stim_on=int(1 * expobj.fps),
+                               stim_off=int(1 * expobj.fps + expobj.stim_duration_frames - 1),
+                               title='dF/stdF heatmap for all nontargets', x_label='Time', cbar=True,
+                               fig=f, ax=a4, show=False)
+
+    f.suptitle(
+        ('%s %s %s' % (expobj.metainfo['animal prep.'], expobj.metainfo['trial'], expobj.metainfo['exptype'])))
+    f.show()
+
 
 # # # import results superobject that will collect analyses from various individual experiments
 results_object_path = '/home/pshah/mnt/qnap/Analysis/alloptical_results_superobject.pkl'
