@@ -2208,6 +2208,7 @@ class alloptical(TwoPhotonImaging):
         :param post_stim_sec: optional, specify number of seconds to collect pre-stim Flu
         :return: plot of avg_dFF of 100 randomly selected nontargets
         """
+        print('\nCollecting peri-stim traces ')
         stim_timings = self.stim_start_frames
 
         self.s2p_cell_nontargets = [cell for cell in self.good_cells if cell not in self.s2p_cell_targets]
@@ -2306,7 +2307,7 @@ class alloptical(TwoPhotonImaging):
             selection = np.arange(self.dff_traces_avg.shape[0])
 
 
-        # SUITE2P NON-TARGETS - PLOTTING OF AVG PERI-PHOTOSTIM RESPONSES
+        #### SUITE2P NON-TARGETS - PLOTTING OF AVG PERI-PHOTOSTIM RESPONSES
         f = plt.figure(constrained_layout=True, figsize=[20, 5])
         gs = f.add_gridspec(1, 4)
 
@@ -2314,14 +2315,14 @@ class alloptical(TwoPhotonImaging):
         a1 = f.add_subplot(gs[:, 0])
         x = self.dff_traces_avg[selection]
         y_label = 'pct. dFF (normalized to prestim period)'
-        aoplot.plot_periphotostim_avg(arr=x, expobj=self, pre_stim_sec=1, post_stim_sec=5,
+        aoplot.plot_periphotostim_avg(arr=x, expobj=self, pre_stim_sec=1, post_stim_sec=4,
                                       title=None, y_label=y_label, fig=f, ax=a1, show=False,
                                       x_label='Time (seconds)', y_lims=[-50, 200])
         # PLOT AVG PHOTOSTIM PRE- POST- TRACE AVGed OVER ALL PHOTOSTIM. TRIALS
         a2 = f.add_subplot(gs[:, 1])
         x = self.dfstdF_traces_avg[selection]
         y_label = 'dFstdF (normalized to prestim period)'
-        aoplot.plot_periphotostim_avg(arr=x, expobj=self, pre_stim_sec=1, post_stim_sec=5,
+        aoplot.plot_periphotostim_avg(arr=x, expobj=self, pre_stim_sec=1, post_stim_sec=4,
                                       title=None, y_label=y_label, fig=f, ax=a2, show=False,
                                       x_label='Time (seconds)', y_lims=[-1, 3])
         # PLOT HEATMAP OF AVG PRE- POST TRACE AVGed OVER ALL PHOTOSTIM. TRIALS - ALL CELLS (photostim targets at top) - Lloyd style :D - df/f
@@ -2401,6 +2402,8 @@ class alloptical(TwoPhotonImaging):
         #         bonf_corr = [i for i,p in enumerate(p_vals) if p < 0.05 / expobj.n_units[plane]]
         #         sig_units = np.zeros(expobj.n_units[plane], dtype='bool')
         #         sig_units[bonf_corr] = True
+
+
 
 
 class Post4ap(alloptical):

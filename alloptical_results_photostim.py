@@ -31,34 +31,6 @@ expobj._get_nontargets_stim_traces_norm(normalize_to='pre-stim', plot='dFstdF')
 #                                             post_stim_sec=expobj.post_stim_sec)
 
 
-# SUITE2P NON-TARGETS - PLOTTING OF AVG PERI-PHOTOSTIM RESPONSES
-f = plt.figure(constrained_layout=True, figsize=[15, 5])
-gs = f.add_gridspec(1, 3)
-
-# PLOT AVG PHOTOSTIM PRE- POST- TRACE AVGed OVER ALL PHOTOSTIM. TRIALS
-a1 = f.add_subplot(gs[:, 0])
-x = expobj.dff_traces_avg
-y_label = 'pct. dFF (normalized to prestim period)'
-aoplot.plot_periphotostim_avg(arr=x, expobj=expobj, pre_stim_sec=1, post_stim_sec=5,
-                              title=None, y_label=y_label, fig=f, ax=a1, show=False,
-                              x_label='Time (seconds)', y_lims=[-50, 200])
-# PLOT AVG PHOTOSTIM PRE- POST- TRACE AVGed OVER ALL PHOTOSTIM. TRIALS
-a2 = f.add_subplot(gs[:, 1])
-x = expobj.dfstdF_traces_avg
-y_label = 'dFstdF (normalized to prestim period)'
-aoplot.plot_periphotostim_avg(arr=x, expobj=expobj, pre_stim_sec=1, post_stim_sec=5,
-                              title=None, y_label=y_label, fig=f, ax=a2, show=False,
-                              x_label='Time (seconds)', y_lims=[-1, 3])
-# PLOT HEATMAP OF AVG PRE- POST TRACE AVGed OVER ALL PHOTOSTIM. TRIALS - ALL CELLS (photostim targets at top) - Lloyd style :D
-a3 = f.add_subplot(gs[:, -1])
-arr = np.asarray([i for i in expobj.dfstdF_traces_avg]); vmin = -1; vmax = 1
-aoplot.plot_traces_heatmap(arr, expobj=expobj, vmin=vmin, vmax=vmax, stim_on=int(1*expobj.fps), stim_off=int(1*expobj.fps + expobj.stim_duration_frames - 1),
-                           title='dF/stdF heatmap for all nontargets', x_label='Time', cbar=True,
-                           fig=f, ax=a3, show=False)
-f.suptitle(('%s %s %s' % (expobj.metainfo['animal prep.'], expobj.metainfo['trial'], expobj.metainfo['exptype'])))
-f.show()
-
-
 # %% 6) quantifying followers responses
 def allopticalAnalysisNontargets(expobj):
     expobj.test_frames = int(expobj.fps*0.5) # test period for stats
@@ -71,8 +43,8 @@ def allopticalAnalysisNontargets(expobj):
 
 def _trialProcessing_nontargets(expobj):
     '''
-    Take dfof trace for entire timeseries and break it up in to individual trials, calculate
-    the mean amplitudes of response and statistical significance across all trials
+    Uses dfstdf traces for individual cells and photostim trials, calculate the mean amplitudes of response and
+    statistical significance across all trials for all cells
 
     Inputs:
         plane             - imaging plane n
@@ -81,7 +53,7 @@ def _trialProcessing_nontargets(expobj):
     expobj._get_nontargets_stim_traces_norm(normalize_to='pre-stim', plot='dFstdF')
 
     # mean pre and post stimulus flu values for all cells, all trials
-    trial_array = expobj.dfstdF_traces
+    trial_array = expobj.dfstdF_traces  # NOTE: NOT USING dFF TRACES
     pre_array = np.mean(trial_array[:, :, expobj.pre_stim_frames_test], axis=1)
     post_array = np.mean(trial_array[:, :, expobj.post_stim_frames_slice], axis=1)
 
@@ -122,6 +94,12 @@ def _sigTestAvgResponse_nontargets(expobj, alpha=0.1):
     #         bonf_corr = [i for i,p in enumerate(p_vals) if p < 0.05 / expobj.n_units[plane]]
     #         sig_units = np.zeros(expobj.n_units[plane], dtype='bool')
     #         sig_units[bonf_corr] = True
+
+    # plot responses of sig nontargets
+    x = expobj.dfstdF_traces_avg[expobj.sig_units]
+    y_label = 'dFstdF (normalized to prestim period)'
+    aoplot.plot_periphotostim_avg(arr=x, expobj=expobj, pre_stim_sec=1, post_stim_sec=3,
+                                  title=None, y_label=y_label, x_label='Time (seconds)', y_lims=[-1, 3])
 
 
 # %% 1) plot responses of SLM TARGETS in response to photostim trials - broken down by pre-4ap, outsz and insz (excl. sz bound)
