@@ -86,18 +86,16 @@ def _trialProcessing_nontargets(expobj):
 
 
 def _sigTestAvgResponse_nontargets(expobj, alpha=0.1):
-    '''
+    """
     Uses the p values and a threshold for the Benjamini-Hochberg correction to return which
     cells are still significant after correcting for multiple significance testing
-    '''
-
-
+    """
     p_vals = expobj.wilcoxons
     expobj.sig_units = np.full_like(p_vals, False, dtype=bool)
 
     try:
         expobj.sig_units, _, _, _ = sm.stats.multitest.multipletests(p_vals, alpha=alpha, method='fdr_bh',
-                                                          is_sorted=False, returnsorted=False)
+                                                                     is_sorted=False, returnsorted=False)
     except ZeroDivisionError:
         print('no cells responding')
 
@@ -153,6 +151,14 @@ x = expobj.dfstdF_traces_avg[expobj.sig_units][np.where(np.nanmean(expobj.post_a
 aoplot.plot_periphotostim_avg(arr=x, expobj=expobj, pre_stim_sec=1, post_stim_sec=3,
                               title='positive signif. responders', y_label='dFstdF (normalized to prestim period)',
                               x_label='Time (seconds)', y_lims=[-1, 3])
+
+# xyloc plot of pos., neg. and non responders
+# TODO make a pandas dataframe using the response magnitudes quantified above and use for the xyloc_responses
+expobj.dfstdf_nontargets = pd.DataFrame(expobj.post_array_responses, index=expobj.s2p_cell_nontargets, columns=expobj.stim_start_frames)
+df = pd.DataFrame(expobj.post_array_responses[expobj.sig_units, :], index=[expobj.s2p_cell_nontargets[i] for i, x in enumerate(expobj.sig_units) if x], columns=expobj.stim_start_frames)
+aoplot.xyloc_responses(expobj, df=df, clim=[-1, +1], plot_target_coords=True)
+
+
 
 # %% 5.3) creating large figures collating multiple plots describing responses of non targets to photostim for individual expobj's
 

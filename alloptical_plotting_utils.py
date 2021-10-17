@@ -682,35 +682,37 @@ def plot_traces_heatmap(arr, expobj, vmin=None, vmax=None, stim_on = None, stim_
 
 
 # plot to show the response magnitude of each cell as the actual's filling in the cell's ROI pixels.
-def xyloc_responses(expobj, to_plot='dfstdf', clim=[-10, +10], plot_target_coords=True, save_fig: str = None):
+def xyloc_responses(expobj, df, label='response magnitude', clim=[-10, +10], plot_target_coords=True, title='', save_fig: str = None):
     """
     plot to show the response magnitude of each cell as the actual's filling in the cell's ROI pixels.
 
-    :param expobj:
-    :param to_plot:
-    :param clim:
+    :param expobj: expobj associated with data
+    :param df: pandas dataframe (cell_id x stim frames)
+    :param clim: color limits
     :param plot_target_coords: bool, if True plot the actual X and Y coords of all photostim cell targets
     :param save_fig: where to save the save figure (optional)
     :return:
     """
-    stim_timings = [str(i) for i in
-                    expobj.stim_start_frames]  # need each stim start frame as a str type for pandas slicing
+    # stim_timings = [str(i) for i in
+    #                 expobj.stim_start_frames]  # need each stim start frame as a str type for pandas slicing
 
-    if to_plot == 'dfstdf':
-        average_responses = expobj.dfstdf_all_cells[stim_timings].mean(axis=1).tolist()
-    elif to_plot == 'dff':
-        average_responses = expobj.dff_responses_all_cells[stim_timings].mean(axis=1).tolist()
-    else:
-        raise Exception('need to specify to_plot arg as either dfstdf or dff in string form!')
+    # if to_plot == 'dfstdf':
+    #     average_responses = expobj.dfstdf_all_cells[stim_timings].mean(axis=1).tolist()
+    # elif to_plot == 'dff':
+    #     average_responses = expobj.dff_responses_all_cells[stim_timings].mean(axis=1).tolist()
+    # else:
+    #     raise Exception('need to specify to_plot arg as either dfstdf or dff in string form!')
 
+    cells_ = list(df.index)
+    average_responses = df.mean(axis=1).tolist()
     # make a matrix containing pixel locations and responses at each of those pixels
     responses = np.zeros((expobj.frame_x, expobj.frame_x), dtype='uint16')
 
-    for n in expobj.good_cells:
+    for n in cells_:
         idx = expobj.cell_id.index(n)
         ypix = expobj.stat[idx]['ypix']
         xpix = expobj.stat[idx]['xpix']
-        responses[ypix, xpix] = 100. + 1 * round(average_responses[expobj.good_cells.index(n)], 2)
+        responses[ypix, xpix] = 100. + 1 * round(average_responses[cells_.index(n)], 2)
 
     # mask some 'bad' data, in your case you would have: data < 0.05
     responses = np.ma.masked_where(responses < 0.05, responses)
@@ -720,18 +722,17 @@ def xyloc_responses(expobj, to_plot='dfstdf', clim=[-10, +10], plot_target_coord
     plt.figure(figsize=(7, 7))
     im = plt.imshow(responses, cmap=cmap)
     cb = plt.colorbar(im, fraction=0.046, pad=0.04)
-    cb.set_label(to_plot)
+    cb.set_label(label)
 
     plt.clim(100+clim[0], 100+clim[1])
     if plot_target_coords:
         for (x, y) in expobj.target_coords_all:
             plt.scatter(x=x, y=y, edgecolors='green', facecolors='none', linewidths=1.0)
-    plt.suptitle((expobj.metainfo['trial'] + ' - avg. %s - targets in green' % to_plot), y=0.95, fontsize=10)
+    plt.suptitle(title + ' - SLM targets in green', y=0.90, fontsize=10)
     # pj.plot_cell_loc(expobj, cells=expobj.s2p_cell_targets, background_transparent=True)
     plt.show()
     if save_fig is not None:
         plt.savefig(save_fig)
-
 
 # plots the raw trace for the Flu mean of the FOV (similar to the ZProject in Fiji)
 def plotMeanRawFluTrace(expobj, stim_span_color='white', stim_lines: bool = True, title='raw Flu trace', x_axis='time', shrink_text=1,
