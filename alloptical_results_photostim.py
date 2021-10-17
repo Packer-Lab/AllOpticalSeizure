@@ -115,59 +115,84 @@ def _sigTestAvgResponse_nontargets(expobj, alpha=0.1):
 
 
 
-    #### MAKE PLOT OF PERI-STIM AVG TRACES FOR ALL SIGNIFICANT AND NON-SIGNIFICANT RESPONDERS
-    f = plt.figure(figsize=[10, 5])
-    gs = f.add_gridspec(1, 2)
-
-    # plot responses of sig nontargets
-    a1 = f.add_subplot(gs[:, 0])
-    x = expobj.dfstdF_traces_avg[expobj.sig_units]
-    aoplot.plot_periphotostim_avg(arr=x, expobj=expobj, pre_stim_sec=1, post_stim_sec=3, fig=f, ax=a1, show=False,
-                                  title='significant responders', y_label='dFstdF (normalized to prestim period)', x_label='Time (seconds)', y_lims=[-1, 3])
-
-    # plot responses of nonsig nontargets
-    a2 = f.add_subplot(gs[:, 1])
-    x = expobj.dfstdF_traces_avg[~expobj.sig_units]
-    aoplot.plot_periphotostim_avg(arr=x, expobj=expobj, pre_stim_sec=1, post_stim_sec=3, fig=f, ax=a2, show=False,
-                                  title='non-significant responders', y_label='dFstdF (normalized to prestim period)', x_label='Time (seconds)', y_lims=[-1, 3])
-
-    f.suptitle(
-        ('%s %s %s' % (expobj.metainfo['animal prep.'], expobj.metainfo['trial'], expobj.metainfo['exptype'])))
-    f.show()
 
 
-# %%
-for i in range(len(expobj.post_array_responses)):
-    a = expobj.post_array_responses[i]
-    if np.isnan(np.mean(a)):
-        print(i, a)
 
-
-# %% 5.2) quantifying significance of responses of non targets to photostim
+# %% 5.2) measuring responses of non targets to photostim
 
 # bar plot of avg post stim response quantified between responders and non-responders
 sig_responders_avgresponse = np.nanmean(expobj.post_array_responses[expobj.sig_units, :], axis=1)
 nonsig_responders_avgresponse = np.nanmean(expobj.post_array_responses[~expobj.sig_units], axis=1)
 data = np.asarray([sig_responders_avgresponse, nonsig_responders_avgresponse])
 pj.plot_bar_with_points(data=data, title='Avg stim response magnitude of cells', colors=['green', 'gray'], y_label='avg dF/stdF', bar=False,
-                        x_tick_labels=['significant', 'non-significant'], expand_size_y=1.5, expand_size_x=0.5)
+                        text_list=['%s pct' % (np.round((len(sig_responders_avgresponse)/expobj.post_array_responses.shape[0]), 2) * 100),
+                                   '%s pct' % (np.round((len(nonsig_responders_avgresponse)/expobj.post_array_responses.shape[0]), 2) * 100)],
+                        text_y_pos=1.43, text_shift=1.7, x_tick_labels=['significant', 'non-significant'], expand_size_y=1.5, expand_size_x=0.6)
 
 
 # bar plot of avg post stim response quantified between responders and non-responders
-sig_responders_avgresponse = np.nanmean(expobj.post_array_responses[expobj.sig_units, :], axis=1)
+possig_responders_avgresponse = np.nanmean(expobj.post_array_responses[expobj.sig_units, :], axis=1)[np.where(np.nanmean(expobj.post_array_responses[expobj.sig_units, :], axis=1) > 0)[0]]
+negsig_responders_avgresponse = np.nanmean(expobj.post_array_responses[expobj.sig_units, :], axis=1)[np.where(np.nanmean(expobj.post_array_responses[expobj.sig_units, :], axis=1) < 0)[0]]
 nonsig_responders_avgresponse = np.nanmean(expobj.post_array_responses[~expobj.sig_units], axis=1)
-data = np.asarray([sig_responders_avgresponse, nonsig_responders_avgresponse])
-pj.plot_bar_with_points(data=data, title='Avg stim response magnitude of cells', colors=['green', 'gray'], y_label='avg dF/stdF', bar=False,
-                        x_tick_labels=['significant', 'non-significant'], expand_size_y=1.5, expand_size_x=0.5)
+data = np.asarray([possig_responders_avgresponse, negsig_responders_avgresponse, nonsig_responders_avgresponse])
+pj.plot_bar_with_points(data=data, title='Avg stim response magnitude of cells', colors=['green', 'blue', 'gray'], y_label='avg dF/stdF', bar=False,
+                        text_list=['%s pct' % (np.round((len(possig_responders_avgresponse)/expobj.post_array_responses.shape[0]) * 100, 1)),
+                                   '%s pct' % (np.round((len(negsig_responders_avgresponse)/expobj.post_array_responses.shape[0]) * 100, 1)),
+                                   '%s pct' % (np.round((len(nonsig_responders_avgresponse)/expobj.post_array_responses.shape[0]) * 100, 1))],
+                        text_y_pos=1.43, text_shift=1.2, x_tick_labels=['pos. significant', 'neg. significant', 'non-significant'], expand_size_y=1.5, expand_size_x=0.5)
 
+
+# plot responses of sig. positive responders
+x = expobj.dfstdF_traces_avg[expobj.sig_units][np.where(np.nanmean(expobj.post_array_responses[expobj.sig_units, :], axis=1) > 0)[0]]
+aoplot.plot_periphotostim_avg(arr=x, expobj=expobj, pre_stim_sec=1, post_stim_sec=3,
+                              title='positive signif. responders', y_label='dFstdF (normalized to prestim period)',
+                              x_label='Time (seconds)', y_lims=[-1, 3])
+
+# plot responses of sig. negative responders
+x = expobj.dfstdF_traces_avg[expobj.sig_units][np.where(np.nanmean(expobj.post_array_responses[expobj.sig_units, :], axis=1) < 0)[0]]
+aoplot.plot_periphotostim_avg(arr=x, expobj=expobj, pre_stim_sec=1, post_stim_sec=3,
+                              title='positive signif. responders', y_label='dFstdF (normalized to prestim period)',
+                              x_label='Time (seconds)', y_lims=[-1, 3])
 
 # %% 5.3) creating large figures collating multiple plots describing responses of non targets to photostim for individual expobj's
 
+#### MAKE PLOT OF PERI-STIM AVG TRACES FOR ALL SIGNIFICANT AND NON-SIGNIFICANT RESPONDERS
+f = plt.figure(figsize=[10, 10])
+gs = f.add_gridspec(2, 2)
 
+# plot PERI-STIM AVG TRACES of sig nontargets
+a1 = f.add_subplot(gs[0, 0])
+x = expobj.dfstdF_traces_avg[expobj.sig_units]
+aoplot.plot_periphotostim_avg(arr=x, expobj=expobj, pre_stim_sec=1, post_stim_sec=3, fig=f, ax=a1, show=False,
+                              title='significant responders', y_label='dFstdF (normalized to prestim period)',
+                              x_label='Time (seconds)', y_lims=[-1, 3])
 
+# plot PERI-STIM AVG TRACES of nonsig nontargets
+a2 = f.add_subplot(gs[0, 1])
+x = expobj.dfstdF_traces_avg[~expobj.sig_units]
+aoplot.plot_periphotostim_avg(arr=x, expobj=expobj, pre_stim_sec=1, post_stim_sec=3, fig=f, ax=a2, show=False,
+                              title='non-significant responders', y_label='dFstdF (normalized to prestim period)',
+                              x_label='Time (seconds)', y_lims=[-1, 3])
 
+# plot PERI-STIM AVG TRACES of sig. positive responders
+a3 = f.add_subplot(gs[1, 0])
+x = expobj.dfstdF_traces_avg[expobj.sig_units][
+    np.where(np.nanmean(expobj.post_array_responses[expobj.sig_units, :], axis=1) > 0)[0]]
+aoplot.plot_periphotostim_avg(arr=x, expobj=expobj, pre_stim_sec=1, post_stim_sec=3, fig=f, ax=a3, show=False,
+                              title='positive signif. responders', y_label='dFstdF (normalized to prestim period)',
+                              x_label='Time (seconds)', y_lims=[-1, 3])
 
+# plot PERI-STIM AVG TRACES of sig. negative responders
+a4 = f.add_subplot(gs[1, 1])
+x = expobj.dfstdF_traces_avg[expobj.sig_units][
+    np.where(np.nanmean(expobj.post_array_responses[expobj.sig_units, :], axis=1) < 0)[0]]
+aoplot.plot_periphotostim_avg(arr=x, expobj=expobj, pre_stim_sec=1, post_stim_sec=3, fig=f, ax=a4, show=False,
+                              title='negative signif. responders', y_label='dFstdF (normalized to prestim period)',
+                              x_label='Time (seconds)', y_lims=[-1, 3])
 
+f.suptitle(
+    ('%s %s %s' % (expobj.metainfo['animal prep.'], expobj.metainfo['trial'], expobj.metainfo['exptype'])))
+f.show()
 
 # %% 1) plot responses of SLM TARGETS in response to photostim trials - broken down by pre-4ap, outsz and insz (excl. sz bound)
 # #  - with option to plot only successful or only failure stims!

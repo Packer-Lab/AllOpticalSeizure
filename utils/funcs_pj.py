@@ -765,8 +765,12 @@ def plot_bar_with_points(data, title='', x_tick_labels=[], legend_labels: list =
             text_shift = kwargs['text_shift']
         else:
             text_shift = 0.8
+        if 'text_y_pos' in kwargs.keys():
+            text_y_pos = kwargs['text_y_pos']
+        else:
+            text_y_pos = max([np.percentile(y[i], 95) for i in x])
         for i in x:
-            ax.text(x[i] * w * 2.5 - text_shift*w / 2, np.max(y[i]) * 0.75, text_list[i]),
+            ax.text(x[i] * w * 2.5 - text_shift*w / 2, text_y_pos, text_list[i]),
 
     if len(legend_labels) > 1:
         if show_legend:
