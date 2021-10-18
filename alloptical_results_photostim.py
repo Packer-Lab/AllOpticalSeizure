@@ -22,18 +22,11 @@ if not hasattr(expobj, 'good_cells'):
     expobj.save()
 
 
-# %% 5) plot responses of non-targets from suite2p ROIs in response to photostim trials - broken down by pre-4ap, outsz and insz (excl. sz bound)
+# %% 5) Analysis of responses of non-targets from suite2p ROIs in response to photostim trials - broken down by pre-4ap, outsz and insz (excl. sz bound)
 # #  - with option to plot only successful or only failure stims!
-aoutils.non_targets_responses(expobj, plot_subset=True)
-expobj._get_nontargets_stim_traces_norm(normalize_to='pre-stim', plot='dFstdF')
-# expobj.dff_traces, expobj.dff_traces_avg, expobj.dfstdF_traces, \
-# expobj.dfstdF_traces_avg, expobj.raw_traces, expobj.raw_traces_avg = \
-#     aoutils.get_nontargets_stim_traces_norm(expobj=expobj, normalize_to='pre-stim', pre_stim_sec=expobj.pre_stim_sec,
-#                                             post_stim_sec=expobj.post_stim_sec)
-
-
-# %% 5.1) finding statistically significant followers responses
 def allopticalAnalysisNontargets(expobj):
+    expobj._get_nontargets_stim_traces_norm(normalize_to='pre-stim', plot='dFstdF')
+
     expobj.test_frames = int(expobj.fps*0.5) # test period for stats
     expobj.pre_stim_frames_test = np.s_[expobj.pre_stim - expobj.test_frames: expobj.pre_stim]
     stim_end = expobj.pre_stim + expobj.stim_duration_frames
@@ -42,8 +35,17 @@ def allopticalAnalysisNontargets(expobj):
     _trialProcessing_nontargets(expobj)
     _sigTestAvgResponse_nontargets(expobj, alpha=0.1)
 
-    aoutils.non_targets_responses(plot_subset=False)
+    # plot analysis results in large figure
+    aoutils.non_targets_responses(expobj=expobj, plot_subset=False)
 
+
+# expobj.dff_traces, expobj.dff_traces_avg, expobj.dfstdF_traces, \
+# expobj.dfstdF_traces_avg, expobj.raw_traces, expobj.raw_traces_avg = \
+#     aoutils.get_nontargets_stim_traces_norm(expobj=expobj, normalize_to='pre-stim', pre_stim_sec=expobj.pre_stim_sec,
+#                                             post_stim_sec=expobj.post_stim_sec)
+
+
+# %% 5.1) finding statistically significant followers responses
 def _trialProcessing_nontargets(expobj):
     '''
     Uses dfstdf traces for individual cells and photostim trials, calculate the mean amplitudes of response and
@@ -182,6 +184,7 @@ else:
 f = plt.figure(figsize=[30, 10])
 gs = f.add_gridspec(2, 9)
 
+# %% 5.3.1) MAKE PLOT OF PERI-STIM AVG TRACES FOR ALL SIGNIFICANT AND NON-SIGNIFICANT RESPONDERS
 # PLOT AVG PHOTOSTIM PRE- POST- TRACE AVGed OVER ALL PHOTOSTIM. TRIALS
 a1 = f.add_subplot(gs[0, 0:2])
 x = expobj.dff_traces_avg[selection]
@@ -243,6 +246,7 @@ aoplot.plot_periphotostim_avg(arr=x, expobj=expobj, pre_stim_sec=1, post_stim_se
                               title='negative signif. responders', y_label='dFstdF (normalized to prestim period)',
                               x_label='Time (seconds)', y_lims=[-1, 3])
 
+# %% 5.3.2) quantifying responses of non targets to photostim
 # bar plot of avg post stim response quantified between responders and non-responders
 a04 = f.add_subplot(gs[0, -1])
 sig_responders_avgresponse = np.nanmean(expobj.post_array_responses[expobj.sig_units, :], axis=1)
