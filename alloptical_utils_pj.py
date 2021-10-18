@@ -2316,7 +2316,7 @@ class alloptical(TwoPhotonImaging):
             plane             - imaging plane n
         '''
         # make trial arrays from dff data [plane x cell x frame x trial]
-        expobj._get_nontargets_stim_traces_norm(normalize_to='pre-stim', plot='dFstdF')
+        expobj._get_nontargets_stim_traces_norm(normalize_to='pre-stim')
 
         # mean pre and post stimulus flu values for all cells, all trials
         trial_array = expobj.dfstdF_traces
@@ -4007,6 +4007,8 @@ def run_photostim_preprocessing(trial, exp_type, tiffs_loc_dir, tiffs_loc, napar
 
     return expobj
 
+
+###### SLM TARGETS analysis + plottings
 # after running suite2p
 def run_alloptical_processing_photostim(expobj, to_suite2p=None, baseline_trials=None, plots: bool = True, force_redo: bool = False):
 
@@ -4164,19 +4166,6 @@ def run_alloptical_processing_photostim(expobj, to_suite2p=None, baseline_trials
 
 
     expobj.save()
-
-def allopticalAnalysisNontargets(expobj):
-    test_period = 0.5  # sec
-    expobj.test_frames = int(expobj.fps*test_period)  # test period for stats
-    expobj.pre_stim_frames_test = np.s_[expobj.pre_stim - expobj.test_frames: expobj.pre_stim]
-    stim_end = expobj.pre_stim + expobj.stim_duration_frames
-    expobj.post_stim_frames_slice = np.s_[stim_end: stim_end + expobj.post_stim_response_frames_window]
-
-    expobj._trialProcessing_nontargets(expobj)
-    expobj._sigTestAvgResponse_nontargets(expobj, alpha=0.1)
-
-    non_targets_responses(plot_subset=False)
-
 
 # creates plots for SLM targets responses
 def slm_targets_responses(expobj, experiment, trial, y_spacing_factor=2, figsize=[20, 20], smooth_overlap_traces=5, linewidth_overlap_traces=0.2, dff_threshold=0.15,
@@ -4342,14 +4331,27 @@ def slm_targets_responses(expobj, experiment, trial, y_spacing_factor=2, figsize
 
         fig.show()
 
-def non_targets_responses(expobj, plot_subset: bool = True):
+###### NON TARGETS analysis + plottings
+def allopticalAnalysisNontargets(expobj):
+    test_period = 0.5  # sec
+    expobj.test_frames = int(expobj.fps*test_period)  # test period for stats
+    expobj.pre_stim_frames_test = np.s_[expobj.pre_stim - expobj.test_frames: expobj.pre_stim]
+    stim_end = expobj.pre_stim + expobj.stim_duration_frames
+    expobj.post_stim_frames_slice = np.s_[stim_end: stim_end + expobj.post_stim_response_frames_window]
+
+    expobj._trialProcessing_nontargets()
+    expobj._sigTestAvgResponse_nontargets(alpha=0.1)
+
+    fig_non_targets_responses(expobj=expobj, plot_subset=False)
+
+def fig_non_targets_responses(expobj, plot_subset: bool = True):
     if plot_subset:
         selection = np.random.randint(0, expobj.dff_traces_avg.shape[0], 100)
     else:
         selection = np.arange(expobj.dff_traces_avg.shape[0])
 
     #### SUITE2P NON-TARGETS - PLOTTING OF AVG PERI-PHOTOSTIM RESPONSES
-    f = plt.figure(figsize=[30, 10])
+    f = plt.figure(figsize=[25, 10])
     gs = f.add_gridspec(2, 9)
 
     # PLOT AVG PHOTOSTIM PRE- POST- TRACE AVGed OVER ALL PHOTOSTIM. TRIALS
@@ -4440,7 +4442,7 @@ def non_targets_responses(expobj, plot_subset: bool = True):
         np.where(np.nanmean(expobj.post_array_responses[expobj.sig_units, :], axis=1) < 0)[0]]
     nonsig_responders_avgresponse = np.nanmean(expobj.post_array_responses[~expobj.sig_units], axis=1)
     data = np.asarray([possig_responders_avgresponse, negsig_responders_avgresponse, nonsig_responders_avgresponse])
-    pj.plot_bar_with_points(data=data, title='Avg stim response magnitude of cells', colors=['green', 'blue', 'gray'],
+    pj.plot_bar_with_points(data=data, title='Avg stim response magnitude', colors=['green', 'blue', 'gray'],
                             y_label='avg dF/stdF', bar=False,
                             text_list=['%s pct' % (np.round(
                                 (len(possig_responders_avgresponse) / expobj.post_array_responses.shape[0]) * 100, 1)),
