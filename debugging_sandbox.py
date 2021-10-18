@@ -62,8 +62,8 @@ def xyloc_responses(expobj, df, label='response magnitude', clim=[-10, +10], plo
         xpix = expobj.stat[idx]['xpix']
         responses[ypix, xpix] = 100. + 1 * round(average_responses[cells_.index(n)], 2)
 
-    # mask some 'bad' data, in your case you would have: data < 0.05
-    responses = np.ma.masked_where(responses < 0.05, responses)
+    # mask some 'bad' data, in your case you would have: data < 0.005
+    responses = np.ma.masked_where(responses < 0.005, responses)
     cmap = plt.cm.bwr
     cmap.set_bad(color='black')
 
@@ -82,4 +82,9 @@ def xyloc_responses(expobj, df, label='response magnitude', clim=[-10, +10], plo
     if save_fig is not None:
         plt.savefig(save_fig)
 
-xyloc_responses(expobj, df=expobj.dfstdf_nontargets, clim=[-1, +1], plot_target_coords=True)
+expobj, experiment = aoutils.import_expobj(aoresults_map_id='pre g.1')
+
+s_ = np.where(np.nanmean(expobj.post_array_responses[expobj.sig_units, :], axis=1) < 0)
+arr = expobj.post_array_responses[expobj.sig_units, :][s_]
+df = pd.DataFrame(arr, index=[expobj.s2p_cell_nontargets[i] for i in s_[0]], columns=expobj.stim_start_frames)
+xyloc_responses(expobj, df=df, clim=[-0.3, +0.3], plot_target_coords=True)
