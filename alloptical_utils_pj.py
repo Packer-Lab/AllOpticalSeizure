@@ -81,15 +81,14 @@ def import_expobj(aoresults_map_id: str = None, trial: str = None, prep: str = N
         raise Exception('pkl path NOT found: ' + pkl_path)
     else:
         if trial is not None and date is not None:
-            if verbose:
-                print('\nimporting expobj for "%s, %s" from: %s' % (date, trial, pkl_path))
+            print('\n-----------------------------------------------------------------------------------------------------------',
+                  '\nimporting expobj for "%s, %s" from: %s' % (date, trial, pkl_path)) if verbose else None
     with open(pkl_path, 'rb') as f:
         expobj = pickle.load(f)
         experiment = '%s: %s, %s, %s' % (
             expobj.metainfo['animal prep.'], expobj.metainfo['trial'], expobj.metainfo['exptype'],
             expobj.metainfo['comments'])
-        if verbose:
-            print('\n\nDONE IMPORT of %s' % experiment)
+        print('|-\tDONE IMPORT of %s' % experiment) if verbose else None
 
 
     ### roping in some extraneous processing steps if there's expobj's that haven't completed for them
@@ -191,7 +190,7 @@ class TwoPhotonImaging:
 
         self._parsePVMetadata()
         if not quick:
-            stack = self.mean_raw_flu_trace(save_pkl=True)
+            stack = self.mean_raw_flu_trace(save_pkl=True) if not quick else None
         if save_downsampled_tiff:
             SaveDownsampledTiff(stack=stack, save_as=analysis_save_path + '/%s_%s_downsampled.tif' % (
             metainfo['date'], metainfo['trial']))  # specify path in Analysis folder to save pkl object')
@@ -458,8 +457,78 @@ class TwoPhotonImaging:
 
             print('|- Loaded %s cells, recorded for %s secs' % (self.raw.shape[0], round(self.raw.shape[1]/self.fps, 2)))
 
-            if save:
-                self.save()
+            self.save() if save else None
+
+    def _good_cells(self, cell_ids: list, raws: np.ndarray, photostim_frames: list, std_thresh: int, radiuses: list = None,
+                    min_radius_pix: int = 2.5, max_radius_pix: int = 10, save=True):
+        """
+        This function is used for filtering for "good" cells based on detection of Flu deflections that are above some std threshold based on std_thresh.
+        Note: a moving averaging window of 4 frames is used to find Flu deflections above std threshold.
+
+        :param cell_ids: list of cell ids to iterate over
+        :param raws: raw flu values corresponding to the cell list in cell_ids
+        :param photostim_frames: frames to delete from the raw flu traces across all cells (because they are photostim frames)
+        :param std_thresh: std. factor above which to define reliable Flu events
+        :param radiuses: radiuses of the s2p ROI mask of all cells in the same order as cell_ids
+        :param min_radius_pix:
+        :param max_radius_pix:
+        :return:
+            good_cells: list of cell_ids that had atleast 1 event above the std_thresh
+            events_loc_cells: dictionary containing locations for each cell_id where the moving averaged Flu trace passes the std_thresh
+            flu_events_cells: dictionary containing the dff Flu value corresponding to events_loc_cells
+            stds = dictionary containing the dFF trace std value for each cell_id
+        """
+
+        print('\n----------------------------------------------------------------')
+        print('running finding of good cells for suite2p ROIs ')
+        print('----------------------------------------------------------------')
+
+        good_cells = []
+        events_loc_cells = {}
+        flu_events_cells = {}
+        stds = {}  # collect the std values for all filtered cells used later for identifying high and low std cells
+        for i in range(len(cell_ids)):
+            cell_id = cell_ids[i]
+
+            if i % 100 == 0:  # print the progress once every 100 cell iterations
+                print(i, " out of ", len(cell_ids), " cells done", end='\r')
+
+            # print(i, " out of ", len(cell_ids), " cells")
+            raw = raws[i]
+            if np.mean(raw) > 1:  # exclude all negative raw traces and very small mean raw traces
+                raw_ = np.delete(raw, photostim_frames)
+                raw_dff = normalize_dff_jit(
+                    raw_)  # note that this function is defined in this file a little further down
+                std_ = raw_dff.std()
+
+                raw_dff_ = moving_average(raw_dff, n=4)
+
+                thr = np.mean(raw_dff) + std_thresh * std_
+                events = np.where(raw_dff_ > thr)
+                flu_values = raw_dff[events]
+
+                if radiuses is not None:
+                    radius = radiuses[i]
+                    if len(events[0]) > 0 and radius > min_radius_pix and radius < max_radius_pix:
+                        events_loc_cells[cell_id] = events
+                        flu_events_cells[cell_id] = flu_values
+                        stds[cell_id] = std_
+                        good_cells.append(cell_id)
+                elif len(events[0]) > 0:
+                    events_loc_cells[cell_id] = events
+                    flu_events_cells[cell_id] = flu_values
+                    good_cells.append(cell_id)
+                    stds[cell_id] = std_
+
+                # if i == 465:  # just using this here if ever need to check back with specific cells if function seems to be misbehaving
+                #     print(events, len(events[0]), thr)
+
+        print('# of good cells found: ', len(good_cells), ' (out of ', len(cell_ids), ' ROIs)')
+        self.good_cells = good_cells
+        self.save() if save else None
+
+        return good_cells, events_loc_cells, flu_events_cells, stds
+
 
     def paqProcessing(self, lfp=False):
 
@@ -758,8 +827,7 @@ class alloptical(TwoPhotonImaging):
             print('baseline frames: ', self.baseline_frames)
             print('current trial frames: ', self.curr_trial_frames)
 
-            if save:
-                self.save()
+            self.save() if save else None
 
     def stitch_reg_tiffs(self, force_crop: bool = False, force_stack: bool = False):
         start = self.curr_trial_frames[0] // 2000  # 2000 because that is the batch size for suite2p run
@@ -842,8 +910,7 @@ class alloptical(TwoPhotonImaging):
 
             self.meanFluImg_registered = np.mean(mean_img_stack, axis=0)
 
-            if save:
-                self.save()
+            self.save() if save else None
 
     def get_alltargets_stim_traces_norm(self, targets_idx: int = None, subselect_cells: list = None, pre_stim=15,
                                         post_stim=200, filter_sz: bool = False, stims: list = None):
@@ -1837,8 +1904,7 @@ class alloptical(TwoPhotonImaging):
                     save_path_stim = save_path + '/%s_%s_stim-%s.tif' % (
                         self.metainfo['date'], self.metainfo['trial'], stim)
                     if os.path.exists(save_path):
-                        if verbose:
-                            print("saving stim_img tiff to... %s" % save_path_stim)
+                        print("saving stim_img tiff to... %s" % save_path_stim) if verbose else None
                         avg_sub8 = convert_to_8bit(avg_sub, 0, 255)
                         tf.imwrite(save_path_stim,
                                    avg_sub8, photometric='minisblack')
@@ -2270,7 +2336,7 @@ class alloptical(TwoPhotonImaging):
             elif normalize_to == 'pre-stim':
                 flu_dff = []
                 flu_dfstdF = []
-                print('|- splitting trace by photostim. trials and correcting by pre-stim period')
+                # print('|- splitting trace by photostim. trials and correcting by pre-stim period')
                 for i in range(len(flu_trials)):
                     trace = flu_trials[i]
                     mean_pre = np.mean(trace[0:self.pre_stim])
@@ -2282,13 +2348,13 @@ class alloptical(TwoPhotonImaging):
                     if mean_pre < 1:
                         # print('risky cell here at cell # %s, trial # %s, mean pre: %s [1.1]' % (cell, i+1, mean_pre))
                         trace_dff = [np.nan] * len(trace)
-                        # dFstdF = [np.nan] * len(trace)  # - commented out to test if we need to exclude cells for this correction with low mean_pre since you're not dividing by a bad mean_pre value
+                        dFstdF = [np.nan] * len(trace)  # - commented out to test if we need to exclude cells for this correction with low mean_pre since you're not dividing by a bad mean_pre value
                     else:
                         # trace_dff = ((trace - mean_pre) / mean_pre) * 100
                         trace_dff = normalize_dff(trace, threshold_val=mean_pre)
-                        std_pre = np.std(trace[0:self.pre_stim], ddof=1)
-                        # dFstdF = (((trace - mean_pre) / mean_pre) * 100) / std_pre  # make dF divided by std of pre-stim F trace
-                        dFstdF = (trace - mean_pre) / std_pre  # make dF divided by std of pre-stim F trace
+                        # std_pre = np.std(trace[0:self.pre_stim], ddof=1)
+                        # # dFstdF = (((trace - mean_pre) / mean_pre) * 100) / std_pre  # make dF divided by std of pre-stim F trace
+                        # dFstdF = (trace - mean_pre) / std_pre  # make dF divided by std of pre-stim F trace
 
                     # add nan if cell is inside sz boundary for this stim
                     if 'post' in self.metainfo['exptype']:
@@ -2335,12 +2401,11 @@ class alloptical(TwoPhotonImaging):
 
         print('\nFinished collecting peri-stim traces ')
 
-        if save:
-            self.save()
+        self.save() if save else None
 
             # return dff_traces, dff_traces_avg, dfstdF_traces, dfstdF_traces_avg, raw_traces, raw_traces_avg
 
-    def _trialProcessing_nontargets(expobj, normalize_to='pre-stim'):
+    def _trialProcessing_nontargets(expobj, normalize_to='pre-stim', save=True):
         '''
         Uses dfstdf traces for individual cells and photostim trials, calculate the mean amplitudes of response and
         statistical significance across all trials for all cells
@@ -2350,7 +2415,10 @@ class alloptical(TwoPhotonImaging):
         '''
         # make trial arrays from dff data shape: [cells x stims x frames]
         # if not hasattr(expobj, 'dfstdF_traces_avg') or type(expobj.dfstdF_traces) is list:
-        expobj._get_nontargets_stim_traces_norm(normalize_to=normalize_to)
+        print('\n----------------------------------------------------------------')
+        print('running trial Processing for nontargets ')
+        print('----------------------------------------------------------------')
+        expobj._get_nontargets_stim_traces_norm(normalize_to=normalize_to, save=False)
 
         # mean pre and post stimulus (within post-stim response window) flu trace values for all cells, all trials
         expobj.analysis_array = expobj.dfstdF_traces  # NOTE: USING dF/stdF TRACES
@@ -2382,14 +2450,17 @@ class alloptical(TwoPhotonImaging):
 
         expobj.post_array_responses = np.mean(expobj.analysis_array[:, :, expobj.post_stim_frames_slice], axis=2)
 
-        expobj.save()
+        expobj.save() if save else None
 
-
-    def _sigTestAvgResponse_nontargets(expobj, alpha=0.1):
+    def _sigTestAvgResponse_nontargets(expobj, alpha=0.1, save=True):
         """
         Uses the p values and a threshold for the Benjamini-Hochberg correction to return which
         cells are still significant after correcting for multiple significance testing
         """
+        print('\n----------------------------------------------------------------')
+        print('running statistical significance testing for nontargets response arrays ')
+        print('----------------------------------------------------------------')
+
         p_vals = expobj.wilcoxons
         expobj.sig_units = np.full_like(p_vals, False, dtype=bool)
 
@@ -2404,7 +2475,7 @@ class alloptical(TwoPhotonImaging):
         expobj.nomulti_sig_units = np.zeros(len(expobj.s2p_cell_nontargets), dtype='bool')
         expobj.nomulti_sig_units[no_bonf_corr] = True
 
-        expobj.save()
+        expobj.save() if save else None
 
         # p values after bonferroni correction
         #         bonf_corr = [i for i,p in enumerate(p_vals) if p < 0.05 / expobj.n_units[plane]]
@@ -3111,7 +3182,7 @@ class OnePhotonStim(TwoPhotonImaging):
         self.save_pkl()
 
 
-
+# %% RESULTS OBJECTS
 class OnePhotonResults:
     def __init__(self, save_path: str):
         # just create an empty class object that you will throw results and analyses into
@@ -3352,7 +3423,7 @@ def moving_average(a, n=4):
     return ret[n - 1:] / n
 
 
-# @njit
+# - moved this code to the twophoton code class
 def _good_cells(cell_ids: list, raws: np.ndarray, photostim_frames: list, std_thresh: int, radiuses: list = None,
                 min_radius_pix: int = 2.5, max_radius_pix: int = 10):
     """
@@ -3813,7 +3884,7 @@ def rm_artifacts_tiffs(expobj, tiffs_loc, new_tiffs):
 
 
 
-# STATISTICS AND OTHER ANALYSES FUNCTIONS
+# %% STATISTICS AND OTHER ANALYSES FUNCTIONS
 
 # calculate correlation across all cells
 def corrcoef_array(array):
@@ -3893,8 +3964,7 @@ def calculate_StimSuccessRate(expobj, cell_ids: list, raw_traces_stims=None, dfs
 
             reliability_cells[cell] = success / counter * 100.
             reliability_cells[cell] = success / counter * 100.
-            if verbose:
-                print(cell, reliability_cells[cell], 'calc over %s stims' % counter)
+            print(cell, reliability_cells[cell], 'calc over %s stims' % counter) if verbose else None
 
     # elif raw_traces_stims is not None:  # used primarily for calculating responses for SLM targets
     #     if sz_filter:
@@ -4383,19 +4453,31 @@ def slm_targets_responses(expobj, experiment, trial, y_spacing_factor=2, figsize
 
 ###### NON TARGETS analysis + plottings
 def run_allopticalAnalysisNontargets(expobj, normalize_to='pre_stim', to_plot=True):
+    good_cells, events_loc_cells, flu_events_cells, stds = expobj._good_cells(cell_ids=expobj.cell_id, raws=expobj.raw,
+                                                                              photostim_frames=expobj.photostim_frames, std_thresh=2.5, save=False)
+
     test_period = 0.5  # sec
     expobj.test_frames = int(expobj.fps*test_period)  # test period for stats
     expobj.pre_stim_frames_test = np.s_[expobj.pre_stim - expobj.test_frames: expobj.pre_stim]
     stim_end = expobj.pre_stim + expobj.stim_duration_frames
     expobj.post_stim_frames_slice = np.s_[stim_end: stim_end + expobj.post_stim_response_frames_window]
 
-    expobj._trialProcessing_nontargets(normalize_to)
-    expobj._sigTestAvgResponse_nontargets(alpha=0.1)
+    expobj._trialProcessing_nontargets(normalize_to, save=False)
+    expobj._sigTestAvgResponse_nontargets(alpha=0.1, save=False)
 
-    if to_plot:
-        fig_non_targets_responses(expobj=expobj, plot_subset=False)
+    expobj.save()
+
+    fig_non_targets_responses(expobj=expobj, plot_subset=False) if to_plot else None
+
+    print('\nFIN. %s %s ' % (expobj.metainfo['animal prep.'], expobj.metainfo['trial']))
+    print('-------------------------------------------------------------------------------------------------------------')
+
 
 def fig_non_targets_responses(expobj, plot_subset: bool = True):
+    print('\n----------------------------------------------------------------')
+    print('plotting nontargets responses ')
+    print('----------------------------------------------------------------')
+
     if plot_subset:
         selection = np.random.randint(0, expobj.dff_traces_avg.shape[0], 100)
     else:

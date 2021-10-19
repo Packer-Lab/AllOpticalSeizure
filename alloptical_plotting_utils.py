@@ -101,8 +101,7 @@ def plot_cells_loc(expobj, cells: list, edgecolor: str = 'yellowgreen', title=No
     else:
         fig.show()
 
-    if 'fig' in kwargs.keys():
-        return fig, ax
+    return fig, ax if 'fig' in kwargs.keys() else None
 
 
 ### plotting the distribution of radius and aspect ratios - should this be running before the filtering step which is right below????????
@@ -191,8 +190,7 @@ def plot_SLMtargets_Locs(expobj, targets_coords: list = None, background: np.nda
     else:
         fig.show()
 
-    if 'fig' in kwargs.keys():
-        return fig, ax
+    return fig, ax if 'fig' in kwargs.keys() else None
 
 
 ### plot entire trace of individual targeted cells as super clean subplots, with the same y-axis lims
@@ -435,10 +433,7 @@ def plot_periphotostim_avg(arr=None, pre_stim_sec=1.0, post_stim_sec=3.0, title=
             ax.set_title((title + ' - %s' % len_ + ' traces'), horizontalalignment='center', verticalalignment='top',
                          pad=20, fontsize=10, wrap=True)
     if 'show' in kwargs.keys():
-        if kwargs['show'] is True:
-            fig.show()
-        else:
-            pass
+        fig.show() if kwargs['show'] else None
     else:
         fig.show()
 
@@ -581,10 +576,7 @@ def plot_lfp_stims(expobj, title='LFP signal with photostim. shown (in different
 
     # show or return axes objects
     if 'show' in kwargs.keys():
-        if kwargs['show'] is True:
-            plt.show()
-        else:
-            pass
+        plt.show() if kwargs['show'] else None
     else:
         plt.show()
 
@@ -672,10 +664,7 @@ def plot_traces_heatmap(arr, expobj, vmin=None, vmax=None, stim_on = None, stim_
         ax.set_title(title, fontsize=10, wrap=True)
 
     if 'show' in kwargs.keys():
-        if kwargs['show'] is True:
-            plt.show()
-        else:
-            pass
+        plt.show() if kwargs['show'] else None
     else:
         plt.show()
 
@@ -797,10 +786,7 @@ def plotMeanRawFluTrace(expobj, stim_span_color='white', stim_lines: bool = True
             '%s %s %s %s' % (title, expobj.metainfo['exptype'], expobj.metainfo['animal prep.'], expobj.metainfo['trial']))
 
     if 'show' in kwargs.keys():
-        if kwargs['show'] is True:
-            plt.show()
-        else:
-            pass
+        plt.show() if kwargs['show'] else None
     else:
         plt.show()
 
@@ -914,15 +900,12 @@ def plotLfpSignal(expobj, stim_span_color='powderblue', downsample: bool = True,
 
     # options for showing plot or returning plot
     if 'show' in kwargs.keys():
-        if kwargs['show'] is True:
-            plt.show()
-        else:
-            pass
+        plt.show() if kwargs['show'] else None
     else:
         plt.show()
 
-    if 'fig' in kwargs.keys():
-        return fig, ax
+
+    return fig, ax if 'fig' in kwargs.keys() else None
 
 
 def plot_flu_1pstim_avg_trace(expobj, title='Average trace of stims', individual_traces=False, x_axis='time', stim_span_color='white',
@@ -1169,10 +1152,7 @@ def plot_lfp_1pstim_avg_trace(expobj, title='Average LFP peri- stims', individua
 
     # options for showing plot or returning plot
     if 'show' in kwargs.keys():
-        if kwargs['show'] is True:
-            plt.show()
-        else:
-            pass
+        plt.show() if kwargs['show'] else None
     else:
         plt.show()
 

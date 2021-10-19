@@ -15,16 +15,15 @@ allopticalResults = aoutils.import_resultsobj(pkl_path=results_object_path)
 
 #
 # import expobj
-expobj, experiment = aoutils.import_expobj(aoresults_map_id='pre g.1')
-
-if not hasattr(expobj, 'good_cells'):
-    expobj.good_cells, events_loc_cells, flu_events_cells, stds = aoutils._good_cells(cell_ids=expobj.cell_id, raws=expobj.raw, photostim_frames=expobj.photostim_frames, std_thresh=2.5)
-    expobj.save()
+expobj, experiment = aoutils.import_expobj(aoresults_map_id='pre g.0')
 
 aoutils.run_allopticalAnalysisNontargets(expobj, normalize_to='pre-stim')
 
 
-# 5.2.1) plot dF/F of significant pos. and neg. responders that were derived from dF/stdF method
+# %% 5.2.1) plot dF/F of significant pos. and neg. responders that were derived from dF/stdF method
+print('\n----------------------------------------------------------------')
+print('plotting dFF for significant cells ')
+print('----------------------------------------------------------------')
 
 expobj.sig_cells = [expobj.s2p_cell_nontargets[i] for i, x in enumerate(expobj.sig_units) if x]
 expobj.pos_sig_cells = [expobj.sig_cells[i] for i in np.where(np.nanmean(expobj.post_array_responses[expobj.sig_units, :], axis=1) > 0)[0]]
