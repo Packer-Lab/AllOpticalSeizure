@@ -33,7 +33,7 @@ for key in list(allopticalResults.trial_maps['pre'].keys())[:3]:
             expobj.good_cells, events_loc_cells, flu_events_cells, stds = aoutils._good_cells(cell_ids=expobj.cell_id, raws=expobj.raw, photostim_frames=expobj.photostim_frames, std_thresh=2.5)
             expobj.save()
 
-        aoutils.allopticalAnalysisNontargets(expobj)
+        aoutils.run_allopticalAnalysisNontargets(expobj)
 
 
 # %% 5) Analysis of responses of non-targets from suite2p ROIs in response to photostim trials - broken down by pre-4ap, outsz and insz (excl. sz bound)
@@ -83,12 +83,12 @@ def _trialProcessing_nontargets(expobj):
 
     expobj.wilcoxons = wilcoxons
 
-    # measure avg response value for each trial, all cells --> return array with 3 axes [cells x response_magnitude_per_stim (avg'd taken over response window)]
-    ar2 = expobj.analysis_array[18, :, expobj.post_stim_frames_slice]
-    ar3 = ar2[~np.isnan(ar2).any(axis=1)]
-    assert np.nanmean(ar2) == np.nanmean(ar3)
-    expobj.analysis_array = expobj.analysis_array[~np.isnan(expobj.analysis_array).any(axis=1)]
+    # ar2 = expobj.analysis_array[18, :, expobj.post_stim_frames_slice]
+    # ar3 = ar2[~np.isnan(ar2).any(axis=1)]
+    # assert np.nanmean(ar2) == np.nanmean(ar3)
+    # expobj.analysis_array = expobj.analysis_array[~np.isnan(expobj.analysis_array).any(axis=1)]
 
+    # measure avg response value for each trial, all cells --> return array with 3 axes [cells x response_magnitude_per_stim (avg'd taken over response window)]
     expobj.post_array_responses = []  ### this and the for loop below was implemented to try to root out stims with nan's but it's likley not necessary...
     for i in np.arange(expobj.analysis_array.shape[0]):
         a = expobj.analysis_array[i][~np.isnan(expobj.analysis_array[i]).any(axis=1)]
