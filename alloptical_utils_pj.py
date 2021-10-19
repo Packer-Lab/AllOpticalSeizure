@@ -82,13 +82,13 @@ def import_expobj(aoresults_map_id: str = None, trial: str = None, prep: str = N
     else:
         if trial is not None and date is not None:
             print('\n-----------------------------------------------------------------------------------------------------------',
-                  '\nimporting expobj for "%s, %s" from: %s' % (date, trial, pkl_path)) if verbose else None
+                  '\nimporting expobj for "%s, %s" from: %s ... ' % (date, trial, pkl_path)) if verbose else None
     with open(pkl_path, 'rb') as f:
         expobj = pickle.load(f)
         experiment = '%s: %s, %s, %s' % (
             expobj.metainfo['animal prep.'], expobj.metainfo['trial'], expobj.metainfo['exptype'],
             expobj.metainfo['comments'])
-        print('|-\tDONE IMPORT of %s' % experiment) if verbose else None
+        print('|- DONE IMPORT of %s' % experiment) if verbose else None
 
 
     ### roping in some extraneous processing steps if there's expobj's that haven't completed for them
@@ -4469,8 +4469,8 @@ def run_allopticalAnalysisNontargets(expobj, normalize_to='pre_stim', to_plot=Tr
 
     fig_non_targets_responses(expobj=expobj, plot_subset=False) if to_plot else None
 
-    print('\nFIN. %s %s ' % (expobj.metainfo['animal prep.'], expobj.metainfo['trial']))
-    print('-------------------------------------------------------------------------------------------------------------')
+    print('\nFIN. %s %s **** ' % (expobj.metainfo['animal prep.'], expobj.metainfo['trial']))
+    print('-------------------------------------------------------------------------------------------------------------\n\n')
 
 
 def fig_non_targets_responses(expobj, plot_subset: bool = True):
