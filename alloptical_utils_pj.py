@@ -112,19 +112,19 @@ def import_expobj(aoresults_map_id: str = None, trial: str = None, prep: str = N
 
 
     # other misc. things you want to do when importing expobj -- should be temp code basically - not essential for actual importing of expobj
-    if expobj.metainfo['animal prep.'] not in expobj.analysis_save_path:
-        expobj.analysis_save_path = "/home/pshah/mnt/qnap/Analysis/%s/%s/%s_%s" % (date, expobj.metainfo['animal prep.'], date, trial)
-        # expobj.analysis_save_path = expobj.analysis_save_path + '/' + expobj.metainfo['animal prep.'] + '/' + expobj.metainfo['date'] + '_' + expobj.metainfo['trial']
-
-    if not expobj.pre_stim == int(1.0 * expobj.fps):
-        print('updating expobj.pre_stim_sec to 1 sec')
-        expobj.pre_stim = int(1.0 * expobj.fps)
-
-    if not hasattr(expobj, 'pre_stim_response_frames_window'):
-        expobj.pre_stim_response_window_msec = 500  # msec
-        expobj.pre_stim_response_frames_window = int(expobj.fps * expobj.pre_stim_response_window_msec / 1000)  # length of the post stim response test window (in frames)
-
     if do_processing:
+        if expobj.metainfo['animal prep.'] not in expobj.analysis_save_path:
+            expobj.analysis_save_path = "/home/pshah/mnt/qnap/Analysis/%s/%s/%s_%s" % (date, expobj.metainfo['animal prep.'], date, trial)
+            # expobj.analysis_save_path = expobj.analysis_save_path + '/' + expobj.metainfo['animal prep.'] + '/' + expobj.metainfo['date'] + '_' + expobj.metainfo['trial']
+
+        if not expobj.pre_stim == int(1.0 * expobj.fps):
+            print('updating expobj.pre_stim_sec to 1 sec')
+            expobj.pre_stim = int(1.0 * expobj.fps)
+
+        if not hasattr(expobj, 'pre_stim_response_frames_window'):
+            expobj.pre_stim_response_window_msec = 500  # msec
+            expobj.pre_stim_response_frames_window = int(expobj.fps * expobj.pre_stim_response_window_msec / 1000)  # length of the post stim response test window (in frames)
+
         if not hasattr(expobj, 'subset_frames') and hasattr(expobj, 'curr_trial_frames'):
             expobj.subset_frames = expobj.curr_trial_frames
             expobj.save()
@@ -134,7 +134,8 @@ def import_expobj(aoresults_map_id: str = None, trial: str = None, prep: str = N
             expobj.s2pProcessing(s2p_path=expobj.s2p_path, subset_frames=expobj.curr_trial_frames, subtract_neuropil=True,
                                  baseline_frames=expobj.baseline_frames, force_redo=True)
 
-    expobj.save()
+        expobj.save()
+
     return expobj, experiment
 
 def import_resultsobj(pkl_path: str):
@@ -2203,9 +2204,7 @@ class alloptical(TwoPhotonImaging):
         """
         primary function to retrieve photostimulation trial timed Fluorescence traces for non-targets (ROIs taken from suite2p).
         :param self: alloptical experiment object
-        :param normalize_to: str; either "baseline" or "pre-stim"
-        :param pre_stim_sec: optional, specify number of seconds to collect pre-stim Flu (if different than default)
-        :param post_stim_sec: optional, specify number of seconds to collect pre-stim Flu
+        :param normalize_to: str; either "baseline" or "pre-stim" or "whole-trace"
         :return: plot of avg_dFF of 100 randomly selected nontargets
         """
         print('\nCollecting peri-stim traces ')
@@ -2247,25 +2246,43 @@ class alloptical(TwoPhotonImaging):
                     flu_dff.append(trace_dff)
 
             elif normalize_to == 'whole-trace':
-                dfstdf_trace = (self.raw[cell_idx] - np.mean(self.raw[cell_idx])) / np.std(self.raw[cell_idx]) # normalize trace (dFstdF) to std of whole trace
-                flu_dfstdF = [dfstdf_trace[stim - self.pre_stim: stim + self.stim_duration_frames + self.post_stim] for
+                print('s2p neu. corrected trace statistics: mean: %s (min: %s, max: %s, std: %s)' %
+                      (np.mean(self.raw[cell_idx]), np.min(self.raw[cell_idx]), np.max(self.raw[cell_idx]), np.std(self.raw[cell_idx], ddof=1)))
+                # dfstdf_trace = (self.raw[cell_idx] - np.mean(self.raw[cell_idx])) / np.std(self.raw[cell_idx], ddof=1)  # normalize trace (dFstdF) to std of whole trace
+                flu_dfstdF = []
+                flu_dff = []
+                flu_dff_ = [dff_trace[stim - self.pre_stim: stim + self.stim_duration_frames + self.post_stim] for
                            stim in stim_timings if
                            stim not in self.seizure_frames]
-                flu_dff = [dff_trace[stim - self.pre_stim: stim + self.stim_duration_frames + self.post_stim] for
-                           stim in stim_timings if
-                           stim not in self.seizure_frames]
+
+                for i in range(len(flu_dff_)):
+                    trace = flu_dff_[i]
+                    mean_pre = np.mean(trace[0:self.pre_stim])
+                    trace_dff = trace - mean_pre  # correct dFF of this trial to mean of pre-stim dFF
+                    std_pre = np.std(trace[0:self.pre_stim], ddof=1)
+                    dFstdF = trace_dff / std_pre  # normalize dFF of this trial by std of pre-stim dFF
+
+                    flu_dff.append(trace_dff)
+                    flu_dfstdF.append(dFstdF)
+
 
 
             elif normalize_to == 'pre-stim':
                 flu_dff = []
                 flu_dfstdF = []
+                print('|- splitting trace by photostim. trials and correcting by pre-stim period')
                 for i in range(len(flu_trials)):
                     trace = flu_trials[i]
                     mean_pre = np.mean(trace[0:self.pre_stim])
+
+                    std_pre = np.std(trace[0:self.pre_stim], ddof=1)
+                    # dFstdF = (((trace - mean_pre) / mean_pre) * 100) / std_pre  # make dF divided by std of pre-stim F trace
+                    dFstdF = (trace - mean_pre) / std_pre  # make dF divided by std of pre-stim F trace
+
                     if mean_pre < 1:
                         # print('risky cell here at cell # %s, trial # %s, mean pre: %s [1.1]' % (cell, i+1, mean_pre))
                         trace_dff = [np.nan] * len(trace)
-                        dFstdF = [np.nan] * len(trace)
+                        # dFstdF = [np.nan] * len(trace)  # - commented out to test if we need to exclude cells for this correction with low mean_pre since you're not dividing by a bad mean_pre value
                     else:
                         # trace_dff = ((trace - mean_pre) / mean_pre) * 100
                         trace_dff = normalize_dff(trace, threshold_val=mean_pre)
@@ -2305,9 +2322,9 @@ class alloptical(TwoPhotonImaging):
             self.dff_traces = dff_traces
             self.dff_traces_avg = dff_traces_avg
             # return dff_traces, dff_traces_avg
-        elif normalize_to == 'pre-stim':
+        elif normalize_to == 'pre-stim' or normalize_to == 'whole-trace':
             print(
-                '\nCompleted collecting pre to post stim traces -- normalized to pre-stim period -- for %s cells' % len(
+                '\nCompleted collecting pre to post stim traces -- normalized to pre-stim period or maybe whole-trace -- for %s cells' % len(
                     dff_traces_avg))
             self.dff_traces = np.asarray(dff_traces)
             self.dff_traces_avg = np.asarray([i for i in dff_traces_avg])
@@ -2316,13 +2333,14 @@ class alloptical(TwoPhotonImaging):
             self.raw_traces = np.asarray(raw_traces)
             self.raw_traces_avg = np.asarray([i for i in raw_traces_avg])
 
+        print('\nFinished collecting peri-stim traces ')
 
         if save:
             self.save()
 
             # return dff_traces, dff_traces_avg, dfstdF_traces, dfstdF_traces_avg, raw_traces, raw_traces_avg
 
-    def _trialProcessing_nontargets(expobj):
+    def _trialProcessing_nontargets(expobj, normalize_to='pre-stim'):
         '''
         Uses dfstdf traces for individual cells and photostim trials, calculate the mean amplitudes of response and
         statistical significance across all trials for all cells
@@ -2332,7 +2350,7 @@ class alloptical(TwoPhotonImaging):
         '''
         # make trial arrays from dff data shape: [cells x stims x frames]
         # if not hasattr(expobj, 'dfstdF_traces_avg') or type(expobj.dfstdF_traces) is list:
-        expobj._get_nontargets_stim_traces_norm(normalize_to='pre-stim')
+        expobj._get_nontargets_stim_traces_norm(normalize_to=normalize_to)
 
         # mean pre and post stimulus (within post-stim response window) flu trace values for all cells, all trials
         expobj.analysis_array = expobj.dfstdF_traces  # NOTE: USING dF/stdF TRACES
@@ -4364,17 +4382,18 @@ def slm_targets_responses(expobj, experiment, trial, y_spacing_factor=2, figsize
         fig.show()
 
 ###### NON TARGETS analysis + plottings
-def run_allopticalAnalysisNontargets(expobj):
+def run_allopticalAnalysisNontargets(expobj, normalize_to='pre_stim', to_plot=True):
     test_period = 0.5  # sec
     expobj.test_frames = int(expobj.fps*test_period)  # test period for stats
     expobj.pre_stim_frames_test = np.s_[expobj.pre_stim - expobj.test_frames: expobj.pre_stim]
     stim_end = expobj.pre_stim + expobj.stim_duration_frames
     expobj.post_stim_frames_slice = np.s_[stim_end: stim_end + expobj.post_stim_response_frames_window]
 
-    expobj._trialProcessing_nontargets()
+    expobj._trialProcessing_nontargets(normalize_to)
     expobj._sigTestAvgResponse_nontargets(alpha=0.1)
 
-    fig_non_targets_responses(expobj=expobj, plot_subset=False)
+    if to_plot:
+        fig_non_targets_responses(expobj=expobj, plot_subset=False)
 
 def fig_non_targets_responses(expobj, plot_subset: bool = True):
     if plot_subset:
@@ -4390,14 +4409,14 @@ def fig_non_targets_responses(expobj, plot_subset: bool = True):
     a1 = f.add_subplot(gs[0, 0:2])
     x = expobj.dff_traces_avg[selection]
     y_label = 'pct. dFF (normalized to prestim period)'
-    aoplot.plot_periphotostim_avg(arr=x, expobj=expobj, pre_stim_sec=1, post_stim_sec=4,
+    aoplot.plot_periphotostim_avg(arr=x, expobj=expobj, pre_stim_sec=1, post_stim_sec=3,
                                   title=None, y_label=y_label, fig=f, ax=a1, show=False,
                                   x_label='Time (seconds)', y_lims=[-50, 200])
     # PLOT AVG PHOTOSTIM PRE- POST- TRACE AVGed OVER ALL PHOTOSTIM. TRIALS
     a2 = f.add_subplot(gs[0, 2:4])
     x = expobj.dfstdF_traces_avg[selection]
     y_label = 'dFstdF (normalized to prestim period)'
-    aoplot.plot_periphotostim_avg(arr=x, expobj=expobj, pre_stim_sec=1, post_stim_sec=4,
+    aoplot.plot_periphotostim_avg(arr=x, expobj=expobj, pre_stim_sec=1, post_stim_sec=3,
                                   title=None, y_label=y_label, fig=f, ax=a2, show=False,
                                   x_label='Time (seconds)', y_lims=[-1, 3])
     # PLOT HEATMAP OF AVG PRE- POST TRACE AVGed OVER ALL PHOTOSTIM. TRIALS - ALL CELLS (photostim targets at top) - Lloyd style :D - df/f
@@ -4408,7 +4427,7 @@ def fig_non_targets_responses(expobj, plot_subset: bool = True):
                                stim_on=int(1 * expobj.fps),
                                stim_off=int(1 * expobj.fps + expobj.stim_duration_frames - 1),
                                xlims=(0, expobj.dfstdF_traces_avg.shape[1]),
-                               title='dF/F heatmap for all nontargets', x_label='Time', cbar=True,
+                               title='dF/stdF heatmap for all nontargets', x_label='Time', cbar=True,
                                fig=f, ax=a3, show=False)
     # PLOT HEATMAP OF AVG PRE- POST TRACE AVGed OVER ALL PHOTOSTIM. TRIALS - ALL CELLS (photostim targets at top) - Lloyd style :D - df/stdf
     a4 = f.add_subplot(gs[0, -3:-1])
@@ -4417,7 +4436,7 @@ def fig_non_targets_responses(expobj, plot_subset: bool = True):
     aoplot.plot_traces_heatmap(expobj.dff_traces_avg, expobj=expobj, vmin=vmin, vmax=vmax, stim_on=int(1 * expobj.fps),
                                stim_off=int(1 * expobj.fps + expobj.stim_duration_frames - 1),
                                xlims=(0, expobj.dfstdF_traces_avg.shape[1]),
-                               title='dF/stdF heatmap for all nontargets', x_label='Time', cbar=True,
+                               title='dF/F heatmap for all nontargets', x_label='Time', cbar=True,
                                fig=f, ax=a4, show=False)
 
     # plot PERI-STIM AVG TRACES of sig nontargets

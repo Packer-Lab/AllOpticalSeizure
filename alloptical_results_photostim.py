@@ -13,16 +13,59 @@ import utils.funcs_pj as pj
 results_object_path = '/home/pshah/mnt/qnap/Analysis/alloptical_results_superobject.pkl'
 allopticalResults = aoutils.import_resultsobj(pkl_path=results_object_path)
 
-# #
-# # import expobj
-# expobj, experiment = aoutils.import_expobj(aoresults_map_id='pre g.1')
 #
-# if not hasattr(expobj, 'good_cells'):
-#     expobj.good_cells, events_loc_cells, flu_events_cells, stds = aoutils._good_cells(cell_ids=expobj.cell_id, raws=expobj.raw, photostim_frames=expobj.photostim_frames, std_thresh=2.5)
-#     expobj.save()
+# import expobj
+expobj, experiment = aoutils.import_expobj(aoresults_map_id='pre g.1')
+
+if not hasattr(expobj, 'good_cells'):
+    expobj.good_cells, events_loc_cells, flu_events_cells, stds = aoutils._good_cells(cell_ids=expobj.cell_id, raws=expobj.raw, photostim_frames=expobj.photostim_frames, std_thresh=2.5)
+    expobj.save()
+
+aoutils.run_allopticalAnalysisNontargets(expobj, normalize_to='pre-stim')
 
 
-# 5.4) for loop to go through each expobj to analyze nontargets
+# 5.2.1) plot dF/F of significant pos. and neg. responders that were derived from dF/stdF method
+
+expobj.sig_cells = [expobj.s2p_cell_nontargets[i] for i, x in enumerate(expobj.sig_units) if x]
+expobj.pos_sig_cells = [expobj.sig_cells[i] for i in np.where(np.nanmean(expobj.post_array_responses[expobj.sig_units, :], axis=1) > 0)[0]]
+expobj.neg_sig_cells = [expobj.sig_cells[i] for i in np.where(np.nanmean(expobj.post_array_responses[expobj.sig_units, :], axis=1) < 0)[0]]
+
+f, ax = plt.subplots(nrows=2, ncols=2, figsize=(10, 10), sharex=True)
+# plot peristim avg dFF of pos_sig_cells
+selection = [expobj.s2p_cell_nontargets.index(i) for i in expobj.pos_sig_cells]
+x = expobj.dff_traces_avg[selection]
+y_label = 'pct. dFF (normalized to prestim period)'
+f, ax[0, 0], _ = aoplot.plot_periphotostim_avg(arr=x, expobj=expobj, pre_stim_sec=1, post_stim_sec=3,
+                              title='positive sig. responders', y_label=y_label, fig=f, ax=ax[0, 0], show=False,
+                              x_label=None, y_lims=[-50, 200])
+
+# plot peristim avg dFF of neg_sig_cells
+selection = [expobj.s2p_cell_nontargets.index(i) for i in expobj.neg_sig_cells]
+x = expobj.dff_traces_avg[selection]
+y_label = None
+f, ax[0, 1], _ = aoplot.plot_periphotostim_avg(arr=x, expobj=expobj, pre_stim_sec=1, post_stim_sec=3,
+                              title='negative sig. responders', y_label=None, fig=f, ax=ax[0, 1], show=False,
+                              x_label=None, y_lims=[-50, 200])
+
+# plot peristim avg dFstdF of pos_sig_cells
+selection = [expobj.s2p_cell_nontargets.index(i) for i in expobj.pos_sig_cells]
+x = expobj.dfstdF_traces_avg[selection]
+y_label = 'dF/stdF'
+f, ax[1, 0], _ = aoplot.plot_periphotostim_avg(arr=x, expobj=expobj, pre_stim_sec=1, post_stim_sec=3,
+                              title=None, y_label=y_label, fig=f, ax=ax[1, 0], show=False,
+                              x_label='Time (seconds) ', y_lims=[-1, 1])
+
+# plot peristim avg dFstdF of neg_sig_cells
+selection = [expobj.s2p_cell_nontargets.index(i) for i in expobj.neg_sig_cells]
+x = expobj.dfstdF_traces_avg[selection]
+y_label = None
+f, ax[1, 1], _ = aoplot.plot_periphotostim_avg(arr=x, expobj=expobj, pre_stim_sec=1, post_stim_sec=3,
+                              title=None, y_label=y_label, fig=f, ax=ax[1, 1], show=False,
+                              x_label='Time (seconds) ', y_lims=[-1, 1])
+
+f.show()
+
+# %% 5.4) for loop to go through each expobj to analyze nontargets
 
 for key in list(allopticalResults.trial_maps['pre'].keys())[:3]:
     for j in range(len(allopticalResults.trial_maps['pre'][key])):

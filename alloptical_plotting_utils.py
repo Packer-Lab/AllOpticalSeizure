@@ -380,9 +380,10 @@ def plot_periphotostim_avg(arr=None, pre_stim_sec=1.0, post_stim_sec=3.0, title=
 
     ax.margins(x=0.07)
 
-    if 'Time' in x_label or 'time' in x_label:
+    if x_label is None or not 'Frames' in x_label or 'frames' in x_label:
         x = x_time  # set the x plotting range
-        x_label = x_label + 'post-stimulation relative'
+        if x_label is not None:
+            x_label = x_label + 'post-stimulation relative'
 
         if avg_only is True:
             ax.axvspan(0 - 1/fps, 0 + stim_duration + 1 / fps, alpha=1, color='plum', zorder = 3)
@@ -391,8 +392,6 @@ def plot_periphotostim_avg(arr=None, pre_stim_sec=1.0, post_stim_sec=3.0, title=
             ax.axvspan(0 - 1/fps, 0 - 1/fps + stim_duration, alpha=0.5, color='plum', zorder = 3)  # note that we are setting 0 as the stimulation time
     else:
         ax.axvspan(exp_prestim, exp_prestim + int(stim_duration*fps), alpha=0.2, color='tomato')
-        x_label = 'Frames'
-
 
     if not avg_only:
         for cell_trace in arr:
@@ -410,7 +409,7 @@ def plot_periphotostim_avg(arr=None, pre_stim_sec=1.0, post_stim_sec=3.0, title=
     if 'y_lims' in kwargs.keys():
         ax.set_ylim(kwargs['y_lims'])
     if pre_stim_sec and post_stim_sec:
-        if 'Time' in x_label or 'time' in x_label:
+        if x_label is None or not 'Frames' in x_label or 'frames' in x_label:
             ax.set_xlim(-pre_stim_sec, stim_duration + post_stim_sec)  # remember that x axis is set to be relative to the stim time (i.e. stim is at t = 0)
         else:
             ax.set_xlim(exp_prestim - int(pre_stim_sec * fps), exp_prestim + int(stim_duration * fps) + int(post_stim_sec * fps) + 1)
