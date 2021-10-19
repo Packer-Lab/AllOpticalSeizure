@@ -642,7 +642,7 @@ class TwoPhotonImaging:
 
         with open(self.pkl_path, 'wb') as f:
             pickle.dump(self, f)
-        print("\n\npkl saved to %s\n" % pkl_path)
+        print("\n\t -- pkl saved to %s -- " % pkl_path)
 
     def save(self):
         self.save_pkl()
