@@ -15,7 +15,7 @@ allopticalResults = aoutils.import_resultsobj(pkl_path=results_object_path)
 
 #
 # import expobj
-expobj, experiment = aoutils.import_expobj(aoresults_map_id='pre g.0')
+expobj, experiment = aoutils.import_expobj(aoresults_map_id='pre g.1')
 
 aoutils.run_allopticalAnalysisNontargets(expobj, normalize_to='pre-stim')
 

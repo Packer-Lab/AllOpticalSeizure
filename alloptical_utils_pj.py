@@ -122,7 +122,7 @@ def import_expobj(aoresults_map_id: str = None, trial: str = None, prep: str = N
 
         if not hasattr(expobj, 'pre_stim_response_frames_window'):
             expobj.pre_stim_response_window_msec = 500  # msec
-            expobj.pre_stim_response_frames_window = int(expobj.fps * expobj.pre_stim_response_window_msec / 1000)  # length of the post stim response test window (in frames)
+            expobj.pre_stim_response_frames_window = int(expobj.fps * expobj.pre_stim_response_window_msec / 1000)  # length of the pre stim response test window (in frames)
 
         if not hasattr(expobj, 'subset_frames') and hasattr(expobj, 'curr_trial_frames'):
             expobj.subset_frames = expobj.curr_trial_frames
@@ -2413,12 +2413,19 @@ class alloptical(TwoPhotonImaging):
         Inputs:
             plane             - imaging plane n
         '''
-        # make trial arrays from dff data shape: [cells x stims x frames]
-        # if not hasattr(expobj, 'dfstdF_traces_avg') or type(expobj.dfstdF_traces) is list:
+
         print('\n----------------------------------------------------------------')
         print('running trial Processing for nontargets ')
         print('----------------------------------------------------------------')
+        # make trial arrays from dff data shape: [cells x stims x frames]
         expobj._get_nontargets_stim_traces_norm(normalize_to=normalize_to, save=False)
+
+        # create parameters, slices, and subsets for making pre-stim and post-stim arrays to use in stats comparison
+        # test_period = expobj.pre_stim_response_window_msec / 1000  # sec
+        # expobj.test_frames = int(expobj.fps * test_period)  # test period for stats
+        expobj.pre_stim_frames_test = np.s_[expobj.pre_stim - expobj.pre_stim_response_frames_window: expobj.pre_stim]
+        stim_end = expobj.pre_stim + expobj.stim_duration_frames
+        expobj.post_stim_frames_slice = np.s_[stim_end: stim_end + expobj.post_stim_response_frames_window]
 
         # mean pre and post stimulus (within post-stim response window) flu trace values for all cells, all trials
         expobj.analysis_array = expobj.dfstdF_traces  # NOTE: USING dF/stdF TRACES
@@ -4455,12 +4462,15 @@ def slm_targets_responses(expobj, experiment, trial, y_spacing_factor=2, figsize
 def run_allopticalAnalysisNontargets(expobj, normalize_to='pre_stim', to_plot=True):
     good_cells, events_loc_cells, flu_events_cells, stds = expobj._good_cells(cell_ids=expobj.cell_id, raws=expobj.raw,
                                                                               photostim_frames=expobj.photostim_frames, std_thresh=2.5, save=False)
-
-    test_period = 0.5  # sec
-    expobj.test_frames = int(expobj.fps*test_period)  # test period for stats
-    expobj.pre_stim_frames_test = np.s_[expobj.pre_stim - expobj.test_frames: expobj.pre_stim]
-    stim_end = expobj.pre_stim + expobj.stim_duration_frames
-    expobj.post_stim_frames_slice = np.s_[stim_end: stim_end + expobj.post_stim_response_frames_window]
+    # set the correct test response windows
+    if not expobj.pre_stim == int(1.0 * expobj.fps):
+        print('updating expobj.pre_stim_sec to 1 sec')
+        expobj.pre_stim = int(1.0 * expobj.fps)  # length of pre stim trace collected (in frames)
+        expobj.post_stim = int(3.0 * expobj.fps)  # length of post stim trace collected (in frames)
+        expobj.post_stim_response_window_msec = 500  # msec
+        expobj.post_stim_response_frames_window = int(expobj.fps * expobj.post_stim_response_window_msec / 1000)  # length of the post stim response test window (in frames)
+        expobj.pre_stim_response_window_msec = 500  # msec
+        expobj.pre_stim_response_frames_window = int(expobj.fps * expobj.pre_stim_response_window_msec / 1000)  # length of the pre stim response test window (in frames)
 
     expobj._trialProcessing_nontargets(normalize_to, save=False)
     expobj._sigTestAvgResponse_nontargets(alpha=0.1, save=False)

@@ -26,7 +26,7 @@ allopticalResults.pre_4ap_trials = [
     ['RL108 t-010'],
     ['RL109 t-007'],
     ['RL109 t-008'],
-    ['RL109 t-013'],
+    # ['RL109 t-013'], - pickle truncated .21/10/18
     ['RL109 t-014'],
     ['PS04 t-012',  # 'PS04 t-014',  - not sure what's wrong with PS04, but the photostim and Flu are out of sync .21/10/09
      'PS04 t-017'],
@@ -48,7 +48,7 @@ allopticalResults.post_4ap_trials = [
     ['RL108 t-011'],  # - problem with pickle data being truncated - analysis code run done .21/10/09
     ['RL109 t-020'],  # - problem with pickle data being truncated - analysis code run done .21/10/09
     ['RL109 t-021'],
-    ['RL109 t-018'],
+    # ['RL109 t-018'],
     ['RL109 t-016', 'RL109 t-017'],
     ['PS04 t-018'],  # - problem with pickle data being truncated - analysis done
     ['PS05 t-012'],  # - pickle truncated 21/10/10 - analysis done .21/10/12
@@ -64,8 +64,8 @@ allopticalResults.post_4ap_trials = [
     # ['PS18 t-008']
 ]
 
-assert len(allopticalResults.pre_4ap_trials) == len(allopticalResults.post_4ap_trials)
-
+assert len(allopticalResults.pre_4ap_trials) == len(allopticalResults.post_4ap_trials), print('pre trials %s ' % len(allopticalResults.pre_4ap_trials),
+                                                                                              'post trials %s ' % len(allopticalResults.post_4ap_trials))
 
 
 allopticalResults.trial_maps = {'pre': {}, 'post': {}}
@@ -74,7 +74,7 @@ allopticalResults.trial_maps['pre'] = {
     'b': ['RL108 t-010'],
     'c': ['RL109 t-007'],
     'd': ['RL109 t-008'],
-    'e': ['RL109 t-013'],
+    # 'e': ['RL109 t-013'],  - pickle truncated .21/10/18
     'f': ['RL109 t-014'],
     'g': ['PS04 t-012',  # 'PS04 t-014',  # - temp just until PS04 gets reprocessed
      'PS04 t-017'],
@@ -83,7 +83,7 @@ allopticalResults.trial_maps['pre'] = {
     'j': ['PS07 t-009'],
     'k': ['PS06 t-008', 'PS06 t-009', 'PS06 t-010'],
     'l': ['PS06 t-011'],
-    'm': ['PS06 t-012'],
+    # 'm': ['PS06 t-012'],  # - t-016 missing sz lfp onsets
     'n': ['PS11 t-007'],
     'o': ['PS11 t-010'],
     'p': ['PS17 t-005'],
@@ -96,15 +96,15 @@ allopticalResults.trial_maps['post'] = {
     'b': ['RL108 t-011'],
     'c': ['RL109 t-020'],
     'd': ['RL109 t-021'],
-    'e': ['RL109 t-018'],
+    # 'e': ['RL109 t-018'], - t-013 has been truncated
     'f': ['RL109 t-016', 'RL109 t-017'],
     'g': ['PS04 t-018'],
     'h': ['PS05 t-012'],
     'i': ['PS07 t-011'],
     'j': ['PS07 t-017'],
-    'k': ['PS06 t-014', 'PS06 t-015'], # - missing seizure_lfp_onsets
+    'k': ['PS06 t-014', 'PS06 t-015'],  # - missing seizure_lfp_onsets
     'l': ['PS06 t-013'],
-    'm': ['PS06 t-016'], # - missing seizure_lfp_onsets
+    # 'm': ['PS06 t-016'],  # - missing seizure_lfp_onsets
     'n': ['PS11 t-016'],
     'o': ['PS11 t-011'],
     'p': ['PS17 t-011'],
