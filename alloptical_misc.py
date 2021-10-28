@@ -4,6 +4,7 @@ import alloptical_utils_pj as aoutils
 import alloptical_plotting_utils as aoplot
 import matplotlib.pyplot as plt
 import numpy as np
+import re
 
 import tifffile as tf
 
@@ -33,6 +34,15 @@ for trial in trials:
     # expobj.MeanSeizureImages(
     #     baseline_tiff="/home/pshah/mnt/qnap/Data/2020-12-18/2020-12-18_t-005/2020-12-18_t-005_Cycle00001_Ch3.tif",
     #     frames_last=1000)
+
+
+# %% add 100ms to the stim dur for expobj which need it (i.e. trials where the stim end is just after the stim_dur and traces are still coming down)
+ls = ['PS05 t-010', 'PS06 t-011', 'PS11 t-010', 'PS17 t-005', 'PS17 t-006', 'PS17 t-007', 'PS18 t-006']
+for i in ls:
+    prep, trial = re.split(' ', i)
+    expobj, experiment = aoutils.import_expobj(trial=trial, prep=prep, verbose=False)
+    expobj.stim_dur = expobj.stim_dur + 100
+    expobj.save()
 
 # %% plot signals of suite2p outputs of a cell with F-neuropil and neuropil -- trying to see if neuropil signal contains anything of predictive value for the cell's spiking activity?
 

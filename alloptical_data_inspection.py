@@ -20,11 +20,12 @@ allopticalResults = aoutils.import_resultsobj(pkl_path=results_object_path)
 
 
 # %% IMPORT expobj
-expobj, experiment = aoutils.import_expobj(aoresults_map_id='pre h.0')
+expobj, experiment = aoutils.import_expobj(aoresults_map_id='post k.0')
+
 
 # %% useful general plots
 
-aoplot.plotMeanRawFluTrace(expobj=expobj, stim_span_color=None, x_axis='Time', figsize=[200, 3])
+aoplot.plotMeanRawFluTrace(expobj=expobj, stim_span_color=None, x_axis='Time', figsize=[20, 3])
 aoplot.plotLfpSignal(expobj, stim_span_color='', x_axis='time', figsize=[8, 2])
 aoplot.plot_SLMtargets_Locs(expobj, background=expobj.meanFluImg_registered)
 aoplot.plot_lfp_stims(expobj)
@@ -38,3 +39,5 @@ for cell in expobj.s2p_cell_nontargets:
     print('mean: %s   \t min: %s  \t max: %s  \t std: %s' %
           (np.round(np.mean(expobj.raw[cell_idx]), 2), np.round(np.min(expobj.raw[cell_idx]), 2), np.round(np.max(expobj.raw[cell_idx]), 2),
            np.round(np.std(expobj.raw[cell_idx], ddof=1), 2)))
+
+

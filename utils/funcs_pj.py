@@ -568,6 +568,11 @@ def findClosest(list, input):
 
     return closest_value, index
 
+# flatten list of lists
+def flattenx1(list):
+    """ flattens a nested list by one nesting level (should be able to run multiple times to get further down if needed for
+     deeper nested lists) """
+    return [x for i in list for x in i]
 
 ############### PLOTTING FUNCTIONS #####################################################################################
 # custom colorbar for heatmaps
@@ -675,28 +680,42 @@ def plot_bar_with_points(data, title='', x_tick_labels=[], legend_labels: list =
     # start making plot
     if not bar:
         for i in x:
+            ## plot the mean line
             ax.plot(np.linspace(x[i] * w * 2.5 - w / 2, x[i] * w * 2.5 + w / 2, 3), [np.mean(y[i])] * 3, color='black')
         lw = 0,
         edgecolor = None
-    else:
-        if not kwargs['edgecolor']:
+        # since no bar being shown on plot (lw = 0 from above) then use it to plot the error bars
+        ax.bar([x * w * 2.5 for x in x],
+               height=[np.mean(yi) for yi in y],
+               yerr=[np.std(yi, ddof=1) for yi in y],  # error bars
+               capsize=4.5,  # error bar cap width in points
+               width=w,  # bar width
+               linewidth=lw,  # width of the bar edges
+               edgecolor=edgecolor,
+               color=(0, 0, 0, 0),  # face edgecolor transparent
+               zorder=2
+               )
+    elif bar:
+        if 'edgecolor' not in kwargs.keys():
             edgecolor = 'black',
             lw = 1
         else:
             edgecolor = kwargs['edgecolor'],
             lw = 1
+        # plot bar graph
+        ax.bar([x * w * 2.5 for x in x],
+               height=[np.mean(yi) for yi in y],
+               yerr=np.asarray([np.asarray([0, np.std(yi, ddof=1)]) for yi in y]).T,  # error bars
+               capsize=4.5,  # error bar cap width in points
+               width=w,  # bar width
+               linewidth=lw,  # width of the bar edges
+               edgecolor=edgecolor,
+               color=(0, 0, 0, 0),  # face edgecolor transparent
+               zorder=2
+               )
+    else:
+        ReferenceError('something wrong happened with the bar bool parameter...')
 
-    # plot bar graph, or if no bar (when lw = 0 from above) then use it to plot the error bars
-    ax.bar([x * w * 2.5 for x in x],
-           height=[np.mean(yi) for yi in y],
-           yerr=[np.std(yi, ddof=1) for yi in y],  # error bars
-           capsize=4.5,  # error bar cap width in points
-           width=w,  # bar width
-           linewidth=lw,  # width of the bar edges
-           edgecolor=edgecolor,
-           color=(0, 0, 0, 0),  # face edgecolor transparent
-           zorder=2
-           )
     ax.set_xticks([x * w * 2.5 for x in x])
     ax.set_xticklabels(x_tick_labels)
 
@@ -781,7 +800,8 @@ def plot_bar_with_points(data, title='', x_tick_labels=[], legend_labels: list =
         ax.set_title((title), horizontalalignment='center', verticalalignment='top', pad=25,
                      fontsize=12*shrink_text, wrap=True)
     else:
-        ax.title.set_text((title))
+        ax.set_title((title),horizontalalignment='center', verticalalignment='top',
+                     fontsize=12*shrink_text, wrap=True)
 
     if 'show' in kwargs.keys():
         if kwargs['show'] is True:

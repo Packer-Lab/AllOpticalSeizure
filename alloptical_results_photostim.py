@@ -4,6 +4,7 @@ import pandas as pd
 from scipy import stats, signal
 import statsmodels.api
 import statsmodels as sm
+import seaborn as sns
 import matplotlib.pyplot as plt
 import alloptical_utils_pj as aoutils
 import alloptical_plotting_utils as aoplot
@@ -13,11 +14,170 @@ import utils.funcs_pj as pj
 results_object_path = '/home/pshah/mnt/qnap/Analysis/alloptical_results_superobject.pkl'
 allopticalResults = aoutils.import_resultsobj(pkl_path=results_object_path)
 
-#
+# %% 5.5.1) # # PLOT - average # of significant responders (+ve and -ve) for pre vs. post 4ap
+
+# tips = sns.load_dataset("tips")
+
+# sns.catplot(data=allopticalResults.num_sig_responders_df, order = ['pre4ap_pos', 'post4ap_pos', 'pre4ap_neg', 'post4ap_neg'])
+# plt.show()
+
+
+data=[]
+cols = ['pre4ap_pos', 'post4ap_pos']
+for col in cols:
+    data.append(list(allopticalResults.num_sig_responders_df.loc[:, col]))
+pj.plot_bar_with_points(data, x_tick_labels=cols, colors=['skyblue', 'steelblue'],
+                        bar=True, paired=True, expand_size_x=0.6, expand_size_y=1.3, title='# of Positive responders',
+                        y_label='# of sig. responders')
+
+
+data=[]
+cols = ['pre4ap_neg', 'post4ap_neg']
+for col in cols:
+    data.append(list(allopticalResults.num_sig_responders_df.loc[:, col]))
+pj.plot_bar_with_points(data, x_tick_labels=cols, colors=['skyblue', 'steelblue', 'lightgreen', 'forestgreen'],
+                        bar=False, paired=True, expand_size_x=0.3, expand_size_y=1.3, title='# of Negative responders',
+                        y_label= '# of sig. responders')
+
+
+
+# %% 5.5.2) # # PLOT - average response stim graph for positive and negative followers
+# - make one graph per comparison for now... then can figure out how to average things out later.
+
+
+# %% 5.5.3) # # -  total post stim response evoked across all cells recorded
+    # - like maybe add up all trials (sig and non sig), and all cells
+    # - and compare pre-4ap and post-4ap (exp by exp, maybe normalizing the peak value per comparison from pre4ap?)
+    # - or just make one graph per comparison and show all to Adam?
+
+
+# %% 5.5.4) # # - think about some normalization via success rate of the stimulus (plot some response measure against success rate of the stimulation)
+    # - calculate pearson's correlation value of the association
+
+
+
+# %% 5)  RUN DATA ANALYSIS OF NON TARGETS:
+# #  - Analysis of responses of non-targets from suite2p ROIs in response to photostim trials - broken down by pre-4ap, outsz and insz (excl. sz bound)
+# #  - with option to plot only successful or only failure stims!
+
 # import expobj
 expobj, experiment = aoutils.import_expobj(aoresults_map_id='pre g.1')
+aoutils.run_allopticalAnalysisNontargets(expobj, normalize_to='pre-stim', skip_processing=False,
+                                         save_plot_suffix='Nontargets_responses_2021-10-24/%s_%s.png' % (expobj.metainfo['animal prep.'], expobj.metainfo['trial']))
 
-aoutils.run_allopticalAnalysisNontargets(expobj, normalize_to='pre-stim')
+
+# expobj.dff_traces, expobj.dff_traces_avg, expobj.dfstdF_traces, \
+# expobj.dfstdF_traces_avg, expobj.raw_traces, expobj.raw_traces_avg = \
+#     aoutils.get_nontargets_stim_traces_norm(expobj=expobj, normalize_to='pre-stim', pre_stim_sec=expobj.pre_stim_sec,
+#                                             post_stim_sec=expobj.post_stim_sec)
+
+
+# %% 5.5) collect average stats for each prep, and summarize into the appropriate data point
+num_sig_responders = pd.DataFrame(columns=['pre4ap_pos', 'pre4ap_neg', 'post4ap_pos', 'post4ap_neg'])
+possig_responders_traces = []
+negsig_responders_traces = []
+for key in list(allopticalResults.trial_maps['pre'].keys()):
+    name = allopticalResults.trial_maps['pre'][key][0][:-6]
+
+    # pre-4ap trials calculations
+    n_trials = len(allopticalResults.trial_maps['pre'][key])
+    pre4ap_possig_responders_avgresponse = []
+    pre4ap_negsig_responders_avgresponse = []
+    pre4ap_num_pos = 0
+    pre4ap_num_neg = 0
+    for i in range(n_trials):
+        expobj, experiment = aoutils.import_expobj(aoresults_map_id='pre %s.%s' % (key, i))
+        if sum(expobj.sig_units) > 0:
+            name += expobj.metainfo['trial']
+            pre4ap_possig_responders_avgresponse_ = expobj.dfstdF_traces_avg[expobj.sig_units][
+            np.where(np.nanmean(expobj.post_array_responses[expobj.sig_units, :], axis=1) > 0)[0]]
+            pre4ap_negsig_responders_avgresponse_ = expobj.dfstdF_traces_avg[expobj.sig_units][
+            np.where(np.nanmean(expobj.post_array_responses[expobj.sig_units, :], axis=1) < 0)[0]]
+
+            if i == 0:
+                pre4ap_possig_responders_avgresponse.append(pre4ap_possig_responders_avgresponse_)
+                pre4ap_negsig_responders_avgresponse.append(pre4ap_negsig_responders_avgresponse_)
+
+                pre4ap_num_pos += len(pre4ap_possig_responders_avgresponse_)
+                pre4ap_num_neg += len(pre4ap_negsig_responders_avgresponse_)
+        else:
+            pre4ap_num_pos += 0
+            pre4ap_num_neg += 0
+    pre4ap_num_pos = pre4ap_num_pos / n_trials
+    pre4ap_num_neg = pre4ap_num_neg / n_trials
+
+
+    # post-4ap trials calculations
+    name += 'vs.'
+    n_trials = len(allopticalResults.trial_maps['post'][key])
+    post4ap_possig_responders_avgresponse = []
+    post4ap_negsig_responders_avgresponse = []
+    post4ap_num_pos = 0
+    post4ap_num_neg = 0
+    for i in range(n_trials):
+        expobj, experiment = aoutils.import_expobj(aoresults_map_id='post %s.%s' % (key, i))
+        if sum(expobj.sig_units) > 0:
+            name += expobj.metainfo['trial']
+            post4ap_possig_responders_avgresponse_ = expobj.dfstdF_traces_avg[expobj.sig_units][
+            np.where(np.nanmean(expobj.post_array_responses[expobj.sig_units, :], axis=1) > 0)[0]]
+            post4ap_negsig_responders_avgresponse_ = expobj.dfstdF_traces_avg[expobj.sig_units][
+            np.where(np.nanmean(expobj.post_array_responses[expobj.sig_units, :], axis=1) < 0)[0]]
+
+            if i == 0:
+                post4ap_possig_responders_avgresponse.append(post4ap_possig_responders_avgresponse_)
+                post4ap_negsig_responders_avgresponse.append(post4ap_negsig_responders_avgresponse_)
+
+                post4ap_num_pos += len(post4ap_possig_responders_avgresponse_)
+                post4ap_num_neg += len(post4ap_negsig_responders_avgresponse_)
+        else:
+            post4ap_num_pos += 0
+            post4ap_num_neg += 0
+    post4ap_num_pos = post4ap_num_pos / n_trials
+    post4ap_num_neg = post4ap_num_neg / n_trials
+
+    # place into the appropriate dataframe
+    series = [pre4ap_num_pos, pre4ap_num_neg, post4ap_num_pos, post4ap_num_neg]
+    num_sig_responders.loc[name] = series
+
+    # place sig pos and sig neg traces into the list
+    possig_responders_traces.append([pre4ap_possig_responders_avgresponse, post4ap_possig_responders_avgresponse])
+    negsig_responders_traces.append([pre4ap_negsig_responders_avgresponse, post4ap_negsig_responders_avgresponse])
+
+allopticalResults.num_sig_responders_df = num_sig_responders
+allopticalResults.possig_responders_traces = np.asarray(possig_responders_traces)
+allopticalResults.negsig_responders_traces = np.asarray(negsig_responders_traces)
+
+allopticalResults.save()
+
+
+
+
+# %% 5.4.1) for loop to go through each expobj to analyze nontargets
+ls = ['PS05 t-010', 'PS06 t-011', 'PS11 t-010', 'PS17 t-005', 'PS17 t-006', 'PS17 t-007', 'PS18 t-006']
+for key in list(allopticalResults.trial_maps['pre'].keys()):
+    for j in range(len(allopticalResults.trial_maps['pre'][key])):
+        # import expobj
+        expobj, experiment = aoutils.import_expobj(aoresults_map_id='pre %s.%s' % (key, j))
+        if expobj.metainfo['animal prep.'] + ' ' + expobj.metainfo['trial'] in ls:
+            aoutils.run_allopticalAnalysisNontargets(expobj, normalize_to='pre-stim', skip_processing=False,
+                                                     save_plot_suffix='Nontargets_responses_2021-10-19/%s_%s.png' % (expobj.metainfo['animal prep.'], expobj.metainfo['trial']))
+        else:
+            aoutils.run_allopticalAnalysisNontargets(expobj, normalize_to='pre-stim', skip_processing=True,
+                                                     save_plot_suffix='Nontargets_responses_2021-10-19/%s_%s.png' % (expobj.metainfo['animal prep.'], expobj.metainfo['trial']))
+
+# %% 5.4.2) for loop to go through each expobj to analyze nontargets - post4ap trials
+ls = pj.flattenx1(allopticalResults.post_4ap_trials)
+for key in list(allopticalResults.trial_maps['post'].keys())[-5:]:
+    for j in range(len(allopticalResults.trial_maps['post'][key])):
+        # import expobj
+        expobj, experiment = aoutils.import_expobj(aoresults_map_id='post %s.%s' % (key, j), do_processing=True)
+        if expobj.metainfo['animal prep.'] + ' ' + expobj.metainfo['trial'] in ls:
+            aoutils.run_allopticalAnalysisNontargets(expobj, normalize_to='pre-stim', skip_processing=False,
+                                                     save_plot_suffix='Nontargets_responses_2021-10-24/%s_%s.png' % (expobj.metainfo['animal prep.'], expobj.metainfo['trial']))
+        else:
+            aoutils.run_allopticalAnalysisNontargets(expobj, normalize_to='pre-stim', skip_processing=True,
+                                                     save_plot_suffix='Nontargets_responses_2021-10-24/%s_%s.png' % (expobj.metainfo['animal prep.'], expobj.metainfo['trial']))
+
 
 
 # %% 5.2.1) plot dF/F of significant pos. and neg. responders that were derived from dF/stdF method
@@ -64,39 +224,7 @@ f, ax[1, 1], _ = aoplot.plot_periphotostim_avg(arr=x, expobj=expobj, pre_stim_se
 
 f.show()
 
-# %% 5.4) for loop to go through each expobj to analyze nontargets
 
-for key in list(allopticalResults.trial_maps['pre'].keys())[:3]:
-    for j in range(len(allopticalResults.trial_maps['pre'][key])):
-        # import expobj
-        expobj, experiment = aoutils.import_expobj(aoresults_map_id='pre %s.%s' % (key, j))
-
-        if not hasattr(expobj, 'good_cells'):
-            expobj.good_cells, events_loc_cells, flu_events_cells, stds = aoutils._good_cells(cell_ids=expobj.cell_id, raws=expobj.raw, photostim_frames=expobj.photostim_frames, std_thresh=2.5)
-            expobj.save()
-
-        aoutils.run_allopticalAnalysisNontargets(expobj)
-
-
-# %% 5) Analysis of responses of non-targets from suite2p ROIs in response to photostim trials - broken down by pre-4ap, outsz and insz (excl. sz bound)
-# #  - with option to plot only successful or only failure stims!
-def allopticalAnalysisNontargets(expobj):
-    expobj.test_frames = int(expobj.fps*0.5) # test period for stats
-    expobj.pre_stim_frames_test = np.s_[expobj.pre_stim - expobj.test_frames: expobj.pre_stim]
-    stim_end = expobj.pre_stim + expobj.stim_duration_frames
-    expobj.post_stim_frames_slice = np.s_[stim_end: stim_end + expobj.post_stim_response_frames_window]
-
-    _trialProcessing_nontargets(expobj)
-    _sigTestAvgResponse_nontargets(expobj, alpha=0.1)
-
-    # plot analysis results in large figure
-    aoutils.fig_non_targets_responses(expobj=expobj, plot_subset=False)
-
-
-# expobj.dff_traces, expobj.dff_traces_avg, expobj.dfstdF_traces, \
-# expobj.dfstdF_traces_avg, expobj.raw_traces, expobj.raw_traces_avg = \
-#     aoutils.get_nontargets_stim_traces_norm(expobj=expobj, normalize_to='pre-stim', pre_stim_sec=expobj.pre_stim_sec,
-#                                             post_stim_sec=expobj.post_stim_sec)
 
 
 # %% 5.1) finding statistically significant followers responses

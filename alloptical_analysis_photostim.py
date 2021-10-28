@@ -77,18 +77,18 @@ allopticalResults.trial_maps['pre'] = {
     # 'e': ['RL109 t-013'],  - pickle truncated .21/10/18
     'f': ['RL109 t-014'],
     'g': ['PS04 t-012',  # 'PS04 t-014',  # - temp just until PS04 gets reprocessed
-     'PS04 t-017'],
+          'PS04 t-017'],
     'h': ['PS05 t-010'],
     'i': ['PS07 t-007'],
     'j': ['PS07 t-009'],
-    'k': ['PS06 t-008', 'PS06 t-009', 'PS06 t-010'],
+    # 'k': ['PS06 t-008', 'PS06 t-009', 'PS06 t-010'],
     'l': ['PS06 t-011'],
     # 'm': ['PS06 t-012'],  # - t-016 missing sz lfp onsets
-    'n': ['PS11 t-007'],
+    # 'n': ['PS11 t-007'],
     'o': ['PS11 t-010'],
-    'p': ['PS17 t-005'],
-    'q': ['PS17 t-006', 'PS17 t-007'],
-    'r': ['PS18 t-006']
+    # 'p': ['PS17 t-005'],
+    # 'q': ['PS17 t-006', 'PS17 t-007'],
+    # 'r': ['PS18 t-006']
 }
 
 allopticalResults.trial_maps['post'] = {
@@ -102,16 +102,17 @@ allopticalResults.trial_maps['post'] = {
     'h': ['PS05 t-012'],
     'i': ['PS07 t-011'],
     'j': ['PS07 t-017'],
-    'k': ['PS06 t-014', 'PS06 t-015'],  # - missing seizure_lfp_onsets
+    # 'k': ['PS06 t-014', 'PS06 t-015'],  # - missing seizure_lfp_onsets
     'l': ['PS06 t-013'],
     # 'm': ['PS06 t-016'],  # - missing seizure_lfp_onsets
-    'n': ['PS11 t-016'],
+    # 'n': ['PS11 t-016'],
     'o': ['PS11 t-011'],
-    'p': ['PS17 t-011'],
-    'q': ['PS17 t-009'],
-    'r': ['PS18 t-008']
+    # 'p': ['PS17 t-011'],
+    # 'q': ['PS17 t-009'],
+    # 'r': ['PS18 t-008']
 }
 
+assert len(allopticalResults.trial_maps['pre'].keys()) == len(allopticalResults.trial_maps['post'].keys())
 
 allopticalResults.save()
 

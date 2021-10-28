@@ -70,11 +70,11 @@ def import_expobj(aoresults_map_id: str = None, trial: str = None, prep: str = N
             num_ = 0
         prep, trial = allopticalResults.trial_maps[exp_type][id][num_].split(' ')
 
-    if date is None:
-        date = allopticalResults.metainfo.loc[allopticalResults.metainfo['prep_trial'] == '%s %s' % (prep, trial), 'date'].values[0]
-
     if pkl_path is None:
+        if date is None:
+            date = allopticalResults.metainfo.loc[allopticalResults.metainfo['prep_trial'] == '%s %s' % (prep, trial), 'date'].values[0]
         pkl_path = "/home/pshah/mnt/qnap/Analysis/%s/%s/%s_%s/%s_%s.pkl" % (date, prep, date, trial, date, trial)
+
 
 
     if not os.path.exists(pkl_path):
@@ -90,6 +90,13 @@ def import_expobj(aoresults_map_id: str = None, trial: str = None, prep: str = N
             expobj.metainfo['comments'])
         print('|- DONE IMPORT of %s' % experiment) if verbose else None
 
+    if pkl_path is not None:
+        if expobj.pkl_path != pkl_path:
+            expobj.pkl_path = pkl_path
+            print('updated expobj.pkl_path ', pkl_path)
+            expobj.analysis_save_path = expobj.pkl_path[:-20]
+            print('updated expobj.analysis_save_path ', expobj.analysis_save_path)
+            expobj.save()
 
     ### roping in some extraneous processing steps if there's expobj's that haven't completed for them
     if not hasattr(expobj, 'paq_rate') or not hasattr(expobj, 'frame_start_time_actual'):
@@ -100,15 +107,6 @@ def import_expobj(aoresults_map_id: str = None, trial: str = None, prep: str = N
     if not hasattr(expobj, 'post_stim_response_frames_window'):
         expobj.post_stim_response_window_msec = 500  # msec
         expobj.post_stim_response_frames_window = int(expobj.fps * expobj.post_stim_response_window_msec / 1000)
-
-    if pkl_path is not None:
-        if expobj.pkl_path != pkl_path:
-            expobj.pkl_path = pkl_path
-            print('updated expobj.pkl_path ', pkl_path)
-            expobj.analysis_save_path = expobj.pkl_path[:-20]
-            print('updated expobj.analysis_save_path ', expobj.analysis_save_path)
-            expobj.save()
-
 
     # other misc. things you want to do when importing expobj -- should be temp code basically - not essential for actual importing of expobj
     if do_processing:
@@ -2551,6 +2549,9 @@ class Post4ap(alloptical):
             bad_frames = frames_discard(paq=paq[0], input_array=seizures_lfp_timing_matarray,
                                         total_frames=self.n_frames,
                                         discard_all=discard_all)
+            self.seizure_frames = []
+            self.seizure_lfp_onsets = []
+            self.seizure_lfp_offsets = []
 
         print('\nTotal extra seizure/CSD or other frames to discard: ', len(bad_frames))
         print('|- first and last 10 indexes of these frames', bad_frames[:10], bad_frames[-10:])
@@ -3188,6 +3189,252 @@ class OnePhotonStim(TwoPhotonImaging):
         aoplot.plot_lfp_stims(self, x_axis='time')
         self.save_pkl()
 
+class onePstim(TwoPhotonImaging):
+    def __init__(self, data_path_base, date, animal_prep, trial, metainfo, analysis_save_path_base: str = None):
+        paqs_loc = '%s%s_%s_%s.paq' % (
+            data_path_base, date, animal_prep, trial[2:])  # path to the .paq files for the selected trials
+        tiffs_loc_dir = '%s/%s_%s' % (data_path_base, date, trial)
+        tiffs_loc = '%s/%s_%s_Cycle00001_Ch3.tif' % (tiffs_loc_dir, date, trial)
+        self.pkl_path = "/home/pshah/mnt/qnap/Analysis/%s/%s_%s/%s_%s.pkl" % (
+            date, date, trial, date, trial)  # specify path in Analysis folder to save pkl object
+        # paqs_loc = '%s/%s_RL109_010.paq' % (data_path_base, date)  # path to the .paq files for the selected trials
+        new_tiffs = tiffs_loc[:-19]  # where new tiffs from rm_artifacts_tiffs will be saved
+
+        # make the necessary Analysis saving subfolder as well
+        if analysis_save_path_base is None:
+            analysis_save_path = tiffs_loc[:21] + 'Analysis/' + tiffs_loc_dir[26:]
+        else:
+            analysis_save_path = analysis_save_path_base + tiffs_loc_dir[-16:]
+
+        # if os.path.exists(self.analysis_save_path):
+        #     pass
+        # elif os.path.exists(self.analysis_save_path[:-17]):
+        #     os.mkdir(self.analysis_save_path)
+        # elif os.path.exists(self.analysis_save_path[:-27]):
+        #     os.mkdir(self.analysis_save_path[:-17])
+        #     os.mkdir(self.analysis_save_path)
+
+        print('\n-----Processing trial # %s-----' % trial)
+
+        paths = [tiffs_loc_dir, tiffs_loc, paqs_loc]
+        # print('tiffs_loc_dir, naparms_loc, paqs_loc paths:\n', paths)
+
+        self.tiff_path_dir = paths[0]
+        self.tiff_path = paths[1]
+        self.paq_path = paths[2]
+        TwoPhotonImaging.__init__(self, self.tiff_path_dir, self.tiff_path, self.paq_path, metainfo=metainfo,
+                                  save_downsampled_tiff=True, analysis_save_path=analysis_save_path, quick=False)
+        self.paqProcessing()
+
+        # add all frames as bad frames incase want to include this trial in suite2p run
+        paq = paq_read(file_path=self.paq_path, plot=False)
+        self.bad_frames = frames_discard(paq=paq[0], input_array=None, total_frames=self.n_frames, discard_all=True)
+
+        self.save_pkl(pkl_path=self.pkl_path)
+
+        print('\n-----DONE OnePhotonStim init of trial # %s-----' % trial)
+
+
+    def paqProcessing(self, **kwargs):
+
+        print('\n-----processing paq file for 1p photostim...')
+
+        print('loading', self.paq_path)
+
+        paq, _ = paq_read(self.paq_path, plot=True)
+        self.paq_rate = paq['rate']
+
+        frame_rate = self.fps / self.n_planes
+
+        # if 'shutter_loopback' in paq['chan_names']:
+        #     ans = input('shutter_loopback in this paq found, should we continue')
+        #     if ans is True or 'Yes':
+        #         pass
+        #     else:
+        #         raise Exception('need to write code for using the shutter loopback')
+
+        # find frame_clock times
+        clock_idx = paq['chan_names'].index('frame_clock')
+        clock_voltage = paq['data'][clock_idx, :]
+
+        frame_clock = pj.threshold_detect(clock_voltage, 1)
+        self.frame_clock = frame_clock
+
+        # find start and stop frame_clock times -- there might be multiple 2p imaging starts/stops in the paq trial (hence multiple frame start and end times)
+        self.frame_start_times = [self.frame_clock[0]]  # initialize list
+        self.frame_end_times = []
+        i = len(self.frame_start_times)
+        for idx in range(1, len(self.frame_clock) - 1):
+            if (self.frame_clock[idx + 1] - self.frame_clock[idx]) > 2e3:
+                i += 1
+                self.frame_end_times.append(self.frame_clock[idx])
+                self.frame_start_times.append(self.frame_clock[idx + 1])
+        self.frame_end_times.append(self.frame_clock[-1])
+
+        # for frame in self.frame_clock[1:]:
+        #     if (frame - self.frame_start_times[i - 1]) > 2e3:
+        #         i += 1
+        #         self.frame_start_times.append(frame)
+        #         self.frame_end_times.append(self.frame_clock[np.where(self.frame_clock == frame)[0] - 1][0])
+        # self.frame_end_times.append(self.frame_clock[-1])
+
+        # handling cases where 2p imaging clock has been started/stopped >1 in the paq trial
+        if len(self.frame_start_times) > 1:
+            diff = [self.frame_end_times[idx] - self.frame_start_times[idx] for idx in
+                    range(len(self.frame_start_times))]
+            idx = diff.index(max(diff))
+            self.frame_start_time_actual = self.frame_start_times[idx]
+            self.frame_end_time_actual = self.frame_end_times[idx]
+            self.frame_clock_actual = [frame for frame in self.frame_clock if
+                                       self.frame_start_time_actual <= frame <= self.frame_end_time_actual]
+        else:
+            self.frame_start_time_actual = self.frame_start_times[0]
+            self.frame_end_time_actual = self.frame_end_times[0]
+            self.frame_clock_actual = self.frame_clock
+
+        plt.figure(figsize=(50, 2))
+        plt.plot(clock_voltage)
+        plt.plot(frame_clock, np.ones(len(frame_clock)), '.', color='orange')
+        plt.plot(self.frame_clock_actual, np.ones(len(self.frame_clock_actual)), '.', color='red')
+        plt.suptitle('frame clock from paq, with detected frame clock instances as scatter')
+        plt.show()
+
+        # find 1p stim times
+        opto_loopback_chan = paq['chan_names'].index('opto_loopback')
+        stim_volts = paq['data'][opto_loopback_chan, :]
+        stim_times = pj.threshold_detect(stim_volts, 1)
+
+        self.stim_times = stim_times
+        self.stim_start_times = [self.stim_times[0]]  # initialize list
+        self.stim_end_times = []
+        i = len(self.stim_start_times)
+        for stim in self.stim_times[1:]:
+            if (stim - self.stim_start_times[i - 1]) > 1e5:
+                i += 1
+                self.stim_start_times.append(stim)
+                self.stim_end_times.append(self.stim_times[np.where(self.stim_times == stim)[0] - 1][0])
+        self.stim_end_times.append(self.stim_times[-1])
+
+        print("\nNumber of 1photon stims found: ", len(self.stim_start_times))
+
+        plt.figure(figsize=(50, 2))
+        plt.plot(stim_volts)
+        plt.plot(stim_times, np.ones(len(stim_times)), '.')
+        plt.suptitle('1p stims from paq, with detected 1p stim instances as scatter')
+        plt.xlim([stim_times[0] - 2e3, stim_times[-1] + 2e3])
+        plt.show()
+
+        # find all stim frames
+        self.stim_frames = []
+        for plane in range(self.n_planes):
+            for stim in range(len(self.stim_start_times)):
+                stim_frames_ = [frame for frame, t in enumerate(self.frame_clock_actual[plane::self.n_planes]) if
+                                self.stim_start_times[stim] - 100 / self.paq_rate <= t <= self.stim_end_times[
+                                    stim] + 100 / self.paq_rate]
+
+                self.stim_frames.append(stim_frames_)
+
+        # if >1 1p stims per trial, find the start of all 1p trials
+        self.stim_start_frames = [stim_frames[0] for stim_frames in self.stim_frames if len(stim_frames) > 0]
+        self.stim_end_frames = [stim_frames[-1] for stim_frames in self.stim_frames if len(stim_frames) > 0]
+        self.stim_duration_frames = int(np.mean(
+            [self.stim_end_frames[idx] - self.stim_start_frames[idx] for idx in range(len(self.stim_start_frames))]))
+
+        print("\nStim duration of 1photon stim: %s frames (%s ms)" % (self.stim_duration_frames, round(self.stim_duration_frames / self.fps * 1000)))
+
+
+        # i = len(self.stim_start_frames)
+        # for stim in self.stim_frames[1:]:
+        #     if (stim - self.stim_start_frames[i-1]) > 100:
+        #         i += 1
+        #         self.stim_start_frames.append(stim)
+
+        # find shutter loopback frames
+        if 'shutter_loopback' in paq['chan_names']:
+            shutter_idx = paq['chan_names'].index('shutter_loopback')
+            shutter_voltage = paq['data'][shutter_idx, :]
+
+            shutter_times = np.where(shutter_voltage > 4)
+            self.shutter_times = shutter_times[0]
+            self.shutter_frames = []
+            self.shutter_start_frames = []
+            self.shutter_end_frames = []
+            for plane in range(self.n_planes):
+                shutter_frames_ = [frame for frame, t in enumerate(self.frame_clock_actual[plane::self.n_planes]) if
+                                   t in self.shutter_times]
+                self.shutter_frames.append(shutter_frames_)
+
+                shutter_start_frames = [shutter_frames_[0]]
+                shutter_end_frames = []
+                i = len(shutter_start_frames)
+                for frame in shutter_frames_[1:]:
+                    if (frame - shutter_start_frames[i - 1]) > 5:
+                        i += 1
+                        shutter_start_frames.append(frame)
+                        shutter_end_frames.append(shutter_frames_[shutter_frames_.index(frame) - 1])
+                shutter_end_frames.append(shutter_frames_[-1])
+                self.shutter_start_frames.append(shutter_start_frames)
+                self.shutter_end_frames.append(shutter_end_frames)
+
+        # # sanity check
+        # assert max(self.stim_start_frames[0]) < self.raw[plane].shape[1] * self.n_planes
+
+        # find voltage channel and save as lfp_signal attribute
+        voltage_idx = paq['chan_names'].index('voltage')
+        self.lfp_signal = paq['data'][voltage_idx]
+
+    def collect_seizures_info(self, seizures_lfp_timing_matarray=None, discard_all=True):
+        print('\ncollecting information about seizures...')
+        self.seizures_lfp_timing_matarray = seizures_lfp_timing_matarray  # path to the matlab array containing paired measurements of seizures onset and offsets
+
+        # retrieve seizure onset and offset times from the seizures info array input
+        paq = paq_read(file_path=self.paq_path, plot=False)
+
+        # print(paq[0]['data'][0])  # print the frame clock signal from the .paq file to make sure its being read properly
+        # NOTE: the output of all of the following function is in dimensions of the FRAME CLOCK (not official paq clock time)
+        if seizures_lfp_timing_matarray is not None:
+            print('-- using matlab array to collect seizures %s: ' % seizures_lfp_timing_matarray)
+            bad_frames, self.seizure_frames, self.seizure_lfp_onsets, self.seizure_lfp_offsets = frames_discard(
+                paq=paq[0], input_array=seizures_lfp_timing_matarray, total_frames=self.n_frames,
+                discard_all=discard_all)
+        else:
+            print('-- no matlab array given to use for finding seizures.')
+            self.seizure_frames = []
+            bad_frames = frames_discard(paq=paq[0], input_array=seizures_lfp_timing_matarray,
+                                        total_frames=self.n_frames,
+                                        discard_all=discard_all)
+
+        print('\nTotal extra seizure/CSD or other frames to discard: ', len(bad_frames))
+        print('|- first and last 10 indexes of these frames', bad_frames[:10], bad_frames[-10:])
+
+        if seizures_lfp_timing_matarray is not None:
+            # print('|-now creating raw movies for each sz as well (saved to the /Analysis folder) ... ')
+            # self.subselect_tiffs_sz(onsets=self.seizure_lfp_onsets, offsets=self.seizure_lfp_offsets,
+            #                         on_off_type='lfp_onsets_offsets')
+
+            print('|-now classifying photostims at phases of seizures ... ')
+            self.stims_in_sz = [stim for stim in self.stim_start_frames if stim in self.seizure_frames]
+            self.stims_out_sz = [stim for stim in self.stim_start_frames if stim not in self.seizure_frames]
+            self.stims_bf_sz = [stim for stim in self.stim_start_frames
+                                  for sz_start in self.seizure_lfp_onsets
+                                  if -2 * self.fps < (
+                                              sz_start - stim) < 2 * self.fps]  # select stims that occur within 2 seconds before of the sz onset
+            self.stims_af_sz = [stim for stim in self.stim_start_frames
+                                  for sz_start in self.seizure_lfp_offsets
+                                  if -2 * self.fps < -1 * (
+                                              sz_start - stim) < 2 * self.fps]  # select stims that occur within 2 seconds afterof the sz offset
+            print(' \n|- stims_in_sz:', self.stims_in_sz, ' \n|- stims_out_sz:', self.stims_out_sz,
+                  ' \n|- stims_bf_sz:', self.stims_bf_sz, ' \n|- stims_af_sz:', self.stims_af_sz)
+
+        else:
+            print('|- No matlab measurement array given so setting all stims as outside of sz ... ')
+            self.stims_in_sz = []
+            self.stims_out_sz = [stim for stim in self.stim_start_frames if stim not in self.seizure_frames]
+            self.stims_bf_sz = []
+            self.stims_af_sz = []
+
+        aoplot.plot_lfp_stims(self, x_axis='time')
+        self.save_pkl()
 
 # %% RESULTS OBJECTS
 class OnePhotonResults:
@@ -4415,8 +4662,7 @@ def slm_targets_responses(expobj, experiment, trial, y_spacing_factor=2, figsize
         fig.tight_layout()
         if save_results:
             save = expobj.analysis_save_path[:-17] + '/results/' + '%s_%s_slm_targets_responses_dFF' % (expobj.metainfo['animal prep.'], trial)
-            if not os.path.exists(expobj.analysis_save_path[:-17] + '/results'):
-                os.makedirs(expobj.analysis_save_path[:-17] + '/results')
+            os.makedirs(expobj.analysis_save_path[:-17] + '/results') if not os.path.exists(expobj.analysis_save_path[:-17] + '/results') else None
             print('saving png and svg to: %s' % save)
             fig.savefig(fname=save + '.png', transparent=True, format='png')
             fig.savefig(fname=save + '.svg', transparent=True, format='svg')
@@ -4450,8 +4696,7 @@ def slm_targets_responses(expobj, experiment, trial, y_spacing_factor=2, figsize
         fig.tight_layout()
         if save_results:
             save = expobj.analysis_save_path[:-17] + '/results/' + '%s_%s_slm_targets_responses_dFF' % (expobj.metainfo['animal prep.'], trial)
-            if not os.path.exists(expobj.analysis_save_path[:-17] + '/results'):
-                os.makedirs(expobj.analysis_save_path[:-17] + '/results')
+            os.makedirs(expobj.analysis_save_path[:-17] + '/results') if not os.path.exists(expobj.analysis_save_path[:-17] + '/results') else None
             print('saving png and svg to: %s' % save)
             fig.savefig(fname=save+'.png', transparent=True, format='png')
             fig.savefig(fname=save+'.svg', transparent=True,  format='svg')
@@ -4459,31 +4704,34 @@ def slm_targets_responses(expobj, experiment, trial, y_spacing_factor=2, figsize
         fig.show()
 
 ###### NON TARGETS analysis + plottings
-def run_allopticalAnalysisNontargets(expobj, normalize_to='pre_stim', to_plot=True):
-    good_cells, events_loc_cells, flu_events_cells, stds = expobj._good_cells(cell_ids=expobj.cell_id, raws=expobj.raw,
-                                                                              photostim_frames=expobj.photostim_frames, std_thresh=2.5, save=False)
-    # set the correct test response windows
-    if not expobj.pre_stim == int(1.0 * expobj.fps):
-        print('updating expobj.pre_stim_sec to 1 sec')
-        expobj.pre_stim = int(1.0 * expobj.fps)  # length of pre stim trace collected (in frames)
-        expobj.post_stim = int(3.0 * expobj.fps)  # length of post stim trace collected (in frames)
-        expobj.post_stim_response_window_msec = 500  # msec
-        expobj.post_stim_response_frames_window = int(expobj.fps * expobj.post_stim_response_window_msec / 1000)  # length of the post stim response test window (in frames)
-        expobj.pre_stim_response_window_msec = 500  # msec
-        expobj.pre_stim_response_frames_window = int(expobj.fps * expobj.pre_stim_response_window_msec / 1000)  # length of the pre stim response test window (in frames)
+def run_allopticalAnalysisNontargets(expobj, normalize_to='pre_stim', to_plot=True, save_plot_suffix='', skip_processing=False):
+    if not skip_processing:
 
-    expobj._trialProcessing_nontargets(normalize_to, save=False)
-    expobj._sigTestAvgResponse_nontargets(alpha=0.1, save=False)
+        good_cells, events_loc_cells, flu_events_cells, stds = expobj._good_cells(cell_ids=expobj.cell_id, raws=expobj.raw,
+                                                                                  photostim_frames=expobj.photostim_frames, std_thresh=2.5, save=False)
+        # set the correct test response windows
+        if not expobj.pre_stim == int(1.0 * expobj.fps):
+            print('updating expobj.pre_stim_sec to 1 sec')
+            expobj.pre_stim = int(1.0 * expobj.fps)  # length of pre stim trace collected (in frames)
+            expobj.post_stim = int(3.0 * expobj.fps)  # length of post stim trace collected (in frames)
+            expobj.post_stim_response_window_msec = 500  # msec
+            expobj.post_stim_response_frames_window = int(expobj.fps * expobj.post_stim_response_window_msec / 1000)  # length of the post stim response test window (in frames)
+            expobj.pre_stim_response_window_msec = 500  # msec
+            expobj.pre_stim_response_frames_window = int(expobj.fps * expobj.pre_stim_response_window_msec / 1000)  # length of the pre stim response test window (in frames)
 
-    expobj.save()
+        expobj._trialProcessing_nontargets(normalize_to, save=False)
+        expobj._sigTestAvgResponse_nontargets(alpha=0.1, save=False)
 
-    fig_non_targets_responses(expobj=expobj, plot_subset=False) if to_plot else None
+        expobj.save()
 
-    print('\nFIN. %s %s **** ' % (expobj.metainfo['animal prep.'], expobj.metainfo['trial']))
+    save_plot_path = expobj.analysis_save_path[:30] + 'Results_figs/' + save_plot_suffix
+    fig_non_targets_responses(expobj=expobj, plot_subset=False, save_fig=save_plot_path) if to_plot else None
+
+    print('\n** FIN. * allopticalAnalysisNontargets * %s %s **** ' % (expobj.metainfo['animal prep.'], expobj.metainfo['trial']))
     print('-------------------------------------------------------------------------------------------------------------\n\n')
 
 
-def fig_non_targets_responses(expobj, plot_subset: bool = True):
+def fig_non_targets_responses(expobj, plot_subset: bool = True, save_fig=None):
     print('\n----------------------------------------------------------------')
     print('plotting nontargets responses ')
     print('----------------------------------------------------------------')
@@ -4494,22 +4742,26 @@ def fig_non_targets_responses(expobj, plot_subset: bool = True):
         selection = np.arange(expobj.dff_traces_avg.shape[0])
 
     #### SUITE2P NON-TARGETS - PLOTTING OF AVG PERI-PHOTOSTIM RESPONSES
-    f = plt.figure(figsize=[25, 10])
-    gs = f.add_gridspec(2, 9)
+    if sum(expobj.sig_units) > 0:
+        f = plt.figure(figsize=[25, 10])
+        gs = f.add_gridspec(2, 9)
+    else:
+        f = plt.figure(figsize=[25, 5])
+        gs = f.add_gridspec(1, 9)
 
     # PLOT AVG PHOTOSTIM PRE- POST- TRACE AVGed OVER ALL PHOTOSTIM. TRIALS
     a1 = f.add_subplot(gs[0, 0:2])
     x = expobj.dff_traces_avg[selection]
     y_label = 'pct. dFF (normalized to prestim period)'
     aoplot.plot_periphotostim_avg(arr=x, expobj=expobj, pre_stim_sec=1, post_stim_sec=3,
-                                  title=None, y_label=y_label, fig=f, ax=a1, show=False,
+                                  title='Average photostim all trials response', y_label=y_label, fig=f, ax=a1, show=False,
                                   x_label='Time (seconds)', y_lims=[-50, 200])
     # PLOT AVG PHOTOSTIM PRE- POST- TRACE AVGed OVER ALL PHOTOSTIM. TRIALS
     a2 = f.add_subplot(gs[0, 2:4])
     x = expobj.dfstdF_traces_avg[selection]
     y_label = 'dFstdF (normalized to prestim period)'
     aoplot.plot_periphotostim_avg(arr=x, expobj=expobj, pre_stim_sec=1, post_stim_sec=3,
-                                  title=None, y_label=y_label, fig=f, ax=a2, show=False,
+                                  title='Average photostim all trials response', y_label=y_label, fig=f, ax=a2, show=False,
                                   x_label='Time (seconds)', y_lims=[-1, 3])
     # PLOT HEATMAP OF AVG PRE- POST TRACE AVGed OVER ALL PHOTOSTIM. TRIALS - ALL CELLS (photostim targets at top) - Lloyd style :D - df/f
     a3 = f.add_subplot(gs[0, 4:6])
@@ -4517,7 +4769,7 @@ def fig_non_targets_responses(expobj, plot_subset: bool = True):
     vmax = 1
     aoplot.plot_traces_heatmap(expobj.dfstdF_traces_avg, expobj=expobj, vmin=vmin, vmax=vmax,
                                stim_on=int(1 * expobj.fps),
-                               stim_off=int(1 * expobj.fps + expobj.stim_duration_frames - 1),
+                               stim_off=int(1 * expobj.fps + expobj.stim_duration_frames),
                                xlims=(0, expobj.dfstdF_traces_avg.shape[1]),
                                title='dF/stdF heatmap for all nontargets', x_label='Time', cbar=True,
                                fig=f, ax=a3, show=False)
@@ -4526,41 +4778,10 @@ def fig_non_targets_responses(expobj, plot_subset: bool = True):
     vmin = -100
     vmax = 100
     aoplot.plot_traces_heatmap(expobj.dff_traces_avg, expobj=expobj, vmin=vmin, vmax=vmax, stim_on=int(1 * expobj.fps),
-                               stim_off=int(1 * expobj.fps + expobj.stim_duration_frames - 1),
+                               stim_off=int(1 * expobj.fps + expobj.stim_duration_frames),
                                xlims=(0, expobj.dfstdF_traces_avg.shape[1]),
                                title='dF/F heatmap for all nontargets', x_label='Time', cbar=True,
                                fig=f, ax=a4, show=False)
-
-    # plot PERI-STIM AVG TRACES of sig nontargets
-    a10 = f.add_subplot(gs[1, 0:2])
-    x = expobj.dfstdF_traces_avg[expobj.sig_units]
-    aoplot.plot_periphotostim_avg(arr=x, expobj=expobj, pre_stim_sec=1, post_stim_sec=3, fig=f, ax=a10, show=False,
-                                  title='significant responders', y_label='dFstdF (normalized to prestim period)',
-                                  x_label='Time (seconds)', y_lims=[-1, 3])
-
-    # plot PERI-STIM AVG TRACES of nonsig nontargets
-    a11 = f.add_subplot(gs[1, 2:4])
-    x = expobj.dfstdF_traces_avg[~expobj.sig_units]
-    aoplot.plot_periphotostim_avg(arr=x, expobj=expobj, pre_stim_sec=1, post_stim_sec=3, fig=f, ax=a11, show=False,
-                                  title='non-significant responders', y_label='dFstdF (normalized to prestim period)',
-                                  x_label='Time (seconds)', y_lims=[-1, 3])
-
-    # plot PERI-STIM AVG TRACES of sig. positive responders
-    a12 = f.add_subplot(gs[1, 4:6])
-    x = expobj.dfstdF_traces_avg[expobj.sig_units][
-        np.where(np.nanmean(expobj.post_array_responses[expobj.sig_units, :], axis=1) > 0)[0]]
-    aoplot.plot_periphotostim_avg(arr=x, expobj=expobj, pre_stim_sec=1, post_stim_sec=3, fig=f, ax=a12, show=False,
-                                  title='positive signif. responders', y_label='dFstdF (normalized to prestim period)',
-                                  x_label='Time (seconds)', y_lims=[-1, 3])
-
-    # plot PERI-STIM AVG TRACES of sig. negative responders
-    a13 = f.add_subplot(gs[1, -3:-1])
-    x = expobj.dfstdF_traces_avg[expobj.sig_units][
-        np.where(np.nanmean(expobj.post_array_responses[expobj.sig_units, :], axis=1) < 0)[0]]
-    aoplot.plot_periphotostim_avg(arr=x, expobj=expobj, pre_stim_sec=1, post_stim_sec=3, fig=f, ax=a13, show=False,
-                                  title='negative signif. responders', y_label='dFstdF (normalized to prestim period)',
-                                  x_label='Time (seconds)', y_lims=[-1, 3])
-
     # bar plot of avg post stim response quantified between responders and non-responders
     a04 = f.add_subplot(gs[0, -1])
     sig_responders_avgresponse = np.nanmean(expobj.post_array_responses[expobj.sig_units, :], axis=1)
@@ -4573,34 +4794,71 @@ def fig_non_targets_responses(expobj, plot_subset: bool = True):
                                        '%s pct' % (np.round(
                                            (len(nonsig_responders_avgresponse) / expobj.post_array_responses.shape[0]),
                                            2) * 100)],
-                            text_y_pos=1.43, text_shift=1.7, x_tick_labels=['significant', 'non-significant'],
+                            text_y_pos=1.43, text_shift=1.7, x_tick_labels=['significant', 'non-significant'], ylims=[-2, 3],
                             expand_size_y=1.5, expand_size_x=0.6,
                             fig=f, ax=a04, show=False)
 
-    # bar plot of avg post stim response quantified between responders and non-responders
-    a14 = f.add_subplot(gs[1, -1])
-    possig_responders_avgresponse = np.nanmean(expobj.post_array_responses[expobj.sig_units, :], axis=1)[
-        np.where(np.nanmean(expobj.post_array_responses[expobj.sig_units, :], axis=1) > 0)[0]]
-    negsig_responders_avgresponse = np.nanmean(expobj.post_array_responses[expobj.sig_units, :], axis=1)[
-        np.where(np.nanmean(expobj.post_array_responses[expobj.sig_units, :], axis=1) < 0)[0]]
-    nonsig_responders_avgresponse = np.nanmean(expobj.post_array_responses[~expobj.sig_units], axis=1)
-    data = np.asarray([possig_responders_avgresponse, negsig_responders_avgresponse, nonsig_responders_avgresponse])
-    pj.plot_bar_with_points(data=data, title='Avg stim response magnitude', colors=['green', 'blue', 'gray'],
-                            y_label='avg dF/stdF', bar=False,
-                            text_list=['%s pct' % (np.round(
-                                (len(possig_responders_avgresponse) / expobj.post_array_responses.shape[0]) * 100, 1)),
-                                       '%s pct' % (np.round((len(negsig_responders_avgresponse) /
-                                                             expobj.post_array_responses.shape[0]) * 100, 1)),
-                                       '%s pct' % (np.round((len(nonsig_responders_avgresponse) /
-                                                             expobj.post_array_responses.shape[0]) * 100, 1))],
-                            text_y_pos=1.43, text_shift=1.2,
-                            x_tick_labels=['pos. significant', 'neg. significant', 'non-significant'],
-                            expand_size_y=1.5, expand_size_x=0.5,
-                            fig=f, ax=a14, show=False)
+    if sum(expobj.sig_units) > 0:
+        # plot PERI-STIM AVG TRACES of sig nontargets
+        a10 = f.add_subplot(gs[1, 0:2])
+        x = expobj.dfstdF_traces_avg[expobj.sig_units]
+        aoplot.plot_periphotostim_avg(arr=x, expobj=expobj, pre_stim_sec=1, post_stim_sec=3, fig=f, ax=a10, show=False,
+                                      title='significant responders', y_label='dFstdF (normalized to prestim period)',
+                                      x_label='Time (seconds)', y_lims=[-1, 3])
+
+        # plot PERI-STIM AVG TRACES of nonsig nontargets
+        a11 = f.add_subplot(gs[1, 2:4])
+        x = expobj.dfstdF_traces_avg[~expobj.sig_units]
+        aoplot.plot_periphotostim_avg(arr=x, expobj=expobj, pre_stim_sec=1, post_stim_sec=3, fig=f, ax=a11, show=False,
+                                      title='non-significant responders', y_label='dFstdF (normalized to prestim period)',
+                                      x_label='Time (seconds)', y_lims=[-1, 3])
+
+        # plot PERI-STIM AVG TRACES of sig. positive responders
+        a12 = f.add_subplot(gs[1, 4:6])
+        x = expobj.dfstdF_traces_avg[expobj.sig_units][
+            np.where(np.nanmean(expobj.post_array_responses[expobj.sig_units, :], axis=1) > 0)[0]]
+        aoplot.plot_periphotostim_avg(arr=x, expobj=expobj, pre_stim_sec=1, post_stim_sec=3, fig=f, ax=a12, show=False,
+                                      title='positive signif. responders', y_label='dFstdF (normalized to prestim period)',
+                                      x_label='Time (seconds)', y_lims=[-1, 3])
+
+        # plot PERI-STIM AVG TRACES of sig. negative responders
+        a13 = f.add_subplot(gs[1, -3:-1])
+        x = expobj.dfstdF_traces_avg[expobj.sig_units][
+            np.where(np.nanmean(expobj.post_array_responses[expobj.sig_units, :], axis=1) < 0)[0]]
+        aoplot.plot_periphotostim_avg(arr=x, expobj=expobj, pre_stim_sec=1, post_stim_sec=3, fig=f, ax=a13, show=False,
+                                      title='negative signif. responders', y_label='dFstdF (normalized to prestim period)',
+                                      x_label='Time (seconds)', y_lims=[-1, 3])
+
+        # bar plot of avg post stim response quantified between responders and non-responders
+        a14 = f.add_subplot(gs[1, -1])
+        possig_responders_avgresponse = np.nanmean(expobj.post_array_responses[expobj.sig_units, :], axis=1)[
+            np.where(np.nanmean(expobj.post_array_responses[expobj.sig_units, :], axis=1) > 0)[0]]
+        negsig_responders_avgresponse = np.nanmean(expobj.post_array_responses[expobj.sig_units, :], axis=1)[
+            np.where(np.nanmean(expobj.post_array_responses[expobj.sig_units, :], axis=1) < 0)[0]]
+        nonsig_responders_avgresponse = np.nanmean(expobj.post_array_responses[~expobj.sig_units], axis=1)
+        data = np.asarray([possig_responders_avgresponse, negsig_responders_avgresponse, nonsig_responders_avgresponse])
+        pj.plot_bar_with_points(data=data, title='Avg stim response magnitude of cells', colors=['green', 'blue', 'gray'],
+                                y_label='avg dF/stdF', bar=False,
+                                text_list=['%s pct' % (np.round(
+                                    (len(possig_responders_avgresponse) / expobj.post_array_responses.shape[0]) * 100, 1)),
+                                           '%s pct' % (np.round((len(negsig_responders_avgresponse) /
+                                                                 expobj.post_array_responses.shape[0]) * 100, 1)),
+                                           '%s pct' % (np.round((len(nonsig_responders_avgresponse) /
+                                                                 expobj.post_array_responses.shape[0]) * 100, 1))],
+                                text_y_pos=1.43, text_shift=1.2, ylims=[-2, 3],
+                                x_tick_labels=['pos. significant', 'neg. significant', 'non-significant'],
+                                expand_size_y=1.5, expand_size_x=0.5,
+                                fig=f, ax=a14, show=False)
 
     f.suptitle(
         ('%s %s %s' % (expobj.metainfo['animal prep.'], expobj.metainfo['trial'], expobj.metainfo['exptype'])))
     f.show()
+
+    if save_fig is not None:
+        _path = save_fig[:[i for i in re.finditer('/', save_fig)][-1].end()]
+        os.makedirs(_path) if not os.path.exists(_path) else None
+        print('saving figure output to:', save_fig)
+        plt.savefig(save_fig)
 
 
 # # # import results superobject that will collect analyses from various individual experiments
