@@ -37,6 +37,7 @@ for exp in experiments:
 
             mean_pre4ap_ = allopticalResults.possig_responders_traces[row][0]
             mean_post4ap_ = allopticalResults.possig_responders_traces[row][1]
+            print(mean_pre4ap_.shape, mean_post4ap_.shape)
 
             # plot avg with confidence intervals
             # fig, ax = plt.subplots()
@@ -44,41 +45,52 @@ for exp in experiments:
             ax = axs[counter//ncols, counter % ncols]
 
             meanst = np.mean(mean_pre4ap_, axis=0)
-            std = np.std(mean_pre4ap_, axis=0, ddof=1)
             ## change xaxis to time (secs)
             if len(meanst) < 100:
                 fps = 15
             else:
                 fps = 30
-            x_time = np.linspace(0, len(meanst) / fps, len(meanst)) - allopticalResults.pre_stim_sec  # x scale, but in time domain (transformed from frames based on the provided fps)
-            ax.set_xlabel('Time post stim (secs)')
 
-            ax.plot(x_time, meanst, color='black', lw=2)
-            ax.fill_between(x_time, meanst - std, meanst + std, alpha=0.15, color='gray')
+            aoplot.plot_periphotostim_avg2(dataset=[mean_pre4ap_, mean_post4ap_], fps=fps, legend_labels=[f"pre4ap {mean_pre4ap_.shape[0]} cells", f"post4ap {mean_post4ap_.shape[0]} cells"],
+                                           colors=['black', 'green'], xlabel='Time post stim (secs)', ylabel='dF/stdF', avg_with_std=True, title=f"{allopticalResults.num_sig_responders_df.index[row]}", ylim=[-0.5, 1.0],
+                                           pre_stim_sec=allopticalResults.pre_stim_sec, fig=fig, ax=ax, show=False)
 
-            meanst = np.mean(mean_post4ap_, axis=0)
-            std = np.std(mean_post4ap_, axis=0, ddof=1)
-            ## change xaxis to time (secs)
-            if len(meanst) < 100:
-                fps = 15
-            else:
-                fps = 30
-            x_time = np.linspace(0, len(meanst) / fps, len(meanst)) - allopticalResults.pre_stim_sec  # x scale, but in time domain (transformed from frames based on the provided fps)
-
-            ax.plot(x_time, meanst, color='green', lw=2)
-            ax.fill_between(x_time, meanst - std, meanst + std, alpha=0.15, color='green')
-
-            ax.legend([f"pre4ap {mean_pre4ap_.shape[0]} cells", f"post4ap {mean_post4ap_.shape[0]} cells"])
-            ax.set_ylim([-0.5, 1.0])
-            ax.set_ylabel('dF/pre_stdF')
-            ax.set_title(f"{allopticalResults.num_sig_responders_df.index[row]}")
+            # meanst = np.mean(mean_pre4ap_, axis=0)
+            # std = np.std(mean_pre4ap_, axis=0, ddof=1)
+            # ## change xaxis to time (secs)
+            # if len(meanst) < 100:
+            #     fps = 15
+            # else:
+            #     fps = 30
+            # x_time = np.linspace(0, len(meanst) / fps, len(meanst)) - allopticalResults.pre_stim_sec  # x scale, but in time domain (transformed from frames based on the provided fps)
+            # ax.set_xlabel('Time post stim (secs)')
+            #
+            # ax.plot(x_time, meanst, color='black', lw=2)
+            # ax.fill_between(x_time, meanst - std, meanst + std, alpha=0.15, color='gray')
+            #
+            # meanst = np.mean(mean_post4ap_, axis=0)
+            # std = np.std(mean_post4ap_, axis=0, ddof=1)
+            # ## change xaxis to time (secs)
+            # if len(meanst) < 100:
+            #     fps = 15
+            # else:
+            #     fps = 30
+            # x_time = np.linspace(0, len(meanst) / fps, len(meanst)) - allopticalResults.pre_stim_sec  # x scale, but in time domain (transformed from frames based on the provided fps)
+            #
+            # ax.plot(x_time, meanst, color='green', lw=2)
+            # ax.fill_between(x_time, meanst - std, meanst + std, alpha=0.15, color='green')
+            #
+            # ax.legend([f"pre4ap {mean_pre4ap_.shape[0]} cells", f"post4ap {mean_post4ap_.shape[0]} cells"])
+            # ax.set_ylim([-0.5, 1.0])
+            # ax.set_ylabel('dF/pre_stdF')
+            # ax.set_title(f"{allopticalResults.num_sig_responders_df.index[row]}")
 
             counter += 1
 fig.suptitle('Avg. positive responders')
 fig.show()
 
 
-# negative responders
+# %% negative responders
 ncols = 3
 nrows = 3
 fig, axs = plt.subplots(ncols=ncols, nrows=nrows, figsize=(12, 14))

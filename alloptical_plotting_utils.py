@@ -333,8 +333,8 @@ def plot_photostim_traces_overlap(array, expobj, exclude_id=[], y_spacing_factor
 
 
 ### photostim analysis - PLOT avg over photostim. trials traces for the provided traces
-def plot_periphotostim_avg2(dataset, fps=None, legend_labels=None, colors=None, xlabel='Frames',ylabel='dF/stdF', avg_with_std=False,
-                            title=None, pre_stim_sec=None, **kwargs):
+def plot_periphotostim_avg2(dataset, fps=None, legend_labels=None, colors=None, xlabel='Frames',ylabel='ylabel', avg_with_std=False,
+                            title='high quality plot', pre_stim_sec=None, ylim=None, **kwargs):
 
     if 'fig' in kwargs.keys():
         fig = kwargs['fig']
@@ -361,8 +361,10 @@ def plot_periphotostim_avg2(dataset, fps=None, legend_labels=None, colors=None, 
             std = np.std(dataset[i], axis=0, ddof=1)
             meantraces.append(meanst)
             stdtraces.append(std)
-            assert meanst.shape == meantraces[i - 1].shape, print('length mismatch in mean traces of datasets...')
-            assert std.shape == stdtraces[i - 1].shape, print('length mismatch in std traces of datasets...')
+            if not meanst.shape == meantraces[i - 1].shape:
+                print(f"|--- length mismatch in mean traces of datasets...{title}")
+            if not std.shape == stdtraces[i - 1].shape:
+                print(f"|--- length mismatch in std traces of datasets...{title}")
 
     elif type(dataset) is not list or len(dataset) == 1:
         dataset = list(dataset)
@@ -372,36 +374,43 @@ def plot_periphotostim_avg2(dataset, fps=None, legend_labels=None, colors=None, 
         stdtraces.append(std)
         colors = ['black']
     else:
-        ReferenceError('please provide the data to plot in a list format, each different data group as a list item...')
+        AttributeError('please provide the data to plot in a list format, each different data group as a list item...')
 
 
     if 'time' in xlabel or 'Time' in xlabel:
         ## change xaxis to time (secs)
-        if fps:
-            if pre_stim_sec:
-                x_range = np.linspace(0, len(meanst[0]) / fps, len(
-                    meanst)) - pre_stim_sec  # x scale, but in time domain (transformed from frames based on the provided fps)
+        if fps is not None:
+            if pre_stim_sec is not None:
+                x_range = np.linspace(0, len(meantraces[0]) / fps, len(
+                    meantraces[0])) - pre_stim_sec  # x scale, but in time domain (transformed from frames based on the provided fps)
                 ax.set_xlabel('Time post stim (secs)')
             else:
-                ReferenceError('need to provide a pre_stim_sec value to the function call!')
+                AttributeError('need to provide a pre_stim_sec value to the function call!')
         else:
-            ReferenceError('need to provide fps value to convert xaxis in units of time (secs)')
+            AttributeError('need to provide fps value to convert xaxis in units of time (secs)')
     else:
         x_range = range(len(meanst[0]))
 
     for i in range(len(meantraces)):
         if avg_with_std:
+            if len(meantraces[i]) < len(x_range):  ## TEMP FIX
+                mismatch = (len(x_range) - len(meantraces[i]))
+                meantraces[i] = np.append(meantraces[i], [0] * mismatch)
+                stdtraces[i] = np.append(stdtraces[i], [0] * mismatch)
+                print(f'|------ adding {mismatch} zeros to mean and std-fill traces to make the arrays the same length, new length of plot array: {meantraces[i].shape} ')
+
             ax.plot(x_range, meantraces[i], color=colors[i], lw=2)
             ax.fill_between(x_range, meantraces[i] - stdtraces[i], meantraces[i] + stdtraces[i], alpha=0.15, color=colors[i])
         else:
             ax.plot(x_range, meantraces[i], color=colors[i], lw=2)
             for trace in dataset[i]:
-                ax.plot(trace, color=colors[i], alpha=0.3, lw=2)
+                ax.plot(x_range, trace, color=colors[i], alpha=0.3, lw=2)
 
 
     if legend_labels:
         ax.legend(legend_labels)
-    ax.set_ylim([-0.5, 1.0])
+    if ylim:
+        ax.set_ylim([ylim[0],ylim[1]])
     ax.set_ylabel(ylabel)
     ax.set_title(title)
 
@@ -558,7 +567,7 @@ def plot_flu_trace(expobj, cell, x_lims=None, slm_group=None, to_plot='raw', fig
         to_plot_ = raw_dff
         to_thresh = std_dff
     else:
-        ValueError('specify to_plot as either "raw" or "dff"')
+        AttributeError('specify to_plot as either "raw" or "dff"')
 
     # make the plot either as just the raw trace or as a dFF trace with the std threshold line drawn as well.
     plt.figure(figsize=figsize)

@@ -2361,7 +2361,7 @@ class alloptical(TwoPhotonImaging):
                                 trace_dff = [np.nan] * len(trace)
                                 dFstdF = [np.nan] * len(trace)
                         else:
-                            ReferenceError(
+                            AttributeError(
                                 'no cells_sz_stim attr, so classify cells in sz boundary hasnot been saved for this expobj')
 
                     flu_dff.append(trace_dff)
@@ -3873,7 +3873,7 @@ def get_nontargets_stim_traces_norm(expobj, normalize_to='', pre_stim=10, post_s
                             trace_dff = [np.nan] * len(trace)
                             dFstdF = [np.nan] * len(trace)
                     else:
-                        ReferenceError('no cells_sz_stim attr, so classify cells in sz boundary hasnot been saved for this expobj')
+                        AttributeError('no cells_sz_stim attr, so classify cells in sz boundary hasnot been saved for this expobj')
 
                 flu_dfstdF.append(dFstdF)
                 flu_dff.append(trace_dff)

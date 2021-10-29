@@ -717,7 +717,7 @@ def plot_bar_with_points(data, title='', x_tick_labels=[], legend_labels: list =
                zorder=2
                )
     else:
-        ReferenceError('something wrong happened with the bar bool parameter...')
+        AttributeError('something wrong happened with the bar bool parameter...')
 
     ax.set_xticks([x * w * 2.5 for x in x])
     ax.set_xticklabels(x_tick_labels)
@@ -754,7 +754,7 @@ def plot_bar_with_points(data, title='', x_tick_labels=[], legend_labels: list =
                 #             [y[i][point_idx] for i in x], color='black', zorder=0, alpha=alpha)
 
             else:
-                ReferenceError('cannot do paired scatter plotting with only one data category')
+                AttributeError('cannot do paired scatter plotting with only one data category')
 
     if ylims:
         ax.set_ylim(ylims)
