@@ -137,9 +137,9 @@ def import_expobj(aoresults_map_id: str = None, trial: str = None, prep: str = N
 
 def import_resultsobj(pkl_path: str):
     with open(pkl_path, 'rb') as f:
-        print('\nimporting resultsobj from: %s ... ' % pkl_path)
+        print(f"\nimporting resultsobj from: {pkl_path} ... " )
         resultsobj = pickle.load(f)
-        print('|-DONE IMPORT of %s resultsobj. \n\n' % (type(resultsobj)))
+        print(f"|-DONE IMPORT of {(type(resultsobj))} resultsobj \n\n")
     return resultsobj
 
 

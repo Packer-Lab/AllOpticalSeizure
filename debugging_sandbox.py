@@ -105,7 +105,7 @@ def plot_bar_with_points(data, title='', x_tick_labels=[], legend_labels: list =
         # plot bar graph
         ax.bar([x * w * 2.5 for x in x],
                height=[np.mean(yi) for yi in y],
-               yerr=np.asarray([np.asarray([0, np.std(yi, ddof=1)]) for yi in y]).T,  # error bars
+               # yerr=np.asarray([np.asarray([0, np.std(yi, ddof=1)]) for yi in y]).T,  # error bars
                capsize=4.5,  # error bar cap width in points
                width=w,  # bar width
                linewidth=lw,  # width of the bar edges
@@ -113,6 +113,8 @@ def plot_bar_with_points(data, title='', x_tick_labels=[], legend_labels: list =
                color=(0, 0, 0, 0),  # face edgecolor transparent
                zorder=2
                )
+        ax.errorbar([x * w * 2.5 for x in x], [np.mean(yi) for yi in y], fmt='none', yerr = np.asarray([np.asarray([0, np.std(yi, ddof=1)]) for yi in y]).T, ecolor='gray',
+                    capsize=5, zorder=0)
     else:
         ReferenceError('something wrong happened with the bar bool parameter...')
 
