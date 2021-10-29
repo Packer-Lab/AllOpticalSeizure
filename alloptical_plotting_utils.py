@@ -332,6 +332,94 @@ def plot_photostim_traces_overlap(array, expobj, exclude_id=[], y_spacing_factor
         fig.show()
 
 
+### photostim analysis - PLOT avg over photostim. trials traces for the provided traces
+def plot_periphotostim_avg2(dataset, fps=None, legend_labels=None, colors=None, xlabel='Frames',ylabel='dF/stdF', avg_with_std=False,
+                            title=None, pre_stim_sec=None, **kwargs):
+
+    if 'fig' in kwargs.keys():
+        fig = kwargs['fig']
+        ax = kwargs['ax']
+    else:
+        if 'figsize' in kwargs.keys():
+            fig, ax = plt.subplots(figsize=kwargs['figsize'])
+        else:
+            fig, ax = plt.subplots(figsize=[5, 4])
+
+
+
+    meantraces = []
+    stdtraces = []
+    if type(dataset) == list and len(dataset) > 1:
+        assert len(legend_labels) == len(dataset), print('please provide same number of legend labels as dataset')
+        if colors is None:
+            colors = ['black', pj.make_random_color_array(len(dataset) - 1)]
+        assert len(colors) == len(legend_labels)
+        avg_only = True
+        print('-- plotting average +/- std fill for each dataset')
+        for i in range(len(dataset)):
+            meanst = np.mean(dataset[i], axis=0)
+            std = np.std(dataset[i], axis=0, ddof=1)
+            meantraces.append(meanst)
+            stdtraces.append(std)
+            assert meanst.shape == meantraces[i - 1].shape, print('length mismatch in mean traces of datasets...')
+            assert std.shape == stdtraces[i - 1].shape, print('length mismatch in std traces of datasets...')
+
+    elif type(dataset) is not list or len(dataset) == 1:
+        dataset = list(dataset)
+        meanst = np.mean(dataset[0], axis=0)
+        std = np.std(dataset[0], axis=0, ddof=1)
+        meantraces.append(meanst)
+        stdtraces.append(std)
+        colors = ['black']
+    else:
+        ReferenceError('please provide the data to plot in a list format, each different data group as a list item...')
+
+
+    if 'time' in xlabel or 'Time' in xlabel:
+        ## change xaxis to time (secs)
+        if fps:
+            if pre_stim_sec:
+                x_range = np.linspace(0, len(meanst[0]) / fps, len(
+                    meanst)) - pre_stim_sec  # x scale, but in time domain (transformed from frames based on the provided fps)
+                ax.set_xlabel('Time post stim (secs)')
+            else:
+                ReferenceError('need to provide a pre_stim_sec value to the function call!')
+        else:
+            ReferenceError('need to provide fps value to convert xaxis in units of time (secs)')
+    else:
+        x_range = range(len(meanst[0]))
+
+    for i in range(len(meantraces)):
+        if avg_with_std:
+            ax.plot(x_range, meantraces[i], color=colors[i], lw=2)
+            ax.fill_between(x_range, meantraces[i] - stdtraces[i], meantraces[i] + stdtraces[i], alpha=0.15, color=colors[i])
+        else:
+            ax.plot(x_range, meantraces[i], color=colors[i], lw=2)
+            for trace in dataset[i]:
+                ax.plot(trace, color=colors[i], alpha=0.3, lw=2)
+
+
+    if legend_labels:
+        ax.legend(legend_labels)
+    ax.set_ylim([-0.5, 1.0])
+    ax.set_ylabel(ylabel)
+    ax.set_title(title)
+
+
+
+    if 'savepath' in kwargs.keys():
+        plt.savefig(kwargs['savepath'])
+
+    # finalize plot, set title, and show or return axes
+    if 'show' in kwargs.keys():
+        fig.show() if kwargs['show'] else None
+    else:
+        fig.show()
+
+    if 'fig' in kwargs.keys():
+        return fig, ax
+
+
 ### photostim analysis - PLOT avg over all photstim. trials traces from PHOTOSTIM TARGETTED cells
 def plot_periphotostim_avg(arr=None, pre_stim_sec=1.0, post_stim_sec=3.0, title='', expobj=None,
                            avg_only: bool = False, x_label=None, y_label=None, **kwargs):

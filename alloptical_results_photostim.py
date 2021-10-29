@@ -16,7 +16,6 @@ allopticalResults = aoutils.import_resultsobj(pkl_path=results_object_path)
 
 
 
-
 # %% 5.5.2) # # PLOT - average response stim graph for positive and negative followers
 # - make one graph per comparison for now... then can figure out how to average things out later.
 
@@ -52,9 +51,10 @@ for exp in experiments:
             else:
                 fps = 30
             x_time = np.linspace(0, len(meanst) / fps, len(meanst)) - allopticalResults.pre_stim_sec  # x scale, but in time domain (transformed from frames based on the provided fps)
+            ax.set_xlabel('Time post stim (secs)')
 
             ax.plot(x_time, meanst, color='black', lw=2)
-            ax.fill_between(range(len(meanst)), meanst - std, meanst + std, alpha=0.15, color='gray')
+            ax.fill_between(x_time, meanst - std, meanst + std, alpha=0.15, color='gray')
 
             meanst = np.mean(mean_post4ap_, axis=0)
             std = np.std(mean_post4ap_, axis=0, ddof=1)
@@ -66,7 +66,7 @@ for exp in experiments:
             x_time = np.linspace(0, len(meanst) / fps, len(meanst)) - allopticalResults.pre_stim_sec  # x scale, but in time domain (transformed from frames based on the provided fps)
 
             ax.plot(x_time, meanst, color='green', lw=2)
-            ax.fill_between(range(len(meanst)), meanst - std, meanst + std, alpha=0.15, color='green')
+            ax.fill_between(x_time, meanst - std, meanst + std, alpha=0.15, color='green')
 
             ax.legend([f"pre4ap {mean_pre4ap_.shape[0]} cells", f"post4ap {mean_post4ap_.shape[0]} cells"])
             ax.set_ylim([-0.5, 1.0])
@@ -80,7 +80,7 @@ fig.show()
 
 # negative responders
 ncols = 3
-nrows = 4
+nrows = 3
 fig, axs = plt.subplots(ncols=ncols, nrows=nrows, figsize=(12, 14))
 counter = 0
 for exp in experiments:
@@ -104,9 +104,10 @@ for exp in experiments:
             else:
                 fps = 30
             x_time = np.linspace(0, len(meanst) / fps, len(meanst)) - allopticalResults.pre_stim_sec  # x scale, but in time domain (transformed from frames based on the provided fps)
+            ax.set_xlabel('Time post stim (secs)')
 
             ax.plot(x_time, meanst, color='black', lw=2)
-            ax.fill_between(range(len(meanst)), meanst - std, meanst + std, alpha=0.15, color='gray')
+            ax.fill_between(x_time, meanst - std, meanst + std, alpha=0.15, color='gray')
 
             meanst = np.mean(mean_post4ap_, axis=0)
             std = np.std(mean_post4ap_, axis=0, ddof=1)
@@ -118,7 +119,7 @@ for exp in experiments:
             x_time = np.linspace(0, len(meanst) / fps, len(meanst)) - allopticalResults.pre_stim_sec  # x scale, but in time domain (transformed from frames based on the provided fps)
 
             ax.plot(x_time, meanst, color='red', lw=2)
-            ax.fill_between(range(len(meanst)), meanst - std, meanst + std, alpha=0.15, color='red')
+            ax.fill_between(x_time, meanst - std, meanst + std, alpha=0.15, color='red')
 
             ax.legend(['pre4ap', 'post4ap'])
             ax.set_ylim([-0.5, 0.2])
