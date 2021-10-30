@@ -11,7 +11,6 @@ from matplotlib import pyplot as plt
 import alloptical_utils_pj as aoutils
 import tifffile as tf
 
-
 # simple plot of the location of the given cell(s) against a black FOV
 def plot_cells_loc(expobj, cells: list, edgecolor: str = 'yellowgreen', title=None, background: np.array = None,
                    show_s2p_targets: bool = True, color_float_list: list = None, cmap: str = 'Reds', **kwargs):
@@ -546,7 +545,7 @@ def plot_periphotostim_avg(arr=None, pre_stim_sec=1.0, post_stim_sec=3.0, title=
 
 
 ### photostim analysis - PLOT avg over photostim. trials traces for the provided traces
-def plot_periphotostim_addition(dataset, normalize: list = None, fps=None, legend_labels=None, colors=None, xlabel='Frames',ylabel='ylabel', avg_with_std=False,
+def plot_periphotostim_addition(dataset, normalize: list = None, fps=None, legend_labels: list = None, colors=None, xlabel='Frames',ylabel='ylabel', avg_with_std=False,
                             title='high quality plot', pre_stim_sec=None, ylim=None, **kwargs):
 
     if 'fig' in kwargs.keys():
@@ -600,8 +599,9 @@ def plot_periphotostim_addition(dataset, normalize: list = None, fps=None, legen
     else:
         x_range = range(len(sum_trace[0]))
 
+    auc = []
     for i in range(len(sumtraces_plot)):
-        if len(sumtraces_plot[i]) < len(x_range):  ## TEMP FIX
+        if len(sumtraces_plot[i]) < len(x_range):  ## TEMP FIX FOR THE MISMATCH (SEE PRINT STATEMENT BELOW)
             mismatch = (len(x_range) - len(sumtraces_plot[i]))
             sumtraces_plot[i] = np.append(sumtraces_plot[i], [0] * mismatch)
             print(f'|------ adding {mismatch} zeros to sum traces to make the arrays the same length, new length of plot array: {sumtraces_plot[i].shape} ')
@@ -610,14 +610,19 @@ def plot_periphotostim_addition(dataset, normalize: list = None, fps=None, legen
         ax.fill_between(x_range, 0, sumtraces_plot[i], alpha=0.15, color=colors[i])
 
         ##### measure area under curve during the poststim response (from pre_stim_sec * fps onwards...)
-
+        period_to_measure = sumtraces_plot[i][int(pre_stim_sec * fps) + 3: int(2 * fps)]  # collect the peristim response that covers the prestim period and the following 3 fr (stim frames)
+        auc_ = np.trapz(period_to_measure)
+        auc.append(round(auc_, 3))
 
     if legend_labels:
         if 'fontsize' in kwargs.keys():
             fontsize = kwargs['fontsize']
         else:
             fontsize = 'medium'
-        ax.legend(legend_labels, fontsize=fontsize)
+        legend_labels_new = []
+        for i in range(len(legend_labels)):
+            legend_labels_new.append(f"{legend_labels[i]} auc: {auc[i]}")
+        ax.legend(legend_labels_new, fontsize=fontsize)
     if ylim:
         ax.set_ylim([ylim[0],ylim[1]])
     ax.set_ylabel(ylabel)
@@ -636,9 +641,9 @@ def plot_periphotostim_addition(dataset, normalize: list = None, fps=None, legen
         fig.show()
 
     if 'fig' in kwargs.keys():
-        return fig, ax
+        return fig, ax, auc
     else:
-        pass
+        return auc
 
 
 def plot_s2p_raw(expobj, cell_id):

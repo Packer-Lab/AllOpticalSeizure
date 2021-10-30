@@ -22,6 +22,10 @@ pre4ap_neg = []
 post4ap_pos = []
 post4ap_neg = []
 
+## dataframe for saving measurement of AUC of total evoked responses
+auc_responders = pd.DataFrame(columns=['pre4ap_pos_auc', 'pre4ap_neg_auc', 'post4ap_pos_auc', 'post4ap_neg_auc'],
+                              index=allopticalResults.num_sig_responders_df.index)
+
 # positive responders
 ncols = 3
 nrows = 3
@@ -49,10 +53,14 @@ for exp in experiments:
                 fps = 30
 
             ## TODO NEED TO ADD AUC MEASUREMENT - RETRIEVE THIS MEASUREMENT AND USE FOR BARPLOT
-            fig, ax = aoplot.plot_periphotostim_addition(dataset=[mean_pre4ap_, mean_post4ap_], normalize=normalize, fps=fps, legend_labels=[f"pre4ap {mean_pre4ap_.shape[0]} cells", f"post4ap {mean_post4ap_.shape[0]} cells"],
-                                               colors=['black', 'green'], xlabel='Time post stim (secs)', ylabel='dF/stdF', avg_with_std=True,  title=f"{allopticalResults.num_sig_responders_df.index[row]}",
-                                               ylim=None, pre_stim_sec=allopticalResults.pre_stim_sec, fig=fig, ax=ax, show=False, fontsize='small')
+            fig, ax, auc = aoplot.plot_periphotostim_addition(dataset=[mean_pre4ap_, mean_post4ap_], normalize=normalize, fps=fps,
+                                                              legend_labels=[f"pre {mean_pre4ap_.shape[0]} cells", f"post {mean_post4ap_.shape[0]} cells"],
+                                                              colors=['black', 'green'], xlabel='Time post stim (secs)', ylabel='dF/stdF',
+                                                              avg_with_std=True,  title=f"{allopticalResults.num_sig_responders_df.index[row]}",
+                                                              ylim=None, pre_stim_sec=allopticalResults.pre_stim_sec, fig=fig, ax=ax, show=False,
+                                                              fontsize='x-small')
 
+            auc_responders.loc[allopticalResults.num_sig_responders_df.index[row], ['pre4ap_pos_auc', 'post4ap_pos_auc']] = auc
 
             counter += 1
 axs[0, 0].set_ylabel('dF/stdF')
@@ -60,11 +68,8 @@ axs[0, 0].set_xlabel('Time post stim (secs)')
 fig.suptitle('Summed response of positive responders')
 fig.show()
 
-# TODO ADD BARPLOT OF AUC OF TOTAL EVOKED PHOTOSTIM AVG ACITIVTY
 
-
-
-# %% negative responders
+#
 ncols = 3
 nrows = 3
 fig, axs = plt.subplots(ncols=ncols, nrows=nrows, figsize=(8, 8))
@@ -81,8 +86,7 @@ for exp in experiments:
             # plot avg with confidence intervals
             # fig, ax = plt.subplots()
 
-            ax = axs[counter//ncols, counter % ncols]
-            # ax2 = axs2[counter//ncols, counter % ncols]
+            ax = axs[counter // ncols, counter % ncols]
 
             meanst = np.mean(mean_pre4ap_, axis=0)
             ## change xaxis to time (secs)
@@ -91,89 +95,226 @@ for exp in experiments:
             else:
                 fps = 30
 
-            fig, ax = aoplot.plot_periphotostim_avg2(dataset=[mean_pre4ap_, mean_post4ap_], fps=fps, legend_labels=[f"pre4ap {mean_pre4ap_.shape[0]} cells", f"post4ap {mean_post4ap_.shape[0]} cells"],
-                                           colors=['black', 'red'], avg_with_std=True, title=f"{allopticalResults.num_sig_responders_df.index[row]}", ylim=[-0.5, 1.0],
-                                           pre_stim_sec=allopticalResults.pre_stim_sec, fig=fig, ax=ax, show=False, fontsize='small',
-                                                     xlabel=None, ylabel=None)
+            ## TODO NEED TO ADD AUC MEASUREMENT - RETRIEVE THIS MEASUREMENT AND USE FOR BARPLOT
+            fig, ax, auc = aoplot.plot_periphotostim_addition(dataset=[mean_pre4ap_, mean_post4ap_],
+                                                              normalize=normalize, fps=fps,
+                                                              legend_labels=[f"pre {mean_pre4ap_.shape[0]} cells", f"post {mean_post4ap_.shape[0]} cells"],
+                                                              colors=['black', 'red'], xlabel='Time post stim (secs)',
+                                                              ylabel='dF/stdF', avg_with_std=True,
+                                                              title=f"{allopticalResults.num_sig_responders_df.index[row]}",
+                                                              ylim=None, pre_stim_sec=allopticalResults.pre_stim_sec,
+                                                              fig=fig, ax=ax, show=False, fontsize='x-small')
 
-
-            ### TODO NEED TO NORMALIZE TO # OF SUITE2P ROIS FOR THIS DATASET
-            # fig2, ax2 = aoplot.plot_periphotostim_addition(dataset=[mean_pre4ap_, mean_post4ap_], fps=fps, legend_labels=[f"pre4ap {mean_pre4ap_.shape[0]} cells", f"post4ap {mean_post4ap_.shape[0]} cells"],
-            #                                    colors=['black', 'green'], xlabel='Time post stim (secs)', ylabel='dF/stdF', avg_with_std=True,  title=f"{allopticalResults.num_sig_responders_df.index[row]}",
-            #                                    ylim=[-50, 100], pre_stim_sec=allopticalResults.pre_stim_sec, fig=fig2, ax=ax2, show=False, fontsize='small')
-
-
-            # meanst = np.mean(mean_pre4ap_, axis=0)
-            # std = np.std(mean_pre4ap_, axis=0, ddof=1)
-            # ## change xaxis to time (secs)
-            # if len(meanst) < 100:
-            #     fps = 15
-            # else:
-            #     fps = 30
-            # x_time = np.linspace(0, len(meanst) / fps, len(meanst)) - allopticalResults.pre_stim_sec  # x scale, but in time domain (transformed from frames based on the provided fps)
-            # ax.set_xlabel('Time post stim (secs)')
-            #
-            # ax.plot(x_time, meanst, color='black', lw=2)
-            # ax.fill_between(x_time, meanst - std, meanst + std, alpha=0.15, color='gray')
-            #
-            # meanst = np.mean(mean_post4ap_, axis=0)
-            # std = np.std(mean_post4ap_, axis=0, ddof=1)
-            # ## change xaxis to time (secs)
-            # if len(meanst) < 100:
-            #     fps = 15
-            # else:
-            #     fps = 30
-            # x_time = np.linspace(0, len(meanst) / fps, len(meanst)) - allopticalResults.pre_stim_sec  # x scale, but in time domain (transformed from frames based on the provided fps)
-            #
-            # ax.plot(x_time, meanst, color='green', lw=2)
-            # ax.fill_between(x_time, meanst - std, meanst + std, alpha=0.15, color='green')
-            #
-            # ax.legend([f"pre4ap {mean_pre4ap_.shape[0]} cells", f"post4ap {mean_post4ap_.shape[0]} cells"])
-            # ax.set_ylim([-0.5, 1.0])
-            # ax.set_ylabel('dF/pre_stdF')
-            # ax.set_title(f"{allopticalResults.num_sig_responders_df.index[row]}")
+            auc_responders.loc[
+                allopticalResults.num_sig_responders_df.index[row], ['pre4ap_neg_auc', 'post4ap_neg_auc']] = auc
 
             counter += 1
 axs[0, 0].set_ylabel('dF/stdF')
 axs[0, 0].set_xlabel('Time post stim (secs)')
-fig.suptitle('Avg. negative responders')
+fig.suptitle('Summed response of negative responders')
 fig.show()
 
-    ### below is for trying to average between trials from the same experiments... not fully working yet...
-    # for exp in experiments:
-    #     rows = []
-    #     for row in range(len(allopticalResults.num_sig_responders_df.index)):
-    #         if exp in allopticalResults.num_sig_responders_df.index[row]:
-    #             rows.append(row)
-    # mean_pre4ap_ = [allopticalResults.possig_responders_traces[row][0] for row in rows]
-    # mean_post4ap_ = [allopticalResults.possig_responders_traces[row][1] for row in rows]
-    # for i in range(len(mean_pre4ap_) - 1):
-    #     mean_pre4ap = np.append(mean_pre4ap_[0], mean_pre4ap_[i + 1], axis=0)
-    #
-    # for i in range(len(mean_post4ap_) - 1):
-    #     mean_post4ap = np.append(mean_post4ap_[0], mean_post4ap_[i + 1], axis=0)
+allopticalResults.auc_responders = auc_responders
 
-    # # plot avg with confidence intervals
-    # fig, ax = plt.subplots()
-    #
-    # meanst = np.mean(mean_pre4ap, axis=1)
-    # std = np.std(mean_pre4ap, axis=1, ddof=1)
-    # ax.plot(range(len(meanst)), meanst, color='skyblue')
-    # ax.fill_between(range(len(meanst)), meanst - std, meanst + std, alpha=0.3, color='skyblue')
-    #
-    # meanst = np.mean(mean_post4ap, axis=1)
-    # std = np.std(mean_post4ap, axis=1, ddof=1)
-    # ax.plot(range(len(meanst)), meanst, color='steelblue')
-    # ax.fill_between(range(len(meanst)), meanst - std, meanst + std, alpha=0.3, color='steelblue')
-    #
-    # fig.show()
+allopticalResults.save()
 
-    # aoplot.plot_periphotostim_avg(arr=cell_avg_stim_traces,
-    #                               figsize=[5, 4], title=('responses of photostim non-targets'),
-    #                               y_label=y_label, x_label='Time post-stimulation (seconds)')
+# TODO ADD BARPLOT OF AUC OF TOTAL EVOKED PHOTOSTIM AVG ACITIVTY
 
 
-# %% 5.5.2) # # PLOT - average response stim graph for positive and negative followers
+
+
+# %% 5.5.3) # # -  total post stim response evoked across all cells recorded
+    # - like maybe add up all trials (sig and non sig), and all cells
+    # - and compare pre-4ap and post-4ap (exp by exp, maybe normalizing the peak value per comparison from pre4ap?)
+    # - or just make one graph per comparison and show all to Adam?
+
+
+# %% 5.5.4) # # - think about some normalization via success rate of the stimulus (plot some response measure against success rate of the stimulation)
+    # - calculate pearson's correlation value of the association
+
+
+
+# %% 5.5) collect average stats for each prep, and summarize into the appropriate data point
+num_sig_responders = pd.DataFrame(columns=['pre4ap_pos', 'pre4ap_neg', 'post4ap_pos', 'post4ap_neg', '# of suite2p ROIs'])
+possig_responders_traces = []
+negsig_responders_traces = []
+
+allopticalResults.pre_stim_sec = 0.5
+allopticalResults.stim_dur_sec = 0.25
+allopticalResults.post_stim_sec = 3
+
+for key in list(allopticalResults.trial_maps['pre'].keys()):
+    name = allopticalResults.trial_maps['pre'][key][0][:-6]
+
+    ########
+    # pre-4ap trials calculations
+    n_trials = len(allopticalResults.trial_maps['pre'][key])
+    pre4ap_possig_responders_avgresponse = []
+    pre4ap_negsig_responders_avgresponse = []
+    pre4ap_num_pos = 0
+    pre4ap_num_neg = 0
+    for i in range(n_trials):
+        expobj, experiment = aoutils.import_expobj(aoresults_map_id='pre %s.%s' % (key, i))
+        if sum(expobj.sig_units) > 0:
+            name += expobj.metainfo['trial']
+            pre4ap_possig_responders_avgresponse_ = expobj.dfstdF_traces_avg[expobj.sig_units][np.where(np.nanmean(expobj.post_array_responses[expobj.sig_units, :], axis=1) > 0)[0]]
+            pre4ap_negsig_responders_avgresponse_ = expobj.dfstdF_traces_avg[expobj.sig_units][np.where(np.nanmean(expobj.post_array_responses[expobj.sig_units, :], axis=1) < 0)[0]]
+
+            if i == 0:  # only taking trials averages from the first sub-trial from the matched comparisons
+                pre4ap_possig_responders_avgresponse.append(pre4ap_possig_responders_avgresponse_)
+                pre4ap_negsig_responders_avgresponse.append(pre4ap_negsig_responders_avgresponse_)
+                stim_dur_fr = int(np.ceil(allopticalResults.stim_dur_sec * expobj.fps))  # setting 500ms as the dummy standardized stimduration
+                pre_stim_fr = int(np.ceil(allopticalResults.pre_stim_sec * expobj.fps))  # setting the pre_stim array collection period again hard
+                post_stim_fr = int(np.ceil(allopticalResults.post_stim_sec * expobj.fps))  # setting the post_stim array collection period again hard
+
+                data_traces = []
+                for trace in pre4ap_possig_responders_avgresponse_:
+                    trace_ = trace[expobj.pre_stim - pre_stim_fr : expobj.pre_stim]
+                    trace_ = np.append(trace_, [[0] * stim_dur_fr])
+                    trace_ = np.append(trace_, trace[expobj.pre_stim + expobj.stim_duration_frames: expobj.pre_stim + expobj.stim_duration_frames + post_stim_fr])
+                    data_traces.append(trace_)
+                pre4ap_possig_responders_avgresponse = np.array(data_traces); print(f"shape of pre4ap_possig_responders array {pre4ap_possig_responders_avgresponse.shape} [5.5-1]")
+                # print('stop here... [5.5-1]')
+
+                data_traces = []
+                for trace in pre4ap_negsig_responders_avgresponse_:
+                    trace_ = trace[expobj.pre_stim - pre_stim_fr : expobj.pre_stim]
+                    trace_ = np.append(trace_, [[0] * stim_dur_fr])
+                    trace_ = np.append(trace_, trace[expobj.pre_stim + expobj.stim_duration_frames: expobj.pre_stim + expobj.stim_duration_frames + post_stim_fr])
+                    data_traces.append(trace_)
+                pre4ap_negsig_responders_avgresponse = np.array(data_traces); print(f"shape of pre4ap_negsig_responders array {pre4ap_negsig_responders_avgresponse.shape} [5.5-2]")
+                # print('stop here... [5.5-2]')
+
+
+                pre4ap_num_pos += len(pre4ap_possig_responders_avgresponse_)
+                pre4ap_num_neg += len(pre4ap_negsig_responders_avgresponse_)
+        else:
+            pre4ap_num_pos += 0
+            pre4ap_num_neg += 0
+    pre4ap_num_pos = pre4ap_num_pos / n_trials
+    pre4ap_num_neg = pre4ap_num_neg / n_trials
+
+
+    num_suite2p_rois = len(expobj.good_cells)  # this will be the same number for pre and post4ap (as they should be the same cells)
+
+
+    # post-4ap trials calculations
+    name += 'vs.'
+    n_trials = len(allopticalResults.trial_maps['post'][key])
+    post4ap_possig_responders_avgresponse = []
+    post4ap_negsig_responders_avgresponse = []
+    post4ap_num_pos = 0
+    post4ap_num_neg = 0
+    for i in range(n_trials):
+        expobj, experiment = aoutils.import_expobj(aoresults_map_id='post %s.%s' % (key, i))
+        if sum(expobj.sig_units) > 0:
+            name += expobj.metainfo['trial']
+            post4ap_possig_responders_avgresponse_ = expobj.dfstdF_traces_avg[expobj.sig_units][
+            np.where(np.nanmean(expobj.post_array_responses[expobj.sig_units, :], axis=1) > 0)[0]]
+            post4ap_negsig_responders_avgresponse_ = expobj.dfstdF_traces_avg[expobj.sig_units][
+            np.where(np.nanmean(expobj.post_array_responses[expobj.sig_units, :], axis=1) < 0)[0]]
+
+            if i == 0:
+                post4ap_possig_responders_avgresponse.append(post4ap_possig_responders_avgresponse_)
+                post4ap_negsig_responders_avgresponse.append(post4ap_negsig_responders_avgresponse_)
+                stim_dur_fr = int(np.ceil(allopticalResults.stim_dur_sec * expobj.fps))  # setting 500ms as the dummy standardized stimduration
+                pre_stim_fr = int(np.ceil(allopticalResults.pre_stim_sec * expobj.fps))  # setting the pre_stim array collection period again hard
+                post_stim_fr = int(np.ceil(allopticalResults.post_stim_sec * expobj.fps))  # setting the post_stim array collection period again hard
+
+
+                data_traces = []
+                for trace in post4ap_possig_responders_avgresponse_:
+                    trace_ = trace[expobj.pre_stim - pre_stim_fr : expobj.pre_stim]
+                    trace_ = np.append(trace_, [[0] * stim_dur_fr])
+                    trace_ = np.append(trace_, trace[expobj.pre_stim + expobj.stim_duration_frames: expobj.pre_stim + expobj.stim_duration_frames + post_stim_fr])
+                    data_traces.append(trace_)
+                post4ap_possig_responders_avgresponse = np.array(data_traces); print(f"shape of post4ap_possig_responders array {post4ap_possig_responders_avgresponse.shape} [5.5-3]")
+                # print('stop here... [5.5-3]')
+
+
+                data_traces = []
+                for trace in post4ap_negsig_responders_avgresponse_:
+                    trace_ = trace[expobj.pre_stim - pre_stim_fr : expobj.pre_stim]
+                    trace_ = np.append(trace_, [[0] * stim_dur_fr])
+                    trace_ = np.append(trace_, trace[expobj.pre_stim + expobj.stim_duration_frames: expobj.pre_stim + expobj.stim_duration_frames + post_stim_fr])
+                    data_traces.append(trace_)
+                post4ap_negsig_responders_avgresponse = np.array(data_traces); print(f"shape of post4ap_negsig_responders array {post4ap_negsig_responders_avgresponse.shape} [5.5-4]")
+                # print('stop here... [5.5-4]')
+
+
+                post4ap_num_pos += len(post4ap_possig_responders_avgresponse_)
+                post4ap_num_neg += len(post4ap_negsig_responders_avgresponse_)
+        else:
+            post4ap_num_pos += 0
+            post4ap_num_neg += 0
+    post4ap_num_pos = post4ap_num_pos / n_trials
+    post4ap_num_neg = post4ap_num_neg / n_trials
+
+
+    ########
+    # place into the appropriate dataframe
+    series = [pre4ap_num_pos, pre4ap_num_neg, post4ap_num_pos, post4ap_num_neg, int(num_suite2p_rois)]
+    num_sig_responders.loc[name] = series
+
+    # place sig pos and sig neg traces into the list
+    possig_responders_traces.append([pre4ap_possig_responders_avgresponse, post4ap_possig_responders_avgresponse])
+    negsig_responders_traces.append([pre4ap_negsig_responders_avgresponse, post4ap_negsig_responders_avgresponse])
+
+allopticalResults.num_sig_responders_df = num_sig_responders
+allopticalResults.possig_responders_traces = np.asarray(possig_responders_traces)
+allopticalResults.negsig_responders_traces = np.asarray(negsig_responders_traces)
+
+allopticalResults.save()
+
+
+# %% 5.5.1) # # PLOT - bar plot average # of significant responders (+ve and -ve) for pre vs. post 4ap
+
+# tips = sns.load_dataset("tips")
+
+# sns.catplot(data=allopticalResults.num_sig_responders_df, order = ['pre4ap_pos', 'post4ap_pos', 'pre4ap_neg', 'post4ap_neg'])
+# plt.show()
+
+
+data=[]
+cols = ['pre4ap_pos', 'post4ap_pos']
+for col in cols:
+    data.append(list(allopticalResults.num_sig_responders_df.loc[:, col]))
+
+cols = ['pre4ap_neg', 'post4ap_neg']
+for col in cols:
+    data.append(list(allopticalResults.num_sig_responders_df.loc[:, col]))
+
+
+experiments = ['RL108', 'RL109', 'PS05', 'PS07', 'PS06', 'PS11']
+pre4ap_pos = []
+pre4ap_neg = []
+post4ap_pos = []
+post4ap_neg = []
+
+for exp in experiments:
+    rows = []
+    for row in range(len(allopticalResults.num_sig_responders_df.index)):
+        if exp in allopticalResults.num_sig_responders_df.index[row]:
+            rows.append(row)
+    x = allopticalResults.num_sig_responders_df.iloc[rows, :].mean(axis=0)
+    pre4ap_pos.append(round(x[0], 1))
+    pre4ap_neg.append(round(x[1], 1))
+    post4ap_pos.append(round(x[2], 1))
+    post4ap_neg.append(round(x[3], 1))
+
+data = [pre4ap_pos, post4ap_pos]
+pj.plot_bar_with_points(data, x_tick_labels=['pre4ap_pos', 'post4ap_pos'], colors=['lightgreen', 'forestgreen'],
+                        bar=True, paired=True, expand_size_x=0.6, expand_size_y=1.3, title='# of Positive responders',
+                        y_label='# of sig. responders')
+
+data = [pre4ap_neg, post4ap_neg]
+pj.plot_bar_with_points(data, x_tick_labels=['pre4ap_neg', 'post4ap_neg'], colors=['skyblue', 'steelblue'],
+                        bar=True, paired=True, expand_size_x=0.6, expand_size_y=1.3, title='# of Negative responders',
+                        y_label= '# of sig. responders')
+
+
+
+# %% 5.5.2) # # PLOT - peri-stim average response stim graph for positive and negative followers
 # - make one graph per comparison for now... then can figure out how to average things out later.
 
 experiments = ['RL108t', 'RL109t', 'PS05t', 'PS07t', 'PS06t', 'PS11t']
@@ -361,200 +502,6 @@ fig.show()
     # aoplot.plot_periphotostim_avg(arr=cell_avg_stim_traces,
     #                               figsize=[5, 4], title=('responses of photostim non-targets'),
     #                               y_label=y_label, x_label='Time post-stimulation (seconds)')
-
-# %% 5.5.1) # # PLOT - average # of significant responders (+ve and -ve) for pre vs. post 4ap
-
-# tips = sns.load_dataset("tips")
-
-# sns.catplot(data=allopticalResults.num_sig_responders_df, order = ['pre4ap_pos', 'post4ap_pos', 'pre4ap_neg', 'post4ap_neg'])
-# plt.show()
-
-
-data=[]
-cols = ['pre4ap_pos', 'post4ap_pos']
-for col in cols:
-    data.append(list(allopticalResults.num_sig_responders_df.loc[:, col]))
-
-cols = ['pre4ap_neg', 'post4ap_neg']
-for col in cols:
-    data.append(list(allopticalResults.num_sig_responders_df.loc[:, col]))
-
-
-experiments = ['RL108', 'RL109', 'PS05', 'PS07', 'PS06', 'PS11']
-pre4ap_pos = []
-pre4ap_neg = []
-post4ap_pos = []
-post4ap_neg = []
-
-for exp in experiments:
-    rows = []
-    for row in range(len(allopticalResults.num_sig_responders_df.index)):
-        if exp in allopticalResults.num_sig_responders_df.index[row]:
-            rows.append(row)
-    x = allopticalResults.num_sig_responders_df.iloc[rows, :].mean(axis=0)
-    pre4ap_pos.append(round(x[0], 1))
-    pre4ap_neg.append(round(x[1], 1))
-    post4ap_pos.append(round(x[2], 1))
-    post4ap_neg.append(round(x[3], 1))
-
-data = [pre4ap_pos, post4ap_pos]
-pj.plot_bar_with_points(data, x_tick_labels=['pre4ap_pos', 'post4ap_pos'], colors=['lightgreen', 'forestgreen'],
-                        bar=True, paired=True, expand_size_x=0.6, expand_size_y=1.3, title='# of Positive responders',
-                        y_label='# of sig. responders')
-
-data = [pre4ap_neg, post4ap_neg]
-pj.plot_bar_with_points(data, x_tick_labels=['pre4ap_neg', 'post4ap_neg'], colors=['skyblue', 'steelblue'],
-                        bar=True, paired=True, expand_size_x=0.6, expand_size_y=1.3, title='# of Negative responders',
-                        y_label= '# of sig. responders')
-
-
-
-
-
-# %% 5.5.3) # # -  total post stim response evoked across all cells recorded
-    # - like maybe add up all trials (sig and non sig), and all cells
-    # - and compare pre-4ap and post-4ap (exp by exp, maybe normalizing the peak value per comparison from pre4ap?)
-    # - or just make one graph per comparison and show all to Adam?
-
-
-# %% 5.5.4) # # - think about some normalization via success rate of the stimulus (plot some response measure against success rate of the stimulation)
-    # - calculate pearson's correlation value of the association
-
-
-
-# %% 5.5) collect average stats for each prep, and summarize into the appropriate data point
-num_sig_responders = pd.DataFrame(columns=['pre4ap_pos', 'pre4ap_neg', 'post4ap_pos', 'post4ap_neg', '# of suite2p ROIs'])
-possig_responders_traces = []
-negsig_responders_traces = []
-
-allopticalResults.pre_stim_sec = 0.5
-allopticalResults.stim_dur_sec = 0.25
-allopticalResults.post_stim_sec = 3
-
-for key in list(allopticalResults.trial_maps['pre'].keys()):
-    name = allopticalResults.trial_maps['pre'][key][0][:-6]
-
-    ########
-    # pre-4ap trials calculations
-    n_trials = len(allopticalResults.trial_maps['pre'][key])
-    pre4ap_possig_responders_avgresponse = []
-    pre4ap_negsig_responders_avgresponse = []
-    pre4ap_num_pos = 0
-    pre4ap_num_neg = 0
-    for i in range(n_trials):
-        expobj, experiment = aoutils.import_expobj(aoresults_map_id='pre %s.%s' % (key, i))
-        if sum(expobj.sig_units) > 0:
-            name += expobj.metainfo['trial']
-            pre4ap_possig_responders_avgresponse_ = expobj.dfstdF_traces_avg[expobj.sig_units][np.where(np.nanmean(expobj.post_array_responses[expobj.sig_units, :], axis=1) > 0)[0]]
-            pre4ap_negsig_responders_avgresponse_ = expobj.dfstdF_traces_avg[expobj.sig_units][np.where(np.nanmean(expobj.post_array_responses[expobj.sig_units, :], axis=1) < 0)[0]]
-
-            if i == 0:  # only taking trials averages from the first sub-trial from the matched comparisons
-                pre4ap_possig_responders_avgresponse.append(pre4ap_possig_responders_avgresponse_)
-                pre4ap_negsig_responders_avgresponse.append(pre4ap_negsig_responders_avgresponse_)
-                stim_dur_fr = int(np.ceil(allopticalResults.stim_dur_sec * expobj.fps))  # setting 500ms as the dummy standardized stimduration
-                pre_stim_fr = int(np.ceil(allopticalResults.pre_stim_sec * expobj.fps))  # setting the pre_stim array collection period again hard
-                post_stim_fr = int(np.ceil(allopticalResults.post_stim_sec * expobj.fps))  # setting the post_stim array collection period again hard
-
-                data_traces = []
-                for trace in pre4ap_possig_responders_avgresponse_:
-                    trace_ = trace[expobj.pre_stim - pre_stim_fr : expobj.pre_stim]
-                    trace_ = np.append(trace_, [[0] * stim_dur_fr])
-                    trace_ = np.append(trace_, trace[expobj.pre_stim + expobj.stim_duration_frames: expobj.pre_stim + expobj.stim_duration_frames + post_stim_fr])
-                    data_traces.append(trace_)
-                pre4ap_possig_responders_avgresponse = np.array(data_traces); print(f"shape of pre4ap_possig_responders array {pre4ap_possig_responders_avgresponse.shape} [5.5-1]")
-                # print('stop here... [5.5-1]')
-
-                data_traces = []
-                for trace in pre4ap_negsig_responders_avgresponse_:
-                    trace_ = trace[expobj.pre_stim - pre_stim_fr : expobj.pre_stim]
-                    trace_ = np.append(trace_, [[0] * stim_dur_fr])
-                    trace_ = np.append(trace_, trace[expobj.pre_stim + expobj.stim_duration_frames: expobj.pre_stim + expobj.stim_duration_frames + post_stim_fr])
-                    data_traces.append(trace_)
-                pre4ap_negsig_responders_avgresponse = np.array(data_traces); print(f"shape of pre4ap_negsig_responders array {pre4ap_negsig_responders_avgresponse.shape} [5.5-2]")
-                # print('stop here... [5.5-2]')
-
-
-                pre4ap_num_pos += len(pre4ap_possig_responders_avgresponse_)
-                pre4ap_num_neg += len(pre4ap_negsig_responders_avgresponse_)
-        else:
-            pre4ap_num_pos += 0
-            pre4ap_num_neg += 0
-    pre4ap_num_pos = pre4ap_num_pos / n_trials
-    pre4ap_num_neg = pre4ap_num_neg / n_trials
-
-
-    num_suite2p_rois = len(expobj.good_cells)  # this will be the same number for pre and post4ap (as they should be the same cells)
-
-
-    # post-4ap trials calculations
-    name += 'vs.'
-    n_trials = len(allopticalResults.trial_maps['post'][key])
-    post4ap_possig_responders_avgresponse = []
-    post4ap_negsig_responders_avgresponse = []
-    post4ap_num_pos = 0
-    post4ap_num_neg = 0
-    for i in range(n_trials):
-        expobj, experiment = aoutils.import_expobj(aoresults_map_id='post %s.%s' % (key, i))
-        if sum(expobj.sig_units) > 0:
-            name += expobj.metainfo['trial']
-            post4ap_possig_responders_avgresponse_ = expobj.dfstdF_traces_avg[expobj.sig_units][
-            np.where(np.nanmean(expobj.post_array_responses[expobj.sig_units, :], axis=1) > 0)[0]]
-            post4ap_negsig_responders_avgresponse_ = expobj.dfstdF_traces_avg[expobj.sig_units][
-            np.where(np.nanmean(expobj.post_array_responses[expobj.sig_units, :], axis=1) < 0)[0]]
-
-            if i == 0:
-                post4ap_possig_responders_avgresponse.append(post4ap_possig_responders_avgresponse_)
-                post4ap_negsig_responders_avgresponse.append(post4ap_negsig_responders_avgresponse_)
-                stim_dur_fr = int(np.ceil(allopticalResults.stim_dur_sec * expobj.fps))  # setting 500ms as the dummy standardized stimduration
-                pre_stim_fr = int(np.ceil(allopticalResults.pre_stim_sec * expobj.fps))  # setting the pre_stim array collection period again hard
-                post_stim_fr = int(np.ceil(allopticalResults.post_stim_sec * expobj.fps))  # setting the post_stim array collection period again hard
-
-
-                data_traces = []
-                for trace in post4ap_possig_responders_avgresponse_:
-                    trace_ = trace[expobj.pre_stim - pre_stim_fr : expobj.pre_stim]
-                    trace_ = np.append(trace_, [[0] * stim_dur_fr])
-                    trace_ = np.append(trace_, trace[expobj.pre_stim + expobj.stim_duration_frames: expobj.pre_stim + expobj.stim_duration_frames + post_stim_fr])
-                    data_traces.append(trace_)
-                post4ap_possig_responders_avgresponse = np.array(data_traces); print(f"shape of post4ap_possig_responders array {post4ap_possig_responders_avgresponse.shape} [5.5-3]")
-                # print('stop here... [5.5-3]')
-
-
-                data_traces = []
-                for trace in post4ap_negsig_responders_avgresponse_:
-                    trace_ = trace[expobj.pre_stim - pre_stim_fr : expobj.pre_stim]
-                    trace_ = np.append(trace_, [[0] * stim_dur_fr])
-                    trace_ = np.append(trace_, trace[expobj.pre_stim + expobj.stim_duration_frames: expobj.pre_stim + expobj.stim_duration_frames + post_stim_fr])
-                    data_traces.append(trace_)
-                post4ap_negsig_responders_avgresponse = np.array(data_traces); print(f"shape of post4ap_negsig_responders array {post4ap_negsig_responders_avgresponse.shape} [5.5-4]")
-                # print('stop here... [5.5-4]')
-
-
-                post4ap_num_pos += len(post4ap_possig_responders_avgresponse_)
-                post4ap_num_neg += len(post4ap_negsig_responders_avgresponse_)
-        else:
-            post4ap_num_pos += 0
-            post4ap_num_neg += 0
-    post4ap_num_pos = post4ap_num_pos / n_trials
-    post4ap_num_neg = post4ap_num_neg / n_trials
-
-
-    ########
-    # place into the appropriate dataframe
-    series = [pre4ap_num_pos, pre4ap_num_neg, post4ap_num_pos, post4ap_num_neg, int(num_suite2p_rois)]
-    num_sig_responders.loc[name] = series
-
-    # place sig pos and sig neg traces into the list
-    possig_responders_traces.append([pre4ap_possig_responders_avgresponse, post4ap_possig_responders_avgresponse])
-    negsig_responders_traces.append([pre4ap_negsig_responders_avgresponse, post4ap_negsig_responders_avgresponse])
-
-allopticalResults.num_sig_responders_df = num_sig_responders
-allopticalResults.possig_responders_traces = np.asarray(possig_responders_traces)
-allopticalResults.negsig_responders_traces = np.asarray(negsig_responders_traces)
-
-allopticalResults.save()
-
-
 
 
 
