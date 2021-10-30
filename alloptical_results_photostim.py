@@ -268,13 +268,6 @@ allopticalResults.save()
 
 
 # %% 5.5.1) # # PLOT - bar plot average # of significant responders (+ve and -ve) for pre vs. post 4ap
-
-# tips = sns.load_dataset("tips")
-
-# sns.catplot(data=allopticalResults.num_sig_responders_df, order = ['pre4ap_pos', 'post4ap_pos', 'pre4ap_neg', 'post4ap_neg'])
-# plt.show()
-
-
 data=[]
 cols = ['pre4ap_pos', 'post4ap_pos']
 for col in cols:
@@ -337,11 +330,7 @@ for exp in experiments:
             mean_post4ap_ = allopticalResults.possig_responders_traces[row][1]
             print(mean_pre4ap_.shape, mean_post4ap_.shape)
 
-            # plot avg with confidence intervals
-            # fig, ax = plt.subplots()
-
             ax = axs[counter//ncols, counter % ncols]
-            # ax2 = axs2[counter//ncols, counter % ncols]
 
             meanst = np.mean(mean_pre4ap_, axis=0)
             ## change xaxis to time (secs)
@@ -354,43 +343,6 @@ for exp in experiments:
                                            colors=['black', 'green'], avg_with_std=True, title=f"{allopticalResults.num_sig_responders_df.index[row]}", ylim=[-0.5, 1.0],
                                            pre_stim_sec=allopticalResults.pre_stim_sec, fig=fig, ax=ax, show=False, fontsize='small',
                                                      xlabel=None, ylabel=None)
-
-
-            ### TODO NEED TO NORMALIZE TO # OF SUITE2P ROIS FOR THIS DATASET
-            # fig2, ax2 = aoplot.plot_periphotostim_addition(dataset=[mean_pre4ap_, mean_post4ap_], fps=fps, legend_labels=[f"pre4ap {mean_pre4ap_.shape[0]} cells", f"post4ap {mean_post4ap_.shape[0]} cells"],
-            #                                    colors=['black', 'green'], xlabel='Time post stim (secs)', ylabel='dF/stdF', avg_with_std=True,  title=f"{allopticalResults.num_sig_responders_df.index[row]}",
-            #                                    ylim=[-50, 100], pre_stim_sec=allopticalResults.pre_stim_sec, fig=fig2, ax=ax2, show=False, fontsize='small')
-
-
-            # meanst = np.mean(mean_pre4ap_, axis=0)
-            # std = np.std(mean_pre4ap_, axis=0, ddof=1)
-            # ## change xaxis to time (secs)
-            # if len(meanst) < 100:
-            #     fps = 15
-            # else:
-            #     fps = 30
-            # x_time = np.linspace(0, len(meanst) / fps, len(meanst)) - allopticalResults.pre_stim_sec  # x scale, but in time domain (transformed from frames based on the provided fps)
-            # ax.set_xlabel('Time post stim (secs)')
-            #
-            # ax.plot(x_time, meanst, color='black', lw=2)
-            # ax.fill_between(x_time, meanst - std, meanst + std, alpha=0.15, color='gray')
-            #
-            # meanst = np.mean(mean_post4ap_, axis=0)
-            # std = np.std(mean_post4ap_, axis=0, ddof=1)
-            # ## change xaxis to time (secs)
-            # if len(meanst) < 100:
-            #     fps = 15
-            # else:
-            #     fps = 30
-            # x_time = np.linspace(0, len(meanst) / fps, len(meanst)) - allopticalResults.pre_stim_sec  # x scale, but in time domain (transformed from frames based on the provided fps)
-            #
-            # ax.plot(x_time, meanst, color='green', lw=2)
-            # ax.fill_between(x_time, meanst - std, meanst + std, alpha=0.15, color='green')
-            #
-            # ax.legend([f"pre4ap {mean_pre4ap_.shape[0]} cells", f"post4ap {mean_post4ap_.shape[0]} cells"])
-            # ax.set_ylim([-0.5, 1.0])
-            # ax.set_ylabel('dF/pre_stdF')
-            # ax.set_title(f"{allopticalResults.num_sig_responders_df.index[row]}")
 
             counter += 1
 axs[0, 0].set_ylabel('dF/stdF')
@@ -415,11 +367,7 @@ for exp in experiments:
             mean_post4ap_ = allopticalResults.negsig_responders_traces[row][1]
             print(mean_pre4ap_.shape, mean_post4ap_.shape)
 
-            # plot avg with confidence intervals
-            # fig, ax = plt.subplots()
-
             ax = axs[counter//ncols, counter % ncols]
-            # ax2 = axs2[counter//ncols, counter % ncols]
 
             meanst = np.mean(mean_pre4ap_, axis=0)
             ## change xaxis to time (secs)
@@ -434,75 +382,11 @@ for exp in experiments:
                                                      xlabel=None, ylabel=None)
 
 
-            # meanst = np.mean(mean_pre4ap_, axis=0)
-            # std = np.std(mean_pre4ap_, axis=0, ddof=1)
-            # ## change xaxis to time (secs)
-            # if len(meanst) < 100:
-            #     fps = 15
-            # else:
-            #     fps = 30
-            # x_time = np.linspace(0, len(meanst) / fps, len(meanst)) - allopticalResults.pre_stim_sec  # x scale, but in time domain (transformed from frames based on the provided fps)
-            # ax.set_xlabel('Time post stim (secs)')
-            #
-            # ax.plot(x_time, meanst, color='black', lw=2)
-            # ax.fill_between(x_time, meanst - std, meanst + std, alpha=0.15, color='gray')
-            #
-            # meanst = np.mean(mean_post4ap_, axis=0)
-            # std = np.std(mean_post4ap_, axis=0, ddof=1)
-            # ## change xaxis to time (secs)
-            # if len(meanst) < 100:
-            #     fps = 15
-            # else:
-            #     fps = 30
-            # x_time = np.linspace(0, len(meanst) / fps, len(meanst)) - allopticalResults.pre_stim_sec  # x scale, but in time domain (transformed from frames based on the provided fps)
-            #
-            # ax.plot(x_time, meanst, color='green', lw=2)
-            # ax.fill_between(x_time, meanst - std, meanst + std, alpha=0.15, color='green')
-            #
-            # ax.legend([f"pre4ap {mean_pre4ap_.shape[0]} cells", f"post4ap {mean_post4ap_.shape[0]} cells"])
-            # ax.set_ylim([-0.5, 1.0])
-            # ax.set_ylabel('dF/pre_stdF')
-            # ax.set_title(f"{allopticalResults.num_sig_responders_df.index[row]}")
-
             counter += 1
 axs[0, 0].set_ylabel('dF/stdF')
 axs[0, 0].set_xlabel('Time post stim (secs)')
 fig.suptitle('Avg. negative responders')
 fig.show()
-
-    ### below is for trying to average between trials from the same experiments... not fully working yet...
-    # for exp in experiments:
-    #     rows = []
-    #     for row in range(len(allopticalResults.num_sig_responders_df.index)):
-    #         if exp in allopticalResults.num_sig_responders_df.index[row]:
-    #             rows.append(row)
-    # mean_pre4ap_ = [allopticalResults.possig_responders_traces[row][0] for row in rows]
-    # mean_post4ap_ = [allopticalResults.possig_responders_traces[row][1] for row in rows]
-    # for i in range(len(mean_pre4ap_) - 1):
-    #     mean_pre4ap = np.append(mean_pre4ap_[0], mean_pre4ap_[i + 1], axis=0)
-    #
-    # for i in range(len(mean_post4ap_) - 1):
-    #     mean_post4ap = np.append(mean_post4ap_[0], mean_post4ap_[i + 1], axis=0)
-
-    # # plot avg with confidence intervals
-    # fig, ax = plt.subplots()
-    #
-    # meanst = np.mean(mean_pre4ap, axis=1)
-    # std = np.std(mean_pre4ap, axis=1, ddof=1)
-    # ax.plot(range(len(meanst)), meanst, color='skyblue')
-    # ax.fill_between(range(len(meanst)), meanst - std, meanst + std, alpha=0.3, color='skyblue')
-    #
-    # meanst = np.mean(mean_post4ap, axis=1)
-    # std = np.std(mean_post4ap, axis=1, ddof=1)
-    # ax.plot(range(len(meanst)), meanst, color='steelblue')
-    # ax.fill_between(range(len(meanst)), meanst - std, meanst + std, alpha=0.3, color='steelblue')
-    #
-    # fig.show()
-
-    # aoplot.plot_periphotostim_avg(arr=cell_avg_stim_traces,
-    #                               figsize=[5, 4], title=('responses of photostim non-targets'),
-    #                               y_label=y_label, x_label='Time post-stimulation (seconds)')
-
 
 
 # %% 5)  RUN DATA ANALYSIS OF NON TARGETS:
