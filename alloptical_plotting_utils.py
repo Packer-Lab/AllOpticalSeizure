@@ -333,7 +333,7 @@ def plot_photostim_traces_overlap(array, expobj, exclude_id=[], y_spacing_factor
 
 
 ### photostim analysis - PLOT avg over photostim. trials traces for the provided traces
-def plot_periphotostim_avg2(dataset, fps=None, legend_labels=None, colors=None, xlabel='Frames',ylabel='ylabel', avg_with_std=False,
+def plot_periphotostim_avg2(dataset, fps=None, legend_labels=None, colors=None, avg_with_std=False,
                             title='high quality plot', pre_stim_sec=None, ylim=None, **kwargs):
 
     if 'fig' in kwargs.keys():
@@ -376,20 +376,23 @@ def plot_periphotostim_avg2(dataset, fps=None, legend_labels=None, colors=None, 
     else:
         AttributeError('please provide the data to plot in a list format, each different data group as a list item...')
 
-
-    if 'time' in xlabel or 'Time' in xlabel:
+    if 'xlabel' not in kwargs or kwargs['xlabel'] is None or 'frames' not in kwargs['xlabel'] or 'Frames' not in kwargs['xlabel']:
         ## change xaxis to time (secs)
         if fps is not None:
             if pre_stim_sec is not None:
                 x_range = np.linspace(0, len(meantraces[0]) / fps, len(
                     meantraces[0])) - pre_stim_sec  # x scale, but in time domain (transformed from frames based on the provided fps)
-                ax.set_xlabel('Time post stim (secs)')
+                if 'xlabel' in kwargs.keys():
+                    ax.set_xlabel(kwargs['xlabel'])
+                else:
+                    ax.set_xlabel('Time post stim (secs)')
             else:
                 AttributeError('need to provide a pre_stim_sec value to the function call!')
         else:
             AttributeError('need to provide fps value to convert xaxis in units of time (secs)')
-    else:
+    elif 'frames' in kwargs['xlabel'] or 'Frames' in kwargs['xlabel']:
         x_range = range(len(meanst[0]))
+        ax.set_xlabel('Frames')
 
     for i in range(len(meantraces)):
         if avg_with_std:
@@ -408,10 +411,17 @@ def plot_periphotostim_avg2(dataset, fps=None, legend_labels=None, colors=None, 
 
 
     if legend_labels:
-        ax.legend(legend_labels)
+        if 'fontsize' in kwargs.keys():
+            fontsize = kwargs['fontsize']
+        else:
+            fontsize = 'medium'
+        ax.legend(legend_labels, fontsize=fontsize)
     if ylim:
         ax.set_ylim([ylim[0],ylim[1]])
-    ax.set_ylabel(ylabel)
+    if 'ylabel' in kwargs.keys():
+        ax.set_ylabel(kwargs['ylabel'])
+    else:
+        pass
     ax.set_title(title)
 
 
@@ -533,6 +543,102 @@ def plot_periphotostim_avg(arr=None, pre_stim_sec=1.0, post_stim_sec=3.0, title=
         fig.show() if kwargs['show'] else None
     else:
         fig.show()
+
+
+### photostim analysis - PLOT avg over photostim. trials traces for the provided traces
+def plot_periphotostim_addition(dataset, normalize: list = None, fps=None, legend_labels=None, colors=None, xlabel='Frames',ylabel='ylabel', avg_with_std=False,
+                            title='high quality plot', pre_stim_sec=None, ylim=None, **kwargs):
+
+    if 'fig' in kwargs.keys():
+        fig = kwargs['fig']
+        ax = kwargs['ax']
+    else:
+        if 'figsize' in kwargs.keys():
+            fig, ax = plt.subplots(figsize=kwargs['figsize'])
+        else:
+            fig, ax = plt.subplots(figsize=[5, 4])
+
+    if normalize is None:  ## factor to normalize the dataset to be plotted - intended to be used to normalize the summed photostim response by the total # of suite2p ROIs in the experiment's dataset
+        normalize = [1] * len(dataset)
+
+    sumtraces_plot = []
+    if type(dataset) == list and len(dataset) > 1:
+        assert len(legend_labels) == len(dataset), print('please provide same number of legend labels as dataset')
+        if colors is None:
+            colors = ['black', pj.make_random_color_array(len(dataset) - 1)]
+        assert len(colors) == len(legend_labels)
+        avg_only = True
+        print('-- plotting sum + fill for each dataset')
+        for i in range(len(dataset)):
+            sum_trace = np.sum(dataset[i], axis=0) / normalize[i]
+            sumtraces_plot.append(sum_trace)
+            if not sum_trace.shape == sumtraces_plot[i - 1].shape:
+                print(f"|--- length mismatch in sum traces of datasets...{title}")
+
+    elif type(dataset) is not list or len(dataset) == 1:
+        dataset = list(dataset)
+        sum_trace = np.sum(dataset[0], axis=0) / normalize
+        std = np.std(dataset[0], axis=0, ddof=1)
+        sumtraces_plot.append(sum_trace)
+        stdtraces.append(std)
+        colors = ['black']
+    else:
+        AttributeError('please provide the data to plot in a list format, each different data group as a list item...')
+
+
+    if 'time' in xlabel or 'Time' in xlabel:
+        ## change xaxis to time (secs)
+        if fps is not None:
+            if pre_stim_sec is not None:
+                x_range = np.linspace(0, len(sumtraces_plot[0]) / fps, len(
+                    sumtraces_plot[0])) - pre_stim_sec  # x scale, but in time domain (transformed from frames based on the provided fps)
+                ax.set_xlabel('Time post stim (secs)')
+            else:
+                AttributeError('need to provide a pre_stim_sec value to the function call!')
+        else:
+            AttributeError('need to provide fps value to convert xaxis in units of time (secs)')
+    else:
+        x_range = range(len(sum_trace[0]))
+
+    for i in range(len(sumtraces_plot)):
+        if len(sumtraces_plot[i]) < len(x_range):  ## TEMP FIX
+            mismatch = (len(x_range) - len(sumtraces_plot[i]))
+            sumtraces_plot[i] = np.append(sumtraces_plot[i], [0] * mismatch)
+            print(f'|------ adding {mismatch} zeros to sum traces to make the arrays the same length, new length of plot array: {sumtraces_plot[i].shape} ')
+
+        ax.plot(x_range, sumtraces_plot[i], color=colors[i], lw=2)
+        ax.fill_between(x_range, 0, sumtraces_plot[i], alpha=0.15, color=colors[i])
+
+        ##### measure area under curve during the poststim response (from pre_stim_sec * fps onwards...)
+
+
+    if legend_labels:
+        if 'fontsize' in kwargs.keys():
+            fontsize = kwargs['fontsize']
+        else:
+            fontsize = 'medium'
+        ax.legend(legend_labels, fontsize=fontsize)
+    if ylim:
+        ax.set_ylim([ylim[0],ylim[1]])
+    ax.set_ylabel(ylabel)
+    ax.set_title(title)
+
+
+
+
+    if 'savepath' in kwargs.keys():
+        plt.savefig(kwargs['savepath'])
+
+    # finalize plot, set title, and show or return axes
+    if 'show' in kwargs.keys():
+        fig.show() if kwargs['show'] else None
+    else:
+        fig.show()
+
+    if 'fig' in kwargs.keys():
+        return fig, ax
+    else:
+        pass
 
 
 def plot_s2p_raw(expobj, cell_id):
