@@ -3190,8 +3190,6 @@ class OnePhotonStim(TwoPhotonImaging):
         self.save_pkl()
 
 
-
-
 class onePstim(TwoPhotonImaging):
     def __init__(self, data_path_base, date, animal_prep, trial, metainfo, analysis_save_path_base: str = None):
         paqs_loc = '%s%s_%s_%s.paq' % (
@@ -3438,10 +3436,6 @@ class onePstim(TwoPhotonImaging):
 
         aoplot.plot_lfp_stims(self, x_axis='time')
         self.save_pkl()
-
-
-
-
 
 
 # %% RESULTS OBJECTS

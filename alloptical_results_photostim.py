@@ -18,10 +18,101 @@ results_object_path = '/home/pshah/mnt/qnap/Analysis/alloptical_results_superobj
 allopticalResults = aoutils.import_resultsobj(pkl_path=results_object_path)
 
 
+# %% 5.1.4.2) scatter plot response magnitude vs. prestim std F
 
-# %% 5.1.4) measuring avg raw pre-stim stdF for all non-targets - pre4ap vs. post4ap
+ls = ['pre', 'post']
+for i in ls:
+    ncols = 3
+    nrows = 4
+    fig, axs = plt.subplots(ncols=ncols, nrows=nrows, figsize=(10, 10))
+    counter = 0
+
+    key = 'h'; j = 0
 
 
+    for key in list(allopticalResults.trial_maps[i].keys()):
+
+        expobj, experiment = aoutils.import_expobj(aoresults_map_id=f'{i} {key}.{j}')  # import expobj
+
+        possig_responders_avgresponse = np.nanmean(expobj.post_array_responses[expobj.sig_units, :], axis=1)[
+            np.where(np.nanmean(expobj.post_array_responses[expobj.sig_units, :], axis=1) > 0)[0]]
+        negsig_responders_avgresponse = np.nanmean(expobj.post_array_responses[expobj.sig_units, :], axis=1)[
+            np.where(np.nanmean(expobj.post_array_responses[expobj.sig_units, :], axis=1) < 0)[0]]
+        nonsig_responders_avgresponse = np.nanmean(expobj.post_array_responses[~expobj.sig_units], axis=1)
+
+        posunits_prestdF = np.mean(np.std(expobj.raw_traces[np.where(np.nanmean(expobj.post_array_responses[expobj.sig_units, :], axis=1) > 0)[0], :, :], axis=2), axis=1)
+        negunits_prestdF = np.mean(np.std(expobj.raw_traces[np.where(np.nanmean(expobj.post_array_responses[expobj.sig_units, :], axis=1) < 0)[0], :, :], axis=2), axis=1)
+        nonsigunits_prestdF = np.mean(np.std(expobj.raw_traces[~expobj.sig_units, :, :], axis=2), axis=1)
+
+        assert len(possig_responders_avgresponse) == len(posunits_prestdF)
+        assert len(negsig_responders_avgresponse) == len(negunits_prestdF)
+        assert len(nonsig_responders_avgresponse) == len(nonsigunits_prestdF)
+
+        # fig, axs = plt.subplots(ncols=ncols, nrows=nrows, figsize=(10, 10))
+        ax = axs[counter // ncols, counter % ncols]
+        ax.scatter(x = negunits_prestdF, y = negsig_responders_avgresponse, color='red', alpha=0.10, label='sig. neg.', s=65, edgecolors='none')
+        ax.scatter(x = posunits_prestdF, y = possig_responders_avgresponse, color='green', alpha=0.10, label='sig. pos.', s=65, edgecolors='none')
+        ax.scatter(x = nonsigunits_prestdF, y = nonsig_responders_avgresponse, color='gray', alpha=0.10, label='non sig.', s=65, edgecolors='none')
+        ax.set_title(f"{expobj.metainfo['animal prep.']} {expobj.metainfo['trial']} ")
+        # fig.show()
+
+        counter += 1
+    axs[0, 0].legend()
+    axs[0, 0].set_xlabel('Avg. prestim std F')
+    axs[0, 0].set_ylabel('Avg. mag (dF/stdF)')
+
+    fig.suptitle(f'All exps. prestim std F distribution - {i}4ap')
+    fig.show()
+
+# 5.1.4.2) scatter plot response magnitude vs. prestim mean F
+
+
+ls = ['pre', 'post']
+for i in ls:
+    ncols = 3
+    nrows = 4
+    fig, axs = plt.subplots(ncols=ncols, nrows=nrows, figsize=(10, 10))
+    counter = 0
+
+    key = 'h'; j = 0
+
+
+    for key in list(allopticalResults.trial_maps[i].keys()):
+
+        expobj, experiment = aoutils.import_expobj(aoresults_map_id=f'{i} {key}.{j}')  # import expobj
+
+        possig_responders_avgresponse = np.nanmean(expobj.post_array_responses[expobj.sig_units, :], axis=1)[
+            np.where(np.nanmean(expobj.post_array_responses[expobj.sig_units, :], axis=1) > 0)[0]]
+        negsig_responders_avgresponse = np.nanmean(expobj.post_array_responses[expobj.sig_units, :], axis=1)[
+            np.where(np.nanmean(expobj.post_array_responses[expobj.sig_units, :], axis=1) < 0)[0]]
+        nonsig_responders_avgresponse = np.nanmean(expobj.post_array_responses[~expobj.sig_units], axis=1)
+
+        posunits_prestdF = np.mean(np.mean(expobj.raw_traces[np.where(np.nanmean(expobj.post_array_responses[expobj.sig_units, :], axis=1) > 0)[0], :, :], axis=2), axis=1)
+        negunits_prestdF = np.mean(np.mean(expobj.raw_traces[np.where(np.nanmean(expobj.post_array_responses[expobj.sig_units, :], axis=1) < 0)[0], :, :], axis=2), axis=1)
+        nonsigunits_prestdF = np.mean(np.mean(expobj.raw_traces[~expobj.sig_units, :, :], axis=2), axis=1)
+
+        assert len(possig_responders_avgresponse) == len(posunits_prestdF)
+        assert len(negsig_responders_avgresponse) == len(negunits_prestdF)
+        assert len(nonsig_responders_avgresponse) == len(nonsigunits_prestdF)
+
+        # fig, axs = plt.subplots(ncols=ncols, nrows=nrows, figsize=(10, 10))
+        ax = axs[counter // ncols, counter % ncols]
+        ax.scatter(x = negunits_prestdF, y = negsig_responders_avgresponse, color='red', alpha=0.10, label='sig. neg.', s=65, edgecolors='none')
+        ax.scatter(x = posunits_prestdF, y = possig_responders_avgresponse, color='green', alpha=0.10, label='sig. pos.', s=65, edgecolors='none')
+        ax.scatter(x = nonsigunits_prestdF, y = nonsig_responders_avgresponse, color='gray', alpha=0.10, label='non sig.', s=65, edgecolors='none')
+        ax.set_title(f"{expobj.metainfo['animal prep.']} {expobj.metainfo['trial']} ")
+        # fig.show()
+
+        counter += 1
+    axs[0, 0].legend()
+    axs[0, 0].set_xlabel('Avg. prestim mean F')
+    axs[0, 0].set_ylabel('Avg. mag (dF/stdF)')
+
+    fig.suptitle(f'All exps. prestim mean F distribution - {i}4ap')
+    fig.show()
+
+
+# %% 5.1.4) measuring avg raw pre-stim stdF for all non-targets - pre4ap vs. post4ap histogram comparison
 ncols = 3
 nrows = 4
 fig, axs = plt.subplots(ncols=ncols, nrows=nrows, figsize=(8, 8))
@@ -52,8 +143,6 @@ fig.show()
 
 
 # 5.1.4) measuring avg raw pre-stim stdF for all non-targets - pre4ap only
-
-
 # key = 'h'; j = 0
 
 sig_units_prestdF_pre4ap = []
@@ -91,9 +180,6 @@ axs[0, 0].set_ylabel('density')
 axs[0, 0].set_xlabel('prestim std F')
 fig.suptitle('All exps. prestim std F distribution - pre4ap only')
 fig.show()
-
-
-# pj.plot_hist_density(allunits_prestdF_pre4ap, x_label=None, title=None, fill_color=['gray'], num_bins=100, figsize=(5, 4))
 
 
 
@@ -138,11 +224,6 @@ axs[0, 0].set_xlabel('prestim std F')
 fig.suptitle('All exps. prestim std F distribution - post4ap only')
 fig.show()
 
-
-
-
-
-# %% 5.1.4.2) TODO scatter plot response magnitude vs. prestim std F
 
 
 
