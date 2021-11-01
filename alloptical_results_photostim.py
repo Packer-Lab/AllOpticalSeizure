@@ -39,19 +39,19 @@ for key in list(allopticalResults.trial_maps['pre'].keys()):
 
     # plot the histogram
     ax = axs[counter // ncols, counter % ncols]
-    fig, ax = pj.plot_hist_density([allunits_prestdF_pre4ap_, allunits_prestdF_post4ap_], x_label=None,
-                                   title=f"{expobj.metainfo['animal prep.']} {expobj.metainfo['trial']} ",
-                                   fill_color=['gray'], num_bins=100, fig=fig, ax=ax, show=False, shrink_text=0.7,
+    fig, ax = pj.plot_hist_density([allunits_prestdF_pre4ap_, allunits_prestdF_post4ap_], x_label=None, legend_labels=['pre4ap', 'post4ap'],
+                                   title=f"{expobj.metainfo['animal prep.']} {expobj.metainfo['trial']} ", show_legend=False,
+                                   fill_color=['gray', 'purple'], num_bins=100, fig=fig, ax=ax, show=False, shrink_text=0.7,
                                    figsize=(4, 5))
     counter += 1
 axs[0, 0].legend()
 axs[0, 0].set_ylabel('density')
-axs[0, 0].set_xlabel('Avg. prestim F')
+axs[0, 0].set_xlabel('Avg. prestim std F')
 fig.suptitle('All exps. prestim std F distribution - pre vs. post4ap')
 fig.show()
 
 
-######
+# 5.1.4) measuring avg raw pre-stim stdF for all non-targets - pre4ap only
 
 
 # key = 'h'; j = 0
@@ -89,7 +89,7 @@ for key in list(allopticalResults.trial_maps['pre'].keys()):
 
 axs[0, 0].set_ylabel('density')
 axs[0, 0].set_xlabel('prestim std F')
-fig.suptitle('All exps. prestim std F distribution - pre4ap')
+fig.suptitle('All exps. prestim std F distribution - pre4ap only')
 fig.show()
 
 
@@ -98,7 +98,7 @@ fig.show()
 
 
 
-# %% 5.1.4) measuring avg raw pre-stim stdF for all non-targets - post4ap trials
+# 5.1.4) measuring avg raw pre-stim stdF for all non-targets - post4ap trials
 sig_units_prestdF_post4ap = []
 nonsig_units_prestdF_post4ap = []
 allunits_prestdF_post4ap = []
@@ -135,7 +135,7 @@ for key in list(allopticalResults.trial_maps['post'].keys()):
 
 axs[0, 0].set_ylabel('density')
 axs[0, 0].set_xlabel('prestim std F')
-fig.suptitle('All exps. prestim std F distribution - post4ap')
+fig.suptitle('All exps. prestim std F distribution - post4ap only')
 fig.show()
 
 
@@ -143,6 +143,8 @@ fig.show()
 
 
 # %% 5.1.4.2) TODO scatter plot response magnitude vs. prestim std F
+
+
 
 
 
@@ -167,12 +169,12 @@ for key in list(allopticalResults.trial_maps['pre'].keys()):
     fig, ax = pj.plot_hist_density([raw_meanprestim_pre4ap, raw_meanprestim_post4ap], x_label=None, legend_labels=['pre4ap', 'post4ap'],
                                    title=f"{expobj.metainfo['animal prep.']} {expobj.metainfo['trial']} ", show_legend=False,
                                    fill_color=['gray', 'purple'], num_bins=100, fig=fig, ax=ax, show=False, shrink_text=0.7,
-                                   figsize=(4, 5), )
+                                   figsize=(4, 5))
     counter += 1
 axs[0, 0].legend()
 axs[0, 0].set_ylabel('density')
 axs[0, 0].set_xlabel('Avg. prestim F')
-fig.suptitle('All exps. prestim std F distribution - pre vs. post4ap')
+fig.suptitle('All exps. prestim mean F distribution - pre vs. post4ap')
 fig.show()
 
 
