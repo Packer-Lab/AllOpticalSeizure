@@ -569,10 +569,14 @@ def findClosest(list, input):
     return closest_value, index
 
 # flatten list of lists
-def flattenx1(list):
+def flattenx1(list, asarray=False):
     """ flattens a nested list by one nesting level (should be able to run multiple times to get further down if needed for
      deeper nested lists) """
-    return [x for i in list for x in i]
+    if not asarray:
+        return [x for i in list for x in i]
+    elif asarray:
+        return np.asarray([x for i in list for x in i])
+
 
 ############### PLOTTING FUNCTIONS #####################################################################################
 # custom colorbar for heatmaps
@@ -819,7 +823,18 @@ def plot_bar_with_points(data, title='', x_tick_labels=[], legend_labels: list =
         f.show()
 
 # histogram density plot with gaussian best fit line
-def plot_hist_density(data, colors: list = None, fill_color: list = None, legend_labels: list = [None], num_bins=10, **kwargs):
+def plot_hist_density(data: list, colors: list = None, fill_color: list = None, legend_labels: list = [None], num_bins=10, **kwargs):
+
+    """
+
+    :param data: list; nested list containing the data; if only one array to plot then provide array enclosed inside list (e.g. [array])
+    :param colors:
+    :param fill_color:
+    :param legend_labels:
+    :param num_bins:
+    :param kwargs:
+    :return:
+    """
 
     if 'fig' in kwargs.keys():
         fig = kwargs['fig']
@@ -830,15 +845,21 @@ def plot_hist_density(data, colors: list = None, fill_color: list = None, legend
         else:
             fig, ax = plt.subplots(figsize=[20, 3])
 
-    if legend_labels is None:
-        legend_labels = [None] * len(data)
+
     if colors is None:
         colors = ['black'] * len(data)
-    if len(data) == 1:
+    if len(data) == 1 and fill_color is None:
         fill_color = ['steelblue']
     else:
         assert len(data) == len(colors)
         assert len(data) == len(fill_color), print('please provide a fill color for each dataset')
+
+    if legend_labels is [None]:
+        legend_labels = [None] * len(data)
+    else:
+        assert len(legend_labels) == len(data), print('please provide a legend label for all your data to be plotted!')
+    if 'show_legend' in kwargs and kwargs['show_legend'] is True:
+        ax.legend()
 
     for i in range(len(data)):
         # the histogram of the data
@@ -853,18 +874,22 @@ def plot_hist_density(data, colors: list = None, fill_color: list = None, legend
               np.exp(-0.5 * (1 / sigma * (x - mu))**2))
         ax.plot(x, y1, linewidth=2, c=colors[i], zorder=2)
         ax.fill_between(x, y1, color=fill_color[i], zorder=2, alpha=0.3)
-        if 'x_label' in kwargs:
+        if 'x_label' in kwargs and kwargs['x_label'] is not None:
             ax.set_xlabel(kwargs['x_label'])
-        if 'y_label' in kwargs:
+        if 'y_label' in kwargs and kwargs['y_label'] is not None:
             ax.set_ylabel(kwargs['y_label'])
+        elif 'y_label' in kwargs and kwargs['y_label'] is None:
+            pass
         else:
             ax.set_ylabel('Probability density')
+
+
+
 
     # set x limits
     if 'x_lim' in kwargs:
         ax.set_xlim(kwargs['x_lim'])
 
-    ax.legend()
 
     # setting shrinking factor for font size for title
     if 'shrink_text' in kwargs.keys():
@@ -874,7 +899,7 @@ def plot_hist_density(data, colors: list = None, fill_color: list = None, legend
 
     # add title
     if 'fig' not in kwargs.keys():
-        if 'title' in kwargs:
+        if 'title' in kwargs and kwargs['title'] is not None:
             if len(data) == 1:
                 ax.set_title(kwargs['title'] + r': $\mu=%s$, $\sigma=%s$' % (round(mu, 2), round(sigma, 2)), wrap=True, fontsize=12*shrink_text)
             else:

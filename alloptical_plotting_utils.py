@@ -585,13 +585,14 @@ def plot_periphotostim_addition(dataset, normalize: list = None, fps=None, legen
         AttributeError('please provide the data to plot in a list format, each different data group as a list item...')
 
 
-    if 'time' in xlabel or 'Time' in xlabel:
+    if xlabel is None or 'time' in xlabel or 'Time' in xlabel:
         ## change xaxis to time (secs)
         if fps is not None:
             if pre_stim_sec is not None:
                 x_range = np.linspace(0, len(sumtraces_plot[0]) / fps, len(
                     sumtraces_plot[0])) - pre_stim_sec  # x scale, but in time domain (transformed from frames based on the provided fps)
-                ax.set_xlabel('Time post stim (secs)')
+                if xlabel is not None:
+                    ax.set_xlabel('Time post stim (secs)')
             else:
                 AttributeError('need to provide a pre_stim_sec value to the function call!')
         else:

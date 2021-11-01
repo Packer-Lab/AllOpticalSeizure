@@ -143,7 +143,6 @@ def import_resultsobj(pkl_path: str):
     return resultsobj
 
 
-## this should technically be the biggest super class lol
 class TwoPhotonImaging:
 
     def __init__(self, tiff_path_dir, tiff_path, paq_path, metainfo, analysis_save_path, suite2p_path=None, suite2p_run=False,
@@ -198,8 +197,6 @@ class TwoPhotonImaging:
             self.s2pProcessing(s2p_path=self.suite2p_path)
 
         self.save_pkl(pkl_path=pkl_path)
-
-
 
     def s2pRun(self, ops, db, user_batch_size):
 
@@ -677,7 +674,7 @@ class alloptical(TwoPhotonImaging):
         print('\ninitialized alloptical expobj of exptype and trial: \n', self.metainfo)
 
         self.stimProcessing(stim_channel='markpoints2packio')
-        self._findTargets()
+        self._findTargetsAreas()
         self.find_photostim_frames()
 
         self.pre_stim = int(1.0 * self.fps)  # length of pre stim trace collected (in frames)
@@ -891,7 +888,7 @@ class alloptical(TwoPhotonImaging):
 
                 targets_trace = np.zeros([len(self.target_coords_all), data.shape[0]], dtype='float32')
                 for coord in range(len(self.target_coords_all)):
-                    target_areas = np.array(self.target_areas)
+                    target_areas = np.array(self.target_areas)  # TODO update this so that it doesn't include the extra exclusion zone
                     x = data[:, target_areas[coord, :, 1], target_areas[coord, :, 0]]  # = 1
                     targets_trace[coord] = np.mean(x, axis=1)
 
@@ -1095,7 +1092,7 @@ class alloptical(TwoPhotonImaging):
                 print('Spiral size (um):', elem.get('SpiralSize'))
                 break
 
-        self.spiral_size = int(spiral_size)
+        self.spiral_size = np.ceil(spiral_size)
         # self.single_stim_dur = single_stim_dur  # not sure why this was previously getting this value from here, but I'm now getting it from the xml file above
 
     def paqProcessing(self, **kwargs):
@@ -1388,7 +1385,7 @@ class alloptical(TwoPhotonImaging):
             self.sta_sig.append(sig_units)
 
     def s2p_targets(self, force_redo: bool = False):
-        '''finding s2p cell ROIs that were also SLM targets'''
+        '''finding s2p cell ROIs that were also SLM targets (or within the 15um from target coord center radius exclusion zone)'''
 
         if force_redo:
             continu = True
@@ -1427,11 +1424,11 @@ class alloptical(TwoPhotonImaging):
             #                          x == True]  # get list of s2p cells that were photostim targetted
 
             ##### new version
-            # s2p targets for all SLM targets
+            # s2p ROIs for all SLM targets
             for cell in range(self.n_units):
                 flag = 0
                 for x, y in zip(self.cell_x[cell], self.cell_y[cell]):
-                    if (x, y) in self.target_coords:
+                    if (x, y) in self.target_coords:  ## TODO need to update this to use the self.target_areas attr, since the self.target_coords only include the center of the SLM target coordinate
                         print((x, y))
                         flag = 1
                     elif (x, y) in self.target_coords_all:
@@ -1516,7 +1513,7 @@ class alloptical(TwoPhotonImaging):
         fig, ax = plt.subplots(figsize=[6,6])
         fig, ax = aoplot.plot_cells_loc(self, cells=self.s2p_cell_targets, show=False, fig=fig, ax=ax,
                                         title='s2p cell targets (red-filled) and all target coords (green) %s/%s' % (
-                              self.metainfo['trial'], self.metainfo['animal prep.']), invert_y=True)
+                                        self.metainfo['trial'], self.metainfo['animal prep.']), invert_y=True)
         for (x, y) in self.target_coords_all:
             ax.scatter(x=x, y=y, edgecolors='yellowgreen', facecolors='none', linewidths=1.0)
         fig.show()
@@ -1551,7 +1548,7 @@ class alloptical(TwoPhotonImaging):
 
             self.single_sig.append(single_sigs)
 
-    def _findTargets(self):
+    def _findTargetsAreas(self):
 
         '''
         Finds cells that have been targeted for optogenetic photostimulation using Naparm in all-optical type experiments.
@@ -2274,7 +2271,7 @@ class alloptical(TwoPhotonImaging):
         print('\nCollecting peri-stim traces ')
         stim_timings = self.stim_start_frames
 
-        self.s2p_cell_nontargets = [cell for cell in self.good_cells if cell not in self.s2p_cell_targets]
+        self.s2p_cell_nontargets = [cell for cell in self.good_cells if cell not in self.s2p_cell_targets]  ## exclusion of cells that are classified as s2p_cell_targets
 
         # collect photostim timed average dff traces of photostim targets
         dff_traces = []
@@ -2417,6 +2414,9 @@ class alloptical(TwoPhotonImaging):
         print('----------------------------------------------------------------')
         # make trial arrays from dff data shape: [cells x stims x frames]
         expobj._get_nontargets_stim_traces_norm(normalize_to=normalize_to, save=False)
+
+        ## TODO add collecting nontargets stim traces from in sz imaging frames - write a new function specifically designed for using the correct stims and cells
+
 
         # create parameters, slices, and subsets for making pre-stim and post-stim arrays to use in stats comparison
         # test_period = expobj.pre_stim_response_window_msec / 1000  # sec
@@ -3189,6 +3189,9 @@ class OnePhotonStim(TwoPhotonImaging):
         aoplot.plot_lfp_stims(self, x_axis='time')
         self.save_pkl()
 
+
+
+
 class onePstim(TwoPhotonImaging):
     def __init__(self, data_path_base, date, animal_prep, trial, metainfo, analysis_save_path_base: str = None):
         paqs_loc = '%s%s_%s_%s.paq' % (
@@ -3435,6 +3438,11 @@ class onePstim(TwoPhotonImaging):
 
         aoplot.plot_lfp_stims(self, x_axis='time')
         self.save_pkl()
+
+
+
+
+
 
 # %% RESULTS OBJECTS
 class OnePhotonResults:
@@ -4400,7 +4408,7 @@ def run_alloptical_processing_photostim(expobj, to_suite2p=None, baseline_trials
     """
 
     if force_redo:
-        expobj._findTargets()
+        expobj._findTargetsAreas()
 
         if not hasattr(expobj, 'meanRawFluTrace'):
             expobj.mean_raw_flu_trace(plot=True)
@@ -4724,6 +4732,7 @@ def run_allopticalAnalysisNontargets(expobj, normalize_to='pre_stim', to_plot=Tr
 
         expobj.save()
 
+    # make figure containing plots showing average responses of nontargets to photostim
     save_plot_path = expobj.analysis_save_path[:30] + 'Results_figs/' + save_plot_suffix
     fig_non_targets_responses(expobj=expobj, plot_subset=False, save_fig=save_plot_path) if to_plot else None
 
@@ -4798,6 +4807,7 @@ def fig_non_targets_responses(expobj, plot_subset: bool = True, save_fig=None):
                             expand_size_y=1.5, expand_size_x=0.6,
                             fig=f, ax=a04, show=False)
 
+    ## PLOTTING STATISTICALLY SIGNIFICANT RESPONDERS
     if sum(expobj.sig_units) > 0:
         # plot PERI-STIM AVG TRACES of sig nontargets
         a10 = f.add_subplot(gs[1, 0:2])
