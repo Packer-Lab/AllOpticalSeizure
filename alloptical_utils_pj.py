@@ -1386,7 +1386,7 @@ class alloptical(TwoPhotonImaging):
 
     def _findTargetedS2pROIs(self, force_redo: bool = False):
         '''finding s2p cell ROIs that were also SLM targets (or more specifically within the target areas as specified by _findTargetAreas - include 15um radius from center coordinate of spiral)
-        --- LAST UPDATED NOV 5 2021 ---
+        --- LAST UPDATED NOV 6 2021 - copied over from Rob's ---
         '''
 
         if force_redo:
@@ -1398,114 +1398,58 @@ class alloptical(TwoPhotonImaging):
             continu = True
 
         if continu:
-            # plot the AllFOVTargets coordinates
-            # load naparm targets file for this experiment
-            naparm_path = os.path.join(self.naparm_path, 'Targets')
+            '''
+            Make a binary mask of the targets and multiply by an image of the cells
+            to find cells that were targeted
 
-            listdir = os.listdir(naparm_path)
+            --- COPIED FROM ROB'S VAPE INTERAREAL_ANALYSIS.PY ON NOV 5 2021 ---
+            '''
 
-            scale_factor = self.frame_x / 512
+            print('searching for targeted cells... [Rob version]')
 
-            ## All SLM targets
-            for path in listdir:
-                if 'AllFOVTargets' in path:
-                    target_file = path
-            target_image = tf.imread(os.path.join(naparm_path, target_file))
+            # make all target area coords in to a binary mask
+            targ_img = np.zeros([self.frame_x, self.frame_y], dtype='uint16')
+            target_areas = np.array(self.target_areas)
+            targ_img[target_areas[:, :, 1], target_areas[:, :, 0]] = 1
 
-            plt.imshow(target_image, cmap='Greys_r')
-            plt.suptitle(f'{target_file}')
-            plt.show()
+            # make an image of every cell area, filled with the index of that cell
+            cell_img = np.zeros_like(targ_img)
 
-            ##### new version
-            self.is_target = []
-            print('\nsearching for targeted cells...')
-            target_areas_allpixels = pj.flattenOnce(self.target_areas)
+            cell_y = np.array(self.cell_x)
+            cell_x = np.array(self.cell_y)
 
-            # s2p ROIs for all SLM targets
-            for cell in range(self.n_units):
-                flag = 0
-                for x, y in zip(self.cell_x[cell], self.cell_y[cell]):
-                    if (y, x) in target_areas_allpixels:
-                        print((y, x))
-                        flag = 1
-                        break
-                if flag == 1:
-                    self.is_target.append(1)
-                else:
-                    self.is_target.append(0)
+            for i, coord in enumerate(zip(cell_x, cell_y)):
+                cell_img[coord] = i + 1
 
-            self.n_targeted_cells = sum(self.is_target)
-            self.s2p_cell_targets = [self.cell_id[i] for i, x in enumerate(self.is_target) if x == 1]  # get list of s2p cells that were photostim targetted
+            # binary mask x cell image to get the cells that overlap with target areas
+            targ_cell = cell_img * targ_img
+
+            targ_cell_ids = np.unique(targ_cell)[1:] - 1  # correct the cell id due to zero indexing
+            self.targeted_cells = np.zeros([self.n_units], dtype='bool')
+            self.targeted_cells[targ_cell_ids] = True
+            # self.s2p_cell_targets = [self.cell_id[i] for i, x in enumerate(self.targeted_cells) if x is True]  # get list of s2p cells that were photostim targetted
+            self.s2p_cell_targets = [self.cell_id[i] for i in np.where(self.targeted_cells)[
+                0]]  # get list of s2p cells that were photostim targetted
+
+            self.n_targeted_cells = np.sum(self.targeted_cells)
 
             print('------- Search completed.')
             self.save()
+            print('Number of targeted cells: ', self.n_targeted_cells)
 
-        print('Number of targeted cells found suite2p: ', self.n_targeted_cells)
-        print('\nTarget cells found in suite2p: ', self.s2p_cell_targets,
-              ' -- %s cells (out of %s target coords)' % (len(self.s2p_cell_targets), len(self.target_coords_all)))
+            fig, ax = plt.subplots(figsize=[6, 6])
+            fig, ax = aoplot.plot_cells_loc(self, cells=self.s2p_cell_targets, show=False, fig=fig, ax=ax,
+                                            show_s2p_targets=True,
+                                            title=f"s2p cell targets (red-filled) and target areas (white) {self.metainfo['trial']}/{self.metainfo['animal prep.']}",
+                                            invert_y=True)
 
-        fig, ax = plt.subplots(figsize=[6,6])
-        fig, ax = aoplot.plot_cells_loc(self, cells=self.s2p_cell_targets, show=False, fig=fig, ax=ax,
-                                        title='s2p cell targets (red-filled) and all target coords (green) %s/%s' % (
-                                        self.metainfo['trial'], self.metainfo['animal prep.']), invert_y=True)
-        for (x, y) in self.target_coords_all:
-            ax.scatter(x=x, y=y, edgecolors='yellowgreen', facecolors='none', linewidths=1.0)
-        fig.show()
-
-        # print('Target cells SLM Group #1: ', self.s2p_cell_targets_1)
-        # print('Target cells SLM Group #2: ', self.s2p_cell_targets_2)
-
-    def _findTargetedCells(self):
-        '''
-        Make a binary mask of the targets and multiply by an image of the cells
-        to find cells that were targeted
-
-        --- COPIED FROM ROB'S VAPE INTERAREAL_ANALYSIS.PY ON NOV 5 2021 ---
-        '''
-
-        print('searching for targeted cells... [Rob version]')
-
-        # make all target area coords in to a binary mask
-        targ_img = np.zeros([self.frame_x, self.frame_y], dtype='uint16')
-        target_areas = np.array(self.target_areas)
-        targ_img[target_areas[:, :, 1], target_areas[:, :, 0]] = 1
-
-        # make an image of every cell area, filled with the index of that cell
-        cell_img = np.zeros_like(targ_img)
-
-        cell_y = np.array(self.cell_x)
-        cell_x = np.array(self.cell_y)
-
-        for i, coord in enumerate(zip(cell_x, cell_y)):
-            cell_img[coord] = i + 1
-
-        # binary mask x cell image to get the cells that overlap with target areas
-        targ_cell = cell_img * targ_img
-
-        targ_cell_ids = np.unique(targ_cell)[1:] - 1  # correct the cell id due to zero indexing
-        self.targeted_cells = np.zeros([self.n_units], dtype='bool')
-        self.targeted_cells[targ_cell_ids] = True
-        # self.s2p_cell_targets = [self.cell_id[i] for i, x in enumerate(self.targeted_cells) if x is True]  # get list of s2p cells that were photostim targetted
-        self.s2p_cell_targets = [self.cell_id[i] for i in np.where(self.targeted_cells)[0]]  # get list of s2p cells that were photostim targetted
-
-        self.n_targeted_cells = np.sum(self.targeted_cells)
-
-        print('------- Search completed.')
-        self.save()
-        print('Number of targeted cells: ', self.n_targeted_cells)
-
-        fig, ax = plt.subplots(figsize=[6,6])
-        fig, ax = aoplot.plot_cells_loc(self, cells=self.s2p_cell_targets, show=False, fig=fig, ax=ax, show_s2p_targets=True,
-                                        title=f"s2p cell targets (red-filled) and target areas (white) {self.metainfo['trial']}/{self.metainfo['animal prep.']}",
-                                        invert_y=True)
-
-        targ_img = np.zeros([self.frame_x, self.frame_y], dtype='uint16')
-        target_areas = np.array(self.target_areas)
-        targ_img[target_areas[:, :, 1], target_areas[:, :, 0]] = 1
-        ax.imshow(targ_img, cmap='Greys_r', zorder=0)
-        # for (x, y) in self.target_coords_all:
-        #     ax.scatter(x=x, y=y, edgecolors='white', facecolors='none', linewidths=1.0)
-        fig.show()
+            targ_img = np.zeros([self.frame_x, self.frame_y], dtype='uint16')
+            target_areas = np.array(self.target_areas)
+            targ_img[target_areas[:, :, 1], target_areas[:, :, 0]] = 1
+            ax.imshow(targ_img, cmap='Greys_r', zorder=0)
+            # for (x, y) in self.target_coords_all:
+            #     ax.scatter(x=x, y=y, edgecolors='white', facecolors='none', linewidths=1.0)
+            fig.show()
 
 
     def singleTrialSignificance(self):
