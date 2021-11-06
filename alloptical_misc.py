@@ -22,6 +22,7 @@ j = 0
 
 # for key in list(allopticalResults.trial_maps[i].keys()):
 expobj, experiment = aoutils.import_expobj(aoresults_map_id=f'{i} {key}.{j}')  # import expobj
+expobj._findTargetedCells()
 expobj._findTargetedS2pROIs(force_redo=True)
 
 print('yes')

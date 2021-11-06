@@ -1385,7 +1385,9 @@ class alloptical(TwoPhotonImaging):
             self.sta_sig.append(sig_units)
 
     def _findTargetedS2pROIs(self, force_redo: bool = False):
-        '''finding s2p cell ROIs that were also SLM targets (or within the 15um from target coord center radius exclusion zone)'''
+        '''finding s2p cell ROIs that were also SLM targets (or more specifically within the target areas as specified by _findTargetAreas - include 15um radius from center coordinate of spiral)
+        --- LAST UPDATED NOV 5 2021 ---
+        '''
 
         if force_redo:
             continu = True
@@ -1400,29 +1402,6 @@ class alloptical(TwoPhotonImaging):
 
             print('\nsearching for targeted cells...')
 
-            # # Rob's new version of this, not really sure how he meant for it to be done, but it's not working
-            # targ_img = np.zeros([self.frame_x, self.frame_y], dtype='uint16')
-            # target_areas = np.array(self.target_areas)
-            # targ_img[target_areas[:, :, 1], target_areas[:, :, 0]] = 1
-            #
-            # cell_img = np.zeros([self.frame_x, self.frame_y], dtype='uint16')
-            # cell_x = np.array(self.cell_x)
-            # cell_y = np.array(self.cell_y)
-            # for i, coord in enumerate(zip(cell_x[0], cell_y[0])):
-            #     cell_img[coord] = i + 1
-            #
-            # targ_cell = cell_img * targ_img
-            #
-            # targ_cell_ids = np.unique(targ_cell)[1:] - 1
-            #
-            # self.is_target = np.zeros([self.n_units], dtype='bool')
-            # self.is_target[targ_cell_ids] = True
-            #
-            # self.n_targeted_cells = np.sum(self.is_target)
-            #
-            # self.s2p_cell_targets = [i for i, x in enumerate(self.is_target) if
-            #                          x == True]  # get list of s2p cells that were photostim targetted
-
             ##### new version
             target_areas_allpixels = pj.flattenOnce(self.target_areas)
 
@@ -1434,8 +1413,7 @@ class alloptical(TwoPhotonImaging):
                         print((x, y))
                         flag = 1
                         break
-                    else:
-                        flag = 0
+
 
                 if flag == 1:
                     self.is_target.append(1)
@@ -1445,65 +1423,6 @@ class alloptical(TwoPhotonImaging):
             self.n_targeted_cells = sum(self.is_target)
             self.s2p_cell_targets = [self.cell_id[i] for i, x in enumerate(self.is_target) if
                                      x == 1]  # get list of s2p cells that were photostim targetted
-
-            # # s2p targets for SLM group #1
-            # self.targeted_cells_1 = []
-            # for cell in range(self.n_units):
-            #     flag = 0
-            #     for x, y in zip(self.cell_x[cell], self.cell_y[cell]):
-            #         if (x, y) in self.target_coords_1:
-            #             print('Target coordinate found (Group #1)', (x, y))
-            #             flag = 1
-            #
-            #     if flag == 1:
-            #         self.targeted_cells_1.append(1)
-            #     else:
-            #         self.targeted_cells_1.append(0)
-            #
-            # self.n_targeted_cells_1 = sum(self.targeted_cells_1)
-            # self.s2p_cell_targets_1 = [self.cell_id[i] for i, x in enumerate(self.targeted_cells_1) if
-            #                            x == 1]  # get list of s2p cells that were photostim targetted
-            #
-            # # s2p targets for SLM group #2
-            # self.targeted_cells_2 = []
-            # for cell in range(self.n_units):
-            #     flag = 0
-            #     for x, y in zip(self.cell_x[cell], self.cell_y[cell]):
-            #         if (x, y) in self.target_coords_2:
-            #             print('Target coordinate found (Group #2)', (x, y))
-            #             flag = 1
-            #
-            #     if flag == 1:
-            #         self.targeted_cells_2.append(1)
-            #     else:
-            #         self.targeted_cells_2.append(0)
-            #
-            # self.n_targeted_cells_2 = sum(self.targeted_cells_2)
-            # self.s2p_cell_targets_2 = [self.cell_id[i] for i, x in enumerate(self.targeted_cells_2) if
-            #                            x == 1]  # get list of s2p cells that were photostim targetted
-
-            # ##### old version - pretty sure something is wrong with this code, the s2p cell targets this code finds don't make much sense
-            # print('Searching for targeted cells in suite2p results...')
-            # for cell in range(self.n_units):
-            #     flag = 0
-            #
-            #     for x, y in zip(self.cell_x[cell], self.cell_y[cell]):
-            #         for target in range(self.n_targets):
-            #             for a, b in self.target_areas[target]:
-            #                 if x == a and y == b:
-            #                     flag = 1
-            #
-            #     if flag == 1:
-            #         self.is_target.append(1)
-            #     else:
-            #         self.is_target.append(0)
-            #
-            # self.s2p_cell_targets = [i for i, x in enumerate(self.is_target) if
-            #                     x == 1]  # get list of s2p cells that were photostim targetted
-            #
-            # self.n_targeted_cells = len(self.s2p_cell_targets)
-
-            # self.s2p_cell_targets_groups = [self.s2p_cell_targets_1, self.s2p_cell_targets_2]
 
             print('------- Search completed.')
             self.save()
@@ -1523,6 +1442,53 @@ class alloptical(TwoPhotonImaging):
         # print('Target cells SLM Group #1: ', self.s2p_cell_targets_1)
         # print('Target cells SLM Group #2: ', self.s2p_cell_targets_2)
         #
+
+    def _findTargetedCells(self):
+        '''
+        Make a binary mask of the targets and multiply by an image of the cells
+        to find cells that were targeted
+
+        --- COPIED FROM ROB'S VAPE INTERAREAL_ANALYSIS.PY ON NOV 5 2021 ---
+        '''
+
+        print('searching for targeted cells...')
+
+        # make all target area coords in to a binary mask
+        targ_img = np.zeros([self.frame_x, self.frame_y], dtype='uint16')
+        target_areas = np.array(self.target_areas)
+        targ_img[target_areas[:, :, 1], target_areas[:, :, 0]] = 1
+
+        # make an image of every cell area, filled with the index of that cell
+        cell_img = np.zeros_like(targ_img)
+
+        cell_x = np.array(self.cell_x)
+        cell_y = np.array(self.cell_y)
+
+        for i, coord in enumerate(zip(cell_x[0], cell_y[0])):
+            cell_img[coord] = i + 1
+
+        # binary mask x cell image to get the cells that overlap with target areas
+        targ_cell = cell_img * targ_img
+
+        targ_cell_ids = np.unique(targ_cell)[1:] - 1  # correct the cell id due to zero indexing
+        self.targeted_cells = np.zeros([self.n_units], dtype='bool')
+        self.targeted_cells[targ_cell_ids] = True
+        self.s2p_cell_targets = [self.cell_id[i] for i, x in enumerate(self.targeted_cells) if
+                                 x is True]  # get list of s2p cells that were photostim targetted
+
+        self.n_targeted_cells = np.sum(self.targeted_cells)
+
+        print('search completed.')
+        print('Number of targeted cells: ', self.n_targeted_cells)
+
+        fig, ax = plt.subplots(figsize=[6,6])
+        fig, ax = aoplot.plot_cells_loc(self, cells=self.s2p_cell_targets, show=False, fig=fig, ax=ax,
+                                        title='s2p cell targets (red-filled) and all target coords (green) %s/%s' % (
+                                        self.metainfo['trial'], self.metainfo['animal prep.']), invert_y=True)
+        for (x, y) in self.target_coords_all:
+            ax.scatter(x=x, y=y, edgecolors='yellowgreen', facecolors='none', linewidths=1.0)
+        fig.show()
+
 
     def singleTrialSignificance(self):
 
