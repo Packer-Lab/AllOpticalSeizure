@@ -17,28 +17,42 @@ allopticalResults = aoutils.import_resultsobj(pkl_path=results_object_path)
 # %% updating the non-targets exclusion region to 15um from the center of the spiral coordinate
 
 i = 'pre'
-key = 'h'
+key = 'i'
 j = 0
 
 # for key in list(allopticalResults.trial_maps[i].keys()):
-expobj, experiment = aoutils.import_expobj(aoresults_map_id=f'{i} {key}.{j}')  # import expobj
+self, experiment = aoutils.import_expobj(aoresults_map_id=f'{i} {key}.{j}')  # import expobj
 
-expobj._findTargetedS2pROIs(force_redo=True)
-expobj._findTargetedCells()
+self._findTargetedCells()
 
 
-targetsareasFOV = np.zeros((expobj.frame_x, expobj.frame_y))
-for (y,x) in pj.flattenOnce(expobj.target_areas):
+listdir = os.listdir(self.naparm_path)
+scale_factor = self.frame_x / 512
+## All SLM targets
+for path in listdir:
+    if 'AllFOVTargets' in path:
+        target_file = path
+target_image = tf.imread(os.path.join(self.naparm_path, target_file))
+
+plt.imshow(target_image, cmap='Greys')
+plt.show()
+
+
+self._findTargetedS2pROIs(force_redo=True)
+
+
+targetsareasFOV = np.zeros((self.frame_x, self.frame_y))
+for (y,x) in pj.flattenOnce(self.target_areas):
     targetsareasFOV[x, y] = 1
 fig, ax = plt.subplots(figsize=(6,6))
 ax.imshow(targetsareasFOV, cmap='Greys_r', zorder=0)
-ax.set_title('11')
+ax.set_title('self.target_areas')
 fig.show()
 
 
 
-targ_img = np.zeros([expobj.frame_x, expobj.frame_y], dtype='uint16')
-target_areas = np.array(expobj.target_areas)
+targ_img = np.zeros([self.frame_x, self.frame_y], dtype='uint16')
+target_areas = np.array(self.target_areas)
 targ_img[target_areas[:, :, 1], target_areas[:, :, 0]] = 1
 fig, ax = plt.subplots(figsize=(6,6))
 ax.imshow(targ_img, cmap='Greys_r', zorder=0)
@@ -49,7 +63,8 @@ fig.show()
 
 fig, ax = plt.subplots(figsize=(6,6))
 ax.imshow(cell_img, cmap='Greys_r', zorder=0)
-ax.set_title('13')
+ax.set_title('s2p cell targets (red-filled) and all target coords (green) %s/%s' % (
+    self.metainfo['trial'], self.metainfo['animal prep.']))
 fig.show()
 
 

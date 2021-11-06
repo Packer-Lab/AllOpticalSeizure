@@ -59,7 +59,7 @@ def plot_cells_loc(expobj, cells: list, edgecolor: str = 'yellowgreen', title=No
                     color_ = 'none'
             else:
                 color_ = 'none'
-            ax.scatter(x=x, y=y, edgecolors=edgecolor, facecolors=color_, linewidths=0.8)
+            ax.scatter(x=x, y=y, edgecolors=None, facecolors=color_, linewidths=0.8)
         elif color_float_list:
             # ax.scatter(x=x, y=y, edgecolors='none', c=color_float_list[cells.index(cell)], linewidths=0.8,
             #            cmap=cmap)
