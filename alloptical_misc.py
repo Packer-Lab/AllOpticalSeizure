@@ -57,7 +57,7 @@ for i in ls:
             counter += 1
 
     title = f"s2p cell targets (red-filled) and target areas (white) - {i} trials"
-    fig.suptitle(title)
+    plt.suptitle(title)
     save_path = f'/home/pshah/mnt/qnap/Analysis/Results_figs/{title}.png'
     plt.savefig(save_path)
     fig.show()

@@ -2167,8 +2167,6 @@ class alloptical(TwoPhotonImaging):
         print('\nCollecting peri-stim traces ')
         stim_timings = self.stim_start_frames
 
-        self.s2p_nontargets = [cell for cell in self.good_cells if cell not in self.s2p_cells_exclude]  ## exclusion of cells that are classified as s2p_cell_targets
-
         # collect photostim timed average dff traces of photostim targets
         dff_traces = []
         dff_traces_avg = []
@@ -2308,8 +2306,13 @@ class alloptical(TwoPhotonImaging):
         print('\n----------------------------------------------------------------')
         print('running trial Processing for nontargets ')
         print('----------------------------------------------------------------')
+
+        # define non targets from suite2p ROIs (exclude cells in the SLM targets exclusion - .s2p_cells_exclude)
+        expobj.s2p_nontargets = [cell for cell in expobj.good_cells if cell not in expobj.s2p_cells_exclude]  ## exclusion of cells that are classified as s2p_cell_targets
+
         # make trial arrays from dff data shape: [cells x stims x frames]
         expobj._get_nontargets_stim_traces_norm(normalize_to=normalize_to, save=False)
+
 
         ## TODO add collecting nontargets stim traces from in sz imaging frames - write a new function specifically designed for using the correct stims and cells
 
