@@ -22,8 +22,38 @@ j = 0
 
 # for key in list(allopticalResults.trial_maps[i].keys()):
 expobj, experiment = aoutils.import_expobj(aoresults_map_id=f'{i} {key}.{j}')  # import expobj
-expobj._findTargetedCells()
+
 expobj._findTargetedS2pROIs(force_redo=True)
+expobj._findTargetedCells()
+
+
+targetsareasFOV = np.zeros((expobj.frame_x, expobj.frame_y))
+for (y,x) in pj.flattenOnce(expobj.target_areas):
+    targetsareasFOV[x, y] = 1
+fig, ax = plt.subplots(figsize=(6,6))
+ax.imshow(targetsareasFOV, cmap='Greys_r', zorder=0)
+ax.set_title('11')
+fig.show()
+
+
+
+targ_img = np.zeros([expobj.frame_x, expobj.frame_y], dtype='uint16')
+target_areas = np.array(expobj.target_areas)
+targ_img[target_areas[:, :, 1], target_areas[:, :, 0]] = 1
+fig, ax = plt.subplots(figsize=(6,6))
+ax.imshow(targ_img, cmap='Greys_r', zorder=0)
+ax.set_title('12')
+fig.show()
+
+
+
+fig, ax = plt.subplots(figsize=(6,6))
+ax.imshow(cell_img, cmap='Greys_r', zorder=0)
+ax.set_title('13')
+fig.show()
+
+
+
 
 print('yes')
 

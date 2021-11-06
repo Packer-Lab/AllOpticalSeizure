@@ -1464,7 +1464,7 @@ class alloptical(TwoPhotonImaging):
         cell_x = np.array(self.cell_x)
         cell_y = np.array(self.cell_y)
 
-        for i, coord in enumerate(zip(cell_x[0], cell_y[0])):
+        for i, coord in enumerate(zip(cell_x, cell_y)):
             cell_img[coord] = i + 1
 
         # binary mask x cell image to get the cells that overlap with target areas
