@@ -13,22 +13,21 @@ results_object_path = '/home/pshah/mnt/qnap/Analysis/alloptical_results_superobj
 allopticalResults = aoutils.import_resultsobj(pkl_path=results_object_path)
 
 
-i = 'pre'
-key = 'h'
-j = 0
-
-# import expobj
-expobj, experiment = aoutils.import_expobj(aoresults_map_id=f'{i} {key}.{j}')
-
-expobj, experiment = aoutils.import_expobj(prep='PS11', trial='t-010')
-
-expobj._parseNAPARMgpl()
-expobj._findTargetsAreas()
-expobj._findTargetedS2pROIs(force_redo=True, plot=False)
+# i = 'pre'
+# key = 'h'
+# j = 0
+#
+# # import expobj
+# expobj, experiment = aoutils.import_expobj(aoresults_map_id=f'{i} {key}.{j}')
+#
+# expobj, experiment = aoutils.import_expobj(prep='PS11', trial='t-010')
+#
+# expobj._findTargetsAreas()
+# expobj._findTargetedS2pROIs(force_redo=True, plot=False)
 
 # %% updating the non-targets exclusion region to 15um from the center of the spiral coordinate
 
-ls = ['pre']
+ls = ['pre', 'post']
 for i in ls:
     ncols = 5
     nrows = 5
@@ -40,6 +39,7 @@ for i in ls:
             # import expobj
             expobj, experiment = aoutils.import_expobj(aoresults_map_id=f'{i} {key}.{j}')
 
+            expobj._parseNAPARMgpl()
             expobj._findTargetsAreas()
             expobj._findTargetedS2pROIs(force_redo=True, plot=False)
 
@@ -56,7 +56,7 @@ for i in ls:
 
             counter += 1
 
-    title = "s2p cell targets (red-filled) and target areas (white) - pre4ap trials"
+    title = f"s2p cell targets (red-filled) and target areas (white) - {i} trials"
     fig.suptitle(title)
     save_path = f'/home/pshah/mnt/qnap/Analysis/Results_figs/{title}.png'
     plt.savefig(save_path)

@@ -1089,8 +1089,8 @@ class alloptical(TwoPhotonImaging):
             if elem.get('SpiralSize'):
                 spiral_size = float(elem.get('SpiralSize'))
                 spiral_size = (spiral_size + 0.005155) / 0.005269  # hard-coded size of spiral from MATLAB code
-                print('Spiral size (um):', elem.get('SpiralSize'))
-                print('\nspiral size (um):', int(spiral_size))
+                print('Spiral size .gpl file:', elem.get('SpiralSize'))
+                print('spiral size (um):', int(spiral_size))
                 break
 
         self.spiral_size = np.ceil(spiral_size)
@@ -1586,16 +1586,31 @@ class alloptical(TwoPhotonImaging):
         # self.target_coords_2 = targetCoordinates_2
         self.n_targets_total = len(targetCoordinates)
 
-        radius = int(((self.spiral_size / 2) + 2.5) / self.pix_sz_x)
+        ## specifying target areas in pixels to use for measuring responses of SLM targets
+        radius_px = int(np.ceil(((self.spiral_size / 2) + 0) / self.pix_sz_x))
         print(f"spiral size: {self.spiral_size}um")
         print(f"pix sz x: {self.pix_sz_x}um")
-        print(f"radius: {radius}um")
+        print("radius (in pixels): {:.2f}px".format(radius_px * self.pix_sz_x))
 
         target_areas = []
         for coord in targetCoordinates:
-            target_area = ([item for item in pj.points_in_circle_np(radius, x0=coord[0], y0=coord[1])])
+            target_area = ([item for item in pj.points_in_circle_np(radius_px, x0=coord[0], y0=coord[1])])
             target_areas.append(target_area)
         self.target_areas = target_areas
+
+
+        ## target_areas that need to be excluded when filtering for nontarget cells
+        radius_px = int(np.ceil(((self.spiral_size / 2) + 2.5) / self.pix_sz_x))
+        print(f"spiral size: {self.spiral_size}um")
+        print(f"pix sz x: {self.pix_sz_x}um")
+        print("radius (in pixels): {:.2f}px".format(radius_px * self.pix_sz_x))
+
+        target_areas = []
+        for coord in targetCoordinates:
+            target_area = ([item for item in pj.points_in_circle_np(radius_px, x0=coord[0], y0=coord[1])])
+            target_areas.append(target_area)
+        self.target_areas_exclude = target_areas
+
 
         # # get areas for SLM group #1
         # target_areas_1 = []
