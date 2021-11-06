@@ -27,9 +27,7 @@ for i in ls:
     fig, axs = plt.subplots(ncols=ncols, nrows=nrows, figsize=(10, 10))
     counter = 0
 
-    key = 'h'; j = 0
-
-
+    j = 0
     for key in list(allopticalResults.trial_maps[i].keys()):
 
         expobj, experiment = aoutils.import_expobj(aoresults_map_id=f'{i} {key}.{j}')  # import expobj
@@ -65,8 +63,6 @@ for i in ls:
     fig.show()
 
 # 5.1.4.2) scatter plot response magnitude vs. prestim mean F
-
-
 ls = ['pre', 'post']
 for i in ls:
     ncols = 3
@@ -74,9 +70,7 @@ for i in ls:
     fig, axs = plt.subplots(ncols=ncols, nrows=nrows, figsize=(10, 10))
     counter = 0
 
-    key = 'h'; j = 0
-
-
+    j = 0
     for key in list(allopticalResults.trial_maps[i].keys()):
 
         expobj, experiment = aoutils.import_expobj(aoresults_map_id=f'{i} {key}.{j}')  # import expobj
@@ -702,7 +696,7 @@ for key in list(allopticalResults.trial_maps['pre'].keys()):
                                                      save_plot_suffix='Nontargets_responses_2021-10-19/%s_%s.png' % (expobj.metainfo['animal prep.'], expobj.metainfo['trial']))
 
 # 5.1) for loop to go through each expobj to analyze nontargets - post4ap trials
-ls = pj.flattenx1(allopticalResults.post_4ap_trials)
+ls = pj.flattenOnce(allopticalResults.post_4ap_trials)
 for key in list(allopticalResults.trial_maps['post'].keys())[-5:]:
     for j in range(len(allopticalResults.trial_maps['post'][key])):
         # import expobj

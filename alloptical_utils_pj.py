@@ -1384,7 +1384,7 @@ class alloptical(TwoPhotonImaging):
 
             self.sta_sig.append(sig_units)
 
-    def s2p_targets(self, force_redo: bool = False):
+    def _findTargetedS2pROIs(self, force_redo: bool = False):
         '''finding s2p cell ROIs that were also SLM targets (or within the 15um from target coord center radius exclusion zone)'''
 
         if force_redo:
@@ -1424,16 +1424,18 @@ class alloptical(TwoPhotonImaging):
             #                          x == True]  # get list of s2p cells that were photostim targetted
 
             ##### new version
+            target_areas_allpixels = pj.flattenOnce(self.target_areas)
+
             # s2p ROIs for all SLM targets
             for cell in range(self.n_units):
                 flag = 0
                 for x, y in zip(self.cell_x[cell], self.cell_y[cell]):
-                    if (x, y) in self.target_coords:  ## TODO need to update this to use the self.target_areas attr, since the self.target_coords only include the center of the SLM target coordinate
+                    if (x, y) in target_areas_allpixels:  ## TODO need to update this to use the self.target_areas attr, since the self.target_coords only include the center of the SLM target coordinate
                         print((x, y))
                         flag = 1
-                    elif (x, y) in self.target_coords_all:
-                        print((x, y))
-                        flag = 1
+                        break
+                    else:
+                        flag = 0
 
                 if flag == 1:
                     self.is_target.append(1)
@@ -4432,7 +4434,7 @@ def run_alloptical_processing_photostim(expobj, to_suite2p=None, baseline_trials
         expobj.s2pProcessing(s2p_path=expobj.s2p_path, subset_frames=expobj.curr_trial_frames, subtract_neuropil=True,
                              baseline_frames=expobj.baseline_frames, force_redo=True)
         # expobj.target_coords_all = expobj.target_coords
-        expobj.s2p_targets(force_redo=True)
+        expobj._findTargetedS2pROIs(force_redo=True)
         s2pMaskStack(obj=expobj, pkl_list=[expobj.pkl_path], s2p_path=expobj.s2p_path,
                      parent_folder=expobj.analysis_save_path, force_redo=force_redo)
 

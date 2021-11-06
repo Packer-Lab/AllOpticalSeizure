@@ -61,7 +61,7 @@ expobj.subset_frames_current_trial(trial=trial, to_suite2p=expobj.suite2p_trials
 expobj.s2pProcessing(s2p_path=expobj.s2p_path, subset_frames=expobj.curr_trial_frames, subtract_neuropil=True,
                      baseline_frames=expobj.baseline_frames, force_redo=True)
 expobj.target_coords_all = expobj.target_coords
-expobj.s2p_targets()
+expobj._findTargetedS2pROIs()
 aoutils.s2pMaskStack(obj=expobj, pkl_list=[pkl_path], s2p_path=expobj.s2p_path, parent_folder=expobj.analysis_save_path, force_redo=True)
 
 

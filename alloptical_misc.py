@@ -13,6 +13,20 @@ results_object_path = '/home/pshah/mnt/qnap/Analysis/alloptical_results_superobj
 allopticalResults = aoutils.import_resultsobj(pkl_path=results_object_path)
 
 
+
+# %% updating the non-targets exclusion region to 15um from the center of the spiral coordinate
+
+i = 'pre'
+key = 'h'
+j = 0
+
+# for key in list(allopticalResults.trial_maps[i].keys()):
+expobj, experiment = aoutils.import_expobj(aoresults_map_id=f'{i} {key}.{j}')  # import expobj
+expobj._findTargetedS2pROIs(force_redo=True)
+
+print('yes')
+
+
 # %%
 prep = 'PS18'
 date = '2021-02-02'

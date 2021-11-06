@@ -469,7 +469,7 @@ s2p_path = '/home/pshah/mnt/qnap/Analysis/2020-12-18/suite2p/alloptical-2p-pre-4
 expobj.s2pProcessing(s2p_path=s2p_path, subset_frames=fr_curr_trial, subtract_neuropil=True)
 # if needed for pkl expobj generated from older versions of Vape
 expobj.target_coords_all = expobj.target_coords
-expobj.s2p_targets()
+expobj._findTargetedS2pROIs()
 
 # expobj.target_coords_all = expobj.target_coords
 

@@ -232,7 +232,7 @@ for exptype in ['post', 'pre']:
 
         # expobj.s2pProcessing(s2p_path=expobj.s2p_path, subset_frames=expobj.curr_trial_frames, subtract_neuropil=True,
         #                      baseline_frames=expobj.baseline_frames, force_redo=True)
-            expobj.s2p_targets(force_redo=True)
+            expobj._findTargetedS2pROIs(force_redo=True)
         # aoutils.s2pMaskStack(obj=expobj, pkl_list=[expobj.pkl_path], s2p_path=expobj.s2p_path, parent_folder=expobj.analysis_save_path, force_redo=True)
         #
 

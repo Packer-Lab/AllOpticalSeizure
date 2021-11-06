@@ -569,7 +569,7 @@ def findClosest(list, input):
     return closest_value, index
 
 # flatten list of lists
-def flattenx1(list, asarray=False):
+def flattenOnce(list, asarray=False):
     """ flattens a nested list by one nesting level (should be able to run multiple times to get further down if needed for
      deeper nested lists) """
     if not asarray:
