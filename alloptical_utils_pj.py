@@ -3412,42 +3412,6 @@ class AllOpticalResults:
 
 
 ########
-# preprocessing functions
-# def run_1p_processing(data_path_base, date, animal_prep, trial, metainfo):  # ---> moved to the __init__() for OnePhotonStim class
-#     paqs_loc = '%s/%s_%s_%s.paq' % (
-#         data_path_base, date, animal_prep, trial[2:])  # path to the .paq files for the selected trials
-#     tiffs_loc_dir = '%s/%s_%s' % (data_path_base, date, trial)
-#     tiffs_loc = '%s/%s_%s_Cycle00001_Ch3.tif' % (tiffs_loc_dir, date, trial)
-#     pkl_path = "/home/pshah/mnt/qnap/Analysis/%s/%s_%s/%s_%s.pkl" % (
-#         date, date, trial, date, trial)  # specify path in Analysis folder to save pkl object
-#     # paqs_loc = '%s/%s_RL109_010.paq' % (data_path_base, date)  # path to the .paq files for the selected trials
-#     new_tiffs = tiffs_loc[:-19]  # where new tiffs from rm_artifacts_tiffs will be saved
-#     # make the necessary Analysis saving subfolder as well
-#     analysis_save_path = tiffs_loc[:21] + 'Analysis/' + tiffs_loc_dir[26:]
-#
-#     print('\n-----Processing trial # %s-----' % trial)
-#
-#     paths = [tiffs_loc_dir, tiffs_loc, paqs_loc]
-#     # print('tiffs_loc_dir, naparms_loc, paqs_loc paths:\n', paths)
-#
-#     expobj = OnePhotonStim(paths, metainfo)
-#
-#     # set analysis save path for expobj
-#     # make the necessary Analysis saving subfolder as well
-#     expobj.analysis_save_path = analysis_save_path
-#     if os.path.exists(expobj.analysis_save_path):
-#         pass
-#     elif os.path.exists(expobj.analysis_save_path[:-17]):
-#         os.mkdir(expobj.analysis_save_path)
-#     elif os.path.exists(expobj.analysis_save_path[:-27]):
-#         os.mkdir(expobj.analysis_save_path[:-17])
-#         os.mkdir(expobj.analysis_save_path)
-#
-#     expobj.save_pkl(pkl_path=pkl_path)
-#
-#     return expobj
-
-
 # import expobj from the pkl file
 
 ## Rob's functions for generating some important commonly used image types.
