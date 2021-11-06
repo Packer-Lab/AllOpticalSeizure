@@ -34,7 +34,7 @@ aoplot.plot_lfp_stims(expobj)
 # %% s2p ROI Flu trace statistics for each cell
 
 print('s2p neu. corrected cell traces statistics: ')
-for cell in expobj.s2p_cell_nontargets:
+for cell in expobj.s2p_nontargets:
     cell_idx = expobj.cell_id.index(cell)
     print('mean: %s   \t min: %s  \t max: %s  \t std: %s' %
           (np.round(np.mean(expobj.raw[cell_idx]), 2), np.round(np.min(expobj.raw[cell_idx]), 2), np.round(np.max(expobj.raw[cell_idx]), 2),

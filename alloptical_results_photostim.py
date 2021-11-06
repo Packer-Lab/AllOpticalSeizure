@@ -729,9 +729,9 @@ def _trialProcessing_nontargets(expobj):
 
     # check if the two distributions of flu values (pre/post) are different
     assert expobj.pre_array.shape == expobj.post_array.shape, 'shapes for expobj.pre_array and expobj.post_array need to be the same for wilcoxon test'
-    wilcoxons = np.empty(len(expobj.s2p_cell_nontargets))  # [cell (p-value)]
+    wilcoxons = np.empty(len(expobj.s2p_nontargets))  # [cell (p-value)]
 
-    for cell in range(len(expobj.s2p_cell_nontargets)):
+    for cell in range(len(expobj.s2p_nontargets)):
         wilcoxons[cell] = stats.wilcoxon(expobj.post_array[cell], expobj.pre_array[cell])[1]
 
     expobj.wilcoxons = wilcoxons
@@ -770,7 +770,7 @@ def _sigTestAvgResponse_nontargets(expobj, alpha=0.1):
 
     # p values without bonferroni correction
     no_bonf_corr = [i for i, p in enumerate(p_vals) if p < 0.05]
-    expobj.nomulti_sig_units = np.zeros(len(expobj.s2p_cell_nontargets), dtype='bool')
+    expobj.nomulti_sig_units = np.zeros(len(expobj.s2p_nontargets), dtype='bool')
     expobj.nomulti_sig_units[no_bonf_corr] = True
 
     expobj.save()
@@ -788,10 +788,10 @@ def _sigTestAvgResponse_nontargets(expobj, alpha=0.1):
 # %% 5.1.2-dc) measuring/plotting responses of non targets to photostim
 
 # xyloc plot of pos., neg. and non responders -- NOT SURE IF ITS WORKING PROPERLY RIGHT NOW, NOT WORTH THE EFFORT RIGHT NOW LIKE THIS. NOT THE FULL WAY TO MEASURE SPATIAL RELATIONSHIPS AT ALL AS WELL.
-expobj.dfstdf_nontargets = pd.DataFrame(expobj.post_array_responses, index=expobj.s2p_cell_nontargets, columns=expobj.stim_start_frames)
-df = pd.DataFrame(expobj.post_array_responses[expobj.sig_units, :], index=[expobj.s2p_cell_nontargets[i] for i, x in enumerate(expobj.sig_units) if x], columns=expobj.stim_start_frames)
+expobj.dfstdf_nontargets = pd.DataFrame(expobj.post_array_responses, index=expobj.s2p_nontargets, columns=expobj.stim_start_frames)
+df = pd.DataFrame(expobj.post_array_responses[expobj.sig_units, :], index=[expobj.s2p_nontargets[i] for i, x in enumerate(expobj.sig_units) if x], columns=expobj.stim_start_frames)
 s_ = np.where(np.nanmean(expobj.post_array_responses[expobj.sig_units, :], axis=1) > 0)
-df = pd.DataFrame(expobj.post_array_responses[s_, :][0], index=[expobj.s2p_cell_nontargets[i] for i in s_[0]], columns=expobj.stim_start_frames)
+df = pd.DataFrame(expobj.post_array_responses[s_, :][0], index=[expobj.s2p_nontargets[i] for i in s_[0]], columns=expobj.stim_start_frames)
 aoplot.xyloc_responses(expobj, df=df, clim=[-1, +1], plot_target_coords=True)
 
 
@@ -803,13 +803,13 @@ print('\n----------------------------------------------------------------')
 print('plotting dFF for significant cells ')
 print('----------------------------------------------------------------')
 
-expobj.sig_cells = [expobj.s2p_cell_nontargets[i] for i, x in enumerate(expobj.sig_units) if x]
+expobj.sig_cells = [expobj.s2p_nontargets[i] for i, x in enumerate(expobj.sig_units) if x]
 expobj.pos_sig_cells = [expobj.sig_cells[i] for i in np.where(np.nanmean(expobj.post_array_responses[expobj.sig_units, :], axis=1) > 0)[0]]
 expobj.neg_sig_cells = [expobj.sig_cells[i] for i in np.where(np.nanmean(expobj.post_array_responses[expobj.sig_units, :], axis=1) < 0)[0]]
 
 f, ax = plt.subplots(nrows=2, ncols=2, figsize=(10, 10), sharex=True)
 # plot peristim avg dFF of pos_sig_cells
-selection = [expobj.s2p_cell_nontargets.index(i) for i in expobj.pos_sig_cells]
+selection = [expobj.s2p_nontargets.index(i) for i in expobj.pos_sig_cells]
 x = expobj.dff_traces_avg[selection]
 y_label = 'pct. dFF (normalized to prestim period)'
 f, ax[0, 0], _ = aoplot.plot_periphotostim_avg(arr=x, expobj=expobj, pre_stim_sec=1, post_stim_sec=3,
@@ -817,7 +817,7 @@ f, ax[0, 0], _ = aoplot.plot_periphotostim_avg(arr=x, expobj=expobj, pre_stim_se
                               x_label=None, y_lims=[-50, 200])
 
 # plot peristim avg dFF of neg_sig_cells
-selection = [expobj.s2p_cell_nontargets.index(i) for i in expobj.neg_sig_cells]
+selection = [expobj.s2p_nontargets.index(i) for i in expobj.neg_sig_cells]
 x = expobj.dff_traces_avg[selection]
 y_label = None
 f, ax[0, 1], _ = aoplot.plot_periphotostim_avg(arr=x, expobj=expobj, pre_stim_sec=1, post_stim_sec=3,
@@ -825,7 +825,7 @@ f, ax[0, 1], _ = aoplot.plot_periphotostim_avg(arr=x, expobj=expobj, pre_stim_se
                               x_label=None, y_lims=[-50, 200])
 
 # plot peristim avg dFstdF of pos_sig_cells
-selection = [expobj.s2p_cell_nontargets.index(i) for i in expobj.pos_sig_cells]
+selection = [expobj.s2p_nontargets.index(i) for i in expobj.pos_sig_cells]
 x = expobj.dfstdF_traces_avg[selection]
 y_label = 'dF/stdF'
 f, ax[1, 0], _ = aoplot.plot_periphotostim_avg(arr=x, expobj=expobj, pre_stim_sec=1, post_stim_sec=3,
@@ -833,7 +833,7 @@ f, ax[1, 0], _ = aoplot.plot_periphotostim_avg(arr=x, expobj=expobj, pre_stim_se
                               x_label='Time (seconds) ', y_lims=[-1, 1])
 
 # plot peristim avg dFstdF of neg_sig_cells
-selection = [expobj.s2p_cell_nontargets.index(i) for i in expobj.neg_sig_cells]
+selection = [expobj.s2p_nontargets.index(i) for i in expobj.neg_sig_cells]
 x = expobj.dfstdF_traces_avg[selection]
 y_label = None
 f, ax[1, 1], _ = aoplot.plot_periphotostim_avg(arr=x, expobj=expobj, pre_stim_sec=1, post_stim_sec=3,
