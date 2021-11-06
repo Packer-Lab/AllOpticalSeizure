@@ -1090,6 +1090,7 @@ class alloptical(TwoPhotonImaging):
                 spiral_size = float(elem.get('SpiralSize'))
                 spiral_size = (spiral_size + 0.005155) / 0.005269  # hard-coded size of spiral from MATLAB code
                 print('Spiral size (um):', elem.get('SpiralSize'))
+                print('\nspiral size (um):', int(spiral_size))
                 break
 
         self.spiral_size = np.ceil(spiral_size)
@@ -1384,7 +1385,7 @@ class alloptical(TwoPhotonImaging):
 
             self.sta_sig.append(sig_units)
 
-    def _findTargetedS2pROIs(self, force_redo: bool = False):
+    def _findTargetedS2pROIs(self, force_redo: bool = False, plot: bool = True):
         '''finding s2p cell ROIs that were also SLM targets (or more specifically within the target areas as specified by _findTargetAreas - include 15um radius from center coordinate of spiral)
         --- LAST UPDATED NOV 6 2021 - copied over from Rob's ---
         '''
@@ -1437,19 +1438,20 @@ class alloptical(TwoPhotonImaging):
             self.save()
             print('Number of targeted cells: ', self.n_targeted_cells)
 
-            fig, ax = plt.subplots(figsize=[6, 6])
-            fig, ax = aoplot.plot_cells_loc(self, cells=self.s2p_cell_targets, show=False, fig=fig, ax=ax,
-                                            show_s2p_targets=True,
-                                            title=f"s2p cell targets (red-filled) and target areas (white) {self.metainfo['trial']}/{self.metainfo['animal prep.']}",
-                                            invert_y=True)
+            if plot:
+                fig, ax = plt.subplots(figsize=[6, 6])
+                fig, ax = aoplot.plot_cells_loc(self, cells=self.s2p_cell_targets, show=False, fig=fig, ax=ax,
+                                                show_s2p_targets=True,
+                                                title=f"s2p cell targets (red-filled) and target areas (white) {self.metainfo['trial']}/{self.metainfo['animal prep.']}",
+                                                invert_y=True)
 
-            targ_img = np.zeros([self.frame_x, self.frame_y], dtype='uint16')
-            target_areas = np.array(self.target_areas)
-            targ_img[target_areas[:, :, 1], target_areas[:, :, 0]] = 1
-            ax.imshow(targ_img, cmap='Greys_r', zorder=0)
-            # for (x, y) in self.target_coords_all:
-            #     ax.scatter(x=x, y=y, edgecolors='white', facecolors='none', linewidths=1.0)
-            fig.show()
+                targ_img = np.zeros([self.frame_x, self.frame_y], dtype='uint16')
+                target_areas = np.array(self.target_areas)
+                targ_img[target_areas[:, :, 1], target_areas[:, :, 0]] = 1
+                ax.imshow(targ_img, cmap='Greys_r', zorder=0)
+                # for (x, y) in self.target_coords_all:
+                #     ax.scatter(x=x, y=y, edgecolors='white', facecolors='none', linewidths=1.0)
+                fig.show()
 
 
     def singleTrialSignificance(self):
@@ -1584,7 +1586,10 @@ class alloptical(TwoPhotonImaging):
         # self.target_coords_2 = targetCoordinates_2
         self.n_targets_total = len(targetCoordinates)
 
-        radius = self.spiral_size / self.pix_sz_x
+        radius = int(((self.spiral_size / 2) + 2.5) / self.pix_sz_x)
+        print(f"spiral size: {self.spiral_size}um")
+        print(f"pix sz x: {self.pix_sz_x}um")
+        print(f"radius: {radius}um")
 
         target_areas = []
         for coord in targetCoordinates:
