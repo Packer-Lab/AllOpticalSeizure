@@ -40,9 +40,9 @@ for i in ls:
             # import expobj
             expobj, experiment = aoutils.import_expobj(aoresults_map_id=f'{i} {key}.{j}')
 
-            # expobj._parseNAPARMgpl()
-            # expobj._findTargetsAreas()
-            # expobj._findTargetedS2pROIs(force_redo=False, plot=False)
+            expobj._parseNAPARMgpl()
+            expobj._findTargetsAreas()
+            expobj._findTargetedS2pROIs(force_redo=False, plot=False)
 
             ax = axs[counter // ncols, counter % ncols]
 

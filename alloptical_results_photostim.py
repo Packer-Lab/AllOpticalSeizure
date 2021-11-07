@@ -22,87 +22,42 @@ save_path_prefix = '/home/pshah/mnt/qnap/Analysis/Results_figs/'
 
 
 # %% 5.0.1-dc) plotting of excluded s2p ROIs and SLM target coordinates
-expobj, experiment = aoutils.import_expobj(aoresults_map_id='pre h.0')
 
-# %% dc) plot to show s2p ROIs location, colored as specified
-fig, ax = plt.subplots(figsize=(5, 5))
-s = 0.003
-##### targets areas image
-targ_img = np.zeros([expobj.frame_x, expobj.frame_y], dtype='float')
-target_areas_exclude = np.array(expobj.target_areas_exclude)
-# targ_img[target_areas_exclude[:, :, 1], target_areas_exclude[:, :, 0]] = 1
-x = np.asarray(list(range(expobj.frame_x)) * expobj.frame_y)
-y = np.asarray([i_y for i_y in range(expobj.frame_y) for i_x in range(expobj.frame_x)])
-img = targ_img.flatten()
-im_array = np.array([x, y], dtype=np.float)
-ax.scatter(im_array[0], im_array[1], c=img, cmap='Greys_r', s=s, zorder=0,  alpha=1)
+completed_list = ['pre a.0',
+ 'pre b.0',
+ 'pre c.0',
+ 'pre d.0',
+ 'pre f.0',
+ 'pre g.0',
+ 'pre g.1',
+ 'pre h.0',
+ 'pre i.0',
+ 'pre j.0',
+ 'pre l.0',
+ 'pre o.0']  # keep a list of expobj that have completed successfully
 
-##### suite2p ROIs areas image - nontargets
-nontargets_img = np.zeros([expobj.frame_x, expobj.frame_y], dtype='float')
-nontargets_img = nontargets_img + targ_img
-for n in expobj.s2p_nontargets[:50]:
-    idx = expobj.cell_id.index(n)
-    ypix = expobj.stat[idx]['ypix']
-    xpix = expobj.stat[idx]['xpix']
-    # nontargets_img[ypix, xpix] = 1
-    ax.scatter(xpix, ypix, c='white', s=s, zorder=1, alpha=1)
-# x = np.asarray(list(range(expobj.frame_x)) * expobj.frame_y)
-# y = np.asarray([i_y for i_y in range(expobj.frame_y) for i_x in range(expobj.frame_x)])
-# img = nontargets_img.flatten()
-# im_array = np.array([x, y], dtype=np.float)
-# ax.scatter(im_array[0], im_array[1], c=img, cmap='Greys_r')
+# %%
+ls = ['pre', 'post']
+for i in ls:
+    for key in list(allopticalResults.trial_maps[i].keys()):
+        for j in range(len(allopticalResults.trial_maps[i][key])):
+            if f"{i} {key}.{j}" not in completed_list:
+                # import expobj
+                expobj, experiment = aoutils.import_expobj(aoresults_map_id=f'{i} {key}.{j}')
 
+                if not hasattr(expobj, 's2p_nontargets'):
+                    expobj._parseNAPARMgpl()
+                    expobj._findTargetsAreas()
+                    expobj._findTargetedS2pROIs(force_redo=True, plot=False)
+                    aoutils.run_allopticalAnalysisNontargets(expobj, normalize_to='pre-stim', skip_processing=False,
+                                                             save_plot_suffix=f'Nontargets_responses_2021-11-06/%s_%s-{i}4ap.png' % (
+                                                             expobj.metainfo['animal prep.'], expobj.metainfo['trial']))
+                    expobj.save()
+                assert hasattr(expobj, 's2p_nontargets')
+                save_path = save_path_prefix + f"Nontargets_responses_2021-11-06/{expobj.metainfo['animal prep.']} - s2p ROIs plot.png"
+                aoplot.s2pRoiImage(expobj, save_fig=save_path)
 
-
-
-ax.set_xlim([0,expobj.frame_x])
-ax.set_ylim([0,expobj.frame_y])
-plt.margins(x=0, y=0)
-plt.gca().invert_yaxis()
-# plt.gca().invert_xaxis()
-fig.show()
-
-# %% dc)
-def s2pRoiImage(expobj, cells, label='response magnitude', clim=[-10, +10], plot_target_coords=True, title='', save_fig: str = None):
-    """
-    plot to show the response magnitude of each cell as the actual's filling in the cell's ROI pixels.
-
-    :param expobj: expobj associated with data
-    :param df: pandas dataframe (cell_id x stim frames)
-    :param clim: color limits
-    :param plot_target_coords: bool, if True plot the actual X and Y coords of all photostim cell targets
-    :param save_fig: where to save the save figure (optional)
-    :return:
-    """
-
-
-
-
-    for n in cells_:
-        idx = expobj.cell_id.index(n)
-        ypix = expobj.stat[idx]['ypix']
-        xpix = expobj.stat[idx]['xpix']
-        responses[ypix, xpix] = 100. + 1 * round(average_responses[cells_.index(n)], 2)
-
-    # mask some 'bad' data, in your case you would have: data < 0.05
-    responses = np.ma.masked_where(responses < 0.05, responses)
-    cmap = plt.cm.bwr
-    cmap.set_bad(color='black')
-
-    plt.figure(figsize=(7, 7))
-    im = plt.imshow(responses, cmap=cmap)
-    cb = plt.colorbar(im, fraction=0.046, pad=0.04)
-    cb.set_label(label)
-
-    plt.clim(100+clim[0], 100+clim[1])
-    if plot_target_coords:
-        for (x, y) in expobj.target_coords_all:
-            plt.scatter(x=x, y=y, edgecolors='green', facecolors='none', linewidths=1.0)
-    plt.suptitle(title + ' - SLM targets in green', y=0.90, fontsize=10)
-    # pj.plot_cell_loc(expobj, cells=expobj.s2p_cell_targets, background_transparent=True)
-    plt.show()
-    if save_fig is not None:
-        plt.savefig(save_fig)
+                completed_list.append(f"{i} {key}.{j}")
 
 
 

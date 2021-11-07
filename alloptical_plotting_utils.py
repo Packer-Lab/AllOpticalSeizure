@@ -708,8 +708,7 @@ def plot_flu_trace(expobj, cell, x_lims=None, slm_group=None, to_plot='raw', fig
         plt.xlim(x_lims)
 
     # plt.ylim(0, 300)
-    if show:
-        plt.show()
+    plt.show() if show else None
 
 
 # make a plot with the paq file LFP signal to visualize these classifications
@@ -873,7 +872,7 @@ def plot_traces_heatmap(arr, expobj, vmin=None, vmax=None, stim_on = None, stim_
         ax.set_title(title, fontsize=10, wrap=True)
 
     if 'show' in kwargs.keys():
-        plt.show() if kwargs['show'] else None
+        plt.show() if kwargs['show'] is True else None
     else:
         plt.show()
 
@@ -930,6 +929,67 @@ def xyloc_responses(expobj, df, label='response magnitude', clim=[-10, +10], plo
     plt.show()
     if save_fig is not None:
         plt.savefig(save_fig)
+
+
+# plot to show s2p ROIs location, colored as specified
+def s2pRoiImage(expobj, save_fig: str = None):
+    """
+    plot to show the response magnitude of each cell as the actual's filling in the cell's ROI pixels.
+
+    :param expobj: expobj associated with data
+    :param df: pandas dataframe (cell_id x stim frames)
+    :param clim: color limits
+    :param plot_target_coords: bool, if True plot the actual X and Y coords of all photostim cell targets
+    :param save_fig: where to save the save figure (optional)
+    :return:
+    """
+    fig, ax = plt.subplots(figsize=(5, 5))
+    s = 0.003
+    ##### targets areas image
+    targ_img = np.zeros([expobj.frame_x, expobj.frame_y], dtype='float')
+    target_areas_exclude = np.array(expobj.target_areas_exclude)
+    targ_img[target_areas_exclude[:, :, 1], target_areas_exclude[:, :, 0]] = 1
+    x = np.asarray(list(range(expobj.frame_x)) * expobj.frame_y)
+    y = np.asarray([i_y for i_y in range(expobj.frame_y) for i_x in range(expobj.frame_x)])
+    img = targ_img.flatten()
+    im_array = np.array([x, y], dtype=np.float)
+    ax.scatter(im_array[0], im_array[1], c=img, cmap='gray', s=s, zorder=0, alpha=1)
+
+    ##### suite2p ROIs areas image - nontargets
+    for n in expobj.s2p_nontargets:
+        idx = expobj.cell_id.index(n)
+        ypix = expobj.stat[idx]['ypix']
+        xpix = expobj.stat[idx]['xpix']
+        ax.scatter(xpix, ypix, c='lightsteelblue', s=s, zorder=1, alpha=1)
+
+    ##### suite2p ROIs areas image - exclude cells
+    for n in expobj.s2p_cells_exclude:
+        idx = expobj.cell_id.index(n)
+        ypix = expobj.stat[idx]['ypix']
+        xpix = expobj.stat[idx]['xpix']
+        ax.scatter(xpix, ypix, c='yellow', s=s, zorder=2, alpha=1)
+
+    ##### suite2p ROIs areas image - targeted cells
+    for n in expobj.s2p_cell_targets:
+        idx = expobj.cell_id.index(n)
+        ypix = expobj.stat[idx]['ypix']
+        xpix = expobj.stat[idx]['xpix']
+        ax.scatter(xpix, ypix, c='red', s=s, zorder=3, alpha=1)
+
+    ax.set_xlim([0, expobj.frame_x])
+    ax.set_ylim([0, expobj.frame_y])
+    plt.margins(x=0, y=0)
+    plt.gca().invert_yaxis()
+    # plt.gca().invert_xaxis()
+    # fig.show()
+
+    plt.suptitle(f"{expobj.metainfo['animal prep.']} - s2p nontargets (blue), exclude (yellow), targets (red); target_areas (white)",
+                 y=0.97, fontsize=8)
+    plt.show()
+    plt.savefig(save_fig) if save_fig else None
+
+
+
 
 # plots the raw trace for the Flu mean of the FOV (similar to the ZProject in Fiji)
 def plotMeanRawFluTrace(expobj, stim_span_color='white', stim_lines: bool = True, title='raw Flu trace', x_axis='time', shrink_text=1,

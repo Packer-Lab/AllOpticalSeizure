@@ -2179,8 +2179,7 @@ class alloptical(TwoPhotonImaging):
         for cell in self.s2p_nontargets:
             # print('considering cell # %s' % cell)
             cell_idx = self.cell_id.index(cell)
-            flu_trials = [self.raw[cell_idx][stim - self.pre_stim: stim + self.stim_duration_frames + self.post_stim] for stim in stim_timings if
-                   stim not in self.seizure_frames]
+            flu_trials = [self.raw[cell_idx][stim - self.pre_stim: stim + self.stim_duration_frames + self.post_stim] for stim in stim_timings]
 
 
             dff_trace = normalize_dff(self.raw[cell_idx], threshold_pct=50)  # normalize trace (dFF) to mean of whole trace
@@ -2308,8 +2307,7 @@ class alloptical(TwoPhotonImaging):
 
 
         # make trial arrays from dff data shape: [cells x stims x frames]
-        stim_timings = expobj.stim_start_frames
-        expobj._get_nontargets_stim_traces_norm(stim_timings=stim_timings, normalize_to=normalize_to, save=False)
+        expobj._get_nontargets_stim_traces_norm(stim_timings=expobj.stim_start_frames, normalize_to=normalize_to, save=False)
 
 
         # create parameters, slices, and subsets for making pre-stim and post-stim arrays to use in stats comparison
@@ -2862,7 +2860,7 @@ class Post4ap(alloptical):
         # - - collect stim traces as usual for all stims, then use the sz boundary dictionary to nan cells/stims insize sz boundary
         # make trial arrays from dff data shape: [cells x stims x frames]
         # stim_timings_outsz = [stim for stim in expobj.stim_start_frames if stim not in expobj.seizure_frames]; stim_timings=expobj.stims_out_sz
-        expobj._get_nontargets_stim_traces_norm(normalize_to=normalize_to, save=False)
+        expobj._get_nontargets_stim_traces_norm(stim_timings=expobj.stim_start_frames, normalize_to=normalize_to, save=False)
 
         if hasattr(expobj, 'slmtargets_sz_stim'):
             stim_timings_insz = [stim for stim in expobj.stims_in_sz if stim in list(expobj.slmtargets_sz_stim.keys())]
@@ -4375,6 +4373,7 @@ def run_alloptical_processing_photostim(expobj, to_suite2p=None, baseline_trials
                              baseline_frames=expobj.baseline_frames, force_redo=True)
         # expobj.target_coords_all = expobj.target_coords
         expobj._findTargetedS2pROIs(force_redo=True)
+        aoplot.s2pRoiImage(expobj)
         s2pMaskStack(obj=expobj, pkl_list=[expobj.pkl_path], s2p_path=expobj.s2p_path,
                      parent_folder=expobj.analysis_save_path, force_redo=force_redo)
 
