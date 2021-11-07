@@ -2864,19 +2864,21 @@ class Post4ap(alloptical):
 
         if hasattr(expobj, 'slmtargets_sz_stim'):
             stim_timings_insz = [stim for stim in expobj.stims_in_sz if stim in list(expobj.slmtargets_sz_stim.keys())]
-            expobj._makeNontargetsStimTracesArray(stim_timings=stim_timings_insz, normalize_to=normalize_to,
-                                                  save=False)
+            # expobj._makeNontargetsStimTracesArray(stim_timings=stim_timings_insz, normalize_to=normalize_to,
+            #                                       save=False)
             print('\nexcluding cells for stims inside sz boundary')
             for x, stim in enumerate(stim_timings_insz):
                 # stim = stim_timings_insz[0]
                 exclude_list = [idx for idx, cell in enumerate(expobj.s2p_nontargets) if cell in expobj.slmtargets_sz_stim[stim]]
 
                 expobj.dff_traces[exclude_list, :, x] = [np.nan] * expobj.dff_traces.shape[1]
-                expobj.dff_traces_avg[exclude_list, :, x] = [np.nan] * expobj.dff_traces_avg.shape[1]
                 expobj.dfstdF_traces[exclude_list, :, x] = [np.nan] * expobj.dfstdF_traces.shape[1]
-                expobj.dfstdF_traces_avg[exclude_list, :, x] = [np.nan] * expobj.dfstdF_traces_avg.shape[1]
                 expobj.raw_traces[exclude_list, :, x] = [np.nan] * expobj.raw_traces.shape[1]
-                expobj.raw_traces_avg[exclude_list, :, x] = [np.nan] * expobj.raw_traces_avg.shape[1]
+
+            ## need to redefine _avg arrays post exclusion for Post4ap expobj's
+            expobj.dff_traces_avg = np.nanmean(expobj.dff_traces, axis=1)
+            expobj.dfstdF_traces_avg = np.nanmean(expobj.dfstdF_traces, axis=1)
+            expobj.raw_traces_avg = np.nanmean(expobj.raw_traces, axis=1)
 
         else:
             AttributeError(
