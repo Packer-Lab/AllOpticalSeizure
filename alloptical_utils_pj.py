@@ -2157,7 +2157,7 @@ class alloptical(TwoPhotonImaging):
     #
     #     return targets_dff, targets_dff_avg, targets_dfstdF, targets_dfstdF_avg, targets_raw, targets_raw_avg
 
-    def _get_nontargets_stim_traces_norm(self, normalize_to='pre-stim', save=True):
+    def _get_nontargets_stim_traces_norm(self, stim_timings=self.stim_start_frames, normalize_to='pre-stim', save=True):
         """
         primary function to retrieve photostimulation trial timed Fluorescence traces for non-targets (ROIs taken from suite2p).
         :param self: alloptical experiment object
@@ -2165,7 +2165,6 @@ class alloptical(TwoPhotonImaging):
         :return: plot of avg_dFF of 100 randomly selected nontargets
         """
         print('\nCollecting peri-stim traces ')
-        stim_timings = self.stim_start_frames
 
         # collect photostim timed average dff traces of photostim targets
         dff_traces = []
@@ -2194,7 +2193,7 @@ class alloptical(TwoPhotonImaging):
                     trace_dff = ((flu_trials[i] - mean_spont_baseline) / mean_spont_baseline) * 100
 
                     # add nan if cell is inside sz boundary for this stim
-                    if hasattr(self, 'cells_sz_stim'):
+                    if hasattr(self, 'slmtargets_sz_stim'):
                         if self.is_cell_insz(cell=cell, stim=stim_timings[i]):
                             trace_dff = [np.nan] * len(flu_trials[i])
 
@@ -2220,8 +2219,6 @@ class alloptical(TwoPhotonImaging):
                     flu_dff.append(trace_dff)
                     flu_dfstdF.append(dFstdF)
 
-
-
             elif normalize_to == 'pre-stim':
                 flu_dff = []
                 flu_dfstdF = []
@@ -2245,15 +2242,15 @@ class alloptical(TwoPhotonImaging):
                         # # dFstdF = (((trace - mean_pre) / mean_pre) * 100) / std_pre  # make dF divided by std of pre-stim F trace
                         # dFstdF = (trace - mean_pre) / std_pre  # make dF divided by std of pre-stim F trace
 
-                    # add nan if cell is inside sz boundary for this stim
-                    if 'post' in self.metainfo['exptype']:
-                        if hasattr(self, 'cells_sz_stim'):
-                            if self.is_cell_insz(cell=cell, stim=stim_timings[i]):
-                                trace_dff = [np.nan] * len(trace)
-                                dFstdF = [np.nan] * len(trace)
-                        else:
-                            AttributeError(
-                                'no cells_sz_stim attr, so classify cells in sz boundary hasnot been saved for this expobj')
+                    # # add nan if cell is inside sz boundary for this stim -- temporarily commented out for a while
+                    # if 'post' in self.metainfo['exptype']:
+                    #     if hasattr(self, 'slmtargets_sz_stim'):
+                    #         if self.is_cell_insz(cell=cell, stim=stim_timings[i]):
+                    #             trace_dff = [np.nan] * len(trace)
+                    #             dFstdF = [np.nan] * len(trace)
+                    #     else:
+                    #         AttributeError(
+                    #             'no slmtargets_sz_stim attr, so classify cells in sz boundary hasnot been saved for this expobj')
 
                     flu_dff.append(trace_dff)
                     flu_dfstdF.append(dFstdF)
@@ -2279,8 +2276,7 @@ class alloptical(TwoPhotonImaging):
             # return dff_traces, dff_traces_avg
         elif normalize_to == 'pre-stim' or normalize_to == 'whole-trace':
             print(
-                '\nCompleted collecting pre to post stim traces -- normalized to pre-stim period or maybe whole-trace -- for %s cells' % len(
-                    dff_traces_avg))
+                f'\nCompleted collecting pre to post stim traces -- normalized to pre-stim period or maybe whole-trace -- for {len(dff_traces_avg)} cells, {len(flu_trials)} stims')
             self.dff_traces = np.asarray(dff_traces)
             self.dff_traces_avg = np.asarray([i for i in dff_traces_avg])
             self.dfstdF_traces = np.asarray(dfstdF_traces)
@@ -2310,11 +2306,10 @@ class alloptical(TwoPhotonImaging):
         # define non targets from suite2p ROIs (exclude cells in the SLM targets exclusion - .s2p_cells_exclude)
         expobj.s2p_nontargets = [cell for cell in expobj.good_cells if cell not in expobj.s2p_cells_exclude]  ## exclusion of cells that are classified as s2p_cell_targets
 
+
         # make trial arrays from dff data shape: [cells x stims x frames]
-        expobj._get_nontargets_stim_traces_norm(normalize_to=normalize_to, save=False)
-
-
-        ## TODO add collecting nontargets stim traces from in sz imaging frames - write a new function specifically designed for using the correct stims and cells
+        stim_timings = expobj.stim_start_frames
+        expobj._get_nontargets_stim_traces_norm(stim_timings=stim_timings, normalize_to=normalize_to, save=False)
 
 
         # create parameters, slices, and subsets for making pre-stim and post-stim arrays to use in stats comparison
@@ -2331,15 +2326,6 @@ class alloptical(TwoPhotonImaging):
         expobj.post_array = np.mean(expobj.analysis_array[:, :, expobj.post_stim_frames_slice],
                                     axis=1)  # [cells x poststim frames] (avg'd taken over all stims)
 
-        # check if the two distributions of flu values (pre/post) are different
-        assert expobj.pre_array.shape == expobj.post_array.shape, 'shapes for expobj.pre_array and expobj.post_array need to be the same for wilcoxon test'
-        wilcoxons = np.empty(len(expobj.s2p_nontargets))  # [cell (p-value)]
-
-        for cell in range(len(expobj.s2p_nontargets)):
-            wilcoxons[cell] = stats.wilcoxon(expobj.post_array[cell], expobj.pre_array[cell])[1]
-
-        expobj.wilcoxons = wilcoxons
-
         # ar2 = expobj.analysis_array[18, :, expobj.post_stim_frames_slice]
         # ar3 = ar2[~np.isnan(ar2).any(axis=1)]
         # assert np.nanmean(ar2) == np.nanmean(ar3)
@@ -2353,8 +2339,24 @@ class alloptical(TwoPhotonImaging):
             expobj.post_array_responses.append(responses)
 
         expobj.post_array_responses = np.mean(expobj.analysis_array[:, :, expobj.post_stim_frames_slice], axis=2)
+        expobj._runWilcoxonsTest(save=False)
 
         expobj.save() if save else None
+
+
+    def _runWilcoxonsTest(expobj, array1=expobj.pre_array, array2=expobj.post_array, save=True):
+
+        # check if the two distributions of flu values (pre/post) are different
+        assert array1.shape == array2.shape, 'shapes for expobj.pre_array and expobj.post_array need to be the same for wilcoxon test'
+        wilcoxons = np.empty(len(array1))  # [cell (p-value)]
+
+        for cell in range(len(array1)):
+            wilcoxons[cell] = stats.wilcoxon(array2[cell], array1[cell])[1]
+
+        expobj.wilcoxons = wilcoxons
+
+        expobj.save() if save else None
+
 
     def _sigTestAvgResponse_nontargets(expobj, alpha=0.1, save=True):
         """
@@ -2658,13 +2660,13 @@ class Post4ap(alloptical):
 
         in_sz = []
         out_sz = []
-        for cell, s in enumerate(self.stat):
+        for _, s in enumerate(self.stat):
             in_seizure = self._InOutSz(cell_med=s['med'], sz_border_path=sz_border_path, to_plot=to_plot)
 
             if in_seizure is True:
-                in_sz.append(s['original_index'])
+                in_sz.append(s['original_index'])  # this is the s2p cell id
             elif in_seizure is False:
-                out_sz.append(s['original_index'])
+                out_sz.append(s['original_index'])  # this is the s2p cell id
 
         if flip:
             # pass
@@ -2824,9 +2826,9 @@ class Post4ap(alloptical):
 
     def is_cell_insz(self, cell, stim):
         """for a given cell and stim, return True if cell is inside the sz boundary."""
-        if hasattr(self, 'cells_sz_stim'):
-            if stim in self.cells_sz_stim.keys():
-                if cell in self.cells_sz_stim[stim]:
+        if hasattr(self, 'slmtargets_sz_stim'):
+            if stim in self.slmtargets_sz_stim.keys():
+                if cell in self.slmtargets_sz_stim[stim]:
                     return True
                 else:
                     return False
@@ -2836,6 +2838,82 @@ class Post4ap(alloptical):
             # return False  # not all expobj will have the sz boundary classes attr so for those just assume no seizure
             raise Exception(
                 'cannot check for cell inside sz boundary because cell sz classification hasnot been performed yet')
+
+    def _trialProcessing_nontargets(expobj, normalize_to='pre-stim', save=True):
+        '''
+        Uses dfstdf traces for individual cells and photostim trials, calculate the mean amplitudes of response and
+        statistical significance across all trials for all cells
+
+        Inputs:
+            plane             - imaging plane n
+        '''
+
+        print('\n----------------------------------------------------------------')
+        print('running trial Processing for nontargets ')
+        print('----------------------------------------------------------------')
+
+        # define non targets from suite2p ROIs (exclude cells in the SLM targets exclusion - .s2p_cells_exclude)
+        expobj.s2p_nontargets = [cell for cell in expobj.good_cells if cell not in expobj.s2p_cells_exclude]  ## exclusion of cells that are classified as s2p_cell_targets
+
+
+        ## TODO add collecting nontargets stim traces from in sz imaging frames - write a new function specifically designed for using the correct stims and cells
+        # - - collect stim traces as usual for all stims, then use the sz boundary dictionary to nan cells/stims insize sz boundary
+        # make trial arrays from dff data shape: [cells x stims x frames]
+        # stim_timings_outsz = [stim for stim in expobj.stim_start_frames if stim not in expobj.seizure_frames]; stim_timings=expobj.stims_out_sz
+        expobj._get_nontargets_stim_traces_norm(normalize_to=normalize_to, save=False)
+
+        if hasattr(expobj, 'slmtargets_sz_stim'):
+            stim_timings_insz = [stim for stim in expobj.stims_in_sz if stim in list(expobj.slmtargets_sz_stim.keys())]
+            expobj._get_nontargets_stim_traces_norm(stim_timings=stim_timings_insz, normalize_to=normalize_to,
+                                                    save=False)
+            print('\nexcluding cells for stims inside sz boundary')
+            for stim in stim_timings_insz:
+                # stim = stim_timings_insz[0]
+                exclude_list = [idx for idx, cell in enumerate(expobj.s2p_nontargets) if cell in expobj.slmtargets_sz_stim[stim]]
+
+                expobj.dff_traces[exclude_list, :, stim] = [np.nan] * expobj.dff_traces.shape[1]
+                expobj.dff_traces_avg[exclude_list, :, stim] = [np.nan] * expobj.dff_traces_avg.shape[1]
+                expobj.dfstdF_traces[exclude_list, :, stim] = [np.nan] * expobj.dfstdF_traces.shape[1]
+                expobj.dfstdF_traces_avg[exclude_list, :, stim] = [np.nan] * expobj.dfstdF_traces_avg.shape[1]
+                expobj.raw_traces[exclude_list, :, stim] = [np.nan] * expobj.raw_traces.shape[1]
+                expobj.raw_traces_avg[exclude_list, :, stim] = [np.nan] * expobj.raw_traces_avg.shape[1]
+
+        else:
+            AttributeError(
+                'no slmtargets_sz_stim attr, so classify cells in sz boundary hasnot been saved for this expobj')
+
+
+        # create parameters, slices, and subsets for making pre-stim and post-stim arrays to use in stats comparison
+        # test_period = expobj.pre_stim_response_window_msec / 1000  # sec
+        # expobj.test_frames = int(expobj.fps * test_period)  # test period for stats
+        expobj.pre_stim_frames_test = np.s_[expobj.pre_stim - expobj.pre_stim_response_frames_window: expobj.pre_stim]
+        stim_end = expobj.pre_stim + expobj.stim_duration_frames
+        expobj.post_stim_frames_slice = np.s_[stim_end: stim_end + expobj.post_stim_response_frames_window]
+
+        # mean pre and post stimulus (within post-stim response window) flu trace values for all cells, all trials
+        expobj.analysis_array = expobj.dfstdF_traces  # NOTE: USING dF/stdF TRACES
+        expobj.pre_array = np.mean(expobj.analysis_array[:, :, expobj.pre_stim_frames_test],
+                                   axis=1)  # [cells x prestim frames] (avg'd taken over all stims)
+        expobj.post_array = np.mean(expobj.analysis_array[:, :, expobj.post_stim_frames_slice],
+                                    axis=1)  # [cells x poststim frames] (avg'd taken over all stims)
+
+        # ar2 = expobj.analysis_array[18, :, expobj.post_stim_frames_slice]
+        # ar3 = ar2[~np.isnan(ar2).any(axis=1)]
+        # assert np.nanmean(ar2) == np.nanmean(ar3)
+        # expobj.analysis_array = expobj.analysis_array[~np.isnan(expobj.analysis_array).any(axis=1)]
+
+        # measure avg response value for each trial, all cells --> return array with 3 axes [cells x response_magnitude_per_stim (avg'd taken over response window)]
+        expobj.post_array_responses = []  ### this and the for loop below was implemented to try to root out stims with nan's but it's likley not necessary...
+        for i in np.arange(expobj.analysis_array.shape[0]):
+            a = expobj.analysis_array[i][~np.isnan(expobj.analysis_array[i]).any(axis=1)]
+            responses = a.mean(axis=1)
+            expobj.post_array_responses.append(responses)
+
+        expobj.post_array_responses = np.mean(expobj.analysis_array[:, :, expobj.post_stim_frames_slice], axis=2)
+
+        expobj._runWilcoxonsTest(save=False)
+
+        expobj.save() if save else None
 
 
 class OnePhotonStim(TwoPhotonImaging):
@@ -3533,7 +3611,7 @@ def s2pMaskStack(obj, pkl_list, s2p_path, parent_folder, force_redo: bool = Fals
 
 # other functions written by me
 
-# PRE-PROCESSING FUNCTIONS
+# PRE-PROCESSING FUNCTIONS - need to delete old functions (i.e. ones that have been moved under classes above)
 # @njit
 def moving_average(a, n=4):
     ret = np.cumsum(a)
@@ -3641,7 +3719,7 @@ def get_s2ptargets_stim_traces(expobj, normalize_to='', pre_stim=10, post_stim=2
                 for i in range(len(flu)):
                     trace_dff = ((flu[i] - mean_spont_baseline) / mean_spont_baseline) * 100
                     # add nan if cell is inside sz boundary for this stim
-                    if hasattr(expobj, 'cells_sz_stim'):
+                    if hasattr(expobj, 'slmtargets_sz_stim'):
                         if expobj.is_cell_insz(cell=cell, stim=stim_timings[i]):
                             trace_dff = [np.nan] * len(flu[i])
                     flu_dff.append(trace_dff)
@@ -3653,7 +3731,7 @@ def get_s2ptargets_stim_traces(expobj, normalize_to='', pre_stim=10, post_stim=2
                     std_pre = np.std(trace[0:pre_stim])
                     dFstdF = (trace - mean_pre) / std_pre  # make dF divided by std of pre-stim F trace
                     # add nan if cell is inside sz boundary for this stim
-                    if hasattr(expobj, 'cells_sz_stim'):
+                    if hasattr(expobj, 'slmtargets_sz_stim'):
                         if expobj.is_cell_insz(cell=cell, stim=stim_timings[i]):
                             trace_dff = [np.nan] * len(trace)
                             dFstdF = [np.nan] * len(trace)
@@ -3714,7 +3792,7 @@ def get_nontargets_stim_traces_norm(expobj, normalize_to='', pre_stim=10, post_s
                 trace_dff = ((flu[i] - mean_spont_baseline) / mean_spont_baseline) * 100
 
                 # add nan if cell is inside sz boundary for this stim
-                if hasattr(expobj, 'cells_sz_stim'):
+                if hasattr(expobj, 'slmtargets_sz_stim'):
                     if expobj.is_cell_insz(cell=cell, stim=stim_timings[i]):
                         trace_dff = [np.nan] * len(flu[i])
 
@@ -3732,12 +3810,12 @@ def get_nontargets_stim_traces_norm(expobj, normalize_to='', pre_stim=10, post_s
 
                 # add nan if cell is inside sz boundary for this stim
                 if 'post' in expobj.metainfo['exptype']:
-                    if hasattr(expobj, 'cells_sz_stim'):
+                    if hasattr(expobj, 'slmtargets_sz_stim'):
                         if expobj.is_cell_insz(cell=cell, stim=stim_timings[i]):
                             trace_dff = [np.nan] * len(trace)
                             dFstdF = [np.nan] * len(trace)
                     else:
-                        AttributeError('no cells_sz_stim attr, so classify cells in sz boundary hasnot been saved for this expobj')
+                        AttributeError('no slmtargets_sz_stim attr, so classify cells in sz boundary hasnot been saved for this expobj')
 
                 flu_dfstdF.append(dFstdF)
                 flu_dff.append(trace_dff)
@@ -4041,8 +4119,8 @@ def calculate_StimSuccessRate(expobj, cell_ids: list, raw_traces_stims=None, dfs
     targets_dff_all_stimtrials = {}  # dict will contain the peri-stim dFF for each cell by the cell_idx
     stim_timings = expobj.stim_start_frames
 
-    # assert list(stim_timings) == list(expobj.cells_sz_stim.keys())  # dont really need this assertion because you wont necessarily always look at the sz boundary for all stims every trial
-    # stim_timings = expobj.cells_sz_stim.keys()
+    # assert list(stim_timings) == list(expobj.slmtargets_sz_stim.keys())  # dont really need this assertion because you wont necessarily always look at the sz boundary for all stims every trial
+    # stim_timings = expobj.slmtargets_sz_stim.keys()
     if dff_threshold:
         threshold = round(dff_threshold)
         # dff = True
@@ -4064,9 +4142,9 @@ def calculate_StimSuccessRate(expobj, cell_ids: list, raw_traces_stims=None, dfs
             # print('considering cell # %s' % cell)
             # if cell in expobj.cell_id:
             if sz_filter:
-                if hasattr(expobj, 'cells_sz_stim'):
+                if hasattr(expobj, 'slmtargets_sz_stim'):
                     stims_to_use = [str(stim) for stim in stim_timings
-                                    if stim not in expobj.cells_sz_stim.keys() or cell not in expobj.cells_sz_stim[
+                                    if stim not in expobj.slmtargets_sz_stim.keys() or cell not in expobj.slmtargets_sz_stim[
                                         stim]]  # select only the stim times where the cell IS NOT inside the sz boundary
                 else:
                     print(

@@ -18,9 +18,19 @@ from mpl_toolkits import mplot3d
 results_object_path = '/home/pshah/mnt/qnap/Analysis/alloptical_results_superobject.pkl'
 allopticalResults = aoutils.import_resultsobj(pkl_path=results_object_path)
 
+save_path_prefix = '/home/pshah/mnt/qnap/Analysis/Results_figs/'
+
+# %% 5.1-dc) TODO add collecting nontargets stim traces from in sz imaging frames - adding a separate _trialProcessing_nontargets method for Post4ap subclass
+
+# # todo probably also need to write a run_allopticalAnalysisNontargets and plots specifically for insz analysis
+
+## Post4ap class
+expobj, experiment = aoutils.import_expobj(aoresults_map_id='post h.0')
+# expobj._trialProcessing_nontargets()
+
+
 # %% 5.0-main)  RUN DATA ANALYSIS OF NON TARGETS:
 # #  - Analysis of responses of non-targets from suite2p ROIs in response to photostim trials - broken down by pre-4ap, outsz and insz (excl. sz boundary)
-
 
 
 # # import expobj
@@ -35,7 +45,6 @@ allopticalResults = aoutils.import_resultsobj(pkl_path=results_object_path)
 #                                             post_stim_sec=expobj.post_stim_sec)
 
 
-
 # %% 5.1) for loop to go through each expobj to analyze nontargets - pre4ap trials
 # ls = ['PS05 t-010', 'PS06 t-011', 'PS11 t-010', 'PS17 t-005', 'PS17 t-006', 'PS17 t-007', 'PS18 t-006']
 ls = pj.flattenOnce(allopticalResults.pre_4ap_trials)
@@ -45,10 +54,10 @@ for key in list(allopticalResults.trial_maps['pre'].keys()):
         expobj, experiment = aoutils.import_expobj(aoresults_map_id='pre %s.%s' % (key, j))
         if expobj.metainfo['animal prep.'] + ' ' + expobj.metainfo['trial'] in ls:
             aoutils.run_allopticalAnalysisNontargets(expobj, normalize_to='pre-stim', skip_processing=False,
-                                                     save_plot_suffix='Nontargets_responses_2021-10-19/%s_%s.png' % (expobj.metainfo['animal prep.'], expobj.metainfo['trial']))
+                                                     save_plot_suffix='Nontargets_responses_2021-11-06/%s_%s-pre4ap.png' % (expobj.metainfo['animal prep.'], expobj.metainfo['trial']))
         else:
-            aoutils.run_allopticalAnalysisNontargets(expobj, normalize_to='pre-stim', skip_processing=True,
-                                                     save_plot_suffix='Nontargets_responses_2021-10-19/%s_%s.png' % (expobj.metainfo['animal prep.'], expobj.metainfo['trial']))
+            aoutils.run_allopticalAnalysisNontargets(expobj, normalize_to='pre-stim', skip_processing=False,
+                                                     save_plot_suffix='Nontargets_responses_2021-11-06/%s_%s-pre4ap.png' % (expobj.metainfo['animal prep.'], expobj.metainfo['trial']))
 
 # 5.1) for loop to go through each expobj to analyze nontargets - post4ap trials
 ls = pj.flattenOnce(allopticalResults.post_4ap_trials)
@@ -58,10 +67,10 @@ for key in list(allopticalResults.trial_maps['post'].keys())[-5:]:
         expobj, experiment = aoutils.import_expobj(aoresults_map_id='post %s.%s' % (key, j), do_processing=True)
         if expobj.metainfo['animal prep.'] + ' ' + expobj.metainfo['trial'] in ls:
             aoutils.run_allopticalAnalysisNontargets(expobj, normalize_to='pre-stim', skip_processing=False,
-                                                     save_plot_suffix='Nontargets_responses_2021-10-24/%s_%s.png' % (expobj.metainfo['animal prep.'], expobj.metainfo['trial']))
+                                                     save_plot_suffix='Nontargets_responses_2021-11-06/%s_%s-post4ap.png' % (expobj.metainfo['animal prep.'], expobj.metainfo['trial']))
         else:
-            aoutils.run_allopticalAnalysisNontargets(expobj, normalize_to='pre-stim', skip_processing=True,
-                                                     save_plot_suffix='Nontargets_responses_2021-10-24/%s_%s.png' % (expobj.metainfo['animal prep.'], expobj.metainfo['trial']))
+            aoutils.run_allopticalAnalysisNontargets(expobj, normalize_to='pre-stim', skip_processing=False,
+                                                     save_plot_suffix='Nontargets_responses_2021-11-06/%s_%s-post4ap.png' % (expobj.metainfo['animal prep.'], expobj.metainfo['trial']))
 
 sys.exit()
 
@@ -289,8 +298,7 @@ f.show()
 
 
 
-# %% 5.2.1) scatter plot response magnitude vs. prestim std F
-
+# %% 5.2.1) PLOT - scatter plot response magnitude vs. prestim std F
 ls = ['pre', 'post']
 for i in ls:
     ncols = 3
@@ -319,9 +327,9 @@ for i in ls:
 
         # fig, axs = plt.subplots(ncols=ncols, nrows=nrows, figsize=(10, 10))
         ax = axs[counter // ncols, counter % ncols]
-        ax.scatter(x = negunits_prestdF, y = negsig_responders_avgresponse, color='red', alpha=0.10, label='sig. neg.', s=65, edgecolors='none')
-        ax.scatter(x = posunits_prestdF, y = possig_responders_avgresponse, color='green', alpha=0.10, label='sig. pos.', s=65, edgecolors='none')
-        ax.scatter(x = nonsigunits_prestdF, y = nonsig_responders_avgresponse, color='gray', alpha=0.10, label='non sig.', s=65, edgecolors='none')
+        ax.scatter(x = nonsigunits_prestdF, y = nonsig_responders_avgresponse, color='gray', alpha=0.10, label='non sig.', s=65, edgecolors='none', zorder=0)
+        ax.scatter(x = negunits_prestdF, y = negsig_responders_avgresponse, color='red', alpha=0.10, label='sig. neg.', s=65, edgecolors='none', zorder=1)
+        ax.scatter(x = posunits_prestdF, y = possig_responders_avgresponse, color='green', alpha=0.10, label='sig. pos.', s=65, edgecolors='none', zorder=2)
         ax.set_title(f"{expobj.metainfo['animal prep.']} {expobj.metainfo['trial']} ")
         # fig.show()
 
@@ -330,10 +338,13 @@ for i in ls:
     axs[0, 0].set_xlabel('Avg. prestim std F')
     axs[0, 0].set_ylabel('Avg. mag (dF/stdF)')
 
-    fig.suptitle(f'All exps. prestim std F distribution - {i}4ap')
+    fig.suptitle(f'All exps. prestim std F vs. response mag (dF/stdF) distribution - {i}4ap')
+    save_path = expobj.analysis_save_path[:30] + 'Results_figs/' + \
+                f"Nontargets_responses_2021-11-06/scatter prestim std F vs. plot response magnitude - {i}4ap.png"
+    plt.savefig(save_path)
     fig.show()
 
-# 5.1.4.2) scatter plot response magnitude vs. prestim mean F
+# 5.2.1.2) scatter plot response magnitude vs. prestim mean F
 ls = ['pre', 'post']
 for i in ls:
     ncols = 3
@@ -362,9 +373,9 @@ for i in ls:
 
         # fig, axs = plt.subplots(ncols=ncols, nrows=nrows, figsize=(10, 10))
         ax = axs[counter // ncols, counter % ncols]
-        ax.scatter(x = negunits_prestdF, y = negsig_responders_avgresponse, color='red', alpha=0.10, label='sig. neg.', s=65, edgecolors='none')
-        ax.scatter(x = posunits_prestdF, y = possig_responders_avgresponse, color='green', alpha=0.10, label='sig. pos.', s=65, edgecolors='none')
-        ax.scatter(x = nonsigunits_prestdF, y = nonsig_responders_avgresponse, color='gray', alpha=0.10, label='non sig.', s=65, edgecolors='none')
+        ax.scatter(x = nonsigunits_prestdF, y = nonsig_responders_avgresponse, color='gray', alpha=0.10, label='non sig.', s=65, edgecolors='none', zorder = 0)
+        ax.scatter(x = negunits_prestdF, y = negsig_responders_avgresponse, color='red', alpha=0.10, label='sig. neg.', s=65, edgecolors='none', zorder = 1)
+        ax.scatter(x = posunits_prestdF, y = possig_responders_avgresponse, color='green', alpha=0.10, label='sig. pos.', s=65, edgecolors='none', zorder = 2)
         ax.set_title(f"{expobj.metainfo['animal prep.']} {expobj.metainfo['trial']} ")
         # fig.show()
 
@@ -373,11 +384,14 @@ for i in ls:
     axs[0, 0].set_xlabel('Avg. prestim mean F')
     axs[0, 0].set_ylabel('Avg. mag (dF/stdF)')
 
-    fig.suptitle(f'All exps. prestim mean F distribution - {i}4ap')
+    fig.suptitle(f'All exps. prestim mean F vs. response mag (dF/stdF) distribution - {i}4ap')
+    save_path = expobj.analysis_save_path[:30] + 'Results_figs/' + \
+                f"Nontargets_responses_2021-11-06/scatter plot prestim mean F vs. response magnitude - {i}4ap.png"
+    plt.savefig(save_path)
     fig.show()
 
 
-# %% 5.2.2) measuring avg raw pre-stim stdF for all non-targets - pre4ap vs. post4ap histogram comparison
+# %% 5.2.2) PLOT - measuring avg raw pre-stim stdF for all non-targets - pre4ap vs. post4ap histogram comparison
 ncols = 3
 nrows = 4
 fig, axs = plt.subplots(ncols=ncols, nrows=nrows, figsize=(8, 8))
@@ -404,10 +418,13 @@ axs[0, 0].legend()
 axs[0, 0].set_ylabel('density')
 axs[0, 0].set_xlabel('Avg. prestim std F')
 fig.suptitle('All exps. prestim std F distribution - pre vs. post4ap')
+save_path = expobj.analysis_save_path[:30] + 'Results_figs/' + \
+            f"Nontargets_responses_2021-11-06/All exps. prestim std F distribution - pre vs. post4ap.png"
+plt.savefig(save_path)
 fig.show()
 
 
-# 5.1.4) measuring avg raw pre-stim stdF for all non-targets - pre4ap only
+# 5.2.2.1) PLOT - measuring avg raw pre-stim stdF for all non-targets - pre4ap only
 # key = 'h'; j = 0
 
 sig_units_prestdF_pre4ap = []
@@ -443,13 +460,17 @@ for key in list(allopticalResults.trial_maps['pre'].keys()):
 
 axs[0, 0].set_ylabel('density')
 axs[0, 0].set_xlabel('prestim std F')
-fig.suptitle('All exps. prestim std F distribution - pre4ap only')
+title = 'All exps. prestim std F distribution - pre4ap only'
+fig.suptitle(title)
+save_path = expobj.analysis_save_path[:30] + 'Results_figs/' + \
+            f"Nontargets_responses_2021-11-06/{title}.png"
+plt.savefig(save_path)
 fig.show()
 
 
 
 
-# 5.1.4) measuring avg raw pre-stim stdF for all non-targets - post4ap trials
+# 5.2.2.2) PLOT - measuring avg raw pre-stim stdF for all non-targets - post4ap trials
 sig_units_prestdF_post4ap = []
 nonsig_units_prestdF_post4ap = []
 allunits_prestdF_post4ap = []
@@ -478,7 +499,7 @@ for key in list(allopticalResults.trial_maps['post'].keys()):
 
         # plot the histogram
         ax = axs[counter // ncols, counter % ncols]
-        fig, ax = pj.plot_hist_density([allunits_prestdF_post4ap_], x_label=None,
+        fig, ax = pj.plot_hist_density([allunits_prestdF_post4ap_], x_label=None, y_label=None,
                                        title=f"{expobj.metainfo['animal prep.']} {expobj.metainfo['trial']} ",
                                        fill_color=['purple'], num_bins=100, fig=fig, ax=ax, show=False, shrink_text=0.7,
                                        figsize=(4, 5))
@@ -486,7 +507,11 @@ for key in list(allopticalResults.trial_maps['post'].keys()):
 
 axs[0, 0].set_ylabel('density')
 axs[0, 0].set_xlabel('prestim std F')
-fig.suptitle('All exps. prestim std F distribution - post4ap only')
+title = 'All exps. prestim std F distribution - post4ap only'
+fig.suptitle(title)
+save_path = expobj.analysis_save_path[:30] + 'Results_figs/' + \
+            f"Nontargets_responses_2021-11-06/{title}.png"
+plt.savefig(save_path)
 fig.show()
 
 
@@ -494,7 +519,7 @@ fig.show()
 
 
 
-# %% 5.2.3) measuring avg. raw prestim F - do post4ap cells have a lower avg. raw prestim F?
+# %% 5.2.3) PLOT - measuring avg. raw prestim F - do post4ap cells have a lower avg. raw prestim F?
 
 ncols = 3
 nrows = 4
@@ -512,15 +537,19 @@ for key in list(allopticalResults.trial_maps['pre'].keys()):
 
     # plot the histogram
     ax = axs[counter // ncols, counter % ncols]
-    fig, ax = pj.plot_hist_density([raw_meanprestim_pre4ap, raw_meanprestim_post4ap], x_label=None, legend_labels=['pre4ap', 'post4ap'],
-                                   title=f"{expobj.metainfo['animal prep.']} {expobj.metainfo['trial']} ", show_legend=False,
-                                   fill_color=['gray', 'purple'], num_bins=100, fig=fig, ax=ax, show=False, shrink_text=0.7,
-                                   figsize=(4, 5))
+    fig, ax = pj.plot_hist_density([raw_meanprestim_pre4ap, raw_meanprestim_post4ap], x_label=None, y_label=None,
+                                   legend_labels=['pre4ap', 'post4ap'], title=f"{expobj.metainfo['animal prep.']} {expobj.metainfo['trial']} ",
+                                   show_legend=False, fill_color=['gray', 'purple'], num_bins=100, fig=fig, ax=ax, show=False,
+                                   shrink_text=0.7, figsize=(4, 5))
     counter += 1
 axs[0, 0].legend()
 axs[0, 0].set_ylabel('density')
 axs[0, 0].set_xlabel('Avg. prestim F')
-fig.suptitle('All exps. prestim mean F distribution - pre vs. post4ap')
+title = 'All exps. prestim mean F distribution - pre vs. post4ap'
+fig.suptitle(title)
+save_path = expobj.analysis_save_path[:30] + 'Results_figs/' + \
+            f"Nontargets_responses_2021-11-06/{title}.png"
+plt.savefig(save_path)
 fig.show()
 
 
@@ -690,16 +719,23 @@ for exp in experiments:
     post4ap_pos.append(round(x[2], 1))
     post4ap_neg.append(round(x[3], 1))
 
+
+fig, axs = plt.subplots(ncols=2, nrows=1)
 data = [pre4ap_pos, post4ap_pos]
 pj.plot_bar_with_points(data, x_tick_labels=['pre4ap_pos', 'post4ap_pos'], colors=['lightgreen', 'forestgreen'],
                         bar=True, paired=True, expand_size_x=0.6, expand_size_y=1.3, title='# of Positive responders',
-                        y_label='# of sig. responders')
+                        y_label='# of sig. responders', ax = axs[0], fig=fig, show=False)
 
 data = [pre4ap_neg, post4ap_neg]
 pj.plot_bar_with_points(data, x_tick_labels=['pre4ap_neg', 'post4ap_neg'], colors=['skyblue', 'steelblue'],
                         bar=True, paired=True, expand_size_x=0.6, expand_size_y=1.3, title='# of Negative responders',
-                        y_label= '# of sig. responders')
-
+                        y_label='# of sig. responders', ax=axs[1], fig=fig, show=False)
+title = 'number of pos and neg responders pre vs. post4ap'
+fig.suptitle(title)
+save_path = expobj.analysis_save_path[:30] + 'Results_figs/' + \
+            f"Nontargets_responses_2021-11-06/{title}.png"
+plt.savefig(save_path)
+fig.show()
 
 
 # %% 5.3.2) # # PLOT - peri-stim average response stim graph for positive and negative followers
@@ -742,7 +778,10 @@ for exp in experiments:
             counter += 1
 axs[0, 0].set_ylabel('dF/stdF')
 axs[0, 0].set_xlabel('Time post stim (secs)')
-fig.suptitle('Avg. positive responders')
+title = 'Avg. periphotostim positive responders'
+fig.suptitle(title)
+save_path = expobj.analysis_save_path[:30] + 'Results_figs/' + f"Nontargets_responses_2021-11-06/{title}.png"
+plt.savefig(save_path)
 fig.show()
 
 # fig2.suptitle('Summed response of positive responders')
@@ -776,11 +815,13 @@ for exp in experiments:
                                            pre_stim_sec=allopticalResults.pre_stim_sec, fig=fig, ax=ax, show=False, fontsize='small',
                                                      xlabel=None, ylabel=None)
 
-
             counter += 1
 axs[0, 0].set_ylabel('dF/stdF')
 axs[0, 0].set_xlabel('Time post stim (secs)')
-fig.suptitle('Avg. negative responders')
+title = 'Avg. periphotostim negative responders'
+fig.suptitle(title)
+save_path = expobj.analysis_save_path[:30] + 'Results_figs/' + f"Nontargets_responses_2021-11-06/{title}.png"
+plt.savefig(save_path)
 fig.show()
 
 
@@ -833,7 +874,10 @@ for exp in experiments:
             counter += 1
 axs[0, 0].set_ylabel('norm. total response (a.u.)')
 axs[0, 0].set_xlabel('Time post stim (secs)')
-fig.suptitle('Summed response of positive responders')
+title = 'Summed response of positive responders'
+fig.suptitle(title)
+save_path = expobj.analysis_save_path[:30] + 'Results_figs/' + f"Nontargets_responses_2021-11-06/{title}.png"
+plt.savefig(save_path)
 fig.show()
 
 
@@ -877,7 +921,10 @@ for exp in experiments:
             counter += 1
 axs[0, 0].set_ylabel('norm. total response (a.u.)')
 axs[0, 0].set_xlabel('Time post stim (secs)')
-fig.suptitle('Summed response of negative responders')
+title = 'Summed response of negative responders'
+fig.suptitle(title)
+save_path = expobj.analysis_save_path[:30] + 'Results_figs/' + f"Nontargets_responses_2021-11-06/{title}.png"
+plt.savefig(save_path)
 fig.show()
 
 allopticalResults.auc_responders_df = auc_responders
@@ -885,7 +932,7 @@ allopticalResults.auc_responders_df = auc_responders
 allopticalResults.save()
 
 
-# 5.5.3.1) PLOT - # TODO ADD BARPLOT OF AUC OF TOTAL EVOKED PHOTOSTIM AVG ACITIVTY
+# %% 5.3.3.1) PLOT - # BARPLOT OF AUC OF TOTAL EVOKED PHOTOSTIM AVG ACITIVTY
 
 data=[]
 cols = ['pre4ap_pos_auc', 'post4ap_pos_auc']
@@ -914,16 +961,22 @@ for exp in experiments:
     post4ap_pos_auc.append(x[2])
     post4ap_neg_auc.append(x[3])
 
+
+fig, axs = plt.subplots(ncols=2, nrows=1, figsize=[4,3])
 data = [pre4ap_pos_auc, post4ap_pos_auc]
 pj.plot_bar_with_points(data, x_tick_labels=['pre4ap', 'post4ap'], colors=['lightgreen', 'forestgreen'],
-                        bar=False, paired=True, expand_size_x=0.4, expand_size_y=1.2, title='evoked activity (pos responders)',
-                        y_label='norm. evoked activity (a.u.)')
+                        bar=False, paired=True, expand_size_x=0.4, expand_size_y=1.2, title='pos responders',
+                        y_label='norm. evoked activity (a.u.)', fig=fig, ax=axs[0], show=False, shrink_text=0.7)
 
 data = [pre4ap_neg_auc, post4ap_neg_auc]
 pj.plot_bar_with_points(data, x_tick_labels=['pre4ap', 'post4ap'], colors=['skyblue', 'steelblue'],
-                        bar=False, paired=True, expand_size_x=0.5, expand_size_y=1.2, title='evoked activity (neg responders)',
-                        y_label='norm. evoked activity (a.u.)')
-
+                        bar=False, paired=True, expand_size_x=0.5, expand_size_y=1.2, title='neg responders',
+                        y_label='norm. evoked activity (a.u.)', fig=fig, ax=axs[1], show=False, shrink_text=0.7)
+title = 'network evoked photostim activity - nontargets - pre vs. post4ap'
+fig.suptitle(title, fontsize=8.5)
+save_path = save_path_prefix + f"Nontargets_responses_2021-11-06/{title}.png"
+plt.savefig(save_path)
+fig.show()
 
 
 
@@ -931,6 +984,9 @@ pj.plot_bar_with_points(data, x_tick_labels=['pre4ap', 'post4ap'], colors=['skyb
     # - like maybe add up all trials (sig and non sig), and all cells
     # - and compare pre-4ap and post-4ap (exp by exp, maybe normalizing the peak value per comparison from pre4ap?)
     # - or just make one graph per comparison and show all to Adam?
+
+
+
 
 # %% 5.4-todo) think about some normalization via success rate of the stimulus (plot some response measure against success rate of the stimulation) - calculate pearson's correlation value of the association
 

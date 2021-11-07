@@ -27,36 +27,6 @@ onePresults = aoutils.import_resultsobj(pkl_path=results_object_path)
 
 
 
-# %% 4.2) plot seizure incidence across onePstim and twoPstim trials
-twop_trials = [0.35, 0.251666667, 0.91, 0.33, 0.553333333, 0.0875, 0.47, 0.33, 0.52]
-onep_trials = [0.38, 0.26, 0.19, 0.436666667, 0.685]
-
-pj.plot_bar_with_points(data=[twop_trials, onep_trials], x_tick_labels=['2p stim', '1p stim'], colors=['purple', 'green'], y_label='seizure incidence (events/min)',
-                        title='rate of seizures during experiments', expand_size_x=0.6, expand_size_y=1.3, ylims=[0, 1])
-
-
-# %% 4.1) measure seizure incidence across onePstim trials
-
-for pkl_path in onePresults.mean_stim_responses['pkl_list']:
-    if list(onePresults.mean_stim_responses.loc[onePresults.mean_stim_responses['pkl_list'] == pkl_path, 'post-4ap response (during sz)'])[0] != '-':
-
-        expobj, experiment = aoutils.import_expobj(pkl_path=pkl_path, verbose=False)
-        total_time_recording = np.round((expobj.n_frames/expobj.fps) / 60., 2)  # return time in mins
-
-        # count seizure incidence (avg. over mins) for each experiment (animal)
-        if hasattr(expobj, 'seizure_lfp_onsets'):
-            n_seizures = len(expobj.seizure_lfp_onsets)
-        else:
-            expobj.seizure_frames = []
-            expobj.seizure_lfp_onsets = []
-            expobj.seizure_lfp_offsets = []
-            expobj.save()
-            n_seizures = 0
-
-        print('Seizure incidence for %s, %s, %s: ' % (expobj.metainfo['animal prep.'], expobj.metainfo['trial'], expobj.metainfo['exptype']), np.round(n_seizures / total_time_recording, 2))
-
-
-
 # %% 4) counting seizure incidence across all imaging trials
 
 for key in list(allopticalResults.trial_maps['post'].keys()):
@@ -86,6 +56,32 @@ for key in list(allopticalResults.trial_maps['post'].keys()):
 
         print('Seizure incidence for %s, %s, %s: ' % (prep, trial, expobj.metainfo['exptype']), np.round(n_seizures / total_time_recording, 2))
 
+# %% 4.1) measure seizure incidence across onePstim trials
+
+for pkl_path in onePresults.mean_stim_responses['pkl_list']:
+    if list(onePresults.mean_stim_responses.loc[onePresults.mean_stim_responses['pkl_list'] == pkl_path, 'post-4ap response (during sz)'])[0] != '-':
+
+        expobj, experiment = aoutils.import_expobj(pkl_path=pkl_path, verbose=False)
+        total_time_recording = np.round((expobj.n_frames/expobj.fps) / 60., 2)  # return time in mins
+
+        # count seizure incidence (avg. over mins) for each experiment (animal)
+        if hasattr(expobj, 'seizure_lfp_onsets'):
+            n_seizures = len(expobj.seizure_lfp_onsets)
+        else:
+            expobj.seizure_frames = []
+            expobj.seizure_lfp_onsets = []
+            expobj.seizure_lfp_offsets = []
+            expobj.save()
+            n_seizures = 0
+
+        print('Seizure incidence for %s, %s, %s: ' % (expobj.metainfo['animal prep.'], expobj.metainfo['trial'], expobj.metainfo['exptype']), np.round(n_seizures / total_time_recording, 2))
+
+# %% 4.2) plot seizure incidence across onePstim and twoPstim trials
+twop_trials = [0.35, 0.251666667, 0.91, 0.33, 0.553333333, 0.0875, 0.47, 0.33, 0.52]
+onep_trials = [0.38, 0.26, 0.19, 0.436666667, 0.685]
+
+pj.plot_bar_with_points(data=[twop_trials, onep_trials], x_tick_labels=['2p stim', '1p stim'], colors=['purple', 'green'], y_label='seizure incidence (events/min)',
+                        title='rate of seizures during experiments', expand_size_x=0.6, expand_size_y=1.3, ylims=[0, 1])
 
 
 

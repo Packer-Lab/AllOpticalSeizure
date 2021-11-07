@@ -665,10 +665,10 @@ def plot_bar_with_points(data, title='', x_tick_labels=[], legend_labels: list =
 
     # collect some info about data to plot
     w = 0.3  # mean bar width
-    x = list(range(len(data)))
+    xrange_ls = list(range(len(data)))
     y = data
-    if len(colors) != len(x):
-        colors = colors * len(x)
+    if len(colors) != len(xrange_ls):
+        colors = colors * len(xrange_ls)
 
 
     # initialize plot
@@ -676,20 +676,20 @@ def plot_bar_with_points(data, title='', x_tick_labels=[], legend_labels: list =
         f = kwargs['fig']
         ax = kwargs['ax']
     else:
-        f, ax = plt.subplots(figsize=((5 * len(x) / 2) * expand_size_x, 3 * expand_size_y))
+        f, ax = plt.subplots(figsize=((5 * len(xrange_ls) / 2) * expand_size_x, 3 * expand_size_y))
 
     if paired:
-        assert len(x) > 1
+        assert len(xrange_ls) > 1
 
     # start making plot
     if not bar:
-        for i in x:
+        for i in xrange_ls:
             ## plot the mean line
-            ax.plot(np.linspace(x[i] * w * 2.5 - w / 2, x[i] * w * 2.5 + w / 2, 3), [np.mean(y[i])] * 3, color='black')
+            ax.plot(np.linspace(xrange_ls[i] * w * 2.5 - w / 2, xrange_ls[i] * w * 2.5 + w / 2, 3), [np.mean(y[i])] * 3, color='black')
         lw = 0,
         edgecolor = None
         # since no bar being shown on plot (lw = 0 from above) then use it to plot the error bars
-        ax.bar([x * w * 2.5 for x in x],
+        ax.bar([x * w * 2.5 for x in xrange_ls],
                height=[np.mean(yi) for yi in y],
                yerr=[np.std(yi, ddof=1) for yi in y],  # error bars
                capsize=4.5,  # error bar cap width in points
@@ -707,10 +707,10 @@ def plot_bar_with_points(data, title='', x_tick_labels=[], legend_labels: list =
             edgecolor = kwargs['edgecolor'],
             lw = 1
         # plot bar graph
-        ax.errorbar([x * w * 2.5 for x in x], [np.mean(yi) for yi in y], fmt='none',
+        ax.errorbar([x * w * 2.5 for x in xrange_ls], [np.mean(yi) for yi in y], fmt='none',
                     yerr=np.asarray([np.asarray([0, np.std(yi, ddof=1)]) for yi in y]).T, ecolor='gray',
                     capsize=5, zorder=0)
-        ax.bar([x * w * 2.5 for x in x],
+        ax.bar([x * w * 2.5 for x in xrange_ls],
                height=[np.mean(yi) for yi in y],
                # yerr=np.asarray([np.asarray([0, np.std(yi, ddof=1)]) for yi in y]).T,  # error bars
                capsize=4.5,  # error bar cap width in points
@@ -723,35 +723,38 @@ def plot_bar_with_points(data, title='', x_tick_labels=[], legend_labels: list =
     else:
         AttributeError('something wrong happened with the bar bool parameter...')
 
-    ax.set_xticks([x * w * 2.5 for x in x])
-    ax.set_xticklabels(x_tick_labels)
+    ax.set_xticks([x * w * 2.5 for x in xrange_ls])
+    if len(xrange_ls) > 1:
+        ax.set_xticklabels(x_tick_labels, fontsize=12*shrink_text, rotation=45)
+    else:
+        ax.set_xticklabels(x_tick_labels, fontsize=12*shrink_text)
 
     if xlims:
-        ax.set_xlim([(x[0] * w * 2) - w * 1.20, (x[-1] * w * 2.5) + w * 1.20])
-    elif len(x) == 1:  # set the x_lims for single bar case so that the bar isn't autoscaled
+        ax.set_xlim([(xrange_ls[0] * w * 2) - w * 1.20, (xrange_ls[-1] * w * 2.5) + w * 1.20])
+    elif len(xrange_ls) == 1:  # set the x_lims for single bar case so that the bar isn't autoscaled
         xlims_ = [-1, 1]
         ax.set_xlim(xlims_)
 
     if len(legend_labels) == 0:
         if len(x_tick_labels) == 0:
-            x_tick_labels = [None] * len(x)
+            x_tick_labels = [None] * len(xrange_ls)
         legend_labels = x_tick_labels
 
     if points:
         if not paired:
-            for i in x:
+            for i in xrange_ls:
                 # distribute scatter randomly across whole width of bar
-                ax.scatter(x[i] * w * 2.5 + np.random.random(len(y[i])) * w - w / 2, y[i], color=colors[i], alpha=alpha, label=legend_labels[i])
+                ax.scatter(xrange_ls[i] * w * 2.5 + np.random.random(len(y[i])) * w - w / 2, y[i], color=colors[i], alpha=alpha, label=legend_labels[i])
 
         else:  # connect lines to the paired scatter points in the list
-            if len(x) > 0:
-                for i in x:
+            if len(xrange_ls) > 0:
+                for i in xrange_ls:
                     # plot points  # dont scatter location of points if plotting paired lines
-                    ax.scatter([x[i] * w * 2.5] * len(y[i]), y[i], color=colors[i], alpha=0.5,
+                    ax.scatter([xrange_ls[i] * w * 2.5] * len(y[i]), y[i], color=colors[i], alpha=0.5,
                                label=legend_labels[i], zorder=3)
-                for i in x[:-1]:
+                for i in xrange_ls[:-1]:
                     for point_idx in range(len(y[i])):  # draw the lines connecting pairs of data
-                        ax.plot([x[i] * w * 2.5 + 0.058, x[i+1] * w * 2.5 - 0.048], [y[i][point_idx], y[i+1][point_idx]], color='black', zorder=2, alpha=alpha)
+                        ax.plot([xrange_ls[i] * w * 2.5 + 0.058, xrange_ls[i+1] * w * 2.5 - 0.048], [y[i][point_idx], y[i+1][point_idx]], color='black', zorder=2, alpha=alpha)
 
                 # for point_idx in range(len(y[i])):  # slight design difference, with straight line going straight through the scatter points
                 #     ax.plot([x * w * 2.5 for x in x],
@@ -762,7 +765,7 @@ def plot_bar_with_points(data, title='', x_tick_labels=[], legend_labels: list =
 
     if ylims:
         ax.set_ylim(ylims)
-    elif len(x) == 1:  # set the y_lims for single bar case so that the bar isn't autoscaled
+    elif len(xrange_ls) == 1:  # set the y_lims for single bar case so that the bar isn't autoscaled
         ylims = [0, 2 * max(data[0])]
         ax.set_ylim(ylims)
 
@@ -780,13 +783,10 @@ def plot_bar_with_points(data, title='', x_tick_labels=[], legend_labels: list =
     ax.set_ylabel(y_label, fontsize=12*shrink_text)
     if savepath:
         plt.savefig(savepath)
-    if len(x) > 1:
-        plt.xticks(rotation=45)
-        # plt.setp(ax.get_xticklabels(), rotation=45)
 
     # add text to the figure if given:
     if text_list:
-        assert len(x) == len(text_list), 'please provide text_list of same len() as data'
+        assert len(xrange_ls) == len(text_list), 'please provide text_list of same len() as data'
         if 'text_shift' in kwargs.keys():
             text_shift = kwargs['text_shift']
         else:
@@ -794,9 +794,9 @@ def plot_bar_with_points(data, title='', x_tick_labels=[], legend_labels: list =
         if 'text_y_pos' in kwargs.keys():
             text_y_pos = kwargs['text_y_pos']
         else:
-            text_y_pos = max([np.percentile(y[i], 95) for i in x])
-        for i in x:
-            ax.text(x[i] * w * 2.5 - text_shift*w / 2, text_y_pos, text_list[i]),
+            text_y_pos = max([np.percentile(y[i], 95) for i in xrange_ls])
+        for i in xrange_ls:
+            ax.text(xrange_ls[i] * w * 2.5 - text_shift*w / 2, text_y_pos, text_list[i]),
 
     if len(legend_labels) > 1:
         if show_legend:
@@ -804,8 +804,8 @@ def plot_bar_with_points(data, title='', x_tick_labels=[], legend_labels: list =
 
     # add title
     if 'fig' not in kwargs.keys():
-        ax.set_title((title), horizontalalignment='center', verticalalignment='top', pad=25,
-                     fontsize=12*shrink_text, wrap=True)
+        ax.set_title(title, horizontalalignment='center', pad=100,
+                     fontsize=12*shrink_text, wrap=False)
     else:
         ax.set_title((title),horizontalalignment='center', verticalalignment='top',
                      fontsize=12*shrink_text, wrap=True)

@@ -32,6 +32,7 @@ for i in ls:
     ncols = 5
     nrows = 5
     fig, axs = plt.subplots(ncols=ncols, nrows=nrows, figsize=(30, 30))
+    fig.tight_layout()
     counter = 0
 
     for key in list(allopticalResults.trial_maps[i].keys()):
@@ -39,9 +40,9 @@ for i in ls:
             # import expobj
             expobj, experiment = aoutils.import_expobj(aoresults_map_id=f'{i} {key}.{j}')
 
-            expobj._parseNAPARMgpl()
-            expobj._findTargetsAreas()
-            expobj._findTargetedS2pROIs(force_redo=True, plot=False)
+            # expobj._parseNAPARMgpl()
+            # expobj._findTargetsAreas()
+            # expobj._findTargetedS2pROIs(force_redo=False, plot=False)
 
             ax = axs[counter // ncols, counter % ncols]
 
@@ -56,11 +57,11 @@ for i in ls:
 
             counter += 1
 
-    title = f"s2p cell targets (red-filled) and target areas (white) - {i} trials"
-    plt.suptitle(title)
+    title = f"s2p cell targets (red-filled) and target areas (white) - {i}4ap trials"
     save_path = f'/home/pshah/mnt/qnap/Analysis/Results_figs/{title}.png'
+    plt.suptitle(title, y=0.90)
     plt.savefig(save_path)
-    fig.show()
+    # fig.show()
 
 #
 # self._findTargetedCells()
