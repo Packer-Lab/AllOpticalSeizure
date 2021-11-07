@@ -29,9 +29,8 @@ save_path_prefix = '/home/pshah/mnt/qnap/Analysis/Results_figs/'
 # sys.exit()
 
 
-# %% 7.0-main) collect targets responses for stims dynamically over time
+# %% 7.0-main) TODO collect targets responses for stims dynamically over time (starting with old code)
 
-## try to find very old code for this...
 # plot the target photostim responses for individual targets for each stim over the course of the trial
 #    (normalize to each target's overall mean response) and plot over the timecourse of the trial
 
@@ -151,9 +150,8 @@ fig1.show()
 
 
 
-# %% 8.0-main) collect targets responses for stims vs. distance
+# %% 8.0-main) TODO collect targets responses for stims vs. distance (starting with old code)
 
-## try to find very old code for this...
 # plot response magnitude vs. distance
 for i in range(len(expobj.stim_times)):
     # calculate the min distance of slm target to s2p cells classified inside of sz boundary at the current stim
@@ -281,11 +279,6 @@ for i in ls:
                 completed_list.append(f"{i} {key}.{j}")
 
 # %% 5.1-dc) for loop to go through each expobj to analyze nontargets - pre4ap trials
-
-# TODO add collecting nontargets stim traces from in sz imaging frames - adding a separate _trialProcessing_nontargets method for Post4ap subclass
-
-# # todo probably also need to write a run_allopticalAnalysisNontargets and plots specifically for insz analysis
-
 
 # ls = ['PS05 t-010', 'PS06 t-011', 'PS11 t-010', 'PS17 t-005', 'PS17 t-006', 'PS17 t-007', 'PS18 t-006']
 ls = pj.flattenOnce(allopticalResults.pre_4ap_trials)
