@@ -2856,7 +2856,7 @@ class Post4ap(alloptical):
         # define non targets from suite2p ROIs (exclude cells in the SLM targets exclusion - .s2p_cells_exclude)
         expobj.s2p_nontargets = [cell for cell in expobj.good_cells if cell not in expobj.s2p_cells_exclude]  ## exclusion of cells that are classified as s2p_cell_targets
 
-        ## TODO add collecting nontargets stim traces from in sz imaging frames - write a new function specifically designed for using the correct stims and cells
+        ## collecting nontargets stim traces from in sz imaging frames
         # - - collect stim traces as usual for all stims, then use the sz boundary dictionary to nan cells/stims insize sz boundary
         # make trial arrays from dff data shape: [cells x stims x frames]
         # stim_timings_outsz = [stim for stim in expobj.stim_start_frames if stim not in expobj.seizure_frames]; stim_timings=expobj.stims_out_sz
@@ -2867,7 +2867,7 @@ class Post4ap(alloptical):
             expobj._makeNontargetsStimTracesArray(stim_timings=stim_timings_insz, normalize_to=normalize_to,
                                                   save=False)
             print('\nexcluding cells for stims inside sz boundary')
-            for stim, x in enumerate(stim_timings_insz):
+            for x, stim in enumerate(stim_timings_insz):
                 # stim = stim_timings_insz[0]
                 exclude_list = [idx for idx, cell in enumerate(expobj.s2p_nontargets) if cell in expobj.slmtargets_sz_stim[stim]]
 
