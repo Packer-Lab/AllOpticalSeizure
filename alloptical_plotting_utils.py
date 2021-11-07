@@ -944,7 +944,10 @@ def s2pRoiImage(expobj, save_fig: str = None):
     :return:
     """
     fig, ax = plt.subplots(figsize=(5, 5))
-    s = 0.003
+    if expobj.frame_x == 512:
+        s = 0.003 * (1024/expobj.frame_x * 4)
+    else:
+        s = 0.003
     ##### targets areas image
     targ_img = np.zeros([expobj.frame_x, expobj.frame_y], dtype='float')
     target_areas_exclude = np.array(expobj.target_areas_exclude)

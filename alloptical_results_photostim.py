@@ -23,18 +23,7 @@ save_path_prefix = '/home/pshah/mnt/qnap/Analysis/Results_figs/'
 
 # %% 5.0.1-dc) plotting of excluded s2p ROIs and SLM target coordinates
 
-completed_list = ['pre a.0',
- 'pre b.0',
- 'pre c.0',
- 'pre d.0',
- 'pre f.0',
- 'pre g.0',
- 'pre g.1',
- 'pre h.0',
- 'pre i.0',
- 'pre j.0',
- 'pre l.0',
- 'pre o.0']  # keep a list of expobj that have completed successfully
+completed_list = []  # keep a list of expobj that have completed successfully
 
 # %%
 ls = ['pre', 'post']
@@ -49,7 +38,7 @@ for i in ls:
                     expobj._parseNAPARMgpl()
                     expobj._findTargetsAreas()
                     expobj._findTargetedS2pROIs(force_redo=True, plot=False)
-                    aoutils.run_allopticalAnalysisNontargets(expobj, normalize_to='pre-stim', skip_processing=False,
+                    aoutils.run_allopticalAnalysisNontargets(expobj, normalize_to='pre-stim', skip_processing=False, to_plot=False,
                                                              save_plot_suffix=f'Nontargets_responses_2021-11-06/%s_%s-{i}4ap.png' % (
                                                              expobj.metainfo['animal prep.'], expobj.metainfo['trial']))
                     expobj.save()
@@ -59,7 +48,7 @@ for i in ls:
 
                 completed_list.append(f"{i} {key}.{j}")
 
-
+sys.exit()
 
 # %% 5.1-dc) TODO add collecting nontargets stim traces from in sz imaging frames - adding a separate _trialProcessing_nontargets method for Post4ap subclass
 
