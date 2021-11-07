@@ -4799,6 +4799,7 @@ def fig_non_targets_responses(expobj, plot_subset: bool = True, save_fig=None):
 
     f.suptitle(
         ('%s %s %s' % (expobj.metainfo['animal prep.'], expobj.metainfo['trial'], expobj.metainfo['exptype'])))
+    f.tight_layout()
     f.show()
 
     if save_fig is not None:

@@ -21,42 +21,222 @@ allopticalResults = aoutils.import_resultsobj(pkl_path=results_object_path)
 save_path_prefix = '/home/pshah/mnt/qnap/Analysis/Results_figs/'
 
 
-# %% 5.0.1-dc) plotting of excluded s2p ROIs and SLM target coordinates
+######### ZONE FOR CALLING THIS SCRIPT DIRECTLY FROM THE SSH SERVER ###########
 
-completed_list = []  # keep a list of expobj that have completed successfully
 
-# %%
-ls = ['pre', 'post']
-for i in ls:
-    for key in list(allopticalResults.trial_maps[i].keys()):
-        for j in range(len(allopticalResults.trial_maps[i][key])):
-            if f"{i} {key}.{j}" not in completed_list:
-                # import expobj
-                expobj, experiment = aoutils.import_expobj(aoresults_map_id=f'{i} {key}.{j}')
 
-                if not hasattr(expobj, 's2p_nontargets'):
-                    expobj._parseNAPARMgpl()
-                    expobj._findTargetsAreas()
-                    expobj._findTargetedS2pROIs(force_redo=True, plot=False)
-                    aoutils.run_allopticalAnalysisNontargets(expobj, normalize_to='pre-stim', skip_processing=False, to_plot=False,
-                                                             save_plot_suffix=f'Nontargets_responses_2021-11-06/%s_%s-{i}4ap.png' % (
-                                                             expobj.metainfo['animal prep.'], expobj.metainfo['trial']))
-                    expobj.save()
-                assert hasattr(expobj, 's2p_nontargets')
-                save_path = save_path_prefix + f"Nontargets_responses_2021-11-06/{expobj.metainfo['animal prep.']} - s2p ROIs plot.png"
-                aoplot.s2pRoiImage(expobj, save_fig=save_path)
+########### END OF // ZONE FOR CALLING THIS SCRIPT DIRECTLY FROM THE SSH SERVER ###########
+# sys.exit()
 
-                completed_list.append(f"{i} {key}.{j}")
 
-sys.exit()
+# %% 7.0-main) collect targets responses for stims dynamically over time
 
-# %% 5.1-dc) TODO add collecting nontargets stim traces from in sz imaging frames - adding a separate _trialProcessing_nontargets method for Post4ap subclass
+## try to find very old code for this...
+# plot the target photostim responses for individual targets for each stim over the course of the trial
+#    (normalize to each target's overall mean response) and plot over the timecourse of the trial
 
-# # todo probably also need to write a run_allopticalAnalysisNontargets and plots specifically for insz analysis
 
-## Post4ap class
-expobj, experiment = aoutils.import_expobj(aoresults_map_id='pre h.0')
-# expobj._trialProcessing_nontargets()
+SLMtarget_ids = list(range(len(expobj.SLMTargets_stims_dfstdF)))
+target_colors = pj.make_random_color_array(SLMtarget_ids)
+
+# --- plot with mean FOV fluorescence signal
+fig, ax1 = plt.subplots(figsize=[20, 3])
+fig, ax1 = aoplot.plotMeanRawFluTrace(expobj=expobj, stim_span_color='white', x_axis='frames', figsize=[20, 3], show=False,
+                                      fig=fig, ax=ax1)
+ax2 = ax1.twinx()
+for target in expobj.responses_SLMtargets.keys():
+    mean_response = np.mean(expobj.responses_SLMtargets[target])
+    # print(mean_response)
+    for i in range(len(expobj.stim_start_frames)):
+        response = expobj.responses_SLMtargets[target][i] - mean_response
+        rand = np.random.randint(-15, 25, 1)[0] #* 1/(abs(response)**1/2)
+        ax2.scatter(x=expobj.stim_start_frames[i] + rand, y=response, color=target_colors[target], alpha=0.70, s=15, zorder=4)
+# for i in expobj.stim_start_frames:
+#     plt.axvline(i)
+plt.show()
+
+
+# --- plot with LFP signal
+fig1, ax1 = plt.subplots(figsize=[20, 3])
+fig1, ax1 = aoplot.plotLfpSignal(expobj, color='black', stim_span_color='', x_axis='time', show=False, fig=fig1, ax=ax1, alpha=0.5)
+ax2 = ax1.twinx()
+for target in expobj.responses_SLMtargets.keys():
+    mean_response = np.mean(expobj.responses_SLMtargets[target])
+    target_coord = expobj.target_coords_all[target]
+    # print(mean_response)
+    x = []
+    y = []
+    distance_to_sz = []
+
+    # calculate response magnitude at each stim time for selected target
+    for i in range(len(expobj.stim_times)):
+        # the response magnitude of the current SLM target at the current stim time (relative to the mean of the responses of the target over this trial)
+        response = expobj.responses_SLMtargets[target][i] - mean_response  # changed to division by mean response instead of substracting
+        min_distance = pj.calc_distance_2points((0, 0), (expobj.frame_x,
+                                                         expobj.frame_y))  # maximum distance possible between two points within the FOV, used as the starting point when the sz has not invaded FOV yet
+
+        if hasattr(expobj, 'cells_sz_stim') and expobj.stim_start_frames[i] in list(expobj.cells_sz_stim.keys()):  # calculate distance to sz only for stims where cell locations in or out of sz boundary are defined in the seizures
+            if expobj.stim_start_frames[i] in expobj.stims_in_sz:
+            # if (expobj.stim_start_frames[i] not in expobj.stims_bf_sz) and (expobj.stim_start_frames[i] not in expobj.stims_af_sz):  # also calculate distance for stims before and after
+                # collect cells from this stim that are in sz
+                s2pcells_sz = expobj.cells_sz_stim[expobj.stim_start_frames[i]]
+
+                # classify the SLM target as in or out of sz, if out then continue with mesauring distance to seizure wavefront,
+                # if in sz then assign negative value for distance to sz wavefront
+                sz_border_path = "%s/boundary_csv/%s_%s_stim-%s.tif_border.csv" % (
+                    expobj.metainfo['date'], expobj.analysis_save_path, trial, expobj.stim_start_frames[i])
+
+                in_sz_bool = expobj._InOutSz(cell_med=[target_coord[1], target_coord[0]],
+                                             sz_border_path=sz_border_path)
+
+                if expobj.stim_start_frames[i] in expobj.not_flip_stims:
+                    flip = False
+                else:
+                    flip = True
+                    in_sz_bool = not in_sz_bool
+
+                if in_sz_bool is True:
+                    min_distance = -1
+
+                else:
+                    ## working on add feature for edgecolor of scatter plot based on calculated distance to seizure
+                    ## -- thinking about doing this as comparing distances between all targets and all suite2p ROIs,
+                    #     and the shortest distance that is found for each SLM target is that target's distance to seizure wavefront
+                    # calculate the min distance of slm target to s2p cells classified inside of sz boundary at the current stim
+                    if len(s2pcells_sz) > 0:
+                        for j in range(len(s2pcells_sz)):
+                            s2p_idx = expobj.cell_id.index(s2pcells_sz[j])
+                            dist = pj.calc_distance_2points(target_coord, tuple(
+                                [expobj.stat[s2p_idx]['med'][1], expobj.stat[s2p_idx]['med'][0]]))  # distance in pixels
+                            if dist < min_distance:
+                                min_distance = dist
+
+                            # if j < 5:
+                            #     fig, ax = pj.plot_cell_loc(expobj, cells=[s2pcells_sz[j]], show=False, fig=fig, ax=ax,
+                            #                                background=expobj.meanFluImg_registered)
+                            #     ax.scatter(x=target_coord[0], y=target_coord[1])
+
+                # if 10 < min_distance < 40:
+                #     fig, ax = plt.subplots()
+                #     fig, ax = alloptical_plotting.plot_cell_loc(expobj, cells=s2pcells_sz, show=False, fig=fig, ax=ax,
+                #                                                 background=expobj.meanFluImg_registered)
+                #     ax.scatter(x=target_coord[0], y=target_coord[1])
+                #     plt.title('stim %s' % expobj.stim_start_frames[i])
+                #     fig.show()
+                #     print(min_distance)
+
+        # min_distance.append((np.random.rand(1) * 1000)[0])  # just for testing
+        distance_to_sz.append(min_distance)
+        # plot the response magnitude of the current SLM target at the current stim time
+        rand = np.random.randint(-10, 30, 1)[
+            0]  # * 1/(abs(response)**1/2)  # used for adding random jitter to the x loc scatter point
+        x.append(expobj.stim_times[i] - expobj.frame_start_time_actual + rand * 1e3)
+        y.append(response)
+    if np.std(distance_to_sz) > 0.1:
+        ax2.scatter(x=x, y=y, c=distance_to_sz, cmap='RdYlBu_r',
+                    alpha=0.5, s=10,
+                    zorder=4)  # use cmap correlated to distance from seizure to define colors of each target at each individual stim times
+    else:
+        ax2.scatter(x=x, y=y, facecolor='#BA1C32', alpha=0.5, s=10,
+                    zorder=4)  # use cmap correlated to distance from seizure to define colors of each target at each individual stim times
+    # fig1.show()
+    # ax2.scatter(x=x, y=y, c=distance_to_sz, cmap='RdYlBu_r',
+    #             alpha=0.70, s=15,
+    #             zorder=4)  # use cmap correlated to distance from seizure to define colors of each target at each individual stim times
+    # ax2.scatter(x=expobj.stim_times[i] + rand * 1e3, y=response, edgecolor=target_colors[target], alpha=0.70, s=15, zorder=4)  # use same edgecolor for each target at all stim times
+# for i in expobj.stim_start_frames:
+#     plt.axvline(i)
+plt.xlim([expobj.stim_times[0] - 4e5, expobj.stim_times[-1] + 1e5])
+fig1.show()
+
+
+
+# %% 8.0-main) collect targets responses for stims vs. distance
+
+## try to find very old code for this...
+# plot response magnitude vs. distance
+for i in range(len(expobj.stim_times)):
+    # calculate the min distance of slm target to s2p cells classified inside of sz boundary at the current stim
+    s2pcells = expobj.cells_sz_stim[expobj.stim_start_frames[i]]
+    target_coord = expobj.target_coords_all[target]
+    min_distance = 1000
+    for j in range(len(s2pcells)):
+        dist = pj.calc_distance_2points(target_coord, tuple(expobj.stat[j]['med']))  # distance in pixels
+        if dist < min_distance:
+            min_distance = dist
+
+fig1, ax1 = plt.subplots(figsize=[5, 5])
+responses = []
+distance_to_sz = []
+responses_ = []
+distance_to_sz_ = []
+for target in expobj.responses_SLMtargets.keys():
+    mean_response = np.mean(expobj.responses_SLMtargets[target])
+    target_coord = expobj.target_coords_all[target]
+    # print(mean_response)
+
+    # calculate response magnitude at each stim time for selected target
+    for i in range(len(expobj.stim_times)):
+        # the response magnitude of the current SLM target at the current stim time (relative to the mean of the responses of the target over this trial)
+        response = expobj.responses_SLMtargets[target][i] / mean_response  # changed to division by mean response instead of substracting
+        min_distance = pj.calc_distance_2points((0, 0), (expobj.frame_x,
+                                                         expobj.frame_y))  # maximum distance possible between two points within the FOV, used as the starting point when the sz has not invaded FOV yet
+
+        if hasattr(expobj, 'cells_sz_stim') and expobj.stim_start_frames[i] in list(expobj.cells_sz_stim.keys()):  # calculate distance to sz only for stims where cell locations in or out of sz boundary are defined in the seizures
+            if expobj.stim_start_frames[i] in expobj.stims_in_sz:
+                # collect cells from this stim that are in sz
+                s2pcells_sz = expobj.cells_sz_stim[expobj.stim_start_frames[i]]
+
+                # classify the SLM target as in or out of sz, if out then continue with mesauring distance to seizure wavefront,
+                # if in sz then assign negative value for distance to sz wavefront
+                sz_border_path = "%s/boundary_csv/2020-12-18_%s_stim-%s.tif_border.csv" % (
+                    expobj.analysis_save_path, trial, expobj.stim_start_frames[i])
+
+                in_sz_bool = expobj._InOutSz(cell_med=[target_coord[1], target_coord[0]],
+                                             sz_border_path=sz_border_path)
+
+                if expobj.stim_start_frames[i] in expobj.not_flip_stims:
+                    flip = False
+                else:
+                    flip = True
+                    in_sz_bool = not in_sz_bool
+
+                if in_sz_bool is True:
+                    min_distance = -1
+
+                else:
+                    ## working on add feature for edgecolor of scatter plot based on calculated distance to seizure
+                    ## -- thinking about doing this as comparing distances between all targets and all suite2p ROIs,
+                    #     and the shortest distance that is found for each SLM target is that target's distance to seizure wavefront
+                    # calculate the min distance of slm target to s2p cells classified inside of sz boundary at the current stim
+                    if len(s2pcells_sz) > 0:
+                        for j in range(len(s2pcells_sz)):
+                            s2p_idx = expobj.cell_id.index(s2pcells_sz[j])
+                            dist = pj.calc_distance_2points(target_coord, tuple(
+                                [expobj.stat[s2p_idx]['med'][1], expobj.stat[s2p_idx]['med'][0]]))  # distance in pixels
+                            if dist < min_distance:
+                                min_distance = dist
+
+        if min_distance > 600:
+            distance_to_sz_.append(min_distance + np.random.randint(-10, 10, 1)[0] - 165)
+            responses_.append(response)
+        elif min_distance > 0:
+            distance_to_sz.append(min_distance)
+            responses.append(response)
+
+# calculate linear regression line
+ax1.plot(range(int(min(distance_to_sz)), int(max(distance_to_sz))), np.poly1d(np.polyfit(distance_to_sz, responses, 1))(range(int(min(distance_to_sz)), int(max(distance_to_sz)))),
+         color='black')
+
+ax1.scatter(x=distance_to_sz, y=responses, color='cornflowerblue',
+            alpha=0.5, s=16, zorder=0)  # use cmap correlated to distance from seizure to define colors of each target at each individual stim times
+ax1.scatter(x=distance_to_sz_, y=responses_, color='firebrick',
+            alpha=0.5, s=16, zorder=0)  # use cmap correlated to distance from seizure to define colors of each target at each individual stim times
+ax1.set_xlabel('distance to seizure front (pixels)')
+ax1.set_ylabel('response magnitude')
+ax1.set_title('')
+fig1.show()
+
 
 
 # %% 5.0-main)  RUN DATA ANALYSIS OF NON TARGETS:
@@ -74,8 +254,39 @@ expobj, experiment = aoutils.import_expobj(aoresults_map_id='pre h.0')
 #     aoutils.get_nontargets_stim_traces_norm(expobj=expobj, normalize_to='pre-stim', pre_stim_sec=expobj.pre_stim_sec,
 #                                             post_stim_sec=expobj.post_stim_sec)
 
+# 5.0.1) re-calculating and plotting of excluded s2p ROIs and SLM target coordinates
 
-# %% 5.1) for loop to go through each expobj to analyze nontargets - pre4ap trials
+completed_list = []  # keep a list of expobj that have completed successfully
+
+ls = ['pre', 'post']
+for i in ls:
+    for key in list(allopticalResults.trial_maps[i].keys()):
+        for j in range(len(allopticalResults.trial_maps[i][key])):
+            if f"{i} {key}.{j}" not in completed_list:
+                i = 'post'
+                key = 'j'
+                j = 0
+                # import expobj
+                expobj, experiment = aoutils.import_expobj(aoresults_map_id=f'{i} {key}.{j}')
+
+                if not hasattr(expobj, 's2p_nontargets'):
+                    expobj._parseNAPARMgpl()
+                    expobj._findTargetsAreas()
+                    expobj._findTargetedS2pROIs(force_redo=True, plot=False)
+                    expobj.save()
+                assert hasattr(expobj, 's2p_nontargets')
+                save_path = save_path_prefix + f"Nontargets_responses_2021-11-06/{expobj.metainfo['animal prep.']} {expobj.metainfo['trial']} - s2p ROIs plot.png"
+                aoplot.s2pRoiImage(expobj, save_fig=save_path)
+
+                completed_list.append(f"{i} {key}.{j}")
+
+# %% 5.1-dc) for loop to go through each expobj to analyze nontargets - pre4ap trials
+
+# TODO add collecting nontargets stim traces from in sz imaging frames - adding a separate _trialProcessing_nontargets method for Post4ap subclass
+
+# # todo probably also need to write a run_allopticalAnalysisNontargets and plots specifically for insz analysis
+
+
 # ls = ['PS05 t-010', 'PS06 t-011', 'PS11 t-010', 'PS17 t-005', 'PS17 t-006', 'PS17 t-007', 'PS18 t-006']
 ls = pj.flattenOnce(allopticalResults.pre_4ap_trials)
 for key in list(allopticalResults.trial_maps['pre'].keys()):
@@ -83,26 +294,27 @@ for key in list(allopticalResults.trial_maps['pre'].keys()):
         # import expobj
         expobj, experiment = aoutils.import_expobj(aoresults_map_id='pre %s.%s' % (key, j))
         if expobj.metainfo['animal prep.'] + ' ' + expobj.metainfo['trial'] in ls:
-            aoutils.run_allopticalAnalysisNontargets(expobj, normalize_to='pre-stim', skip_processing=False,
-                                                     save_plot_suffix='Nontargets_responses_2021-11-06/%s_%s-pre4ap.png' % (expobj.metainfo['animal prep.'], expobj.metainfo['trial']))
+            aoutils.run_allopticalAnalysisNontargets(expobj, normalize_to='pre-stim', skip_processing=True, to_plot=True,
+                                                     save_plot_suffix=f"Nontargets_responses_2021-11-06/{expobj.metainfo['animal prep.']}_{expobj.metainfo['trial']}-pre4ap.png")
         else:
-            aoutils.run_allopticalAnalysisNontargets(expobj, normalize_to='pre-stim', skip_processing=False,
-                                                     save_plot_suffix='Nontargets_responses_2021-11-06/%s_%s-pre4ap.png' % (expobj.metainfo['animal prep.'], expobj.metainfo['trial']))
+            aoutils.run_allopticalAnalysisNontargets(expobj, normalize_to='pre-stim', skip_processing=False, to_plot=True,
+                                                     save_plot_suffix=f"Nontargets_responses_2021-11-06/{expobj.metainfo['animal prep.']}_{expobj.metainfo['trial']}-pre4ap.png")
 
 # 5.1) for loop to go through each expobj to analyze nontargets - post4ap trials
-ls = pj.flattenOnce(allopticalResults.post_4ap_trials)
+ls = ['RL108 t-013', 'RL109 t-021', 'RL109 t-016']
+# ls = pj.flattenOnce(allopticalResults.post_4ap_trials)
 for key in list(allopticalResults.trial_maps['post'].keys())[-5:]:
     for j in range(len(allopticalResults.trial_maps['post'][key])):
         # import expobj
         expobj, experiment = aoutils.import_expobj(aoresults_map_id='post %s.%s' % (key, j), do_processing=True)
         if expobj.metainfo['animal prep.'] + ' ' + expobj.metainfo['trial'] in ls:
-            aoutils.run_allopticalAnalysisNontargets(expobj, normalize_to='pre-stim', skip_processing=False,
-                                                     save_plot_suffix='Nontargets_responses_2021-11-06/%s_%s-post4ap.png' % (expobj.metainfo['animal prep.'], expobj.metainfo['trial']))
+            aoutils.run_allopticalAnalysisNontargets(expobj, normalize_to='pre-stim', skip_processing=True, to_plot=True,
+                                                     save_plot_suffix=f"Nontargets_responses_2021-11-06/{expobj.metainfo['animal prep.']}_{expobj.metainfo['trial']}-post4ap.png")
         else:
-            aoutils.run_allopticalAnalysisNontargets(expobj, normalize_to='pre-stim', skip_processing=False,
-                                                     save_plot_suffix='Nontargets_responses_2021-11-06/%s_%s-post4ap.png' % (expobj.metainfo['animal prep.'], expobj.metainfo['trial']))
+            pass
+            # aoutils.run_allopticalAnalysisNontargets(expobj, normalize_to='pre-stim', skip_processing=False, to_plot=False,
+            #                                          save_plot_suffix=f"Nontargets_responses_2021-11-06/{expobj.metainfo['animal prep.']}_{expobj.metainfo['trial']}-post4ap.png")
 
-sys.exit()
 
 # %% 5.1.1-dc) finding statistically significant followers responses
 def _trialProcessing_nontargets(expobj):
@@ -367,7 +579,7 @@ for i in ls:
     axs[0, 0].legend()
     axs[0, 0].set_xlabel('Avg. prestim std F')
     axs[0, 0].set_ylabel('Avg. mag (dF/stdF)')
-
+    fig.tight_layout()
     fig.suptitle(f'All exps. prestim std F vs. response mag (dF/stdF) distribution - {i}4ap')
     save_path = expobj.analysis_save_path[:30] + 'Results_figs/' + \
                 f"Nontargets_responses_2021-11-06/scatter prestim std F vs. plot response magnitude - {i}4ap.png"
@@ -413,7 +625,7 @@ for i in ls:
     axs[0, 0].legend()
     axs[0, 0].set_xlabel('Avg. prestim mean F')
     axs[0, 0].set_ylabel('Avg. mag (dF/stdF)')
-
+    fig.tight_layout()
     fig.suptitle(f'All exps. prestim mean F vs. response mag (dF/stdF) distribution - {i}4ap')
     save_path = expobj.analysis_save_path[:30] + 'Results_figs/' + \
                 f"Nontargets_responses_2021-11-06/scatter plot prestim mean F vs. response magnitude - {i}4ap.png"
@@ -447,6 +659,7 @@ for key in list(allopticalResults.trial_maps['pre'].keys()):
 axs[0, 0].legend()
 axs[0, 0].set_ylabel('density')
 axs[0, 0].set_xlabel('Avg. prestim std F')
+fig.tight_layout()
 fig.suptitle('All exps. prestim std F distribution - pre vs. post4ap')
 save_path = expobj.analysis_save_path[:30] + 'Results_figs/' + \
             f"Nontargets_responses_2021-11-06/All exps. prestim std F distribution - pre vs. post4ap.png"
@@ -491,6 +704,7 @@ for key in list(allopticalResults.trial_maps['pre'].keys()):
 axs[0, 0].set_ylabel('density')
 axs[0, 0].set_xlabel('prestim std F')
 title = 'All exps. prestim std F distribution - pre4ap only'
+fig.tight_layout()
 fig.suptitle(title)
 save_path = expobj.analysis_save_path[:30] + 'Results_figs/' + \
             f"Nontargets_responses_2021-11-06/{title}.png"
@@ -538,6 +752,7 @@ for key in list(allopticalResults.trial_maps['post'].keys()):
 axs[0, 0].set_ylabel('density')
 axs[0, 0].set_xlabel('prestim std F')
 title = 'All exps. prestim std F distribution - post4ap only'
+fig.tight_layout()
 fig.suptitle(title)
 save_path = expobj.analysis_save_path[:30] + 'Results_figs/' + \
             f"Nontargets_responses_2021-11-06/{title}.png"
@@ -576,6 +791,7 @@ axs[0, 0].legend()
 axs[0, 0].set_ylabel('density')
 axs[0, 0].set_xlabel('Avg. prestim F')
 title = 'All exps. prestim mean F distribution - pre vs. post4ap'
+fig.tight_layout()
 fig.suptitle(title)
 save_path = expobj.analysis_save_path[:30] + 'Results_figs/' + \
             f"Nontargets_responses_2021-11-06/{title}.png"
@@ -809,6 +1025,7 @@ for exp in experiments:
 axs[0, 0].set_ylabel('dF/stdF')
 axs[0, 0].set_xlabel('Time post stim (secs)')
 title = 'Avg. periphotostim positive responders'
+fig.tight_layout()
 fig.suptitle(title)
 save_path = expobj.analysis_save_path[:30] + 'Results_figs/' + f"Nontargets_responses_2021-11-06/{title}.png"
 plt.savefig(save_path)
@@ -849,6 +1066,7 @@ for exp in experiments:
 axs[0, 0].set_ylabel('dF/stdF')
 axs[0, 0].set_xlabel('Time post stim (secs)')
 title = 'Avg. periphotostim negative responders'
+fig.tight_layout()
 fig.suptitle(title)
 save_path = expobj.analysis_save_path[:30] + 'Results_figs/' + f"Nontargets_responses_2021-11-06/{title}.png"
 plt.savefig(save_path)
@@ -905,6 +1123,7 @@ for exp in experiments:
 axs[0, 0].set_ylabel('norm. total response (a.u.)')
 axs[0, 0].set_xlabel('Time post stim (secs)')
 title = 'Summed response of positive responders'
+fig.tight_layout()
 fig.suptitle(title)
 save_path = expobj.analysis_save_path[:30] + 'Results_figs/' + f"Nontargets_responses_2021-11-06/{title}.png"
 plt.savefig(save_path)
@@ -953,6 +1172,7 @@ axs[0, 0].set_ylabel('norm. total response (a.u.)')
 axs[0, 0].set_xlabel('Time post stim (secs)')
 title = 'Summed response of negative responders'
 fig.suptitle(title)
+fig.tight_layout()
 save_path = expobj.analysis_save_path[:30] + 'Results_figs/' + f"Nontargets_responses_2021-11-06/{title}.png"
 plt.savefig(save_path)
 fig.show()
@@ -1481,6 +1701,12 @@ pj.plot_bar_with_points(data=[pre4ap_reliability, post4ap_reliability], paired=T
 # %% 4) plot peri-photostim avg traces for all trials analyzed to make sure they look alright
 # -- plot as little postage stamps
 
+# plot avg of successes in green
+# plot avg of failures in gray
+# plot line at dF_stdF = 0.3
+# add text in plot for avg dF_stdF value of successes, and % of successes
+
+
 
 # make one figure for each prep/trial (one little plot for each cell in that prep)
 for exp in allopticalResults.pre_4ap_trials:
@@ -1667,16 +1893,11 @@ for exp in allopticalResults.pre_4ap_trials:
 # for i in responses_magnitudes_successes.keys():
 #     print(len(responses_magnitudes_successes))
 
-# plot avg of successes in green
-# plot avg of failures in gray
-# plot line at dF_stdF = 0.3
-# add text in plot for avg dF_stdF value of successes, and % of successes
-
 # plot barplot with points only comparing response magnitude of successes
 
 # %% 6) 4D plotting of the seizure wavefront (2D space vs. time vs. Flu intensity)
 
-## import expobj
+# import expobj
 expobj, experiment = aoutils.import_expobj(aoresults_map_id='post h.0', do_processing=False)
 aoplot.plotMeanRawFluTrace(expobj=expobj, stim_span_color=None, x_axis='Frames', figsize=[20, 3])
 
@@ -1730,3 +1951,7 @@ ax.set_ylabel('y axis')
 ax.set_zlabel('x axis')
 fig.tight_layout()
 fig.show()
+
+
+# %% 9.0-main) avg responses around photostim targets - pre vs. post4ap
+
