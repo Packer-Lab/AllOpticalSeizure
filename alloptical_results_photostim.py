@@ -125,7 +125,7 @@ def _trialProcessing_nontargets(expobj):
         plane             - imaging plane n
     '''
     # make trial arrays from dff data shape: [cells x stims x frames]
-    expobj._get_nontargets_stim_traces_norm(normalize_to='pre-stim', plot='dFstdF')
+    expobj._makeNontargetsStimTracesArray(normalize_to='pre-stim', plot='dFstdF')
 
     # mean pre and post stimulus (within post-stim response window) flu trace values for all cells, all trials
     expobj.analysis_array = expobj.dfstdF_traces  # NOTE: USING dF/stdF TRACES

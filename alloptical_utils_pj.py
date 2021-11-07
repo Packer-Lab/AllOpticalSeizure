@@ -2157,7 +2157,7 @@ class alloptical(TwoPhotonImaging):
     #
     #     return targets_dff, targets_dff_avg, targets_dfstdF, targets_dfstdF_avg, targets_raw, targets_raw_avg
 
-    def _get_nontargets_stim_traces_norm(self, stim_timings, normalize_to='pre-stim', save=True):
+    def _makeNontargetsStimTracesArray(self, stim_timings, normalize_to='pre-stim', save=True):
         """
         primary function to retrieve photostimulation trial timed Fluorescence traces for non-targets (ROIs taken from suite2p).
         :param self: alloptical experiment object
@@ -2307,7 +2307,7 @@ class alloptical(TwoPhotonImaging):
 
 
         # make trial arrays from dff data shape: [cells x stims x frames]
-        expobj._get_nontargets_stim_traces_norm(stim_timings=expobj.stim_start_frames, normalize_to=normalize_to, save=False)
+        expobj._makeNontargetsStimTracesArray(stim_timings=expobj.stim_start_frames, normalize_to=normalize_to, save=False)
 
 
         # create parameters, slices, and subsets for making pre-stim and post-stim arrays to use in stats comparison
@@ -2860,23 +2860,23 @@ class Post4ap(alloptical):
         # - - collect stim traces as usual for all stims, then use the sz boundary dictionary to nan cells/stims insize sz boundary
         # make trial arrays from dff data shape: [cells x stims x frames]
         # stim_timings_outsz = [stim for stim in expobj.stim_start_frames if stim not in expobj.seizure_frames]; stim_timings=expobj.stims_out_sz
-        expobj._get_nontargets_stim_traces_norm(stim_timings=expobj.stim_start_frames, normalize_to=normalize_to, save=False)
+        expobj._makeNontargetsStimTracesArray(stim_timings=expobj.stim_start_frames, normalize_to=normalize_to, save=False)
 
         if hasattr(expobj, 'slmtargets_sz_stim'):
             stim_timings_insz = [stim for stim in expobj.stims_in_sz if stim in list(expobj.slmtargets_sz_stim.keys())]
-            expobj._get_nontargets_stim_traces_norm(stim_timings=stim_timings_insz, normalize_to=normalize_to,
-                                                    save=False)
+            expobj._makeNontargetsStimTracesArray(stim_timings=stim_timings_insz, normalize_to=normalize_to,
+                                                  save=False)
             print('\nexcluding cells for stims inside sz boundary')
-            for stim in stim_timings_insz:
+            for stim, x in enumerate(stim_timings_insz):
                 # stim = stim_timings_insz[0]
                 exclude_list = [idx for idx, cell in enumerate(expobj.s2p_nontargets) if cell in expobj.slmtargets_sz_stim[stim]]
 
-                expobj.dff_traces[exclude_list, :, stim] = [np.nan] * expobj.dff_traces.shape[1]
-                expobj.dff_traces_avg[exclude_list, :, stim] = [np.nan] * expobj.dff_traces_avg.shape[1]
-                expobj.dfstdF_traces[exclude_list, :, stim] = [np.nan] * expobj.dfstdF_traces.shape[1]
-                expobj.dfstdF_traces_avg[exclude_list, :, stim] = [np.nan] * expobj.dfstdF_traces_avg.shape[1]
-                expobj.raw_traces[exclude_list, :, stim] = [np.nan] * expobj.raw_traces.shape[1]
-                expobj.raw_traces_avg[exclude_list, :, stim] = [np.nan] * expobj.raw_traces_avg.shape[1]
+                expobj.dff_traces[exclude_list, :, x] = [np.nan] * expobj.dff_traces.shape[1]
+                expobj.dff_traces_avg[exclude_list, :, x] = [np.nan] * expobj.dff_traces_avg.shape[1]
+                expobj.dfstdF_traces[exclude_list, :, x] = [np.nan] * expobj.dfstdF_traces.shape[1]
+                expobj.dfstdF_traces_avg[exclude_list, :, x] = [np.nan] * expobj.dfstdF_traces_avg.shape[1]
+                expobj.raw_traces[exclude_list, :, x] = [np.nan] * expobj.raw_traces.shape[1]
+                expobj.raw_traces_avg[exclude_list, :, x] = [np.nan] * expobj.raw_traces_avg.shape[1]
 
         else:
             AttributeError(
