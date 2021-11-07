@@ -2157,7 +2157,7 @@ class alloptical(TwoPhotonImaging):
     #
     #     return targets_dff, targets_dff_avg, targets_dfstdF, targets_dfstdF_avg, targets_raw, targets_raw_avg
 
-    def _get_nontargets_stim_traces_norm(self, stim_timings=self.stim_start_frames, normalize_to='pre-stim', save=True):
+    def _get_nontargets_stim_traces_norm(self, stim_timings, normalize_to='pre-stim', save=True):
         """
         primary function to retrieve photostimulation trial timed Fluorescence traces for non-targets (ROIs taken from suite2p).
         :param self: alloptical experiment object
@@ -2344,7 +2344,10 @@ class alloptical(TwoPhotonImaging):
         expobj.save() if save else None
 
 
-    def _runWilcoxonsTest(expobj, array1=expobj.pre_array, array2=expobj.post_array, save=True):
+    def _runWilcoxonsTest(expobj, array1=None, array2=None, save=True):
+
+        if array1 is None and array2 is None:
+            array1 = expobj.pre_array; array2 = expobj.post_array
 
         # check if the two distributions of flu values (pre/post) are different
         assert array1.shape == array2.shape, 'shapes for expobj.pre_array and expobj.post_array need to be the same for wilcoxon test'
@@ -2854,7 +2857,6 @@ class Post4ap(alloptical):
 
         # define non targets from suite2p ROIs (exclude cells in the SLM targets exclusion - .s2p_cells_exclude)
         expobj.s2p_nontargets = [cell for cell in expobj.good_cells if cell not in expobj.s2p_cells_exclude]  ## exclusion of cells that are classified as s2p_cell_targets
-
 
         ## TODO add collecting nontargets stim traces from in sz imaging frames - write a new function specifically designed for using the correct stims and cells
         # - - collect stim traces as usual for all stims, then use the sz boundary dictionary to nan cells/stims insize sz boundary
@@ -4366,7 +4368,7 @@ def run_alloptical_processing_photostim(expobj, to_suite2p=None, baseline_trials
             expobj.baseline_trials = baseline_trials
             expobj.save()
 
-        # main function that imports suite2p data and adds attributes to the expobj
+        # main function that imports suite2p data and starts adding attributes to the expobj
         expobj.subset_frames_current_trial(trial=expobj.metainfo['trial'], to_suite2p=expobj.suite2p_trials,
                                            baseline_trials=expobj.baseline_trials, force_redo=force_redo)
         expobj.s2pProcessing(s2p_path=expobj.s2p_path, subset_frames=expobj.curr_trial_frames, subtract_neuropil=True,
