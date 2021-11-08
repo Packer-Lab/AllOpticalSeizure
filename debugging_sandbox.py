@@ -80,8 +80,8 @@ for i in ls:
         stims = [i for i, stim in enumerate(expobj.stim_start_frames) if stim not in expobj.stims_in_sz]
         stims_sz = [i for i, stim in enumerate(expobj.stim_start_frames) if stim in list(expobj.slmtargets_sz_stim.keys())]
 
-        posunits_prestdF = np.mean(np.std(expobj.raw_traces[np.where(np.nanmean(expobj.post_array_responses[:, stims][expobj.sig_units], axis=1) > 0)[0],:,:][:, stims, :], axis=2), axis=1)
-        negunits_prestdF = np.mean(np.std(expobj.raw_traces[np.where(np.nanmean(expobj.post_array_responses[:, stims][expobj.sig_units], axis=1) < 0)[0],:,:][:, stims, :], axis=2), axis=1)
+        posunits_prestdF = np.mean(np.std(expobj.raw_traces[np.where(np.nanmean(expobj.post_array_responses[:, stims][expobj.sig_units], axis=1) > 0)[0], :, :][:, stims, :], axis=2), axis=1)
+        negunits_prestdF = np.mean(np.std(expobj.raw_traces[np.where(np.nanmean(expobj.post_array_responses[:, stims][expobj.sig_units], axis=1) < 0)[0], :, :][:, stims, :], axis=2), axis=1)
         nonsigunits_prestdF = np.mean(np.std(expobj.raw_traces[~expobj.sig_units, stims, :], axis=2), axis=1)
 
         assert len(possig_responders_avgresponse) == len(posunits_prestdF)

@@ -655,3 +655,80 @@ def slm_targets_responses(expobj, experiment, trial, y_spacing_factor=2, figsize
             fig.savefig(fname=save+'.svg', transparent=True,  format='svg')
 
         fig.show()
+
+def _trialProcessing_nontargets(expobj, normalize_to='pre-stim', save=True):
+    '''
+    Uses dfstdf traces for individual cells and photostim trials, calculate the mean amplitudes of response and
+    statistical significance across all trials for all cells
+
+    Inputs:
+        plane             - imaging plane n
+    '''
+
+    print('\n----------------------------------------------------------------')
+    print('running trial Processing for nontargets ')
+    print('----------------------------------------------------------------')
+
+    # define non targets from suite2p ROIs (exclude cells in the SLM targets exclusion - .s2p_cells_exclude)
+    expobj.s2p_nontargets = [cell for cell in expobj.good_cells if cell not in expobj.s2p_cells_exclude]  ## exclusion of cells that are classified as s2p_cell_targets
+
+    ## collecting nontargets stim traces from in sz imaging frames
+    # - - collect stim traces as usual for all stims, then use the sz boundary dictionary to nan cells/stims insize sz boundary
+    # make trial arrays from dff data shape: [cells x stims x frames]
+    # stim_timings_outsz = [stim for stim in expobj.stim_start_frames if stim not in expobj.seizure_frames]; stim_timings=expobj.stims_out_sz
+    expobj._makeNontargetsStimTracesArray(stim_timings=expobj.stim_start_frames, normalize_to=normalize_to, save=False)
+
+    if hasattr(expobj, 'slmtargets_sz_stim'):
+        stim_timings_insz = [(x, stim) for x, stim in enumerate(expobj.stim_start_frames) if stim in list(expobj.slmtargets_sz_stim.keys())]
+        # expobj._makeNontargetsStimTracesArray(stim_timings=stim_timings_insz, normalize_to=normalize_to,
+        #                                       save=False)
+        print('\nexcluding cells for stims inside sz boundary')
+        for x, stim in stim_timings_insz:
+            # stim = stim_timings_insz[0]
+            exclude_list = [idx for idx, cell in enumerate(expobj.s2p_nontargets) if cell in expobj.slmtargets_sz_stim[stim]]
+
+            expobj.dff_traces[exclude_list, x, :] = [np.nan] * expobj.dff_traces.shape[2]
+            expobj.dfstdF_traces[exclude_list, x, :] = [np.nan] * expobj.dfstdF_traces.shape[2]
+            expobj.raw_traces[exclude_list, x, :] = [np.nan] * expobj.raw_traces.shape[2]
+
+        ## need to redefine _avg arrays post exclusion for Post4ap expobj's
+        expobj.dff_traces_avg = np.nanmean(expobj.dff_traces, axis=1)
+        expobj.dfstdF_traces_avg = np.nanmean(expobj.dfstdF_traces, axis=1)
+        expobj.raw_traces_avg = np.nanmean(expobj.raw_traces, axis=1)
+
+    else:
+        AttributeError(
+            'no slmtargets_sz_stim attr, so classify cells in sz boundary hasnot been saved for this expobj')
+
+
+    # create parameters, slices, and subsets for making pre-stim and post-stim arrays to use in stats comparison
+    # test_period = expobj.pre_stim_response_window_msec / 1000  # sec
+    # expobj.test_frames = int(expobj.fps * test_period)  # test period for stats
+    expobj.pre_stim_frames_test = np.s_[expobj.pre_stim - expobj.pre_stim_response_frames_window: expobj.pre_stim]
+    stim_end = expobj.pre_stim + expobj.stim_duration_frames
+    expobj.post_stim_frames_slice = np.s_[stim_end: stim_end + expobj.post_stim_response_frames_window]
+
+    # mean pre and post stimulus (within post-stim response window) flu trace values for all cells, all trials
+    expobj.analysis_array = expobj.dfstdF_traces  # NOTE: USING dF/stdF TRACES
+    expobj.pre_array = np.mean(expobj.analysis_array[:, :, expobj.pre_stim_frames_test],
+                               axis=1)  # [cells x prestim frames] (avg'd taken over all stims)
+    expobj.post_array = np.mean(expobj.analysis_array[:, :, expobj.post_stim_frames_slice],
+                                axis=1)  # [cells x poststim frames] (avg'd taken over all stims)
+
+    # ar2 = expobj.analysis_array[18, :, expobj.post_stim_frames_slice]
+    # ar3 = ar2[~np.isnan(ar2).any(axis=1)]
+    # assert np.nanmean(ar2) == np.nanmean(ar3)
+    # expobj.analysis_array = expobj.analysis_array[~np.isnan(expobj.analysis_array).any(axis=1)]
+
+    # measure avg response value for each trial, all cells --> return array with 3 axes [cells x response_magnitude_per_stim (avg'd taken over response window)]
+    expobj.post_array_responses = []  ### this and the for loop below was implemented to try to root out stims with nan's but it's likley not necessary...
+    for i in np.arange(expobj.analysis_array.shape[0]):
+        a = expobj.analysis_array[i][~np.isnan(expobj.analysis_array[i]).any(axis=1)]
+        responses = a.mean(axis=1)
+        expobj.post_array_responses.append(responses)
+
+    expobj.post_array_responses = np.mean(expobj.analysis_array[:, :, expobj.post_stim_frames_slice], axis=2)
+
+    expobj._runWilcoxonsTest(save=False)
+
+    expobj.save() if save else None
