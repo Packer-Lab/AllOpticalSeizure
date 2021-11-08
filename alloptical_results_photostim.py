@@ -117,38 +117,6 @@ fig.show()
 
 
 
-##
-# %% --- plot with LFP signal
-SLMtarget_ids = list(range(len(expobj.SLMTargets_stims_dfstdF)))
-target_colors = pj.make_random_color_array(len(SLMtarget_ids))
-# --- plot with mean FOV fluorescence signal
-fig, ax1 = plt.subplots(figsize=[20, 3])
-fig, ax1 = aoplot.plotLfpSignal(expobj, stim_span_color='', x_axis='Time', show=False, fig=fig, ax=ax1)
-ax2 = ax1.twinx()
-## retrieve the appropriate zscored database - outsz stims
-targets = [x for x in list(allopticalResults.stim_responses_zscores[f"{expobj.metainfo['animal prep.']}"][f"{j + 1}"]['post-4ap'].columns) if type(x) == str]
-for target in targets:
-    for stim_idx in allopticalResults.stim_responses_zscores[f"{expobj.metainfo['animal prep.']}"][f"{j + 1}"]['post-4ap'].index:
-        response = allopticalResults.stim_responses_zscores[f"{expobj.metainfo['animal prep.']}"][f"{j + 1}"]['post-4ap'].loc[stim_idx, target]
-        rand = np.random.randint(-15, 25, 1)[0] #* 1/(abs(response)**1/2)  # jittering around the stim_frame for the plot
-        ax2.scatter(x=expobj.stim_start_times[stim_idx]/expobj.paq_rate + rand, y=response, color=target_colors[targets.index(target)], alpha=0.70, s=15, zorder=4)
-        ax2.set_ylabel('Response mag. (zscored to pre4ap)')
-
-
-## retrieve the appropriate zscored database - insz stims
-targets = [x for x in list(allopticalResults.stim_responses_zscores[f"{expobj.metainfo['animal prep.']}"][f"{j + 1}"]['in sz'].columns) if type(x) == str]
-for target in targets:
-    for stim_idx in allopticalResults.stim_responses_zscores[f"{expobj.metainfo['animal prep.']}"][f"{j + 1}"]['in sz'].index:
-        response = allopticalResults.stim_responses_zscores[f"{expobj.metainfo['animal prep.']}"][f"{j + 1}"]['in sz'].loc[stim_idx, target]
-        rand = np.random.randint(-15, 25, 1)[0] #* 1/(abs(response)**1/2)  # jittering around the stim_frame for the plot
-        ax2.scatter(x=expobj.stim_start_times[stim_idx]/expobj.paq_rate + rand, y=response, color=target_colors[targets.index(target)], alpha=0.70, s=15, zorder=4)
-        ax2.set_ylabel('Response mag. (zscored to pre4ap)')
-
-fig.show()
-
-
-
-
 
 # %% 8.0-main) TODO collect targets responses for stims vs. distance (starting with old code)
 
@@ -296,12 +264,12 @@ for key in list(allopticalResults.trial_maps['pre'].keys()):
 # 5.1) for loop to go through each expobj to analyze nontargets - post4ap trials
 ls = ['RL108 t-013', 'RL109 t-021', 'RL109 t-016']
 # ls = pj.flattenOnce(allopticalResults.post_4ap_trials)
-for key in list(allopticalResults.trial_maps['post'].keys())[-5:]:
+for key in list(allopticalResults.trial_maps['post'].keys()):
     for j in range(len(allopticalResults.trial_maps['post'][key])):
         # import expobj
         expobj, experiment = aoutils.import_expobj(aoresults_map_id='post %s.%s' % (key, j), do_processing=True)
         if expobj.metainfo['animal prep.'] + ' ' + expobj.metainfo['trial'] in ls:
-            aoutils.run_allopticalAnalysisNontargets(expobj, normalize_to='pre-stim', skip_processing=True, to_plot=True,
+            aoutils.run_allopticalAnalysisNontargets(expobj, normalize_to='pre-stim', skip_processing=False, to_plot=True,
                                                      save_plot_suffix=f"Nontargets_responses_2021-11-06/{expobj.metainfo['animal prep.']}_{expobj.metainfo['trial']}-post4ap.png")
         else:
             pass
@@ -533,8 +501,10 @@ f.show()
 
 
 
-# %% 5.2.1) PLOT - scatter plot response magnitude vs. prestim std F
-ls = ['pre', 'post']
+# %% 5.2.1) PLOT - scatter plot 1) response magnitude vs. prestim std F, and 2) response magnitude vs. prestim mean F
+
+# 5.2.1.1) scatter plot response magnitude vs. prestim std F
+ls = ['post']
 for i in ls:
     ncols = 3
     nrows = 4
@@ -573,7 +543,7 @@ for i in ls:
     axs[0, 0].set_xlabel('Avg. prestim std F')
     axs[0, 0].set_ylabel('Avg. mag (dF/stdF)')
     fig.tight_layout()
-    fig.suptitle(f'All exps. prestim std F vs. response mag (dF/stdF) distribution - {i}4ap')
+    fig.suptitle(f'All exps. prestim std F vs. response mag (dF/stdF) distribution - {i}4ap', y = 0.98)
     save_path = expobj.analysis_save_path[:30] + 'Results_figs/' + \
                 f"Nontargets_responses_2021-11-06/scatter prestim std F vs. plot response magnitude - {i}4ap.png"
     plt.savefig(save_path)

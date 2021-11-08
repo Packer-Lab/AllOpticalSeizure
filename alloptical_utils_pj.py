@@ -2871,9 +2871,9 @@ class Post4ap(alloptical):
                 # stim = stim_timings_insz[0]
                 exclude_list = [idx for idx, cell in enumerate(expobj.s2p_nontargets) if cell in expobj.slmtargets_sz_stim[stim]]
 
-                expobj.dff_traces[exclude_list, :, x] = [np.nan] * expobj.dff_traces.shape[1]
-                expobj.dfstdF_traces[exclude_list, :, x] = [np.nan] * expobj.dfstdF_traces.shape[1]
-                expobj.raw_traces[exclude_list, :, x] = [np.nan] * expobj.raw_traces.shape[1]
+                expobj.dff_traces[exclude_list, x, :] = [np.nan] * expobj.dff_traces.shape[1]
+                expobj.dfstdF_traces[exclude_list, x, :] = [np.nan] * expobj.dfstdF_traces.shape[1]
+                expobj.raw_traces[exclude_list, x, :] = [np.nan] * expobj.raw_traces.shape[1]
 
             ## need to redefine _avg arrays post exclusion for Post4ap expobj's
             expobj.dff_traces_avg = np.nanmean(expobj.dff_traces, axis=1)
