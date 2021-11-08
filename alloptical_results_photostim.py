@@ -261,6 +261,8 @@ for key in list(allopticalResults.trial_maps['pre'].keys()):
             aoutils.run_allopticalAnalysisNontargets(expobj, normalize_to='pre-stim', skip_processing=False, to_plot=True,
                                                      save_plot_suffix=f"Nontargets_responses_2021-11-06/{expobj.metainfo['animal prep.']}_{expobj.metainfo['trial']}-pre4ap.png")
 
+
+# TODO needs some major bug fixing - run_allopticalAnalysisNontargets - expobj.raw_traces inspection shows nan's ending up in unexpected places
 # 5.1) for loop to go through each expobj to analyze nontargets - post4ap trials
 ls = ['RL108 t-013', 'RL109 t-021', 'RL109 t-016']
 # ls = pj.flattenOnce(allopticalResults.post_4ap_trials)
