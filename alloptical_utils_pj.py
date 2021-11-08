@@ -2359,7 +2359,7 @@ class alloptical(TwoPhotonImaging):
         # expobj.save() if save else None
 
 
-    def _sigTestAvgResponse_nontargets(expobj, alpha=0.1, save=True):
+    def _sigTestAvgResponse_nontargets(expobj, p_vals=None, alpha=0.1, save=True):
         """
         Uses the p values and a threshold for the Benjamini-Hochberg correction to return which
         cells are still significant after correcting for multiple significance testing
@@ -2368,27 +2368,28 @@ class alloptical(TwoPhotonImaging):
         print('running statistical significance testing for nontargets response arrays ')
         print('----------------------------------------------------------------')
 
-        p_vals = expobj.wilcoxons
-        expobj.sig_units = np.full_like(p_vals, False, dtype=bool)
+        # p_vals = expobj.wilcoxons
+        sig_units = np.full_like(p_vals, False, dtype=bool)
 
         try:
-            expobj.sig_units, _, _, _ = sm.stats.multitest.multipletests(p_vals, alpha=alpha, method='fdr_bh',
+            sig_units, _, _, _ = sm.stats.multitest.multipletests(p_vals, alpha=alpha, method='fdr_bh',
                                                                          is_sorted=False, returnsorted=False)
         except ZeroDivisionError:
             print('no cells responding')
 
-        # p values without bonferroni correction
-        no_bonf_corr = [i for i, p in enumerate(p_vals) if p < 0.05]
-        expobj.nomulti_sig_units = np.zeros(len(expobj.s2p_nontargets), dtype='bool')
-        expobj.nomulti_sig_units[no_bonf_corr] = True
+        # # p values without bonferroni correction
+        # no_bonf_corr = [i for i, p in enumerate(p_vals) if p < 0.05]
+        # expobj.nomulti_sig_units = np.zeros(len(expobj.s2p_nontargets), dtype='bool')
+        # expobj.nomulti_sig_units[no_bonf_corr] = True
 
-        expobj.save() if save else None
+        # expobj.save() if save else None
 
         # p values after bonferroni correction
         #         bonf_corr = [i for i,p in enumerate(p_vals) if p < 0.05 / expobj.n_units[plane]]
         #         sig_units = np.zeros(expobj.n_units[plane], dtype='bool')
         #         sig_units[bonf_corr] = True
 
+        return sig_units
 
 class Post4ap(alloptical):
 
@@ -2875,6 +2876,8 @@ class Post4ap(alloptical):
         # mean pre and post stimulus (within post-stim response window) flu trace values for all cells, all trials
         stims_outsz = [i for i, stim in enumerate(expobj.stim_start_frames) if stim not in expobj.stims_in_sz]
         expobj.analysis_array_outsz = expobj.dfstdF_traces[:, stims_outsz, :]          # NOTE: USING dF/stdF TRACES
+        expobj.raw_traces_outsz = expobj.raw_traces[:, stims_outsz, :]
+        expobj.dff_traces_outsz = expobj.dff_traces[:, stims_outsz, :]
 
         ## checking that there are no additional nan's being added from the code below (unless its specifically for the cell exclusion part)
         # print(f"analysis array outsz nan's: {sum(np.isnan(expobj.analysis_array_outsz))}")
@@ -2892,6 +2895,8 @@ class Post4ap(alloptical):
         # mean pre and post stimulus (within post-stim response window) flu trace values for all cells, all trials
         stims_sz = [i for i, stim in enumerate(expobj.stim_start_frames) if stim in list(expobj.slmtargets_sz_stim.keys())]
         expobj.analysis_array_insz = expobj.dfstdF_traces[:, stims_sz, :]  # NOTE: USING dF/stdF TRACES
+        expobj.raw_traces_insz = expobj.raw_traces[:, stims_sz, :]
+        expobj.dff_traces_insz = expobj.dff_traces[:, stims_sz, :]
         expobj.pre_array_insz = np.nanmean(expobj.analysis_array_insz[:, :, expobj.pre_stim_frames_test],
                                    axis=1)  # [cells x prestim frames] (avg'd taken over all stims)
         expobj.post_array_insz = np.nanmean(expobj.analysis_array_insz[:, :, expobj.post_stim_frames_slice],
@@ -2900,15 +2905,22 @@ class Post4ap(alloptical):
 
         ## process in sz stims - exclude cells inside sz boundary
         analysis_array_insz_ = expobj.analysis_array_insz
+        raw_traces_ = expobj.raw_traces_insz
+        dff_traces_ = expobj.dff_traces_insz
         ## add nan's where necessary
         for x, stim_idx in enumerate(stims_sz):
             stim = expobj.stim_start_frames[stim_idx]
             exclude_cells_list = [idx for idx, cell in enumerate(expobj.s2p_nontargets) if cell in expobj.slmtargets_sz_stim[stim]]
             analysis_array_insz_[exclude_cells_list, x, :] = [np.nan] * expobj.analysis_array_insz.shape[2]
+            raw_traces_[exclude_cells_list, x, :] = [np.nan] * expobj.raw_traces_insz.shape[2]
+            dff_traces_[exclude_cells_list, x, :] = [np.nan] * expobj.dff_traces_insz.shape[2]
 
 
         # mean pre and post stimulus (within post-stim response window) flu trace values for all cells, all trials
         expobj.analysis_array_insz_exclude = analysis_array_insz_
+        expobj.raw_traces_insz = raw_traces_
+        expobj.dff_traces_insz = dff_traces_
+
         expobj.pre_array_insz_exclude = np.nanmean(expobj.analysis_array[:, :, expobj.pre_stim_frames_test],
                                                    axis=1)  # [cells x prestim frames] (avg'd taken over all stims)
         expobj.post_array_insz_exclude = np.nanmean(expobj.analysis_array[:, :, expobj.post_stim_frames_slice],
@@ -2916,11 +2928,11 @@ class Post4ap(alloptical):
 
 
         # measure avg response value for each trial, all cells --> return array with 3 axes [cells x response_magnitude_per_stim (avg'd taken over response window)]
-        expobj.post_array_responses_outsz = np.nanmean(expobj.analysis_array_outsz[:, :, expobj.post_stim_frames_slice], axis=2)
+        expobj.post_array_responses = np.nanmean(expobj.analysis_array_outsz[:, :, expobj.post_stim_frames_slice], axis=2)
         expobj.post_array_responses_insz = np.nanmean(expobj.analysis_array_insz[:, :, expobj.post_stim_frames_slice], axis=2)
         expobj.post_array_responses_insz_exclude = np.nanmean(expobj.analysis_array_insz_exclude[:, :, expobj.post_stim_frames_slice], axis=2)
 
-        expobj.wilcoxons_outsz = expobj._runWilcoxonsTest(array1=expobj.pre_array_outsz, array2=expobj.post_array_outsz)
+        expobj.wilcoxons = expobj._runWilcoxonsTest(array1=expobj.pre_array_outsz, array2=expobj.post_array_outsz)
         expobj.wilcoxons_insz = expobj._runWilcoxonsTest(array1=expobj.pre_array_insz, array2=expobj.post_array_insz)
         expobj.wilcoxons_insz_exclude = expobj._runWilcoxonsTest(array1=expobj.pre_array_insz_exclude, array2=expobj.post_array_insz_exclude)
 
@@ -4673,8 +4685,9 @@ def run_allopticalAnalysisNontargets(expobj, normalize_to='pre_stim', to_plot=Tr
             expobj.pre_stim_response_window_msec = 500  # msec
             expobj.pre_stim_response_frames_window = int(expobj.fps * expobj.pre_stim_response_window_msec / 1000)  # length of the pre stim response test window (in frames)
 
-        expobj._trialProcessing_nontargets(normalize_to, save=False)  # todo need to use a specific _trialProcessing_nontargets for Post4ap to run statistical tests exactly on either the stims in sz or out sz
-        expobj._sigTestAvgResponse_nontargets(alpha=0.1, save=False)
+        expobj._trialProcessing_nontargets(normalize_to, save=False)
+        expobj.sig_units = expobj._sigTestAvgResponse_nontargets(p_vals=expobj.wilcoxons, alpha=0.1, save=False)
+
 
         expobj.save()
 
@@ -4684,7 +4697,6 @@ def run_allopticalAnalysisNontargets(expobj, normalize_to='pre_stim', to_plot=Tr
 
     print('\n** FIN. * allopticalAnalysisNontargets * %s %s **** ' % (expobj.metainfo['animal prep.'], expobj.metainfo['trial']))
     print('-------------------------------------------------------------------------------------------------------------\n\n')
-
 
 def fig_non_targets_responses(expobj, plot_subset: bool = True, save_fig=None):
     print('\n----------------------------------------------------------------')
@@ -4816,6 +4828,37 @@ def fig_non_targets_responses(expobj, plot_subset: bool = True, save_fig=None):
         os.makedirs(_path) if not os.path.exists(_path) else None
         print('saving figure output to:', save_fig)
         plt.savefig(save_fig)
+
+###### NON TARGETS analysis - post4ap experiments + plotting
+def run_allopticalAnalysisNontargetsPost4ap(expobj, normalize_to='pre_stim', to_plot=True, save_plot_suffix='', do_processing=True):
+    if do_processing:
+
+        good_cells, events_loc_cells, flu_events_cells, stds = expobj._good_cells(cell_ids=expobj.cell_id, raws=expobj.raw,
+                                                                                  photostim_frames=expobj.photostim_frames, std_thresh=2.5, save=False)
+        # set the correct test response windows
+        if not expobj.pre_stim == int(1.0 * expobj.fps):
+            print('updating expobj.pre_stim_sec to 1 sec')
+            expobj.pre_stim = int(1.0 * expobj.fps)  # length of pre stim trace collected (in frames)
+            expobj.post_stim = int(3.0 * expobj.fps)  # length of post stim trace collected (in frames)
+            expobj.post_stim_response_window_msec = 500  # msec
+            expobj.post_stim_response_frames_window = int(expobj.fps * expobj.post_stim_response_window_msec / 1000)  # length of the post stim response test window (in frames)
+            expobj.pre_stim_response_window_msec = 500  # msec
+            expobj.pre_stim_response_frames_window = int(expobj.fps * expobj.pre_stim_response_window_msec / 1000)  # length of the pre stim response test window (in frames)
+
+        expobj._trialProcessing_nontargets(normalize_to, save=False)  # todo need to use a specific _trialProcessing_nontargets for Post4ap to run statistical tests exactly on either the stims in sz or out sz
+        expobj.sig_units = expobj._sigTestAvgResponse_nontargets(p_vals=expobj.wilcoxons, alpha=0.1, save=False)
+        expobj.sig_units_insz = expobj._sigTestAvgResponse_nontargets(p_vals=expobj.wilcoxons_insz, alpha=0.1, save=False)
+        expobj.sig_units_insz_exclude = expobj._sigTestAvgResponse_nontargets(p_vals=expobj.wilcoxons_insz_exclude, alpha=0.1, save=False)
+
+        expobj.save()
+
+    # make figure containing plots showing average responses of nontargets to photostim
+    save_plot_path = expobj.analysis_save_path[:30] + 'Results_figs/' + save_plot_suffix
+    fig_non_targets_responses(expobj=expobj, plot_subset=False, save_fig=save_plot_path) if to_plot else None
+
+    print('\n** FIN. * allopticalAnalysisNontargets * %s %s **** ' % (expobj.metainfo['animal prep.'], expobj.metainfo['trial']))
+    print('-------------------------------------------------------------------------------------------------------------\n\n')
+
 
 
 # # # import results superobject that will collect analyses from various individual experiments
