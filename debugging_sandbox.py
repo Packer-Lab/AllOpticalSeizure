@@ -45,11 +45,11 @@ for key in list(allopticalResults.trial_maps['post'].keys()):
         # import expobj
         expobj, experiment = aoutils.import_expobj(aoresults_map_id='post %s.%s' % (key, j))
         if expobj.metainfo['animal prep.'] + ' ' + expobj.metainfo['trial'] in ls:
-            aoutils.run_allopticalAnalysisNontargets(expobj, normalize_to='pre-stim', skip_processing=False, to_plot=True,
-                                                     save_plot_suffix=f"Nontargets_responses_2021-11-06/{expobj.metainfo['animal prep.']}_{expobj.metainfo['trial']}-post4ap.png")
+            aoutils.run_allopticalAnalysisNontargets(expobj, normalize_to='pre-stim', do_processing=True, to_plot=True,
+                                                     save_plot_suffix=f"Nontargets_responses_2021-11-08/{expobj.metainfo['animal prep.']}_{expobj.metainfo['trial']}-post4ap.png")
         else:
             pass
-            # aoutils.run_allopticalAnalysisNontargets(expobj, normalize_to='pre-stim', skip_processing=False, to_plot=False,
+            # aoutils.run_allopticalAnalysisNontargets(expobj, normalize_to='pre-stim', do_processing=False, to_plot=False,
             #                                          save_plot_suffix=f"Nontargets_responses_2021-11-06/{expobj.metainfo['animal prep.']}_{expobj.metainfo['trial']}-post4ap.png")
 
 

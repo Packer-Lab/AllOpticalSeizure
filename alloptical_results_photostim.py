@@ -211,7 +211,7 @@ fig1.show()
 
 # # import expobj
 # expobj, experiment = aoutils.import_expobj(aoresults_map_id='pre g.1')
-# aoutils.run_allopticalAnalysisNontargets(expobj, normalize_to='pre-stim', skip_processing=False,
+# aoutils.run_allopticalAnalysisNontargets(expobj, normalize_to='pre-stim', do_processing=False,
 #                                          save_plot_suffix='Nontargets_responses_2021-10-24/%s_%s.png' % (expobj.metainfo['animal prep.'], expobj.metainfo['trial']))
 
 
@@ -255,14 +255,14 @@ for key in list(allopticalResults.trial_maps['pre'].keys()):
         # import expobj
         expobj, experiment = aoutils.import_expobj(aoresults_map_id='pre %s.%s' % (key, j))
         if expobj.metainfo['animal prep.'] + ' ' + expobj.metainfo['trial'] in ls:
-            aoutils.run_allopticalAnalysisNontargets(expobj, normalize_to='pre-stim', skip_processing=True, to_plot=True,
+            aoutils.run_allopticalAnalysisNontargets(expobj, normalize_to='pre-stim', do_processing=True, to_plot=True,
                                                      save_plot_suffix=f"Nontargets_responses_2021-11-06/{expobj.metainfo['animal prep.']}_{expobj.metainfo['trial']}-pre4ap.png")
         else:
-            aoutils.run_allopticalAnalysisNontargets(expobj, normalize_to='pre-stim', skip_processing=False, to_plot=True,
+            aoutils.run_allopticalAnalysisNontargets(expobj, normalize_to='pre-stim', do_processing=False, to_plot=True,
                                                      save_plot_suffix=f"Nontargets_responses_2021-11-06/{expobj.metainfo['animal prep.']}_{expobj.metainfo['trial']}-pre4ap.png")
 
 
-# TODO needs some major bug fixing - run_allopticalAnalysisNontargets - expobj.raw_traces inspection shows nan's ending up in unexpected places
+# TODO need to add correct stim filters when analysing data to exclude stims/cells in seizure boundaries
 # 5.1) for loop to go through each expobj to analyze nontargets - post4ap trials
 ls = ['RL108 t-013', 'RL109 t-021', 'RL109 t-016']
 # ls = pj.flattenOnce(allopticalResults.post_4ap_trials)
@@ -271,11 +271,11 @@ for key in list(allopticalResults.trial_maps['post'].keys()):
         # import expobj
         expobj, experiment = aoutils.import_expobj(aoresults_map_id='post %s.%s' % (key, j), do_processing=True)
         if expobj.metainfo['animal prep.'] + ' ' + expobj.metainfo['trial'] in ls:
-            aoutils.run_allopticalAnalysisNontargets(expobj, normalize_to='pre-stim', skip_processing=False, to_plot=True,
+            aoutils.run_allopticalAnalysisNontargets(expobj, normalize_to='pre-stim', do_processing=True, to_plot=True,
                                                      save_plot_suffix=f"Nontargets_responses_2021-11-06/{expobj.metainfo['animal prep.']}_{expobj.metainfo['trial']}-post4ap.png")
         else:
             pass
-            # aoutils.run_allopticalAnalysisNontargets(expobj, normalize_to='pre-stim', skip_processing=False, to_plot=False,
+            # aoutils.run_allopticalAnalysisNontargets(expobj, normalize_to='pre-stim', do_processing=False, to_plot=False,
             #                                          save_plot_suffix=f"Nontargets_responses_2021-11-06/{expobj.metainfo['animal prep.']}_{expobj.metainfo['trial']}-post4ap.png")
 
 
