@@ -636,7 +636,7 @@ def make_random_color_array(n_colors):
 # plotting function for plotting a bar graph with the individual data points shown as well
 def plot_bar_with_points(data, title='', x_tick_labels=[], legend_labels: list = [], points: bool = True, bar: bool = True, colors: list = ['black'], ylims=None, xlims=True, text_list=None,
                          x_label=None, y_label=None, alpha=0.2, savepath=None, expand_size_x=1, expand_size_y=1, shrink_text: float = 1, show_legend=False,
-                         paired=False, **kwargs):
+                         paired=False, title_pad=20, **kwargs):
     """
     all purpose function for plotting a bar graph of multiple categories with the option of individual datapoints shown
     as well. The individual datapoints are drawn by adding a scatter plot with the datapoints randomly jittered around the central
@@ -804,8 +804,9 @@ def plot_bar_with_points(data, title='', x_tick_labels=[], legend_labels: list =
 
     # add title
     if 'fig' not in kwargs.keys():
-        ax.set_title(title, horizontalalignment='center', pad=100,
+        ax.set_title(title, horizontalalignment='center', pad=title_pad,
                      fontsize=12*shrink_text, wrap=False)
+        f.tight_layout()
     else:
         ax.set_title((title),horizontalalignment='center', verticalalignment='top',
                      fontsize=12*shrink_text, wrap=True)

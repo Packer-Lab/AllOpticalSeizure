@@ -34,21 +34,33 @@ save_path_prefix = '/home/pshah/mnt/qnap/Analysis/Results_figs/'
 # plot the target photostim responses for individual targets for each stim over the course of the trial
 #    (normalize to each target's overall mean response) and plot over the timecourse of the trial
 
-# ls = pj.flattenOnce(allopticalResults.post_4ap_trials)
-for key in list(allopticalResults.trial_maps['post'].keys())[-5:]:
-    for j in range(len(allopticalResults.trial_maps['post'][key])):
-        # import expobj
-        expobj, experiment = aoutils.import_expobj(aoresults_map_id='post %s.%s' % (key, j))
+# # ls = pj.flattenOnce(allopticalResults.post_4ap_trials)
+# for key in list(allopticalResults.trial_maps['post'].keys())[-5:]:
+#     for j in range(len(allopticalResults.trial_maps['post'][key])):
+#         # import expobj
+#         expobj, experiment = aoutils.import_expobj(aoresults_map_id='post %s.%s' % (key, j))
+
+
+# ls = ['RL108 t-013', 'RL109 t-021', 'RL109 t-016']
+# # ls = pj.flattenOnce(allopticalResults.post_4ap_trials)
+# for key in list(allopticalResults.trial_maps['post'].keys())[-5:]:
+#     for j in range(len(allopticalResults.trial_maps['post'][key])):
+#         # import expobj
+#         expobj, experiment = aoutils.import_expobj(aoresults_map_id='post %s.%s' % (key, j), do_processing=True)
+
 
 key = 'h'
 j = 0
 expobj, experiment = aoutils.import_expobj(aoresults_map_id='post %s.%s' % (key, j))
 
 
+
+# %% 7.0-dc)
+## APPROACH #1 - CALCULATING RESPONSE MAGNITUDE AT EACH STIM PER TARGET
+
 SLMtarget_ids = list(range(len(expobj.SLMTargets_stims_dfstdF)))
 target_colors = pj.make_random_color_array(len(SLMtarget_ids))
 
-## APPROACH #1 - CALCULATING RESPONSE MAGNITUDE AT EACH STIM PER TARGET
 # --- plot with mean FOV fluorescence signal
 fig, ax1 = plt.subplots(figsize=[20, 3])
 fig, ax1 = aoplot.plotMeanRawFluTrace(expobj=expobj, stim_span_color='white', x_axis='frames', figsize=[20, 3], show=False,
@@ -71,15 +83,16 @@ fig.show()
 
 
 
-## APPROACH #2 - USING Z-SCORED PHOTOSTIM RESPONSES
+# %% 7.0-dc)
+# APPROACH #2 - USING Z-SCORED PHOTOSTIM RESPONSES
 
 SLMtarget_ids = list(range(len(expobj.SLMTargets_stims_dfstdF)))
 target_colors = pj.make_random_color_array(len(SLMtarget_ids))
 # --- plot with mean FOV fluorescence signal
-fig, ax1 = plt.subplots(figsize=[20, 3])
-fig, ax1 = aoplot.plotMeanRawFluTrace(expobj=expobj, stim_span_color='white', x_axis='frames', figsize=[20, 3], show=False,
-                                      fig=fig, ax=ax1)
-ax2 = ax1.twinx()
+fig, axs = plt.subplots(ncols=1, nrows=2, figsize=[20, 6])
+fig, axs[0] = aoplot.plotMeanRawFluTrace(expobj=expobj, stim_span_color='white', x_axis='frames', figsize=[20, 3], show=False,
+                                      fig=fig, ax=axs[0])
+ax2 = axs[0].twinx()
 ## retrieve the appropriate zscored database - outsz stims
 targets = [x for x in list(allopticalResults.stim_responses_zscores[f"{expobj.metainfo['animal prep.']}"][f"{j + 1}"]['post-4ap'].columns) if type(x) == str]
 for target in targets:
@@ -87,7 +100,6 @@ for target in targets:
         response = allopticalResults.stim_responses_zscores[f"{expobj.metainfo['animal prep.']}"][f"{j + 1}"]['post-4ap'].loc[stim_idx, target]
         rand = np.random.randint(-15, 25, 1)[0] #* 1/(abs(response)**1/2)  # jittering around the stim_frame for the plot
         ax2.scatter(x=expobj.stim_start_frames[stim_idx] + rand, y=response, color=target_colors[targets.index(target)], alpha=0.70, s=15, zorder=4)
-        ax2.set_ylabel('Response mag. (zscored to pre4ap)')
 
 
 ## retrieve the appropriate zscored database - insz stims
@@ -99,17 +111,19 @@ for target in targets:
         ax2.scatter(x=expobj.stim_start_frames[stim_idx] + rand, y=response, color=target_colors[targets.index(target)], alpha=0.70, s=15, zorder=4)
         ax2.set_ylabel('Response mag. (zscored to pre4ap)')
 
+fig, axs[1] = aoplot.plotLfpSignal(expobj, stim_span_color='', x_axis='Time', show=False, fig=fig, ax=axs[1])
+
 fig.show()
+
 
 
 ##
-# --- plot with LFP signal
+# %% --- plot with LFP signal
 SLMtarget_ids = list(range(len(expobj.SLMTargets_stims_dfstdF)))
 target_colors = pj.make_random_color_array(len(SLMtarget_ids))
 # --- plot with mean FOV fluorescence signal
 fig, ax1 = plt.subplots(figsize=[20, 3])
-fig, ax1 = aoplot.plotMeanRawFluTrace(expobj=expobj, stim_span_color='white', x_axis='frames', figsize=[20, 3], show=False,
-                                      fig=fig, ax=ax1)
+fig, ax1 = aoplot.plotLfpSignal(expobj, stim_span_color='', x_axis='Time', show=False, fig=fig, ax=ax1)
 ax2 = ax1.twinx()
 ## retrieve the appropriate zscored database - outsz stims
 targets = [x for x in list(allopticalResults.stim_responses_zscores[f"{expobj.metainfo['animal prep.']}"][f"{j + 1}"]['post-4ap'].columns) if type(x) == str]
@@ -117,7 +131,7 @@ for target in targets:
     for stim_idx in allopticalResults.stim_responses_zscores[f"{expobj.metainfo['animal prep.']}"][f"{j + 1}"]['post-4ap'].index:
         response = allopticalResults.stim_responses_zscores[f"{expobj.metainfo['animal prep.']}"][f"{j + 1}"]['post-4ap'].loc[stim_idx, target]
         rand = np.random.randint(-15, 25, 1)[0] #* 1/(abs(response)**1/2)  # jittering around the stim_frame for the plot
-        ax2.scatter(x=expobj.stim_start_frames[stim_idx] + rand, y=response, color=target_colors[targets.index(target)], alpha=0.70, s=15, zorder=4)
+        ax2.scatter(x=expobj.stim_start_times[stim_idx]/expobj.paq_rate + rand, y=response, color=target_colors[targets.index(target)], alpha=0.70, s=15, zorder=4)
         ax2.set_ylabel('Response mag. (zscored to pre4ap)')
 
 
@@ -127,17 +141,11 @@ for target in targets:
     for stim_idx in allopticalResults.stim_responses_zscores[f"{expobj.metainfo['animal prep.']}"][f"{j + 1}"]['in sz'].index:
         response = allopticalResults.stim_responses_zscores[f"{expobj.metainfo['animal prep.']}"][f"{j + 1}"]['in sz'].loc[stim_idx, target]
         rand = np.random.randint(-15, 25, 1)[0] #* 1/(abs(response)**1/2)  # jittering around the stim_frame for the plot
-        ax2.scatter(x=expobj.stim_start_frames[stim_idx] + rand, y=response, color=target_colors[targets.index(target)], alpha=0.70, s=15, zorder=4)
+        ax2.scatter(x=expobj.stim_start_times[stim_idx]/expobj.paq_rate + rand, y=response, color=target_colors[targets.index(target)], alpha=0.70, s=15, zorder=4)
         ax2.set_ylabel('Response mag. (zscored to pre4ap)')
 
 fig.show()
 
-ls = ['RL108 t-013', 'RL109 t-021', 'RL109 t-016']
-# ls = pj.flattenOnce(allopticalResults.post_4ap_trials)
-for key in list(allopticalResults.trial_maps['post'].keys())[-5:]:
-    for j in range(len(allopticalResults.trial_maps['post'][key])):
-        # import expobj
-        expobj, experiment = aoutils.import_expobj(aoresults_map_id='post %s.%s' % (key, j), do_processing=True)
 
 
 

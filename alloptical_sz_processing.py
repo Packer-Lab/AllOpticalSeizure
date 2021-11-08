@@ -22,131 +22,86 @@ results_object_path = '/home/pshah/mnt/qnap/Analysis/onePstim_results_superobjec
 onePresults = aoutils.import_resultsobj(pkl_path=results_object_path)
 
 
+# %% 4.2) TODO measure seizure legnths across all imaging trials (including any spont imaging you might have)
+
+for key in list(allopticalResults.trial_maps['post'].keys()):
+    # import initial expobj
+    expobj, experiment = aoutils.import_expobj(aoresults_map_id='pre %s.0' % key, verbose=False)
+    prep = expobj.metainfo['animal prep.']
+    # look at all post4ap trials in expobj
+    if 'post-4ap trials' in expobj.metainfo.keys():
+        a = 'post-4ap trials'
+    elif 'post4ap_trials' in expobj.metainfo.keys():
+        a = 'post4ap_trials'
+    # for loop over all of those post4ap trials
+    for trial in expobj.metainfo['%s' % a]:
+        # import expobj
+        expobj, experiment = aoutils.import_expobj(prep=prep, trial=trial, verbose=False)
+        # count the average length of each seizure
+        if hasattr(expobj, 'seizure_lfp_onsets'):
+            n_seizures = len(expobj.seizure_lfp_onsets)
+            counter = 0
+            sz_lengths_total = 0
+            if len(expobj.seizure_lfp_onsets) == len(expobj.seizure_lfp_offsets) > 1:
+                for i, sz_onset in enumerate(expobj.seizure_lfp_onsets):
+                    if sz_onset != 0:
+                        sz_lengths_total += (expobj.frame_clock_actual[expobj.seizure_lfp_offsets[i]] - expobj.frame_clock_actual[sz_onset])/expobj.paq_rate
+                        counter += 1
+                avg_len = sz_lengths_total / counter
+                expobj.avg_sz_len = avg_len
+
+                print('Avg. seizure length (secs) for %s, %s, %s: ' % (prep, trial, expobj.metainfo['exptype']),
+                      np.round(expobj.avg_sz_len, 2))
+
+        else:
+            expobj.seizure_frames = []
+            expobj.seizure_lfp_onsets = []
+            expobj.seizure_lfp_offsets = []
+            expobj.save()
+            n_seizures = 0
+            print('no sz events for %s, %s, %s ' % (prep, trial, expobj.metainfo['exptype']))
+
+# 4.2.1) measure seizure incidence across onePstim trials
+for pkl_path in onePresults.mean_stim_responses['pkl_list']:
+    if list(onePresults.mean_stim_responses.loc[onePresults.mean_stim_responses['pkl_list'] == pkl_path, 'post-4ap response (during sz)'])[0] != '-':
+
+        expobj, experiment = aoutils.import_expobj(pkl_path=pkl_path, verbose=False)
+        # count the average length of each seizure
+        if hasattr(expobj, 'seizure_lfp_onsets'):
+            n_seizures = len(expobj.seizure_lfp_onsets)
+            counter = 0
+            sz_lengths_total = 0
+            if len(expobj.seizure_lfp_onsets) == len(expobj.seizure_lfp_offsets) > 1:
+                for i, sz_onset in enumerate(expobj.seizure_lfp_onsets):
+                    if sz_onset != 0:
+                        sz_lengths_total += (expobj.frame_clock_actual[expobj.seizure_lfp_offsets[i]] - expobj.frame_clock_actual[sz_onset])/expobj.paq_rate
+                        counter += 1
+                avg_len = sz_lengths_total / counter
+                expobj.avg_sz_len = avg_len
+                print('Avg. seizure length (secs) for %s, %s, %s: ' % (
+                expobj.metainfo['animal prep.'], expobj.metainfo['trial'], expobj.metainfo['exptype']),
+                      np.round(expobj.avg_sz_len, 2))
+
+        else:
+            expobj.seizure_frames = []
+            expobj.seizure_lfp_onsets = []
+            expobj.seizure_lfp_offsets = []
+            expobj.save()
+            n_seizures = 0
+            print('Avg. seizure length (secs) for %s, %s, %s ' % (
+                expobj.metainfo['animal prep.'], expobj.metainfo['trial'], expobj.metainfo['exptype']))
 
 
-# %% 5) TODO measure seizure legnths across all imaging trials (including any spont imaging you might have)
-#  plot the target photostim responses for individual targets for each stim over the course of the trial
-#    (normalize to each target's overall mean response) and plot over the timecourse of the trial
+# 4.2.2) plot seizure length across onePstim and twoPstim trials
+twop_trials = [24.0, 93.73, 38.86, 84.77, 17.16, 83.78, 15.78, 36.88]
+onep_trials = [30.02, 34.25, 114.53, 35.57]
 
-
-SLMtarget_ids = list(range(len(expobj.SLMTargets_stims_dfstdF)))
-target_colors = pj.make_random_color_array(SLMtarget_ids)
-
-# --- plot with mean FOV fluorescence signal
-fig, ax1 = plt.subplots(figsize=[20, 3])
-fig, ax1 = aoplot.plotMeanRawFluTrace(expobj=expobj, stim_span_color='white', x_axis='frames', figsize=[20, 3], show=False,
-                                      fig=fig, ax=ax1)
-ax2 = ax1.twinx()
-for target in expobj.responses_SLMtargets.keys():
-    mean_response = np.mean(expobj.responses_SLMtargets[target])
-    # print(mean_response)
-    for i in range(len(expobj.stim_start_frames)):
-        response = expobj.responses_SLMtargets[target][i] - mean_response
-        rand = np.random.randint(-15, 25, 1)[0] #* 1/(abs(response)**1/2)
-        ax2.scatter(x=expobj.stim_start_frames[i] + rand, y=response, color=target_colors[target], alpha=0.70, s=15, zorder=4)
-# for i in expobj.stim_start_frames:
-#     plt.axvline(i)
-plt.show()
-
-
-# --- plot with LFP signal
-fig1, ax1 = plt.subplots(figsize=[20, 3])
-fig1, ax1 = aoplot.plotLfpSignal(expobj, color='black', stim_span_color='', x_axis='time', show=False, fig=fig1, ax=ax1, alpha=0.5)
-ax2 = ax1.twinx()
-for target in expobj.responses_SLMtargets.keys():
-    mean_response = np.mean(expobj.responses_SLMtargets[target])
-    target_coord = expobj.target_coords_all[target]
-    # print(mean_response)
-    x = []
-    y = []
-    distance_to_sz = []
-
-    # calculate response magnitude at each stim time for selected target
-    for i in range(len(expobj.stim_times)):
-        # the response magnitude of the current SLM target at the current stim time (relative to the mean of the responses of the target over this trial)
-        response = expobj.responses_SLMtargets[target][i] - mean_response  # changed to division by mean response instead of substracting
-        min_distance = pj.calc_distance_2points((0, 0), (expobj.frame_x,
-                                                         expobj.frame_y))  # maximum distance possible between two points within the FOV, used as the starting point when the sz has not invaded FOV yet
-
-        if hasattr(expobj, 'cells_sz_stim') and expobj.stim_start_frames[i] in list(expobj.cells_sz_stim.keys()):  # calculate distance to sz only for stims where cell locations in or out of sz boundary are defined in the seizures
-            if expobj.stim_start_frames[i] in expobj.stims_in_sz:
-            # if (expobj.stim_start_frames[i] not in expobj.stims_bf_sz) and (expobj.stim_start_frames[i] not in expobj.stims_af_sz):  # also calculate distance for stims before and after
-                # collect cells from this stim that are in sz
-                s2pcells_sz = expobj.cells_sz_stim[expobj.stim_start_frames[i]]
-
-                # classify the SLM target as in or out of sz, if out then continue with mesauring distance to seizure wavefront,
-                # if in sz then assign negative value for distance to sz wavefront
-                sz_border_path = "%s/boundary_csv/%s_%s_stim-%s.tif_border.csv" % (
-                    expobj.metainfo['date'], expobj.analysis_save_path, trial, expobj.stim_start_frames[i])
-
-                in_sz_bool = expobj._InOutSz(cell_med=[target_coord[1], target_coord[0]],
-                                             sz_border_path=sz_border_path)
-
-                if expobj.stim_start_frames[i] in expobj.not_flip_stims:
-                    flip = False
-                else:
-                    flip = True
-                    in_sz_bool = not in_sz_bool
-
-                if in_sz_bool is True:
-                    min_distance = -1
-
-                else:
-                    ## working on add feature for edgecolor of scatter plot based on calculated distance to seizure
-                    ## -- thinking about doing this as comparing distances between all targets and all suite2p ROIs,
-                    #     and the shortest distance that is found for each SLM target is that target's distance to seizure wavefront
-                    # calculate the min distance of slm target to s2p cells classified inside of sz boundary at the current stim
-                    if len(s2pcells_sz) > 0:
-                        for j in range(len(s2pcells_sz)):
-                            s2p_idx = expobj.cell_id.index(s2pcells_sz[j])
-                            dist = pj.calc_distance_2points(target_coord, tuple(
-                                [expobj.stat[s2p_idx]['med'][1], expobj.stat[s2p_idx]['med'][0]]))  # distance in pixels
-                            if dist < min_distance:
-                                min_distance = dist
-
-                            # if j < 5:
-                            #     fig, ax = pj.plot_cell_loc(expobj, cells=[s2pcells_sz[j]], show=False, fig=fig, ax=ax,
-                            #                                background=expobj.meanFluImg_registered)
-                            #     ax.scatter(x=target_coord[0], y=target_coord[1])
-
-                # if 10 < min_distance < 40:
-                #     fig, ax = plt.subplots()
-                #     fig, ax = alloptical_plotting.plot_cell_loc(expobj, cells=s2pcells_sz, show=False, fig=fig, ax=ax,
-                #                                                 background=expobj.meanFluImg_registered)
-                #     ax.scatter(x=target_coord[0], y=target_coord[1])
-                #     plt.title('stim %s' % expobj.stim_start_frames[i])
-                #     fig.show()
-                #     print(min_distance)
-
-        # min_distance.append((np.random.rand(1) * 1000)[0])  # just for testing
-        distance_to_sz.append(min_distance)
-        # plot the response magnitude of the current SLM target at the current stim time
-        rand = np.random.randint(-10, 30, 1)[
-            0]  # * 1/(abs(response)**1/2)  # used for adding random jitter to the x loc scatter point
-        x.append(expobj.stim_times[i] - expobj.frame_start_time_actual + rand * 1e3)
-        y.append(response)
-    if np.std(distance_to_sz) > 0.1:
-        ax2.scatter(x=x, y=y, c=distance_to_sz, cmap='RdYlBu_r',
-                    alpha=0.5, s=10,
-                    zorder=4)  # use cmap correlated to distance from seizure to define colors of each target at each individual stim times
-    else:
-        ax2.scatter(x=x, y=y, facecolor='#BA1C32', alpha=0.5, s=10,
-                    zorder=4)  # use cmap correlated to distance from seizure to define colors of each target at each individual stim times
-    # fig1.show()
-    # ax2.scatter(x=x, y=y, c=distance_to_sz, cmap='RdYlBu_r',
-    #             alpha=0.70, s=15,
-    #             zorder=4)  # use cmap correlated to distance from seizure to define colors of each target at each individual stim times
-    # ax2.scatter(x=expobj.stim_times[i] + rand * 1e3, y=response, edgecolor=target_colors[target], alpha=0.70, s=15, zorder=4)  # use same edgecolor for each target at all stim times
-# for i in expobj.stim_start_frames:
-#     plt.axvline(i)
-plt.xlim([expobj.stim_times[0] - 4e5, expobj.stim_times[-1] + 1e5])
-fig1.show()
+pj.plot_bar_with_points(data=[twop_trials, onep_trials], x_tick_labels=['2p stim', '1p stim'], colors=['purple', 'green'], y_label='seizure length (secs)',
+                        title='Avg. length of sz', expand_size_x=0.4, expand_size_y=1, ylims=[0, 120], title_pad=15, shrink_text=0.8)
 
 
 
-
-
-# %% 4) counting seizure incidence across all imaging trials
+# %% 4.1) counting seizure incidence across all imaging trials
 
 for key in list(allopticalResults.trial_maps['post'].keys()):
     # import initial expobj
@@ -175,8 +130,7 @@ for key in list(allopticalResults.trial_maps['post'].keys()):
 
         print('Seizure incidence for %s, %s, %s: ' % (prep, trial, expobj.metainfo['exptype']), np.round(n_seizures / total_time_recording, 2))
 
-# %% 4.1) measure seizure incidence across onePstim trials
-
+# 4.1.1) measure seizure incidence across onePstim trials
 for pkl_path in onePresults.mean_stim_responses['pkl_list']:
     if list(onePresults.mean_stim_responses.loc[onePresults.mean_stim_responses['pkl_list'] == pkl_path, 'post-4ap response (during sz)'])[0] != '-':
 
@@ -195,12 +149,12 @@ for pkl_path in onePresults.mean_stim_responses['pkl_list']:
 
         print('Seizure incidence for %s, %s, %s: ' % (expobj.metainfo['animal prep.'], expobj.metainfo['trial'], expobj.metainfo['exptype']), np.round(n_seizures / total_time_recording, 2))
 
-# %% 4.2) plot seizure incidence across onePstim and twoPstim trials
+# 4.1.2) plot seizure incidence across onePstim and twoPstim trials
 twop_trials = [0.35, 0.251666667, 0.91, 0.33, 0.553333333, 0.0875, 0.47, 0.33, 0.52]
 onep_trials = [0.38, 0.26, 0.19, 0.436666667, 0.685]
 
-pj.plot_bar_with_points(data=[twop_trials, onep_trials], x_tick_labels=['2p stim', '1p stim'], colors=['purple', 'green'], y_label='seizure incidence (events/min)',
-                        title='rate of seizures during experiments', expand_size_x=0.6, expand_size_y=1.3, ylims=[0, 1])
+pj.plot_bar_with_points(data=[twop_trials, onep_trials], x_tick_labels=['2p stim', '1p stim'], colors=['purple', 'green'], y_label='sz incidence (events/min)',
+                        title='rate of seizures during exp', expand_size_x=0.4, expand_size_y=1, ylims=[0, 1], shrink_text=0.8)
 
 
 

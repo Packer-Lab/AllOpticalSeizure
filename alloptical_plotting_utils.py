@@ -727,7 +727,7 @@ def plot_lfp_stims(expobj, title='LFP signal with photostim. shown (in different
     # plot LFP signal
     # ax.plot(expobj.lfp_signal, zorder=0, linewidth=0.5)
     fig, ax = plotLfpSignal(expobj, fig=fig, ax=ax, stim_lines=False, show=False, stim_span_color='', x_axis=x_axis,
-                            sz_markings=sz_markings, color='slategray', hide_xlabel=True, downsample=False)
+                            sz_markings=sz_markings, color='slategray', downsample=False)
     # y_loc = np.percentile(expobj.lfp_signal, 75)
     y_loc = 0 # location of where to place the stim markers on the plot
 
@@ -1125,15 +1125,15 @@ def plotLfpSignal(expobj, stim_span_color='powderblue', downsample: bool = True,
         if stim_lines:
             for line in expobj.stim_start_times:
                 line = (line - expobj.frame_start_time_actual) / down
-                plt.axvline(x=line+2, color='black', linestyle='--', linewidth=0.6, zorder=0)
+                ax.axvline(x=line+2, color='black', linestyle='--', linewidth=0.6, zorder=0)
 
     # plot seizure onset and offset markings
     if sz_markings:
         if hasattr(expobj, 'seizure_lfp_onsets'):
             for sz_onset in expobj.seizure_lfp_onsets:
-                plt.axvline(x=expobj.frame_clock_actual[sz_onset] - expobj.frame_start_time_actual, color='black', linestyle='--', linewidth=1.0, zorder=0)
+                    ax.axvline(x=expobj.frame_clock_actual[sz_onset] - expobj.frame_start_time_actual, color='black', linestyle='--', linewidth=1.0, zorder=0)
             for sz_offset in expobj.seizure_lfp_offsets:
-                plt.axvline(x=expobj.frame_clock_actual[sz_offset] - expobj.frame_start_time_actual, color='black', linestyle='--', linewidth=1.0, zorder=0)
+                ax.axvline(x=expobj.frame_clock_actual[sz_offset] - expobj.frame_start_time_actual, color='black', linestyle='--', linewidth=1.0, zorder=0)
 
     # change x axis ticks to seconds
     if 'time' in x_axis or 'Time' in x_axis:

@@ -21,6 +21,7 @@ allopticalResults = aoutils.import_resultsobj(pkl_path=results_object_path)
 
 # %% IMPORT expobj
 expobj, experiment = aoutils.import_expobj(aoresults_map_id='pre h.0')
+expobj, experiment = aoutils.import_expobj(prep='RL109', trial='t-021')
 
 
 # %% useful general plots
@@ -28,7 +29,7 @@ expobj, experiment = aoutils.import_expobj(aoresults_map_id='pre h.0')
 aoplot.plotMeanRawFluTrace(expobj=expobj, stim_span_color=None, x_axis='Time', figsize=[20, 3])
 aoplot.plotLfpSignal(expobj, stim_span_color='', x_axis='time', figsize=[10, 4])
 aoplot.plot_SLMtargets_Locs(expobj, background=expobj.meanFluImg_registered)
-aoplot.plot_lfp_stims(expobj)
+aoplot.plot_lfp_stims(expobj, x_axis='Time')
 
 
 # %% s2p ROI Flu trace statistics for each cell
