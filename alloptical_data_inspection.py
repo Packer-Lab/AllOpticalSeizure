@@ -26,7 +26,7 @@ expobj, experiment = aoutils.import_expobj(aoresults_map_id='pre h.0')
 # %% useful general plots
 
 aoplot.plotMeanRawFluTrace(expobj=expobj, stim_span_color=None, x_axis='Time', figsize=[20, 3])
-aoplot.plotLfpSignal(expobj, stim_span_color='', x_axis='time', figsize=[8, 2])
+aoplot.plotLfpSignal(expobj, stim_span_color='', x_axis='time', figsize=[10, 4])
 aoplot.plot_SLMtargets_Locs(expobj, background=expobj.meanFluImg_registered)
 aoplot.plot_lfp_stims(expobj)
 

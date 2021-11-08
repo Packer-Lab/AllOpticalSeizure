@@ -16,7 +16,7 @@ results_object_path = '/home/pshah/mnt/qnap/Analysis/alloptical_results_superobj
 allopticalResults = aoutils.import_resultsobj(pkl_path=results_object_path)
 
 
-# %% convert stim responses to z-scores - relative to pre-4ap scores - make sure to compare the appropriate pre and post 4ap trial comparisons
+# %% 1) convert SLMTargets stim responses to z-scores - relative to pre-4ap scores - make sure to compare the appropriate pre and post 4ap trial comparisons
 
 allopticalResults.outsz_missing = []
 allopticalResults.insz_missing = []
@@ -129,8 +129,8 @@ for i in range(len(allopticalResults.pre_4ap_trials)):
     # load up post-4ap trial and stim responses
     expobj, experiment = aoutils.import_expobj(trial=post4aptrial, date=date, prep=prep, verbose=False)
     if hasattr(expobj, 'slmtargets_sz_stim'):
-        if hasattr(expobj, 'insz_responses_SLMtargets'):
-            df = expobj.insz_responses_SLMtargets.T
+        if hasattr(expobj, 'responses_SLMtargets_insz'):
+            df = expobj.responses_SLMtargets_insz.T
 
 
             # switch to NA for stims for cells which are classified in the sz
@@ -141,7 +141,7 @@ for i in range(len(allopticalResults.pre_4ap_trials)):
                     if target in expobj.slmtargets_sz_stim[stim]:
                         df.loc[expobj.stim_start_frames.index(stim)][target] = np.nan
 
-                # responses = [expobj.insz_responses_SLMtargets.loc[col][expobj.stim_start_frames.index(stim)] for stim in expobj.stims_in_sz if
+                # responses = [expobj.responses_SLMtargets_insz.loc[col][expobj.stim_start_frames.index(stim)] for stim in expobj.stims_in_sz if
                 #              col not in expobj.slmtargets_sz_stim[stim]]
                 # targets_avgresponses_exclude_stims_sz[row] = np.mean(responses)
 
@@ -159,8 +159,8 @@ for i in range(len(allopticalResults.pre_4ap_trials)):
 
                     # load up post-4ap trial and stim responses
                     expobj, experiment = aoutils.import_expobj(trial=post4aptrial, date=date, prep=prep, verbose=False)
-                    if hasattr(expobj, 'insz_responses_SLMtargets'):
-                        df_ = expobj.insz_responses_SLMtargets.T
+                    if hasattr(expobj, 'responses_SLMtargets_insz'):
+                        df_ = expobj.responses_SLMtargets_insz.T
 
                         # append additional dataframe to the first dataframe
                         # switch to NA for stims for cells which are classified in the sz
@@ -190,22 +190,22 @@ for i in range(len(allopticalResults.pre_4ap_trials)):
 
 allopticalResults.save()
 
-# %% plot histogram of zscore stim responses pre and post 4ap and in sz (excluding cells inside sz boundary)
+# %% 2) plot histogram of zscore stim responses pre and post 4ap and in sz (excluding cells inside sz boundary)
 
 pre_4ap_zscores = []
 post_4ap_zscores = []
 in_sz_zscores = []
-for key in allopticalResults.stim_responses_zscores.keys():
+for prep in allopticalResults.stim_responses_zscores.keys():
     count = 0
     for i in allopticalResults.pre_4ap_trials:
-        if key in i[0]:
+        if prep in i[0]:
             count += 1
 
     for comp in range(count):
         comp += 1
-        pre_4ap_df = allopticalResults.stim_responses_zscores[key][str(comp)]['pre-4ap']
-        post_4ap_df = allopticalResults.stim_responses_zscores[key][str(comp)]['post-4ap']
-        in_sz_df = allopticalResults.stim_responses_zscores[key][str(comp)]['in sz']
+        pre_4ap_df = allopticalResults.stim_responses_zscores[prep][str(comp)]['pre-4ap']
+        post_4ap_df = allopticalResults.stim_responses_zscores[prep][str(comp)]['post-4ap']
+        in_sz_df = allopticalResults.stim_responses_zscores[prep][str(comp)]['in sz']
         for col in pre_4ap_df.columns:
             if 'z' in str(col):
                 pre_4ap_zscores = pre_4ap_zscores + list(pre_4ap_df[col][:-2])
@@ -228,7 +228,7 @@ pj.plot_hist_density(data, x_label='z-score', title='All exps. stim responses zs
 
 
 
-# %% zscore of stim responses vs. TIME to seizure onset - original code for single experiments TODO
+# %% aoresults-7-dc) TODO zscore of stim responses vs. TIME to seizure onset - original code for single experiments
 
 stim_relative_szonset_vs_avg_zscore_alltargets_atstim = {}
 
@@ -274,7 +274,8 @@ for prep in allopticalResults.stim_responses_zscores.keys():
 
 allopticalResults.stim_relative_szonset_vs_avg_zscore_alltargets_atstim = stim_relative_szonset_vs_avg_zscore_alltargets_atstim
 
-# %% plotting of post_4ap zscore_stim_relative_to_sz onset
+
+# plotting of post_4ap zscore_stim_relative_to_sz onset
 
 preps = [prep[:-6] for prep in allopticalResults.stim_relative_szonset_vs_avg_zscore_alltargets_atstim.keys()]
 
@@ -291,7 +292,7 @@ fig.show()
 
 
 
-# %% zscore of stim responses vs. TIME to seizure onset - original code for single experiments
+# %% aoresults-7-dc) zscore of stim responses vs. TIME to seizure onset - original code for single experiments
 prep = 'RL108'
 date = '2020-12-18'
 trial = 't-013'

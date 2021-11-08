@@ -34,119 +34,111 @@ save_path_prefix = '/home/pshah/mnt/qnap/Analysis/Results_figs/'
 # plot the target photostim responses for individual targets for each stim over the course of the trial
 #    (normalize to each target's overall mean response) and plot over the timecourse of the trial
 
+# ls = pj.flattenOnce(allopticalResults.post_4ap_trials)
+for key in list(allopticalResults.trial_maps['post'].keys())[-5:]:
+    for j in range(len(allopticalResults.trial_maps['post'][key])):
+        # import expobj
+        expobj, experiment = aoutils.import_expobj(aoresults_map_id='post %s.%s' % (key, j))
+
+key = 'h'
+j = 0
+expobj, experiment = aoutils.import_expobj(aoresults_map_id='post %s.%s' % (key, j))
+
 
 SLMtarget_ids = list(range(len(expobj.SLMTargets_stims_dfstdF)))
-target_colors = pj.make_random_color_array(SLMtarget_ids)
+target_colors = pj.make_random_color_array(len(SLMtarget_ids))
 
+## APPROACH #1 - CALCULATING RESPONSE MAGNITUDE AT EACH STIM PER TARGET
 # --- plot with mean FOV fluorescence signal
 fig, ax1 = plt.subplots(figsize=[20, 3])
 fig, ax1 = aoplot.plotMeanRawFluTrace(expobj=expobj, stim_span_color='white', x_axis='frames', figsize=[20, 3], show=False,
                                       fig=fig, ax=ax1)
 ax2 = ax1.twinx()
-for target in expobj.responses_SLMtargets.keys():
-    mean_response = np.mean(expobj.responses_SLMtargets[target])
+
+## calculate and plot the response magnitude for each target at each stim;
+#   where response magnitude is classified as response of each target at a particular stim relative to the mean response from the whole trial
+for target in expobj.responses_SLMtargets.index:
+    mean_response = np.mean(expobj.responses_SLMtargets.iloc[target, :])
     # print(mean_response)
-    for i in range(len(expobj.stim_start_frames)):
-        response = expobj.responses_SLMtargets[target][i] - mean_response
-        rand = np.random.randint(-15, 25, 1)[0] #* 1/(abs(response)**1/2)
+    for i in expobj.responses_SLMtargets.columns:
+        response = expobj.responses_SLMtargets.iloc[target, i] - mean_response
+        rand = np.random.randint(-15, 25, 1)[0] #* 1/(abs(response)**1/2)  # jittering around the stim_frame for the plot
         ax2.scatter(x=expobj.stim_start_frames[i] + rand, y=response, color=target_colors[target], alpha=0.70, s=15, zorder=4)
+        ax2.set_ylabel('Response mag. (relative to mean)')
 # for i in expobj.stim_start_frames:
 #     plt.axvline(i)
-plt.show()
+fig.show()
 
 
-# --- plot with LFP signal
-fig1, ax1 = plt.subplots(figsize=[20, 3])
-fig1, ax1 = aoplot.plotLfpSignal(expobj, color='black', stim_span_color='', x_axis='time', show=False, fig=fig1, ax=ax1, alpha=0.5)
+
+## APPROACH #2 - USING Z-SCORED PHOTOSTIM RESPONSES
+
+SLMtarget_ids = list(range(len(expobj.SLMTargets_stims_dfstdF)))
+target_colors = pj.make_random_color_array(len(SLMtarget_ids))
+# --- plot with mean FOV fluorescence signal
+fig, ax1 = plt.subplots(figsize=[20, 3])
+fig, ax1 = aoplot.plotMeanRawFluTrace(expobj=expobj, stim_span_color='white', x_axis='frames', figsize=[20, 3], show=False,
+                                      fig=fig, ax=ax1)
 ax2 = ax1.twinx()
-for target in expobj.responses_SLMtargets.keys():
-    mean_response = np.mean(expobj.responses_SLMtargets[target])
-    target_coord = expobj.target_coords_all[target]
-    # print(mean_response)
-    x = []
-    y = []
-    distance_to_sz = []
+## retrieve the appropriate zscored database - outsz stims
+targets = [x for x in list(allopticalResults.stim_responses_zscores[f"{expobj.metainfo['animal prep.']}"][f"{j + 1}"]['post-4ap'].columns) if type(x) == str]
+for target in targets:
+    for stim_idx in allopticalResults.stim_responses_zscores[f"{expobj.metainfo['animal prep.']}"][f"{j + 1}"]['post-4ap'].index:
+        response = allopticalResults.stim_responses_zscores[f"{expobj.metainfo['animal prep.']}"][f"{j + 1}"]['post-4ap'].loc[stim_idx, target]
+        rand = np.random.randint(-15, 25, 1)[0] #* 1/(abs(response)**1/2)  # jittering around the stim_frame for the plot
+        ax2.scatter(x=expobj.stim_start_frames[stim_idx] + rand, y=response, color=target_colors[targets.index(target)], alpha=0.70, s=15, zorder=4)
+        ax2.set_ylabel('Response mag. (zscored to pre4ap)')
 
-    # calculate response magnitude at each stim time for selected target
-    for i in range(len(expobj.stim_times)):
-        # the response magnitude of the current SLM target at the current stim time (relative to the mean of the responses of the target over this trial)
-        response = expobj.responses_SLMtargets[target][i] - mean_response  # changed to division by mean response instead of substracting
-        min_distance = pj.calc_distance_2points((0, 0), (expobj.frame_x,
-                                                         expobj.frame_y))  # maximum distance possible between two points within the FOV, used as the starting point when the sz has not invaded FOV yet
 
-        if hasattr(expobj, 'cells_sz_stim') and expobj.stim_start_frames[i] in list(expobj.cells_sz_stim.keys()):  # calculate distance to sz only for stims where cell locations in or out of sz boundary are defined in the seizures
-            if expobj.stim_start_frames[i] in expobj.stims_in_sz:
-            # if (expobj.stim_start_frames[i] not in expobj.stims_bf_sz) and (expobj.stim_start_frames[i] not in expobj.stims_af_sz):  # also calculate distance for stims before and after
-                # collect cells from this stim that are in sz
-                s2pcells_sz = expobj.cells_sz_stim[expobj.stim_start_frames[i]]
+## retrieve the appropriate zscored database - insz stims
+targets = [x for x in list(allopticalResults.stim_responses_zscores[f"{expobj.metainfo['animal prep.']}"][f"{j + 1}"]['in sz'].columns) if type(x) == str]
+for target in targets:
+    for stim_idx in allopticalResults.stim_responses_zscores[f"{expobj.metainfo['animal prep.']}"][f"{j + 1}"]['in sz'].index:
+        response = allopticalResults.stim_responses_zscores[f"{expobj.metainfo['animal prep.']}"][f"{j + 1}"]['in sz'].loc[stim_idx, target]
+        rand = np.random.randint(-15, 25, 1)[0] #* 1/(abs(response)**1/2)  # jittering around the stim_frame for the plot
+        ax2.scatter(x=expobj.stim_start_frames[stim_idx] + rand, y=response, color=target_colors[targets.index(target)], alpha=0.70, s=15, zorder=4)
+        ax2.set_ylabel('Response mag. (zscored to pre4ap)')
 
-                # classify the SLM target as in or out of sz, if out then continue with mesauring distance to seizure wavefront,
-                # if in sz then assign negative value for distance to sz wavefront
-                sz_border_path = "%s/boundary_csv/%s_%s_stim-%s.tif_border.csv" % (
-                    expobj.metainfo['date'], expobj.analysis_save_path, trial, expobj.stim_start_frames[i])
+fig.show()
 
-                in_sz_bool = expobj._InOutSz(cell_med=[target_coord[1], target_coord[0]],
-                                             sz_border_path=sz_border_path)
 
-                if expobj.stim_start_frames[i] in expobj.not_flip_stims:
-                    flip = False
-                else:
-                    flip = True
-                    in_sz_bool = not in_sz_bool
+##
+# --- plot with LFP signal
+SLMtarget_ids = list(range(len(expobj.SLMTargets_stims_dfstdF)))
+target_colors = pj.make_random_color_array(len(SLMtarget_ids))
+# --- plot with mean FOV fluorescence signal
+fig, ax1 = plt.subplots(figsize=[20, 3])
+fig, ax1 = aoplot.plotMeanRawFluTrace(expobj=expobj, stim_span_color='white', x_axis='frames', figsize=[20, 3], show=False,
+                                      fig=fig, ax=ax1)
+ax2 = ax1.twinx()
+## retrieve the appropriate zscored database - outsz stims
+targets = [x for x in list(allopticalResults.stim_responses_zscores[f"{expobj.metainfo['animal prep.']}"][f"{j + 1}"]['post-4ap'].columns) if type(x) == str]
+for target in targets:
+    for stim_idx in allopticalResults.stim_responses_zscores[f"{expobj.metainfo['animal prep.']}"][f"{j + 1}"]['post-4ap'].index:
+        response = allopticalResults.stim_responses_zscores[f"{expobj.metainfo['animal prep.']}"][f"{j + 1}"]['post-4ap'].loc[stim_idx, target]
+        rand = np.random.randint(-15, 25, 1)[0] #* 1/(abs(response)**1/2)  # jittering around the stim_frame for the plot
+        ax2.scatter(x=expobj.stim_start_frames[stim_idx] + rand, y=response, color=target_colors[targets.index(target)], alpha=0.70, s=15, zorder=4)
+        ax2.set_ylabel('Response mag. (zscored to pre4ap)')
 
-                if in_sz_bool is True:
-                    min_distance = -1
 
-                else:
-                    ## working on add feature for edgecolor of scatter plot based on calculated distance to seizure
-                    ## -- thinking about doing this as comparing distances between all targets and all suite2p ROIs,
-                    #     and the shortest distance that is found for each SLM target is that target's distance to seizure wavefront
-                    # calculate the min distance of slm target to s2p cells classified inside of sz boundary at the current stim
-                    if len(s2pcells_sz) > 0:
-                        for j in range(len(s2pcells_sz)):
-                            s2p_idx = expobj.cell_id.index(s2pcells_sz[j])
-                            dist = pj.calc_distance_2points(target_coord, tuple(
-                                [expobj.stat[s2p_idx]['med'][1], expobj.stat[s2p_idx]['med'][0]]))  # distance in pixels
-                            if dist < min_distance:
-                                min_distance = dist
+## retrieve the appropriate zscored database - insz stims
+targets = [x for x in list(allopticalResults.stim_responses_zscores[f"{expobj.metainfo['animal prep.']}"][f"{j + 1}"]['in sz'].columns) if type(x) == str]
+for target in targets:
+    for stim_idx in allopticalResults.stim_responses_zscores[f"{expobj.metainfo['animal prep.']}"][f"{j + 1}"]['in sz'].index:
+        response = allopticalResults.stim_responses_zscores[f"{expobj.metainfo['animal prep.']}"][f"{j + 1}"]['in sz'].loc[stim_idx, target]
+        rand = np.random.randint(-15, 25, 1)[0] #* 1/(abs(response)**1/2)  # jittering around the stim_frame for the plot
+        ax2.scatter(x=expobj.stim_start_frames[stim_idx] + rand, y=response, color=target_colors[targets.index(target)], alpha=0.70, s=15, zorder=4)
+        ax2.set_ylabel('Response mag. (zscored to pre4ap)')
 
-                            # if j < 5:
-                            #     fig, ax = pj.plot_cell_loc(expobj, cells=[s2pcells_sz[j]], show=False, fig=fig, ax=ax,
-                            #                                background=expobj.meanFluImg_registered)
-                            #     ax.scatter(x=target_coord[0], y=target_coord[1])
+fig.show()
 
-                # if 10 < min_distance < 40:
-                #     fig, ax = plt.subplots()
-                #     fig, ax = alloptical_plotting.plot_cell_loc(expobj, cells=s2pcells_sz, show=False, fig=fig, ax=ax,
-                #                                                 background=expobj.meanFluImg_registered)
-                #     ax.scatter(x=target_coord[0], y=target_coord[1])
-                #     plt.title('stim %s' % expobj.stim_start_frames[i])
-                #     fig.show()
-                #     print(min_distance)
+ls = ['RL108 t-013', 'RL109 t-021', 'RL109 t-016']
+# ls = pj.flattenOnce(allopticalResults.post_4ap_trials)
+for key in list(allopticalResults.trial_maps['post'].keys())[-5:]:
+    for j in range(len(allopticalResults.trial_maps['post'][key])):
+        # import expobj
+        expobj, experiment = aoutils.import_expobj(aoresults_map_id='post %s.%s' % (key, j), do_processing=True)
 
-        # min_distance.append((np.random.rand(1) * 1000)[0])  # just for testing
-        distance_to_sz.append(min_distance)
-        # plot the response magnitude of the current SLM target at the current stim time
-        rand = np.random.randint(-10, 30, 1)[
-            0]  # * 1/(abs(response)**1/2)  # used for adding random jitter to the x loc scatter point
-        x.append(expobj.stim_times[i] - expobj.frame_start_time_actual + rand * 1e3)
-        y.append(response)
-    if np.std(distance_to_sz) > 0.1:
-        ax2.scatter(x=x, y=y, c=distance_to_sz, cmap='RdYlBu_r',
-                    alpha=0.5, s=10,
-                    zorder=4)  # use cmap correlated to distance from seizure to define colors of each target at each individual stim times
-    else:
-        ax2.scatter(x=x, y=y, facecolor='#BA1C32', alpha=0.5, s=10,
-                    zorder=4)  # use cmap correlated to distance from seizure to define colors of each target at each individual stim times
-    # fig1.show()
-    # ax2.scatter(x=x, y=y, c=distance_to_sz, cmap='RdYlBu_r',
-    #             alpha=0.70, s=15,
-    #             zorder=4)  # use cmap correlated to distance from seizure to define colors of each target at each individual stim times
-    # ax2.scatter(x=expobj.stim_times[i] + rand * 1e3, y=response, edgecolor=target_colors[target], alpha=0.70, s=15, zorder=4)  # use same edgecolor for each target at all stim times
-# for i in expobj.stim_start_frames:
-#     plt.axvline(i)
-plt.xlim([expobj.stim_times[0] - 4e5, expobj.stim_times[-1] + 1e5])
-fig1.show()
 
 
 
