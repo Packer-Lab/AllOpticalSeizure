@@ -72,12 +72,12 @@ allopticalResults.trial_maps = {'pre': {}, 'post': {}}
 allopticalResults.trial_maps['pre'] = {
     'a': ['RL108 t-009'],
     'b': ['RL108 t-010'],
-    'c': ['RL109 t-007'],
+    # 'c': ['RL109 t-007'],
     'd': ['RL109 t-008'],
     # 'e': ['RL109 t-013'],  - pickle truncated .21/10/18
     'f': ['RL109 t-014'],
-    'g': ['PS04 t-012',  # 'PS04 t-014',  # - temp just until PS04 gets reprocessed
-          'PS04 t-017'],
+    # 'g': ['PS04 t-012',  # 'PS04 t-014',  # - temp just until PS04 gets reprocessed
+    #       'PS04 t-017'],
     'h': ['PS05 t-010'],
     'i': ['PS07 t-007'],
     'j': ['PS07 t-009'],
@@ -94,11 +94,11 @@ allopticalResults.trial_maps['pre'] = {
 allopticalResults.trial_maps['post'] = {
     'a': ['RL108 t-013'],
     'b': ['RL108 t-011'],
-    'c': ['RL109 t-020'],
+    # 'c': ['RL109 t-020'], -- need to redo sz boundary classifying processing
     'd': ['RL109 t-021'],
     # 'e': ['RL109 t-018'], - t-013 has been truncated
     'f': ['RL109 t-016', 'RL109 t-017'],
-    'g': ['PS04 t-018'],
+    # 'g': ['PS04 t-018'],  -- need to redo sz boundary classifying processing
     'h': ['PS05 t-012'],
     'i': ['PS07 t-011'],
     'j': ['PS07 t-017'],

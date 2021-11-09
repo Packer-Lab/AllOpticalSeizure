@@ -21,7 +21,7 @@ allopticalResults = aoutils.import_resultsobj(pkl_path=results_object_path)
 
 # %% IMPORT expobj
 expobj, experiment = aoutils.import_expobj(aoresults_map_id='pre h.0')
-expobj, experiment = aoutils.import_expobj(prep='RL109', trial='t-021')
+expobj, experiment = aoutils.import_expobj(prep='RL109', trial='t-020')
 
 
 # %% useful general plots

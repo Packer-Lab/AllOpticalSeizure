@@ -2084,7 +2084,7 @@ class alloptical(TwoPhotonImaging):
     #     else:
     #         stim_timings = [self.stim_start_frames[stim_idx] for stim_idx in stims_idx_l]
     #
-    #     self.s2p_rois_nontargets = [cell for cell in self.cell_id if cell not in self.s2p_cell_targets]  # TODO need to also detect (and exclude) ROIs that are within some radius of the SLM targets
+    #     self.s2p_rois_nontargets = [cell for cell in self.cell_id if cell not in self.s2p_cell_targets]  # need to also detect (and exclude) ROIs that are within some radius of the SLM targets
     #     num_cells = len(self.s2p_rois_nontargets)
     #     targets_trace = self.raw
     #
@@ -2105,7 +2105,7 @@ class alloptical(TwoPhotonImaging):
     #     for cell_idx in range(num_cells):
     #
     #         if filter_sz:
-    #             if hasattr(self, 'slmtargets_sz_stim'):  ## TODO change to ROIs in sz for each stim -- has this classification been done for non-targets ROIs?
+    #             if hasattr(self, 'slmtargets_sz_stim'):  ## change to ROIs in sz for each stim -- has this classification been done for non-targets ROIs?
     #                 flu = []
     #                 for stim in stim_timings:
     #                     if stim in self.slmtargets_sz_stim.keys():  # some stims dont have sz boundaries because of issues with their TIFFs not being made properly (not readable in Fiji), usually it is the first TIFF in a seizure
@@ -2885,9 +2885,9 @@ class Post4ap(alloptical):
         # assert sum(np.isnan(expobj.dfstdF_traces[0][0])) == sum(np.isnan(expobj.analysis_array_outsz[0][0])), print('there is a discrepancy in the number of nans in expobj.analysis_array_outsz')
 
         expobj.pre_array_outsz = np.nanmean(expobj.analysis_array_outsz[:, :, expobj.pre_stim_frames_test],
-                                   axis=1)  # [cells x prestim frames] (avg'd taken over all stims)
+                                            axis=1)  # [cells x prestim frames] (avg'd taken over all stims)
         expobj.post_array_outsz = np.nanmean(expobj.analysis_array_outsz[:, :, expobj.post_stim_frames_slice],
-                                    axis=1)  # [cells x poststim frames] (avg'd taken over all stims)
+                                             axis=1)  # [cells x poststim frames] (avg'd taken over all stims)
 
 
 
@@ -2898,9 +2898,9 @@ class Post4ap(alloptical):
         expobj.raw_traces_insz = expobj.raw_traces[:, stims_sz, :]
         expobj.dff_traces_insz = expobj.dff_traces[:, stims_sz, :]
         expobj.pre_array_insz = np.nanmean(expobj.analysis_array_insz[:, :, expobj.pre_stim_frames_test],
-                                   axis=1)  # [cells x prestim frames] (avg'd taken over all stims)
+                                           axis=1)  # [cells x prestim frames] (avg'd taken over all stims)
         expobj.post_array_insz = np.nanmean(expobj.analysis_array_insz[:, :, expobj.post_stim_frames_slice],
-                                    axis=1)  # [cells x poststim frames] (avg'd taken over all stims)
+                                            axis=1)  # [cells x poststim frames] (avg'd taken over all stims)
 
 
         ## process in sz stims - exclude cells inside sz boundary
