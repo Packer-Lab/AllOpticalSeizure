@@ -361,9 +361,9 @@ def plot_periphotostim_avg2(dataset, fps=None, legend_labels=None, colors=None, 
             meantraces.append(meanst)
             stdtraces.append(std)
             if not meanst.shape == meantraces[i - 1].shape:
-                print(f"|--- length mismatch in mean traces of datasets...{title}")
+                print(f"|--- length mismatch in mean traces of datasets... {title}, shape0 {meanst.shape} and shape1 {meantraces[i - 1].shape}")
             if not std.shape == stdtraces[i - 1].shape:
-                print(f"|--- length mismatch in std traces of datasets...{title}")
+                print(f"|--- length mismatch in std traces of datasets...{title}, shape0 {std.shape} and shape1 {stdtraces[i - 1].shape}")
 
     elif type(dataset) is not list or len(dataset) == 1:
         dataset = list(dataset)

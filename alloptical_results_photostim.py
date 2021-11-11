@@ -35,13 +35,18 @@ os.makedirs(save_path_prefix) if not os.path.exists(save_path_prefix) else None
 # %% 5.3.2) # # PLOT - peri-stim average response stim graph for positive and negative followers
 """# - make one graph per comparison for now... then can figure out how to average things out later."""
 
-experiments = ['RL108t', 'RL109t', 'PS05t', 'PS07t', 'PS06t', 'PS11t']
+# experiments = ['RL108t', 'RL109t', 'PS05t', 'PS07t', 'PS06t', 'PS11t']
+experiments = ['RL109t', 'PS05t', 'PS07t', 'PS06t', 'PS11t']  # 'RL108t' already run successfully (RL109t008 vs. t021 had an issue)
 pre4ap_pos = []
 pre4ap_neg = []
 post4ap_pos = []
 post4ap_neg = []
 
 # positive responders
+print('\n\n------------------------------------------------')
+print('PLOTTING: Avg. periphotostim positive responders')
+print('------------------------------------------------')
+
 ncols = 3
 nrows = 3
 fig, axs = plt.subplots(ncols=ncols, nrows=nrows, figsize=(8, 8))
@@ -50,24 +55,25 @@ counter = 0
 for exp in experiments:
     for row in range(len(allopticalResults.num_sig_responders_df.index)):
         if exp in allopticalResults.num_sig_responders_df.index[row]:
-
+            print(f"\nexperiment comparison: {allopticalResults.num_sig_responders_df.index[row]}")
             mean_pre4ap_ = allopticalResults.possig_responders_traces[row][0]
             mean_post4ap_ = allopticalResults.possig_responders_traces[row][1]
-            print(mean_pre4ap_.shape, mean_post4ap_.shape)
+            print(f"# of mean_pre4ap traces: {len(mean_pre4ap_)}, and mean_post4ap traces: {len(mean_post4ap_)}")
 
-            ax = axs[counter//ncols, counter % ncols]
+            if len(mean_pre4ap_) > 1 and len(mean_post4ap_) > 1:
+                ax = axs[counter//ncols, counter % ncols]
 
-            meanst = np.mean(mean_pre4ap_, axis=0)
-            ## change xaxis to time (secs)
-            if len(meanst) < 100:
-                fps = 15
-            else:
-                fps = 30
+                meanst = np.mean(mean_pre4ap_, axis=0)
+                ## change xaxis to time (secs)
+                if len(meanst) < 100:
+                    fps = 15
+                else:
+                    fps = 30
 
-            fig, ax = aoplot.plot_periphotostim_avg2(dataset=[mean_pre4ap_, mean_post4ap_], fps=fps, legend_labels=[f"pre4ap {mean_pre4ap_.shape[0]} cells", f"post4ap {mean_post4ap_.shape[0]} cells"],
-                                           colors=['black', 'green'], avg_with_std=True, title=f"{allopticalResults.num_sig_responders_df.index[row]}", ylim=[-0.5, 1.0],
-                                           pre_stim_sec=allopticalResults.pre_stim_sec, fig=fig, ax=ax, show=False, fontsize='small',
-                                                     xlabel=None, ylabel=None)
+                fig, ax = aoplot.plot_periphotostim_avg2(dataset=[mean_pre4ap_, mean_post4ap_], fps=fps, legend_labels=[f"pre4ap {len(mean_pre4ap_)} cells", f"post4ap {len(mean_post4ap_)} cells"],
+                                               colors=['black', 'green'], avg_with_std=True, title=f"{allopticalResults.num_sig_responders_df.index[row]}", ylim=[-0.5, 1.0],
+                                               pre_stim_sec=allopticalResults.pre_stim_sec, fig=fig, ax=ax, show=False, fontsize='small',
+                                                         xlabel=None, ylabel=None)
 
             counter += 1
 axs[0, 0].set_ylabel('dF/stdF')
@@ -84,6 +90,9 @@ fig.show()
 
 
 # negative responders
+print('\n\n------------------------------------------------')
+print('PLOTTING: Avg. periphotostim negative responders')
+print('------------------------------------------------')
 ncols = 3
 nrows = 3
 fig, axs = plt.subplots(ncols=ncols, nrows=nrows, figsize=(8, 8))
@@ -91,24 +100,25 @@ counter = 0
 for exp in experiments:
     for row in range(len(allopticalResults.num_sig_responders_df.index)):
         if exp in allopticalResults.num_sig_responders_df.index[row]:
-
+            print(f"\nexperiment comparison: {allopticalResults.num_sig_responders_df.index[row]}")
             mean_pre4ap_ = allopticalResults.negsig_responders_traces[row][0]
             mean_post4ap_ = allopticalResults.negsig_responders_traces[row][1]
-            print(mean_pre4ap_.shape, mean_post4ap_.shape)
+            print(f"# of mean_pre4ap traces: {len(mean_pre4ap_)}, and mean_post4ap traces: {len(mean_post4ap_)}")
 
-            ax = axs[counter//ncols, counter % ncols]
+            if len(mean_pre4ap_) > 1 and len(mean_post4ap_) > 1:
+                ax = axs[counter//ncols, counter % ncols]
 
-            meanst = np.mean(mean_pre4ap_, axis=0)
-            ## change xaxis to time (secs)
-            if len(meanst) < 100:
-                fps = 15
-            else:
-                fps = 30
+                meanst = np.mean(mean_pre4ap_, axis=0)
+                ## change xaxis to time (secs)
+                if len(meanst) < 100:
+                    fps = 15
+                else:
+                    fps = 30
 
-            fig, ax = aoplot.plot_periphotostim_avg2(dataset=[mean_pre4ap_, mean_post4ap_], fps=fps, legend_labels=[f"pre4ap {mean_pre4ap_.shape[0]} cells", f"post4ap {mean_post4ap_.shape[0]} cells"],
-                                           colors=['black', 'red'], avg_with_std=True, title=f"{allopticalResults.num_sig_responders_df.index[row]}", ylim=[-0.5, 1.0],
-                                           pre_stim_sec=allopticalResults.pre_stim_sec, fig=fig, ax=ax, show=False, fontsize='small',
-                                                     xlabel=None, ylabel=None)
+                fig, ax = aoplot.plot_periphotostim_avg2(dataset=[mean_pre4ap_, mean_post4ap_], fps=fps, legend_labels=[f"pre4ap {len(mean_pre4ap_)} cells", f"post4ap {len(mean_post4ap_)} cells"],
+                                               colors=['black', 'red'], avg_with_std=True, title=f"{allopticalResults.num_sig_responders_df.index[row]}", ylim=[-0.5, 1.0],
+                                               pre_stim_sec=allopticalResults.pre_stim_sec, fig=fig, ax=ax, show=False, fontsize='small',
+                                                         xlabel=None, ylabel=None)
 
             counter += 1
 axs[0, 0].set_ylabel('dF/stdF')
@@ -133,6 +143,9 @@ auc_responders = pd.DataFrame(columns=['pre4ap_pos_auc', 'pre4ap_neg_auc', 'post
                               index=allopticalResults.num_sig_responders_df.index)
 
 # positive responders
+print('\n\n------------------------------------------------')
+print('PLOTTING: Avg. total evoked activity positive responders')
+print('------------------------------------------------')
 ncols = 3
 nrows = 3
 fig, axs = plt.subplots(ncols=ncols, nrows=nrows, figsize=(8, 8))
@@ -140,32 +153,34 @@ counter = 0
 for exp in experiments:
     for row in range(len(allopticalResults.num_sig_responders_df.index)):
         if exp in allopticalResults.num_sig_responders_df.index[row]:
-
+            print(f"\nexperiment comparison: {allopticalResults.num_sig_responders_df.index[row]}")
             mean_pre4ap_ = allopticalResults.possig_responders_traces[row][0]
             mean_post4ap_ = allopticalResults.possig_responders_traces[row][1]
-            print(mean_pre4ap_.shape, mean_post4ap_.shape)
             normalize = [int(allopticalResults.num_sig_responders_df.iloc[row, -1])] * 2
+            print(f"# of mean_pre4ap traces: {len(mean_pre4ap_)}, and mean_post4ap traces: {len(mean_post4ap_)}")
 
-            # plot avg with confidence intervals
-            # fig, ax = plt.subplots()
+            if len(mean_pre4ap_) > 1 and len(mean_post4ap_) > 1:
 
-            ax = axs[counter//ncols, counter % ncols]
+                # plot avg with confidence intervals
+                # fig, ax = plt.subplots()
 
-            meanst = np.mean(mean_pre4ap_, axis=0)
-            ## change xaxis to time (secs)
-            if len(meanst) < 100:
-                fps = 15
-            else:
-                fps = 30
+                ax = axs[counter//ncols, counter % ncols]
 
-            fig, ax, auc = aoplot.plot_periphotostim_addition(dataset=[mean_pre4ap_, mean_post4ap_], normalize=normalize, fps=fps,
-                                                              legend_labels=[f"pre {mean_pre4ap_.shape[0]} cells", f"post {mean_post4ap_.shape[0]} cells"],
-                                                              colors=['black', 'green'], xlabel=None, ylabel=None,
-                                                              avg_with_std=True,  title=f"{allopticalResults.num_sig_responders_df.index[row]}",
-                                                              ylim=None, pre_stim_sec=allopticalResults.pre_stim_sec, fig=fig, ax=ax, show=False,
-                                                              fontsize='x-small')
+                meanst = np.mean(mean_pre4ap_, axis=0)
+                ## change xaxis to time (secs)
+                if len(meanst) < 100:
+                    fps = 15
+                else:
+                    fps = 30
 
-            auc_responders.loc[allopticalResults.num_sig_responders_df.index[row], ['pre4ap_pos_auc', 'post4ap_pos_auc']] = auc
+                fig, ax, auc = aoplot.plot_periphotostim_addition(dataset=[mean_pre4ap_, mean_post4ap_], normalize=normalize, fps=fps,
+                                                                  legend_labels=[f"pre {mean_pre4ap_.shape[0]} cells", f"post {mean_post4ap_.shape[0]} cells"],
+                                                                  colors=['black', 'green'], xlabel=None, ylabel=None,
+                                                                  avg_with_std=True,  title=f"{allopticalResults.num_sig_responders_df.index[row]}",
+                                                                  ylim=None, pre_stim_sec=allopticalResults.pre_stim_sec, fig=fig, ax=ax, show=False,
+                                                                  fontsize='x-small')
+
+                auc_responders.loc[allopticalResults.num_sig_responders_df.index[row], ['pre4ap_pos_auc', 'post4ap_pos_auc']] = auc
 
             counter += 1
 axs[0, 0].set_ylabel('norm. total response (a.u.)')
@@ -178,7 +193,10 @@ plt.savefig(save_path)
 fig.show()
 
 
-#
+# negative responders
+print('\n\n------------------------------------------------')
+print('PLOTTING: Avg. total evoked activity negative responders')
+print('------------------------------------------------')
 ncols = 3
 nrows = 3
 fig, axs = plt.subplots(ncols=ncols, nrows=nrows, figsize=(8, 8))
@@ -187,33 +205,35 @@ counter = 0
 for exp in experiments:
     for row in range(len(allopticalResults.num_sig_responders_df.index)):
         if exp in allopticalResults.num_sig_responders_df.index[row]:
-
+            print(f"\nexperiment comparison: {allopticalResults.num_sig_responders_df.index[row]}")
             mean_pre4ap_ = allopticalResults.negsig_responders_traces[row][0]
             mean_post4ap_ = allopticalResults.negsig_responders_traces[row][1]
-            print(mean_pre4ap_.shape, mean_post4ap_.shape)
 
             # plot avg with confidence intervals
             # fig, ax = plt.subplots()
+            print(f"# of mean_pre4ap traces: {len(mean_pre4ap_)}, and mean_post4ap traces: {len(mean_post4ap_)}")
 
-            ax = axs[counter // ncols, counter % ncols]
+            if len(mean_pre4ap_) > 1 and len(mean_post4ap_) > 1:
 
-            meanst = np.mean(mean_pre4ap_, axis=0)
-            ## change xaxis to time (secs)
-            if len(meanst) < 100:
-                fps = 15
-            else:
-                fps = 30
+                ax = axs[counter // ncols, counter % ncols]
 
-            fig, ax, auc = aoplot.plot_periphotostim_addition(dataset=[mean_pre4ap_, mean_post4ap_],
-                                                              normalize=normalize, fps=fps,
-                                                              legend_labels=[f"pre {mean_pre4ap_.shape[0]} cells", f"post {mean_post4ap_.shape[0]} cells"],
-                                                              colors=['black', 'red'], xlabel=None, ylabel=None, avg_with_std=True,
-                                                              title=f"{allopticalResults.num_sig_responders_df.index[row]}",
-                                                              ylim=None, pre_stim_sec=allopticalResults.pre_stim_sec,
-                                                              fig=fig, ax=ax, show=False, fontsize='x-small')
+                meanst = np.mean(mean_pre4ap_, axis=0)
+                ## change xaxis to time (secs)
+                if len(meanst) < 100:
+                    fps = 15
+                else:
+                    fps = 30
 
-            auc_responders.loc[
-                allopticalResults.num_sig_responders_df.index[row], ['pre4ap_neg_auc', 'post4ap_neg_auc']] = auc
+                fig, ax, auc = aoplot.plot_periphotostim_addition(dataset=[mean_pre4ap_, mean_post4ap_],
+                                                                  normalize=normalize, fps=fps,
+                                                                  legend_labels=[f"pre {mean_pre4ap_.shape[0]} cells", f"post {mean_post4ap_.shape[0]} cells"],
+                                                                  colors=['black', 'red'], xlabel=None, ylabel=None, avg_with_std=True,
+                                                                  title=f"{allopticalResults.num_sig_responders_df.index[row]}",
+                                                                  ylim=None, pre_stim_sec=allopticalResults.pre_stim_sec,
+                                                                  fig=fig, ax=ax, show=False, fontsize='x-small')
+
+                auc_responders.loc[
+                    allopticalResults.num_sig_responders_df.index[row], ['pre4ap_neg_auc', 'post4ap_neg_auc']] = auc
 
             counter += 1
 axs[0, 0].set_ylabel('norm. total response (a.u.)')
@@ -232,6 +252,10 @@ allopticalResults.save()
 
 # %% 5.3.3.1) PLOT - # BARPLOT OF AUC OF TOTAL EVOKED PHOTOSTIM AVG ACITIVTY
 
+print('\n\n------------------------------------------------')
+print('PLOTTING: AUC OF TOTAL EVOKED PHOTOSTIM AVG ACTIVITY')
+print('------------------------------------------------')
+
 data=[]
 cols = ['pre4ap_pos_auc', 'post4ap_pos_auc']
 for col in cols:
@@ -241,6 +265,7 @@ cols = ['pre4ap_neg_auc', 'post4ap_neg_auc']
 for col in cols:
     data.append(list(allopticalResults.auc_responders_df.loc[:, col]))
 
+print(allopticalResults.auc_responders_df)
 
 experiments = ['RL108', 'RL109', 'PS05', 'PS07', 'PS06', 'PS11']
 pre4ap_pos_auc = []
@@ -1220,13 +1245,18 @@ fig.show()
 # %% 5.3.2) # # PLOT - peri-stim average response stim graph for positive and negative followers
 """# - make one graph per comparison for now... then can figure out how to average things out later."""
 
-experiments = ['RL108t', 'RL109t', 'PS05t', 'PS07t', 'PS06t', 'PS11t']
+# experiments = ['RL108t', 'RL109t', 'PS05t', 'PS07t', 'PS06t', 'PS11t']
+experiments = ['RL109t', 'PS05t', 'PS07t', 'PS06t', 'PS11t']  # 'RL108t' already run successfully (RL109t008 vs. t021 had an issue)
 pre4ap_pos = []
 pre4ap_neg = []
 post4ap_pos = []
 post4ap_neg = []
 
 # positive responders
+print('\n\n------------------------------------------------')
+print('PLOTTING: Avg. periphotostim positive responders')
+print('------------------------------------------------')
+
 ncols = 3
 nrows = 3
 fig, axs = plt.subplots(ncols=ncols, nrows=nrows, figsize=(8, 8))
@@ -1235,24 +1265,25 @@ counter = 0
 for exp in experiments:
     for row in range(len(allopticalResults.num_sig_responders_df.index)):
         if exp in allopticalResults.num_sig_responders_df.index[row]:
-
+            print(f"\nexperiment comparison: {allopticalResults.num_sig_responders_df.index[row]}")
             mean_pre4ap_ = allopticalResults.possig_responders_traces[row][0]
             mean_post4ap_ = allopticalResults.possig_responders_traces[row][1]
-            print(mean_pre4ap_.shape, mean_post4ap_.shape)
+            print(f"# of mean_pre4ap traces: {len(mean_pre4ap_)}, and mean_post4ap traces: {len(mean_post4ap_)}")
 
-            ax = axs[counter//ncols, counter % ncols]
+            if len(mean_pre4ap_) > 1 and len(mean_post4ap_) > 1:
+                ax = axs[counter//ncols, counter % ncols]
 
-            meanst = np.mean(mean_pre4ap_, axis=0)
-            ## change xaxis to time (secs)
-            if len(meanst) < 100:
-                fps = 15
-            else:
-                fps = 30
+                meanst = np.mean(mean_pre4ap_, axis=0)
+                ## change xaxis to time (secs)
+                if len(meanst) < 100:
+                    fps = 15
+                else:
+                    fps = 30
 
-            fig, ax = aoplot.plot_periphotostim_avg2(dataset=[mean_pre4ap_, mean_post4ap_], fps=fps, legend_labels=[f"pre4ap {mean_pre4ap_.shape[0]} cells", f"post4ap {mean_post4ap_.shape[0]} cells"],
-                                           colors=['black', 'green'], avg_with_std=True, title=f"{allopticalResults.num_sig_responders_df.index[row]}", ylim=[-0.5, 1.0],
-                                           pre_stim_sec=allopticalResults.pre_stim_sec, fig=fig, ax=ax, show=False, fontsize='small',
-                                                     xlabel=None, ylabel=None)
+                fig, ax = aoplot.plot_periphotostim_avg2(dataset=[mean_pre4ap_, mean_post4ap_], fps=fps, legend_labels=[f"pre4ap {len(mean_pre4ap_)} cells", f"post4ap {len(mean_post4ap_)} cells"],
+                                               colors=['black', 'green'], avg_with_std=True, title=f"{allopticalResults.num_sig_responders_df.index[row]}", ylim=[-0.5, 1.0],
+                                               pre_stim_sec=allopticalResults.pre_stim_sec, fig=fig, ax=ax, show=False, fontsize='small',
+                                                         xlabel=None, ylabel=None)
 
             counter += 1
 axs[0, 0].set_ylabel('dF/stdF')
@@ -1260,7 +1291,7 @@ axs[0, 0].set_xlabel('Time post stim (secs)')
 title = 'Avg. periphotostim positive responders'
 fig.tight_layout()
 fig.suptitle(title)
-save_path = expobj.analysis_save_path[:30] + 'Results_figs/' + f"{save_path_prefix[-31:]}/{title}.png"
+save_path = save_path_prefix + f"/{title}.png"
 plt.savefig(save_path)
 fig.show()
 
@@ -1269,6 +1300,9 @@ fig.show()
 
 
 # negative responders
+print('\n\n------------------------------------------------')
+print('PLOTTING: Avg. periphotostim negative responders')
+print('------------------------------------------------')
 ncols = 3
 nrows = 3
 fig, axs = plt.subplots(ncols=ncols, nrows=nrows, figsize=(8, 8))
@@ -1276,24 +1310,25 @@ counter = 0
 for exp in experiments:
     for row in range(len(allopticalResults.num_sig_responders_df.index)):
         if exp in allopticalResults.num_sig_responders_df.index[row]:
-
+            print(f"\nexperiment comparison: {allopticalResults.num_sig_responders_df.index[row]}")
             mean_pre4ap_ = allopticalResults.negsig_responders_traces[row][0]
             mean_post4ap_ = allopticalResults.negsig_responders_traces[row][1]
-            print(mean_pre4ap_.shape, mean_post4ap_.shape)
+            print(f"# of mean_pre4ap traces: {len(mean_pre4ap_)}, and mean_post4ap traces: {len(mean_post4ap_)}")
 
-            ax = axs[counter//ncols, counter % ncols]
+            if len(mean_pre4ap_) > 1 and len(mean_post4ap_) > 1:
+                ax = axs[counter//ncols, counter % ncols]
 
-            meanst = np.mean(mean_pre4ap_, axis=0)
-            ## change xaxis to time (secs)
-            if len(meanst) < 100:
-                fps = 15
-            else:
-                fps = 30
+                meanst = np.mean(mean_pre4ap_, axis=0)
+                ## change xaxis to time (secs)
+                if len(meanst) < 100:
+                    fps = 15
+                else:
+                    fps = 30
 
-            fig, ax = aoplot.plot_periphotostim_avg2(dataset=[mean_pre4ap_, mean_post4ap_], fps=fps, legend_labels=[f"pre4ap {mean_pre4ap_.shape[0]} cells", f"post4ap {mean_post4ap_.shape[0]} cells"],
-                                           colors=['black', 'red'], avg_with_std=True, title=f"{allopticalResults.num_sig_responders_df.index[row]}", ylim=[-0.5, 1.0],
-                                           pre_stim_sec=allopticalResults.pre_stim_sec, fig=fig, ax=ax, show=False, fontsize='small',
-                                                     xlabel=None, ylabel=None)
+                fig, ax = aoplot.plot_periphotostim_avg2(dataset=[mean_pre4ap_, mean_post4ap_], fps=fps, legend_labels=[f"pre4ap {len(mean_pre4ap_)} cells", f"post4ap {len(mean_post4ap_)} cells"],
+                                               colors=['black', 'red'], avg_with_std=True, title=f"{allopticalResults.num_sig_responders_df.index[row]}", ylim=[-0.5, 1.0],
+                                               pre_stim_sec=allopticalResults.pre_stim_sec, fig=fig, ax=ax, show=False, fontsize='small',
+                                                         xlabel=None, ylabel=None)
 
             counter += 1
 axs[0, 0].set_ylabel('dF/stdF')
@@ -1301,7 +1336,7 @@ axs[0, 0].set_xlabel('Time post stim (secs)')
 title = 'Avg. periphotostim negative responders'
 fig.tight_layout()
 fig.suptitle(title)
-save_path = expobj.analysis_save_path[:30] + 'Results_figs/' + f"{save_path_prefix[-31:]}/{title}.png"
+save_path = save_path_prefix + f"/{title}.png"
 plt.savefig(save_path)
 fig.show()
 
@@ -1318,6 +1353,9 @@ auc_responders = pd.DataFrame(columns=['pre4ap_pos_auc', 'pre4ap_neg_auc', 'post
                               index=allopticalResults.num_sig_responders_df.index)
 
 # positive responders
+print('\n\n------------------------------------------------')
+print('PLOTTING: Avg. total evoked activity positive responders')
+print('------------------------------------------------')
 ncols = 3
 nrows = 3
 fig, axs = plt.subplots(ncols=ncols, nrows=nrows, figsize=(8, 8))
@@ -1325,32 +1363,34 @@ counter = 0
 for exp in experiments:
     for row in range(len(allopticalResults.num_sig_responders_df.index)):
         if exp in allopticalResults.num_sig_responders_df.index[row]:
-
+            print(f"\nexperiment comparison: {allopticalResults.num_sig_responders_df.index[row]}")
             mean_pre4ap_ = allopticalResults.possig_responders_traces[row][0]
             mean_post4ap_ = allopticalResults.possig_responders_traces[row][1]
-            print(mean_pre4ap_.shape, mean_post4ap_.shape)
             normalize = [int(allopticalResults.num_sig_responders_df.iloc[row, -1])] * 2
+            print(f"# of mean_pre4ap traces: {len(mean_pre4ap_)}, and mean_post4ap traces: {len(mean_post4ap_)}")
 
-            # plot avg with confidence intervals
-            # fig, ax = plt.subplots()
+            if len(mean_pre4ap_) > 1 and len(mean_post4ap_) > 1:
 
-            ax = axs[counter//ncols, counter % ncols]
+                # plot avg with confidence intervals
+                # fig, ax = plt.subplots()
 
-            meanst = np.mean(mean_pre4ap_, axis=0)
-            ## change xaxis to time (secs)
-            if len(meanst) < 100:
-                fps = 15
-            else:
-                fps = 30
+                ax = axs[counter//ncols, counter % ncols]
 
-            fig, ax, auc = aoplot.plot_periphotostim_addition(dataset=[mean_pre4ap_, mean_post4ap_], normalize=normalize, fps=fps,
-                                                              legend_labels=[f"pre {mean_pre4ap_.shape[0]} cells", f"post {mean_post4ap_.shape[0]} cells"],
-                                                              colors=['black', 'green'], xlabel=None, ylabel=None,
-                                                              avg_with_std=True,  title=f"{allopticalResults.num_sig_responders_df.index[row]}",
-                                                              ylim=None, pre_stim_sec=allopticalResults.pre_stim_sec, fig=fig, ax=ax, show=False,
-                                                              fontsize='x-small')
+                meanst = np.mean(mean_pre4ap_, axis=0)
+                ## change xaxis to time (secs)
+                if len(meanst) < 100:
+                    fps = 15
+                else:
+                    fps = 30
 
-            auc_responders.loc[allopticalResults.num_sig_responders_df.index[row], ['pre4ap_pos_auc', 'post4ap_pos_auc']] = auc
+                fig, ax, auc = aoplot.plot_periphotostim_addition(dataset=[mean_pre4ap_, mean_post4ap_], normalize=normalize, fps=fps,
+                                                                  legend_labels=[f"pre {mean_pre4ap_.shape[0]} cells", f"post {mean_post4ap_.shape[0]} cells"],
+                                                                  colors=['black', 'green'], xlabel=None, ylabel=None,
+                                                                  avg_with_std=True,  title=f"{allopticalResults.num_sig_responders_df.index[row]}",
+                                                                  ylim=None, pre_stim_sec=allopticalResults.pre_stim_sec, fig=fig, ax=ax, show=False,
+                                                                  fontsize='x-small')
+
+                auc_responders.loc[allopticalResults.num_sig_responders_df.index[row], ['pre4ap_pos_auc', 'post4ap_pos_auc']] = auc
 
             counter += 1
 axs[0, 0].set_ylabel('norm. total response (a.u.)')
@@ -1358,12 +1398,15 @@ axs[0, 0].set_xlabel('Time post stim (secs)')
 title = 'Summed response of positive responders'
 fig.tight_layout()
 fig.suptitle(title)
-save_path = expobj.analysis_save_path[:30] + 'Results_figs/' + f"{save_path_prefix[-31:]}/{title}.png"
+save_path = save_path_prefix + f"/{title}.png"
 plt.savefig(save_path)
 fig.show()
 
 
-#
+# negative responders
+print('\n\n------------------------------------------------')
+print('PLOTTING: Avg. total evoked activity negative responders')
+print('------------------------------------------------')
 ncols = 3
 nrows = 3
 fig, axs = plt.subplots(ncols=ncols, nrows=nrows, figsize=(8, 8))
@@ -1372,33 +1415,35 @@ counter = 0
 for exp in experiments:
     for row in range(len(allopticalResults.num_sig_responders_df.index)):
         if exp in allopticalResults.num_sig_responders_df.index[row]:
-
+            print(f"\nexperiment comparison: {allopticalResults.num_sig_responders_df.index[row]}")
             mean_pre4ap_ = allopticalResults.negsig_responders_traces[row][0]
             mean_post4ap_ = allopticalResults.negsig_responders_traces[row][1]
-            print(mean_pre4ap_.shape, mean_post4ap_.shape)
 
             # plot avg with confidence intervals
             # fig, ax = plt.subplots()
+            print(f"# of mean_pre4ap traces: {len(mean_pre4ap_)}, and mean_post4ap traces: {len(mean_post4ap_)}")
 
-            ax = axs[counter // ncols, counter % ncols]
+            if len(mean_pre4ap_) > 1 and len(mean_post4ap_) > 1:
 
-            meanst = np.mean(mean_pre4ap_, axis=0)
-            ## change xaxis to time (secs)
-            if len(meanst) < 100:
-                fps = 15
-            else:
-                fps = 30
+                ax = axs[counter // ncols, counter % ncols]
 
-            fig, ax, auc = aoplot.plot_periphotostim_addition(dataset=[mean_pre4ap_, mean_post4ap_],
-                                                              normalize=normalize, fps=fps,
-                                                              legend_labels=[f"pre {mean_pre4ap_.shape[0]} cells", f"post {mean_post4ap_.shape[0]} cells"],
-                                                              colors=['black', 'red'], xlabel=None, ylabel=None, avg_with_std=True,
-                                                              title=f"{allopticalResults.num_sig_responders_df.index[row]}",
-                                                              ylim=None, pre_stim_sec=allopticalResults.pre_stim_sec,
-                                                              fig=fig, ax=ax, show=False, fontsize='x-small')
+                meanst = np.mean(mean_pre4ap_, axis=0)
+                ## change xaxis to time (secs)
+                if len(meanst) < 100:
+                    fps = 15
+                else:
+                    fps = 30
 
-            auc_responders.loc[
-                allopticalResults.num_sig_responders_df.index[row], ['pre4ap_neg_auc', 'post4ap_neg_auc']] = auc
+                fig, ax, auc = aoplot.plot_periphotostim_addition(dataset=[mean_pre4ap_, mean_post4ap_],
+                                                                  normalize=normalize, fps=fps,
+                                                                  legend_labels=[f"pre {mean_pre4ap_.shape[0]} cells", f"post {mean_post4ap_.shape[0]} cells"],
+                                                                  colors=['black', 'red'], xlabel=None, ylabel=None, avg_with_std=True,
+                                                                  title=f"{allopticalResults.num_sig_responders_df.index[row]}",
+                                                                  ylim=None, pre_stim_sec=allopticalResults.pre_stim_sec,
+                                                                  fig=fig, ax=ax, show=False, fontsize='x-small')
+
+                auc_responders.loc[
+                    allopticalResults.num_sig_responders_df.index[row], ['pre4ap_neg_auc', 'post4ap_neg_auc']] = auc
 
             counter += 1
 axs[0, 0].set_ylabel('norm. total response (a.u.)')
@@ -1406,7 +1451,7 @@ axs[0, 0].set_xlabel('Time post stim (secs)')
 title = 'Summed response of negative responders'
 fig.suptitle(title)
 fig.tight_layout()
-save_path = expobj.analysis_save_path[:30] + 'Results_figs/' + f"{save_path_prefix[-31:]}/{title}.png"
+save_path = save_path_prefix + f"/{title}.png"
 plt.savefig(save_path)
 fig.show()
 
@@ -1417,6 +1462,10 @@ allopticalResults.save()
 
 # %% 5.3.3.1) PLOT - # BARPLOT OF AUC OF TOTAL EVOKED PHOTOSTIM AVG ACITIVTY
 
+print('\n\n------------------------------------------------')
+print('PLOTTING: AUC OF TOTAL EVOKED PHOTOSTIM AVG ACTIVITY')
+print('------------------------------------------------')
+
 data=[]
 cols = ['pre4ap_pos_auc', 'post4ap_pos_auc']
 for col in cols:
@@ -1426,6 +1475,7 @@ cols = ['pre4ap_neg_auc', 'post4ap_neg_auc']
 for col in cols:
     data.append(list(allopticalResults.auc_responders_df.loc[:, col]))
 
+print(allopticalResults.auc_responders_df)
 
 experiments = ['RL108', 'RL109', 'PS05', 'PS07', 'PS06', 'PS11']
 pre4ap_pos_auc = []
@@ -1468,7 +1518,6 @@ fig.show()
     # - and compare pre-4ap and post-4ap (exp by exp, maybe normalizing the peak value per comparison from pre4ap?)
     # - or just make one graph per comparison and show all to Adam?
 """
-
 
 
 # %% 5.4-todo) think about some normalization via success rate of the stimulus (plot some response measure against success rate of the stimulation) - calculate pearson's correlation value of the association
