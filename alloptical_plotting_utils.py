@@ -986,8 +986,8 @@ def s2pRoiImage(expobj, save_fig: str = None):
     # plt.gca().invert_xaxis()
     # fig.show()
 
-    plt.suptitle(f"{expobj.metainfo['animal prep.']} - s2p nontargets (blue), exclude (yellow), targets (red); target_areas (white)",
-                 y=0.97, fontsize=8)
+    plt.suptitle(f"{expobj.metainfo['animal prep.']} {expobj.metainfo['trial']} - s2p nontargets (blue), exclude (yellow), targets (red); target_areas (white)",
+                 y=0.97, fontsize=7)
     plt.show()
     plt.savefig(save_fig) if save_fig else None
 
