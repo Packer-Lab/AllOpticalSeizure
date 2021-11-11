@@ -1,15 +1,19 @@
 # %% IMPORT MODULES AND TRIAL expobj OBJECT
-import sys
+import sys; import os
 sys.path.append('/home/pshah/Documents/code/PackerLab_pycharm/')
 sys.path.append('/home/pshah/Documents/code/')
-import alloptical_utils_pj as aoutils
-import alloptical_plotting_utils as aoplot
-import utils.funcs_pj as pj
-
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
+
+from scipy import stats, signal
+import statsmodels.api
+import statsmodels as sm
+
+import alloptical_utils_pj as aoutils
+import alloptical_plotting_utils as aoplot
+import utils.funcs_pj as pj
 
 from skimage import draw
 
@@ -17,6 +21,8 @@ from skimage import draw
 results_object_path = '/home/pshah/mnt/qnap/Analysis/alloptical_results_superobject.pkl'
 allopticalResults = aoutils.import_resultsobj(pkl_path=results_object_path)
 
+save_path_prefix = '/home/pshah/mnt/qnap/Analysis/Results_figs/Nontargets_responses_2021-11-11'
+os.makedirs(save_path_prefix) if not os.path.exists(save_path_prefix) else None
 
 
 # %% 1) lists of trials to analyse for pre4ap and post4ap trials within experiments
@@ -190,7 +196,6 @@ allopticalResults.metainfo = allopticalResults.slmtargets_stim_responses.loc[:, 
 
 
 
-
 #%% ####################################################################################################################
 #### -------------------- ALL OPTICAL PHOTOSTIM AND ETC. ANALYSIS STEPS ################################################
 ########################################################################################################################
@@ -245,12 +250,8 @@ for key in list(allopticalResults.trial_maps['pre'].keys()):
     for j in range(len(allopticalResults.trial_maps['pre'][key])):
         # import expobj
         expobj, experiment = aoutils.import_expobj(aoresults_map_id='pre %s.%s' % (key, j))
-        if expobj.metainfo['animal prep.'] + ' ' + expobj.metainfo['trial'] in ls:
-            aoutils.run_allopticalAnalysisNontargets(expobj, normalize_to='pre-stim', do_processing=False, to_plot=True,
-                                                     save_plot_suffix=f"{save_path_prefix[-31:]}/{expobj.metainfo['animal prep.']}_{expobj.metainfo['trial']}-pre4ap.png")
-        else:
-            aoutils.run_allopticalAnalysisNontargets(expobj, normalize_to='pre-stim', do_processing=False, to_plot=True,
-                                                     save_plot_suffix=f"{save_path_prefix[-31:]}/{expobj.metainfo['animal prep.']}_{expobj.metainfo['trial']}-pre4ap.png")
+        aoutils.run_allopticalAnalysisNontargets(expobj, normalize_to='pre-stim', do_processing=True, to_plot=True,
+                                                 save_plot_suffix=f"{save_path_prefix[-31:]}/{expobj.metainfo['animal prep.']}_{expobj.metainfo['trial']}-pre4ap.png")
 
 
 # test: adding correct stim filters when analysing data to exclude stims/cells in seizure boundaries - this should be done, but not thouroughly tested necessarily yet //
@@ -262,90 +263,14 @@ for key in list(allopticalResults.trial_maps['post'].keys()):
     for j in range(len(allopticalResults.trial_maps['post'][key])):
         # import expobj
         expobj, experiment = aoutils.import_expobj(aoresults_map_id='post %s.%s' % (key, j), do_processing=True)
-        if expobj.metainfo['animal prep.'] + ' ' + expobj.metainfo['trial'] in ls:
-            if hasattr(expobj, 'slmtargets_sz_stim'):  ##
-                aoutils.run_allopticalAnalysisNontargetsPost4ap(expobj, normalize_to='pre-stim', do_processing=True, to_plot=True,
-                                                                save_plot_suffix=f"{save_path_prefix[-31:]}/{expobj.metainfo['animal prep.']}_{expobj.metainfo['trial']}-post4ap.png")
-            else:
-                missing_slmtargets_sz_stim.append(f"{expobj.metainfo['animal prep.']} {expobj.metainfo['trial']}")
+        if hasattr(expobj, 'slmtargets_sz_stim'):  ##
+            aoutils.run_allopticalAnalysisNontargetsPost4ap(expobj, normalize_to='pre-stim', do_processing=True, to_plot=True,
+                                                            save_plot_suffix=f"{save_path_prefix[-31:]}/{expobj.metainfo['animal prep.']}_{expobj.metainfo['trial']}-post4ap.png")
         else:
-            pass
-            # aoutils.run_allopticalAnalysisNontargets(expobj, normalize_to='pre-stim', do_processing=False, to_plot=False,
-            #                                          save_plot_suffix=f"{save_path_prefix[-31:]}/{expobj.metainfo['animal prep.']}_{expobj.metainfo['trial']}-post4ap.png")
+            missing_slmtargets_sz_stim.append(f"{expobj.metainfo['animal prep.']} {expobj.metainfo['trial']}")
 
 
-# %% 5.1.1-dc) finding statistically significant followers responses
-def _trialProcessing_nontargets(expobj):
-    '''
-    Uses dfstdf traces for individual cells and photostim trials, calculate the mean amplitudes of response and
-    statistical significance across all trials for all cells
-
-    Inputs:
-        plane             - imaging plane n
-    '''
-    # make trial arrays from dff data shape: [cells x stims x frames]
-    expobj._makeNontargetsStimTracesArray(normalize_to='pre-stim', plot='dFstdF')
-
-    # mean pre and post stimulus (within post-stim response window) flu trace values for all cells, all trials
-    expobj.analysis_array = expobj.dfstdF_traces  # NOTE: USING dF/stdF TRACES
-    expobj.pre_array = np.mean(expobj.analysis_array[:, :, expobj.pre_stim_frames_test], axis=1)  # [cells x prestim frames] (avg'd taken over all stims)
-    expobj.post_array = np.mean(expobj.analysis_array[:, :, expobj.post_stim_frames_slice], axis=1)  # [cells x poststim frames] (avg'd taken over all stims)
-
-    # check if the two distributions of flu values (pre/post) are different
-    assert expobj.pre_array.shape == expobj.post_array.shape, 'shapes for expobj.pre_array and expobj.post_array need to be the same for wilcoxon test'
-    wilcoxons = np.empty(len(expobj.s2p_nontargets))  # [cell (p-value)]
-
-    for cell in range(len(expobj.s2p_nontargets)):
-        wilcoxons[cell] = stats.wilcoxon(expobj.post_array[cell], expobj.pre_array[cell])[1]
-
-    expobj.wilcoxons = wilcoxons
-
-    # ar2 = expobj.analysis_array[18, :, expobj.post_stim_frames_slice]
-    # ar3 = ar2[~np.isnan(ar2).any(axis=1)]
-    # assert np.nanmean(ar2) == np.nanmean(ar3)
-    # expobj.analysis_array = expobj.analysis_array[~np.isnan(expobj.analysis_array).any(axis=1)]
-
-    # measure avg response value for each trial, all cells --> return array with 3 axes [cells x response_magnitude_per_stim (avg'd taken over response window)]
-    expobj.post_array_responses = []  ### this and the for loop below was implemented to try to root out stims with nan's but it's likley not necessary...
-    for i in np.arange(expobj.analysis_array.shape[0]):
-        a = expobj.analysis_array[i][~np.isnan(expobj.analysis_array[i]).any(axis=1)]
-        responses = a.mean(axis=1)
-        expobj.post_array_responses.append(responses)
-
-    expobj.post_array_responses = np.mean(expobj.analysis_array[:, :, expobj.post_stim_frames_slice], axis=2)
-
-
-    expobj.save()
-
-def _sigTestAvgResponse_nontargets(expobj, alpha=0.1):
-    """
-    Uses the p values and a threshold for the Benjamini-Hochberg correction to return which
-    cells are still significant after correcting for multiple significance testing
-    """
-    p_vals = expobj.wilcoxons
-    expobj.sig_units = np.full_like(p_vals, False, dtype=bool)
-
-    try:
-        expobj.sig_units, _, _, _ = sm.stats.multitest.multipletests(p_vals, alpha=alpha, method='fdr_bh',
-                                                                     is_sorted=False, returnsorted=False)
-    except ZeroDivisionError:
-        print('no cells responding')
-
-    # p values without bonferroni correction
-    no_bonf_corr = [i for i, p in enumerate(p_vals) if p < 0.05]
-    expobj.nomulti_sig_units = np.zeros(len(expobj.s2p_nontargets), dtype='bool')
-    expobj.nomulti_sig_units[no_bonf_corr] = True
-
-    expobj.save()
-
-    # p values after bonferroni correction
-    #         bonf_corr = [i for i,p in enumerate(p_vals) if p < 0.05 / expobj.n_units[plane]]
-    #         sig_units = np.zeros(expobj.n_units[plane], dtype='bool')
-    #         sig_units[bonf_corr] = True
-
-
-
-# %% 5.3) collect average stats for each prep, and summarize into the appropriate data point
+# %% 5.2) collect average stats for each prep, and summarize into the appropriate data point
 num_sig_responders = pd.DataFrame(columns=['pre4ap_pos', 'pre4ap_neg', 'post4ap_pos', 'post4ap_neg', '# of suite2p ROIs'])
 possig_responders_traces = []
 negsig_responders_traces = []

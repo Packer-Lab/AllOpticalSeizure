@@ -2391,6 +2391,7 @@ class alloptical(TwoPhotonImaging):
 
         return sig_units
 
+
 class Post4ap(alloptical):
 
     def __init__(self, paths, metainfo, stimtype, discard_all):
