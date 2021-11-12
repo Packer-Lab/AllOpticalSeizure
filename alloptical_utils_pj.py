@@ -152,7 +152,7 @@ class TwoPhotonImaging:
         :param suite2p_run: set to true if suite2p is already run for this trial
         """
 
-        print('***** CREATING NEW TwoPhotonImaging with the following metainfo: ', metainfo)
+        print('\n***** CREATING NEW TwoPhotonImaging with the following metainfo: ', metainfo)
 
         self.tiff_path_dir = tiff_path_dir
         self.tiff_path = tiff_path
@@ -679,10 +679,10 @@ class alloptical(TwoPhotonImaging):
 
         self.pre_stim = int(1.0 * self.fps)  # length of pre stim trace collected (in frames)
         self.post_stim = int(3.0 * self.fps)  # length of post stim trace collected (in frames)
-        self.post_stim_response_window_msec = 500  # msec
-        self.post_stim_response_frames_window = int(self.fps * self.pre_stim_response_window_msec / 1000)  # length of the post stim response test window (in frames)
         self.pre_stim_response_window_msec = 500  # msec
-        self.pre_stim_response_frames_window = int(self.fps * self.pre_stim_response_window_msec / 1000)  # length of the post stim response test window (in frames)
+        self.pre_stim_response_frames_window = int(self.fps * self.pre_stim_response_window_msec / 1000)  # length of the pre stim response test window (in frames)
+        self.post_stim_response_window_msec = 500  # msec
+        self.post_stim_response_frames_window = int(self.fps * self.post_stim_response_window_msec / 1000)  # length of the post stim response test window (in frames)
 
         self.save()
 
@@ -1574,7 +1574,13 @@ class alloptical(TwoPhotonImaging):
 
             print('------- Search completed.')
             self.save()
-            print('Number of exclude cells: ', self.n_exclude_cells)
+            print(f"Number of exclude cells: {self.n_exclude_cells}")
+
+            # define non targets from suite2p ROIs (exclude cells in the SLM targets exclusion - .s2p_cells_exclude)
+            self.s2p_nontargets = [cell for cell in self.good_cells if
+                                     cell not in self.s2p_cells_exclude]  ## exclusion of cells that are classified as s2p_cell_targets
+
+            print(f"Number of good, s2p non_targets: {len(self.s2p_nontargets)}")
 
             if plot:
                 fig, ax = plt.subplots(figsize=[6, 6])
@@ -2302,10 +2308,6 @@ class alloptical(TwoPhotonImaging):
         print('running trial Processing for nontargets ')
         print('----------------------------------------------------------------')
 
-        # define non targets from suite2p ROIs (exclude cells in the SLM targets exclusion - .s2p_cells_exclude)
-        expobj.s2p_nontargets = [cell for cell in expobj.good_cells if cell not in expobj.s2p_cells_exclude]  ## exclusion of cells that are classified as s2p_cell_targets
-
-
         # make trial arrays from dff data shape: [cells x stims x frames]
         expobj._makeNontargetsStimTracesArray(stim_timings=expobj.stim_start_frames, normalize_to=normalize_to, save=False)
 
@@ -2965,7 +2967,9 @@ class OnePhotonStim(TwoPhotonImaging):
         #     os.mkdir(self.analysis_save_path[:-17])
         #     os.mkdir(self.analysis_save_path)
 
-        print('\n-----Processing trial # %s-----' % trial)
+        print('----------------------------------------')
+        print('-----Processing trial # %s-----' % trial)
+        print('----------------------------------------\n')
 
         paths = [tiffs_loc_dir, tiffs_loc, paqs_loc]
         # print('tiffs_loc_dir, naparms_loc, paqs_loc paths:\n', paths)
@@ -3215,7 +3219,9 @@ class onePstim(TwoPhotonImaging):
         #     os.mkdir(self.analysis_save_path[:-17])
         #     os.mkdir(self.analysis_save_path)
 
-        print('\n-----Processing trial # %s-----' % trial)
+        print('----------------------------------------')
+        print('-----Processing trial # %s-----' % trial)
+        print('----------------------------------------\n')
 
         paths = [tiffs_loc_dir, tiffs_loc, paqs_loc]
         # print('tiffs_loc_dir, naparms_loc, paqs_loc paths:\n', paths)
@@ -3828,7 +3834,7 @@ def get_nontargets_stim_traces_norm(expobj, normalize_to='', pre_stim=10, post_s
                 mean_pre = np.mean(trace[0:pre_stim])
                 # trace_dff = ((trace - mean_pre) / mean_pre) * 100
                 percentile = pj.find_percentile(trace, mean_pre)
-                trace_dff = normalize_dff(trace, threshold=percentile)
+                trace_dff = normalize_dff(trace, threshold_pct=percentile)
                 std_pre = np.std(trace[0:pre_stim])
                 dFstdF = (trace - mean_pre) / std_pre  # make dF divided by std of pre-stim F trace
 
@@ -4274,18 +4280,22 @@ def calculate_StimSuccessRate(expobj, cell_ids: list, raw_traces_stims=None, dfs
     print("\navg photostim. success rate is: %s pct." % (round(np.nanmean(list(reliability_cells.values())), 2)))
     return reliability_cells, hits_cells, responses_cells
 
-def run_photostim_preprocessing(trial, exp_type, tiffs_loc_dir, tiffs_loc, naparms_loc, paqs_loc, pkl_path, metainfo,
+def run_photostim_preprocessing(trial, exp_type, tiffs_loc_dir, tiffs_loc, naparms_loc, paqs_loc, metainfo,
                                 new_tiffs, matlab_pairedmeasurements_path=None, processed_tiffs=True, discard_all=False, quick=False,
                                 analysis_save_path=''):
-    print('\n-----Processing trial # %s-----' % trial)
+    print('----------------------------------------')
+    print('-----Processing trial # %s-----' % trial)
+    print('----------------------------------------\n')
 
     paths = [[tiffs_loc_dir, tiffs_loc, naparms_loc, paqs_loc, analysis_save_path, matlab_pairedmeasurements_path]]
+    print('tiffs_loc_dir, tiffs_loc, naparms_loc, paqs_loc, analysis_save_path paths, and matlab_pairedmeasurement_path:\n', paths)
     for path in paths[0]:  # check that all paths required for processing run are legit and active
-        try:
-            assert os.path.exists(path)
-        except AssertionError:
-            print('we got an invalid path at: ', path)
-    print('tiffs_loc_dir, naparms_loc, paqs_loc paths:\n', paths)
+        if path is not None:
+            try:
+                assert os.path.exists(path)
+
+            except AssertionError:
+                print('we got an invalid path at: ', path)
 
     if 'post' in exp_type and '4ap' in exp_type:
         expobj = Post4ap(paths[0], metainfo=metainfo, stimtype='2pstim', discard_all=discard_all)
@@ -4395,6 +4405,9 @@ def run_alloptical_processing_photostim(expobj, to_suite2p=None, baseline_trials
                                            baseline_trials=expobj.baseline_trials, force_redo=force_redo)
         expobj.s2pProcessing(s2p_path=expobj.s2p_path, subset_frames=expobj.curr_trial_frames, subtract_neuropil=True,
                              baseline_frames=expobj.baseline_frames, force_redo=True)
+        good_cells, events_loc_cells, flu_events_cells, stds = expobj._good_cells(cell_ids=expobj.cell_id, raws=expobj.raw,
+                                                                                  photostim_frames=expobj.photostim_frames, std_thresh=2.5, save=False)
+
         # expobj.target_coords_all = expobj.target_coords
         expobj._findTargetedS2pROIs(force_redo=True)
         aoplot.s2pRoiImage(expobj)
@@ -4674,8 +4687,6 @@ def slm_targets_responses(expobj, experiment, trial, y_spacing_factor=2, figsize
 def run_allopticalAnalysisNontargets(expobj, normalize_to='pre_stim', to_plot=True, save_plot_suffix='', do_processing=True):
     if do_processing:
 
-        good_cells, events_loc_cells, flu_events_cells, stds = expobj._good_cells(cell_ids=expobj.cell_id, raws=expobj.raw,
-                                                                                  photostim_frames=expobj.photostim_frames, std_thresh=2.5, save=False)
         # set the correct test response windows
         if not expobj.pre_stim == int(1.0 * expobj.fps):
             print('updating expobj.pre_stim_sec to 1 sec')

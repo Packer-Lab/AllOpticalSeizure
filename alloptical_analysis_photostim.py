@@ -25,6 +25,9 @@ save_path_prefix = '/home/pshah/mnt/qnap/Analysis/Results_figs/Nontargets_respon
 os.makedirs(save_path_prefix) if not os.path.exists(save_path_prefix) else None
 
 
+expobj, experiment = aoutils.import_expobj(prep='RL109', trial='t-013')
+
+
 # %% 1) lists of trials to analyse for pre4ap and post4ap trials within experiments
 
 allopticalResults.pre_4ap_trials = [
@@ -34,9 +37,9 @@ allopticalResults.pre_4ap_trials = [
     ['RL109 t-008'],
     # ['RL109 t-013'], - pickle truncated .21/10/18
     ['RL109 t-014'],
-    ['PS04 t-012',  # 'PS04 t-014',  - not sure what's wrong with PS04, but the photostim and Flu are out of sync .21/10/09
+    ['PS04 t-012',  # 'PS04 t-014',  - not sure what's wrong with PS04, but the photostim and Flu are falling out of sync .21/10/09
      'PS04 t-017'],
-    ['PS05 t-010'],  # - problem with pickle data being truncated - analysis code run done .21/10/09
+    ['PS05 t-010'],
     ['PS07 t-007'],
     ['PS07 t-009'],
     # ['PS06 t-008', 'PS06 t-009', 'PS06 t-010'],  # matching post4ap trial cannot be analysed
@@ -51,18 +54,18 @@ allopticalResults.pre_4ap_trials = [
 
 allopticalResults.post_4ap_trials = [
     ['RL108 t-013'],
-    ['RL108 t-011'],  # - problem with pickle data being truncated - analysis code run done .21/10/09
-    ['RL109 t-020'],  # - problem with pickle data being truncated - analysis code run done .21/10/09
+    ['RL108 t-011'],
+    ['RL109 t-020'],
     ['RL109 t-021'],
     # ['RL109 t-018'],
     ['RL109 t-016', 'RL109 t-017'],
-    ['PS04 t-018'],  # - problem with pickle data being truncated - analysis done
-    ['PS05 t-012'],  # - pickle truncated 21/10/10 - analysis done .21/10/12
-    ['PS07 t-011'],  # - pickle truncated 21/10/11 - analysis done .21/10/12
+    ['PS04 t-018'],
+    ['PS05 t-012'],
+    ['PS07 t-011'],
     ['PS07 t-017'],
     # ['PS06 t-014', 'PS06 t-015'], - missing seizure_lfp_onsets (no paired measurements mat file for trial .21/10/09)
     ['PS06 t-013'],
-    # ['PS06 t-016'], - missing seizure_lfp_onsets (no paired measurements mat file for trial .21/10/09)
+    # ['PS06 t-016'], - no seizures, missing seizure_lfp_onsets (no paired measurements mat file for trial .21/10/09)
     # ['PS11 t-016'],
     ['PS11 t-011'],
     # ['PS17 t-011'],
@@ -194,11 +197,8 @@ allopticalResults.metainfo = allopticalResults.slmtargets_stim_responses.loc[:, 
 
 
 
+# %%#### -------------------- ALL OPTICAL PHOTOSTIM ANALYSIS ################################################
 
-
-#%% ####################################################################################################################
-#### -------------------- ALL OPTICAL PHOTOSTIM AND ETC. ANALYSIS STEPS ################################################
-########################################################################################################################
 
 # %% 5.0-main)  RUN DATA ANALYSIS OF NON TARGETS:
 # #  - Analysis of responses of non-targets from suite2p ROIs in response to photostim trials - broken down by pre-4ap, outsz and insz (excl. sz boundary)
@@ -263,7 +263,7 @@ for key in list(allopticalResults.trial_maps['post'].keys()):
     for j in range(len(allopticalResults.trial_maps['post'][key])):
         # import expobj
         expobj, experiment = aoutils.import_expobj(aoresults_map_id='post %s.%s' % (key, j), do_processing=True)
-        if hasattr(expobj, 'slmtargets_sz_stim'):  ##
+        if hasattr(expobj, 'slmtargets_sz_stim'):
             aoutils.run_allopticalAnalysisNontargetsPost4ap(expobj, normalize_to='pre-stim', do_processing=True, to_plot=True,
                                                             save_plot_suffix=f"{save_path_prefix[-31:]}/{expobj.metainfo['animal prep.']}_{expobj.metainfo['trial']}-post4ap.png")
         else:
