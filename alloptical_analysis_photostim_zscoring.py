@@ -144,12 +144,11 @@ for i in range(len(allopticalResults.pre_4ap_trials)):
             allopticalResults.outsz_missing.append('%s %s' % (post4aptrial, prep))
 
     else:
-        print(f"|-- skipping: {prep} {post4aptrial}")
+        print(f"|-- ***** skipping: {prep} {post4aptrial}")
         if not hasattr(expobj, 'responses_SLMtargets_outsz'):
-            print('|-- **** 2 need to run collecting outsz responses SLMtargets attr for %s %s ****' % (
-            post4aptrial, prep))
+            print(f'|-- **** 2 need to run collecting outsz responses SLMtargets attr for {post4aptrial}, {prep} ****')
         if not hasattr(expobj, 'responses_SLMtargets_outsz'):
-            print('|-- **** 1 need to run collecting outsz responses SLMtargets attr for %s %s ****' % (post4aptrial, prep))
+            print(f'|-- **** 1 need to run collecting outsz responses SLMtargets attr for {post4aptrial}, {prep} ****')
 
 
 
@@ -230,9 +229,9 @@ for i in range(len(allopticalResults.pre_4ap_trials)):
     else:
         print(f"|-- ***** skipping: {prep} {post4aptrial}")
         if not hasattr(expobj, 'slmtargets_sz_stim'):
-            print('**** 3 need to run collecting insz responses SLMtargets attr for %s %s ****' % (post4aptrial, prep))
+            print(f'**** 3 need to run collecting insz responses SLMtargets attr for {post4aptrial}, {prep} ****')
         if hasattr(expobj, 'responses_SLMtargets_insz'):
-            print('**** 4 need to run collecting in sz responses SLMtargets attr for %s %s ****' % (post4aptrial, prep))
+            print(f'**** 4 need to run collecting in sz responses SLMtargets attr for {post4aptrial}, {prep} ****')
 
 
 allopticalResults.save()
@@ -268,10 +267,10 @@ for prep in allopticalResults.stim_responses_zscores.keys():
                     in_sz_zscores = in_sz_zscores + list(in_sz_df[col][:-2])
 
 in_sz_zscores = [score for score in in_sz_zscores if str(score) != 'nan']
-data = [pre_4ap_zscores, post_4ap_zscores, in_sz_zscores]
-pj.plot_hist_density(data, x_label='z-score', title='All exps. stim responses zscores (normalized to pre-4ap) - pre vs. post',
-                     fill_color=['#09ff6b', '#ff09ce', '#ff9d09'], num_bins=1000,
-                     figsize=(5, 4), legend_labels=['pre-4ap', 'post-4ap', 'in_sz'], x_lim=[-15, 15])
+data = [pre_4ap_zscores, in_sz_zscores, post_4ap_zscores]
+pj.plot_hist_density(data, x_label='z-score', title='All exps. stim responses zscores (normalized to pre-4ap)',
+                     fill_color=['green', '#ff9d09', 'steelblue'], num_bins=1000, show_legend=True, alpha=1.0, mean_line=True,
+                     figsize=(3.5, 3.5), legend_labels=['pre 4ap', 'ictal', 'interictal'], x_lim=[-15, 15])
 
 
 

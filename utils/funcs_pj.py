@@ -824,7 +824,7 @@ def plot_bar_with_points(data, title='', x_tick_labels=[], legend_labels: list =
         f.show()
 
 # histogram density plot with gaussian best fit line
-def plot_hist_density(data: list, colors: list = None, fill_color: list = None, legend_labels: list = [None], num_bins=10, **kwargs):
+def plot_hist_density(data: list, mean_line: bool = False, colors: list = None, fill_color: list = None, legend_labels: list = [None], num_bins=10, **kwargs):
 
     """
 
@@ -859,9 +859,15 @@ def plot_hist_density(data: list, colors: list = None, fill_color: list = None, 
         legend_labels = [None] * len(data)
     else:
         assert len(legend_labels) == len(data), print('please provide a legend label for all your data to be plotted!')
-    if 'show_legend' in kwargs and kwargs['show_legend'] is True:
-        ax.legend()
 
+    # set the transparancy for the fill of the plot
+    if 'alpha' in kwargs and type(kwargs['alpha']) is float or kwargs['alpha'] == 1:
+        alpha = kwargs['alpha']
+    else:
+        alpha = 0.3
+
+    # make the primary histogram density plot
+    zorder = 2
     for i in range(len(data)):
         # the histogram of the data
         n, bins, patches = ax.hist(data[i], num_bins, density=1, alpha=0.4, color=fill_color[i], label=legend_labels[i])  # histogram hidden currently
@@ -873,19 +879,24 @@ def plot_hist_density(data: list, colors: list = None, fill_color: list = None, 
         x = np.linspace(bins[0], bins[-1], num_bins*5)
         y1 = ((1 / (np.sqrt(2 * np.pi) * sigma)) *
               np.exp(-0.5 * (1 / sigma * (x - mu))**2))
-        ax.plot(x, y1, linewidth=2, c=colors[i], zorder=2)
-        ax.fill_between(x, y1, color=fill_color[i], zorder=2, alpha=0.3)
-        if 'x_label' in kwargs and kwargs['x_label'] is not None:
-            ax.set_xlabel(kwargs['x_label'])
-        if 'y_label' in kwargs and kwargs['y_label'] is not None:
-            ax.set_ylabel(kwargs['y_label'])
-        elif 'y_label' in kwargs and kwargs['y_label'] is None:
-            pass
-        else:
-            ax.set_ylabel('Probability density')
+        ax.plot(x, y1, linewidth=2, c=colors[i], zorder=zorder+i)
+        ax.fill_between(x, y1, color=fill_color[i], zorder=zorder+i, alpha=alpha)
+
+        if mean_line:
+            ax.axvline(x=np.nanmean(data[i]), c=fill_color[i], linewidth=2, zorder=0, linestyle='dashed')
 
 
+    if 'x_label' in kwargs and kwargs['x_label'] is not None:
+        ax.set_xlabel(kwargs['x_label'])
+    if 'y_label' in kwargs and kwargs['y_label'] is not None:
+        ax.set_ylabel(kwargs['y_label'])
+    elif 'y_label' in kwargs and kwargs['y_label'] is None:
+        pass
+    else:
+        ax.set_ylabel('Probability density')
 
+    if 'show_legend' in kwargs and kwargs['show_legend'] is True:
+        ax.legend()
 
     # set x limits
     if 'x_lim' in kwargs:
