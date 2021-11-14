@@ -80,7 +80,7 @@ assert len(allopticalResults.pre_4ap_trials) == len(allopticalResults.post_4ap_t
 allopticalResults.trial_maps = {'pre': {}, 'post': {}}
 allopticalResults.trial_maps['pre'] = {
     'a': ['RL108 t-009'],
-    'b': ['RL108 t-010'],
+    # 'b': ['RL108 t-010'],
     # 'c': ['RL109 t-007'],
     'd': ['RL109 t-008'],
     'e': ['RL109 t-013'],
@@ -102,7 +102,7 @@ allopticalResults.trial_maps['pre'] = {
 
 allopticalResults.trial_maps['post'] = {
     'a': ['RL108 t-013'],
-    'b': ['RL108 t-011'],
+    # 'b': ['RL108 t-011'], -- need to redo sz boundary classifying processing
     # 'c': ['RL109 t-020'], -- need to redo sz boundary classifying processing
     'd': ['RL109 t-021'],
     'e': ['RL109 t-018'],

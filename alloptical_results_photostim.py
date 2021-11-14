@@ -78,7 +78,6 @@ j = 0
 exp = 'post'
 expobj, experiment = aoutils.import_expobj(aoresults_map_id=f"{exp} {key}.{j}")
 
-# %%
 SLMtarget_ids = list(range(len(expobj.SLMTargets_stims_dfstdF)))
 target_colors = pj.make_random_color_array(len(SLMtarget_ids))
 
@@ -110,41 +109,172 @@ fig.show()
 
 # %% 7.0-dc)
 # APPROACH #2 - USING Z-SCORED PHOTOSTIM RESPONSES
-key = 'a'
-j = 0
-exp = 'post'
-expobj, experiment = aoutils.import_expobj(aoresults_map_id=f"{exp} {key}.{j}")
+
+print(f"---------------------------------------------------------")
+print(f"plotting zscored photostim responses over the whole trial")
+print(f"---------------------------------------------------------")
+
+### PRE 4AP
+trials = list(allopticalResults.trial_maps['pre'].keys())
+fig, axs = plt.subplots(nrows=len(trials) * 2, ncols=1, figsize=[20, 6 * len(trials)])
+counter = 0
+for expprep in list(allopticalResults.stim_responses_zscores.keys()):
+    for trials_comparisons in allopticalResults.stim_responses_zscores[expprep]:
+        pre4ap_trial = trials_comparisons[:5]
+        post4ap_trial = trials_comparisons[-5:]
+
+        # PRE 4AP STUFF
+        if f"{expprep} {pre4ap_trial}" in pj.flattenOnce(allopticalResults.pre_4ap_trials):
+            pre4ap_df = allopticalResults.stim_responses_zscores[expprep][trials_comparisons]['pre-4ap']
+
+            print(f"working on expobj: {expprep} {pre4ap_trial}")
+            expobj, experiment = aoutils.import_expobj(prep=expprep, trial=pre4ap_trial)
+
+            SLMtarget_ids = list(range(len(expobj.SLMTargets_stims_dfstdF)))
+            target_colors = pj.make_random_color_array(len(SLMtarget_ids))
+            # --- plot with mean FOV fluorescence signal
+            # fig, axs = plt.subplots(ncols=1, nrows=2, figsize=[20, 6])
+            ax = axs[counter]
+            fig, ax = aoplot.plotMeanRawFluTrace(expobj=expobj, stim_span_color='white', x_axis='frames', show=False,
+                                                     fig=fig, ax=ax)
+            ax2 = ax.twinx()
+            ## retrieve the appropriate zscored database - pre4ap stims
+            targets = [x for x in list(pre4ap_df.columns) if type(x) == str and '_z' in x]
+            for target in targets:
+                for stim_idx in pre4ap_df.index[:-2]:
+                    # if i == 'pre':
+                    #     stim_idx = expobj.stim_start_frames.index(stim_idx)  # MINOR BUG: appears that for some reason the stim_idx of the allopticalResults.stim_responses_zscores for pre-4ap are actually the frames themselves
+                    response = pre4ap_df.loc[stim_idx, target]
+                    rand = np.random.randint(-15, 25, 1)[0] #* 1/(abs(response)**1/2)  # jittering around the stim_frame for the plot
+                    ax2.scatter(x=expobj.stim_start_frames[stim_idx] + rand, y=response, color=target_colors[targets.index(target)], alpha=0.70, s=15, zorder=4)
+
+            fig, axs[1] = aoplot.plot_lfp_stims(expobj, x_axis='Time', show=False, fig=fig, ax=axs[counter + 1])
+            counter += 2
+
+fig.suptitle(f"Photostim responses - pre-4ap", y = 0.98)
+fig.show()
+# %%
+
+
+### POST 4AP
+trials = list(allopticalResults.trial_maps['post'].keys())
+fig, axs = plt.subplots(nrows=len(trials) * 2, ncols=1, figsize=[20, 6 * len(trials)])
+counter = 0
+for expprep in list(allopticalResults.stim_responses_zscores.keys())[:5]:
+    for trials_comparisons in allopticalResults.stim_responses_zscores[expprep]:
+        if len(allopticalResults.stim_responses_zscores[expprep][trials_comparisons].keys()) > 2:  ## make sure that there are keys containing data for post 4ap and in sz
+            pre4ap_trial = trials_comparisons[:5]
+            post4ap_trial = trials_comparisons[-5:]
+
+            # POST 4AP STUFF
+            if f"{expprep} {post4ap_trial}" in pj.flattenOnce(allopticalResults.post_4ap_trials):
+                post4ap_df = allopticalResults.stim_responses_zscores[expprep][trials_comparisons]['post-4ap']
+
+                insz_df = allopticalResults.stim_responses_zscores[expprep][trials_comparisons]['in sz']
+
+
+                print(f"working on expobj: {expprep} {post4ap_trial}, counter @ {counter}")
+                expobj, experiment = aoutils.import_expobj(prep=expprep, trial=post4ap_trial)
+
+                SLMtarget_ids = list(range(len(expobj.SLMTargets_stims_dfstdF)))
+                target_colors = pj.make_random_color_array(len(SLMtarget_ids))
+                # --- plot with mean FOV fluorescence signal
+                # fig, axs = plt.subplots(ncols=1, nrows=2, figsize=[20, 6])
+                ax = axs[counter]
+                fig, ax = aoplot.plotMeanRawFluTrace(expobj=expobj, stim_span_color='white', x_axis='frames', show=False, fig=fig, ax=ax)
+
+                ax2 = ax.twinx()
+                ## retrieve the appropriate zscored database - post4ap (outsz) stims
+                targets = [x for x in list(post4ap_df.columns) if type(x) == str and '_z' in x]
+                for target in targets:
+                    for stim_idx in post4ap_df.index[:-2]:
+                        response = post4ap_df.loc[stim_idx, target]
+                        rand = np.random.randint(-15, 25, 1)[0] #* 1/(abs(response)**1/2)  # jittering around the stim_frame for the plot
+                        ax2.scatter(x=expobj.stim_start_frames[stim_idx] + rand, y=response, color=target_colors[targets.index(target)], alpha=0.70, s=15, zorder=4)
+
+
+                ## retrieve the appropriate zscored database - insz stims
+                targets = [x for x in list(insz_df.columns) if type(x) == str]
+                for target in targets:
+                    for stim_idx in insz_df.index:
+                        response = insz_df.loc[stim_idx, target]
+                        rand = np.random.randint(-15, 25, 1)[0] #* 1/(abs(response)**1/2)  # jittering around the stim_frame for the plot
+                        ax2.scatter(x=expobj.stim_start_frames[stim_idx] + rand, y=response, color=target_colors[targets.index(target)], alpha=0.70, s=15, zorder=4)
+                        ax2.axhline(y=0)
+                        ax2.set_ylabel('Response mag. (zscored to pre4ap)')
+
+                ax3 = axs[counter+1]
+                ax3_2 = ax3.twinx()
+                fig, ax3, ax3_2 = aoplot.plot_lfp_stims(expobj, x_axis='Time', show=False, fig=fig, ax=ax3, ax2=ax3_2)
+
+                counter += 2
+                print(f"finished on expobj: {expprep} {post4ap_trial}, counter @ {counter}\n")
+
+fig.suptitle(f"Photostim responses - post-4ap", y=0.999)
+fig.show()
+
+
+
+
+
 
 # %%
-SLMtarget_ids = list(range(len(expobj.SLMTargets_stims_dfstdF)))
-target_colors = pj.make_random_color_array(len(SLMtarget_ids))
-# --- plot with mean FOV fluorescence signal
-fig, axs = plt.subplots(ncols=1, nrows=2, figsize=[20, 6])
-fig, axs[0] = aoplot.plotMeanRawFluTrace(expobj=expobj, stim_span_color='white', x_axis='frames', figsize=[20, 3], show=False,
-                                         fig=fig, ax=axs[0])
-ax2 = axs[0].twinx()
-## retrieve the appropriate zscored database - outsz stims
-targets = [x for x in list(allopticalResults.stim_responses_zscores[f"{expobj.metainfo['animal prep.']}"][f"{j + 1}"][f"{exp}-4ap"].columns) if type(x) == str and '_z' in x]
-for target in targets:
-    for stim_idx in allopticalResults.stim_responses_zscores[f"{expobj.metainfo['animal prep.']}"][f"{j + 1}"][f"{exp}-4ap"].index[:-2]:
-        # if i == 'pre':
-        #     stim_idx = expobj.stim_start_frames.index(stim_idx)  # MINOR BUG: appears that for some reason the stim_idx of the allopticalResults.stim_responses_zscores for pre-4ap are actually the frames themselves
-        response = allopticalResults.stim_responses_zscores[f"{expobj.metainfo['animal prep.']}"][f"{j + 1}"][f"{exp}-4ap"].loc[stim_idx, target]
-        rand = np.random.randint(-15, 25, 1)[0] #* 1/(abs(response)**1/2)  # jittering around the stim_frame for the plot
-        ax2.scatter(x=expobj.stim_start_frames[stim_idx] + rand, y=response, color=target_colors[targets.index(target)], alpha=0.70, s=15, zorder=4)
 
 
-## retrieve the appropriate zscored database - insz stims
-targets = [x for x in list(allopticalResults.stim_responses_zscores[f"{expobj.metainfo['animal prep.']}"][f"{j + 1}"]['in sz'].columns) if type(x) == str]
-for target in targets:
-    for stim_idx in allopticalResults.stim_responses_zscores[f"{expobj.metainfo['animal prep.']}"][f"{j + 1}"]['in sz'].index:
-        response = allopticalResults.stim_responses_zscores[f"{expobj.metainfo['animal prep.']}"][f"{j + 1}"]['in sz'].loc[stim_idx, target]
-        rand = np.random.randint(-15, 25, 1)[0] #* 1/(abs(response)**1/2)  # jittering around the stim_frame for the plot
-        ax2.scatter(x=expobj.stim_start_frames[stim_idx] + rand, y=response, color=target_colors[targets.index(target)], alpha=0.70, s=15, zorder=4)
-        ax2.axhline(y=0)
-        ax2.set_ylabel('Response mag. (zscored to pre4ap)')
 
-fig, axs[1] = aoplot.plotLfpSignal(expobj, stim_span_color='', x_axis='Time', show=False, fig=fig, ax=axs[1])
+
+
+
+
+print(f"---------------------------------------------------------")
+print(f"plotting zscored photostim responses over the whole trial")
+print(f"---------------------------------------------------------")
+
+
+for exp in ['pre', 'post']:
+    trials = list(allopticalResults.trial_maps[exp].keys())[:2]
+    fig, axs = plt.subplots(nrows=len(trials), ncols=1, figsize=[20, 6*len(trials)])
+    counter = 0
+    for key in trials:
+        # key = 'a'
+        j = 0
+        print(f"working on expobj: ")
+        expobj, experiment = aoutils.import_expobj(aoresults_map_id=f"{exp} {key}.{j}")
+
+        SLMtarget_ids = list(range(len(expobj.SLMTargets_stims_dfstdF)))
+        target_colors = pj.make_random_color_array(len(SLMtarget_ids))
+        # --- plot with mean FOV fluorescence signal
+        # fig, axs = plt.subplots(ncols=1, nrows=2, figsize=[20, 6])
+        ax = axs[counter]
+        fig, ax = aoplot.plotMeanRawFluTrace(expobj=expobj, stim_span_color='white', x_axis='frames', show=False,
+                                                 fig=fig, ax=ax)
+        ax2 = ax.twinx()
+        ## retrieve the appropriate zscored database - pre4ap or post4ap (outsz) stims
+        targets = [x for x in list(allopticalResults.stim_responses_zscores[f"{expobj.metainfo['animal prep.']}"][f"{j + 1}"][f"{exp}-4ap"].columns) if type(x) == str and '_z' in x]
+        for target in targets:
+            for stim_idx in allopticalResults.stim_responses_zscores[f"{expobj.metainfo['animal prep.']}"][f"{j + 1}"][f"{exp}-4ap"].index[:-2]:
+                # if i == 'pre':
+                #     stim_idx = expobj.stim_start_frames.index(stim_idx)  # MINOR BUG: appears that for some reason the stim_idx of the allopticalResults.stim_responses_zscores for pre-4ap are actually the frames themselves
+                response = allopticalResults.stim_responses_zscores[f"{expobj.metainfo['animal prep.']}"][f"{j + 1}"][f"{exp}-4ap"].loc[stim_idx, target]
+                rand = np.random.randint(-15, 25, 1)[0] #* 1/(abs(response)**1/2)  # jittering around the stim_frame for the plot
+                ax2.scatter(x=expobj.stim_start_frames[stim_idx] + rand, y=response, color=target_colors[targets.index(target)], alpha=0.70, s=15, zorder=4)
+
+
+        if exp == 'post':
+            ## retrieve the appropriate zscored database - insz stims
+            targets = [x for x in list(allopticalResults.stim_responses_zscores[f"{expobj.metainfo['animal prep.']}"][f"{j + 1}"]['in sz'].columns) if type(x) == str]
+            for target in targets:
+                for stim_idx in allopticalResults.stim_responses_zscores[f"{expobj.metainfo['animal prep.']}"][f"{j + 1}"]['in sz'].index:
+                    response = allopticalResults.stim_responses_zscores[f"{expobj.metainfo['animal prep.']}"][f"{j + 1}"]['in sz'].loc[stim_idx, target]
+                    rand = np.random.randint(-15, 25, 1)[0] #* 1/(abs(response)**1/2)  # jittering around the stim_frame for the plot
+                    ax2.scatter(x=expobj.stim_start_frames[stim_idx] + rand, y=response, color=target_colors[targets.index(target)], alpha=0.70, s=15, zorder=4)
+                    ax2.axhline(y=0)
+                    ax2.set_ylabel('Response mag. (zscored to pre4ap)')
+
+        fig, axs[1] = aoplot.plotLfpSignal(expobj, stim_span_color='', x_axis='Time', show=False, fig=fig, ax=axs[1])
+        counter += 1
+
+
 fig.suptitle(f"Photostim responses - {exp}-4ap {expobj.metainfo['animal prep.']} {expobj.metainfo['trial']}")
 fig.show()
 

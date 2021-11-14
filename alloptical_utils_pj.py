@@ -79,10 +79,6 @@ def import_expobj(aoresults_map_id: str = None, trial: str = None, prep: str = N
 
     if not os.path.exists(pkl_path):
         raise Exception('pkl path NOT found: ' + pkl_path)
-    else:
-        if trial is not None and date is not None:
-            print('\n-----------------------------------------------------------------------------------------------------------',
-                  '\nimporting expobj for "%s, %s" from: %s ... ' % (date, trial, pkl_path)) if verbose else None
     with open(pkl_path, 'rb') as f:
         expobj = pickle.load(f)
         experiment = '%s: %s, %s, %s' % (

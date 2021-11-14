@@ -26,6 +26,7 @@ allopticalResults.outsz_missing = []
 allopticalResults.insz_missing = []
 allopticalResults.stim_responses_zscores = {}
 for i in range(len(allopticalResults.pre_4ap_trials)):
+    # i = 3
     prep = allopticalResults.pre_4ap_trials[i][0][:-6]
     pre4aptrial = allopticalResults.pre_4ap_trials[i][0][-5:]
     date = list(allopticalResults.slmtargets_stim_responses.loc[
@@ -78,10 +79,10 @@ for i in range(len(allopticalResults.pre_4ap_trials)):
             allopticalResults.stim_responses_zscores[prep] = {}
             comparison_number = 1
         else:
-            comparison_number = len(allopticalResults.stim_responses_zscores[prep]) + 1
+                comparison_number = len(allopticalResults.stim_responses_zscores[prep]) + 1
 
-        allopticalResults.stim_responses_zscores[prep]['%s' % comparison_number] = {'pre-4ap': {}, 'post-4ap': {}, 'in sz': {}}
-        allopticalResults.stim_responses_zscores[prep]['%s' % comparison_number]['pre-4ap'] = df
+        allopticalResults.stim_responses_zscores[prep][f'{comparison_number}'] = {'pre-4ap': {}}
+        allopticalResults.stim_responses_zscores[prep][f'{comparison_number}']['pre-4ap'] = df
 
         # allopticalResults.save()
 
@@ -137,7 +138,7 @@ for i in range(len(allopticalResults.pre_4ap_trials)):
                 col_zscore = str(col) + '_z'
                 df[col_zscore] = (df[col] - pre_4ap_df.loc['mean', col])/pre_4ap_df.loc['std', col]
 
-            allopticalResults.stim_responses_zscores[prep]['%s' % comparison_number]['post-4ap'] = df
+            allopticalResults.stim_responses_zscores[prep][f'{comparison_number}']['post-4ap'] = df
 
         else:
             print('|-- **** 1 need to run collecting outsz responses SLMtargets attr for %s %s ****' % (post4aptrial, prep))
@@ -221,7 +222,7 @@ for i in range(len(allopticalResults.pre_4ap_trials)):
                     col_zscore = str(col) + '_z'
                     df[col_zscore] = (df[col] - pre_4ap_df.loc['mean', col]) / pre_4ap_df.loc['std', col]
 
-                allopticalResults.stim_responses_zscores[prep]['%s' % comparison_number]['in sz'] = df
+                allopticalResults.stim_responses_zscores[prep][f"{comparison_number}"]['in sz'] = df
             else:
                 print('**** 3 need to run collecting insz responses SLMtargets attr for %s %s ****' % (post4aptrial, prep))
                 allopticalResults.insz_missing.append('%s %s' % (post4aptrial, prep))
@@ -232,6 +233,11 @@ for i in range(len(allopticalResults.pre_4ap_trials)):
             print(f'**** 3 need to run collecting insz responses SLMtargets attr for {post4aptrial}, {prep} ****')
         if hasattr(expobj, 'responses_SLMtargets_insz'):
             print(f'**** 4 need to run collecting in sz responses SLMtargets attr for {post4aptrial}, {prep} ****')
+
+    ## switch out this comparison_number to something more readable
+    new_key = f"{pre4aptrial} vs. {post4aptrial}"
+    allopticalResults.stim_responses_zscores[prep][new_key]= allopticalResults.stim_responses_zscores[prep].pop(f'{comparison_number}')
+    # allopticalResults.stim_responses_zscores[prep][new_key]= allopticalResults.stim_responses_zscores[prep][f'{comparison_number}']
 
 
 allopticalResults.save()
