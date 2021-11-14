@@ -20,17 +20,25 @@ allopticalResults = aoutils.import_resultsobj(pkl_path=results_object_path)
 
 
 # %% IMPORT expobj
-expobj, experiment = aoutils.import_expobj(aoresults_map_id='pre h.0')
-expobj, experiment = aoutils.import_expobj(prep='PS06', trial='t-016')
+# expobj, experiment = aoutils.import_expobj(aoresults_map_id='pre h.0')
+expobj, experiment = aoutils.import_expobj(prep='PS06', trial='t-015')
 
 
 # %% useful general plots
 
-aoplot.plotMeanRawFluTrace(expobj=expobj, stim_span_color=None, x_axis='Time', figsize=[20, 3])
-aoplot.plotLfpSignal(expobj, stim_span_color='', x_axis='time', figsize=[10, 4])
+fig, axs = plt.subplots(2, 1, figsize=(20,6))
+fig, ax = aoplot.plotMeanRawFluTrace(expobj=expobj, stim_span_color=None, x_axis='Time', fig=fig, ax=axs[0], show=False)
+fig, ax = aoplot.plotLfpSignal(expobj, stim_span_color='', x_axis='time', fig=fig, ax=axs[1], show=False)
+fig.show()
+
 aoplot.plot_SLMtargets_Locs(expobj, background=expobj.meanFluImg_registered)
 aoplot.plot_lfp_stims(expobj, x_axis='Time')
 
+expobj.plot_single_frame_tiff(frame_num=10020)
+expobj.plot_single_frame_tiff(frame_num=700)
+expobj.plot_single_frame_tiff(frame_num=501)
+expobj.plot_single_frame_tiff(frame_num=301)
+expobj.plot_single_frame_tiff(frame_num=200)
 
 # %% s2p ROI Flu trace statistics for each cell
 

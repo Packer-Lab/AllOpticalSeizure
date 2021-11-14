@@ -1447,9 +1447,7 @@ class alloptical(TwoPhotonImaging):
 
         ## target_areas that need to be excluded when filtering for nontarget cells
         radius_px = int(np.ceil(((self.spiral_size / 2) + 2.5) / self.pix_sz_x))
-        print(f"spiral size: {self.spiral_size}um")
-        print(f"pix sz x: {self.pix_sz_x}um")
-        print("radius (in pixels): {:.2f}px".format(radius_px * self.pix_sz_x))
+        print("radius of target exclusion zone (in pixels): {:.2f}px".format(radius_px * self.pix_sz_x))
 
         target_areas = []
         for coord in targetCoordinates:
@@ -1489,7 +1487,7 @@ class alloptical(TwoPhotonImaging):
             print('Number of targets (in SLM group %s): ' % (counter + 1), len(targetCoordinates))
             counter += 1
 
-        print('Got targets...')
+        print('FIN. -----Loading up target coordinates-----')
 
     def _findTargetedS2pROIs(self, force_redo: bool = False, plot: bool = True):
         '''finding s2p cell ROIs that were also SLM targets (or more specifically within the target areas as specified by _findTargetAreas - include 15um radius from center coordinate of spiral)
@@ -4666,7 +4664,7 @@ def slm_targets_responses(expobj, experiment, trial, y_spacing_factor=2, figsize
         if cmap is None:
             cmap = pj.make_colormap([c('blue'), c('white'), zero_point - 0.20, c('white'), c('red')])
         ax5 = fig.add_subplot(gs[-1, 5:])
-        fig, ax5 = aoplot.plot_traces_heatmap(data=cell_avg_stim_traces, expobj=expobj, vmin=v_lims_periphotostim_heatmap[0], vmax=v_lims_periphotostim_heatmap[1],
+        fig, ax5 = aoplot.plot_traces_heatmap(arr=cell_avg_stim_traces, expobj=expobj, vmin=v_lims_periphotostim_heatmap[0], vmax=v_lims_periphotostim_heatmap[1],
                                               stim_on=expobj.pre_stim, stim_off=expobj.pre_stim + expobj.stim_duration_frames + 1, cbar=False,
                                               title=(expobj.metainfo['animal prep.'] + ' ' + expobj.metainfo[
                                               'trial'] + ' - SLM targets raw Flu'), show=False, fig=fig, ax=ax5, x_label='Frames', y_label='Neurons',

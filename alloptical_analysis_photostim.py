@@ -35,7 +35,7 @@ allopticalResults.pre_4ap_trials = [
     ['RL108 t-010'],
     ['RL109 t-007'],
     ['RL109 t-008'],
-    # ['RL109 t-013'], - pickle truncated .21/10/18
+    ['RL109 t-013'],  # - pickle truncated .21/10/18 - analysis func jupyter run on .21/11/12
     ['RL109 t-014'],
     ['PS04 t-012',  # 'PS04 t-014',  - not sure what's wrong with PS04, but the photostim and Flu are falling out of sync .21/10/09
      'PS04 t-017'],
@@ -57,7 +57,7 @@ allopticalResults.post_4ap_trials = [
     ['RL108 t-011'],
     ['RL109 t-020'],
     ['RL109 t-021'],
-    # ['RL109 t-018'],
+    ['RL109 t-018'],
     ['RL109 t-016', 'RL109 t-017'],
     ['PS04 t-018'],
     ['PS05 t-012'],
@@ -83,7 +83,7 @@ allopticalResults.trial_maps['pre'] = {
     'b': ['RL108 t-010'],
     # 'c': ['RL109 t-007'],
     'd': ['RL109 t-008'],
-    # 'e': ['RL109 t-013'],  - pickle truncated .21/10/18
+    'e': ['RL109 t-013'],
     'f': ['RL109 t-014'],
     # 'g': ['PS04 t-012',  # 'PS04 t-014',  # - temp just until PS04 gets reprocessed
     #       'PS04 t-017'],
@@ -105,7 +105,7 @@ allopticalResults.trial_maps['post'] = {
     'b': ['RL108 t-011'],
     # 'c': ['RL109 t-020'], -- need to redo sz boundary classifying processing
     'd': ['RL109 t-021'],
-    # 'e': ['RL109 t-018'], - t-013 has been truncated
+    'e': ['RL109 t-018'],
     'f': ['RL109 t-016', 'RL109 t-017'],
     # 'g': ['PS04 t-018'],  -- need to redo sz boundary classifying processing
     'h': ['PS05 t-012'],
@@ -113,7 +113,7 @@ allopticalResults.trial_maps['post'] = {
     'j': ['PS07 t-017'],
     # 'k': ['PS06 t-014', 'PS06 t-015'],  # - missing seizure_lfp_onsets
     'l': ['PS06 t-013'],
-    # 'm': ['PS06 t-016'],  # - missing seizure_lfp_onsets
+    # 'm': ['PS06 t-016'],  # - missing seizure_lfp_onsets - LFP signal not clear, but there is seizures on avg Flu trace
     # 'n': ['PS11 t-016'],
     'o': ['PS11 t-011'],
     # 'p': ['PS17 t-011'],
@@ -199,7 +199,26 @@ allopticalResults.metainfo = allopticalResults.slmtargets_stim_responses.loc[:, 
 
 # %%#### -------------------- ALL OPTICAL PHOTOSTIM ANALYSIS ################################################
 
+# specify trials to run code on
+code_run_list_all = []
+for i in ['pre', 'post']:
+    for key in list(allopticalResults.trial_maps[i].keys()):
+        for j in range(len(allopticalResults.trial_maps[i][key])):
+            code_run_list_all.append((i, key, j))
 
+code_run_list_pre = []
+for key in list(allopticalResults.trial_maps['pre'].keys()):
+    for j in range(len(allopticalResults.trial_maps['pre'][key])):
+        code_run_list_pre.append(('pre', key, j))
+
+code_run_list_post4ap = []
+for key in list(allopticalResults.trial_maps['post'].keys()):
+    for j in range(len(allopticalResults.trial_maps['post'][key])):
+        code_run_list_post4ap.append(('post', key, j))
+
+
+short_list_pre = [('pre', 'e', '0')]
+short_list_post = [('post', 'e', '0')]
 # %% 5.0-main)  RUN DATA ANALYSIS OF NON TARGETS:
 # #  - Analysis of responses of non-targets from suite2p ROIs in response to photostim trials - broken down by pre-4ap, outsz and insz (excl. sz boundary)
 
@@ -217,41 +236,31 @@ allopticalResults.metainfo = allopticalResults.slmtargets_stim_responses.loc[:, 
 
 # 5.0.1) re-calculating and plotting of excluded s2p ROIs and SLM target coordinates
 
-completed_list = []  # keep a list of expobj that have completed successfully
+for (i, key, j) in code_run_list_all:
+    if (i, key, j) in short_list_pre or (i, key, j) in short_list_post:
+        # import expobj
+        expobj, experiment = aoutils.import_expobj(aoresults_map_id=f'{i} {key}.{j}')
 
-ls = ['pre', 'post']
-for i in ls:
-    for key in list(allopticalResults.trial_maps[i].keys()):
-        for j in range(len(allopticalResults.trial_maps[i][key])):
-            if f"{i} {key}.{j}" not in completed_list:
-                # i = 'post'
-                # key = 'j'
-                j = 0
-                # import expobj
-                expobj, experiment = aoutils.import_expobj(aoresults_map_id=f'{i} {key}.{j}')
+        if not hasattr(expobj, 's2p_nontargets'):
+            expobj._parseNAPARMgpl()
+            expobj._findTargetsAreas()
+            expobj._findTargetedS2pROIs(force_redo=True, plot=False)
+            expobj.save()
+        assert hasattr(expobj, 's2p_nontargets')
+        save_path = save_path_prefix + f"/{expobj.metainfo['animal prep.']} {expobj.metainfo['trial']} - s2p ROIs plot.png"
+        aoplot.s2pRoiImage(expobj, save_fig=save_path)
 
-                if not hasattr(expobj, 's2p_nontargets'):
-                    expobj._parseNAPARMgpl()
-                    expobj._findTargetsAreas()
-                    expobj._findTargetedS2pROIs(force_redo=True, plot=False)
-                    expobj.save()
-                assert hasattr(expobj, 's2p_nontargets')
-                save_path = save_path_prefix + f"/{expobj.metainfo['animal prep.']} {expobj.metainfo['trial']} - s2p ROIs plot.png"
-                aoplot.s2pRoiImage(expobj, save_fig=save_path)
-
-                completed_list.append(f"{i} {key}.{j}")
 
 
 # %% 5.1) for loop to go through each expobj to analyze nontargets - pre4ap trials
 
 # ls = ['PS05 t-010', 'PS06 t-011', 'PS11 t-010', 'PS17 t-005', 'PS17 t-006', 'PS17 t-007', 'PS18 t-006']
 ls = pj.flattenOnce(allopticalResults.pre_4ap_trials)
-for key in list(allopticalResults.trial_maps['pre'].keys()):
-    for j in range(len(allopticalResults.trial_maps['pre'][key])):
-        # import expobj
-        expobj, experiment = aoutils.import_expobj(aoresults_map_id='pre %s.%s' % (key, j))
-        aoutils.run_allopticalAnalysisNontargets(expobj, normalize_to='pre-stim', do_processing=True, to_plot=True,
-                                                 save_plot_suffix=f"{save_path_prefix[-31:]}/{expobj.metainfo['animal prep.']}_{expobj.metainfo['trial']}-pre4ap.png")
+for (i, key, j) in code_run_list_pre:
+    # import expobj
+    expobj, experiment = aoutils.import_expobj(aoresults_map_id='pre %s.%s' % (key, j))
+    aoutils.run_allopticalAnalysisNontargets(expobj, normalize_to='pre-stim', do_processing=True, to_plot=True,
+                                             save_plot_suffix=f"{save_path_prefix[-31:]}/{expobj.metainfo['animal prep.']}_{expobj.metainfo['trial']}-pre4ap.png")
 
 
 # test: adding correct stim filters when analysing data to exclude stims/cells in seizure boundaries - this should be done, but not thouroughly tested necessarily yet //
@@ -259,15 +268,14 @@ for key in list(allopticalResults.trial_maps['pre'].keys()):
 # ls = ['RL108 t-013', 'RL109 t-021', 'RL109 t-016']
 missing_slmtargets_sz_stim = []
 ls = pj.flattenOnce(allopticalResults.post_4ap_trials)
-for key in list(allopticalResults.trial_maps['post'].keys()):
-    for j in range(len(allopticalResults.trial_maps['post'][key])):
-        # import expobj
-        expobj, experiment = aoutils.import_expobj(aoresults_map_id='post %s.%s' % (key, j), do_processing=True)
-        if hasattr(expobj, 'slmtargets_sz_stim'):
-            aoutils.run_allopticalAnalysisNontargetsPost4ap(expobj, normalize_to='pre-stim', do_processing=True, to_plot=True,
-                                                            save_plot_suffix=f"{save_path_prefix[-31:]}/{expobj.metainfo['animal prep.']}_{expobj.metainfo['trial']}-post4ap.png")
-        else:
-            missing_slmtargets_sz_stim.append(f"{expobj.metainfo['animal prep.']} {expobj.metainfo['trial']}")
+for (i, key, j) in code_run_list_all:
+    # import expobj
+    expobj, experiment = aoutils.import_expobj(aoresults_map_id='post %s.%s' % (key, j), do_processing=True)
+    if hasattr(expobj, 'slmtargets_sz_stim'):
+        aoutils.run_allopticalAnalysisNontargetsPost4ap(expobj, normalize_to='pre-stim', do_processing=True, to_plot=True,
+                                                        save_plot_suffix=f"{save_path_prefix[-31:]}/{expobj.metainfo['animal prep.']}_{expobj.metainfo['trial']}-post4ap.png")
+    else:
+        missing_slmtargets_sz_stim.append(f"{expobj.metainfo['animal prep.']} {expobj.metainfo['trial']}")
 
 
 # %% 5.2) collect average stats for each prep, and summarize into the appropriate data point

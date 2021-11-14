@@ -161,13 +161,13 @@ def plot_SLMtargets_Locs(expobj, targets_coords: list = None, background: np.nda
         if len(expobj.target_coords) > 1:
             for i in range(len(expobj.target_coords)):
                 for (x, y) in expobj.target_coords[i]:
-                    ax.scatter(x=x, y=y, edgecolors=colors[i], facecolors='none', linewidths=1.0)
+                    ax.scatter(x=x, y=y, edgecolors=colors[i], facecolors='none', linewidths=2.0)
         else:
             for (x, y) in expobj.target_coords_all:
-                ax.scatter(x=x, y=y, edgecolors='yellowgreen', facecolors='none', linewidths=1.0)
+                ax.scatter(x=x, y=y, edgecolors='yellowgreen', facecolors='none', linewidths=2.0)
     else:
         for (x, y) in targets_coords:
-            ax.scatter(x=x, y=y, edgecolors='yellowgreen', facecolors='none', linewidths=1.0)
+            ax.scatter(x=x, y=y, edgecolors='yellowgreen', facecolors='none', linewidths=2.0)
 
 
     ax.margins(0)
@@ -1049,8 +1049,11 @@ def plotMeanRawFluTrace(expobj, stim_span_color='white', stim_lines: bool = True
     elif x_axis == 'frames':
         ax.set_xlabel('frame #s')
     ax.set_ylabel('Flu (a.u.)')
-    if 'xlims' in kwargs.keys():
+    if 'xlims' in kwargs.keys() and kwargs['xlims'] is not None:
         ax.set_xlim(kwargs['xlims'])
+
+    if 'ylims' in kwargs.keys() and kwargs['ylims'] is not None:
+        ax.set_ylim(kwargs['ylims'])
 
     # add title
     if not 'fig' in kwargs.keys():
