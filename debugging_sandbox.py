@@ -36,73 +36,121 @@ save_path_prefix = '/home/pshah/mnt/qnap/Analysis/Results_figs/'
 
 ########
 
-# # %% 5.1) for loop to go through each expobj to analyze nontargets - post4ap trials
-ls = ['RL108 t-013', 'RL109 t-021', 'RL109 t-016']
-# ls = pj.flattenOnce(allopticalResults.post_4ap_trials)
-for key in list(allopticalResults.trial_maps['post'].keys()):
-    for j in range(len(allopticalResults.trial_maps['post'][key])):
+prep='RL108'
+trial='t-013'
+expobj, experiment = aoutils.import_expobj(trial=trial, prep=prep, verbose=False)
 
-        # import expobj
-        expobj, experiment = aoutils.import_expobj(aoresults_map_id='post %s.%s' % (key, j))
-        if expobj.metainfo['animal prep.'] + ' ' + expobj.metainfo['trial'] in ls:
-            aoutils.run_allopticalAnalysisNontargets(expobj, normalize_to='pre-stim', do_processing=True, to_plot=True,
-                                                     save_plot_suffix=f"Nontargets_responses_2021-11-08/{expobj.metainfo['animal prep.']}_{expobj.metainfo['trial']}-post4ap.png")
-        else:
-            pass
-            # aoutils.run_allopticalAnalysisNontargets(expobj, normalize_to='pre-stim', do_processing=False, to_plot=False,
-            #                                          save_plot_suffix=f"Nontargets_responses_2021-11-06/{expobj.metainfo['animal prep.']}_{expobj.metainfo['trial']}-post4ap.png")
-
-
-
-
+# aoplot.plot_lfp_stims(expobj, xlims=[0.2e7, 1.0e7], linewidth=1.0)
 
 
 # %%
-# 5.2.1.1) scatter plot response magnitude vs. prestim std F
-ls = ['post']
-for i in ls:
-    ncols = 3
-    nrows = 4
-    fig, axs = plt.subplots(ncols=ncols, nrows=nrows, figsize=(10, 10))
-    counter = 0
+# plots the raw trace for the Flu mean of the FOV
+def plotLfpSignal(expobj, stim_span_color='powderblue', downsample: bool = True, stim_lines: bool = True, sz_markings: bool = False,
+                  title='LFP trace', x_axis='time', hide_xlabel=False, **kwargs):
+    """make plot of LFP with also showing stim locations
+    NOTE: ONLY PLOTTING LFP SIGNAL CROPPED TO 2P IMAGING FRAME START AND END TIMES - SO CUTTING OUT THE LFP SIGNAL BEFORE AND AFTER"""
 
-    j = 0
-    for key in list(allopticalResults.trial_maps[i].keys()):
+    # if there is a fig and ax provided in the function call then use those, otherwise start anew
+    if 'fig' in kwargs.keys():
+        fig = kwargs['fig']
+        ax = kwargs['ax']
+    else:
+        if 'figsize' in kwargs.keys():
+            fig, ax = plt.subplots(figsize=kwargs['figsize'])
+        else:
+            fig, ax = plt.subplots(figsize=[60 * (expobj.stim_start_times[-1] + 1e5 - (expobj.stim_start_times[0] - 1e5)) / 1e7, 3])
 
-        expobj, experiment = aoutils.import_expobj(aoresults_map_id=f'{i} {key}.{j}')  # import expobj
+    if 'alpha' in kwargs:
+        alpha = kwargs['alpha']
+    else:
+        alpha = 1
 
-        possig_responders_avgresponse = np.nanmean(expobj.post_array_responses[expobj.sig_units, :], axis=1)[
-            np.where(np.nanmean(expobj.post_array_responses[expobj.sig_units, :], axis=1) > 0)[0]]
-        negsig_responders_avgresponse = np.nanmean(expobj.post_array_responses[expobj.sig_units, :], axis=1)[
-            np.where(np.nanmean(expobj.post_array_responses[expobj.sig_units, :], axis=1) < 0)[0]]
-        nonsig_responders_avgresponse = np.nanmean(expobj.post_array_responses[~expobj.sig_units], axis=1)
+    # plot LFP signal
+    if 'color' in kwargs:
+        color = kwargs['color']
+    else:
+        color = 'steelblue'
 
-        stims = [i for i, stim in enumerate(expobj.stim_start_frames) if stim not in expobj.stims_in_sz]
-        stims_sz = [i for i, stim in enumerate(expobj.stim_start_frames) if stim in list(expobj.slmtargets_sz_stim.keys())]
+    # option for downsampling of data plot trace
+    x = range(len(expobj.lfp_signal[expobj.frame_start_time_actual: expobj.frame_end_time_actual]))
+    signal = expobj.lfp_signal[expobj.frame_start_time_actual: expobj.frame_end_time_actual]
+    if downsample:
+        labels = list(range(0, int(len(signal) / expobj.paq_rate * 1), 30))[::2]
+        down = 1000
+        signal = signal[::down]
+        x = x[::down]
+        assert len(x) == len(signal), print('something went wrong with the downsampling')
 
-        posunits_prestdF = np.nanmean(np.nanstd(expobj.raw_traces[np.where(np.nanmean(expobj.post_array_responses[:, stims][expobj.sig_units], axis=1) > 0)[0], :, :][:, stims, :], axis=2), axis=1)
-        negunits_prestdF = np.nanmean(np.nanstd(expobj.raw_traces[np.where(np.nanmean(expobj.post_array_responses[:, stims][expobj.sig_units], axis=1) < 0)[0], :, :][:, stims, :], axis=2), axis=1)
-        nonsigunits_prestdF = np.nanmean(np.nanstd(expobj.raw_traces[~expobj.sig_units, stims, :], axis=2), axis=1)
+    # change linewidth
+    if 'linewidth' in kwargs:
+        lw = kwargs['linewidth']
+    else:
+        lw = 0.4
 
-        assert len(possig_responders_avgresponse) == len(posunits_prestdF)
-        assert len(negsig_responders_avgresponse) == len(negunits_prestdF)
-        assert len(nonsig_responders_avgresponse) == len(nonsigunits_prestdF)
+    ax.plot(x, signal, c=color, zorder=1, linewidth=lw, alpha=alpha)  ## NOTE: ONLY PLOTTING LFP SIGNAL RELATED TO
+    ax.margins(0)
 
-        # fig, axs = plt.subplots(ncols=ncols, nrows=nrows, figsize=(10, 10))
-        ax = axs[counter // ncols, counter % ncols]
-        ax.scatter(x = nonsigunits_prestdF, y = nonsig_responders_avgresponse, color='gray', alpha=0.10, label='non sig.', s=65, edgecolors='none', zorder=0)
-        ax.scatter(x = negunits_prestdF, y = negsig_responders_avgresponse, color='red', alpha=0.10, label='sig. neg.', s=65, edgecolors='none', zorder=1)
-        ax.scatter(x = negunits_prestdF, y = possig_responders_avgresponse, color='green', alpha=0.10, label='sig. pos.', s=65, edgecolors='none', zorder=2)
-        ax.set_title(f"{expobj.metainfo['animal prep.']} {expobj.metainfo['trial']} ")
-        # fig.show()
+    # plot stims
+    if stim_span_color != '':
+        for stim in expobj.stim_start_times:
+            stim = (stim - expobj.frame_start_time_actual)
+            ax.axvspan(stim - 8, 1 + stim + expobj.stim_duration_frames / expobj.fps * expobj.paq_rate, color=stim_span_color, zorder=1, alpha=0.5)
+    else:
+        if stim_lines:
+            for line in expobj.stim_start_times:
+                line = (line - expobj.frame_start_time_actual)
+                ax.axvline(x=line+2, color='black', linestyle='--', linewidth=0.6, zorder=0)
 
-        counter += 1
-    axs[0, 0].legend()
-    axs[0, 0].set_xlabel('Avg. prestim std F')
-    axs[0, 0].set_ylabel('Avg. mag (dF/stdF)')
-    fig.tight_layout()
-    fig.suptitle(f'All exps. prestim std F vs. response mag (dF/stdF) distribution - {i}4ap', y = 0.98)
-    save_path = expobj.analysis_save_path[:30] + 'Results_figs/' + \
-                f"Nontargets_responses_2021-11-06/scatter prestim std F vs. plot response magnitude - {i}4ap.png"
-    plt.savefig(save_path)
-    fig.show()
+    # plot seizure onset and offset markings
+    if sz_markings:
+        if hasattr(expobj, 'seizure_lfp_onsets'):
+            for sz_onset in expobj.seizure_lfp_onsets:
+                ax.axvline(x=expobj.frame_clock_actual[sz_onset] - expobj.frame_start_time_actual, color='black', linestyle='--', linewidth=1.0, zorder=0)
+            for sz_offset in expobj.seizure_lfp_offsets:
+                ax.axvline(x=expobj.frame_clock_actual[sz_offset] - expobj.frame_start_time_actual, color='black', linestyle='--', linewidth=1.0, zorder=0)
+
+    # change x axis ticks to seconds
+    if 'time' in x_axis or 'Time' in x_axis:
+        # set x ticks at every 30 seconds
+        # labels = list(range(0, int(len(signal) / expobj.paq_rate * down), 30))[::2]
+        # print('x_axis labels: ', labels)
+        ax.set_xticks(ticks=[(label * expobj.paq_rate) for label in labels])
+        ax.set_xticklabels(labels)
+        ax.tick_params(axis='both', which='both', length=3)
+        if not hide_xlabel:
+            ax.set_xlabel('Time (secs)')
+
+        # label_format = '{:,.2f}'
+        # labels = [item for item in ax.get_xticks()]
+        # for item in labels:
+        #     labels[labels.index(item)] = int(round(item / expobj.paq_rate, 2))
+        # ticks_loc = ax.get_xticks().tolist()
+        # ax.xaxis.set_major_locator(mticker.FixedLocator(ticks_loc))
+        # ax.set_xticklabels([label_format.format(x) for x in labels])
+        # ax.set_xlabel('Time (secs)')
+    else:
+        ax.set_xlabel('paq clock')
+    ax.set_ylabel('Voltage')
+    # ax.set_xlim([expobj.frame_start_time_actual, expobj.frame_end_time_actual])  ## this should be limited to the 2p acquisition duration only
+
+    # set ylimits:
+    if 'ylims' in kwargs:
+        ax.set_ylim(kwargs['ylims'])
+    else:
+        ax.set_ylim([np.mean(expobj.lfp_signal) - 10, np.mean(expobj.lfp_signal) + 10])
+
+    # add title
+    if not 'fig' in kwargs.keys():
+        ax.set_title(
+            '%s - %s %s %s' % (title, expobj.metainfo['exptype'], expobj.metainfo['animal prep.'], expobj.metainfo['trial']))
+
+    # options for showing plot or returning plot
+    if 'show' in kwargs.keys():
+        plt.show() if kwargs['show'] else None
+    else:
+        plt.show()
+
+
+    return fig, ax if 'fig' in kwargs.keys() else None
+
+plotLfpSignal(expobj, downsample=True, figsize=(10,3), x_axis='paq clock')

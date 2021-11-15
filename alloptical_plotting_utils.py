@@ -482,7 +482,7 @@ def plot_periphotostim_avg(arr=None, pre_stim_sec=1.0, post_stim_sec=3.0, title=
         else:
             fig, ax = plt.subplots(figsize=[5, 4])
 
-    ax.margins(x=0.07)
+    # ax.margins(x=0.07)
 
     if x_label is None or not 'Frames' in x_label or 'frames' in x_label:
         x = x_time  # set the x plotting range
@@ -726,8 +726,13 @@ def plot_lfp_stims(expobj, title='LFP signal with photostim. shown (in different
 
     # plot LFP signal
     # ax.plot(expobj.lfp_signal, zorder=0, linewidth=0.5)
+    if 'linewidth' in kwargs and kwargs['linewidth'] is not None:
+        lw = kwargs['linewidth']
+    else:
+        lw = 0.5
+
     fig, ax = plotLfpSignal(expobj, fig=fig, ax=ax, stim_lines=False, show=False, stim_span_color='', x_axis=x_axis,
-                            sz_markings=sz_markings, color='slategray', downsample=False)
+                            sz_markings=sz_markings, color='slategray', downsample=False, linewidth=lw)
     # y_loc = np.percentile(expobj.lfp_signal, 75)
     y_loc = 0 # location of where to place the stim markers on the plot
 
@@ -769,6 +774,9 @@ def plot_lfp_stims(expobj, title='LFP signal with photostim. shown (in different
 
     if 'ylims' in kwargs and kwargs['ylims'] != None:
         ax.set_ylim(kwargs['ylims'])
+
+    if 'xlims' in kwargs and kwargs['xlims'] != None:
+        ax.set_xlim(kwargs['xlims'])
 
 
     # # set x ticks at every 30 seconds
@@ -1105,13 +1113,14 @@ def plotLfpSignal(expobj, stim_span_color='powderblue', downsample: bool = True,
         color = 'steelblue'
 
     # option for downsampling of data plot trace
+    x = range(len(expobj.lfp_signal[expobj.frame_start_time_actual: expobj.frame_end_time_actual]))
+    signal = expobj.lfp_signal[expobj.frame_start_time_actual: expobj.frame_end_time_actual]
     if downsample:
-        signal = expobj.lfp_signal[expobj.frame_start_time_actual: expobj.frame_end_time_actual]
-        signal = signal[::1000]
+        labels = list(range(0, int(len(signal) / expobj.paq_rate * 1), 30))[::2]
         down = 1000
-    else:
-        signal = expobj.lfp_signal[expobj.frame_start_time_actual: expobj.frame_end_time_actual]
-        down = 1
+        signal = signal[::down]
+        x = x[::down]
+        assert len(x) == len(signal), print('something went wrong with the downsampling')
 
     # change linewidth
     if 'linewidth' in kwargs:
@@ -1119,34 +1128,34 @@ def plotLfpSignal(expobj, stim_span_color='powderblue', downsample: bool = True,
     else:
         lw = 0.4
 
-    ax.plot(signal, c=color, zorder=1, linewidth=lw, alpha=alpha)  ## NOTE: ONLY PLOTTING LFP SIGNAL RELATED TO
+    ax.plot(x, signal, c=color, zorder=1, linewidth=lw, alpha=alpha)  ## NOTE: ONLY PLOTTING LFP SIGNAL RELATED TO
     ax.margins(0)
 
     # plot stims
     if stim_span_color != '':
         for stim in expobj.stim_start_times:
-            stim = (stim - expobj.frame_start_time_actual) / down
-            ax.axvspan(stim - 8, 1 + stim + expobj.stim_duration_frames / expobj.fps * expobj.paq_rate / down, color=stim_span_color, zorder=1, alpha=0.5)
+            stim = (stim - expobj.frame_start_time_actual)
+            ax.axvspan(stim - 8, 1 + stim + expobj.stim_duration_frames / expobj.fps * expobj.paq_rate, color=stim_span_color, zorder=1, alpha=0.5)
     else:
         if stim_lines:
             for line in expobj.stim_start_times:
-                line = (line - expobj.frame_start_time_actual) / down
+                line = (line - expobj.frame_start_time_actual)
                 ax.axvline(x=line+2, color='black', linestyle='--', linewidth=0.6, zorder=0)
 
     # plot seizure onset and offset markings
     if sz_markings:
         if hasattr(expobj, 'seizure_lfp_onsets'):
             for sz_onset in expobj.seizure_lfp_onsets:
-                    ax.axvline(x=expobj.frame_clock_actual[sz_onset] - expobj.frame_start_time_actual, color='black', linestyle='--', linewidth=1.0, zorder=0)
+                ax.axvline(x=expobj.frame_clock_actual[sz_onset] - expobj.frame_start_time_actual, color='black', linestyle='--', linewidth=1.0, zorder=0)
             for sz_offset in expobj.seizure_lfp_offsets:
                 ax.axvline(x=expobj.frame_clock_actual[sz_offset] - expobj.frame_start_time_actual, color='black', linestyle='--', linewidth=1.0, zorder=0)
 
     # change x axis ticks to seconds
     if 'time' in x_axis or 'Time' in x_axis:
         # set x ticks at every 30 seconds
-        labels = list(range(0, int(len(signal) / expobj.paq_rate * down), 30))[::2]
+        # labels = list(range(0, int(len(signal) / expobj.paq_rate * down), 30))[::2]
         # print('x_axis labels: ', labels)
-        ax.set_xticks(ticks=[(label * expobj.paq_rate / down) for label in labels])
+        ax.set_xticks(ticks=[(label * expobj.paq_rate) for label in labels])
         ax.set_xticklabels(labels)
         ax.tick_params(axis='both', which='both', length=3)
         if not hide_xlabel:
@@ -1174,7 +1183,7 @@ def plotLfpSignal(expobj, stim_span_color='powderblue', downsample: bool = True,
     # add title
     if not 'fig' in kwargs.keys():
         ax.set_title(
-        '%s - %s %s %s' % (title, expobj.metainfo['exptype'], expobj.metainfo['animal prep.'], expobj.metainfo['trial']))
+            '%s - %s %s %s' % (title, expobj.metainfo['exptype'], expobj.metainfo['animal prep.'], expobj.metainfo['trial']))
 
     # options for showing plot or returning plot
     if 'show' in kwargs.keys():
@@ -1184,7 +1193,6 @@ def plotLfpSignal(expobj, stim_span_color='powderblue', downsample: bool = True,
 
 
     return fig, ax if 'fig' in kwargs.keys() else None
-
 
 def plot_flu_1pstim_avg_trace(expobj, title='Average trace of stims', individual_traces=False, x_axis='time', stim_span_color='white',
                               y_axis: str = 'raw', quantify: bool = False, stims_to_analyze: list = None, write_full_text: bool = True,

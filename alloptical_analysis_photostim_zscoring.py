@@ -253,21 +253,24 @@ for prep in allopticalResults.stim_responses_zscores.keys():
         if prep in i[0]:
             count += 1
 
-    for comp in range(count):
-        comp += 1
-        pre_4ap_df = allopticalResults.stim_responses_zscores[prep][str(comp)]['pre-4ap']
-        post_4ap_df = allopticalResults.stim_responses_zscores[prep][str(comp)]['post-4ap']
-        in_sz_df = allopticalResults.stim_responses_zscores[prep][str(comp)]['in sz']
-        for col in pre_4ap_df.columns:
-            if 'z' in str(col):
-                pre_4ap_zscores = pre_4ap_zscores + list(pre_4ap_df[col][:-2])
+    for key in list(allopticalResults.stim_responses_zscores[prep].keys()):
+        # comparison_number += 1
+        # key = list(allopticalResults.stim_responses_zscores[prep].keys())[comparison_number]
+        trial_comparison = allopticalResults.stim_responses_zscores[prep][key]
+        if 'pre-4ap' in trial_comparison.keys():
+            pre_4ap_df = trial_comparison['pre-4ap']
+            for col in pre_4ap_df.columns:
+                if 'z' in str(col):
+                    pre_4ap_zscores = pre_4ap_zscores + list(pre_4ap_df[col][:-2])
 
-        if len(post_4ap_df) > 0:
+        if 'post-4ap' in trial_comparison.keys():
+            post_4ap_df = trial_comparison['post-4ap']
             for col in post_4ap_df.columns:
                 if 'z' in str(col):
                     post_4ap_zscores = post_4ap_zscores + list(post_4ap_df[col][:-2])
 
-        if len(in_sz_df) > 0:
+        if 'in sz' in trial_comparison.keys():
+            in_sz_df = trial_comparison['in sz']
             for col in in_sz_df.columns:
                 if 'z' in str(col):
                     in_sz_zscores = in_sz_zscores + list(in_sz_df[col][:-2])

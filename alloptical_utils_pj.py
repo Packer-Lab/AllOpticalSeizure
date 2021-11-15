@@ -72,7 +72,7 @@ def import_expobj(aoresults_map_id: str = None, trial: str = None, prep: str = N
 
     if pkl_path is None:
         if date is None:
-            date = allopticalResults.metainfo.loc[allopticalResults.metainfo['prep_trial'] == '%s %s' % (prep, trial), 'date'].values[0]
+            date = allopticalResults.metainfo.loc[allopticalResults.metainfo['prep_trial'] == f"{prep} {trial}", 'date'].values[0]
         pkl_path = "/home/pshah/mnt/qnap/Analysis/%s/%s/%s_%s/%s_%s.pkl" % (date, prep, date, trial, date, trial)
 
 

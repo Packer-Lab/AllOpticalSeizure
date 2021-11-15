@@ -262,49 +262,31 @@ pj.plot_hist_density(data, x_label='response magnitude (dF/stdF)', title='stims_
                      colors=['black'] * 3, legend_labels=[None] * 3)
 
 
+# %% 4) PLOT - stim frames for figures with SLM targets inside (yellow) and outside (green) of seizure boundary
+
+prep='RL108'
+trial='t-013'
+expobj, experiment = aoutils.import_expobj(trial=trial, prep=prep, verbose=False)
+
+aoplot.plot_lfp_stims(expobj, xlims=[0.2e7, 1.0e7], linewidth=1.0)
 
 
 
+sz_num = 3
+stims_to_plot = [stim for stim in expobj.stim_start_frames if expobj.seizure_lfp_offsets[sz_num] > stim > expobj.seizure_lfp_onsets[sz_num]]
 
+fig, ax = plt.subplots(figsize=[5, 5], nrows=1, ncols=len(stims_to_plot))
+for stim in stims_to_plot:
+    pass
+stim = stims_to_plot[0]
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+# plot SLM targets in sz boundary
+coords_to_plot = [expobj.target_coords_all[cell] for cell in expobj.slmtargets_sz_stim[stim]]
+# read in avg stim image to use as the background
+avg_stim_img_path = '%s/%s_%s_stim-%s.tif' % (self.analysis_save_path + 'avg_stim_images', self.metainfo['date'], self.metainfo['trial'], stim)
+bg_img = tf.imread(avg_stim_img_path)
+fig, ax = aoplot.plot_SLMtargets_Locs(self, targets_coords=coords_to_plot, fig=fig, ax=ax, cells=in_sz, title=title,
+                                      show=False, background=bg_img)
 
 
 
