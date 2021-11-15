@@ -767,6 +767,9 @@ def plot_lfp_stims(expobj, title='LFP signal with photostim. shown (in different
     if 'ax2' not in kwargs.keys():
         ax2.legend(loc='upper left')
 
+    if 'ylims' in kwargs and kwargs['ylims'] != None:
+        ax.set_ylim(kwargs['ylims'])
+
 
     # # set x ticks at every 30 seconds
     # labels = list(range(0, len(expobj.lfp_signal)//expobj.paq_rate, 30))
@@ -1355,7 +1358,10 @@ def plot_lfp_1pstim_avg_trace(expobj, title='Average LFP peri- stims', individua
     x_ = np.mean(x, axis=0)
     ax.plot(x_, color='black', zorder=3, linewidth=1.75)
 
-    ax.set_ylim([np.mean(x_) - 2.5, np.mean(x_) + 2.5])
+    if 'ylims' in kwargs.keys() and kwargs['ylims'] is not None:
+        ax.set_ylim([kwargs['ylims'][0], kwargs['ylims'][1]])
+    else:
+        ax.set_ylim([np.mean(x_) - 2.5, np.mean(x_) + 2.5])
     ax.margins(0)
 
     if individual_traces:
@@ -1375,6 +1381,13 @@ def plot_lfp_1pstim_avg_trace(expobj, title='Average LFP peri- stims', individua
         ax.fill_between(x=range(len(x_)), y1=x_ + std_, y2=x_ - std_, alpha=0.3, zorder=2, color='steelblue')
         ax.axvspan(int(pre_stim * expobj.paq_rate),
                    int(pre_stim * expobj.paq_rate) + stim_duration, color='skyblue', zorder=1, alpha=0.7)
+
+    if 'shrink_text' in kwargs.keys():
+        shrink_text = kwargs['shrink_text']
+        print(shrink_text)
+    else:
+        shrink_text = 0.7
+        print(shrink_text)
 
 
     if optoloopback:
@@ -1398,7 +1411,7 @@ def plot_lfp_1pstim_avg_trace(expobj, title='Average LFP peri- stims', individua
         if write_full_text:
             ax2.text(0.98, 0.12, 'Widefield LED TTL',
                      transform=ax.transAxes, fontweight='bold', horizontalalignment='right',
-                     color='royalblue', fontsize=10)
+                     color='royalblue', fontsize=10*shrink_text)
         # ax2.set_ylabel('Widefield LED TTL', color='royalblue', fontweight='bold')
         ax2.yaxis.set_tick_params(right=False,
                                   labelright=False)
@@ -1423,7 +1436,8 @@ def plot_lfp_1pstim_avg_trace(expobj, title='Average LFP peri- stims', individua
 
     # add title
     plt.suptitle(
-        '%s %s %s %s' % (title, expobj.metainfo['exptype'], expobj.metainfo['animal prep.'], expobj.metainfo['trial']))
+        '%s %s %s %s' % (title, expobj.metainfo['exptype'], expobj.metainfo['animal prep.'], expobj.metainfo['trial']),
+    fontsize=10*shrink_text)
 
     # options for showing plot or returning plot
     if 'show' in kwargs.keys():

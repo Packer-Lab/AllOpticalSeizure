@@ -25,6 +25,10 @@ onePresults = aoutils.import_resultsobj(pkl_path=results_object_path)
 ## TODO rerunning classifying sz boundaries for trials in ls2:
 ls2 = [
     ['RL108 t-011'],
+    ['RL109 t-017'],
+    ['PS06 t-014'],
+    ['PS06 t-015'],
+    ['PS06 t-016']
 ]
 
 #%% 1) defining trials to run for analysis
@@ -209,7 +213,7 @@ for on, off in zip(on_, end):
     sz_num += 1
 
 
-# %% 3) responses of targets during seizures, but EXCLUDE STIMS WHERE THE CELL IS INSIDE THE SZ BOUND -- should this be in alloptical_results_photostim.py????
+# %% 3) responses of targets during seizures, but EXCLUDE STIMS WHERE THE CELL IS INSIDE THE SZ BOUND -- should this be in ARCHIVEDalloptical_results_photostim.py????
 
 if hasattr(expobj, 'stims_in_sz'):
 
@@ -256,61 +260,6 @@ for row in expobj.responses_SLMtargets.index:
 data = [list(targets_avgresponses_exclude_stims_sz.values()), list(targets_avgresponses_stims_outsz.values()), list(targets_avgresponses_stims_presz.values())]
 pj.plot_hist_density(data, x_label='response magnitude (dF/stdF)', title='stims_in_sz - ', figsize=(5,5), fill_color=['orange', 'skyblue', 'green'],
                      colors=['black'] * 3, legend_labels=[None] * 3)
-
-
-# %% 6)
-################################# SEIZURE EVENTS PLOTTING ##############################################################
-########################################################################################################################
-
-# PLOT HEATMAP of SEIZURE EVENTS
-
-sz = 2
-sz_onset, sz_offset = expobj.stims_bf_sz[sz], expobj.stims_af_sz[sz+1]
-
-# -- approach of dFF normalize to the mean of the Flu data 2 seconds before the seizure
-pre_sz = 2*int(expobj.fps)
-sz_flu = expobj.raw[[expobj.cell_id.index(cell) for cell in expobj.good_cells], sz_onset - pre_sz: sz_offset]
-sz_flu_smooth = np.array([pj.smooth_signal(signal, w=5) for signal in sz_flu])  # grouped average of the raw signal
-x_norm = np.array([pj.dff(flu[pre_sz:], np.mean(flu[:pre_sz])) * 100 for flu in sz_flu_smooth])
-
-
-stims = [(stim - sz_onset) for stim in expobj.stim_start_frames if sz_onset <= stim < sz_offset]
-stims_off = [(stim + expobj.stim_duration_frames - 1) for stim in stims]
-
-x_bf = expobj.stim_times[np.where(expobj.stim_start_frames == expobj.stims_bf_sz[sz])[0][0]]
-x_af = expobj.stim_times[np.where(expobj.stim_start_frames == expobj.stims_af_sz[sz+1])[0][0]]
-
-lfp_signal = expobj.lfp_signal[x_bf:x_af]
-
-# -- ordering cells based on their order of reaching top 5% signal threshold
-x_95 = [np.percentile(trace, 95) for trace in x_norm]
-
-x_peak = [np.min(np.where(x_norm[i] > x_95[i])) for i in range(len(x_norm))]
-new_order = np.argsort(x_peak)
-x_ordered = x_norm[new_order]
-
-# plot heatmap of dFF processed Flu signals for all cells for selected sz and ordered as determined above
-aoplot.plot_traces_heatmap(x_ordered, stim_on=stims, stim_off=stims_off, cmap='Spectral_r', figsize=(10, 6),
-                           title=('%s - seizure %s - sz flu smooth - %s to %s' % (trial, sz, sz_onset, sz_offset)),
-                           xlims=None, vmin=100, vmax=500, lfp_signal=lfp_signal)
-
-# just the bottom half cells that seems to show more of an order
-x_ordered = x_norm[new_order[250:]]
-aoplot.plot_traces_heatmap(x_ordered, stim_on=stims, stim_off=stims_off, cmap='Spectral_r', figsize=(10, 6),
-                           title=('%s - seizure %s - sz flu smooth - %s to %s' % (trial, sz, sz_onset, sz_offset)),
-                           xlims=None, vmin=100, vmax=500, lfp_signal=lfp_signal)
-
-
-# PLOT cell location with cmap based on their order of reaching top 5% signal during sz event
-
-cell_ids_ordered = list(np.array(expobj.cell_id)[new_order])
-aoplot.plot_cells_loc(expobj, cells=cell_ids_ordered, show_s2p_targets=False, color_float_list=list(range(len(cell_ids_ordered))),
-                      title='cell locations ordered by recruitment in sz # %s' % sz, invert_y=True, cmap='Purples')
-
-# just the bottom half cells that seems to show more of an order
-cell_ids_ordered = list(np.array(expobj.cell_id)[new_order])
-aoplot.plot_cells_loc(expobj, cells=cell_ids_ordered[250:], show_s2p_targets=False, color_float_list=list(np.array(x_peak)[new_order][250:]),
-                      title='cell locations ordered by recruitment in sz # %s' % sz, invert_y=True, cmap='Purples')
 
 
 
