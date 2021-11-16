@@ -520,7 +520,6 @@ class TwoPhotonImaging:
 
         return good_cells, events_loc_cells, flu_events_cells, stds
 
-
     def paqProcessing(self, lfp=False):
 
         print('\n-----processing paq file...')
@@ -620,6 +619,17 @@ class TwoPhotonImaging:
             plt.suptitle('frame num: %s' % frame_num)
         plt.show()
         return stack
+
+    def s2pMeanImage(s2p_path):
+        os.chdir(s2p_path)
+
+        ops = np.load('ops.npy', allow_pickle=True).item()
+
+        mean_img = ops['meanImg']
+
+        mean_img = np.array(mean_img, dtype='uint16')
+
+        return mean_img
 
     def save_pkl(self, pkl_path: str = None):
         if pkl_path is None:
@@ -2387,6 +2397,230 @@ class alloptical(TwoPhotonImaging):
 
         return sig_units
 
+    # used for creating tiffs that remove artifacts from alloptical experiments with photostim artifacts
+    def rm_artifacts_tiffs(expobj, tiffs_loc, new_tiffs):
+        ### make a new tiff file (not for suite2p) with the first photostim frame whitened, and save new tiff
+        print('\n-----making processed photostim .tiff from:')
+        tiff_path = tiffs_loc
+        print(tiff_path)
+        im_stack = tf.imread(tiff_path, key=range(expobj.n_frames))
+        print('Processing experiment tiff of shape: ', im_stack.shape)
+
+        frames_to_whiten = []
+        for j in expobj.stim_start_frames:
+            frames_to_whiten.append(j)
+
+        # number of photostim frames with artifacts
+        frames_to_remove = []
+        for j in expobj.stim_start_frames:
+            for i in range(0,
+                           expobj.stim_duration_frames + 1):  # usually need to remove 1 more frame than the stim duration, as the stim isn't perfectly aligned with the start of the imaging frame
+                frames_to_remove.append(j + i)
+
+        print('# of total photostim artifact frames:', len(frames_to_remove))
+
+        im_stack_1 = im_stack
+        a = np.full_like(im_stack_1[0], fill_value=0)
+        a[0:100, 0:100] = 5000.
+        for frame in frames_to_whiten:
+            im_stack_1[frame - 3] = im_stack_1[frame - 3] + a
+            im_stack_1[frame - 2] = im_stack_1[frame - 2] + a
+            im_stack_1[frame - 1] = im_stack_1[frame - 1] + a
+        print('Shape', im_stack_1.shape)
+
+        im_stack_1 = np.delete(im_stack_1, frames_to_remove, axis=0)
+        print('After delete shape artifactrem', im_stack_1.shape)
+
+        save_path = (new_tiffs + "_artifactrm.tif")
+        tf.imwrite(save_path, im_stack_1, photometric='minisblack')
+
+        del im_stack_1
+
+        # draw areas on top of im_stack_1 where targets are:
+        im_stack_2 = im_stack
+        print('Shape', im_stack_2.shape)
+
+        for stim in range(expobj.n_groups):
+            b = np.full_like(im_stack_2[0], fill_value=0)
+            targets = expobj.target_areas[stim]
+            for i in np.arange(len(targets)):
+                for j in targets[i]:
+                    b[j] = 5000
+
+            all_stim_start_frames = []
+            for stim_frame in expobj.stim_start_frames[stim::expobj.n_groups]:
+                all_stim_start_frames.append(stim_frame)
+            for frame in all_stim_start_frames:
+                #         im_stack_2[frame-4] = im_stack_2[frame-4]+b
+                #         im_stack_2[frame-3] = im_stack_2[frame-3]+b
+                #        im_stack_2[frame-2] = im_stack_2[frame-2]+b
+                im_stack_2[frame - 1] = im_stack_2[frame - 1] + b
+
+        im_stack_2 = np.delete(im_stack_2, expobj.photostim_frames, axis=0)
+
+        print('After delete shape targetcells', im_stack_2.shape)
+
+        save_path = (new_tiffs + '_targetcells.tif')
+        tf.imwrite(save_path, im_stack_2, photometric='minisblack')
+
+        print('done saving to: ', save_path)
+
+        del im_stack_2
+        del im_stack
+
+    def s2pMasks(expobj, s2p_path, cell_ids):
+        os.chdir(s2p_path)
+        stat = np.load('stat.npy', allow_pickle=True)
+        ops = np.load('ops.npy', allow_pickle=True).item()
+        iscell = np.load('iscell.npy', allow_pickle=True)
+        mask_img = np.zeros((ops['Ly'], ops['Lx']), dtype='uint8')
+        for n in range(0, len(iscell)):
+            if n in cell_ids:
+                ypix = stat[n]['ypix']
+                xpix = stat[n]['xpix']
+                mask_img[ypix, xpix] = 3000
+
+        # s2p targets - all SLM targets
+        targets_s2p_img = np.zeros((ops['Ly'], ops['Lx']), dtype='uint8')
+        for n in range(0, len(iscell)):
+            if n in expobj.s2p_cell_targets:
+                ypix = stat[n]['ypix']
+                xpix = stat[n]['xpix']
+                targets_s2p_img[ypix, xpix] = 3000
+
+        # # s2p targets - SLM group #1 targets
+        # targets_s2p_img_1 = np.zeros((ops['Ly'], ops['Lx']), dtype='uint8')
+        # for n in range(0, len(iscell)):
+        #     if n in obj.s2p_cell_targets_1:
+        #         ypix = stat[n]['ypix']
+        #         xpix = stat[n]['xpix']
+        #         targets_s2p_img_1[ypix, xpix] = 3000
+        #
+        # # s2p targets - SLM group #2 targets
+        # targets_s2p_img_2 = np.zeros((ops['Ly'], ops['Lx']), dtype='uint8')
+        # for n in range(0, len(iscell)):
+        #     if n in obj.s2p_cell_targets_2:
+        #         ypix = stat[n]['ypix']
+        #         xpix = stat[n]['xpix']
+        #         targets_s2p_img_2[ypix, xpix] = 3000
+
+        return mask_img, targets_s2p_img,  # targets_s2p_img_1, targets_s2p_img_2
+
+    def getTargetImage(obj):
+        targ_img = np.zeros((obj.frame_x, obj.frame_y), dtype='uint8')
+        # all FOV targets
+        targ_areas = obj.target_areas
+        for targ_area in targ_areas:
+            for coord in targ_area:
+                targ_img[coord[1], coord[0]] = 3000
+
+        # targ_img_1 = np.zeros((obj.frame_x, obj.frame_y), dtype='uint8')
+        # # FOV targets group #1
+        # targ_areas = obj.target_areas_1
+        # for targ_area in targ_areas:
+        #     for coord in targ_area:
+        #         targ_img_1[coord[1], coord[0]] = 3000
+        #
+        # targ_img_2 = np.zeros((obj.frame_x, obj.frame_y), dtype='uint8')
+        # # FOV targets group #2
+        # targ_areas = obj.target_areas_2
+        # for targ_area in targ_areas:
+        #     for coord in targ_area:
+        #         targ_img_2[coord[1], coord[0]] = 3000
+
+        return targ_img  # , targ_img_1, targ_img_2
+
+    def s2pMaskStack(obj, pkl_list, s2p_path, parent_folder, force_redo: bool = False):
+        """makes a TIFF stack with the s2p mean image, and then suite2p ROI masks for all cells detected, target cells, and also SLM targets as well?"""
+
+        if force_redo:
+            continu = True
+        elif hasattr(obj, 's2p_cell_targets'):
+            print('skipped re-making TIFF stack of finding s2p targets from suite2p cell list')
+            continu = False
+        else:
+            continu = True
+
+        if continu:
+
+            for pkl in pkl_list:
+                expobj = obj
+
+                print('Retrieving s2p masks for:', pkl, end='\r')
+
+                # with open(pkl, 'rb') as f:
+                #     expobj = pickle.load(f)
+
+                # list of cell ids to filter s2p masks by
+                # cell_id_list = [list(range(1, 99999)),  # all
+                #                 expobj.photostim_r.cell_id[0],  # cells
+                #                 [expobj.photostim_r.cell_id[0][i] for i, b in enumerate(expobj.photostim_r.cell_s1[0]) if
+                #                  b == False],  # s2 cells
+                #                 [expobj.photostim_r.cell_id[0][i] for i, b in enumerate(expobj.photostim_r.is_target) if
+                #                  b == 1],  # pr cells
+                #                 [expobj.photostim_s.cell_id[0][i] for i, b in enumerate(expobj.photostim_s.is_target) if
+                #                  b == 1],  # ps cells
+                #                 ]
+                #
+                cell_ids = expobj.cell_id
+
+                # empty stack to fill with images
+                stack = np.empty((0, expobj.frame_y, expobj.frame_x), dtype='uint8')
+
+                s2p_path = s2p_path
+
+                # mean image from s2p
+                mean_img = s2pMeanImage(s2p_path)
+                mean_img = np.expand_dims(mean_img, axis=0)
+                stack = np.append(stack, mean_img, axis=0)
+
+                # mask images from s2p
+                mask_img, targets_s2p_img = s2pMasks(obj=expobj, s2p_path=s2p_path, cell_ids=cell_ids)
+                mask_img = np.expand_dims(mask_img, axis=0)
+                targets_s2p_img = np.expand_dims(targets_s2p_img, axis=0)
+                # targets_s2p_img_1 = np.expand_dims(targets_s2p_img_1, axis=0)
+                # targets_s2p_img_2 = np.expand_dims(targets_s2p_img_2, axis=0)
+                stack = np.append(stack, mask_img, axis=0)
+                stack = np.append(stack, targets_s2p_img, axis=0)
+                # stack = np.append(stack, targets_s2p_img_1, axis=0)
+                # stack = np.append(stack, targets_s2p_img_2, axis=0)
+
+                # # sta images
+                # for file in os.listdir(stam_save_path):
+                #     if all(s in file for s in ['AvgImage', expobj.photostim_r.tiff_path.split('/')[-1]]):
+                #         pr_sta_img = tf.imread(os.path.join(stam_save_path, file))
+                #         pr_sta_img = np.expand_dims(pr_sta_img, axis=0)
+                #     elif all(s in file for s in ['AvgImage', expobj.photostim_s.tiff_path.split('/')[-1]]):
+                #         ps_sta_img = tf.imread(os.path.join(stam_save_path, file))
+                #         ps_sta_img = np.expand_dims(ps_sta_img, axis=0)
+
+                # stack = np.append(stack, pr_sta_img, axis=0)
+                # stack = np.append(stack, ps_sta_img, axis=0)
+
+                # target images
+                targ_img = getTargetImage(expobj)
+                targ_img = np.expand_dims(targ_img, axis=0)
+                stack = np.append(stack, targ_img, axis=0)
+
+                # targ_img_1 = np.expand_dims(targ_img_1, axis=0)
+                # stack = np.append(stack, targ_img_1, axis=0)
+                #
+                # targ_img_2 = np.expand_dims(targ_img_2, axis=0)
+                # stack = np.append(stack, targ_img_2, axis=0)
+
+                # stack is now: mean_img, all_rois, all_cells, s2_cells, pr_cells, ps_cells,
+                # (whisker,) pr_sta_img, ps_sta_img, pr_target_areas, ps_target_areas
+                # c, x, y = stack.shape
+                # stack.shape = 1, 1, c, x, y, 1  # dimensions in TZCYXS order
+
+                x_pix = expobj.pix_sz_x
+                y_pix = expobj.pix_sz_y
+
+                save_path = os.path.join(parent_folder, pkl.split('/')[-1][:-4] + '_s2p_masks.tif')
+
+                tf.imwrite(save_path, stack, photometric='minisblack')
+                print('\ns2p ROI + photostim targets masks saved in TIFF to: ', save_path)
+
 
 class Post4ap(alloptical):
 
@@ -3465,174 +3699,6 @@ class AllOpticalResults:
 # import expobj from the pkl file
 
 ## Rob's functions for generating some important commonly used image types.
-def s2pMeanImage(s2p_path):
-    os.chdir(s2p_path)
-
-    ops = np.load('ops.npy', allow_pickle=True).item()
-
-    mean_img = ops['meanImg']
-
-    mean_img = np.array(mean_img, dtype='uint16')
-
-    return mean_img
-
-
-def s2pMasks(obj, s2p_path, cell_ids):
-    os.chdir(s2p_path)
-    stat = np.load('stat.npy', allow_pickle=True)
-    ops = np.load('ops.npy', allow_pickle=True).item()
-    iscell = np.load('iscell.npy', allow_pickle=True)
-    mask_img = np.zeros((ops['Ly'], ops['Lx']), dtype='uint8')
-    for n in range(0, len(iscell)):
-        if n in cell_ids:
-            ypix = stat[n]['ypix']
-            xpix = stat[n]['xpix']
-            mask_img[ypix, xpix] = 3000
-
-    # s2p targets - all SLM targets
-    targets_s2p_img = np.zeros((ops['Ly'], ops['Lx']), dtype='uint8')
-    for n in range(0, len(iscell)):
-        if n in obj.s2p_cell_targets:
-            ypix = stat[n]['ypix']
-            xpix = stat[n]['xpix']
-            targets_s2p_img[ypix, xpix] = 3000
-
-    # # s2p targets - SLM group #1 targets
-    # targets_s2p_img_1 = np.zeros((ops['Ly'], ops['Lx']), dtype='uint8')
-    # for n in range(0, len(iscell)):
-    #     if n in obj.s2p_cell_targets_1:
-    #         ypix = stat[n]['ypix']
-    #         xpix = stat[n]['xpix']
-    #         targets_s2p_img_1[ypix, xpix] = 3000
-    #
-    # # s2p targets - SLM group #2 targets
-    # targets_s2p_img_2 = np.zeros((ops['Ly'], ops['Lx']), dtype='uint8')
-    # for n in range(0, len(iscell)):
-    #     if n in obj.s2p_cell_targets_2:
-    #         ypix = stat[n]['ypix']
-    #         xpix = stat[n]['xpix']
-    #         targets_s2p_img_2[ypix, xpix] = 3000
-
-    return mask_img, targets_s2p_img,  # targets_s2p_img_1, targets_s2p_img_2
-
-
-def getTargetImage(obj):
-    targ_img = np.zeros((obj.frame_x, obj.frame_y), dtype='uint8')
-    # all FOV targets
-    targ_areas = obj.target_areas
-    for targ_area in targ_areas:
-        for coord in targ_area:
-            targ_img[coord[1], coord[0]] = 3000
-
-    # targ_img_1 = np.zeros((obj.frame_x, obj.frame_y), dtype='uint8')
-    # # FOV targets group #1
-    # targ_areas = obj.target_areas_1
-    # for targ_area in targ_areas:
-    #     for coord in targ_area:
-    #         targ_img_1[coord[1], coord[0]] = 3000
-    #
-    # targ_img_2 = np.zeros((obj.frame_x, obj.frame_y), dtype='uint8')
-    # # FOV targets group #2
-    # targ_areas = obj.target_areas_2
-    # for targ_area in targ_areas:
-    #     for coord in targ_area:
-    #         targ_img_2[coord[1], coord[0]] = 3000
-
-    return targ_img  # , targ_img_1, targ_img_2
-
-
-def s2pMaskStack(obj, pkl_list, s2p_path, parent_folder, force_redo: bool = False):
-    """makes a TIFF stack with the s2p mean image, and then suite2p ROI masks for all cells detected, target cells, and also SLM targets as well?"""
-
-    if force_redo:
-        continu = True
-    elif hasattr(obj, 's2p_cell_targets'):
-        print('skipped re-making TIFF stack of finding s2p targets from suite2p cell list')
-        continu = False
-    else:
-        continu = True
-
-    if continu:
-
-        for pkl in pkl_list:
-            expobj = obj
-
-            print('Retrieving s2p masks for:', pkl, end='\r')
-
-            # with open(pkl, 'rb') as f:
-            #     expobj = pickle.load(f)
-
-            # list of cell ids to filter s2p masks by
-            # cell_id_list = [list(range(1, 99999)),  # all
-            #                 expobj.photostim_r.cell_id[0],  # cells
-            #                 [expobj.photostim_r.cell_id[0][i] for i, b in enumerate(expobj.photostim_r.cell_s1[0]) if
-            #                  b == False],  # s2 cells
-            #                 [expobj.photostim_r.cell_id[0][i] for i, b in enumerate(expobj.photostim_r.is_target) if
-            #                  b == 1],  # pr cells
-            #                 [expobj.photostim_s.cell_id[0][i] for i, b in enumerate(expobj.photostim_s.is_target) if
-            #                  b == 1],  # ps cells
-            #                 ]
-            #
-            cell_ids = expobj.cell_id
-
-            # empty stack to fill with images
-            stack = np.empty((0, expobj.frame_y, expobj.frame_x), dtype='uint8')
-
-            s2p_path = s2p_path
-
-            # mean image from s2p
-            mean_img = s2pMeanImage(s2p_path)
-            mean_img = np.expand_dims(mean_img, axis=0)
-            stack = np.append(stack, mean_img, axis=0)
-
-            # mask images from s2p
-            mask_img, targets_s2p_img = s2pMasks(obj=expobj, s2p_path=s2p_path, cell_ids=cell_ids)
-            mask_img = np.expand_dims(mask_img, axis=0)
-            targets_s2p_img = np.expand_dims(targets_s2p_img, axis=0)
-            # targets_s2p_img_1 = np.expand_dims(targets_s2p_img_1, axis=0)
-            # targets_s2p_img_2 = np.expand_dims(targets_s2p_img_2, axis=0)
-            stack = np.append(stack, mask_img, axis=0)
-            stack = np.append(stack, targets_s2p_img, axis=0)
-            # stack = np.append(stack, targets_s2p_img_1, axis=0)
-            # stack = np.append(stack, targets_s2p_img_2, axis=0)
-
-            # # sta images
-            # for file in os.listdir(stam_save_path):
-            #     if all(s in file for s in ['AvgImage', expobj.photostim_r.tiff_path.split('/')[-1]]):
-            #         pr_sta_img = tf.imread(os.path.join(stam_save_path, file))
-            #         pr_sta_img = np.expand_dims(pr_sta_img, axis=0)
-            #     elif all(s in file for s in ['AvgImage', expobj.photostim_s.tiff_path.split('/')[-1]]):
-            #         ps_sta_img = tf.imread(os.path.join(stam_save_path, file))
-            #         ps_sta_img = np.expand_dims(ps_sta_img, axis=0)
-
-            # stack = np.append(stack, pr_sta_img, axis=0)
-            # stack = np.append(stack, ps_sta_img, axis=0)
-
-            # target images
-            targ_img = getTargetImage(expobj)
-            targ_img = np.expand_dims(targ_img, axis=0)
-            stack = np.append(stack, targ_img, axis=0)
-
-            # targ_img_1 = np.expand_dims(targ_img_1, axis=0)
-            # stack = np.append(stack, targ_img_1, axis=0)
-            #
-            # targ_img_2 = np.expand_dims(targ_img_2, axis=0)
-            # stack = np.append(stack, targ_img_2, axis=0)
-
-            # stack is now: mean_img, all_rois, all_cells, s2_cells, pr_cells, ps_cells,
-            # (whisker,) pr_sta_img, ps_sta_img, pr_target_areas, ps_target_areas
-            # c, x, y = stack.shape
-            # stack.shape = 1, 1, c, x, y, 1  # dimensions in TZCYXS order
-
-            x_pix = expobj.pix_sz_x
-            y_pix = expobj.pix_sz_y
-
-            save_path = os.path.join(parent_folder, pkl.split('/')[-1][:-4] + '_s2p_masks.tif')
-
-            tf.imwrite(save_path, stack, photometric='minisblack')
-            print('\ns2p ROI + photostim targets masks saved in TIFF to: ', save_path)
-
-
 # other functions written by me
 
 # PRE-PROCESSING FUNCTIONS - need to delete old functions (i.e. ones that have been moved under classes above)
@@ -4031,76 +4097,7 @@ def normalize_dff_jit(arr, threshold=20):
     return new_array
 
 
-# used for creating tiffs that remove artifacts from alloptical experiments with photostim artifacts
-def rm_artifacts_tiffs(expobj, tiffs_loc, new_tiffs):
-    ### make a new tiff file (not for suite2p) with the first photostim frame whitened, and save new tiff
-    print('\n-----making processed photostim .tiff from:')
-    tiff_path = tiffs_loc
-    print(tiff_path)
-    im_stack = tf.imread(tiff_path, key=range(expobj.n_frames))
-    print('Processing experiment tiff of shape: ', im_stack.shape)
 
-    frames_to_whiten = []
-    for j in expobj.stim_start_frames:
-        frames_to_whiten.append(j)
-
-    # number of photostim frames with artifacts
-    frames_to_remove = []
-    for j in expobj.stim_start_frames:
-        for i in range(0,
-                       expobj.stim_duration_frames + 1):  # usually need to remove 1 more frame than the stim duration, as the stim isn't perfectly aligned with the start of the imaging frame
-            frames_to_remove.append(j + i)
-
-    print('# of total photostim artifact frames:', len(frames_to_remove))
-
-    im_stack_1 = im_stack
-    a = np.full_like(im_stack_1[0], fill_value=0)
-    a[0:100, 0:100] = 5000.
-    for frame in frames_to_whiten:
-        im_stack_1[frame - 3] = im_stack_1[frame - 3] + a
-        im_stack_1[frame - 2] = im_stack_1[frame - 2] + a
-        im_stack_1[frame - 1] = im_stack_1[frame - 1] + a
-    print('Shape', im_stack_1.shape)
-
-    im_stack_1 = np.delete(im_stack_1, frames_to_remove, axis=0)
-    print('After delete shape artifactrem', im_stack_1.shape)
-
-    save_path = (new_tiffs + "_artifactrm.tif")
-    tf.imwrite(save_path, im_stack_1, photometric='minisblack')
-
-    del im_stack_1
-
-    # draw areas on top of im_stack_1 where targets are:
-    im_stack_2 = im_stack
-    print('Shape', im_stack_2.shape)
-
-    for stim in range(expobj.n_groups):
-        b = np.full_like(im_stack_2[0], fill_value=0)
-        targets = expobj.target_areas[stim]
-        for i in np.arange(len(targets)):
-            for j in targets[i]:
-                b[j] = 5000
-
-        all_stim_start_frames = []
-        for stim_frame in expobj.stim_start_frames[stim::expobj.n_groups]:
-            all_stim_start_frames.append(stim_frame)
-        for frame in all_stim_start_frames:
-            #         im_stack_2[frame-4] = im_stack_2[frame-4]+b
-            #         im_stack_2[frame-3] = im_stack_2[frame-3]+b
-            #        im_stack_2[frame-2] = im_stack_2[frame-2]+b
-            im_stack_2[frame - 1] = im_stack_2[frame - 1] + b
-
-    im_stack_2 = np.delete(im_stack_2, expobj.photostim_frames, axis=0)
-
-    print('After delete shape targetcells', im_stack_2.shape)
-
-    save_path = (new_tiffs + '_targetcells.tif')
-    tf.imwrite(save_path, im_stack_2, photometric='minisblack')
-
-    print('done saving to: ', save_path)
-
-    del im_stack_2
-    del im_stack
 
 
 

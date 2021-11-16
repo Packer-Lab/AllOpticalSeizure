@@ -732,7 +732,7 @@ def plot_lfp_stims(expobj, title='LFP signal with photostim. shown (in different
         lw = 0.5
 
     fig, ax = plotLfpSignal(expobj, fig=fig, ax=ax, stim_lines=False, show=False, stim_span_color='', x_axis=x_axis,
-                            sz_markings=sz_markings, color='slategray', downsample=False, linewidth=lw)
+                            sz_markings=sz_markings, color='slategray', downsample=True, linewidth=lw)
     # y_loc = np.percentile(expobj.lfp_signal, 75)
     y_loc = 0 # location of where to place the stim markers on the plot
 
@@ -1128,14 +1128,14 @@ def plotLfpSignal(expobj, stim_span_color='powderblue', downsample: bool = True,
     else:
         lw = 0.4
 
-    ax.plot(x, signal, c=color, zorder=1, linewidth=lw, alpha=alpha)  ## NOTE: ONLY PLOTTING LFP SIGNAL RELATED TO
+    ax.plot(x, signal, c=color, zorder=1, linewidth=lw)  ## NOTE: ONLY PLOTTING LFP SIGNAL RELATED TO
     ax.margins(0)
 
     # plot stims
     if stim_span_color != '':
         for stim in expobj.stim_start_times:
             stim = (stim - expobj.frame_start_time_actual)
-            ax.axvspan(stim - 8, 1 + stim + expobj.stim_duration_frames / expobj.fps * expobj.paq_rate, color=stim_span_color, zorder=1, alpha=0.5)
+            ax.axvspan(stim - 8, 1 + stim + expobj.stim_duration_frames / expobj.fps * expobj.paq_rate, color=stim_span_color, zorder=0, alpha=alpha)
     else:
         if stim_lines:
             for line in expobj.stim_start_times:
@@ -1179,6 +1179,11 @@ def plotLfpSignal(expobj, stim_span_color='powderblue', downsample: bool = True,
         ax.set_ylim(kwargs['ylims'])
     else:
         ax.set_ylim([np.mean(expobj.lfp_signal) - 10, np.mean(expobj.lfp_signal) + 10])
+
+    # set xlimits:
+    if 'xlims' in kwargs and kwargs['xlims'] is not None:
+        ax.set_xlim(kwargs['xlims'])
+
 
     # add title
     if not 'fig' in kwargs.keys():

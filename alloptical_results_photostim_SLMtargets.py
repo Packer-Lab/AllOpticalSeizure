@@ -77,7 +77,7 @@ aoplot.plot_periphotostim_avg(arr=arr, expobj=expobj, pre_stim_sec=0.5, post_sti
                               title=(f'{prep} {trial} photostim targets'), figsize=[3,4], y_label=y_label,
                               x_label='Time', y_lims=y_lims)
 
-# %%
+
 
 
 ##  POST4AP TRIAL
@@ -796,7 +796,7 @@ print(f"---------------------------------------------------------")
 trials = list(allopticalResults.trial_maps['pre'].keys())
 fig, axs = plt.subplots(nrows=len(trials) * 2, ncols=1, figsize=[20, 6 * len(trials)])
 counter = 0
-for expprep in list(allopticalResults.stim_responses_zscores.keys())[:5]:
+for expprep in list(allopticalResults.stim_responses_zscores.keys())[:3]:
     for trials_comparisons in allopticalResults.stim_responses_zscores[expprep]:
         pre4ap_trial = trials_comparisons[:5]
         post4ap_trial = trials_comparisons[-5:]

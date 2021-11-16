@@ -267,9 +267,9 @@ pj.plot_hist_density(data, x_label='response magnitude (dF/stdF)', title='stims_
 prep='RL108'
 trial='t-013'
 expobj, experiment = aoutils.import_expobj(trial=trial, prep=prep, verbose=False)
-
-aoplot.plot_lfp_stims(expobj, xlims=[0.2e7, 1.0e7], linewidth=1.0)
-
+# aoplot.plot_lfp_stims(expobj, xlims=[0.2e7, 1.0e7], linewidth=1.0)
+aoplot.plotLfpSignal(expobj, downsample=True, figsize=(6,2), x_axis='Time', xlims=[120 * expobj.paq_rate, 480 * expobj.paq_rate],
+                     ylims=[-6, 2], color='slategray', stim_span_color='green', alpha=0.1)
 
 
 sz_num = 3
