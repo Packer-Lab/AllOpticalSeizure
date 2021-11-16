@@ -45,7 +45,7 @@ t05_roi3 = np.loadtxt('/Volumes/Extreme SSD/oxford-data/2020-03-06/t05_roi3.txt'
 # subset voltage and camera measurements to region of interest (imaging measurements taken from frame #8404 onwards)
 frames = frames[8404:]
 
-# find the closest value in a list to the given input
+# find the closest value in a ls to the given input
 sample_index, frame_index = pjf.findClosest(frames, 9000000)
 
 #%%

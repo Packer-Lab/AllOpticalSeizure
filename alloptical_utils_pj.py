@@ -456,15 +456,15 @@ class TwoPhotonImaging:
         This function is used for filtering for "good" cells based on detection of Flu deflections that are above some std threshold based on std_thresh.
         Note: a moving averaging window of 4 frames is used to find Flu deflections above std threshold.
 
-        :param cell_ids: list of cell ids to iterate over
-        :param raws: raw flu values corresponding to the cell list in cell_ids
+        :param cell_ids: ls of cell ids to iterate over
+        :param raws: raw flu values corresponding to the cell ls in cell_ids
         :param photostim_frames: frames to delete from the raw flu traces across all cells (because they are photostim frames)
         :param std_thresh: std. factor above which to define reliable Flu events
         :param radiuses: radiuses of the s2p ROI mask of all cells in the same order as cell_ids
         :param min_radius_pix:
         :param max_radius_pix:
         :return:
-            good_cells: list of cell_ids that had atleast 1 event above the std_thresh
+            good_cells: ls of cell_ids that had atleast 1 event above the std_thresh
             events_loc_cells: dictionary containing locations for each cell_id where the moving averaged Flu trace passes the std_thresh
             flu_events_cells: dictionary containing the dff Flu value corresponding to events_loc_cells
             stds = dictionary containing the dFF trace std value for each cell_id
@@ -544,7 +544,7 @@ class TwoPhotonImaging:
         plt.show()
 
         # find start and stop frame_clock times -- there might be multiple 2p imaging starts/stops in the paq trial (hence multiple frame start and end times)
-        self.frame_start_times = [self.frame_clock[0]]  # initialize list
+        self.frame_start_times = [self.frame_clock[0]]  # initialize ls
         self.frame_end_times = []
         i = len(self.frame_start_times)
         for idx in range(1, len(self.frame_clock) - 1):
@@ -834,7 +834,7 @@ class alloptical(TwoPhotonImaging):
         primary function to measure the dFF and dF/setdF traces for photostimulated targets.
         :param stims:
         :param targets_idx: integer for the index of target cell to process
-        :param subselect_cells: list of cells to subset from the overall set of traces (use in place of targets_idx if desired)
+        :param subselect_cells: ls of cells to subset from the overall set of traces (use in place of targets_idx if desired)
         :param pre_stim: number of frames to use as pre-stim
         :param post_stim: number of frames to use as post-stim
         :param filter_sz: whether to filter out stims that are occuring seizures
@@ -1041,7 +1041,7 @@ class alloptical(TwoPhotonImaging):
         plt.show()
 
         # find start and stop frame_clock times -- there might be multiple 2p imaging starts/stops in the paq trial (hence multiple frame start and end times)
-        self.frame_start_times = [self.frame_clock[0]]  # initialize list
+        self.frame_start_times = [self.frame_clock[0]]  # initialize ls
         self.frame_end_times = []
         i = len(self.frame_start_times)
         for idx in range(1, len(self.frame_clock) - 1):
@@ -1165,11 +1165,11 @@ class alloptical(TwoPhotonImaging):
             self.pre_frames = int(np.ceil(self.fps * 0.5))  # 500 ms pre-stim period
             self.post_frames = int(np.ceil(self.fps * 3))  # 3000 ms post-stim period
 
-            # list of cell pixel intensity values during each stim on each trial
-            self.all_trials = []  # list 1 = cells, list 2 = trials, list 3 = dff vector
+            # ls of cell pixel intensity values during each stim on each trial
+            self.all_trials = []  # ls 1 = cells, ls 2 = trials, ls 3 = dff vector
 
             # the average of every trial
-            self.stas = []  # list 1 = cells, list 2 = sta vector
+            self.stas = []  # ls 1 = cells, ls 2 = sta vector
 
             self.all_amplitudes = []
             self.sta_amplitudes = []
@@ -1179,9 +1179,9 @@ class alloptical(TwoPhotonImaging):
 
             for plane in range(self.n_planes):
 
-                all_trials = []  # list 1 = cells, list 2 = trials, list 3 = dff vector
+                all_trials = []  # ls 1 = cells, ls 2 = trials, ls 3 = dff vector
 
-                stas = []  # list 1 = cells, list 2 = sta vector
+                stas = []  # ls 1 = cells, ls 2 = sta vector
 
                 all_amplitudes = []
                 sta_amplitudes = []
@@ -1196,9 +1196,9 @@ class alloptical(TwoPhotonImaging):
                     amplitudes = []
                     df = []
 
-                    # a flat list of all observations before stim occured
+                    # a flat ls of all observations before stim occured
                     pre_obs = []
-                    # a flat list of all observations after stim occured
+                    # a flat ls of all observations after stim occured
                     post_obs = []
 
                     for stim in self.stim_start_frames[plane]:
@@ -1337,7 +1337,7 @@ class alloptical(TwoPhotonImaging):
         '''
         Finds cells that have been targeted for optogenetic photostimulation using Naparm in all-optical type experiments.
         output: coordinates of targets, and circular areas of targets
-        Note this is not done by target groups however. So all of the targets are just in one big list.
+        Note this is not done by target groups however. So all of the targets are just in one big ls.
         '''
 
         print('\n-----Loading up target coordinates...')
@@ -1427,10 +1427,10 @@ class alloptical(TwoPhotonImaging):
         targetCoordinates = list(zip(targets[1] * scale_factor, targets[0] * scale_factor))
         print('Number of targets:', len(targetCoordinates))
 
-        # targetCoordinates_1 = list(zip(targets_1[1], targets_1[0]))
+        # targetCoordinates_1 = ls(zip(targets_1[1], targets_1[0]))
         # print('Number of targets, SLM group #1:', len(targetCoordinates_1))
         #
-        # targetCoordinates_2 = list(zip(targets_2[1], targets_2[0]))
+        # targetCoordinates_2 = ls(zip(targets_2[1], targets_2[0]))
         # print('Number of targets, SLM group #2:', len(targetCoordinates_2))
 
         self.target_coords_all = targetCoordinates
@@ -1503,7 +1503,7 @@ class alloptical(TwoPhotonImaging):
         if force_redo:
             continu = True
         elif hasattr(self, 's2p_cell_targets'):
-            print('skipped re-running of finding s2p targets from suite2p cell list')
+            print('skipped re-running of finding s2p targets from suite2p cell ls')
             continu = False
         else:
             continu = True
@@ -1538,8 +1538,8 @@ class alloptical(TwoPhotonImaging):
             targ_cell_ids = np.unique(targ_cell)[1:] - 1  # correct the cell id due to zero indexing
             self.targeted_cells = np.zeros([self.n_units], dtype='bool')
             self.targeted_cells[targ_cell_ids] = True
-            # self.s2p_cell_targets = [self.cell_id[i] for i, x in enumerate(self.targeted_cells) if x is True]  # get list of s2p cells that were photostim targetted
-            self.s2p_cell_targets = [self.cell_id[i] for i in np.where(self.targeted_cells)[0]]  # get list of s2p cells that were photostim targetted
+            # self.s2p_cell_targets = [self.cell_id[i] for i, x in enumerate(self.targeted_cells) if x is True]  # get ls of s2p cells that were photostim targetted
+            self.s2p_cell_targets = [self.cell_id[i] for i in np.where(self.targeted_cells)[0]]  # get ls of s2p cells that were photostim targetted
 
             self.n_targeted_cells = np.sum(self.targeted_cells)
 
@@ -1572,7 +1572,7 @@ class alloptical(TwoPhotonImaging):
             targ_cell_ids = np.unique(targ_cell)[1:] - 1  # correct the cell id due to zero indexing
             self.exclude_cells = np.zeros([self.n_units], dtype='bool')
             self.exclude_cells[targ_cell_ids] = True
-            self.s2p_cells_exclude = [self.cell_id[i] for i in np.where(self.exclude_cells)[0]]  # get list of s2p cells that were photostim targetted
+            self.s2p_cells_exclude = [self.cell_id[i] for i in np.where(self.exclude_cells)[0]]  # get ls of s2p cells that were photostim targetted
 
             self.n_exclude_cells = np.sum(self.exclude_cells)
 
@@ -1679,7 +1679,7 @@ class alloptical(TwoPhotonImaging):
                     targeted_cells.append(0)
 
             s2p_cell_targets = [self.cell_id[i] for i, x in enumerate(targeted_cells) if
-                                x == 1]  # get list of s2p cells that were photostim targetted
+                                x == 1]  # get ls of s2p cells that were photostim targetted
             self.s2p_targets_naparm.append(s2p_cell_targets)
             print('Number of targeted cells:', len(s2p_cell_targets))
             self.n_targeted_cells += len(s2p_cell_targets)
@@ -1903,13 +1903,13 @@ class alloptical(TwoPhotonImaging):
     #     and 2) a minimum cell radius (in pixels) of the given value.
     #
     #     :param min_radius_pix:
-    #     :return: a list of
+    #     :return: a ls of
     #     '''
     #
     #     good_cells = []
     #     for i in range(len(self.cell_id)):
     #         raw = self.raw[i]
-    #         raw_ = list(np.delete(raw, self.photostim_frames, None))
+    #         raw_ = ls(np.delete(raw, self.photostim_frames, None))
     #         raw_dff = normalize_dff(raw_)
     #         std = np.std(raw_dff, axis=0)
     #
@@ -1935,7 +1935,7 @@ class alloptical(TwoPhotonImaging):
     #         radius = self.radius[i]
     #
     #         raw = self.raw[i]
-    #         raw_ = list(np.delete(raw, self.photostim_frames, None))
+    #         raw_ = ls(np.delete(raw, self.photostim_frames, None))
     #         raw_dff = normalize_dff(raw_)
     #         std = np.std(raw_dff, axis=0)
     #
@@ -1966,7 +1966,7 @@ class alloptical(TwoPhotonImaging):
         saving success stim locations, and saving stim response magnitudes as pandas dataframe.
 
         :param threshold: dFF threshold above which a response for a photostim trial is considered a success.
-        :param stims_to_use: list of stims to retrieve photostim trial dFF responses
+        :param stims_to_use: ls of stims to retrieve photostim trial dFF responses
         :return:
         """
         if stims_to_use is None:
@@ -2028,7 +2028,7 @@ class alloptical(TwoPhotonImaging):
         """uses outputs of calculate_SLMTarget_responses_dff to calculate overall successrate of the specified stims
 
         :param hits_df: pandas dataframe of targets x stims where 1 denotes successful stim response (0 is failure)
-        :param stims_idx_l: list of stims to use for this function (useful when needing to filter out certain stims for in/out of sz)
+        :param stims_idx_l: ls of stims to use for this function (useful when needing to filter out certain stims for in/out of sz)
         :param exclude_stims_targets: dictionary of stims (keys) where the values for each stim contains the targets that should be excluded from counting in the analysis of Success/failure of trial
 
         :return
@@ -2074,12 +2074,12 @@ class alloptical(TwoPhotonImaging):
         return reliability_slmtargets, traces_SLMtargets_successes_avg_dict, traces_SLMtargets_failures_avg_dict
 
 
-    # def get_alltargets_stim_traces_norm(self, pre_stim_sec=15, post_stim_sec=200, filter_sz: bool = False, stims_idx_l: list = None):
+    # def get_alltargets_stim_traces_norm(self, pre_stim_sec=15, post_stim_sec=200, filter_sz: bool = False, stims_idx_l: ls = None):
     #     """
     #     primary function to measure the dFF and dF/setdF traces for photostimulated targets.
     #     :param stims:
     #     :param targets_idx: integer for the index of target cell to process
-    #     :param subselect_cells: list of cells to subset from the overall set of traces (use in place of targets_idx if desired)
+    #     :param subselect_cells: ls of cells to subset from the overall set of traces (use in place of targets_idx if desired)
     #     :param pre_stim_sec: number of frames to use as pre-stim
     #     :param post_stim_sec: number of frames to use as post-stim
     #     :param filter_sz: whether to filter out stims that are occuring seizures
@@ -2536,7 +2536,7 @@ class alloptical(TwoPhotonImaging):
         if force_redo:
             continu = True
         elif hasattr(obj, 's2p_cell_targets'):
-            print('skipped re-making TIFF stack of finding s2p targets from suite2p cell list')
+            print('skipped re-making TIFF stack of finding s2p targets from suite2p cell ls')
             continu = False
         else:
             continu = True
@@ -2551,8 +2551,8 @@ class alloptical(TwoPhotonImaging):
                 # with open(pkl, 'rb') as f:
                 #     expobj = pickle.load(f)
 
-                # list of cell ids to filter s2p masks by
-                # cell_id_list = [list(range(1, 99999)),  # all
+                # ls of cell ids to filter s2p masks by
+                # cell_id_list = [ls(range(1, 99999)),  # all
                 #                 expobj.photostim_r.cell_id[0],  # cells
                 #                 [expobj.photostim_r.cell_id[0][i] for i, b in enumerate(expobj.photostim_r.cell_s1[0]) if
                 #                  b == False],  # s2 cells
@@ -2725,7 +2725,7 @@ class Post4ap(alloptical):
             differences_on = stim - self.seizure_lfp_onsets
             differences_off = stim - self.seizure_lfp_offsets
 
-            # some math to figure out the closest seizure on and off frames from the list of sz LFP stamps and current stim time
+            # some math to figure out the closest seizure on and off frames from the ls of sz LFP stamps and current stim time
             y = abs(differences_on)
             x = min(y)
             closest_sz_on = differences_on[np.where(y == x)[0][0]]
@@ -2888,7 +2888,7 @@ class Post4ap(alloptical):
         :param to_plot: make plot showing the boundary start, end and the location of the cell in question
         :param title:
         :param flip: use True if the seizure orientation is from bottom right to top left.
-        :return in_sz = list; containing the cell_ids of cells that are classified inside the seizure area
+        :return in_sz = ls; containing the cell_ids of cells that are classified inside the seizure area
         """
 
         in_sz = []
@@ -2978,7 +2978,7 @@ class Post4ap(alloptical):
         :param to_plot: make plot showing the boundary start, end and the location of the cell in question
         :param title:
         :param flip: use True if the seizure orientation is from bottom right to top left.
-        :return in_sz = list; containing the cell_ids of cells that are classified inside the seizure area
+        :return in_sz = ls; containing the cell_ids of cells that are classified inside the seizure area
         """
 
         in_sz = []
@@ -3246,7 +3246,7 @@ class OnePhotonStim(TwoPhotonImaging):
         self.frame_clock = frame_clock
 
         # find start and stop frame_clock times -- there might be multiple 2p imaging starts/stops in the paq trial (hence multiple frame start and end times)
-        self.frame_start_times = [self.frame_clock[0]]  # initialize list
+        self.frame_start_times = [self.frame_clock[0]]  # initialize ls
         self.frame_end_times = []
         i = len(self.frame_start_times)
         for idx in range(1, len(self.frame_clock) - 1):
@@ -3290,7 +3290,7 @@ class OnePhotonStim(TwoPhotonImaging):
         stim_times = pj.threshold_detect(stim_volts, 1)
 
         self.stim_times = stim_times
-        self.stim_start_times = [self.stim_times[0]]  # initialize list
+        self.stim_start_times = [self.stim_times[0]]  # initialize ls
         self.stim_end_times = []
         i = len(self.stim_start_times)
         for stim in self.stim_times[1:]:
@@ -3496,7 +3496,7 @@ class onePstim(TwoPhotonImaging):
         self.frame_clock = frame_clock
 
         # find start and stop frame_clock times -- there might be multiple 2p imaging starts/stops in the paq trial (hence multiple frame start and end times)
-        self.frame_start_times = [self.frame_clock[0]]  # initialize list
+        self.frame_start_times = [self.frame_clock[0]]  # initialize ls
         self.frame_end_times = []
         i = len(self.frame_start_times)
         for idx in range(1, len(self.frame_clock) - 1):
@@ -3540,7 +3540,7 @@ class onePstim(TwoPhotonImaging):
         stim_times = pj.threshold_detect(stim_volts, 1)
 
         self.stim_times = stim_times
-        self.stim_start_times = [self.stim_times[0]]  # initialize list
+        self.stim_start_times = [self.stim_times[0]]  # initialize ls
         self.stim_end_times = []
         i = len(self.stim_start_times)
         for stim in self.stim_times[1:]:
@@ -3716,15 +3716,15 @@ def _good_cells(cell_ids: list, raws: np.ndarray, photostim_frames: list, std_th
     This function is used for filtering for "good" cells based on detection of Flu deflections that are above some std threshold based on std_thresh.
     Note: a moving averaging window of 4 frames is used to find Flu deflections above std threshold.
 
-    :param cell_ids: list of cell ids to iterate over
-    :param raws: raw flu values corresponding to the cell list in cell_ids
+    :param cell_ids: ls of cell ids to iterate over
+    :param raws: raw flu values corresponding to the cell ls in cell_ids
     :param photostim_frames: frames to delete from the raw flu traces across all cells (because they are photostim frames)
     :param std_thresh: std. factor above which to define reliable Flu events
     :param radiuses: radiuses of the s2p ROI mask of all cells in the same order as cell_ids
     :param min_radius_pix:
     :param max_radius_pix:
     :return:
-        good_cells: list of cell_ids that had atleast 1 event above the std_thresh
+        good_cells: ls of cell_ids that had atleast 1 event above the std_thresh
         events_loc_cells: dictionary containing locations for each cell_id where the moving averaged Flu trace passes the std_thresh
         flu_events_cells: dictionary containing the dff Flu value corresponding to events_loc_cells
         stds = dictionary containing the dFF trace std value for each cell_id
@@ -3853,7 +3853,7 @@ def get_nontargets_stim_traces_norm(expobj, normalize_to='', pre_stim=10, post_s
     :param normalize_to: str; either "baseline" or "pre-stim"
     :param pre_stim: number of frames to use as pre-stim
     :param post_stim: number of frames to use as post-stim
-    :param stim_idx_l: list of indexes of stims to use for calculating avg stim response
+    :param stim_idx_l: ls of indexes of stims to use for calculating avg stim response
     :return: lists of individual targets dFF traces, and averaged targets dFF over all stims for each target
     """
     stim_timings = expobj.stim_start_frames
@@ -4140,7 +4140,7 @@ def calculate_StimSuccessRate(expobj, cell_ids: list, raw_traces_stims=None, dfs
     targets_dff_all_stimtrials = {}  # dict will contain the peri-stim dFF for each cell by the cell_idx
     stim_timings = expobj.stim_start_frames
 
-    # assert list(stim_timings) == list(expobj.slmtargets_sz_stim.keys())  # dont really need this assertion because you wont necessarily always look at the sz boundary for all stims every trial
+    # assert ls(stim_timings) == ls(expobj.slmtargets_sz_stim.keys())  # dont really need this assertion because you wont necessarily always look at the sz boundary for all stims every trial
     # stim_timings = expobj.slmtargets_sz_stim.keys()
     if dff_threshold:
         threshold = round(dff_threshold)
@@ -4931,7 +4931,7 @@ def all_cell_responses_dff(expobj, normalize_to=''):
 
     # # getting rid of the for loop below that was used previously for more hard coded photostim target groups
     # for group in cell_groups:
-    #     # hard coded number of stim. groups as the 0 and 1 in the list of this for loop
+    #     # hard coded number of stim. groups as the 0 and 1 in the ls of this for loop
     #     if group == 'non-targets':
     #         for stim in expobj.stim_start_frames:
     #             cells = [i for i in expobj.good_cells if i not in expobj.s2p_cell_targets]
@@ -5015,7 +5015,7 @@ def all_cell_responses_dFstdF(expobj):
 
     # # getting rid of the for loop below that was used previously for hard coded photostim target groups
     # for group in cell_groups:
-    #     # hard coded number of stim. groups as the 0 and 1 in the list of this for loop
+    #     # hard coded number of stim. groups as the 0 and 1 in the ls of this for loop
     #     if group == 'non-targets':
     #         for stim in expobj.stim_start_frames:
     #             cells = [i for i in expobj.good_cells if i not in expobj.s2p_cell_targets]

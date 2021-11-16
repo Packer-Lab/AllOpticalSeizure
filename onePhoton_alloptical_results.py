@@ -244,7 +244,7 @@ fig.savefig(fname=save_path + '.svg', transparent=True, format='svg')
 
 data = [list(onePresults.mean_stim_responses[onePresults.mean_stim_responses.iloc[:, -3].notnull()].iloc[:, -3])]
 data.append(list(onePresults.mean_stim_responses[onePresults.mean_stim_responses.iloc[:, -2].notnull()].iloc[:, -2]))
-# data.append(list(onePresults.mean_stim_responses[onePresults.mean_stim_responses.iloc[:, -1].notnull()].iloc[:, -1]))
+# data.append(ls(onePresults.mean_stim_responses[onePresults.mean_stim_responses.iloc[:, -1].notnull()].iloc[:, -1]))
 
 fig, ax = plt.subplots(figsize=[3, 5])
 pj.plot_bar_with_points(data=data, title='decay constants - 1p stim experiments', legend_labels=list(onePresults.mean_stim_responses.columns[-3:]),

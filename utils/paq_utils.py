@@ -163,7 +163,7 @@ def plot_paq_interactive(paq, input_path, channels_to_plot=None):
             title="time",
             linecolor="#BCCCDC",  # Sets edgecolor of X-axis line
             showgrid=False,  # Removes X-axis grid lines
-            # rangeslider=list(),
+            # rangeslider=ls(),
 
             # format spikes
             showspikes=True,
@@ -188,7 +188,7 @@ def plot_paq_interactive(paq, input_path, channels_to_plot=None):
     # fig.update_traces(hovertemplate=None)
 
     # fig.add_trace(
-    #     go.Scatter(x=list(t[::10]), y=list(V[0][::10]), line=dict(width=0.75)))  # downsampling data by 10
+    #     go.Scatter(x=ls(t[::10]), y=ls(V[0][::10]), line=dict(width=0.75)))  # downsampling data by 10
 
     # Add range slider
     fig.update_layout(
@@ -219,7 +219,7 @@ def plot_paq_interactive_line(paq_df, input_path, channels_to_plot=None):
             title="time",
             linecolor="#BCCCDC",  # Sets edgecolor of X-axis line
             showgrid=False,  # Removes X-axis grid lines
-            # rangeslider=list(),
+            # rangeslider=ls(),
 
             # format spikes
             showspikes=True,
@@ -243,7 +243,7 @@ def plot_paq_interactive_line(paq_df, input_path, channels_to_plot=None):
     # fig.update_traces(hovertemplate=None)
 
     # fig.add_trace(
-    #     go.Scatter(x=list(t[::10]), y=list(V[0][::10]), line=dict(width=0.75)))  # downsampling data by 10
+    #     go.Scatter(x=ls(t[::10]), y=ls(V[0][::10]), line=dict(width=0.75)))  # downsampling data by 10
 
     # Add range slider
     fig.update_layout(

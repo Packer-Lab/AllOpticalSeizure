@@ -148,7 +148,7 @@ for i in ls2:
                 # classification of SLM targets relative to sz boundary
                 # in_sz, out_sz, fig, ax = expobj.classify_slmtargets_sz_bound(sz_border_path, stim=stim, to_plot=True, title='%s' % stim, flip=flip, fig=fig, ax=ax)
                 expobj.slmtargets_sz_stim[
-                    stim] = in_sz  # for each stim, there will be a list of cells that will be classified as in seizure or out of seizure
+                    stim] = in_sz  # for each stim, there will be a ls of cells that will be classified as in seizure or out of seizure
 
                 axs[counter // ncols, counter % ncols] = ax
                 counter += 1
@@ -203,7 +203,7 @@ for on, off in zip(on_, end):
             flip = True
 
         in_sz, out_sz, fig, ax = expobj.classify_slmtargets_sz_bound(sz_border_path, stim=stim, to_plot=True, title='%s' % stim, flip=flip, fig=fig, ax=ax)
-        expobj.slmtargets_sz_stim[stim] = in_sz  # for each stim, there will be a list of cells that will be classified as in seizure or out of seizure
+        expobj.slmtargets_sz_stim[stim] = in_sz  # for each stim, there will be a ls of cells that will be classified as in seizure or out of seizure
 
         axs[counter // ncols, counter % ncols] = ax
         counter += 1

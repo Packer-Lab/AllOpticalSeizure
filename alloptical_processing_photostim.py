@@ -381,11 +381,11 @@ expobj.save()
 
 # # %%  EXTRA THINGS
 # # there's a bunch of very high dFF responses of cells
-# expobj.abnormal_high_responders = list(
+# expobj.abnormal_high_responders = ls(
 #     expobj.average_responses_df[expobj.average_responses_df['Avg. dFF response'] > 500]['cell_id']);
 # print(len(expobj.abnormal_high_responders))
 # cell = expobj.abnormal_high_responders[0]
-# x_ = list(expobj.dff_responses_all_cells.loc[cell][1:]);
+# x_ = ls(expobj.dff_responses_all_cells.loc[cell][1:]);
 # print(x_, '\nAverage:', np.mean(x_))
 # [expobj.stim_start_frames[x] for x in range(len(x_)) if x_[x] > 6000]
 # idx = expobj.cell_id.index(cell)
@@ -416,7 +416,7 @@ expobj.save()
 #     response = np.mean(trace_dff[
 #                        expobj.pre_stim_sec + expobj.stim_duration_frames:expobj.pre_stim_sec + 3 * expobj.stim_duration_frames])
 #     if response > 500:
-#         problem_stims.append(list(expobj.stim_start_frames).index(stim))
+#         problem_stims.append(ls(expobj.stim_start_frames).index(stim))
 #
 # # del(trace_dff_list[10])
 # for trace in trace_raw_list:

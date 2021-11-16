@@ -273,7 +273,7 @@ for stim in expobj.stim_start_frames:
 df = pd.DataFrame(d, index=expobj.good_cells)
 # population dataframe
 for group in cell_groups:
-    # hard coded number of stim. groups as the 0 and 1 in the list of this for loop
+    # hard coded number of stim. groups as the 0 and 1 in the ls of this for loop
     if group == 'non-target':
         for stim in expobj.stim_start_frames:
             cells = [i for i in expobj.good_cells if i not in expobj.good_photostim_cells_all]
@@ -315,7 +315,7 @@ def bar_with_points(data, title='', x_tick_labels=[], points=True, bar=True, col
     as well. The latter is achieved by adding a scatter plot with the datapoints randomly jittered around the central
     x location of the bar graph.
 
-    :param data: list; provide data from each category as a list and then group all into one list
+    :param data: ls; provide data from each category as a ls and then group all into one ls
     :param title: str; title of the graph
     :param x_tick_labels: labels to use for categories on x axis
     :param points: bool; if True plot individual data points for each category in data using scatter function
@@ -610,7 +610,7 @@ for cell in targets:
         cell_idx = expobj.cell_id.index(cell)
         flu = []
         for stim in good_photostim_trials:
-            # frames_to_plot = list(range(stim-8, stim+35))
+            # frames_to_plot = ls(range(stim-8, stim+35))
             flu.append(expobj.raw[cell_idx][stim - pre_stim:stim + post_stim])
 
         flu_dff = []
@@ -624,7 +624,7 @@ for cell in targets:
         # flu_avg = np.mean(flu_dff, axis=0)
         # std = np.std(flu_dff, axis=0)
         # ci = 1.960 * (std/np.sqrt(len(flu_dff))) # 1.960 is z for 95% confidence interval, standard deviation divided by the sqrt of N samples (# traces in flu_dff)
-        # x = list(range(-pre_stim_sec, post_stim_sec))
+        # x = ls(range(-pre_stim_sec, post_stim_sec))
         # y = flu_avg
         #
         # fig, ax = plt.subplots()
@@ -702,7 +702,7 @@ plt.show()
 # expobj = expobj_1
 #
 # # add other bad imaging frames
-# expobj.photostim_frames.extend(list(range(2680,5120))) # seizure/CSD frames
+# expobj.photostim_frames.extend(ls(range(2680,5120))) # seizure/CSD frames
 
 #%%
 
@@ -714,7 +714,7 @@ plt.show()
 #     flu_avg = np.median(dff_array, axis=0)
 #     std = np.std(dff_array, axis=0)
 #     ci = 1.960 * (std / np.sqrt(len_))  # 1.960 is z for 95% confidence interval, standard deviation divided by the sqrt of N samples (# traces in flu_dff)
-#     x = list(range(-pre_stim_sec, post_stim_sec))
+#     x = ls(range(-pre_stim_sec, post_stim_sec))
 #     y = flu_avg
 #
 #     fig, ax = plt.subplots()

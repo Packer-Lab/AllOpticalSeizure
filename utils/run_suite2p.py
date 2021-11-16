@@ -25,7 +25,7 @@ imaging_fps = 30.
 ops = {
     'batch_size': 2000,  # reduce if running out of RAM
     'fast_disk': os.path.expanduser('~/Documents/suite2p_binaries'),
-    # used to store temporary binary file, defaults to save_path0 (set as a string NOT a list)
+    # used to store temporary binary file, defaults to save_path0 (set as a string NOT a ls)
     # 'save_path0': '/media/jamesrowland/DATA/plab/suite_2p', # stores results, defaults to first item in data_path
     'delete_bin': True,  # whether to delete binary file after processing
     # main settings

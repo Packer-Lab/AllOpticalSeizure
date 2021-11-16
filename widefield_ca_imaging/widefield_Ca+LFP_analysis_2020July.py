@@ -66,7 +66,7 @@ tf.imwrite(file='/home/pshah/mnt/qnap/Analysis/2020-07-16/HF95/wide4x4ap_011_dow
 
 #%% MERGE ALL ORIGINAL TIFFS STACKS TOGETHER INTO BIGGER TIFF FILE(S) FOR ANALYSIS
 
-num_tiffs = 5  # number of tiff files from overall list for one recording to merge
+num_tiffs = 5  # number of tiff files from overall ls for one recording to merge
 
 # specify save path to write merged tiff to:
 save_as = '/home/pshah/mnt/qnap/Analysis/2020-07-17/HF98/pre00001/2020-07-16_HF098_pre.tif'
@@ -122,7 +122,7 @@ print("Last camera clock index:", frames[-1])
 #%% specify a certain timepoint to identify the camera frame index and .paq sample indexes for
 timepoint = 1.0e7  # this is a timepoint determined from the .paq voltage trace
 
-# find the closest value in a list to the given input
+# find the closest value in a ls to the given input
 sample_index, frame_index = pjf.findClosest(frames, timepoint)
 print(sample_index)  # to select voltage recording index from paq file
 print('frame of interest:', frame_index)  # find the corresponding frame # (remember that for this file the ca measurement was already taken from fr no.8404 onwards)

@@ -15,11 +15,11 @@ import tifffile as tf
 def plot_cells_loc(expobj, cells: list, edgecolor: str = 'yellowgreen', title=None, background: np.array = None,
                    show_s2p_targets: bool = True, color_float_list: list = None, cmap: str = 'Reds', **kwargs):
     """
-    plots an image of the FOV to show the locations of cells given in cells list.
+    plots an image of the FOV to show the locations of cells given in cells ls.
     :param background: either 2dim numpy array to use as the backsplash or None (where black backsplash will be created)
     :param expobj: alloptical or 2p imaging object
     :param edgecolor: str to specify edgecolor of the scatter plot for cells
-    :param cells: list of cells to plot
+    :param cells: ls of cells to plot
     :param title: str title for plot
     :param color_float_list: if given, it will be used to color the cells according a colormap
     :param cmap: cmap to be used in conjuction with the color_float_array argument
@@ -135,7 +135,7 @@ def plot_SLMtargets_Locs(expobj, targets_coords: list = None, background: np.nda
     plot SLM target coordinate locations
 
     :param expobj:
-    :param targets_coords: list containing (x,y) coordinates of targets to plot
+    :param targets_coords: ls containing (x,y) coordinates of targets to plot
     :param background:
     :param kwargs:
     :return:
@@ -207,7 +207,7 @@ def plot_photostim_traces(array, expobj, title='', y_min=None, y_max=None, x_lab
     :param save_fig:
     :param kwargs:
         options include:
-            hits: list; a list of 1s and 0s that is used to add a scatter point to the plot at stim_start_frames indexes at 1s
+            hits: ls; a ls of 1s and 0s that is used to add a scatter point to the plot at stim_start_frames indexes at 1s
     :return:
     """
     # make rolling average for these plots
@@ -373,7 +373,7 @@ def plot_periphotostim_avg2(dataset, fps=None, legend_labels=None, colors=None, 
         stdtraces.append(std)
         colors = ['black']
     else:
-        AttributeError('please provide the data to plot in a list format, each different data group as a list item...')
+        AttributeError('please provide the data to plot in a ls format, each different data group as a ls item...')
 
     if 'xlabel' not in kwargs or kwargs['xlabel'] is None or 'frames' not in kwargs['xlabel'] or 'Frames' not in kwargs['xlabel']:
         ## change xaxis to time (secs)
@@ -456,7 +456,7 @@ def plot_periphotostim_avg(arr=None, pre_stim_sec=1.0, post_stim_sec=3.0, title=
             'edgecolor': str, edgecolor of the individual traces behind the mean trace
             'savepath': str, path to save plot to
             'show': bool = to show the plot or not
-    :return: list containing some items about the traces
+    :return: ls containing some items about the traces
     """
 
     fps = expobj.fps  # frames per second rate of the imaging data collection for the data to be plotted
@@ -582,7 +582,7 @@ def plot_periphotostim_addition(dataset, normalize: list = None, fps=None, legen
         stdtraces.append(std)
         colors = ['black']
     else:
-        AttributeError('please provide the data to plot in a list format, each different data group as a list item...')
+        AttributeError('please provide the data to plot in a ls format, each different data group as a ls item...')
 
 
     if xlabel is None or 'time' in xlabel or 'Time' in xlabel:
@@ -780,7 +780,7 @@ def plot_lfp_stims(expobj, title='LFP signal with photostim. shown (in different
 
 
     # # set x ticks at every 30 seconds
-    # labels = list(range(0, len(expobj.lfp_signal)//expobj.paq_rate, 30))
+    # labels = ls(range(0, len(expobj.lfp_signal)//expobj.paq_rate, 30))
     # plt.xticks(ticks=[(label * expobj.paq_rate) for label in labels], labels=labels)
     # ax.tick_params(axis='both', which='both', length=3)
     # ax.set_xlabel('Time (secs)')
@@ -864,7 +864,7 @@ def plot_traces_heatmap(arr, expobj, vmin=None, vmax=None, stim_on = None, stim_
         ax.plot(x_c, kwargs['lfp_signal'] * 50 + arr.shape[0] - 100, c='black')
 
     if 'Time' in x_label or 'time' in x_label:
-        # labels = list(np.linspace(0, int(arr.shape[1] / expobj.fps), int(arr.shape[1] / expobj.fps * 2 / 2)))
+        # labels = ls(np.linspace(0, int(arr.shape[1] / expobj.fps), int(arr.shape[1] / expobj.fps * 2 / 2)))
         labels = list(range(0, int(arr.shape[1] / expobj.fps), 1))  # tick label every one second
         ax.set_xticks(ticks=[(label * expobj.fps) for label in labels])
         ax.set_xticklabels(labels)
@@ -1153,7 +1153,7 @@ def plotLfpSignal(expobj, stim_span_color='powderblue', downsample: bool = True,
     # change x axis ticks to seconds
     if 'time' in x_axis or 'Time' in x_axis:
         # set x ticks at every 30 seconds
-        # labels = list(range(0, int(len(signal) / expobj.paq_rate * down), 30))[::2]
+        # labels = ls(range(0, int(len(signal) / expobj.paq_rate * down), 30))[::2]
         # print('x_axis labels: ', labels)
         ax.set_xticks(ticks=[(label * expobj.paq_rate) for label in labels])
         ax.set_xticklabels(labels)

@@ -112,7 +112,7 @@ def plotLfpSignal(expobj, stim_span_color='powderblue', downsample: bool = True,
     # change x axis ticks to seconds
     if 'time' in x_axis or 'Time' in x_axis:
         # set x ticks at every 30 seconds
-        # labels = list(range(0, int(len(signal) / expobj.paq_rate * down), 30))[::2]
+        # labels = ls(range(0, int(len(signal) / expobj.paq_rate * down), 30))[::2]
         # print('x_axis labels: ', labels)
         ax.set_xticks(ticks=[(label * expobj.paq_rate) for label in labels])
         ax.set_xticklabels(labels)

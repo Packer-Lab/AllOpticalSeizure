@@ -437,7 +437,7 @@ def make_tiff_stack(sorted_paths: list, save_as: str):
     """
     read in a bunch of tiffs and stack them together, and save the output as the save_as
 
-    :param sorted_paths: list of string paths for tiffs to stack
+    :param sorted_paths: ls of string paths for tiffs to stack
     :param save_as: .tif file path to where the tif should be saved
     """
 
@@ -496,10 +496,10 @@ def path_finder(umbrella, *args, is_folder=False):
     '''
     returns the path to the single item in the umbrella folder
     containing the string names in each arg
-    is_folder = False if args is list of files
-    is_folder = True if  args is list of folders
+    is_folder = False if args is ls of files
+    is_folder = True if  args is ls of folders
     '''
-    # list of bools, has the function found each argument?
+    # ls of bools, has the function found each argument?
     # ensures two folders / files are not found
     found = [False] * len(args)
     # the paths to the args
@@ -558,19 +558,19 @@ def printProgressBar(iteration, total, prefix='', suffix='', decimals=1, length=
         print()
 
 
-# find the closest value in a list to the given input
-def findClosest(list, input):
-    subtract = list - input
-    positive_values = abs(subtract)
+# find the closest value in a ls to the given input
+def findClosest(ls, input):
+    subtract = [l - input for l in ls]
+    positive_values = [abs(l) for l in subtract]
     # closest_value = min(positive_values) + input
     index = np.where(positive_values == min(positive_values))[0][0]
-    closest_value = list[index]
+    closest_value = ls[index]
 
     return closest_value, index
 
-# flatten list of lists
+# flatten ls of lists
 def flattenOnce(list, asarray=False):
-    """ flattens a nested list by one nesting level (should be able to run multiple times to get further down if needed for
+    """ flattens a nested ls by one nesting level (should be able to run multiple times to get further down if needed for
      deeper nested lists) """
     if not asarray:
         return [x for i in list for x in i]
@@ -622,10 +622,10 @@ def _generate_new_color(existing_colors, pastel_factor=0.5):
 
 def make_random_color_array(n_colors):
     """
-    Generates a list of random colors for an input number of colors required.
+    Generates a ls of random colors for an input number of colors required.
 
     :param n_colors: # of colors required
-    :return: list of colors in RGB
+    :return: ls of colors in RGB
     """
     colors = []
     for i in range(0, n_colors):
@@ -642,7 +642,7 @@ def plot_bar_with_points(data, title='', x_tick_labels=[], legend_labels: list =
     as well. The individual datapoints are drawn by adding a scatter plot with the datapoints randomly jittered around the central
     x location of the bar graph. The individual points can also be paired in which case they will be centered. The bar can also be turned off.
 
-    :param data: list; provide data from each category as a list and then group all into one list
+    :param data: ls; provide data from each category as a ls and then group all into one ls
     :param title: str; title of the graph
     :param x_tick_labels: labels to use for categories on x axis
     :param legend_labels:
@@ -653,13 +653,13 @@ def plot_bar_with_points(data, title='', x_tick_labels=[], legend_labels: list =
     :param xlims: the x axis is used to position the bars, so use this to move the position of the bars left and right
     :param x_label: x axis label
     :param y_label: y axis label
-    :param text_list: list of text to add to each category of data on the plot
+    :param text_list: ls of text to add to each category of data on the plot
     :param text_shift: float; number between 0.5 to 1 used to adjust precise positioning of the text in text_list
     :param alpha: transparency of the individual points when plotted in the scatter
     :param savepath: .svg file path; if given, the plot will be saved to the provided file path
     :param expand_size_x: factor to use for expanding figure size
     :param expand_size_y: factor to use for expanding figure size
-    :param paired: bool, if True then draw lines between data points of the same index location in each respective list in the data
+    :param paired: bool, if True then draw lines between data points of the same index location in each respective ls in the data
     :return: matplotlib plot
     """
 
@@ -746,7 +746,7 @@ def plot_bar_with_points(data, title='', x_tick_labels=[], legend_labels: list =
                 # distribute scatter randomly across whole width of bar
                 ax.scatter(xrange_ls[i] * w * 2.5 + np.random.random(len(y[i])) * w - w / 2, y[i], color=colors[i], alpha=alpha, label=legend_labels[i])
 
-        else:  # connect lines to the paired scatter points in the list
+        else:  # connect lines to the paired scatter points in the ls
             if len(xrange_ls) > 0:
                 for i in xrange_ls:
                     # plot points  # dont scatter location of points if plotting paired lines
@@ -828,7 +828,7 @@ def plot_hist_density(data: list, mean_line: bool = False, colors: list = None, 
 
     """
 
-    :param data: list; nested list containing the data; if only one array to plot then provide array enclosed inside list (e.g. [array])
+    :param data: ls; nested ls containing the data; if only one array to plot then provide array enclosed inside ls (e.g. [array])
     :param colors:
     :param fill_color:
     :param legend_labels:

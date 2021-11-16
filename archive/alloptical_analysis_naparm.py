@@ -672,7 +672,7 @@ for cell in targeted_cells:
         cell_idx = exp_obj.cell_id.index(cell)
         flu = []
         for stim in stim_timings:
-            #frames_to_plot = list(range(stim-8, stim+35))
+            #frames_to_plot = ls(range(stim-8, stim+35))
             flu.append(exp_obj.raw[cell_idx][stim-pre_stim:stim+post_stim])
 
         flu_dff = []

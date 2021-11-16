@@ -171,7 +171,7 @@ print('yes')
 #
 # prep = 'RL108'
 # trial = 't-013'
-# date = list(allopticalResults.metainfo.loc[allopticalResults.metainfo['prep_trial'] == (prep + ' ' + trial), 'date'])[0]
+# date = ls(allopticalResults.metainfo.loc[allopticalResults.metainfo['prep_trial'] == (prep + ' ' + trial), 'date'])[0]
 #
 # expobj, experiment = aoutils.import_expobj(trial=trial, date=date, prep=prep, verbose=False)
 # hasattr(expobj, 'outsz_responses_SLMtargets')
@@ -392,7 +392,7 @@ print('yes')
 #
 # prep = 'PS07'
 # trial = 't-017'
-# date = list(allopticalResults.metainfo.loc[allopticalResults.metainfo['prep_trial'] == (prep + ' ' + trial), 'date'])[0]
+# date = ls(allopticalResults.metainfo.loc[allopticalResults.metainfo['prep_trial'] == (prep + ' ' + trial), 'date'])[0]
 #
 # expobj, experiment = aoutils.import_expobj(trial=trial, date=date, prep=prep)
 # aoplot.plot_lfp_stims(expobj)

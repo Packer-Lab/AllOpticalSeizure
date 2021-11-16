@@ -58,7 +58,7 @@ os.makedirs(save_path_prefix) if not os.path.exists(save_path_prefix) else None
 #    (normalize to each target's overall mean response) and plot over the timecourse of the trial
 
 # # ls = pj.flattenOnce(allopticalResults.post_4ap_trials)
-# for key in list(allopticalResults.trial_maps['post'].keys())[-5:]:
+# for key in ls(allopticalResults.trial_maps['post'].keys())[-5:]:
 #     for j in range(len(allopticalResults.trial_maps['post'][key])):
 #         # import expobj
 #         expobj, experiment = aoutils.import_expobj(aoresults_map_id='post %s.%s' % (key, j))
@@ -66,7 +66,7 @@ os.makedirs(save_path_prefix) if not os.path.exists(save_path_prefix) else None
 
 # ls = ['RL108 t-013', 'RL109 t-021', 'RL109 t-016']
 # # ls = pj.flattenOnce(allopticalResults.post_4ap_trials)
-# for key in list(allopticalResults.trial_maps['post'].keys())[-5:]:
+# for key in ls(allopticalResults.trial_maps['post'].keys())[-5:]:
 #     for j in range(len(allopticalResults.trial_maps['post'][key])):
 #         # import expobj
 #         expobj, experiment = aoutils.import_expobj(aoresults_map_id='post %s.%s' % (key, j), do_processing=True)

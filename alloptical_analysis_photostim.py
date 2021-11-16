@@ -400,7 +400,7 @@ for key in list(allopticalResults.trial_maps['pre'].keys()):
     series = [pre4ap_num_pos, pre4ap_num_neg, post4ap_num_pos, post4ap_num_neg, int(num_suite2p_rois)]
     num_sig_responders.loc[name] = series
 
-    # place sig pos and sig neg traces into the list
+    # place sig pos and sig neg traces into the ls
     possig_responders_traces.append([pre4ap_possig_responders_avgresponse, post4ap_possig_responders_avgresponse])
     negsig_responders_traces.append([pre4ap_negsig_responders_avgresponse, post4ap_negsig_responders_avgresponse])
 
@@ -577,14 +577,14 @@ for cell2 in expobj.good_cells:
 
 def binned_amplitudes_2d(all_x, all_y, responses_of_cells, response_metric='dF/preF', bins=35, title=experiment):
     """
-    :param all_x: list of x coords of cells in dataset
-    :param all_y: list of y coords of cells in dataset
-    :param responses_of_cells: list of responses of cells to plots
+    :param all_x: ls of x coords of cells in dataset
+    :param all_y: ls of y coords of cells in dataset
+    :param responses_of_cells: ls of responses of cells to plots
     :param bins: integer - number of bins to split FOV in (along one axis)
     :return: plot of binned 2d histograms
     """
 
-    all_amps_real = responses_of_cells  # list of photostim. responses
+    all_amps_real = responses_of_cells  # ls of photostim. responses
     denominator, xedges, yedges = np.histogram2d(all_x, all_y, bins=bins)
     numerator, _, _ = np.histogram2d(all_x, all_y, bins=bins, weights=all_amps_real)
     h = numerator / denominator  # divide the overall
@@ -697,7 +697,7 @@ for cell in expobj.good_cells:
         cell_idx = expobj.cell_id.index(cell)
         flu = []
         for stim in stim_timings:
-            # frames_to_plot = list(range(stim-8, stim+35))
+            # frames_to_plot = ls(range(stim-8, stim+35))
             flu.append(expobj.raw[cell_idx][stim - pre_stim:stim + post_stim])
 
         flu_dff = []
@@ -740,7 +740,7 @@ for cell in expobj.good_cells:
         # flu_avg = np.mean(flu_dff, axis=0)
         # std = np.std(flu_dff, axis=0)
         # ci = 1.960 * (std/np.sqrt(len(flu_dff))) # 1.960 is z for 95% confidence interval, standard deviation divided by the sqrt of N samples (# traces in flu_dff)
-        # x = list(range(-pre_stim_sec, post_stim_sec))
+        # x = ls(range(-pre_stim_sec, post_stim_sec))
         # y = flu_avg
         #
         # fig, ax = plt.subplots()
@@ -963,7 +963,7 @@ good_std_cells = []
 # remove cells with very high average response values from the dff dataframe
 # high_responders = expobj.average_responses_df[expobj.average_responses_df['Avg. dFF response'] > 500].index.values
 # expobj.dff_responses_all_cells.iloc[high_responders[0], 1:]
-# list(expobj.dff_responses_all_cells.iloc[high_responders[0], 1:])
+# ls(expobj.dff_responses_all_cells.iloc[high_responders[0], 1:])
 # idx = expobj.cell_id.index(1668);
 # aoplot.plot_flu_trace(expobj=expobj, idx=idx, to_plot='dff', size_factor=2)
 

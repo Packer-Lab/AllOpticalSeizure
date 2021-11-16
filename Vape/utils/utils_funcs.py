@@ -23,7 +23,7 @@ def intersect(lst1, lst2):
     return list(set(lst1) & set(lst2)) 
 
 def dfof(arr):
-    '''takes 1d list or array or 2d array and returns dfof array of same
+    '''takes 1d ls or array or 2d array and returns dfof array of same
        dim (JR 2019) This is extraordinarily slow, use dfof2'''
 
     if type(arr) is list or type(arr) == np.ndarray and len(arr.shape) == 1:
@@ -309,7 +309,7 @@ def tseries_finder(tseries_lens, frame_clock, paq_rate=20000):
 
     ''' Finds chunks of frame clock that correspond to the tseries in 
         tseries lens
-        tseries_lens -- list of the number of frames each tseries you want 
+        tseries_lens -- ls of the number of frames each tseries you want
                         to find contains
         frame_clock  -- thresholded times each frame recorded in paqio occured
         paq_rate     -- input sampling rate of paqio
@@ -393,7 +393,7 @@ def flu_splitter(flu, clock, t_starts, pre_frames, post_frames):
        returns 
        trial_flu -- trial by trial array 
                     [num_cells x trial frames x num_trials]
-       imaging_trial -- list of booleans of len num_trials,
+       imaging_trial -- ls of booleans of len num_trials,
                         was the trial imaged? 
 
        n.b. clock and t_start must have same units and
@@ -613,17 +613,17 @@ def build_flu_array(run, stim_times, pre_frames=10, post_frames=50,
 def averager(array_list, pre_frames=10, post_frames=50, offset=0, 
              trial_filter=None, plot=False, fs=5):
 
-    ''' Averages list of trial by trial fluoresence arrays and can 
+    ''' Averages ls of trial by trial fluoresence arrays and can
         visualise results
 
         Inputs:
-        array_list -- list of tbt fluoresence arrays
+        array_list -- ls of tbt fluoresence arrays
         pre_frames -- number of frames before stim to include in
                       trial
         post_frames -- number of frames after stim to include 
                        in trial
         offset -- number of frames to offset post_frames to avoid artifacts
-        trial_filter -- list of trial indexs to include 
+        trial_filter -- ls of trial indexs to include
         plot -- whether to plot result
         fs -- frame rate / plane
 
@@ -632,7 +632,7 @@ def averager(array_list, pre_frames=10, post_frames=50, offset=0,
         scaled_average -- same as session average but all traces start 
                           at dfof = 0
         grand_average -- average across all sessions [pre_frames + post_frames]
-        cell_average -- list with length n_sessions contains arrays 
+        cell_average -- ls with length n_sessions contains arrays
                         [n_cells x pre_frames+post_frames]
 
         '''

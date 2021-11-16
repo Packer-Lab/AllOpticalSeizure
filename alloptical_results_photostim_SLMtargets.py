@@ -736,7 +736,7 @@ for exp in allopticalResults.pre_4ap_trials:
 #    (normalize to each target's overall mean response) and plot over the timecourse of the trial
 
 # # ls = pj.flattenOnce(allopticalResults.post_4ap_trials)
-# for key in list(allopticalResults.trial_maps['post'].keys())[-5:]:
+# for key in ls(allopticalResults.trial_maps['post'].keys())[-5:]:
 #     for j in range(len(allopticalResults.trial_maps['post'][key])):
 #         # import expobj
 #         expobj, experiment = aoutils.import_expobj(aoresults_map_id='post %s.%s' % (key, j))
@@ -744,7 +744,7 @@ for exp in allopticalResults.pre_4ap_trials:
 
 # ls = ['RL108 t-013', 'RL109 t-021', 'RL109 t-016']
 # # ls = pj.flattenOnce(allopticalResults.post_4ap_trials)
-# for key in list(allopticalResults.trial_maps['post'].keys())[-5:]:
+# for key in ls(allopticalResults.trial_maps['post'].keys())[-5:]:
 #     for j in range(len(allopticalResults.trial_maps['post'][key])):
 #         # import expobj
 #         expobj, experiment = aoutils.import_expobj(aoresults_map_id='post %s.%s' % (key, j), do_processing=True)
@@ -1027,7 +1027,7 @@ for prep in allopticalResults.stim_responses_zscores.keys():
             stims_relative_sz = []
             for stim_idx in stims:
                 stim_frame = expobj.stim_start_frames[stim_idx]
-                closest_sz_onset = pj.findClosest(list=expobj.seizure_lfp_onsets, input=stim_frame)[0]
+                closest_sz_onset = pj.findClosest(ls=expobj.seizure_lfp_onsets, input=stim_frame)[0]
                 time_diff = (closest_sz_onset - stim_frame) / expobj.fps  # time difference in seconds
                 stims_relative_sz.append(round(time_diff, 3))
 
@@ -1074,7 +1074,7 @@ stims = list(post_4ap_df.index)
 stims_relative_sz = []
 for stim_idx in stims:
     stim_frame = expobj.stim_start_frames[stim_idx]
-    closest_sz_onset = pj.findClosest(list=expobj.seizure_lfp_onsets, input=stim_frame)[0]
+    closest_sz_onset = pj.findClosest(ls=expobj.seizure_lfp_onsets, input=stim_frame)[0]
     time_diff = (closest_sz_onset - stim_frame) / expobj.fps  # time difference in seconds
     stims_relative_sz.append(round(time_diff, 3))
 

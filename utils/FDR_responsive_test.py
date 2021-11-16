@@ -38,7 +38,7 @@ sorted_q = q_value[order_p]
 sorted_p = p_value[order_p]
 ​
 fdr_corr = sorted_p < sorted_q
-final_idx = np.amax(np.argwhere(fdr_corr)) # the index of the final p_value in the ordered list that is less than the q_value
+final_idx = np.amax(np.argwhere(fdr_corr)) # the index of the final p_value in the ordered ls that is less than the q_value
 ​
 benhof_cells = order_p[:final_idx] # all p_values ranked lower (regardless of statistical significance) pass the correction
 ​
