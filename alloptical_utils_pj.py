@@ -3704,8 +3704,23 @@ class AllOpticalResults:
 
         self.save(pkl_path=self.pkl_path)
 
-    def save(self, pkl_path: str = None):
-        TwoPhotonImaging.save_pkl(self, pkl_path=pkl_path)
+    def save_pkl(self, pkl_path: str = None):
+        if pkl_path is None:
+            if hasattr(self, 'pkl_path'):
+                pkl_path = self.pkl_path
+            else:
+                raise ValueError(
+                    'pkl path for saving was not found in object attributes, please provide path to save to')
+        else:
+            self.pkl_path = pkl_path
+
+        with open(self.pkl_path, 'wb') as f:
+            pickle.dump(self, f)
+        print("\n\t -- alloptical results obj saved to %s -- " % pkl_path)
+
+    def save(self):
+        self.save_pkl()
+
 #
 
 ########

@@ -367,46 +367,6 @@ allopticalResults.stim_relative_szonset_vs_avg_zscore_alltargets_atstim = stim_r
 allopticalResults.save()
 
 
-# %% 8.1-dc) DATA COLLECTION - absolute stim responses vs. TIME to seizure onset - for loop over all experiments to collect responses in terms of sz onset time
-
-stim_relative_szonset_vs_avg_response_alltargets_atstim = {}
-
-for prep in allopticalResults.stim_responses_zscores.keys():
-    # prep = 'PS07'
-
-    for key in list(allopticalResults.stim_responses_zscores[prep].keys()):
-        # key = list(allopticalResults.stim_responses_zscores[prep].keys())[0]
-        # comp = 2
-        if 'post-4ap' in allopticalResults.stim_responses_zscores[prep][key]:
-            post_4ap_df = allopticalResults.stim_responses_zscores[prep][key]['post-4ap']
-            if len(post_4ap_df) > 0:
-                post4aptrial = key[-5:]
-                print(f'working on.. {prep} {key}, post4ap trial: {post4aptrial}')
-                stim_relative_szonset_vs_avg_response_alltargets_atstim[f"{prep} {post4aptrial}"] = [[], []]
-                expobj, experiment = aoutils.import_expobj(trial=post4aptrial, prep=prep, verbose=False)
-
-                # transform the rows of the stims responses dataframe to relative time to seizure
-                stims = list(post_4ap_df.index)
-                stims_relative_sz = []
-                for stim_idx in stims:
-                    stim_frame = expobj.stim_start_frames[stim_idx]
-                    closest_sz_onset = pj.findClosest(ls=expobj.seizure_lfp_onsets, input=stim_frame)[0]
-                    time_diff = (closest_sz_onset - stim_frame) / expobj.fps  # time difference in seconds
-                    stims_relative_sz.append(round(time_diff, 3))
-
-                cols = [col for col in post_4ap_df.columns if 'z' in str(col)]
-                post_4ap_df_zscore_stim_relative_to_sz = post_4ap_df[cols]
-                post_4ap_df_zscore_stim_relative_to_sz.index = stims_relative_sz  # take the original zscored df and assign a new index where the col names are times relative to sz onset
-
-                # take average of all targets at a specific time to seizure onset
-                post_4ap_df_zscore_stim_relative_to_sz['avg'] = post_4ap_df_zscore_stim_relative_to_sz.T.mean()
-
-                stim_relative_szonset_vs_avg_response_alltargets_atstim[f"{prep} {post4aptrial}"][0].append(stims_relative_sz)
-                stim_relative_szonset_vs_avg_response_alltargets_atstim[f"{prep} {post4aptrial}"][1].append(post_4ap_df_zscore_stim_relative_to_sz['avg'].tolist())
-
-
-allopticalResults.stim_relative_szonset_vs_avg_response_alltargets_atstim = stim_relative_szonset_vs_avg_response_alltargets_atstim
-allopticalResults.save()
 
 
 
