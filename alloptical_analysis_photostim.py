@@ -28,6 +28,245 @@ os.makedirs(save_path_prefix) if not os.path.exists(save_path_prefix) else None
 expobj, experiment = aoutils.import_expobj(prep='RL109', trial='t-013')
 
 
+
+# %% 6) DATA COLLECTION: organize SLMTargets stim responses - across all appropriate pre4ap, post4ap trial comparisons
+"""######### ZONE FOR CALLING THIS SCRIPT DIRECTLY FROM THE SSH SERVER ###########
+######### ZONE FOR CALLING THIS SCRIPT DIRECTLY FROM THE SSH SERVER ###########
+######### ZONE FOR CALLING THIS SCRIPT DIRECTLY FROM THE SSH SERVER ###########
+######### ZONE FOR CALLING THIS SCRIPT DIRECTLY FROM THE SSH SERVER ###########
+######### ZONE FOR CALLING THIS SCRIPT DIRECTLY FROM THE SSH SERVER ###########
+######### ZONE FOR CALLING THIS SCRIPT DIRECTLY FROM THE SSH SERVER ###########
+######### ZONE FOR CALLING THIS SCRIPT DIRECTLY FROM THE SSH SERVER ###########
+######### ZONE FOR CALLING THIS SCRIPT DIRECTLY FROM THE SSH SERVER ###########
+######### ZONE FOR CALLING THIS SCRIPT DIRECTLY FROM THE SSH SERVER ###########
+"""
+
+
+trials_skip = [
+    'RL108 t-011',
+    'RL109 t-017'  # RL109 t-017 doesn't have sz boundaries yet..
+]
+
+allopticalResults.outsz_missing = []
+allopticalResults.insz_missing = []
+allopticalResults.stim_responses = {}
+for i in range(len(allopticalResults.pre_4ap_trials)):
+    prep = allopticalResults.pre_4ap_trials[i][0][:-6]
+    pre4aptrial = allopticalResults.pre_4ap_trials[i][0][-5:]
+    date = list(allopticalResults.slmtargets_stim_responses.loc[
+                allopticalResults.slmtargets_stim_responses['prep_trial'] == '%s %s' % (
+                prep, pre4aptrial), 'date'])[0]
+    print(f"\n{i}, {date}, {prep}")
+
+
+    # skipping some trials that need fixing of the expobj
+    if f"{prep} {pre4aptrial}" not in trials_skip:
+
+
+        # load up pre-4ap trial
+        print(f'|-- importing {prep} {pre4aptrial} - pre4ap trial')
+
+
+
+        expobj, experiment = aoutils.import_expobj(trial=pre4aptrial, date=date, prep=prep, verbose=False)
+
+        df = expobj.responses_SLMtargets.T  # df == stim frame x cells (photostim targets)
+        if len(allopticalResults.pre_4ap_trials[i]) > 1:
+            for j in range(len(allopticalResults.pre_4ap_trials[i]))[1:]:
+                print(f"|-- {i}, {j}")
+                # if there are multiple trials for this comparison then append stim frames for repeat trials to the dataframe
+                prep = allopticalResults.pre_4ap_trials[i][j][:-6]
+                pre4aptrial_ = allopticalResults.pre_4ap_trials[i][j][-5:]
+                if f"{prep} {pre4aptrial}" not in trials_skip:
+                    print(f"adding trial to this comparison: {pre4aptrial_} [1.0]")
+                    date = list(allopticalResults.slmtargets_stim_responses.loc[
+                                    allopticalResults.slmtargets_stim_responses['prep_trial'] == '%s %s' % (prep, pre4aptrial_), 'date'])[0]
+
+                    # load up pre-4ap trial
+                    print(f'|-- importing {prep} {pre4aptrial_} - pre4ap trial')
+                    expobj, experiment = aoutils.import_expobj(trial=pre4aptrial_, date=date, prep=prep, verbose=False)
+                    df_ = expobj.responses_SLMtargets.T
+
+                    # append additional dataframe to the first dataframe
+                    df.append(df_, ignore_index=True)
+                else:
+                    print(f"\-- ***** skipping: {prep} {pre4aptrial_}")
+
+        # accounting for multiple pre/post photostim setup comparisons within each prep
+        if prep not in allopticalResults.stim_responses.keys():
+            allopticalResults.stim_responses[prep] = {}
+            comparison_number = 1
+        else:
+                comparison_number = len(allopticalResults.stim_responses[prep]) + 1
+
+        allopticalResults.stim_responses[prep][f'{comparison_number}'] = {'pre-4ap': {}}
+        allopticalResults.stim_responses[prep][f'{comparison_number}']['pre-4ap'] = df
+
+        # allopticalResults.save()
+
+
+        # expobj.responses_SLMtargets_zscore = df
+        # expobj.save()
+
+        pre_4ap_df = df
+
+
+    else:
+        print(f"|-- skipping: {prep} {pre4aptrial}")
+
+
+    ##### POST-4ap trials - OUT OF SZ PHOTOSTIMS - zscore to the mean and std of the same SLM target calculated from the pre-4ap trial
+    post4aptrial = allopticalResults.post_4ap_trials[i][0][-5:]
+
+
+
+    # skipping some trials that need fixing of the expobj
+    if f"{prep} {post4aptrial}" not in trials_skip:
+        print(f'TEST 1.1 - working on {prep} {post4aptrial}')
+
+
+
+        # load up post-4ap trial and stim responses
+        print(f'|-- importing {prep} {post4aptrial} - post4ap trial')
+        expobj, experiment = aoutils.import_expobj(trial=post4aptrial, date=date, prep=prep, verbose=False)
+        if hasattr(expobj, 'responses_SLMtargets_outsz'):
+            df = expobj.responses_SLMtargets_outsz.T
+
+            if len(allopticalResults.post_4ap_trials[i]) > 1:
+                for j in range(len(allopticalResults.post_4ap_trials[i]))[1:]:
+                    print(f"|-- {i}, {j}")
+                    # if there are multiple trials for this comparison then append stim frames for repeat trials to the dataframe
+                    prep = allopticalResults.post_4ap_trials[i][j][:-6]
+                    post4aptrial_ = allopticalResults.post_4ap_trials[i][j][-5:]
+                    if f"{prep} {post4aptrial_}" not in trials_skip:
+                        print(f"adding trial to this comparison: {post4aptrial} [1.1]")
+                        date = list(allopticalResults.slmtargets_stim_responses.loc[
+                                        allopticalResults.slmtargets_stim_responses['prep_trial'] == '%s %s' % (prep, pre4aptrial), 'date'])[0]
+
+                        # load up post-4ap trial and stim responses
+                        print(f'|-- importing {prep} {post4aptrial_} - post4ap trial')
+                        expobj, experiment = aoutils.import_expobj(trial=post4aptrial_, date=date, prep=prep, verbose=False)
+                        if hasattr(expobj, 'responses_SLMtargets_outsz'):
+                            df_ = expobj.responses_SLMtargets_outsz.T
+                            # append additional dataframe to the first dataframe
+                            df.append(df_, ignore_index=True)
+                        else:
+                            print('|-- **** 2 need to run collecting outsz responses SLMtargets attr for %s %s ****' % (post4aptrial_, prep))
+                            allopticalResults.outsz_missing.append('%s %s' % (post4aptrial_, prep))
+                    else:
+                        print(f"\-- ***** skipping: {prep} {post4aptrial_}")
+
+            allopticalResults.stim_responses[prep][f'{comparison_number}']['post-4ap'] = df
+
+        else:
+            print('\-- **** 1 need to run collecting outsz responses SLMtargets attr for %s %s ****' % (post4aptrial, prep))
+            allopticalResults.outsz_missing.append('%s %s' % (post4aptrial, prep))
+
+
+
+    ##### POST-4ap trials - IN SZ PHOTOSTIMS - only PENUMBRA cells - zscore to the mean and std of the same SLM target calculated from the pre-4ap trial
+    # post4aptrial = allopticalResults.post_4ap_trials[i][0][-5:] -- same as post4ap OUTSZ for loop one above
+
+
+
+    # skipping some trials that need fixing of the expobj
+    # if f"{prep} {post4aptrial}" not in trials_skip:
+    #     print(f'TEST 1.2 - working on {prep} {post4aptrial}')
+
+    # using the same skip statement as in the main for loop here
+
+        # load up post-4ap trial and stim responses
+        # expobj, experiment = aoutils.import_expobj(trial=post4aptrial, date=date, prep=prep, verbose=False)  --- dont need to load up
+        if hasattr(expobj, 'slmtargets_szboundary_stim'):
+            if hasattr(expobj, 'responses_SLMtargets_insz'):
+                df = expobj.responses_SLMtargets_insz.T
+
+
+                # switch to NA for stims for cells which are classified in the sz
+                # collect stim responses with stims excluded as necessary
+                for target in df.columns:
+                    # stims = [expobj.stim_start_frames.index(stim) for stim in expobj.stims_in_sz]
+                    for stim in list(expobj.slmtargets_szboundary_stim.keys()):
+                        if target in expobj.slmtargets_szboundary_stim[stim]:
+                            df.loc[expobj.stim_start_frames.index(stim)][target] = np.nan
+
+                    # responses = [expobj.responses_SLMtargets_insz.loc[col][expobj.stim_start_frames.index(stim)] for stim in expobj.stims_in_sz if
+                    #              col not in expobj.slmtargets_szboundary_stim[stim]]
+                    # targets_avgresponses_exclude_stims_sz[row] = np.mean(responses)
+
+
+                if len(allopticalResults.post_4ap_trials[i]) > 1:
+                    for j in range(len(allopticalResults.post_4ap_trials[i]))[1:]:
+                        print(f"|-- {i}, {j}")
+                        # if there are multiple trials for this comparison then append stim frames for repeat trials to the dataframe
+                        prep = allopticalResults.post_4ap_trials[i][j][:-6]
+                        post4aptrial_ = allopticalResults.post_4ap_trials[i][j][-5:]
+                        if f"{prep} {post4aptrial_}" not in trials_skip:
+                            print(f"{post4aptrial} [1.2]")
+                            date = list(allopticalResults.slmtargets_stim_responses.loc[
+                                            allopticalResults.slmtargets_stim_responses['prep_trial'] == '%s %s' % (
+                                                prep, pre4aptrial), 'date'])[0]
+
+                            # load up post-4ap trial and stim responses
+                            expobj, experiment = aoutils.import_expobj(trial=post4aptrial_, date=date, prep=prep, verbose=False)
+                            if hasattr(expobj, 'responses_SLMtargets_insz'):
+                                df_ = expobj.responses_SLMtargets_insz.T
+
+                                # append additional dataframe to the first dataframe
+                                # switch to NA for stims for cells which are classified in the sz
+                                # collect stim responses with stims excluded as necessary
+                                for target in df.columns:
+                                    # stims = [expobj.stim_start_frames.index(stim) for stim in expobj.stims_in_sz]
+                                    for stim in list(expobj.slmtargets_szboundary_stim.keys()):
+                                        if target in expobj.slmtargets_szboundary_stim[stim]:
+                                            df_.loc[expobj.stim_start_frames.index(stim)][target] = np.nan
+
+                                df.append(df_, ignore_index=True)
+                            else:
+                                print(
+                                    '**** 4 need to run collecting in sz responses SLMtargets attr for %s %s ****' % (post4aptrial_, prep))
+                                allopticalResults.insz_missing.append('%s %s' % (post4aptrial_, prep))
+                        else:
+                            print(f"\-- ***** skipping: {prep} {post4aptrial_}")
+
+                allopticalResults.stim_responses[prep][f"{comparison_number}"]['in sz'] = df
+            else:
+                print('**** 4 need to run collecting insz responses SLMtargets attr for %s %s ****' % (post4aptrial, prep))
+                allopticalResults.insz_missing.append('%s %s' % (post4aptrial, prep))
+        else:
+            print(f"**** 5 need to run collecting slmtargets_szboundary_stim for {prep} {post4aptrial}")
+
+    else:
+        print(f"\-- ***** skipping: {prep} {post4aptrial}")
+        if not hasattr(expobj, 'responses_SLMtargets_outsz'):
+            print(f'\-- **** 1 need to run collecting outsz responses SLMtargets attr for {post4aptrial}, {prep} ****')
+
+        if not hasattr(expobj, 'slmtargets_szboundary_stim'):
+            print(f'**** 2 need to run collecting insz responses SLMtargets attr for {post4aptrial}, {prep} ****')
+        if hasattr(expobj, 'responses_SLMtargets_insz'):
+            print(f'**** 3 need to run collecting in sz responses SLMtargets attr for {post4aptrial}, {prep} ****')
+
+    ## switch out this comparison_number to something more readable
+    new_key = f"{pre4aptrial} vs. {post4aptrial}"
+    allopticalResults.stim_responses[prep][new_key]= allopticalResults.stim_responses[prep].pop(f'{comparison_number}')
+    # allopticalResults.stim_responses[prep][new_key]= allopticalResults.stim_responses[prep][f'{comparison_number}']
+
+
+allopticalResults.save()
+
+
+sys.exit()
+"""# ########### END OF // ZONE FOR CALLING THIS SCRIPT DIRECTLY FROM THE SSH SERVER ###########
+########### END OF // ZONE FOR CALLING THIS SCRIPT DIRECTLY FROM THE SSH SERVER ###########
+########### END OF // ZONE FOR CALLING THIS SCRIPT DIRECTLY FROM THE SSH SERVER ###########
+########### END OF // ZONE FOR CALLING THIS SCRIPT DIRECTLY FROM THE SSH SERVER ###########
+########### END OF // ZONE FOR CALLING THIS SCRIPT DIRECTLY FROM THE SSH SERVER ###########
+########### END OF // ZONE FOR CALLING THIS SCRIPT DIRECTLY FROM THE SSH SERVER ###########
+########### END OF // ZONE FOR CALLING THIS SCRIPT DIRECTLY FROM THE SSH SERVER ###########
+########### END OF // ZONE FOR CALLING THIS SCRIPT DIRECTLY FROM THE SSH SERVER ###########
+"""
+
+
 # %% 1) lists of trials to analyse for pre4ap and post4ap trials within experiments
 
 allopticalResults.pre_4ap_trials = [
@@ -409,6 +648,8 @@ allopticalResults.possig_responders_traces = np.asarray(possig_responders_traces
 allopticalResults.negsig_responders_traces = np.asarray(negsig_responders_traces)
 
 allopticalResults.save()
+
+
 
 
 

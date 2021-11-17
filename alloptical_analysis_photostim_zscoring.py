@@ -31,7 +31,20 @@ allopticalResults = aoutils.import_resultsobj(pkl_path=results_object_path)
 ######### ZONE FOR CALLING THIS SCRIPT DIRECTLY FROM THE SSH SERVER ###########
 """
 
-# %% 1) convert SLMTargets stim responses to z-scores - relative to pre-4ap scores - make sure to compare the appropriate pre and post 4ap trial comparisons
+
+sys.exit()
+"""# ########### END OF // ZONE FOR CALLING THIS SCRIPT DIRECTLY FROM THE SSH SERVER ###########
+########### END OF // ZONE FOR CALLING THIS SCRIPT DIRECTLY FROM THE SSH SERVER ###########
+########### END OF // ZONE FOR CALLING THIS SCRIPT DIRECTLY FROM THE SSH SERVER ###########
+########### END OF // ZONE FOR CALLING THIS SCRIPT DIRECTLY FROM THE SSH SERVER ###########
+########### END OF // ZONE FOR CALLING THIS SCRIPT DIRECTLY FROM THE SSH SERVER ###########
+########### END OF // ZONE FOR CALLING THIS SCRIPT DIRECTLY FROM THE SSH SERVER ###########
+########### END OF // ZONE FOR CALLING THIS SCRIPT DIRECTLY FROM THE SSH SERVER ###########
+########### END OF // ZONE FOR CALLING THIS SCRIPT DIRECTLY FROM THE SSH SERVER ###########
+"""
+
+
+# %% 1) DATA COLLECTION: organize and convert SLMTargets stim responses to Z-SCORES - relative to pre-4ap scores - make sure to compare the appropriate pre and post 4ap trial comparisons
 
 trials_skip = [
     'RL108 t-011',
@@ -158,6 +171,8 @@ for i in range(len(allopticalResults.pre_4ap_trials)):
                         print(f"\-- ***** skipping: {prep} {post4aptrial_}")
 
             cols = list(df.columns)
+            # for loop for z scoring all stim responses for all cells - creates a whole set of new columns for each cell
+            # NOTE THAT THE Z SCORING IS BEING DONE RELATIVE TO THE MEAN AND STD OF THE SAME TARGET FROM THE PRE4AP DF
             for col in cols:
                 col_zscore = str(col) + '_z'
                 df[col_zscore] = (df[col] - pre_4ap_df.loc['mean', col])/pre_4ap_df.loc['std', col]
@@ -236,6 +251,8 @@ for i in range(len(allopticalResults.pre_4ap_trials)):
                             print(f"\-- ***** skipping: {prep} {post4aptrial_}")
 
                 cols = list(df.columns)
+                # for loop for z scoring all stim responses for all cells - creates a whole set of new columns for each cell
+                # NOTE THAT THE Z SCORING IS BEING DONE RELATIVE TO THE MEAN AND STD OF THE SAME TARGET FROM THE PRE4AP DF
                 for col in cols:
                     col_zscore = str(col) + '_z'
                     df[col_zscore] = (df[col] - pre_4ap_df.loc['mean', col]) / pre_4ap_df.loc['std', col]
@@ -265,16 +282,6 @@ for i in range(len(allopticalResults.pre_4ap_trials)):
 
 allopticalResults.save()
 
-sys.exit()
-"""# ########### END OF // ZONE FOR CALLING THIS SCRIPT DIRECTLY FROM THE SSH SERVER ###########
-########### END OF // ZONE FOR CALLING THIS SCRIPT DIRECTLY FROM THE SSH SERVER ###########
-########### END OF // ZONE FOR CALLING THIS SCRIPT DIRECTLY FROM THE SSH SERVER ###########
-########### END OF // ZONE FOR CALLING THIS SCRIPT DIRECTLY FROM THE SSH SERVER ###########
-########### END OF // ZONE FOR CALLING THIS SCRIPT DIRECTLY FROM THE SSH SERVER ###########
-########### END OF // ZONE FOR CALLING THIS SCRIPT DIRECTLY FROM THE SSH SERVER ###########
-########### END OF // ZONE FOR CALLING THIS SCRIPT DIRECTLY FROM THE SSH SERVER ###########
-########### END OF // ZONE FOR CALLING THIS SCRIPT DIRECTLY FROM THE SSH SERVER ###########
-"""
 
 
 # %% 2) plot histogram of zscore stim responses pre and post 4ap and in sz (excluding cells inside sz boundary)
@@ -358,6 +365,51 @@ for prep in allopticalResults.stim_responses_zscores.keys():
 
 allopticalResults.stim_relative_szonset_vs_avg_zscore_alltargets_atstim = stim_relative_szonset_vs_avg_zscore_alltargets_atstim
 allopticalResults.save()
+
+
+# %% 8.1-dc) DATA COLLECTION - absolute stim responses vs. TIME to seizure onset - for loop over all experiments to collect responses in terms of sz onset time
+
+stim_relative_szonset_vs_avg_response_alltargets_atstim = {}
+
+for prep in allopticalResults.stim_responses_zscores.keys():
+    # prep = 'PS07'
+
+    for key in list(allopticalResults.stim_responses_zscores[prep].keys()):
+        # key = list(allopticalResults.stim_responses_zscores[prep].keys())[0]
+        # comp = 2
+        if 'post-4ap' in allopticalResults.stim_responses_zscores[prep][key]:
+            post_4ap_df = allopticalResults.stim_responses_zscores[prep][key]['post-4ap']
+            if len(post_4ap_df) > 0:
+                post4aptrial = key[-5:]
+                print(f'working on.. {prep} {key}, post4ap trial: {post4aptrial}')
+                stim_relative_szonset_vs_avg_response_alltargets_atstim[f"{prep} {post4aptrial}"] = [[], []]
+                expobj, experiment = aoutils.import_expobj(trial=post4aptrial, prep=prep, verbose=False)
+
+                # transform the rows of the stims responses dataframe to relative time to seizure
+                stims = list(post_4ap_df.index)
+                stims_relative_sz = []
+                for stim_idx in stims:
+                    stim_frame = expobj.stim_start_frames[stim_idx]
+                    closest_sz_onset = pj.findClosest(ls=expobj.seizure_lfp_onsets, input=stim_frame)[0]
+                    time_diff = (closest_sz_onset - stim_frame) / expobj.fps  # time difference in seconds
+                    stims_relative_sz.append(round(time_diff, 3))
+
+                cols = [col for col in post_4ap_df.columns if 'z' in str(col)]
+                post_4ap_df_zscore_stim_relative_to_sz = post_4ap_df[cols]
+                post_4ap_df_zscore_stim_relative_to_sz.index = stims_relative_sz  # take the original zscored df and assign a new index where the col names are times relative to sz onset
+
+                # take average of all targets at a specific time to seizure onset
+                post_4ap_df_zscore_stim_relative_to_sz['avg'] = post_4ap_df_zscore_stim_relative_to_sz.T.mean()
+
+                stim_relative_szonset_vs_avg_response_alltargets_atstim[f"{prep} {post4aptrial}"][0].append(stims_relative_sz)
+                stim_relative_szonset_vs_avg_response_alltargets_atstim[f"{prep} {post4aptrial}"][1].append(post_4ap_df_zscore_stim_relative_to_sz['avg'].tolist())
+
+
+allopticalResults.stim_relative_szonset_vs_avg_response_alltargets_atstim = stim_relative_szonset_vs_avg_response_alltargets_atstim
+allopticalResults.save()
+
+
+
 
 
 # %% aoresults-7-dc) zscore of stim responses vs. TIME to seizure onset - original code for single experiments

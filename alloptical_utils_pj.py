@@ -3033,10 +3033,12 @@ class Post4ap(alloptical):
             # read in avg stim image to use as the background
             avg_stim_img_path = '%s/%s_%s_stim-%s.tif' % (self.analysis_save_path[:-1] + 'avg_stim_images', self.metainfo['date'], self.metainfo['trial'], stim)
             bg_img = tf.imread(avg_stim_img_path)
+            # aoplot.plot_SLMtargets_Locs(self, targets_coords=coords_to_plot_insz, cells=in_sz, edgecolors='yellowgreen', background=bg_img)
+            # aoplot.plot_SLMtargets_Locs(self, targets_coords=coords_to_plot_outsz, cells=out_sz, edgecolors='white', background=bg_img)
             fig, ax = aoplot.plot_SLMtargets_Locs(self, targets_coords=coords_to_plot_insz, fig=fig, ax=ax, cells=in_sz, title=title, show=False, background=bg_img,
                                                   edgecolors='yellowgreen')
-            fig, ax = aoplot.plot_SLMtargets_Locs(self, targets_coords=coords_to_plot_outsz, fig=fig, ax=ax, cells=in_sz, title=title, show=False, background=bg_img,
-                                                  edgecolor='white')
+            fig, ax = aoplot.plot_SLMtargets_Locs(self, targets_coords=coords_to_plot_outsz, fig=fig, ax=ax, cells=out_sz, title=title, show=False, background=bg_img,
+                                                  edgecolors='white')
             # plt.gca().invert_yaxis()
             # plt.show()  # the indiviual cells were plotted in ._InOutSz
 

@@ -22,13 +22,14 @@ allopticalResults = aoutils.import_resultsobj(pkl_path=results_object_path)
 results_object_path = '/home/pshah/mnt/qnap/Analysis/onePstim_results_superobject.pkl'
 onePresults = aoutils.import_resultsobj(pkl_path=results_object_path)
 
-save_path_prefix = '/home/pshah/mnt/qnap/Analysis/Procesing_figs/sz_processing_boundaries_2021-11-16/'
+save_path_prefix = '/home/pshah/mnt/qnap/Analysis/Procesing_figs/sz_processing_boundaries_2021-11-17/'
 os.makedirs(save_path_prefix) if not os.path.exists(save_path_prefix) else None
 
 
 ## TODO need to do paired measurements for seizures, and then run classifying sz boundaries for trials in ls2:
 ls2 = [
-    ['RL108 t-011'],
+    ['PS17 t-009'],
+    # ['RL108 t-011'],
     # ['RL109 t-017'],
     # ['PS06 t-014'],
     # ['PS06 t-015'],
@@ -67,7 +68,7 @@ trials_without_flip_stims = []
 # using post4ap experiments from allopticalResults attr. in for loop for processing:
 
 # for i in allopticalResults.post_4ap_trials:
-for i in ls:
+for i in ls2:
     for j in range(len(i)):
         # pass
         # i = allopticalResults.post_4ap_trials[-1]
@@ -78,7 +79,7 @@ for i in ls:
         trial = i[j][-5:]
         print('\nWorking on @ ', prep, trial)
         expobj, experiment = aoutils.import_expobj(trial=trial, prep=prep, verbose=False)
-        aoplot.plot_lfp_stims(expobj)
+        # aoplot.plot_lfp_stims(expobj)
 
 # matlab_pairedmeasurements_path = '%s/paired_measurements/%s_%s_%s.mat' % (expobj.analysis_save_path[:-23], expobj.metainfo['date'], expobj.metainfo['animal prep.'], trial[2:])  # choose matlab path if need to use or use None for no additional bad frames
 # expobj.paqProcessing()

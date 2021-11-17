@@ -51,14 +51,14 @@ def plot_SLMtargets_Locs(expobj, targets_coords: list = None, background: np.nda
             else:
                 edgecolors = 'yellowgreen'
             for (x, y) in expobj.target_coords_all:
-                ax.scatter(x=x, y=y, edgecolors='yellowgreen', facecolors='none', linewidths=2.0)
+                ax.scatter(x=x, y=y, edgecolors=edgecolors, facecolors='none', linewidths=2.0)
     else:
         if 'edgecolors' in kwargs.keys():
             edgecolors = kwargs['edgecolors']
         else:
             edgecolors = 'yellowgreen'
         for (x, y) in targets_coords:
-            ax.scatter(x=x, y=y, edgecolors='yellowgreen', facecolors='none', linewidths=2.0)
+            ax.scatter(x=x, y=y, edgecolors=edgecolors, facecolors='none', linewidths=2.0)
 
 
     ax.margins(0)
