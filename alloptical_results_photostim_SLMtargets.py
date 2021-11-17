@@ -37,79 +37,12 @@ os.makedirs(save_path_prefix) if not os.path.exists(save_path_prefix) else None
 ######### ZONE FOR CALLING THIS SCRIPT DIRECTLY FROM THE SSH SERVER ###########
 ######### ZONE FOR CALLING THIS SCRIPT DIRECTLY FROM THE SSH SERVER ###########
 """
-# 5.0-dc) collect SLM targets responses for stims dynamically over time - APPROACH #2 - USING Z-SCORED PHOTOSTIM RESPONSES
 
 
-### POST 4AP
-trials_to_plot = pj.flattenOnce(allopticalResults.post_4ap_trials)
-fig, axs = plt.subplots(nrows=len(trials_to_plot) * 2, ncols=1, figsize=[20, 6 * len(trials_to_plot)])
-post4ap_trials_stimresponses_zscores = list(allopticalResults.stim_responses_zscores.keys())
-counter = 0
-for expprep in post4ap_trials_stimresponses_zscores:
-    for trials_comparisons in allopticalResults.stim_responses_zscores[expprep]:
-        if len(allopticalResults.stim_responses_zscores[expprep][trials_comparisons].keys()) > 2:  ## make sure that there are keys containing data for post 4ap and in sz
-            pre4ap_trial = trials_comparisons[:5]
-            post4ap_trial = trials_comparisons[-5:]
-
-            # POST 4AP STUFF
-            if f"{expprep} {post4ap_trial}" in trials_to_plot:
-                post4ap_df = allopticalResults.stim_responses_zscores[expprep][trials_comparisons]['post-4ap']
-
-                insz_df = allopticalResults.stim_responses_zscores[expprep][trials_comparisons]['in sz']
 
 
-                print(f"working on expobj: {expprep} {post4ap_trial}, counter @ {counter}")
-                expobj, experiment = aoutils.import_expobj(prep=expprep, trial=post4ap_trial)
 
-                SLMtarget_ids = list(range(len(expobj.SLMTargets_stims_dfstdF)))
-                target_colors = pj.make_random_color_array(len(SLMtarget_ids))
-                # --- plot with mean FOV fluorescence signal
-                # fig, axs = plt.subplots(ncols=1, nrows=2, figsize=[20, 6])
-                ax = axs[counter]
-                fig, ax = aoplot.plotMeanRawFluTrace(expobj=expobj, stim_span_color='white', x_axis='frames', show=False, fig=fig, ax=ax)
-                ax.margins(x=0)
-
-                ax2 = ax.twinx()
-                ## retrieve the appropriate zscored database - post4ap (outsz) stims
-                targets = [x for x in list(post4ap_df.columns) if type(x) == str and '_z' in x]
-                assert len(targets) == len(SLMtarget_ids), print('mismatch in SLMtargets_ids and targets post4ap out sz')
-                for target in targets:
-                    for stim_idx in post4ap_df.index[:-2]:
-                        response = post4ap_df.loc[stim_idx, target]
-                        rand = np.random.randint(-15, 25, 1)[0] #* 1/(abs(response)**1/2)  # jittering around the stim_frame for the plot
-                        assert not np.isnan(response)
-                        ax2.scatter(x=expobj.stim_start_frames[stim_idx] + rand, y=response, color=target_colors[targets.index(target)], alpha=0.70, s=15, zorder=4)
-
-
-                ## retrieve the appropriate zscored database - insz stims
-                targets = [x for x in list(insz_df.columns) if type(x) == str]
-                assert len(targets) == len(SLMtarget_ids), print('mismatch in SLMtargets_ids and targets in sz')
-                for target in targets:
-                    for stim_idx in insz_df.index:
-                        response = insz_df.loc[stim_idx, target]
-                        rand = np.random.randint(-15, 25, 1)[0] #* 1/(abs(response)**1/2)  # jittering around the stim_frame for the plot
-                        if not np.isnan(response):
-                            ax2.scatter(x=expobj.stim_start_frames[stim_idx] + rand, y=response, color=target_colors[targets.index(target)], alpha=0.70, s=15, zorder=4)
-
-                ax2.axhline(y=0)
-                ax2.set_ylabel('Response mag. (zscored to pre4ap)')
-                ax2.margins(x=0)
-
-                ax3 = axs[counter+1]
-                ax3_2 = ax3.twinx()
-                fig, ax3, ax3_2 = aoplot.plot_lfp_stims(expobj, x_axis='Time', show=False, fig=fig, ax=ax3, ax2=ax3_2)
-
-                counter += 2
-                print(f"|- finished on expobj: {expprep} {post4ap_trial}, counter @ {counter}\n")
-
-fig.suptitle(f"Photostim responses - post-4ap", y=0.99)
-save_path_full = f"{save_path_prefix}/post4ap_indivtrial_zscore_responses_TEST.png"
-print(f'\nsaving figure to {save_path_full}')
-fig.savefig(save_path_full)
-fig.show()
-
-
-sys.exit()
+# sys.exit()
 """# ########### END OF // ZONE FOR CALLING THIS SCRIPT DIRECTLY FROM THE SSH SERVER ###########
 ########### END OF // ZONE FOR CALLING THIS SCRIPT DIRECTLY FROM THE SSH SERVER ###########
 ########### END OF // ZONE FOR CALLING THIS SCRIPT DIRECTLY FROM THE SSH SERVER ###########
@@ -821,7 +754,7 @@ for exp in allopticalResults.pre_4ap_trials:
 
 
 
-# %% 5.0-dc) collect SLM targets responses for stims dynamically over time - APPROACH #1 - CALCULATING RESPONSE MAGNITUDE AT EACH STIM PER TARGET
+# %% 5.1) collect SLM targets responses for stims dynamically over time - APPROACH #1 - CALCULATING RESPONSE MAGNITUDE AT EACH STIM PER TARGET
 key = 'e'
 j = 0
 exp = 'post'
@@ -856,11 +789,12 @@ fig.show()
 
 
 
-# %% 5.0-dc) collect SLM targets responses for stims dynamically over time - APPROACH #2 - USING Z-SCORED PHOTOSTIM RESPONSES
+# %% 5.2) collect SLM targets responses for stims dynamically over time - APPROACH #2 - USING Z-SCORED PHOTOSTIM RESPONSES
 
 print(f"---------------------------------------------------------")
 print(f"plotting zscored photostim responses over the whole trial")
 print(f"---------------------------------------------------------")
+
 
 ### PRE 4AP
 trials = list(allopticalResults.trial_maps['pre'].keys())
@@ -894,9 +828,9 @@ for expprep in list(allopticalResults.stim_responses_zscores.keys())[:3]:
                     response = pre4ap_df.loc[stim_idx, target]
                     rand = np.random.randint(-15, 25, 1)[0] #* 1/(abs(response)**1/2)  # jittering around the stim_frame for the plot
                     ax2.scatter(x=expobj.stim_start_frames[stim_idx] + rand, y=response, color=target_colors[targets.index(target)], alpha=0.70, s=15, zorder=4)
-                    ax2.axhline(y=0)
-                    ax2.set_ylabel('Response mag. (zscored)')
 
+            ax2.axhline(y=0)
+            ax2.set_ylabel('Response mag. (zscored to pre4ap)')
             ax2.margins(x=0)
 
             ax3 = axs[counter + 1]
@@ -907,20 +841,26 @@ for expprep in list(allopticalResults.stim_responses_zscores.keys())[:3]:
             print(f"|- finished on expobj: {expprep} {pre4ap_trial}, counter @ {counter}\n")
 
 fig.suptitle(f"Photostim responses - pre-4ap", y=0.99)
+save_path_full = f"{save_path_prefix}/pre4ap_indivtrial_zscore_responses.png"
+print(f'\nsaving figure to {save_path_full}')
+fig.savefig(save_path_full)
 fig.show()
 
+
+
 ### POST 4AP
-trials = list(allopticalResults.trial_maps['post'].keys())
-fig, axs = plt.subplots(nrows=len(trials) * 2, ncols=1, figsize=[20, 6 * len(trials)])
+trials_to_plot = pj.flattenOnce(allopticalResults.post_4ap_trials)
+fig, axs = plt.subplots(nrows=len(trials_to_plot) * 2, ncols=1, figsize=[20, 6 * len(trials_to_plot)])
+post4ap_trials_stimresponses_zscores = list(allopticalResults.stim_responses_zscores.keys())
 counter = 0
-for expprep in list(allopticalResults.stim_responses_zscores.keys()):
+for expprep in post4ap_trials_stimresponses_zscores:
     for trials_comparisons in allopticalResults.stim_responses_zscores[expprep]:
         if len(allopticalResults.stim_responses_zscores[expprep][trials_comparisons].keys()) > 2:  ## make sure that there are keys containing data for post 4ap and in sz
             pre4ap_trial = trials_comparisons[:5]
             post4ap_trial = trials_comparisons[-5:]
 
             # POST 4AP STUFF
-            if f"{expprep} {post4ap_trial}" in pj.flattenOnce(allopticalResults.post_4ap_trials):
+            if f"{expprep} {post4ap_trial}" in trials_to_plot:
                 post4ap_df = allopticalResults.stim_responses_zscores[expprep][trials_comparisons]['post-4ap']
 
                 insz_df = allopticalResults.stim_responses_zscores[expprep][trials_comparisons]['in sz']
@@ -940,24 +880,27 @@ for expprep in list(allopticalResults.stim_responses_zscores.keys()):
                 ax2 = ax.twinx()
                 ## retrieve the appropriate zscored database - post4ap (outsz) stims
                 targets = [x for x in list(post4ap_df.columns) if type(x) == str and '_z' in x]
+                assert len(targets) == len(SLMtarget_ids), print('mismatch in SLMtargets_ids and targets post4ap out sz')
                 for target in targets:
                     for stim_idx in post4ap_df.index[:-2]:
                         response = post4ap_df.loc[stim_idx, target]
                         rand = np.random.randint(-15, 25, 1)[0] #* 1/(abs(response)**1/2)  # jittering around the stim_frame for the plot
+                        assert not np.isnan(response)
                         ax2.scatter(x=expobj.stim_start_frames[stim_idx] + rand, y=response, color=target_colors[targets.index(target)], alpha=0.70, s=15, zorder=4)
-
-                ax2.margins(x=0)
 
 
                 ## retrieve the appropriate zscored database - insz stims
                 targets = [x for x in list(insz_df.columns) if type(x) == str]
+                assert len(targets) == len(SLMtarget_ids), print('mismatch in SLMtargets_ids and targets in sz')
                 for target in targets:
                     for stim_idx in insz_df.index:
                         response = insz_df.loc[stim_idx, target]
                         rand = np.random.randint(-15, 25, 1)[0] #* 1/(abs(response)**1/2)  # jittering around the stim_frame for the plot
-                        ax2.scatter(x=expobj.stim_start_frames[stim_idx] + rand, y=response, color=target_colors[targets.index(target)], alpha=0.70, s=15, zorder=4)
-                        ax2.axhline(y=0)
-                        ax2.set_ylabel('Response mag. (zscored to pre4ap)')
+                        if not np.isnan(response):
+                            ax2.scatter(x=expobj.stim_start_frames[stim_idx] + rand, y=response, color=target_colors[targets.index(target)], alpha=0.70, s=15, zorder=4)
+
+                ax2.axhline(y=0)
+                ax2.set_ylabel('Response mag. (zscored to pre4ap)')
                 ax2.margins(x=0)
 
                 ax3 = axs[counter+1]
@@ -968,6 +911,9 @@ for expprep in list(allopticalResults.stim_responses_zscores.keys()):
                 print(f"|- finished on expobj: {expprep} {post4ap_trial}, counter @ {counter}\n")
 
 fig.suptitle(f"Photostim responses - post-4ap", y=0.99)
+save_path_full = f"{save_path_prefix}/post4ap_indivtrial_zscore_responses.png"
+print(f'\nsaving figure to {save_path_full}')
+fig.savefig(save_path_full)
 fig.show()
 
 
@@ -1067,69 +1013,71 @@ fig1.show()
 
 
 
-# %% 7.0-main) avg responses around photostim targets - pre vs. post4ap
+# %% 7.0-main) avg responses in space around photostim targets - pre vs. post4ap
 
-# %% 8.0-dc) TODO zscore of stim responses vs. TIME to seizure onset - original code for single experiments
+# %% 8.0-dc) PLOT - zscore of stim responses vs. TIME to seizure onset
 
-stim_relative_szonset_vs_avg_zscore_alltargets_atstim = {}
-
-for prep in allopticalResults.stim_responses_zscores.keys():
-    # prep = 'PS07'
-    count = 0
-    trials = []
-    for i in allopticalResults.post_4ap_trials:
-        if prep in i[0]:
-            count += 1
-            trials.append(i)
-
-    for comp in range(count):
-        comp += 1
-
-        # comp = 2
-        post_4ap_df = allopticalResults.stim_responses_zscores[prep][str(comp)]['post-4ap']
-        if len(post_4ap_df) > 0:
-            date = list(allopticalResults.metainfo.loc[allopticalResults.metainfo['prep_trial'] == trials[comp-1][0], 'date'])[0]
-            print('working on.. ', trials[comp-1][0], date)
-            stim_relative_szonset_vs_avg_zscore_alltargets_atstim[trials[comp-1][0]] = [[], []]
-            post4aptrial = trials[comp-1][0][-5:]
-            expobj, experiment = aoutils.import_expobj(trial=post4aptrial, date=date, prep=prep, verbose=False)
-
-            # transform the rows of the stims responses dataframe to relative time to seizure
-            stims = list(post_4ap_df.index)
-            stims_relative_sz = []
-            for stim_idx in stims:
-                stim_frame = expobj.stim_start_frames[stim_idx]
-                closest_sz_onset = pj.findClosest(ls=expobj.seizure_lfp_onsets, input=stim_frame)[0]
-                time_diff = (closest_sz_onset - stim_frame) / expobj.fps  # time difference in seconds
-                stims_relative_sz.append(round(time_diff, 3))
-
-            cols = [col for col in post_4ap_df.columns if 'z' in str(col)]
-            post_4ap_df_zscore_stim_relative_to_sz = post_4ap_df[cols]
-            post_4ap_df_zscore_stim_relative_to_sz.index = stims_relative_sz  # take the original zscored df and assign a new index where the col names are times relative to sz onset
-
-            # take average of all targets at a specific time to seizure onset
-            post_4ap_df_zscore_stim_relative_to_sz['avg'] = post_4ap_df_zscore_stim_relative_to_sz.T.mean()
-
-            stim_relative_szonset_vs_avg_zscore_alltargets_atstim[trials[comp-1][0]][0].append(stims_relative_sz)
-            stim_relative_szonset_vs_avg_zscore_alltargets_atstim[trials[comp-1][0]][1].append(post_4ap_df_zscore_stim_relative_to_sz['avg'].tolist())
-
-allopticalResults.stim_relative_szonset_vs_avg_zscore_alltargets_atstim = stim_relative_szonset_vs_avg_zscore_alltargets_atstim
-
+"""todo for this analysis:
+- average over targets for plot containing all exps
+"""
 
 # plotting of post_4ap zscore_stim_relative_to_sz onset
+print(f"plotting averages from trials: {list(allopticalResults.stim_relative_szonset_vs_avg_zscore_alltargets_atstim.keys())}")
 
-preps = [prep[:-6] for prep in allopticalResults.stim_relative_szonset_vs_avg_zscore_alltargets_atstim.keys()]
+preps = np.unique([prep[:-6] for prep in allopticalResults.stim_relative_szonset_vs_avg_zscore_alltargets_atstim.keys()])
 
-fig, ax = plt.subplots(figsize=(8, 5))
-colors = pj.make_random_color_array(n_colors=len(np.unique(preps)))
-for i in range(len(np.unique(preps))):
+exps = list(allopticalResults.stim_relative_szonset_vs_avg_zscore_alltargets_atstim.keys())
+
+## prep for large figure with individual experiments
+ncols = 4
+nrows = len(exps) // ncols
+if len(exps) % ncols > 0:
+    nrows += 1
+
+fig2, axs = plt.subplots(nrows=nrows, ncols=ncols, figsize=[(ncols * 4), (nrows * 3)])
+counter = 0
+axs[0, 0].set_xlabel('Time to closest seizure onset (secs)')
+axs[0, 0].set_ylabel('responses (z scored)')
+
+# prep for single small plot with all experiments
+fig, ax = plt.subplots(figsize=(4, 3))
+colors = pj.make_random_color_array(n_colors=len(preps))
+for i in range(len(preps)):
+    print(i)
     for key in allopticalResults.stim_relative_szonset_vs_avg_zscore_alltargets_atstim.keys():
         if preps[i] in key:
+            print(key)
             sz_time = allopticalResults.stim_relative_szonset_vs_avg_zscore_alltargets_atstim[key][0]
             z_scores = allopticalResults.stim_relative_szonset_vs_avg_zscore_alltargets_atstim[key][1]
-            ax.scatter(x=sz_time, y=z_scores, facecolors=colors[i])
-ax.set_xlim(0, 100)
+            ax.scatter(x=sz_time, y=z_scores, facecolors=colors[i], alpha=0.2, lw=0)
+
+            a = counter // ncols
+            b = counter % ncols
+
+            # make plot for individual key/experiment trial
+            ax2 = axs[a, b]
+            ax2.scatter(x=sz_time, y=z_scores, facecolors=colors[i], alpha=0.8, lw=0)
+            ax2.set_xlim(-300, 250)
+            ax2.set_title(f"{key}")
+            counter += 1
+
+ax.set_xlim(-300, 250)
+ax.set_xlabel('Time to closest seizure onset (secs)')
+ax.set_ylabel('responses (z scored)')
+
+fig.suptitle(f"All exps, all targets relative to closest sz onset")
+fig.tight_layout(pad=1.8)
+save_path_full = f"{save_path_prefix}/zscore-vs-szonset_time_allexps.png"
+print(f'\nsaving figure to {save_path_full}')
+fig.savefig(save_path_full)
 fig.show()
+
+fig2.suptitle(f"all exps. individual")
+fig2.tight_layout(pad=1.8)
+save_path_full = f"{save_path_prefix}/zscore-vs-szonset_time_individualexps.png"
+print(f'\nsaving figure2 to {save_path_full}')
+fig2.savefig(save_path_full)
+fig2.show()
 
 
 

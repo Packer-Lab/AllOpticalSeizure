@@ -932,7 +932,7 @@ def plot_hist_density(data: list, mean_line: bool = False, colors: list = None, 
             pass
     else:
         # Tweak spacing to prevent clipping of ylabel
-        fig.tight_layout()
+        fig.tight_layout(pad=1.8)
         fig.show()
 
     if 'fig' in kwargs.keys():

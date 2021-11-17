@@ -1,5 +1,5 @@
 # %% IMPORT MODULES AND TRIAL expobj OBJECT
-import sys
+import os; import sys
 sys.path.append('/home/pshah/Documents/code/PackerLab_pycharm/')
 sys.path.append('/home/pshah/Documents/code/')
 import alloptical_utils_pj as aoutils
@@ -11,6 +11,9 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
+
+save_path_prefix = '/home/pshah/mnt/qnap/Analysis/Results_figs/Nontargets_responses_2021-11-16'
+os.makedirs(save_path_prefix) if not os.path.exists(save_path_prefix) else None
 
 # import results superobject
 results_object_path = '/home/pshah/mnt/qnap/Analysis/alloptical_results_superobject.pkl'
@@ -311,11 +314,11 @@ in_sz_zscores = [score for score in in_sz_zscores if str(score) != 'nan']
 data = [pre_4ap_zscores, in_sz_zscores, post_4ap_zscores]
 pj.plot_hist_density(data, x_label='z-score', title='All exps. stim responses zscores (normalized to pre-4ap)',
                      fill_color=['green', '#ff9d09', 'steelblue'], num_bins=1000, show_legend=True, alpha=1.0, mean_line=True,
-                     figsize=(3.5, 3.5), legend_labels=['pre 4ap', 'ictal', 'interictal'], x_lim=[-15, 15])
+                     figsize=(4, 4), legend_labels=['pre 4ap', 'ictal', 'interictal'], x_lim=[-15, 15])
 
 
 
-# %% aoresults-7-dc) TODO zscore of stim responses vs. TIME to seizure onset - original code for single experiments
+# %% 8.0-dc) DATA COLLECTION - zscore of stim responses vs. TIME to seizure onset - for loop over all experiments to collect zscores in terms of sz onset time
 
 stim_relative_szonset_vs_avg_zscore_alltargets_atstim = {}
 
@@ -353,32 +356,8 @@ for prep in allopticalResults.stim_responses_zscores.keys():
                 stim_relative_szonset_vs_avg_zscore_alltargets_atstim[f"{prep} {post4aptrial}"][1].append(post_4ap_df_zscore_stim_relative_to_sz['avg'].tolist())
 
 
-# allopticalResults.stim_relative_szonset_vs_avg_zscore_alltargets_atstim = stim_relative_szonset_vs_avg_zscore_alltargets_atstim
-
-# %%
-
-# plotting of post_4ap zscore_stim_relative_to_sz onset
-print(f"plotting averages from trials: {list(stim_relative_szonset_vs_avg_zscore_alltargets_atstim.keys())}")
-
-preps = np.unique([prep[:-6] for prep in stim_relative_szonset_vs_avg_zscore_alltargets_atstim.keys()])
-
-fig, ax = plt.subplots(figsize=(4, 3))
-colors = pj.make_random_color_array(n_colors=len(preps))
-for i in range(len(preps)):
-    print(i)
-    for key in stim_relative_szonset_vs_avg_zscore_alltargets_atstim.keys():
-        if preps[i] in key:
-            print(key)
-            sz_time = stim_relative_szonset_vs_avg_zscore_alltargets_atstim[key][0]
-            z_scores = stim_relative_szonset_vs_avg_zscore_alltargets_atstim[key][1]
-            ax.scatter(x=sz_time, y=z_scores, facecolors=colors[i], alpha=0.2, lw=0)
-ax.set_xlim(-300, 250)
-ax.set_xlabel('Time to closest seizure onset (secs)')
-ax.set_ylabel('responses (z scored)')
-fig.suptitle(f"All exps, all targets relative to closest sz onset")
-fig.tight_layout()
-fig.show()
-
+allopticalResults.stim_relative_szonset_vs_avg_zscore_alltargets_atstim = stim_relative_szonset_vs_avg_zscore_alltargets_atstim
+allopticalResults.save()
 
 
 # %% aoresults-7-dc) zscore of stim responses vs. TIME to seizure onset - original code for single experiments
