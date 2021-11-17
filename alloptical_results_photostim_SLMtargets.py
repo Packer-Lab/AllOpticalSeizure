@@ -19,7 +19,7 @@ from mpl_toolkits import mplot3d
 results_object_path = '/home/pshah/mnt/qnap/Analysis/alloptical_results_superobject.pkl'
 allopticalResults = aoutils.import_resultsobj(pkl_path=results_object_path)
 
-save_path_prefix = '/home/pshah/mnt/qnap/Analysis/Results_figs/Nontargets_responses_2021-11-11'
+save_path_prefix = '/home/pshah/mnt/qnap/Analysis/Results_figs/Nontargets_responses_2021-11-16'
 os.makedirs(save_path_prefix) if not os.path.exists(save_path_prefix) else None
 
 
@@ -37,6 +37,70 @@ os.makedirs(save_path_prefix) if not os.path.exists(save_path_prefix) else None
 ######### ZONE FOR CALLING THIS SCRIPT DIRECTLY FROM THE SSH SERVER ###########
 ######### ZONE FOR CALLING THIS SCRIPT DIRECTLY FROM THE SSH SERVER ###########
 """
+# 5.0-dc) collect SLM targets responses for stims dynamically over time - APPROACH #2 - USING Z-SCORED PHOTOSTIM RESPONSES
+
+
+### POST 4AP
+trials = list(allopticalResults.trial_maps['post'].keys())
+fig, axs = plt.subplots(nrows=len(trials) * 2, ncols=1, figsize=[20, 6 * len(trials)])
+counter = 0
+for expprep in list(allopticalResults.stim_responses_zscores.keys()):
+    for trials_comparisons in allopticalResults.stim_responses_zscores[expprep]:
+        if len(allopticalResults.stim_responses_zscores[expprep][trials_comparisons].keys()) > 2:  ## make sure that there are keys containing data for post 4ap and in sz
+            pre4ap_trial = trials_comparisons[:5]
+            post4ap_trial = trials_comparisons[-5:]
+
+            # POST 4AP STUFF
+            if f"{expprep} {post4ap_trial}" in pj.flattenOnce(allopticalResults.post_4ap_trials):
+                post4ap_df = allopticalResults.stim_responses_zscores[expprep][trials_comparisons]['post-4ap']
+
+                insz_df = allopticalResults.stim_responses_zscores[expprep][trials_comparisons]['in sz']
+
+
+                print(f"working on expobj: {expprep} {post4ap_trial}, counter @ {counter}")
+                expobj, experiment = aoutils.import_expobj(prep=expprep, trial=post4ap_trial)
+
+                SLMtarget_ids = list(range(len(expobj.SLMTargets_stims_dfstdF)))
+                target_colors = pj.make_random_color_array(len(SLMtarget_ids))
+                # --- plot with mean FOV fluorescence signal
+                # fig, axs = plt.subplots(ncols=1, nrows=2, figsize=[20, 6])
+                ax = axs[counter]
+                fig, ax = aoplot.plotMeanRawFluTrace(expobj=expobj, stim_span_color='white', x_axis='frames', show=False, fig=fig, ax=ax)
+                ax.margins(x=0)
+
+                ax2 = ax.twinx()
+                ## retrieve the appropriate zscored database - post4ap (outsz) stims
+                targets = [x for x in list(post4ap_df.columns) if type(x) == str and '_z' in x]
+                for target in targets:
+                    for stim_idx in post4ap_df.index[:-2]:
+                        response = post4ap_df.loc[stim_idx, target]
+                        rand = np.random.randint(-15, 25, 1)[0] #* 1/(abs(response)**1/2)  # jittering around the stim_frame for the plot
+                        ax2.scatter(x=expobj.stim_start_frames[stim_idx] + rand, y=response, color=target_colors[targets.index(target)], alpha=0.70, s=15, zorder=4)
+
+                ax2.margins(x=0)
+
+
+                ## retrieve the appropriate zscored database - insz stims
+                targets = [x for x in list(insz_df.columns) if type(x) == str]
+                for target in targets:
+                    for stim_idx in insz_df.index:
+                        response = insz_df.loc[stim_idx, target]
+                        rand = np.random.randint(-15, 25, 1)[0] #* 1/(abs(response)**1/2)  # jittering around the stim_frame for the plot
+                        ax2.scatter(x=expobj.stim_start_frames[stim_idx] + rand, y=response, color=target_colors[targets.index(target)], alpha=0.70, s=15, zorder=4)
+                        ax2.axhline(y=0)
+                        ax2.set_ylabel('Response mag. (zscored to pre4ap)')
+                ax2.margins(x=0)
+
+                ax3 = axs[counter+1]
+                ax3_2 = ax3.twinx()
+                fig, ax3, ax3_2 = aoplot.plot_lfp_stims(expobj, x_axis='Time', show=False, fig=fig, ax=ax3, ax2=ax3_2)
+
+                counter += 2
+                print(f"|- finished on expobj: {expprep} {post4ap_trial}, counter @ {counter}\n")
+
+fig.suptitle(f"Photostim responses - post-4ap", y=0.99)
+fig.show()
+
 
 """# ########### END OF // ZONE FOR CALLING THIS SCRIPT DIRECTLY FROM THE SSH SERVER ###########
 ########### END OF // ZONE FOR CALLING THIS SCRIPT DIRECTLY FROM THE SSH SERVER ###########
@@ -89,10 +153,50 @@ print('\nprogress @ ', prep, trial, ' [1.1.0]')
 expobj, experiment = aoutils.import_expobj(trial=trial, prep=prep, verbose=False)
 
 
-# %% 1) plot responses of SLM TARGETS in response to photostim trials - broken down by pre-4ap, outsz and insz (excl. sz bound)
-# #  - with option to plot only successful or only failure stims!
+# %% 1) BAR PLOT FOR PHOTOSTIM RESPONSE MAGNITUDE B/W PRE AND POST 4AP TRIALS
+pre4ap_response_magnitude = []
+for i in allopticalResults.pre_4ap_trials:
+    x = [allopticalResults.slmtargets_stim_responses.loc[
+             allopticalResults.slmtargets_stim_responses[
+                 'prep_trial'] == trial, 'mean response (dF/stdF all targets)'].values[0] for trial in i]
+    pre4ap_response_magnitude.append(np.mean(x))
 
-### 1.1) PRE-4AP TRIALS
+post4ap_response_magnitude = []
+for i in allopticalResults.post_4ap_trials:
+    x = [allopticalResults.slmtargets_stim_responses.loc[
+             allopticalResults.slmtargets_stim_responses[
+                 'prep_trial'] == trial, 'mean response (dF/stdF all targets)'].values[0] for trial in i]
+    post4ap_response_magnitude.append(np.mean(x))
+
+pj.plot_bar_with_points(data=[pre4ap_response_magnitude, post4ap_response_magnitude], paired=True,
+                        colors=['black', 'purple'], bar=False, expand_size_y=1.1, expand_size_x=0.6,
+                        xlims=True, x_tick_labels=['pre-4ap', 'post-4ap'], title='Avg. Response magnitude',
+                        y_label='response magnitude')
+
+# %% 2) BAR PLOT FOR PHOTOSTIM RESPONSE RELIABILITY B/W PRE AND POST 4AP TRIALS
+pre4ap_reliability = []
+for i in allopticalResults.pre_4ap_trials:
+    x = [allopticalResults.slmtargets_stim_responses.loc[
+             allopticalResults.slmtargets_stim_responses[
+                 'prep_trial'] == trial, 'mean reliability (>0.3 dF/stdF)'].values[0] for trial in i]
+    pre4ap_reliability.append(np.mean(x))
+
+post4ap_reliability = []
+for i in allopticalResults.post_4ap_trials:
+    x = [allopticalResults.slmtargets_stim_responses.loc[
+             allopticalResults.slmtargets_stim_responses[
+                 'prep_trial'] == trial, 'mean reliability (>0.3 dF/stdF)'].values[0] for trial in i]
+    post4ap_reliability.append(np.mean(x))
+
+pj.plot_bar_with_points(data=[pre4ap_reliability, post4ap_reliability], paired=True,
+                        colors=['black', 'purple'], bar=False, expand_size_y=1.1, expand_size_x=0.6,
+                        xlims=True, x_tick_labels=['pre-4ap', 'post-4ap'], title='Avg. Response Reliability',
+                        y_label='% success rate of photostim')
+
+# %% 3) plot responses of SLM TARGETS in response to photostim trials - broken down by pre-4ap, outsz and insz (excl. sz bound)
+# - with option to plot only successful or only failure stims!
+
+# ## 3.1) PRE-4AP TRIALS
 redo_processing = False  # flag to use when rerunning this whole for loop multiple times
 avg_only = True  # avg only for each expobj
 to_plot = 'successes'  # use for plotting either 'successes' stim responses or 'failures' stim responses
@@ -167,7 +271,7 @@ allopticalResults.save()
 
 
 
-# %% ## 1.2) POST-4AP TRIALS - IN SZ STIMS - EXCLUDE STIMS/CELLS INSIDE SZ BOUNDARY
+# ## 3.2) POST-4AP TRIALS - IN SZ STIMS - EXCLUDE STIMS/CELLS INSIDE SZ BOUNDARY
 run_processing = False  # flag to use when rerunning this whole for loop multiple times
 avg_only = True
 to_plot = 'failures'  # use for plotting either 'successes' stim responses or 'failures' stim responses
@@ -201,7 +305,7 @@ for i in allopticalResults.post_4ap_trials:
                 expobj.insz_traces_SLMtargets_failures_avg = \
                     expobj.calculate_SLMTarget_SuccessStims(hits_df=expobj.hits_SLMtargets,
                                                             stims_idx_l=stims_insz_idx,
-                                                            exclude_stims_targets=expobj.slmtargets_sz_stim)
+                                                            exclude_stims_targets=expobj.slmtargets_szboundary_stim)
 
         if to_plot == 'successes':
             array_to_plot = np.asarray([expobj.insz_traces_SLMtargets_successes_avg[key] for key in expobj.insz_traces_SLMtargets_successes_avg.keys()])
@@ -240,7 +344,7 @@ allopticalResults.save()
 
 
 
-# %% ## 1.3) POST-4AP TRIALS (OUT SZ STIMS)
+# ## 3.3) POST-4AP TRIALS (OUT SZ STIMS)
 
 run_processing = False  # flag to use when rerunning this whole for loop multiple times
 avg_only = True
@@ -316,7 +420,7 @@ allopticalResults.save()
 
 
 
-# %% 1.3.1)
+# %% 3.3.1)
 from scipy.interpolate import interp1d
 
 traces = []
@@ -341,7 +445,7 @@ ax.set_ylabel('dFF (norm. to pre-stim F)')
 f.show()
 
 
-# %% 1.4) COMPARISON OF RESPONSE MAGNITUDE OF SUCCESS STIMS. FROM PRE-4AP, OUT-SZ AND IN-SZ
+# %% 3.4) COMPARISON OF RESPONSE MAGNITUDE OF SUCCESS STIMS. FROM PRE-4AP, OUT-SZ AND IN-SZ
 
 run_processing = 0
 
@@ -423,7 +527,7 @@ pj.plot_bar_with_points(data=[pre4ap_response_magnitude, outsz_response_magnitud
                         y_label='response magnitude (dFF)')
 
 
-# %% 1.5) COMPARISON OF RESPONSE MAGNITUDE OF FAILURES STIMS. FROM PRE-4AP, OUT-SZ AND IN-SZ
+# %% 3.5) COMPARISON OF RESPONSE MAGNITUDE OF FAILURES STIMS. FROM PRE-4AP, OUT-SZ AND IN-SZ
 
 run_processing = 0
 
@@ -493,55 +597,16 @@ pj.plot_bar_with_points(data=[pre4ap_response_magnitude, outsz_response_magnitud
 
 
 
-# %% 2) BAR PLOT FOR PHOTOSTIM RESPONSE MAGNITUDE B/W PRE AND POST 4AP TRIALS
-pre4ap_response_magnitude = []
-for i in allopticalResults.pre_4ap_trials:
-    x = [allopticalResults.slmtargets_stim_responses.loc[
-             allopticalResults.slmtargets_stim_responses[
-                 'prep_trial'] == trial, 'mean response (dF/stdF all targets)'].values[0] for trial in i]
-    pre4ap_response_magnitude.append(np.mean(x))
 
-post4ap_response_magnitude = []
-for i in allopticalResults.post_4ap_trials:
-    x = [allopticalResults.slmtargets_stim_responses.loc[
-             allopticalResults.slmtargets_stim_responses[
-                 'prep_trial'] == trial, 'mean response (dF/stdF all targets)'].values[0] for trial in i]
-    post4ap_response_magnitude.append(np.mean(x))
 
-pj.plot_bar_with_points(data=[pre4ap_response_magnitude, post4ap_response_magnitude], paired=True,
-                        colors=['black', 'purple'], bar=False, expand_size_y=1.1, expand_size_x=0.6,
-                        xlims=True, x_tick_labels=['pre-4ap', 'post-4ap'], title='Avg. Response magnitude',
-                        y_label='response magnitude')
+# %% 4) plot peri-photostim avg traces for all trials analyzed to make sure they look alright -- plot as little postage stamps
 
-# %% 3) BAR PLOT FOR PHOTOSTIM RESPONSE RELIABILITY B/W PRE AND POST 4AP TRIALS
-pre4ap_reliability = []
-for i in allopticalResults.pre_4ap_trials:
-    x = [allopticalResults.slmtargets_stim_responses.loc[
-             allopticalResults.slmtargets_stim_responses[
-                 'prep_trial'] == trial, 'mean reliability (>0.3 dF/stdF)'].values[0] for trial in i]
-    pre4ap_reliability.append(np.mean(x))
-
-post4ap_reliability = []
-for i in allopticalResults.post_4ap_trials:
-    x = [allopticalResults.slmtargets_stim_responses.loc[
-             allopticalResults.slmtargets_stim_responses[
-                 'prep_trial'] == trial, 'mean reliability (>0.3 dF/stdF)'].values[0] for trial in i]
-    post4ap_reliability.append(np.mean(x))
-
-pj.plot_bar_with_points(data=[pre4ap_reliability, post4ap_reliability], paired=True,
-                        colors=['black', 'purple'], bar=False, expand_size_y=1.1, expand_size_x=0.6,
-                        xlims=True, x_tick_labels=['pre-4ap', 'post-4ap'], title='Avg. Response Reliability',
-                        y_label='% success rate of photostim')
-
-# %% 4) plot peri-photostim avg traces for all trials analyzed to make sure they look alright
-# -- plot as little postage stamps
-
-# plot avg of successes in green
+"""# plot avg of successes in green
 # plot avg of failures in gray
 # plot line at dF_stdF = 0.3
 # add text in plot for avg dF_stdF value of successes, and % of successes
 
-
+"""
 
 # make one figure for each prep/trial (one little plot for each cell in that prep)
 for exp in allopticalResults.pre_4ap_trials:
@@ -728,7 +793,6 @@ for exp in allopticalResults.pre_4ap_trials:
 # for i in responses_magnitudes_successes.keys():
 #     print(len(responses_magnitudes_successes))
 
-# plot barplot with points only comparing response magnitude of successes
 
 # %% 5.0-main) TODO collect SLM targets responses for stims dynamically over time
 

@@ -11,123 +11,6 @@ from matplotlib import pyplot as plt
 import alloptical_utils_pj as aoutils
 import tifffile as tf
 
-# simple plot of the location of the given cell(s) against a black FOV
-def plot_cells_loc(expobj, cells: list, edgecolor: str = 'yellowgreen', title=None, background: np.array = None,
-                   show_s2p_targets: bool = True, color_float_list: list = None, cmap: str = 'Reds', **kwargs):
-    """
-    plots an image of the FOV to show the locations of cells given in cells ls.
-    :param background: either 2dim numpy array to use as the backsplash or None (where black backsplash will be created)
-    :param expobj: alloptical or 2p imaging object
-    :param edgecolor: str to specify edgecolor of the scatter plot for cells
-    :param cells: ls of cells to plot
-    :param title: str title for plot
-    :param color_float_list: if given, it will be used to color the cells according a colormap
-    :param cmap: cmap to be used in conjuction with the color_float_array argument
-    :param show_s2p_targets: if True, then will prioritize coloring of cell points based on whether they were photostim targets
-    :param kwargs: optional arguments
-            invert_y: if True, invert the reverse the direction of the y axis
-            show: if True, show the plot
-            fig: a fig plt.subplots() instance, if provided use this fig for making figure
-            ax: a ax plt.subplots() instance, if provided use this ax for plotting
-    """
-
-    # if there is a fig and ax provided in the function call then use those, otherwise start anew
-    if 'fig' in kwargs.keys():
-        fig = kwargs['fig']
-        ax = kwargs['ax']
-    else:
-        fig, ax = plt.subplots()
-
-    if background is None:
-        black = np.zeros((expobj.frame_x, expobj.frame_y), dtype='uint16')
-        ax.imshow(black, cmap='Greys_r', zorder=0)
-    else:
-        ax.imshow(background, cmap='Greys_r', zorder=0)
-
-    x_list = []
-    y_list = []
-    for cell in cells:
-        y, x = expobj.stat[expobj.cell_id.index(cell)]['med']
-        x_list.append(x)
-        y_list.append(y)
-
-        if show_s2p_targets:
-            if hasattr(expobj, 's2p_cell_targets'):
-                if cell in expobj.s2p_cell_targets:
-                    color_ = '#F02A71'
-                else:
-                    color_ = 'none'
-            else:
-                color_ = 'none'
-            ax.scatter(x=x, y=y, edgecolors=None, facecolors=color_, linewidths=0.8)
-        elif color_float_list:
-            # ax.scatter(x=x, y=y, edgecolors='none', c=color_float_list[cells.index(cell)], linewidths=0.8,
-            #            cmap=cmap)
-            pass
-        else:
-            ax.scatter(x=x, y=y, edgecolors=edgecolor, facecolors='none', linewidths=0.8)
-
-    if color_float_list:
-        ac = ax.scatter(x=x_list, y=y_list, edgecolors='none', c=color_float_list, linewidths=0.8,
-                   cmap=cmap, zorder=1)
-
-        plt.colorbar(ac, ax=ax)
-
-    if background is None:
-        ax.set_xlim(0, expobj.frame_x)
-        ax.set_ylim(0, expobj.frame_y)
-
-    if title is not None:
-        plt.suptitle(title, wrap=True)
-
-    if 'text' in kwargs.keys():
-        if kwargs['text'] is not None:
-            ax.text(0.99, 0.95, kwargs['text'],
-                    verticalalignment='top', horizontalalignment='right',
-                    transform=ax.transAxes, fontweight='bold',
-                    color='white', fontsize=10)
-
-
-    if 'invert_y' in kwargs.keys():
-        if kwargs['invert_y']:
-            ax.invert_yaxis()
-
-    if 'show' in kwargs.keys():
-        if kwargs['show'] is True:
-            fig.show()
-        else:
-            pass
-    else:
-        fig.show()
-
-    return fig, ax if 'fig' in kwargs.keys() else None
-
-
-### plotting the distribution of radius and aspect ratios - should this be running before the filtering step which is right below????????
-def plot_cell_radius_aspectr(expobj, stat, to_plot, min_vline: int = 4, max_vline: int = 12):
-    radius = []
-    aspect_ratio = []
-    for cell in range(len(stat)):
-        # if expobj.cell_id[cell] in expobj.good_cells:
-        if expobj.cell_id[cell] in expobj.cell_id:
-            radius.append(stat[cell]['radius'])
-            aspect_ratio.append(stat[cell]['aspect_ratio'])
-
-    if to_plot == 'radius':
-        to_plot_ = radius
-        plt.axvline(min_vline / expobj.pix_sz_x, color='grey')
-        plt.axvline(max_vline / expobj.pix_sz_x, color='grey')
-        n, bins, patches = plt.hist(to_plot_, 100)
-        title = 'radius - {%s um to %s um}' % (min_vline, max_vline)
-    elif to_plot == 'aspect':
-        to_plot_ = aspect_ratio
-        n, bins, patches = plt.hist(to_plot_, 100)
-        title = 'aspect ratio'
-
-    plt.suptitle('All cells - %s' % title, y=0.95)
-    plt.show()
-    return to_plot_
-
 
 ### plot the location of all SLM targets, along with option for plotting the mean img of the current trial
 def plot_SLMtargets_Locs(expobj, targets_coords: list = None, background: np.ndarray = None, **kwargs):
@@ -190,6 +73,192 @@ def plot_SLMtargets_Locs(expobj, targets_coords: list = None, background: np.nda
         fig.show()
 
     return fig, ax if 'fig' in kwargs.keys() else None
+
+
+# simple plot of the location of the given cell(s) against a black FOV
+def plot_cells_loc(expobj, cells: list, edgecolor: str = 'yellowgreen', title=None, background: np.array = None, scatter_only: bool = False,
+                   show_s2p_targets: bool = True, color_float_list: list = None, cmap: str = 'Reds', invert_y = True, **kwargs):
+    """
+    plots an image of the FOV to show the locations of cells given in cells ls.
+    :param background: either 2dim numpy array to use as the backsplash or None (where black backsplash will be created)
+    :param expobj: alloptical or 2p imaging object
+    :param edgecolor: str to specify edgecolor of the scatter plot for cells
+    :param cells: ls of cells to plot
+    :param title: str title for plot
+    :param color_float_list: if given, it will be used to color the cells according a colormap
+    :param cmap: cmap to be used in conjuction with the color_float_array argument
+    :param show_s2p_targets: if True, then will prioritize coloring of cell points based on whether they were photostim targets
+    :param kwargs: optional arguments
+            invert_y: if True, invert the reverse the direction of the y axis
+            show: if True, show the plot
+            fig: a fig plt.subplots() instance, if provided use this fig for making figure
+            ax: a ax plt.subplots() instance, if provided use this ax for plotting
+    """
+
+    # if there is a fig and ax provided in the function call then use those, otherwise start anew
+    if 'fig' in kwargs.keys():
+        fig = kwargs['fig']
+        ax = kwargs['ax']
+    else:
+        fig, ax = plt.subplots()
+
+    x_list = []
+    y_list = []
+    for cell in cells:
+        y, x = expobj.stat[expobj.cell_id.index(cell)]['med']
+        x_list.append(x)
+        y_list.append(y)
+
+        if show_s2p_targets:
+            if hasattr(expobj, 's2p_cell_targets'):
+                if cell in expobj.s2p_cell_targets:
+                    color_ = '#F02A71'
+                else:
+                    color_ = 'none'
+            else:
+                color_ = 'none'
+            ax.scatter(x=x, y=y, edgecolors=None, facecolors=color_, linewidths=0.8)
+        elif color_float_list:
+            # ax.scatter(x=x, y=y, edgecolors='none', c=color_float_list[cells.index(cell)], linewidths=0.8,
+            #            cmap=cmap)
+            pass
+        else:
+            ax.scatter(x=x, y=y, edgecolors=edgecolor, facecolors='none', linewidths=0.8)
+
+    if color_float_list:
+        ac = ax.scatter(x=x_list, y=y_list, edgecolors='none', c=color_float_list, linewidths=0.8,
+                   cmap=cmap, zorder=1)
+
+        plt.colorbar(ac, ax=ax)
+
+    if not scatter_only:
+        if background is None:
+            black = np.zeros((expobj.frame_x, expobj.frame_y), dtype='uint16')
+            ax.imshow(black, cmap='Greys_r', zorder=0)
+            ax.set_xlim(0, expobj.frame_x)
+            ax.set_ylim(0, expobj.frame_y)
+        else:
+            ax.imshow(background, cmap='Greys_r', zorder=0)
+
+    if title is not None:
+        plt.suptitle(title, wrap=True)
+
+    if 'text' in kwargs.keys():
+        if kwargs['text'] is not None:
+            ax.text(0.99, 0.95, kwargs['text'],
+                    verticalalignment='top', horizontalalignment='right',
+                    transform=ax.transAxes, fontweight='bold',
+                    color='white', fontsize=10)
+
+    if 'hide_axis_labels' in kwargs.keys():
+        ax.set_xticks(ticks=[])
+        ax.set_xticklabels([])
+        ax.set_yticks(ticks=[])
+        ax.set_yticklabels([])
+
+
+    if 'invert_y' in kwargs.keys():
+        if kwargs['invert_y']:
+            ax.invert_yaxis()
+
+    if 'show' in kwargs.keys():
+        if kwargs['show'] is True:
+            fig.show()
+        else:
+            pass
+    else:
+        fig.show()
+
+    return fig, ax if 'fig' in kwargs.keys() else None
+
+
+# plot to show s2p ROIs location, colored as specified
+def s2pRoiImage(expobj, save_fig: str = None):
+    """
+    plot to show the classification of each cell as the actual's filling in the cell's ROI pixels.
+
+    :param expobj: expobj associated with data
+    :param df: pandas dataframe (cell_id x stim frames)
+    :param clim: color limits
+    :param plot_target_coords: bool, if True plot the actual X and Y coords of all photostim cell targets
+    :param save_fig: where to save the save figure (optional)
+    :return:
+    """
+    fig, ax = plt.subplots(figsize=(5, 5))
+    if expobj.frame_x == 512:
+        s = 0.003 * (1024/expobj.frame_x * 4)
+    else:
+        s = 0.003
+    ##### targets areas image
+    targ_img = np.zeros([expobj.frame_x, expobj.frame_y], dtype='float')
+    target_areas_exclude = np.array(expobj.target_areas_exclude)
+    targ_img[target_areas_exclude[:, :, 1], target_areas_exclude[:, :, 0]] = 1
+    x = np.asarray(list(range(expobj.frame_x)) * expobj.frame_y)
+    y = np.asarray([i_y for i_y in range(expobj.frame_y) for i_x in range(expobj.frame_x)])
+    img = targ_img.flatten()
+    im_array = np.array([x, y], dtype=np.float)
+    ax.scatter(im_array[0], im_array[1], c=img, cmap='gray', s=s, zorder=0, alpha=1)
+
+    ##### suite2p ROIs areas image - nontargets
+    for n in expobj.s2p_nontargets:
+        idx = expobj.cell_id.index(n)
+        ypix = expobj.stat[idx]['ypix']
+        xpix = expobj.stat[idx]['xpix']
+        ax.scatter(xpix, ypix, c='lightsteelblue', s=s, zorder=1, alpha=1)
+
+    ##### suite2p ROIs areas image - exclude cells
+    for n in expobj.s2p_cells_exclude:
+        idx = expobj.cell_id.index(n)
+        ypix = expobj.stat[idx]['ypix']
+        xpix = expobj.stat[idx]['xpix']
+        ax.scatter(xpix, ypix, c='yellow', s=s, zorder=2, alpha=1)
+
+    ##### suite2p ROIs areas image - targeted cells
+    for n in expobj.s2p_cell_targets:
+        idx = expobj.cell_id.index(n)
+        ypix = expobj.stat[idx]['ypix']
+        xpix = expobj.stat[idx]['xpix']
+        ax.scatter(xpix, ypix, c='red', s=s, zorder=3, alpha=1)
+
+    ax.set_xlim([0, expobj.frame_x])
+    ax.set_ylim([0, expobj.frame_y])
+    plt.margins(x=0, y=0)
+    plt.gca().invert_yaxis()
+    # plt.gca().invert_xaxis()
+    # fig.show()
+
+    plt.suptitle(f"{expobj.metainfo['animal prep.']} {expobj.metainfo['trial']} - s2p nontargets (blue), exclude (yellow), targets (red); target_areas (white)",
+                 y=0.97, fontsize=7)
+    plt.show()
+    plt.savefig(save_fig) if save_fig else None
+
+
+### plotting the distribution of radius and aspect ratios - should this be running before the filtering step which is right below????????
+def plot_cell_radius_aspectr(expobj, stat, to_plot, min_vline: int = 4, max_vline: int = 12):
+    radius = []
+    aspect_ratio = []
+    for cell in range(len(stat)):
+        # if expobj.cell_id[cell] in expobj.good_cells:
+        if expobj.cell_id[cell] in expobj.cell_id:
+            radius.append(stat[cell]['radius'])
+            aspect_ratio.append(stat[cell]['aspect_ratio'])
+
+    if to_plot == 'radius':
+        to_plot_ = radius
+        plt.axvline(min_vline / expobj.pix_sz_x, color='grey')
+        plt.axvline(max_vline / expobj.pix_sz_x, color='grey')
+        n, bins, patches = plt.hist(to_plot_, 100)
+        title = 'radius - {%s um to %s um}' % (min_vline, max_vline)
+    elif to_plot == 'aspect':
+        to_plot_ = aspect_ratio
+        n, bins, patches = plt.hist(to_plot_, 100)
+        title = 'aspect ratio'
+
+    plt.suptitle('All cells - %s' % title, y=0.95)
+    plt.show()
+    return to_plot_
+
+
 
 
 ### plot entire trace of individual targeted cells as super clean subplots, with the same y-axis lims
@@ -484,18 +553,21 @@ def plot_periphotostim_avg(arr=None, pre_stim_sec=1.0, post_stim_sec=3.0, title=
 
     # ax.margins(x=0.07)
 
+    if 'alpha' in kwargs.keys():
+        alpha = kwargs['alpha']
+
     if x_label is None or not 'Frames' in x_label or 'frames' in x_label:
         x = x_time  # set the x plotting range
         if x_label is not None:
             x_label = x_label + 'post-stimulation relative'
 
         if avg_only is True:
-            ax.axvspan(0 - 1/fps, 0 + stim_duration + 1 / fps, alpha=1, color='plum', zorder = 3)
-            ax.axvspan(0 - 1/fps, 0 + stim_duration + 1 / fps, alpha=1, color='plum', zorder = 3)
+            ax.axvspan(0 - 1/fps, 0 + stim_duration + 1 / fps, alpha=alpha, color='plum', zorder = 3)
+            ax.axvspan(0 - 1/fps, 0 + stim_duration + 1 / fps, alpha=alpha, color='plum', zorder = 3)
         else:
-            ax.axvspan(0 - 1/fps, 0 - 1/fps + stim_duration, alpha=0.5, color='plum', zorder = 3)  # note that we are setting 0 as the stimulation time
+            ax.axvspan(0 - 1/fps, 0 - 1/fps + stim_duration, alpha=alpha, color='plum', zorder = 3)  # note that we are setting 0 as the stimulation time
     else:
-        ax.axvspan(exp_prestim, exp_prestim + int(stim_duration*fps), alpha=0.2, color='tomato')
+        ax.axvspan(exp_prestim, exp_prestim + int(stim_duration*fps), alpha=alpha, color='tomato')
 
     if not avg_only:
         for cell_trace in arr:
@@ -941,66 +1013,6 @@ def xyloc_responses(expobj, df, label='response magnitude', clim=[-10, +10], plo
     if save_fig is not None:
         plt.savefig(save_fig)
 
-
-# plot to show s2p ROIs location, colored as specified
-def s2pRoiImage(expobj, save_fig: str = None):
-    """
-    plot to show the response magnitude of each cell as the actual's filling in the cell's ROI pixels.
-
-    :param expobj: expobj associated with data
-    :param df: pandas dataframe (cell_id x stim frames)
-    :param clim: color limits
-    :param plot_target_coords: bool, if True plot the actual X and Y coords of all photostim cell targets
-    :param save_fig: where to save the save figure (optional)
-    :return:
-    """
-    fig, ax = plt.subplots(figsize=(5, 5))
-    if expobj.frame_x == 512:
-        s = 0.003 * (1024/expobj.frame_x * 4)
-    else:
-        s = 0.003
-    ##### targets areas image
-    targ_img = np.zeros([expobj.frame_x, expobj.frame_y], dtype='float')
-    target_areas_exclude = np.array(expobj.target_areas_exclude)
-    targ_img[target_areas_exclude[:, :, 1], target_areas_exclude[:, :, 0]] = 1
-    x = np.asarray(list(range(expobj.frame_x)) * expobj.frame_y)
-    y = np.asarray([i_y for i_y in range(expobj.frame_y) for i_x in range(expobj.frame_x)])
-    img = targ_img.flatten()
-    im_array = np.array([x, y], dtype=np.float)
-    ax.scatter(im_array[0], im_array[1], c=img, cmap='gray', s=s, zorder=0, alpha=1)
-
-    ##### suite2p ROIs areas image - nontargets
-    for n in expobj.s2p_nontargets:
-        idx = expobj.cell_id.index(n)
-        ypix = expobj.stat[idx]['ypix']
-        xpix = expobj.stat[idx]['xpix']
-        ax.scatter(xpix, ypix, c='lightsteelblue', s=s, zorder=1, alpha=1)
-
-    ##### suite2p ROIs areas image - exclude cells
-    for n in expobj.s2p_cells_exclude:
-        idx = expobj.cell_id.index(n)
-        ypix = expobj.stat[idx]['ypix']
-        xpix = expobj.stat[idx]['xpix']
-        ax.scatter(xpix, ypix, c='yellow', s=s, zorder=2, alpha=1)
-
-    ##### suite2p ROIs areas image - targeted cells
-    for n in expobj.s2p_cell_targets:
-        idx = expobj.cell_id.index(n)
-        ypix = expobj.stat[idx]['ypix']
-        xpix = expobj.stat[idx]['xpix']
-        ax.scatter(xpix, ypix, c='red', s=s, zorder=3, alpha=1)
-
-    ax.set_xlim([0, expobj.frame_x])
-    ax.set_ylim([0, expobj.frame_y])
-    plt.margins(x=0, y=0)
-    plt.gca().invert_yaxis()
-    # plt.gca().invert_xaxis()
-    # fig.show()
-
-    plt.suptitle(f"{expobj.metainfo['animal prep.']} {expobj.metainfo['trial']} - s2p nontargets (blue), exclude (yellow), targets (red); target_areas (white)",
-                 y=0.97, fontsize=7)
-    plt.show()
-    plt.savefig(save_fig) if save_fig else None
 
 
 

@@ -6,11 +6,12 @@ sys.path.append('/home/pshah/Documents/code/')
 import alloptical_utils_pj as aoutils
 import alloptical_plotting_utils as aoplot
 import utils.funcs_pj as pj
-
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
+from matplotlib.colors import ColorConverter
 import seaborn as sns
+import tifffile as tf
 
 from skimage import draw
 
@@ -21,26 +22,30 @@ allopticalResults = aoutils.import_resultsobj(pkl_path=results_object_path)
 results_object_path = '/home/pshah/mnt/qnap/Analysis/onePstim_results_superobject.pkl'
 onePresults = aoutils.import_resultsobj(pkl_path=results_object_path)
 
+save_path_prefix = '/home/pshah/mnt/qnap/Analysis/Procesing_figs/sz_processing_boundaries_2021-11-16/'
+os.makedirs(save_path_prefix) if not os.path.exists(save_path_prefix) else None
 
-## TODO rerunning classifying sz boundaries for trials in ls2:
+
+## TODO need to do paired measurements for seizures, and then run classifying sz boundaries for trials in ls2:
 ls2 = [
     ['RL108 t-011'],
-    ['RL109 t-017'],
-    ['PS06 t-014'],
-    ['PS06 t-015'],
-    ['PS06 t-016']
+    # ['RL109 t-017'],
+    # ['PS06 t-014'],
+    # ['PS06 t-015'],
+    # ['PS06 t-016']
 ]
 
 #%% 1) defining trials to run for analysis
 
+# this list should line up with the analysis list for post4ap trials
 ls = [
-    # ['RL108 t-013'],
-    # ['RL108 t-011'],
-    # ['RL109 t-020'],
-    # ['RL109 t-021'],
-    # ['RL109 t-018'],
-    # ['RL109 t-016'], #, 'RL109 t-017'], - need to redo paired measurements
-    # ['PS04 t-018'],
+    ['RL108 t-013'],
+    ['RL108 t-011'],
+    ['RL109 t-020'],  # - hasnt been inspected for flip stims requirements
+    ['RL109 t-021'],
+    ['RL109 t-018'],
+    ['RL109 t-016'], #, 'RL109 t-017'], - need to redo paired measurements
+    ['PS04 t-018'],
     ['PS05 t-012'],
     ['PS07 t-011'],
     # ['PS07 t-017'], - lots of little tiny seizures, not sure if they are propagating through likely not
@@ -54,11 +59,10 @@ ls = [
     # ['PS18 t-008']
 ]
 
-ls2 = [
-    ['RL108 t-011'],
-]
 
 # %% 2.1) classification of cells in/out of sz boundary
+
+trials_without_flip_stims = []
 
 # using post4ap experiments from allopticalResults attr. in for loop for processing:
 
@@ -72,7 +76,7 @@ for i in ls2:
         # trial = 't-016'
         prep = i[j][:-6]
         trial = i[j][-5:]
-        print('\nworking on @ ', prep, trial)
+        print('\nWorking on @ ', prep, trial)
         expobj, experiment = aoutils.import_expobj(trial=trial, prep=prep, verbose=False)
         aoplot.plot_lfp_stims(expobj)
 
@@ -101,22 +105,29 @@ for i in ls2:
             end = expobj.stims_af_sz + [expobj.stim_start_frames[-1]]
         else:
             end = expobj.stims_af_sz
-        print('seizure start frames: ', on_)
-        print('seizure end frames: ', end)
+        print('\-seizure start frames: ', on_)
+        print('\-seizure end frames: ', end)
 
         ##### import the CSV file in and classify cells by their location in or out of seizure
 
         if not hasattr(expobj, 'not_flip_stims'):
         # if hasattr(expobj, 'not_flip_stims'):
-            expobj.not_flip_stims = []
+            print(f"|-- expobj {prep} {trial} DOES NOT have not_flip_stims made")
+            trials_without_flip_stims.append(f"{prep} {trial}")
+            break  # move on to the next for loop instance without plotting this expobj
+        else:
+            print(f"\-expobj.not_flip_stims: {expobj.not_flip_stims}")
 
-        print('working on classifying cells for stims start frames...')
-        expobj.slmtargets_sz_stim = {}
+        # break
 
-#  2.1.1) ######## - all stims in sz are classified, with individual sz events labelled
+        print(' \nworking on classifying cells for stims start frames...')
+        expobj.slmtargets_szboundary_stim = {}
+        expobj.s2prois_szboundary_stim = {}
+
+        ######## - all stims in sz are classified, with individual sz events labelled
 
         stims_of_interest = [stim for stim in expobj.stims_in_sz[1:]]
-        print('\n all stims in seizures: \n|-', stims_of_interest)
+        print(' \-all stims in seizures: \n \-', stims_of_interest)
         nrows = len(stims_of_interest) // 4 + 1
         if nrows == 1:
             nrows += 1
@@ -127,40 +138,48 @@ for i in ls2:
         sz_num = 0
         for on, off in zip(on_, end):
             stims_of_interest = [stim for stim in expobj.stim_start_frames if on < stim < off if stim != expobj.stims_in_sz[0]]
-            print('\n working sz # %s with stims: \n|-' % (sz_num), stims_of_interest)
+            print(' \-- working sz # %s with stims: \n \---' % (sz_num), stims_of_interest)
 
             for stim in stims_of_interest:
+                print(f"considering stim # {stim}")
+
                 ax = axs[counter // ncols, counter % ncols]
 
-                sz_border_path = "%s/boundary_csv/%s_%s_stim-%s.tif_border.csv" % (
-                expobj.analysis_save_path[:-17], expobj.metainfo['date'], trial, stim)
-                if not os.path.exists(sz_border_path):
-                    print(sz_border_path)
-                # first round of classifying (dont flip any cells over) - do this in the second round
-                if stim not in expobj.not_flip_stims:
-                    flip = False
+                sz_border_path = "%s/boundary_csv/%s_%s_stim-%s.tif_border.csv" % (expobj.analysis_save_path[:-17], expobj.metainfo['date'], trial, stim)
+                if os.path.exists(sz_border_path):
+                    # first round of classifying (dont flip any cells over) - do this in the second round
+                    if stim not in expobj.not_flip_stims:
+                        flip = False
+                    else:
+                        flip = True
+
+                    # classification of suite2p ROIs relative to sz boundary
+                    in_sz, out_sz, fig, ax = expobj.classify_cells_sz_bound(sz_border_path, stim=stim, to_plot=True,
+                                                                            flip=flip, fig=fig, ax=ax, text='sz %s stim %s' % (sz_num, stim))
+                    expobj.s2prois_szboundary_stim[stim] = in_sz
+                    # classification of SLM targets relative to sz boundary
+                    in_sz, out_sz, fig, ax = expobj.classify_slmtargets_sz_bound(sz_border_path, stim=stim, to_plot=True, title='%s' % stim, flip=flip, fig=fig, ax=ax)
+                    expobj.slmtargets_szboundary_stim[stim] = in_sz  # for each stim, there will be a ls of cells that will be classified as in seizure or out of seizure
+
+                    axs[counter // ncols, counter % ncols] = ax
+                    counter += 1
                 else:
-                    flip = True
+                    print(f"sz border path doesn't exist for stim {stim}: {sz_border_path}")
 
-                # classification of suite2p ROIs relative to sz boundary
-                in_sz, out_sz, fig, ax = expobj.classify_cells_sz_bound(sz_border_path, stim=stim, to_plot=True,
-                                                                        flip=flip, fig=fig, ax=ax, text='sz %s stim %s' % (sz_num, stim))
-                # classification of SLM targets relative to sz boundary
-                # in_sz, out_sz, fig, ax = expobj.classify_slmtargets_sz_bound(sz_border_path, stim=stim, to_plot=True, title='%s' % stim, flip=flip, fig=fig, ax=ax)
-                expobj.slmtargets_sz_stim[
-                    stim] = in_sz  # for each stim, there will be a ls of cells that will be classified as in seizure or out of seizure
-
-                axs[counter // ncols, counter % ncols] = ax
-                counter += 1
             sz_num += 1
 
         fig.suptitle('%s %s - Avg img around stims during- all stims' % (expobj.metainfo['animal prep.'], expobj.metainfo['trial']), y=0.995)
-        fig.show()
+        save_path_full = f"{save_path_prefix}/{expobj.metainfo['animal prep.']} {expobj.metainfo['trial']} {sz_num} events.png"
+        print(f"saving fig to: {save_path_full}")
+        fig.savefig(save_path_full)
+        # fig.show()
 
-        # expobj.save()
+        expobj.save()
 print('end end end.')
 
-# %% 2.2) need to repeat the above code
+sys.exit()
+
+# %% 2.1.1) specify which stims are flipped for boundary assignment and repeat the above code in 2.1.2)
 # to correct for mis-assignment of cells (look at results and then find out which stims need to be flipped)
 
  # ['RL109 t-020'],
@@ -176,8 +195,8 @@ expobj.not_flip_stims = expobj.stims_in_sz[1:]  # specify here the stims where t
 
 expobj.save()
 
-# %% 2.3) re-run with new flip stims
-expobj.slmtargets_sz_stim = {}
+# %% 2.1.2) re-run with new flip stims
+expobj.slmtargets_szboundary_stim = {}
 sz_num = 0
 for on, off in zip(on_, end):
     stims_of_interest = [stim for stim in expobj.stim_start_frames if on < stim < off if stim != expobj.stims_in_sz[0]]
@@ -203,7 +222,7 @@ for on, off in zip(on_, end):
             flip = True
 
         in_sz, out_sz, fig, ax = expobj.classify_slmtargets_sz_bound(sz_border_path, stim=stim, to_plot=True, title='%s' % stim, flip=flip, fig=fig, ax=ax)
-        expobj.slmtargets_sz_stim[stim] = in_sz  # for each stim, there will be a ls of cells that will be classified as in seizure or out of seizure
+        expobj.slmtargets_szboundary_stim[stim] = in_sz  # for each stim, there will be a ls of cells that will be classified as in seizure or out of seizure
 
         axs[counter // ncols, counter % ncols] = ax
         counter += 1
@@ -239,7 +258,7 @@ else:
 targets_avgresponses_exclude_stims_sz = {}
 for row in expobj.insz_responses_SLMtargets.index:
     # stims = [expobj.stim_start_frames.index(stim) for stim in expobj.stims_in_sz]
-    responses = [expobj.insz_responses_SLMtargets.loc[row][stim] for stim in expobj.stims_in_sz if row not in expobj.slmtargets_sz_stim[stim]]
+    responses = [expobj.insz_responses_SLMtargets.loc[row][stim] for stim in expobj.stims_in_sz if row not in expobj.slmtargets_szboundary_stim[stim]]
     targets_avgresponses_exclude_stims_sz[row] = np.mean(responses)
 
 
@@ -264,31 +283,46 @@ pj.plot_hist_density(data, x_label='response magnitude (dF/stdF)', title='stims_
 
 # %% 4) PLOT - stim frames for figures with SLM targets inside (yellow) and outside (green) of seizure boundary
 
-prep='RL108'
-trial='t-013'
+prep = 'RL108'
+trial = 't-013'
 expobj, experiment = aoutils.import_expobj(trial=trial, prep=prep, verbose=False)
 # aoplot.plot_lfp_stims(expobj, xlims=[0.2e7, 1.0e7], linewidth=1.0)
-aoplot.plotLfpSignal(expobj, downsample=True, figsize=(6,2), x_axis='Time', xlims=[120 * expobj.paq_rate, 480 * expobj.paq_rate],
-                     ylims=[-6, 2], color='slategray', stim_span_color='green', alpha=0.1)
+# aoplot.plotLfpSignal(expobj, downsample=True, figsize=(6,2), x_axis='Time', xlims=[120 * expobj.paq_rate, 480 * expobj.paq_rate],
+#                      ylims=[-6, 2], color='slategray', stim_span_color='green', alpha=0.1)
 
-
-sz_num = 3
+# %%
+sz_num = 2
 stims_to_plot = [stim for stim in expobj.stim_start_frames if expobj.seizure_lfp_offsets[sz_num] > stim > expobj.seizure_lfp_onsets[sz_num]]
 
-fig, ax = plt.subplots(figsize=[5, 5], nrows=1, ncols=len(stims_to_plot))
-for stim in stims_to_plot:
-    pass
-stim = stims_to_plot[0]
+fig, axs = plt.subplots(figsize=[5*len(stims_to_plot), 5], nrows=1, ncols=len(stims_to_plot))
+for i in range(len(stims_to_plot)):
 
-# plot SLM targets in sz boundary
-coords_to_plot = [expobj.target_coords_all[cell] for cell in expobj.slmtargets_sz_stim[stim]]
-# read in avg stim image to use as the background
-avg_stim_img_path = '%s/%s_%s_stim-%s.tif' % (self.analysis_save_path + 'avg_stim_images', self.metainfo['date'], self.metainfo['trial'], stim)
-bg_img = tf.imread(avg_stim_img_path)
-fig, ax = aoplot.plot_SLMtargets_Locs(self, targets_coords=coords_to_plot, fig=fig, ax=ax, cells=in_sz, title=title,
-                                      show=False, background=bg_img)
+    ax = axs[i]
+    stim = stims_to_plot[i]
+    # fig, ax = plt.subplots(figsize=[5, 5], nrows=1, ncols=1)
+    # stim = stims_to_plot[0]
 
-
+    # plot SLM targets in sz boundary
+    coords_to_plot = [expobj.target_coords_all[cell] for cell in expobj.slmtargets_szboundary_stim[stim]]
+    # read in avg stim image to use as the background
+    avg_stim_img_path = '%s/%s_%s_stim-%s.tif' % (expobj.analysis_save_path + 'avg_stim_images', expobj.metainfo['date'], expobj.metainfo['trial'], stim)
+    bg_img = tf.imread(avg_stim_img_path)
+    title=f"{prep} {trial} {stim} - SLM targets"
+    for (x, y) in coords_to_plot:
+        ax.scatter(x=x, y=y, edgecolors='red', facecolors='none', linewidths=2.5, zorder=4)
+    cells_to_plot = expobj.s2prois_szboundary_stim[stim]
+    cells_to_plot2 = [cell for cell in expobj.cell_id if cell not in expobj.s2prois_szboundary_stim[stim]]
+    fig, ax = aoplot.plot_cells_loc(expobj, cells=cells_to_plot, show_s2p_targets=False, fig=fig, ax=ax, show=False, scatter_only=True)
+    fig, ax = aoplot.plot_cells_loc(expobj, cells=cells_to_plot2, show_s2p_targets=False, fig=fig, ax=ax, show=False, scatter_only=True,
+                                    edgecolor='gray')
+    ax.imshow(bg_img, cmap='Greys_r', zorder=0)
+    ax.set_title(title)
+    ax.set_xticks(ticks=[])
+    ax.set_xticklabels([])
+    ax.set_yticks(ticks=[])
+    ax.set_yticklabels([])
+fig.tight_layout(pad=2)
+fig.show()
 
 
 
@@ -478,14 +512,14 @@ def _trialProcessing_nontargets(expobj, normalize_to='pre-stim', save=True):
     # stim_timings_outsz = [stim for stim in expobj.stim_start_frames if stim not in expobj.seizure_frames]; stim_timings=expobj.stims_out_sz
     expobj._makeNontargetsStimTracesArray(stim_timings=expobj.stim_start_frames, normalize_to=normalize_to, save=False)
 
-    if hasattr(expobj, 'slmtargets_sz_stim'):
-        stim_timings_insz = [(x, stim) for x, stim in enumerate(expobj.stim_start_frames) if stim in list(expobj.slmtargets_sz_stim.keys())]
+    if hasattr(expobj, 'slmtargets_szboundary_stim'):
+        stim_timings_insz = [(x, stim) for x, stim in enumerate(expobj.stim_start_frames) if stim in list(expobj.slmtargets_szboundary_stim.keys())]
         # expobj._makeNontargetsStimTracesArray(stim_timings=stim_timings_insz, normalize_to=normalize_to,
         #                                       save=False)
         print('\nexcluding cells for stims inside sz boundary')
         for x, stim in stim_timings_insz:
             # stim = stim_timings_insz[0]
-            exclude_list = [idx for idx, cell in enumerate(expobj.s2p_nontargets) if cell in expobj.slmtargets_sz_stim[stim]]
+            exclude_list = [idx for idx, cell in enumerate(expobj.s2p_nontargets) if cell in expobj.slmtargets_szboundary_stim[stim]]
 
             expobj.dff_traces[exclude_list, x, :] = [np.nan] * expobj.dff_traces.shape[2]
             expobj.dfstdF_traces[exclude_list, x, :] = [np.nan] * expobj.dfstdF_traces.shape[2]
@@ -498,7 +532,7 @@ def _trialProcessing_nontargets(expobj, normalize_to='pre-stim', save=True):
 
     else:
         AttributeError(
-            'no slmtargets_sz_stim attr, so classify cells in sz boundary hasnot been saved for this expobj')
+            'no slmtargets_szboundary_stim attr, so classify cells in sz boundary hasnot been saved for this expobj')
 
 
     # create parameters, slices, and subsets for making pre-stim and post-stim arrays to use in stats comparison

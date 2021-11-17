@@ -5,6 +5,7 @@ sys.path.append('/home/pshah/Documents/code/')
 import alloptical_utils_pj as aoutils
 import alloptical_plotting_utils as aoplot
 import utils.funcs_pj as pj
+# import funcsforprajay.funcs as pj
 
 import numpy as np
 import pandas as pd
@@ -167,7 +168,7 @@ for i in range(len(allopticalResults.pre_4ap_trials)):
 
         # load up post-4ap trial and stim responses
         expobj, experiment = aoutils.import_expobj(trial=post4aptrial, date=date, prep=prep, verbose=False)
-        if hasattr(expobj, 'slmtargets_sz_stim'):
+        if hasattr(expobj, 'slmtargets_szboundary_stim'):
             if hasattr(expobj, 'responses_SLMtargets_insz'):
                 df = expobj.responses_SLMtargets_insz.T
 
@@ -176,12 +177,12 @@ for i in range(len(allopticalResults.pre_4ap_trials)):
                 # collect stim responses with stims excluded as necessary
                 for target in df.columns:
                     # stims = [expobj.stim_start_frames.index(stim) for stim in expobj.stims_in_sz]
-                    for stim in list(expobj.slmtargets_sz_stim.keys()):
-                        if target in expobj.slmtargets_sz_stim[stim]:
+                    for stim in list(expobj.slmtargets_szboundary_stim.keys()):
+                        if target in expobj.slmtargets_szboundary_stim[stim]:
                             df.loc[expobj.stim_start_frames.index(stim)][target] = np.nan
 
                     # responses = [expobj.responses_SLMtargets_insz.loc[col][expobj.stim_start_frames.index(stim)] for stim in expobj.stims_in_sz if
-                    #              col not in expobj.slmtargets_sz_stim[stim]]
+                    #              col not in expobj.slmtargets_szboundary_stim[stim]]
                     # targets_avgresponses_exclude_stims_sz[row] = np.mean(responses)
 
 
@@ -206,8 +207,8 @@ for i in range(len(allopticalResults.pre_4ap_trials)):
                             # collect stim responses with stims excluded as necessary
                             for target in df.columns:
                                 # stims = [expobj.stim_start_frames.index(stim) for stim in expobj.stims_in_sz]
-                                for stim in list(expobj.slmtargets_sz_stim.keys()):
-                                    if target in expobj.slmtargets_sz_stim[stim]:
+                                for stim in list(expobj.slmtargets_szboundary_stim.keys()):
+                                    if target in expobj.slmtargets_szboundary_stim[stim]:
                                         df_.loc[expobj.stim_start_frames.index(stim)][target] = np.nan
 
                             df.append(df_, ignore_index=True)
@@ -229,7 +230,7 @@ for i in range(len(allopticalResults.pre_4ap_trials)):
 
     else:
         print(f"|-- ***** skipping: {prep} {post4aptrial}")
-        if not hasattr(expobj, 'slmtargets_sz_stim'):
+        if not hasattr(expobj, 'slmtargets_szboundary_stim'):
             print(f'**** 3 need to run collecting insz responses SLMtargets attr for {post4aptrial}, {prep} ****')
         if hasattr(expobj, 'responses_SLMtargets_insz'):
             print(f'**** 4 need to run collecting in sz responses SLMtargets attr for {post4aptrial}, {prep} ****')
@@ -287,57 +288,64 @@ pj.plot_hist_density(data, x_label='z-score', title='All exps. stim responses zs
 
 stim_relative_szonset_vs_avg_zscore_alltargets_atstim = {}
 
-# for prep in allopticalResults.stim_responses_zscores.keys():
-#     pass
+for prep in allopticalResults.stim_responses_zscores.keys():
+    # prep = 'PS07'
+
+    for key in list(allopticalResults.stim_responses_zscores[prep].keys()):
+        # key = list(allopticalResults.stim_responses_zscores[prep].keys())[0]
+        # comp = 2
+        if 'post-4ap' in allopticalResults.stim_responses_zscores[prep][key]:
+            post_4ap_df = allopticalResults.stim_responses_zscores[prep][key]['post-4ap']
+            if len(post_4ap_df) > 0:
+                post4aptrial = key[-5:]
+                print(f'working on.. {prep} {key}, post4ap trial: {post4aptrial}')
+                stim_relative_szonset_vs_avg_zscore_alltargets_atstim[f"{prep} {post4aptrial}"] = [[], []]
+                expobj, experiment = aoutils.import_expobj(trial=post4aptrial, prep=prep, verbose=False)
+
+                # transform the rows of the stims responses dataframe to relative time to seizure
+                stims = list(post_4ap_df.index)
+                stims_relative_sz = []
+                for stim_idx in stims:
+                    stim_frame = expobj.stim_start_frames[stim_idx]
+                    closest_sz_onset = pj.findClosest(ls=expobj.seizure_lfp_onsets, input=stim_frame)[0]
+                    time_diff = (closest_sz_onset - stim_frame) / expobj.fps  # time difference in seconds
+                    stims_relative_sz.append(round(time_diff, 3))
+
+                cols = [col for col in post_4ap_df.columns if 'z' in str(col)]
+                post_4ap_df_zscore_stim_relative_to_sz = post_4ap_df[cols]
+                post_4ap_df_zscore_stim_relative_to_sz.index = stims_relative_sz  # take the original zscored df and assign a new index where the col names are times relative to sz onset
+
+                # take average of all targets at a specific time to seizure onset
+                post_4ap_df_zscore_stim_relative_to_sz['avg'] = post_4ap_df_zscore_stim_relative_to_sz.T.mean()
+
+                stim_relative_szonset_vs_avg_zscore_alltargets_atstim[f"{prep} {post4aptrial}"][0].append(stims_relative_sz)
+                stim_relative_szonset_vs_avg_zscore_alltargets_atstim[f"{prep} {post4aptrial}"][1].append(post_4ap_df_zscore_stim_relative_to_sz['avg'].tolist())
+
+
 # allopticalResults.stim_relative_szonset_vs_avg_zscore_alltargets_atstim = stim_relative_szonset_vs_avg_zscore_alltargets_atstim
-
-
-prep = 'PS07'
-
-# for key in ls(allopticalResults.stim_responses_zscores[prep].keys()):
-key = list(allopticalResults.stim_responses_zscores[prep].keys())[0]
-# comp = 2
-post_4ap_df = allopticalResults.stim_responses_zscores[prep][key]['post-4ap']
-if len(post_4ap_df) > 0:
-    post4aptrial = key[-5:]
-    print(f'working on.. {post4aptrial}')
-    stim_relative_szonset_vs_avg_zscore_alltargets_atstim[post4aptrial] = [[], []]
-    expobj, experiment = aoutils.import_expobj(trial=post4aptrial, prep=prep, verbose=False)
-
-    # transform the rows of the stims responses dataframe to relative time to seizure
-    stims = list(post_4ap_df.index)
-    stims_relative_sz = []
-    for stim_idx in stims:
-        stim_frame = expobj.stim_start_frames[stim_idx]
-        closest_sz_onset = pj.findClosest(ls=expobj.seizure_lfp_onsets, input=stim_frame)[0]
-        time_diff = (closest_sz_onset - stim_frame) / expobj.fps  # time difference in seconds
-        stims_relative_sz.append(round(time_diff, 3))
-
-    cols = [col for col in post_4ap_df.columns if 'z' in str(col)]
-    post_4ap_df_zscore_stim_relative_to_sz = post_4ap_df[cols]
-    post_4ap_df_zscore_stim_relative_to_sz.index = stims_relative_sz  # take the original zscored df and assign a new index where the col names are times relative to sz onset
-
-    # take average of all targets at a specific time to seizure onset
-    post_4ap_df_zscore_stim_relative_to_sz['avg'] = post_4ap_df_zscore_stim_relative_to_sz.T.mean()
-
-    stim_relative_szonset_vs_avg_zscore_alltargets_atstim[post4aptrial][0].append(stims_relative_sz)
-    stim_relative_szonset_vs_avg_zscore_alltargets_atstim[post4aptrial][1].append(post_4ap_df_zscore_stim_relative_to_sz['avg'].tolist())
 
 # %%
 
 # plotting of post_4ap zscore_stim_relative_to_sz onset
+print(f"plotting averages from trials: {list(stim_relative_szonset_vs_avg_zscore_alltargets_atstim.keys())}")
 
-preps = np.unique([prep[:-6] for prep in allopticalResults.stim_relative_szonset_vs_avg_zscore_alltargets_atstim.keys()])
+preps = np.unique([prep[:-6] for prep in stim_relative_szonset_vs_avg_zscore_alltargets_atstim.keys()])
 
-fig, ax = plt.subplots(figsize=(8, 5))
+fig, ax = plt.subplots(figsize=(4, 3))
 colors = pj.make_random_color_array(n_colors=len(preps))
 for i in range(len(preps)):
-    for key in allopticalResults.stim_relative_szonset_vs_avg_zscore_alltargets_atstim.keys():
+    print(i)
+    for key in stim_relative_szonset_vs_avg_zscore_alltargets_atstim.keys():
         if preps[i] in key:
-            sz_time = allopticalResults.stim_relative_szonset_vs_avg_zscore_alltargets_atstim[key][0]
-            z_scores = allopticalResults.stim_relative_szonset_vs_avg_zscore_alltargets_atstim[key][1]
-            ax.scatter(x=sz_time, y=z_scores, facecolors=colors[i])
-ax.set_xlim(0, 100)
+            print(key)
+            sz_time = stim_relative_szonset_vs_avg_zscore_alltargets_atstim[key][0]
+            z_scores = stim_relative_szonset_vs_avg_zscore_alltargets_atstim[key][1]
+            ax.scatter(x=sz_time, y=z_scores, facecolors=colors[i], alpha=0.2, lw=0)
+ax.set_xlim(-300, 250)
+ax.set_xlabel('Time to closest seizure onset (secs)')
+ax.set_ylabel('responses (z scored)')
+fig.suptitle(f"All exps, all targets relative to closest sz onset")
+fig.tight_layout()
 fig.show()
 
 

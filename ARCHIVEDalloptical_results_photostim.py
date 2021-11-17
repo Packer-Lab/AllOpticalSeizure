@@ -1,3 +1,5 @@
+# ARCHIVED ON: NOV 15 2021
+
 # %% DATA ANALYSIS + PLOTTING FOR ALL-OPTICAL TWO-P PHOTOSTIM EXPERIMENTS
 import os
 import sys
@@ -1107,7 +1109,7 @@ for i in allopticalResults.post_4ap_trials:
                 expobj.insz_traces_SLMtargets_failures_avg = \
                     expobj.calculate_SLMTarget_SuccessStims(hits_df=expobj.hits_SLMtargets,
                                                             stims_idx_l=stims_insz_idx,
-                                                            exclude_stims_targets=expobj.slmtargets_sz_stim)
+                                                            exclude_stims_targets=expobj.slmtargets_szboundary_stim)
 
         if to_plot == 'successes':
             array_to_plot = np.asarray([expobj.insz_traces_SLMtargets_successes_avg[key] for key in expobj.insz_traces_SLMtargets_successes_avg.keys()])

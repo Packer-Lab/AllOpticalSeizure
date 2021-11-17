@@ -95,6 +95,10 @@ def import_expobj(aoresults_map_id: str = None, trial: str = None, prep: str = N
             expobj.save()
 
     ### roping in some extraneous processing steps if there's expobj's that haven't completed for them
+    if expobj.analysis_save_path[-1] != '/':
+        expobj.analysis_save_path = expobj.analysis_save_path + '/'
+        print(f"updated expobj.analysis_save_path to: {expobj.analysis_save_path}")
+
     if not hasattr(expobj, 'paq_rate') or not hasattr(expobj, 'frame_start_time_actual'):
         print('\n-running paqProcessing to update paq attr.s in expobj')
         expobj.paqProcessing()
@@ -901,7 +905,7 @@ class alloptical(TwoPhotonImaging):
                     pass
                     # print('collecting stim traces for cell # %s out of %s' % (cell_idx + 1, num_cells))
                 if filter_sz:
-                    if self.slmtargets_sz_stim is not None and hasattr(self, 'slmtargets_sz_stim'):
+                    if self.slmtargets_sz_stim is not None and hasattr(self, 'slmtargets_szboundary_stim'):
                         flu = []
                         for stim in stim_timings:
                             if stim in self.slmtargets_sz_stim.keys():  # some stims dont have sz boundaries because of issues with their TIFFs not being made properly (not readable in Fiji), usually it is the first TIFF in a seizure
@@ -2115,11 +2119,11 @@ class alloptical(TwoPhotonImaging):
     #     for cell_idx in range(num_cells):
     #
     #         if filter_sz:
-    #             if hasattr(self, 'slmtargets_sz_stim'):  ## change to ROIs in sz for each stim -- has this classification been done for non-targets ROIs?
+    #             if hasattr(self, 'slmtargets_szboundary_stim'):  ## change to ROIs in sz for each stim -- has this classification been done for non-targets ROIs?
     #                 flu = []
     #                 for stim in stim_timings:
-    #                     if stim in self.slmtargets_sz_stim.keys():  # some stims dont have sz boundaries because of issues with their TIFFs not being made properly (not readable in Fiji), usually it is the first TIFF in a seizure
-    #                         if cell_idx not in self.slmtargets_sz_stim[stim]:
+    #                     if stim in self.slmtargets_szboundary_stim.keys():  # some stims dont have sz boundaries because of issues with their TIFFs not being made properly (not readable in Fiji), usually it is the first TIFF in a seizure
+    #                         if cell_idx not in self.slmtargets_szboundary_stim[stim]:
     #                             flu.append(targets_trace[cell_idx][stim - pre_stim_sec: stim + self.stim_duration_frames + post_stim_sec])
     #             else:
     #                 flu = []
@@ -2202,7 +2206,7 @@ class alloptical(TwoPhotonImaging):
                     trace_dff = ((flu_trials[i] - mean_spont_baseline) / mean_spont_baseline) * 100
 
                     # add nan if cell is inside sz boundary for this stim
-                    if hasattr(self, 'slmtargets_sz_stim'):
+                    if hasattr(self, 'slmtargets_szboundary_stim'):
                         if self.is_cell_insz(cell=cell, stim=stim_timings[i]):
                             trace_dff = [np.nan] * len(flu_trials[i])
 
@@ -2253,13 +2257,13 @@ class alloptical(TwoPhotonImaging):
 
                     # # add nan if cell is inside sz boundary for this stim -- temporarily commented out for a while
                     # if 'post' in self.metainfo['exptype']:
-                    #     if hasattr(self, 'slmtargets_sz_stim'):
+                    #     if hasattr(self, 'slmtargets_szboundary_stim'):
                     #         if self.is_cell_insz(cell=cell, stim=stim_timings[i]):
                     #             trace_dff = [np.nan] * len(trace)
                     #             dFstdF = [np.nan] * len(trace)
                     #     else:
                     #         AttributeError(
-                    #             'no slmtargets_sz_stim attr, so classify cells in sz boundary hasnot been saved for this expobj')
+                    #             'no slmtargets_szboundary_stim attr, so classify cells in sz boundary hasnot been saved for this expobj')
 
                     flu_dff.append(trace_dff)
                     flu_dfstdF.append(dFstdF)
@@ -2881,7 +2885,7 @@ class Post4ap(alloptical):
 
     def classify_cells_sz_bound(self, sz_border_path, stim, to_plot=True, title=None, flip=False, fig=None, ax=None, text=None):
         """
-        going to use Rob's suggestions to define boundary of the seizure in ImageJ and then read in the ImageJ output,
+        using Rob's suggestions to define boundary of the seizure in ImageJ and then read in the ImageJ output,
         and use this to classify cells as in seizure or out of seizure in a particular image (which will relate to stim time).
 
         :param sz_border_path: str; path to the .csv containing the points specifying the seizure border for a particular stim image
@@ -2935,7 +2939,7 @@ class Post4ap(alloptical):
             # plot SLM targets in sz boundary
             # coords_to_plot = [s['med'] for cell, s in enumerate(self.stat) if cell in in_sz_final]
             # read in avg stim image to use as the background
-            avg_stim_img_path = '%s/%s_%s_stim-%s.tif' % (self.analysis_save_path + 'avg_stim_images', self.metainfo['date'], self.metainfo['trial'], stim)
+            avg_stim_img_path = '%s/%s_%s_stim-%s.tif' % (self.analysis_save_path[:-1] + 'avg_stim_images', self.metainfo['date'], self.metainfo['trial'], stim)
             bg_img = tf.imread(avg_stim_img_path)
             fig, ax = aoplot.plot_cells_loc(self, cells=in_sz_final, fig=fig, ax=ax, title=title, show=False, background=bg_img, cmap='gray', text=text)
 
@@ -3022,7 +3026,7 @@ class Post4ap(alloptical):
             # plot SLM targets in sz boundary
             coords_to_plot = [self.target_coords_all[cell] for cell in in_sz]
             # read in avg stim image to use as the background
-            avg_stim_img_path = '%s/%s_%s_stim-%s.tif' % (self.analysis_save_path + 'avg_stim_images', self.metainfo['date'], self.metainfo['trial'], stim)
+            avg_stim_img_path = '%s/%s_%s_stim-%s.tif' % (self.analysis_save_path[:-1] + 'avg_stim_images', self.metainfo['date'], self.metainfo['trial'], stim)
             bg_img = tf.imread(avg_stim_img_path)
             fig, ax = aoplot.plot_SLMtargets_Locs(self, targets_coords=coords_to_plot, fig=fig, ax=ax, cells=in_sz, title=title,
                                                   show=False, background=bg_img)
@@ -3059,7 +3063,7 @@ class Post4ap(alloptical):
 
     def is_cell_insz(self, cell, stim):
         """for a given cell and stim, return True if cell is inside the sz boundary."""
-        if hasattr(self, 'slmtargets_sz_stim'):
+        if hasattr(self, 'slmtargets_szboundary_stim'):
             if stim in self.slmtargets_sz_stim.keys():
                 if cell in self.slmtargets_sz_stim[stim]:
                     return True
@@ -3809,7 +3813,7 @@ def get_s2ptargets_stim_traces(expobj, normalize_to='', pre_stim=10, post_stim=2
                 for i in range(len(flu)):
                     trace_dff = ((flu[i] - mean_spont_baseline) / mean_spont_baseline) * 100
                     # add nan if cell is inside sz boundary for this stim
-                    if hasattr(expobj, 'slmtargets_sz_stim'):
+                    if hasattr(expobj, 'slmtargets_szboundary_stim'):
                         if expobj.is_cell_insz(cell=cell, stim=stim_timings[i]):
                             trace_dff = [np.nan] * len(flu[i])
                     flu_dff.append(trace_dff)
@@ -3821,7 +3825,7 @@ def get_s2ptargets_stim_traces(expobj, normalize_to='', pre_stim=10, post_stim=2
                     std_pre = np.std(trace[0:pre_stim])
                     dFstdF = (trace - mean_pre) / std_pre  # make dF divided by std of pre-stim F trace
                     # add nan if cell is inside sz boundary for this stim
-                    if hasattr(expobj, 'slmtargets_sz_stim'):
+                    if hasattr(expobj, 'slmtargets_szboundary_stim'):
                         if expobj.is_cell_insz(cell=cell, stim=stim_timings[i]):
                             trace_dff = [np.nan] * len(trace)
                             dFstdF = [np.nan] * len(trace)
@@ -3882,7 +3886,7 @@ def get_nontargets_stim_traces_norm(expobj, normalize_to='', pre_stim=10, post_s
                 trace_dff = ((flu[i] - mean_spont_baseline) / mean_spont_baseline) * 100
 
                 # add nan if cell is inside sz boundary for this stim
-                if hasattr(expobj, 'slmtargets_sz_stim'):
+                if hasattr(expobj, 'slmtargets_szboundary_stim'):
                     if expobj.is_cell_insz(cell=cell, stim=stim_timings[i]):
                         trace_dff = [np.nan] * len(flu[i])
 
@@ -3900,12 +3904,12 @@ def get_nontargets_stim_traces_norm(expobj, normalize_to='', pre_stim=10, post_s
 
                 # add nan if cell is inside sz boundary for this stim
                 if 'post' in expobj.metainfo['exptype']:
-                    if hasattr(expobj, 'slmtargets_sz_stim'):
+                    if hasattr(expobj, 'slmtargets_szboundary_stim'):
                         if expobj.is_cell_insz(cell=cell, stim=stim_timings[i]):
                             trace_dff = [np.nan] * len(trace)
                             dFstdF = [np.nan] * len(trace)
                     else:
-                        AttributeError('no slmtargets_sz_stim attr, so classify cells in sz boundary hasnot been saved for this expobj')
+                        AttributeError('no slmtargets_szboundary_stim attr, so classify cells in sz boundary hasnot been saved for this expobj')
 
                 flu_dfstdF.append(dFstdF)
                 flu_dff.append(trace_dff)
@@ -4140,8 +4144,8 @@ def calculate_StimSuccessRate(expobj, cell_ids: list, raw_traces_stims=None, dfs
     targets_dff_all_stimtrials = {}  # dict will contain the peri-stim dFF for each cell by the cell_idx
     stim_timings = expobj.stim_start_frames
 
-    # assert ls(stim_timings) == ls(expobj.slmtargets_sz_stim.keys())  # dont really need this assertion because you wont necessarily always look at the sz boundary for all stims every trial
-    # stim_timings = expobj.slmtargets_sz_stim.keys()
+    # assert ls(stim_timings) == ls(expobj.slmtargets_szboundary_stim.keys())  # dont really need this assertion because you wont necessarily always look at the sz boundary for all stims every trial
+    # stim_timings = expobj.slmtargets_szboundary_stim.keys()
     if dff_threshold:
         threshold = round(dff_threshold)
         # dff = True
@@ -4163,9 +4167,9 @@ def calculate_StimSuccessRate(expobj, cell_ids: list, raw_traces_stims=None, dfs
             # print('considering cell # %s' % cell)
             # if cell in expobj.cell_id:
             if sz_filter:
-                if hasattr(expobj, 'slmtargets_sz_stim'):
+                if hasattr(expobj, 'slmtargets_szboundary_stim'):
                     stims_to_use = [str(stim) for stim in stim_timings
-                                    if stim not in expobj.slmtargets_sz_stim.keys() or cell not in expobj.slmtargets_sz_stim[
+                                    if stim not in expobj.slmtargets_szboundary_stim.keys() or cell not in expobj.slmtargets_szboundary_stim[
                                         stim]]  # select only the stim times where the cell IS NOT inside the sz boundary
                 else:
                     print(
@@ -4473,16 +4477,16 @@ def run_alloptical_processing_photostim(expobj, to_suite2p=None, baseline_trials
                     expobj.calculate_SLMTarget_SuccessStims(hits_df=expobj.hits_SLMtargets, stims_idx_l=stims_outsz_idx)
 
         if hasattr(expobj, 'stims_in_sz'):
-            if hasattr(expobj, 'slmtargets_sz_stim'):
+            if hasattr(expobj, 'slmtargets_szboundary_stim'):
                 stims_insz_idx = [expobj.stim_start_frames.index(stim) for stim in expobj.stims_in_sz]
                 if len(stims_insz_idx) > 0:
                     print('|- calculating stim success rates (insz) - %s stims [2.3]' % len(stims_insz_idx))
                     expobj.insz_StimSuccessRate_SLMtargets, expobj.insz_traces_SLMtargets_successes_avg,\
                         expobj.insz_traces_SLMtargets_failures_avg = \
                         expobj.calculate_SLMTarget_SuccessStims(hits_df=expobj.hits_SLMtargets, stims_idx_l=stims_insz_idx,
-                                                                exclude_stims_targets=expobj.slmtargets_sz_stim)
+                                                                exclude_stims_targets=expobj.slmtargets_szboundary_stim)
             else:
-                print('No slmtargets_sz_stim (sz boundary classification not done) for: %s %s' % (
+                print('No slmtargets_szboundary_stim (sz boundary classification not done) for: %s %s' % (
                 expobj.metainfo['animal prep.'], expobj.metainfo['trial']), ' [2.4] ')
                 # delattr(expobj, 'insz_traces_SLMtargets_successes_avg')
 

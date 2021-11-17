@@ -271,7 +271,7 @@ ls = pj.flattenOnce(allopticalResults.post_4ap_trials)
 for (i, key, j) in code_run_list_all:
     # import expobj
     expobj, experiment = aoutils.import_expobj(aoresults_map_id='post %s.%s' % (key, j), do_processing=True)
-    if hasattr(expobj, 'slmtargets_sz_stim'):
+    if hasattr(expobj, 'slmtargets_szboundary_stim'):
         aoutils.run_allopticalAnalysisNontargetsPost4ap(expobj, normalize_to='pre-stim', do_processing=True, to_plot=True,
                                                         save_plot_suffix=f"{save_path_prefix[-31:]}/{expobj.metainfo['animal prep.']}_{expobj.metainfo['trial']}-post4ap.png")
     else:
