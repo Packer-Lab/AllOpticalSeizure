@@ -46,9 +46,17 @@ def plot_SLMtargets_Locs(expobj, targets_coords: list = None, background: np.nda
                 for (x, y) in expobj.target_coords[i]:
                     ax.scatter(x=x, y=y, edgecolors=colors[i], facecolors='none', linewidths=2.0)
         else:
+            if 'edgecolors' in kwargs.keys():
+                edgecolors = kwargs['edgecolors']
+            else:
+                edgecolors = 'yellowgreen'
             for (x, y) in expobj.target_coords_all:
                 ax.scatter(x=x, y=y, edgecolors='yellowgreen', facecolors='none', linewidths=2.0)
     else:
+        if 'edgecolors' in kwargs.keys():
+            edgecolors = kwargs['edgecolors']
+        else:
+            edgecolors = 'yellowgreen'
         for (x, y) in targets_coords:
             ax.scatter(x=x, y=y, edgecolors='yellowgreen', facecolors='none', linewidths=2.0)
 
@@ -76,7 +84,7 @@ def plot_SLMtargets_Locs(expobj, targets_coords: list = None, background: np.nda
 
 
 # simple plot of the location of the given cell(s) against a black FOV
-def plot_cells_loc(expobj, cells: list, edgecolor: str = 'yellowgreen', title=None, background: np.array = None, scatter_only: bool = False,
+def plot_cells_loc(expobj, cells: list, title=None, background: np.array = None, scatter_only: bool = False,
                    show_s2p_targets: bool = True, color_float_list: list = None, cmap: str = 'Reds', invert_y = True, **kwargs):
     """
     plots an image of the FOV to show the locations of cells given in cells ls.
@@ -123,7 +131,11 @@ def plot_cells_loc(expobj, cells: list, edgecolor: str = 'yellowgreen', title=No
             #            cmap=cmap)
             pass
         else:
-            ax.scatter(x=x, y=y, edgecolors=edgecolor, facecolors='none', linewidths=0.8)
+            if 'edgecolors' in kwargs.keys():
+                edgecolors = kwargs['edgecolors']
+            else:
+                edgecolors = 'yellowgreen'
+            ax.scatter(x=x, y=y, edgecolors=edgecolors, facecolors='none', linewidths=0.8)
 
     if color_float_list:
         ac = ax.scatter(x=x_list, y=y_list, edgecolors='none', c=color_float_list, linewidths=0.8,
@@ -1090,7 +1102,7 @@ def plotMeanRawFluTrace(expobj, stim_span_color='white', stim_lines: bool = True
 
     if 'fig' in kwargs.keys():
         # adding text because adding title doesn't seem to want to work when piping subplots
-        ax.text(0.98, 0.97, '%s %s %s' % (expobj.metainfo['exptype'], expobj.metainfo['animal prep.'], expobj.metainfo['trial']),
+        ax.text(0.98, 0.97, f"Avg. FOV Flu Trace - {expobj.metainfo['exptype']} {expobj.metainfo['animal prep.']} {expobj.metainfo['trial']}",
                 verticalalignment='top', horizontalalignment='right',
                 transform=ax.transAxes, fontweight='bold',
                 color='black', fontsize=10 * shrink_text)

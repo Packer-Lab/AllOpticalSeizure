@@ -131,7 +131,7 @@ def import_expobj(aoresults_map_id: str = None, trial: str = None, prep: str = N
             expobj.s2pProcessing(s2p_path=expobj.s2p_path, subset_frames=expobj.curr_trial_frames, subtract_neuropil=True,
                                  baseline_frames=expobj.baseline_frames, force_redo=True)
 
-        expobj.save()
+    expobj.save()
 
     return expobj, experiment
 
@@ -2941,7 +2941,11 @@ class Post4ap(alloptical):
             # read in avg stim image to use as the background
             avg_stim_img_path = '%s/%s_%s_stim-%s.tif' % (self.analysis_save_path[:-1] + 'avg_stim_images', self.metainfo['date'], self.metainfo['trial'], stim)
             bg_img = tf.imread(avg_stim_img_path)
-            fig, ax = aoplot.plot_cells_loc(self, cells=in_sz_final, fig=fig, ax=ax, title=title, show=False, background=bg_img, cmap='gray', text=text)
+            fig, ax = aoplot.plot_cells_loc(self, cells=in_sz_final, fig=fig, ax=ax, title=title, show=False, background=bg_img, cmap='gray', text=text,
+                                            edgecolors='yellowgreen')
+            fig, ax = aoplot.plot_cells_loc(self, cells=out_sz_final, fig=fig, ax=ax, title=title, show=False, background=bg_img, cmap='gray', text=text,
+                                            edgecolors='white')
+
 
             # plt.gca().invert_yaxis()
             # plt.show()  # the indiviual cells were plotted in ._InOutSz
@@ -3024,12 +3028,15 @@ class Post4ap(alloptical):
             # fig.show()
 
             # plot SLM targets in sz boundary
-            coords_to_plot = [self.target_coords_all[cell] for cell in in_sz]
+            coords_to_plot_insz = [self.target_coords_all[cell] for cell in in_sz]
+            coords_to_plot_outsz = [self.target_coords_all[cell] for cell in out_sz]
             # read in avg stim image to use as the background
             avg_stim_img_path = '%s/%s_%s_stim-%s.tif' % (self.analysis_save_path[:-1] + 'avg_stim_images', self.metainfo['date'], self.metainfo['trial'], stim)
             bg_img = tf.imread(avg_stim_img_path)
-            fig, ax = aoplot.plot_SLMtargets_Locs(self, targets_coords=coords_to_plot, fig=fig, ax=ax, cells=in_sz, title=title,
-                                                  show=False, background=bg_img)
+            fig, ax = aoplot.plot_SLMtargets_Locs(self, targets_coords=coords_to_plot_insz, fig=fig, ax=ax, cells=in_sz, title=title, show=False, background=bg_img,
+                                                  edgecolors='yellowgreen')
+            fig, ax = aoplot.plot_SLMtargets_Locs(self, targets_coords=coords_to_plot_outsz, fig=fig, ax=ax, cells=in_sz, title=title, show=False, background=bg_img,
+                                                  edgecolor='white')
             # plt.gca().invert_yaxis()
             # plt.show()  # the indiviual cells were plotted in ._InOutSz
 

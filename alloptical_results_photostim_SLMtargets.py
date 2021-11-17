@@ -41,17 +41,18 @@ os.makedirs(save_path_prefix) if not os.path.exists(save_path_prefix) else None
 
 
 ### POST 4AP
-trials = list(allopticalResults.trial_maps['post'].keys())
-fig, axs = plt.subplots(nrows=len(trials) * 2, ncols=1, figsize=[20, 6 * len(trials)])
+trials_to_plot = pj.flattenOnce(allopticalResults.post_4ap_trials)
+fig, axs = plt.subplots(nrows=len(trials_to_plot) * 2, ncols=1, figsize=[20, 6 * len(trials_to_plot)])
+post4ap_trials_stimresponses_zscores = list(allopticalResults.stim_responses_zscores.keys())
 counter = 0
-for expprep in list(allopticalResults.stim_responses_zscores.keys()):
+for expprep in post4ap_trials_stimresponses_zscores:
     for trials_comparisons in allopticalResults.stim_responses_zscores[expprep]:
         if len(allopticalResults.stim_responses_zscores[expprep][trials_comparisons].keys()) > 2:  ## make sure that there are keys containing data for post 4ap and in sz
             pre4ap_trial = trials_comparisons[:5]
             post4ap_trial = trials_comparisons[-5:]
 
             # POST 4AP STUFF
-            if f"{expprep} {post4ap_trial}" in pj.flattenOnce(allopticalResults.post_4ap_trials):
+            if f"{expprep} {post4ap_trial}" in trials_to_plot:
                 post4ap_df = allopticalResults.stim_responses_zscores[expprep][trials_comparisons]['post-4ap']
 
                 insz_df = allopticalResults.stim_responses_zscores[expprep][trials_comparisons]['in sz']
@@ -71,24 +72,27 @@ for expprep in list(allopticalResults.stim_responses_zscores.keys()):
                 ax2 = ax.twinx()
                 ## retrieve the appropriate zscored database - post4ap (outsz) stims
                 targets = [x for x in list(post4ap_df.columns) if type(x) == str and '_z' in x]
+                assert len(targets) == len(SLMtarget_ids), print('mismatch in SLMtargets_ids and targets post4ap out sz')
                 for target in targets:
                     for stim_idx in post4ap_df.index[:-2]:
                         response = post4ap_df.loc[stim_idx, target]
                         rand = np.random.randint(-15, 25, 1)[0] #* 1/(abs(response)**1/2)  # jittering around the stim_frame for the plot
+                        assert not np.isnan(response)
                         ax2.scatter(x=expobj.stim_start_frames[stim_idx] + rand, y=response, color=target_colors[targets.index(target)], alpha=0.70, s=15, zorder=4)
-
-                ax2.margins(x=0)
 
 
                 ## retrieve the appropriate zscored database - insz stims
                 targets = [x for x in list(insz_df.columns) if type(x) == str]
+                assert len(targets) == len(SLMtarget_ids), print('mismatch in SLMtargets_ids and targets in sz')
                 for target in targets:
                     for stim_idx in insz_df.index:
                         response = insz_df.loc[stim_idx, target]
                         rand = np.random.randint(-15, 25, 1)[0] #* 1/(abs(response)**1/2)  # jittering around the stim_frame for the plot
-                        ax2.scatter(x=expobj.stim_start_frames[stim_idx] + rand, y=response, color=target_colors[targets.index(target)], alpha=0.70, s=15, zorder=4)
-                        ax2.axhline(y=0)
-                        ax2.set_ylabel('Response mag. (zscored to pre4ap)')
+                        if not np.isnan(response):
+                            ax2.scatter(x=expobj.stim_start_frames[stim_idx] + rand, y=response, color=target_colors[targets.index(target)], alpha=0.70, s=15, zorder=4)
+
+                ax2.axhline(y=0)
+                ax2.set_ylabel('Response mag. (zscored to pre4ap)')
                 ax2.margins(x=0)
 
                 ax3 = axs[counter+1]
@@ -99,9 +103,13 @@ for expprep in list(allopticalResults.stim_responses_zscores.keys()):
                 print(f"|- finished on expobj: {expprep} {post4ap_trial}, counter @ {counter}\n")
 
 fig.suptitle(f"Photostim responses - post-4ap", y=0.99)
+save_path_full = f"{save_path_prefix}/post4ap_indivtrial_zscore_responses_TEST.png"
+print(f'\nsaving figure to {save_path_full}')
+fig.savefig(save_path_full)
 fig.show()
 
 
+sys.exit()
 """# ########### END OF // ZONE FOR CALLING THIS SCRIPT DIRECTLY FROM THE SSH SERVER ###########
 ########### END OF // ZONE FOR CALLING THIS SCRIPT DIRECTLY FROM THE SSH SERVER ###########
 ########### END OF // ZONE FOR CALLING THIS SCRIPT DIRECTLY FROM THE SSH SERVER ###########
@@ -112,9 +120,7 @@ fig.show()
 ########### END OF // ZONE FOR CALLING THIS SCRIPT DIRECTLY FROM THE SSH SERVER ###########
 """
 
-"""# sys.exit()
-###########
-"""
+
 
 
 # %% 0) plot representative experiment plot for stim responses - showing pre4ap and post4ap
@@ -888,6 +894,8 @@ for expprep in list(allopticalResults.stim_responses_zscores.keys())[:3]:
                     response = pre4ap_df.loc[stim_idx, target]
                     rand = np.random.randint(-15, 25, 1)[0] #* 1/(abs(response)**1/2)  # jittering around the stim_frame for the plot
                     ax2.scatter(x=expobj.stim_start_frames[stim_idx] + rand, y=response, color=target_colors[targets.index(target)], alpha=0.70, s=15, zorder=4)
+                    ax2.axhline(y=0)
+                    ax2.set_ylabel('Response mag. (zscored)')
 
             ax2.margins(x=0)
 

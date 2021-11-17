@@ -67,7 +67,7 @@ trials_without_flip_stims = []
 # using post4ap experiments from allopticalResults attr. in for loop for processing:
 
 # for i in allopticalResults.post_4ap_trials:
-for i in ls2:
+for i in ls:
     for j in range(len(i)):
         # pass
         # i = allopticalResults.post_4ap_trials[-1]
