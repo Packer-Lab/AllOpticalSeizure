@@ -694,6 +694,12 @@ class alloptical(TwoPhotonImaging):
         self.post_stim_response_window_msec = 500  # msec
         self.post_stim_response_frames_window = int(self.fps * self.post_stim_response_window_msec / 1000)  # length of the post stim response test window (in frames)
 
+
+
+        ## initializing data processing, data analysis and/or results associated attr's
+        self.responses_SLMtargets = []  # dF/stdF responses for all SLM targets for each photostim trial
+
+
         self.save()
 
     def cellAreas(self, x=None, y=None):

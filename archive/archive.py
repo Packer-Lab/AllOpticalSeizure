@@ -439,7 +439,7 @@ def xyloc_responses(expobj, to_plot='dfstdf', clim=[-10, +10], plot_target_coord
         plt.savefig(save_fig)
 
 
-# moved to the alloptical_processing_photostim.py file
+# moved to the ARCHIVEDalloptical_processing_photostim.py file
 # ###### IMPORT pkl file containing expobj
 
 # determine which frames to retrieve from the overall total s2p output
