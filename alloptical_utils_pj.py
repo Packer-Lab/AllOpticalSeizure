@@ -4449,7 +4449,7 @@ def run_alloptical_processing_photostim(expobj, to_suite2p=None, baseline_trials
         # expobj.target_coords_all = expobj.target_coords
         expobj._findTargetedS2pROIs(force_redo=True)
         aoplot.s2pRoiImage(expobj)
-        s2pMaskStack(obj=expobj, pkl_list=[expobj.pkl_path], s2p_path=expobj.s2p_path,
+        expobj.s2pMaskStack(pkl_list=[expobj.pkl_path], s2p_path=expobj.s2p_path,
                      parent_folder=expobj.analysis_save_path, force_redo=force_redo)
 
         ####################################################################################################################
@@ -4578,7 +4578,7 @@ def slm_targets_responses(expobj, experiment, trial, y_spacing_factor=2, figsize
             # raw_traces_stims = expobj.SLMTargets_stims_raw[:, stims, :]
             if len(expobj.stims_out_sz) > 0:
                     expobj.StimSuccessRate_SLMtargets_outsz, expobj.hits_SLMtargets_outsz, expobj.responses_SLMtargets_outsz, expobj.traces_SLMtargets_successes_outsz = \
-                    expobj.calculate_SLMTarget_responses_dff(threshold=15, stims_to_use=expobj.stims_out_sz)
+                    expobj.calculate_SLMTarget_responses_dff(threshold=10, stims_to_use=expobj.stims_out_sz)
 
                 # expobj.outsz_StimSuccessRate_SLMtargets, expobj.outsz_hits_SLMtargets, expobj.outsz_responses_SLMtargets = \
                 #     calculate_StimSuccessRate(expobj, cell_ids=SLMtarget_ids, raw_traces_stims=raw_traces_stims,
@@ -4589,7 +4589,7 @@ def slm_targets_responses(expobj, experiment, trial, y_spacing_factor=2, figsize
             # raw_traces_stims = expobj.SLMTargets_stims_raw[:, stims, :]
             if len(expobj.stims_in_sz) > 0:
                 expobj.StimSuccessRate_SLMtargets_insz, expobj.hits_SLMtargets_insz, expobj.responses_SLMtargets_insz, expobj.traces_SLMtargets_successes_insz = \
-                    expobj.calculate_SLMTarget_responses_dff(threshold=15, stims_to_use=expobj.stims_in_sz)
+                    expobj.calculate_SLMTarget_responses_dff(threshold=10, stims_to_use=expobj.stims_in_sz)
 
                 # expobj.insz_StimSuccessRate_SLMtargets, expobj.insz_hits_SLMtargets, expobj.insz_responses_SLMtargets = \
                 #     calculate_StimSuccessRate(expobj, cell_ids=SLMtarget_ids, raw_traces_stims=raw_traces_stims,
