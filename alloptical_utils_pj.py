@@ -3702,13 +3702,18 @@ class AllOpticalResults:  ## initiated in allOptical-results.ipynb
         # just create an empty class object that you will throw results and analyses into
         self.pkl_path = save_path
 
-        self.metainfo = pd.DataFrame()  ## gets defined in allOptical-results.ipynb
+        self.metainfo = pd.DataFrame()  # gets defined in allOptical-results.ipynb
         self.slmtargets_stim_responses = pd.DataFrame({'prep_trial': [], 'date': [], 'exptype': [],
                                                                     'stim_setup': [],
                                                                     'mean response (dF/stdF all targets)': [],
                                                                     'mean response (dFF all targets)': [],
-                                                                    'mean reliability (>0.3 dF/stdF)': []})
-        ## gets defined in allOptical-results.ipynb
+                                                                    'mean reliability (>0.3 dF/stdF)': []})  # gets defined in allOptical-results.ipynb
+
+        # large dictionary containing direct pre4ap and post4ap trial comparisons for each experiments, and stim responses
+        # for pre4ap data and stim responses for post4ap data (also broken down by outsz and insz)
+        allopticalResults.stim_responses = {}  # get defined in alloptical_analysis_photostim
+
+        allopticalResults.stim_relative_szonset_vs_avg_response_alltargets_atstim = {}
 
         self.save_pkl(pkl_path=self.pkl_path)
 

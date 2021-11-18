@@ -38,7 +38,7 @@ os.makedirs(save_path_prefix) if not os.path.exists(save_path_prefix) else None
 ######### ZONE FOR CALLING THIS SCRIPT DIRECTLY FROM THE SSH SERVER ###########
 """
 
-# %% aoresults-SLMtargets-8.1-dc) PLOT - zscore of stim responses vs. TIME to seizure onset
+# %% aoresults-SLMtargets-8.1-dc) PLOT - absolute stim responses vs. TIME to seizure onset
 
 """todo for this analysis:
 - average over targets for plot containing all exps

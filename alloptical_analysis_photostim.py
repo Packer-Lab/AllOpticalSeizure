@@ -165,7 +165,7 @@ trials_skip = [
 
 allopticalResults.outsz_missing = []
 allopticalResults.insz_missing = []
-allopticalResults.stim_responses = {}
+stim_responses_comparisons_dict = {}
 for i in range(len(allopticalResults.pre_4ap_trials)):
     prep = allopticalResults.pre_4ap_trials[i][0][:-6]
     pre4aptrial = allopticalResults.pre_4ap_trials[i][0][-5:]
@@ -208,14 +208,14 @@ for i in range(len(allopticalResults.pre_4ap_trials)):
                     print(f"\-- ***** skipping: {prep} {pre4aptrial_}")
 
         # accounting for multiple pre/post photostim setup comparisons within each prep
-        if prep not in allopticalResults.stim_responses.keys():
-            allopticalResults.stim_responses[prep] = {}
+        if prep not in stim_responses_comparisons_dict.keys():
+            stim_responses_comparisons_dict[prep] = {}
             comparison_number = 1
         else:
-                comparison_number = len(allopticalResults.stim_responses[prep]) + 1
+                comparison_number = len(stim_responses_comparisons_dict[prep]) + 1
 
-        allopticalResults.stim_responses[prep][f'{comparison_number}'] = {'pre-4ap': {}}
-        allopticalResults.stim_responses[prep][f'{comparison_number}']['pre-4ap'] = df
+        stim_responses_comparisons_dict[prep][f'{comparison_number}'] = {'pre-4ap': {}}
+        stim_responses_comparisons_dict[prep][f'{comparison_number}']['pre-4ap'] = df
 
         # allopticalResults.save()
 
@@ -271,7 +271,7 @@ for i in range(len(allopticalResults.pre_4ap_trials)):
                     else:
                         print(f"\-- ***** skipping: {prep} {post4aptrial_}")
 
-            allopticalResults.stim_responses[prep][f'{comparison_number}']['post-4ap'] = df
+            stim_responses_comparisons_dict[prep][f'{comparison_number}']['post-4ap'] = df
 
         else:
             print('\-- **** 1 need to run collecting outsz responses SLMtargets attr for %s %s ****' % (post4aptrial, prep))
@@ -344,7 +344,7 @@ for i in range(len(allopticalResults.pre_4ap_trials)):
                         else:
                             print(f"\-- ***** skipping: {prep} {post4aptrial_}")
 
-                allopticalResults.stim_responses[prep][f"{comparison_number}"]['in sz'] = df
+                stim_responses_comparisons_dict[prep][f"{comparison_number}"]['in sz'] = df
             else:
                 print('**** 4 need to run collecting insz responses SLMtargets attr for %s %s ****' % (post4aptrial, prep))
                 allopticalResults.insz_missing.append('%s %s' % (post4aptrial, prep))
@@ -363,10 +363,12 @@ for i in range(len(allopticalResults.pre_4ap_trials)):
 
     ## switch out this comparison_number to something more readable
     new_key = f"{pre4aptrial} vs. {post4aptrial}"
-    allopticalResults.stim_responses[prep][new_key]= allopticalResults.stim_responses[prep].pop(f'{comparison_number}')
-    # allopticalResults.stim_responses[prep][new_key]= allopticalResults.stim_responses[prep][f'{comparison_number}']
+    stim_responses_comparisons_dict[prep][new_key]= stim_responses_comparisons_dict[prep].pop(f'{comparison_number}')
+    # stim_responses_comparisons_dict[prep][new_key]= stim_responses_comparisons_dict[prep][f'{comparison_number}']
 
 
+# save to: allopticalResults.stim_responses
+allopticalResults.stim_responses = stim_responses_comparisons_dict
 allopticalResults.save()
 
 
