@@ -3697,12 +3697,20 @@ class OnePhotonResults:
         TwoPhotonImaging.save_pkl(self, pkl_path=pkl_path)
 
 
-class AllOpticalResults:
+class AllOpticalResults:  ## initiated in allOptical-results.ipynb
     def __init__(self, save_path: str):
         # just create an empty class object that you will throw results and analyses into
         self.pkl_path = save_path
 
-        self.save(pkl_path=self.pkl_path)
+        self.metainfo = pd.DataFrame()  ## gets defined in allOptical-results.ipynb
+        self.slmtargets_stim_responses = pd.DataFrame({'prep_trial': [], 'date': [], 'exptype': [],
+                                                                    'stim_setup': [],
+                                                                    'mean response (dF/stdF all targets)': [],
+                                                                    'mean response (dFF all targets)': [],
+                                                                    'mean reliability (>0.3 dF/stdF)': []})
+        ## gets defined in allOptical-results.ipynb
+
+        self.save_pkl(pkl_path=self.pkl_path)
 
     def save_pkl(self, pkl_path: str = None):
         if pkl_path is None:

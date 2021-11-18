@@ -19,7 +19,7 @@ from mpl_toolkits import mplot3d
 results_object_path = '/home/pshah/mnt/qnap/Analysis/alloptical_results_superobject.pkl'
 allopticalResults = aoutils.import_resultsobj(pkl_path=results_object_path)
 
-save_path_prefix = '/home/pshah/mnt/qnap/Analysis/Results_figs/Nontargets_responses_2021-11-17'
+save_path_prefix = '/home/pshah/mnt/qnap/Analysis/Results_figs/SLMtargets_responses_2021-11-17'
 os.makedirs(save_path_prefix) if not os.path.exists(save_path_prefix) else None
 
 
@@ -38,7 +38,7 @@ os.makedirs(save_path_prefix) if not os.path.exists(save_path_prefix) else None
 ######### ZONE FOR CALLING THIS SCRIPT DIRECTLY FROM THE SSH SERVER ###########
 """
 
-# %% 8.1-dc) PLOT - zscore of stim responses vs. TIME to seizure onset
+# %% aoresults-SLMtargets-8.1-dc) PLOT - zscore of stim responses vs. TIME to seizure onset
 
 """todo for this analysis:
 - average over targets for plot containing all exps
@@ -72,20 +72,21 @@ for i in range(len(preps)):
             print(key)
             sz_time = allopticalResults.stim_relative_szonset_vs_avg_response_alltargets_atstim[key][0]
             responses = allopticalResults.stim_relative_szonset_vs_avg_response_alltargets_atstim[key][1]
-            xes = list(np.where(np.isnan(responses[0]))[0])
-            responses_to_plot = [responses[0][i] for i in range(len(responses)) if i not in xes]
-            sz_time_plot = [sz_time[0][i] for i in range(len(responses)) if i not in xes]
-            if len(responses_to_plot) > 1:
-                print(f"plotting responses for {key}")
+            # xes = list(np.where(np.isnan(responses[0]))[0])
+            # responses_to_plot = [responses[0][i] for i in range(len(responses)) if i not in xes]
+            # sz_time_plot = [sz_time[0][i] for i in range(len(responses)) if i not in xes]
+            # if len(responses_to_plot) > 1:
+            #     print(f"plotting responses for {key}")
 
-            ax.scatter(x=sz_time_plot, y=responses_to_plot, facecolors=colors[i], alpha=0.2, lw=0)
+            # ax.scatter(x=sz_time_plot, y=responses_to_plot, facecolors=colors[i], alpha=0.2, lw=0)
+            ax.scatter(x=sz_time, y=responses, facecolors=colors[i], alpha=0.2, lw=0)
 
             a = counter // ncols
             b = counter % ncols
 
             # make plot for individual key/experiment trial
             ax2 = axs[a, b]
-            ax2.scatter(x=sz_time_plot, y=responses_to_plot, facecolors=colors[i], alpha=0.8, lw=0)
+            ax2.scatter(x=sz_time, y=responses, facecolors=colors[i], alpha=0.8, lw=0)
             ax2.set_xlim(-300, 250)
             ax2.set_title(f"{key}")
             counter += 1
@@ -109,6 +110,7 @@ fig2.savefig(save_path_full)
 fig2.show()
 
 
+allopticalResults.save()
 
 
 # sys.exit()
