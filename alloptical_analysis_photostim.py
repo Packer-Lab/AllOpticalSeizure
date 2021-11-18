@@ -79,7 +79,7 @@ allopticalResults.stim_relative_szonset_vs_avg_response_alltargets_atstim = stim
 allopticalResults.save()
 
 
-# %% aoresults-SLMtargets-8.1-dc) PLOT - zscore of stim responses vs. TIME to seizure onset
+# %% aoresults-SLMtargets-8.1-dc) PLOT - absolute stim responses vs. TIME to seizure onset
 
 """todo for this analysis:
 - average over targets for plot containing all exps
@@ -195,8 +195,7 @@ for i in range(len(allopticalResults.pre_4ap_trials)):
                 pre4aptrial_ = allopticalResults.pre_4ap_trials[i][j][-5:]
                 if f"{prep} {pre4aptrial}" not in trials_skip:
                     print(f"adding trial to this comparison: {pre4aptrial_} [1.0]")
-                    date = list(allopticalResults.slmtargets_stim_responses.loc[
-                                    allopticalResults.slmtargets_stim_responses['prep_trial'] == '%s %s' % (prep, pre4aptrial_), 'date'])[0]
+                    date = list(allopticalResults.metainfo.loc[allopticalResults.metainfo['prep_trial'] == '%s %s' % (prep, pre4aptrial_), 'date'])[0]
 
                     # load up pre-4ap trial
                     print(f'|-- importing {prep} {pre4aptrial_} - pre4ap trial')

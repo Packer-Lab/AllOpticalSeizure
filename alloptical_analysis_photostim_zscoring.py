@@ -57,8 +57,7 @@ allopticalResults.stim_responses_zscores = {}
 for i in range(len(allopticalResults.pre_4ap_trials)):
     prep = allopticalResults.pre_4ap_trials[i][0][:-6]
     pre4aptrial = allopticalResults.pre_4ap_trials[i][0][-5:]
-    date = list(allopticalResults.slmtargets_stim_responses.loc[
-                allopticalResults.slmtargets_stim_responses['prep_trial'] == '%s %s' % (
+    date = list(allopticalResults.metainfo.loc[allopticalResults.metainfo['prep_trial'] == '%s %s' % (
                 prep, pre4aptrial), 'date'])[0]
     print(f"\n{i}, {date}, {prep}")
 
