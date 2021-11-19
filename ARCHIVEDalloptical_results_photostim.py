@@ -1267,7 +1267,7 @@ if run_processing:
                 if len(expobj.stims_out_sz) > 0:
                     print('\n Calculating stim success rates and response magnitudes (outsz) [1.4.2] ***********')
                     expobj.StimSuccessRate_SLMtargets_outsz, expobj.hits_SLMtargets_outsz, expobj.responses_SLMtargets_outsz, expobj.traces_SLMtargets_successes_outsz = \
-                        expobj.calculate_SLMTarget_responses_dff(threshold=15, stims_to_use=expobj.stims_out_sz)
+                        expobj.get_SLMTarget_responses_dff(threshold=15, stims_to_use=expobj.stims_out_sz)
                     success_responses = expobj.hits_SLMtargets_outsz * expobj.responses_SLMtargets_outsz
                     success_responses = success_responses.replace(0, np.NaN).mean(axis=1)
                     allopticalResults.slmtargets_stim_responses.loc[allopticalResults.slmtargets_stim_responses[
@@ -1278,7 +1278,7 @@ if run_processing:
                 if len(expobj.stims_in_sz) > 0:
                     print('\n Calculating stim success rates and response magnitudes (insz) [1.4.3] ***********')
                     expobj.StimSuccessRate_SLMtargets_insz, expobj.hits_SLMtargets_insz, expobj.responses_SLMtargets_insz, expobj.traces_SLMtargets_successes_insz = \
-                        expobj.calculate_SLMTarget_responses_dff(threshold=15, stims_to_use=expobj.stims_in_sz)
+                        expobj.get_SLMTarget_responses_dff(threshold=15, stims_to_use=expobj.stims_in_sz)
 
                     success_responses = expobj.hits_SLMtargets_insz * expobj.responses_SLMtargets_insz
                     success_responses = success_responses.replace(0, np.NaN).mean(axis=1)
@@ -1291,7 +1291,7 @@ if run_processing:
                 seizure_filter = False
                 print('\n Calculating stim success rates and response magnitudes [1.4.4] ***********')
                 expobj.StimSuccessRate_SLMtargets, expobj.hits_SLMtargets, expobj.responses_SLMtargets, expobj.traces_SLMtargets_successes = \
-                    expobj.calculate_SLMTarget_responses_dff(threshold=15, stims_to_use=expobj.stim_start_frames)
+                    expobj.get_SLMTarget_responses_dff(threshold=15, stims_to_use=expobj.stim_start_frames)
 
                 success_responses = expobj.hits_SLMtargets * expobj.responses_SLMtargets
                 success_responses = success_responses.replace(0, np.NaN).mean(axis=1)

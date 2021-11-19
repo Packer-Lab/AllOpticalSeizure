@@ -241,19 +241,19 @@ if hasattr(expobj, 'stims_in_sz'):
     stims = [expobj.stim_start_frames.index(stim) for stim in expobj.stims_in_sz]
     if len(stims) > 0:
         expobj.insz_StimSuccessRate_SLMtargets, expobj.insz_hits_SLMtargets, expobj.insz_responses_SLMtargets = \
-            aoutils.calculate_SLMTarget_responses_dff(expobj, threshold=10, stims_to_use=stims)
+            aoutils.get_SLMTarget_responses_dff(expobj, threshold=10, stims_to_use=stims)
 
     # stims outside sz
     stims = [expobj.stim_start_frames.index(stim) for stim in expobj.stims_out_sz]
     # raw_traces_stims = expobj.SLMTargets_stims_raw[:, stims, :]
     if len(stims) > 0:
         expobj.outsz_StimSuccessRate_SLMtargets, expobj.outsz_hits_SLMtargets, expobj.outsz_responses_SLMtargets = \
-            aoutils.calculate_SLMTarget_responses_dff(expobj, threshold=10, stims_to_use=stims)
+            aoutils.get_SLMTarget_responses_dff(expobj, threshold=10, stims_to_use=stims)
 
 
 else:
     expobj.StimSuccessRate_SLMtargets, expobj.hits_SLMtargets, expobj.responses_SLMtargets = \
-        aoutils.calculate_SLMTarget_responses_dff(expobj, threshold=10, stims_to_use=None)
+        aoutils.get_SLMTarget_responses_dff(expobj, threshold=10, stims_to_use=None)
 
 # collect stim responses with stims excluded as necessary
 targets_avgresponses_exclude_stims_sz = {}

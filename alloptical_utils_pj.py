@@ -2006,7 +2006,7 @@ class alloptical(TwoPhotonImaging):
         return x
 
     # calculate reliability of photostim responsiveness of all of the targeted cells (found in s2p output)
-    def calculate_SLMTarget_responses_dff(self, process: str,  threshold=10, stims_to_use: list = None):
+    def get_SLMTarget_responses_dff(self, process: str, threshold=10, stims_to_use: list = None):
         """
         calculations of dFF responses to photostimulation of SLM Targets. Includes calculating reliability of slm targets,
         saving success stim locations, and saving stim response magnitudes as pandas dataframe.
@@ -4632,18 +4632,21 @@ def run_alloptical_processing_photostim(expobj, to_suite2p=None, baseline_trials
         seizure_filter = False
         print('\n Calculating stim success rates and response magnitudes (of SLM targets) *********** [3.]')
         expobj.StimSuccessRate_SLMtargets, expobj.hits_SLMtargets, expobj.responses_SLMtargets, expobj.traces_SLMtargets_successes = \
-            expobj.calculate_SLMTarget_responses_dff(threshold=10, stims_to_use=expobj.stim_start_frames)
+            expobj.get_SLMTarget_responses_dff(process='dF/prestimF', threshold=10, stims_to_use=expobj.stim_start_frames)
 
         expobj.stims_idx = [expobj.stim_start_frames.index(stim) for stim in expobj.stim_start_frames]
-        expobj.StimSuccessRate_SLMtargets, expobj.traces_SLMtargets_successes_avg, \
-        expobj.traces_SLMtargets_failures_avg = \
-            expobj.calculate_SLMTarget_SuccessStims(hits_df=expobj.hits_SLMtargets, stims_idx_l=expobj.stims_idx)
+        expobj.StimSuccessRate_SLMtargets, expobj.traces_SLMtargets_successes_avg, expobj.traces_SLMtargets_failures_avg = \
+            expobj.calculate_SLMTarget_SuccessStims(process='dF/prestimF', hits_df=expobj.hits_SLMtargets, stims_idx_l=expobj.stims_idx)
 
 
-        expobj.stims_idx = [expobj.stim_start_frames.index(stim) for stim in expobj.stim_start_frames]
+        expobj.StimSuccessRate_SLMtargets_tracedFF, expobj.hits_SLMtargets_tracedFF, expobj.responses_SLMtargets_tracedFF, expobj.traces_SLMtargets_tracedFF_successes = \
+            expobj.get_SLMTarget_responses_dff(process='trace dFF', threshold=10, stims_to_use=expobj.stim_start_frames)
 
-        expobj.dff_traces, expobj.dff_traces_avg, expobj.dfstdF_traces, \
-        expobj.dfstdF_traces_avg, expobj.raw_traces, expobj.raw_traces_avg = \
+        expobj.StimSuccessRate_SLMtargets_tracedFF, expobj.traces_SLMtargets_tracedFF_successes_avg, expobj.traces_SLMtargets_tracedFF_failures_avg = \
+            expobj.calculate_SLMTarget_SuccessStims(process='trace dFF', hits_df=expobj.hits_SLMtargets_tracedFF, stims_idx_l=expobj.stims_idx)
+
+
+        expobj.dff_traces, expobj.dff_traces_avg, expobj.dfstdF_traces, expobj.dfstdF_traces_avg, expobj.raw_traces, expobj.raw_traces_avg = \
             get_nontargets_stim_traces_norm(expobj=expobj, normalize_to='pre-stim', pre_stim=expobj.pre_stim,
                                                     post_stim=expobj.post_stim)
 
@@ -4652,10 +4655,10 @@ def run_alloptical_processing_photostim(expobj, to_suite2p=None, baseline_trials
 
         print('\n Calculating stim success rates and response magnitudes (of SLM targets) *********** [2.1]')
         expobj.StimSuccessRate_SLMtargets, expobj.hits_SLMtargets, expobj.responses_SLMtargets, expobj.traces_SLMtargets_successes = \
-            expobj.calculate_SLMTarget_responses_dff(process='dF/prestimF', threshold=10, stims_to_use=expobj.stim_start_frames)
+            expobj.get_SLMTarget_responses_dff(process='dF/prestimF', threshold=10, stims_to_use=expobj.stim_start_frames)
 
         expobj.StimSuccessRate_SLMtargets_tracedFF, expobj.hits_SLMtargets_tracedFF, expobj.responses_SLMtargets_tracedFF, expobj.traces_SLMtargets_tracedFF_successes = \
-            expobj.calculate_SLMTarget_responses_dff(process='trace dFF', threshold=10, stims_to_use=expobj.stim_start_frames)
+            expobj.get_SLMTarget_responses_dff(process='trace dFF', threshold=10, stims_to_use=expobj.stim_start_frames)
 
 
         if hasattr(expobj, 'stims_out_sz'):
@@ -4710,7 +4713,7 @@ def slm_targets_responses(expobj, experiment, trial, plot: bool, y_spacing_facto
             # raw_traces_stims = expobj.SLMTargets_stims_raw[:, stims, :]
             if len(expobj.stims_out_sz) > 0:
                     expobj.StimSuccessRate_SLMtargets_outsz, expobj.hits_SLMtargets_outsz, expobj.responses_SLMtargets_outsz, expobj.traces_SLMtargets_successes_outsz = \
-                    expobj.calculate_SLMTarget_responses_dff(threshold=10, stims_to_use=expobj.stims_out_sz)
+                    expobj.get_SLMTarget_responses_dff(threshold=10, stims_to_use=expobj.stims_out_sz)
 
                 # expobj.outsz_StimSuccessRate_SLMtargets, expobj.outsz_hits_SLMtargets, expobj.outsz_responses_SLMtargets = \
                 #     calculate_StimSuccessRate(expobj, cell_ids=SLMtarget_ids, raw_traces_stims=raw_traces_stims,
@@ -4721,7 +4724,7 @@ def slm_targets_responses(expobj, experiment, trial, plot: bool, y_spacing_facto
             # raw_traces_stims = expobj.SLMTargets_stims_raw[:, stims, :]
             if len(expobj.stims_in_sz) > 0:
                 expobj.StimSuccessRate_SLMtargets_insz, expobj.hits_SLMtargets_insz, expobj.responses_SLMtargets_insz, expobj.traces_SLMtargets_successes_insz = \
-                    expobj.calculate_SLMTarget_responses_dff(threshold=10, stims_to_use=expobj.stims_in_sz)
+                    expobj.get_SLMTarget_responses_dff(threshold=10, stims_to_use=expobj.stims_in_sz)
 
                 # expobj.insz_StimSuccessRate_SLMtargets, expobj.insz_hits_SLMtargets, expobj.insz_responses_SLMtargets = \
                 #     calculate_StimSuccessRate(expobj, cell_ids=SLMtarget_ids, raw_traces_stims=raw_traces_stims,
@@ -4733,7 +4736,7 @@ def slm_targets_responses(expobj, experiment, trial, plot: bool, y_spacing_facto
             seizure_filter = False
             print('\n Calculating stim success rates and response magnitudes ***********')
             expobj.StimSuccessRate_SLMtargets, expobj.hits_SLMtargets, expobj.responses_SLMtargets, expobj.traces_SLMtargets_successes = \
-                expobj.calculate_SLMTarget_responses_dff(threshold=15, stims_to_use=expobj.stim_start_frames)
+                expobj.get_SLMTarget_responses_dff(threshold=15, stims_to_use=expobj.stim_start_frames)
 
             # expobj.StimSuccessRate_SLMtargets, expobj.hits_SLMtargets, expobj.responses_SLMtargets = \
             #     calculate_StimSuccessRate(expobj, cell_ids=SLMtarget_ids, raw_traces_stims=expobj.SLMTargets_stims_raw,
