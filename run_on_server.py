@@ -43,7 +43,7 @@ os.makedirs(save_path_prefix) if not os.path.exists(save_path_prefix) else None
 
 
 
-# %% 6.1.0-dc) DATA COLLECTION: organize SLMTargets stim responses - across all appropriate pre4ap, post4ap trial comparisons - using whole trace dFF responses - TODO need to modify to use new whole trace dFF responses
+# %% 6.1.0-dc) DATA COLLECTION: organize SLMTargets stim responses - across all appropriate pre4ap, post4ap trial comparisons - using whole trace dFF responses
 """ doing it in this way so that its easy to use in the response vs. stim times relative to seizure onset code (as this has already been coded up)"""
 
 trials_skip = [
