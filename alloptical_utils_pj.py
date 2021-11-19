@@ -98,15 +98,17 @@ def import_expobj(aoresults_map_id: str = None, trial: str = None, prep: str = N
     if expobj.analysis_save_path[-1] != '/':
         expobj.analysis_save_path = expobj.analysis_save_path + '/'
         print(f"updated expobj.analysis_save_path to: {expobj.analysis_save_path}")
+        expobj.save()
 
     if not hasattr(expobj, 'paq_rate') or not hasattr(expobj, 'frame_start_time_actual'):
         print('\n-running paqProcessing to update paq attr.s in expobj')
         expobj.paqProcessing()
-        expobj.save_pkl()
+        expobj.save()
 
     if not hasattr(expobj, 'post_stim_response_frames_window'):
         expobj.post_stim_response_window_msec = 500  # msec
         expobj.post_stim_response_frames_window = int(expobj.fps * expobj.post_stim_response_window_msec / 1000)
+        expobj.save()
 
     # other misc. things you want to do when importing expobj -- should be temp code basically - not essential for actual importing of expobj
     if do_processing:
@@ -131,7 +133,6 @@ def import_expobj(aoresults_map_id: str = None, trial: str = None, prep: str = N
             expobj.s2pProcessing(s2p_path=expobj.s2p_path, subset_frames=expobj.curr_trial_frames, subtract_neuropil=True,
                                  baseline_frames=expobj.baseline_frames, force_redo=True)
 
-    expobj.save()
 
     return expobj, experiment
 
@@ -454,6 +455,26 @@ class TwoPhotonImaging:
 
             self.save() if save else None
 
+    def cellAreas(self, x=None, y=None):
+
+        '''not sure what this function does'''
+
+        self.cell_area = []
+
+        if x:
+            for i, _ in enumerate(self.cell_id):
+                if self.cell_med[i][1] < x:
+                    self.cell_area.append(0)
+                else:
+                    self.cell_area.append(1)
+
+        if y:
+            for i, _ in enumerate(self.cell_id):
+                if self.cell_med[i][1] < y:
+                    self.cell_area.append(0)
+                else:
+                    self.cell_area.append(1)
+
     def _good_cells(self, cell_ids: list, raws: np.ndarray, photostim_frames: list, std_thresh: int, radiuses: list = None,
                     min_radius_pix: int = 2.5, max_radius_pix: int = 10, save=True):
         """
@@ -624,6 +645,39 @@ class TwoPhotonImaging:
         plt.show()
         return stack
 
+    def stitch_reg_tiffs(self, force_crop: bool = False, force_stack: bool = False):
+        start = self.curr_trial_frames[0] // 2000  # 2000 because that is the batch size for suite2p run
+        end = self.curr_trial_frames[1] // 2000 + 1
+
+        tif_path_save = self.analysis_save_path + 'reg_tiff_%s.tif' % self.metainfo['trial']
+        tif_path_save2 = self.analysis_save_path + 'reg_tiff_%s_r.tif' % self.metainfo['trial']
+        reg_tif_folder = self.s2p_path + '/reg_tif/'
+        reg_tif_list = os.listdir(reg_tif_folder)
+        reg_tif_list.sort()
+        sorted_paths = [reg_tif_folder + tif for tif in reg_tif_list][start:end + 1]
+
+        print(tif_path_save)
+        print(sorted_paths)
+
+        if os.path.exists(tif_path_save):
+            if force_stack:
+                make_tiff_stack(sorted_paths, save_as=tif_path_save)
+            else:
+                pass
+        else:
+            make_tiff_stack(sorted_paths, save_as=tif_path_save)
+
+        if not os.path.exists(tif_path_save2) or force_crop:
+            with tf.TiffWriter(tif_path_save2, bigtiff=True) as tif:
+                with tf.TiffFile(tif_path_save, multifile=False) as input_tif:
+                    print('cropping registered tiff')
+                    data = input_tif.asarray()
+                    print('shape of stitched tiff: ', data.shape)
+                reg_tif_crop = data[self.curr_trial_frames[0] - start * 2000: self.curr_trial_frames[1] - (
+                        self.curr_trial_frames[0] - start * 2000)]
+                print('saving cropped tiff ', reg_tif_crop.shape)
+                tif.save(reg_tif_crop)
+
     def s2pMeanImage(s2p_path):
         os.chdir(s2p_path)
 
@@ -696,31 +750,29 @@ class alloptical(TwoPhotonImaging):
 
 
 
-        ## initializing data processing, data analysis and/or results associated attr's
-        self.responses_SLMtargets = []  # dF/stdF responses for all SLM targets for each photostim trial
+        #### initializing data processing, data analysis and/or results associated attr's
+
+        ## PHOTOSTIM SLM TARGETS
+        self.responses_SLMtargets = []  # dF/prestimF responses for all SLM targets for each photostim trial
+        self.responses_SLMtargets_tracedFF = []  # poststim dFF - prestim dFF responses for all SLM targets for each photostim trial
+
+        # .get_alltargets_stim_traces_norm(pre_stim=expobj.pre_stim, post_stim=expobj.post_stim, stims=expobj.stim_start_frames)
+        # - various attrs. for collecting photostim timed trace snippets from raw Flu values
+        self.SLMTargets_stims_dff = []
+        self.SLMTargets_stims_dffAvg = []
+        self.SLMTargets_stims_dfstdF = []
+        self.SLMTargets_stims_dfstdF_avg = []
+        self.SLMTargets_stims_raw = []
+        self.SLMTargets_stims_rawAvg = []
 
 
+        ## NON PHOTOSTIM SLM TARGETS
+
+
+        ##
         self.save()
 
-    def cellAreas(self, x=None, y=None):
 
-        '''not sure what this function does'''
-
-        self.cell_area = []
-
-        if x:
-            for i, _ in enumerate(self.cell_id):
-                if self.cell_med[i][1] < x:
-                    self.cell_area.append(0)
-                else:
-                    self.cell_area.append(1)
-
-        if y:
-            for i, _ in enumerate(self.cell_id):
-                if self.cell_med[i][1] < y:
-                    self.cell_area.append(0)
-                else:
-                    self.cell_area.append(1)
 
     def subset_frames_current_trial(self, to_suite2p, trial, baseline_trials, force_redo: bool = False, save=True):
 
@@ -754,39 +806,6 @@ class alloptical(TwoPhotonImaging):
             print('current trial frames: ', self.curr_trial_frames)
 
             self.save() if save else None
-
-    def stitch_reg_tiffs(self, force_crop: bool = False, force_stack: bool = False):
-        start = self.curr_trial_frames[0] // 2000  # 2000 because that is the batch size for suite2p run
-        end = self.curr_trial_frames[1] // 2000 + 1
-
-        tif_path_save = self.analysis_save_path + 'reg_tiff_%s.tif' % self.metainfo['trial']
-        tif_path_save2 = self.analysis_save_path + 'reg_tiff_%s_r.tif' % self.metainfo['trial']
-        reg_tif_folder = self.s2p_path + '/reg_tif/'
-        reg_tif_list = os.listdir(reg_tif_folder)
-        reg_tif_list.sort()
-        sorted_paths = [reg_tif_folder + tif for tif in reg_tif_list][start:end + 1]
-
-        print(tif_path_save)
-        print(sorted_paths)
-
-        if os.path.exists(tif_path_save):
-            if force_stack:
-                make_tiff_stack(sorted_paths, save_as=tif_path_save)
-            else:
-                pass
-        else:
-            make_tiff_stack(sorted_paths, save_as=tif_path_save)
-
-        if not os.path.exists(tif_path_save2) or force_crop:
-            with tf.TiffWriter(tif_path_save2, bigtiff=True) as tif:
-                with tf.TiffFile(tif_path_save, multifile=False) as input_tif:
-                    print('cropping registered tiff')
-                    data = input_tif.asarray()
-                    print('shape of stitched tiff: ', data.shape)
-                reg_tif_crop = data[self.curr_trial_frames[0] - start * 2000: self.curr_trial_frames[1] - (
-                        self.curr_trial_frames[0] - start * 2000)]
-                print('saving cropped tiff ', reg_tif_crop.shape)
-                tif.save(reg_tif_crop)
 
     def raw_traces_from_targets(self, force_redo: bool = False, save: bool = True):
 
@@ -833,15 +852,19 @@ class alloptical(TwoPhotonImaging):
             self.raw_SLMTargets = targets_trace_full[:,
                                   self.curr_trial_frames[0] - start * 2000: self.curr_trial_frames[1] - (start * 2000)]
 
+            targets_trace_dFF_full = normalize_dff(targets_trace_full, threshold_pct=10)
+            self.dFF_SLMTargets = targets_trace_dFF_full[:,
+                                  self.curr_trial_frames[0] - start * 2000: self.curr_trial_frames[1] - (start * 2000)]
+
 
             self.meanFluImg_registered = np.mean(mean_img_stack, axis=0)
 
             self.save() if save else None
 
-    def get_alltargets_stim_traces_norm(self, targets_idx: int = None, subselect_cells: list = None, pre_stim=15,
+    def get_alltargets_stim_traces_norm(self, process: str, targets_idx: int = None, subselect_cells: list = None, pre_stim=15,
                                         post_stim=200, filter_sz: bool = False, stims: list = None):
         """
-        primary function to measure the dFF and dF/setdF traces for photostimulated targets.
+        primary function to measure the dFF and dF/setdF trace SNIPPETS for photostimulated targets.
         :param stims:
         :param targets_idx: integer for the index of target cell to process
         :param subselect_cells: ls of cells to subset from the overall set of traces (use in place of targets_idx if desired)
@@ -858,12 +881,19 @@ class alloptical(TwoPhotonImaging):
         else:
             stim_timings = stims
 
-        if subselect_cells:
-            num_cells = len(self.raw_SLMTargets[subselect_cells])
-            targets_trace = self.raw_SLMTargets[subselect_cells]
+        if process == 'raw':  ## specify which data to process (i.e. do you want to process whole trace dFF traces?)
+            data_to_process = self.raw_SLMTargets
+        elif process == 'dFF':
+            data_to_process = self.dFF_SLMTargets
         else:
-            num_cells = len(self.raw_SLMTargets)
-            targets_trace = self.raw_SLMTargets
+            ValueError('need to provide process as either raw or dFF')
+
+        if subselect_cells:
+            num_cells = len(data_to_process[subselect_cells])
+            targets_trace = data_to_process[subselect_cells]  ## NOTE USING .raw traces
+        else:
+            num_cells = len(data_to_process)
+            targets_trace = data_to_process
 
         # collect photostim timed average dff traces of photostim targets
         targets_dff = np.zeros(
@@ -905,11 +935,8 @@ class alloptical(TwoPhotonImaging):
 
         else:
             for cell_idx in range(num_cells):
-                if subselect_cells:
-                    print('collecting stim traces for cell %s' % subselect_cells[cell_idx])
-                else:
-                    pass
-                    # print('collecting stim traces for cell # %s out of %s' % (cell_idx + 1, num_cells))
+                print('collecting stim traces for cell %s' % subselect_cells[cell_idx]) if subselect_cells else None
+
                 if filter_sz:
                     if self.slmtargets_sz_stim is not None and hasattr(self, 'slmtargets_szboundary_stim'):
                         flu = []
@@ -925,9 +952,7 @@ class alloptical(TwoPhotonImaging):
                     #        in stim_timings if
                     #        stim not in self.seizure_frames]
                 else:
-                    flu = [targets_trace[cell_idx][stim - pre_stim: stim + self.stim_duration_frames + post_stim] for
-                           stim
-                           in stim_timings]
+                    flu = [targets_trace[cell_idx][stim - pre_stim: stim + self.stim_duration_frames + post_stim] for stim in stim_timings]
 
                 # flu_dfstdF = []
                 # flu_dff = []
@@ -2643,6 +2668,14 @@ class Post4ap(alloptical):
         # collect information about seizures
         self.collect_seizures_info(seizures_lfp_timing_matarray=paths[5], discard_all=discard_all)
 
+
+        #### initializing data processing, data analysis and/or results associated attr's
+
+        ## PHOTOSTIM SLM TARGETS
+        self.responses_SLMtargets_outsz = []  # dF/prestimF responses for all SLM targets for photostim trials outside sz
+        self.responses_SLMtargets_insz = []  # dF/prestimF responses for all SLM targets for photostim trials inside sz - excluding targets inside the sz boundary
+
+
         self.save()
 
     def subselect_tiffs_sz(self, onsets, offsets, on_off_type: str):
@@ -3715,11 +3748,20 @@ class AllOpticalResults:  ## initiated in allOptical-results.ipynb
                                                                     'mean response (dFF all targets)': [],
                                                                     'mean reliability (>0.3 dF/stdF)': []})  # gets defined in allOptical-results.ipynb
 
-        # large dictionary containing direct pre4ap and post4ap trial comparisons for each experiments, and stim responses
-        # for pre4ap data and stim responses for post4ap data (also broken down by outsz and insz)
-        allopticalResults.stim_responses = {}  # get defined in alloptical_analysis_photostim
 
-        allopticalResults.stim_relative_szonset_vs_avg_response_alltargets_atstim = {}
+        # large dictionary containing direct pre4ap and post4ap trial comparisons for each experiments, and stim responses
+        # for pre4ap data and stim responses for post4ap data (also broken down by outsz and insz) - responses are dF/prestimF
+        self.stim_responses = {}  # get defined in alloptical_analysis_photostim
+
+        # for pre4ap data and stim responses for post4ap data (also broken down by outsz and insz) - responses are taken using whole trace dFF
+        self.stim_responses_tracedFF = {}  # get defined in alloptical_analysis_photostim
+
+
+        # responses of targets at each stim (timed relative to the closest sz onset location) - responses are dF/prestimF
+        self.stim_relative_szonset_vs_avg_response_alltargets_atstim = {}
+
+        # responses of targets at each stim (timed relative to the closest sz onset location) - using whole trace dFF
+        self.stim_relative_szonset_vs_avg_dFFresponse_alltargets_atstim = {}
 
         self.save_pkl(pkl_path=self.pkl_path)
 
@@ -3819,10 +3861,10 @@ def _good_cells(cell_ids: list, raws: np.ndarray, photostim_frames: list, std_th
     print('# of good cells found: ', len(good_cells), ' (out of ', len(cell_ids), ' ROIs)')
     return good_cells, events_loc_cells, flu_events_cells, stds
 
-
+# TODO need to move class method under alloptical - already superposed in alloptical by get_alltargets_stim_traces_norm
 def get_s2ptargets_stim_traces(expobj, normalize_to='', pre_stim=10, post_stim=200):
     """
-    primary function to measure the dFF traces for photostimulated targets.
+    primary function to measure the dFF trace SNIPPETS for photostimulated targets.
     :param expobj:
     :param normalize_to: str; either "baseline" or "pre-stim"
     :param pre_stim: number of frames to use as pre-stim
@@ -3846,23 +3888,27 @@ def get_s2ptargets_stim_traces(expobj, normalize_to='', pre_stim=10, post_stim=2
         # print('considering cell # %s' % cell)
         if cell in expobj.cell_id:
             cell_idx = expobj.cell_id.index(cell)
-            flu = [expobj.raw[cell_idx][stim - pre_stim: stim + post_stim] for stim in stim_timings if
+            flu_raw_snippets = [expobj.raw[cell_idx][stim - pre_stim: stim + post_stim] for stim in stim_timings if
+                   stim not in expobj.seizure_frames]
+
+            flu_dff_trace = normalize_dff(expobj.raw[cell_idx], threshold_pct=10)
+            flu_dfftrace_snippets = [expobj.raw[cell_idx][stim - pre_stim: stim + post_stim] for stim in stim_timings if
                    stim not in expobj.seizure_frames]
 
             flu_dfstdF = []
             flu_dff = []
             if normalize_to == 'baseline':
                 mean_spont_baseline = np.mean(expobj.baseline_raw[cell_idx])
-                for i in range(len(flu)):
-                    trace_dff = ((flu[i] - mean_spont_baseline) / mean_spont_baseline) * 100
+                for i in range(len(flu_raw_snippets)):
+                    trace_dff = ((flu_raw_snippets[i] - mean_spont_baseline) / mean_spont_baseline) * 100
                     # add nan if cell is inside sz boundary for this stim
                     if hasattr(expobj, 'slmtargets_szboundary_stim'):
                         if expobj.is_cell_insz(cell=cell, stim=stim_timings[i]):
-                            trace_dff = [np.nan] * len(flu[i])
+                            trace_dff = [np.nan] * len(flu_raw_snippets[i])
                     flu_dff.append(trace_dff)
-            elif normalize_to == 'pre-stim':
-                for i in range(len(flu)):
-                    trace = flu[i]
+            elif normalize_to == 'pre-stim':  # NOTE: this is the delta(raw poststim - raw prestim) version
+                for i in range(len(flu_raw_snippets)):
+                    trace = flu_raw_snippets[i]
                     mean_pre = np.mean(trace[0:pre_stim])
                     trace_dff = ((trace - mean_pre) / mean_pre) * 100
                     std_pre = np.std(trace[0:pre_stim])
@@ -3874,6 +3920,22 @@ def get_s2ptargets_stim_traces(expobj, normalize_to='', pre_stim=10, post_stim=2
                             dFstdF = [np.nan] * len(trace)
                     flu_dfstdF.append(dFstdF)
                     flu_dff.append(trace_dff)
+
+            elif normalize_to == 'trace dFF':    # NOTE: this is the delta(dFF poststim - dFF prestim) version
+                for i in range(len(flu_dfftrace_snippets)):
+                    trace = flu_dfftrace_snippets[i]
+                    mean_pre = np.mean(trace[0:pre_stim])
+                    trace_dff = ((trace - mean_pre) / mean_pre) * 100
+                    std_pre = np.std(trace[0:pre_stim])
+                    dFstdF = (trace - mean_pre) / std_pre  # make dF divided by std of pre-stim F trace
+                    # add nan if cell is inside sz boundary for this stim
+                    if hasattr(expobj, 'slmtargets_szboundary_stim'):
+                        if expobj.is_cell_insz(cell=cell, stim=stim_timings[i]):
+                            trace_dff = [np.nan] * len(trace)
+                            dFstdF = [np.nan] * len(trace)
+                    flu_dfstdF.append(dFstdF)
+                    flu_dff.append(trace_dff)
+
             else:
                 TypeError('need to specify what to normalize to in get_targets_dFF (choose "baseline" or "pre-stim")')
 
@@ -3883,8 +3945,8 @@ def get_s2ptargets_stim_traces(expobj, normalize_to='', pre_stim=10, post_stim=2
             targets_dfstdF.append(flu_dfstdF)
             targets_dfstdF_avg.append(np.nanmean(flu_dfstdF, axis=0))
 
-            targets_raw.append(flu)
-            targets_raw_avg.append(np.nanmean(flu, axis=0))
+            targets_raw.append(flu_raw_snippets)
+            targets_raw_avg.append(np.nanmean(flu_raw_snippets, axis=0))
 
     if normalize_to == 'baseline':
         return targets_dff, targets_dff_avg
@@ -4472,7 +4534,12 @@ def run_alloptical_processing_photostim(expobj, to_suite2p=None, baseline_trials
     if 'pre' in expobj.metainfo['exptype']:
         expobj.SLMTargets_stims_dff, expobj.SLMTargets_stims_dffAvg, expobj.SLMTargets_stims_dfstdF, \
         expobj.SLMTargets_stims_dfstdF_avg, expobj.SLMTargets_stims_raw, expobj.SLMTargets_stims_rawAvg = \
-            expobj.get_alltargets_stim_traces_norm(pre_stim=expobj.pre_stim, post_stim=expobj.post_stim, stims=expobj.stim_start_frames)
+            expobj.get_alltargets_stim_traces_norm(process='raw', pre_stim=expobj.pre_stim, post_stim=expobj.post_stim, stims=expobj.stim_start_frames)
+
+        expobj.SLMTargets_tracedFF_stims_dff, expobj.SLMTargets_tracedFF_stims_dffAvg, expobj.SLMTargets_tracedFF_stims_dfstdF, \
+        expobj.SLMTargets_tracedFF_stims_dfstdF_avg, expobj.SLMTargets_tracedFF_stims_raw, expobj.SLMTargets_tracedFF_stims_rawAvg = \
+            expobj.get_alltargets_stim_traces_norm(process='dFF', pre_stim=expobj.pre_stim, post_stim=expobj.post_stim, stims=expobj.stim_start_frames)
+
 
         SLMtarget_ids = list(range(len(expobj.SLMTargets_stims_dfstdF)))
 
@@ -4481,20 +4548,37 @@ def run_alloptical_processing_photostim(expobj, to_suite2p=None, baseline_trials
 
         expobj.SLMTargets_stims_dff, expobj.SLMTargets_stims_dffAvg, expobj.SLMTargets_stims_dfstdF, \
         expobj.SLMTargets_stims_dfstdF_avg, expobj.SLMTargets_stims_raw, expobj.SLMTargets_stims_rawAvg = \
-            expobj.get_alltargets_stim_traces_norm(pre_stim=expobj.pre_stim, post_stim=expobj.post_stim,
+            expobj.get_alltargets_stim_traces_norm(process='raw', pre_stim=expobj.pre_stim, post_stim=expobj.post_stim,
                                                    stims=expobj.stim_start_frames)
+
+        expobj.SLMTargets_tracedFF_stims_dff, expobj.SLMTargets_tracedFF_stims_dffAvg, expobj.SLMTargets_tracedFF_stims_dfstdF, \
+        expobj.SLMTargets_tracedFF_stims_dfstdF_avg, expobj.SLMTargets_tracedFF_stims_raw, expobj.SLMTargets_tracedFF_stims_rawAvg = \
+            expobj.get_alltargets_stim_traces_norm(process='dFF', pre_stim=expobj.pre_stim, post_stim=expobj.post_stim,
+                                                   stims=expobj.stim_start_frames)
+
+
 
         stims = [stim for stim in expobj.stim_start_frames if stim not in expobj.seizure_frames]
         expobj.SLMTargets_stims_dff_outsz, expobj.SLMTargets_stims_dffAvg_outsz, expobj.SLMTargets_stims_dfstdF_outsz, \
         expobj.SLMTargets_stims_dfstdF_avg_outsz, expobj.SLMTargets_stims_raw_outsz, expobj.SLMTargets_stims_rawAvg_outsz = \
-            expobj.get_alltargets_stim_traces_norm(pre_stim=expobj.pre_stim, post_stim=expobj.post_stim, stims=stims)
+            expobj.get_alltargets_stim_traces_norm(process='raw', pre_stim=expobj.pre_stim, post_stim=expobj.post_stim, stims=stims)
+
+        expobj.SLMTargets_tracedFF_stims_dff_outsz, expobj.SLMTargets_tracedFF_stims_dffAvg_outsz, expobj.SLMTargets_tracedFF_stims_dfstdF_outsz, \
+        expobj.SLMTargets_tracedFF_stims_dfstdF_avg_outsz, expobj.SLMTargets_tracedFF_stims_raw_outsz, expobj.SLMTargets_tracedFF_stims_rawAvg_outsz = \
+            expobj.get_alltargets_stim_traces_norm(process='dFF', pre_stim=expobj.pre_stim, post_stim=expobj.post_stim, stims=stims)
+
 
     # only in sz stims (use for post-4ap trials) - includes exclusion of cells inside of sz boundary
         if hasattr(expobj, 'stims_in_sz'):
             stims = [expobj.stim_start_frames.index(stim) for stim in expobj.stims_in_sz]
             expobj.SLMTargets_stims_dff_insz, expobj.SLMTargets_stims_dffAvg_insz, expobj.SLMTargets_stims_dfstdF_insz, \
             expobj.SLMTargets_stims_dfstdF_avg_insz, expobj.SLMTargets_stims_raw_insz, expobj.SLMTargets_stims_rawAvg_insz = \
-                expobj.get_alltargets_stim_traces_norm(pre_stim=expobj.pre_stim, post_stim=expobj.post_stim, stims=stims, filter_sz=True)
+                expobj.get_alltargets_stim_traces_norm(process='raw', pre_stim=expobj.pre_stim, post_stim=expobj.post_stim, stims=stims, filter_sz=True)
+
+            expobj.SLMTargets_tracedFF_stims_dff_insz, expobj.SLMTargets_tracedFF_stims_dffAvg_insz, expobj.SLMTargets_tracedFF_stims_dfstdF_insz, \
+            expobj.SLMTargets_tracedFF_stims_dfstdF_avg_insz, expobj.SLMTargets_tracedFF_stims_raw_insz, expobj.SLMTargets_tracedFF_stims_rawAvg_insz = \
+                expobj.get_alltargets_stim_traces_norm(process='dFF', pre_stim=expobj.pre_stim, post_stim=expobj.post_stim, stims=stims, filter_sz=True)
+
 
     else:
         raise Exception('something very weird has happened. exptype for expobj not defined as pre or post 4ap [1.]')
@@ -4559,8 +4643,8 @@ def run_alloptical_processing_photostim(expobj, to_suite2p=None, baseline_trials
 
     expobj.save()
 
-# creates plots for SLM targets responses
-def slm_targets_responses(expobj, experiment, trial, y_spacing_factor=2, figsize=[20, 20], smooth_overlap_traces=5, linewidth_overlap_traces=0.2, dff_threshold=0.15,
+# runs analysis code and creates plots for SLM targets responses
+def slm_targets_responses(expobj, experiment, trial, plot: bool, y_spacing_factor=2, figsize=[20, 20], smooth_overlap_traces=5, linewidth_overlap_traces=0.2, dff_threshold=0.15,
                           y_lims_periphotostim_trace=[-0.5, 2.0], v_lims_periphotostim_heatmap=[-5, 5], save_results=True, force_redo=False, cmap=None):
     # plot SLM photostim individual targets -- individual, full traces, dff normalized
 
@@ -4617,109 +4701,110 @@ def slm_targets_responses(expobj, experiment, trial, y_spacing_factor=2, figsize
 
     ####################################################################################################################
     ## PLOTTING
-    w = smooth_overlap_traces
-    to_plot = np.asarray([(np.convolve(trace, np.ones(w), 'valid') / w) for trace in expobj.dff_SLMTargets])
-    # to_plot = expobj.dff_SLMTargets
-    # aoplot.plot_photostim_traces(array=to_plot, expobj=expobj, x_label='Time (secs.)',
-    #                              y_label='dFF Flu', title=experiment)
+    if plot:
+        w = smooth_overlap_traces
+        to_plot = np.asarray([(np.convolve(trace, np.ones(w), 'valid') / w) for trace in expobj.dff_SLMTargets])
+        # to_plot = expobj.dff_SLMTargets
+        # aoplot.plot_photostim_traces(array=to_plot, expobj=expobj, x_label='Time (secs.)',
+        #                              y_label='dFF Flu', title=experiment)
 
 
-    # initialize figure
-    fig = plt.figure(constrained_layout=True, figsize=figsize)
-    gs = fig.add_gridspec(4, 8)
+        # initialize figure
+        fig = plt.figure(constrained_layout=True, figsize=figsize)
+        gs = fig.add_gridspec(4, 8)
 
-    ax9 = fig.add_subplot(gs[0, 0])
-    fig, ax9 = aoplot.plot_SLMtargets_Locs(expobj, background=expobj.meanFluImg_registered, title=None, fig=fig, ax=ax9, show=False)
+        ax9 = fig.add_subplot(gs[0, 0])
+        fig, ax9 = aoplot.plot_SLMtargets_Locs(expobj, background=expobj.meanFluImg_registered, title=None, fig=fig, ax=ax9, show=False)
 
 
-    ax0 = fig.add_subplot(gs[0, 1:])
-    ax0 = aoplot.plot_lfp_stims(expobj, fig=fig, ax=ax0, show=False, x_axis='Time (secs.)')
+        ax0 = fig.add_subplot(gs[0, 1:])
+        ax0 = aoplot.plot_lfp_stims(expobj, fig=fig, ax=ax0, show=False, x_axis='Time (secs.)')
 
-    ax1 = fig.add_subplot(gs[1:3, :])
-    aoplot.plot_photostim_traces_overlap(array=expobj.dff_SLMTargets, expobj=expobj, x_axis='Time (secs.)',
-                                         y_spacing_factor=y_spacing_factor, fig=fig, ax=ax1, show=False,
-                                         title='%s - dFF Flu photostims' % experiment, linewidth=linewidth_overlap_traces,
-                                         figsize=(2 * 20, 2 * len(to_plot) * 0.15))
+        ax1 = fig.add_subplot(gs[1:3, :])
+        aoplot.plot_photostim_traces_overlap(array=expobj.dff_SLMTargets, expobj=expobj, x_axis='Time (secs.)',
+                                             y_spacing_factor=y_spacing_factor, fig=fig, ax=ax1, show=False,
+                                             title='%s - dFF Flu photostims' % experiment, linewidth=linewidth_overlap_traces,
+                                             figsize=(2 * 20, 2 * len(to_plot) * 0.15))
 
-    ax2 = fig.add_subplot(gs[-1, 0:2])
-    y_label = 'dF/F'
-    cell_avg_stim_traces = expobj.SLMTargets_stims_dffAvg
-    aoplot.plot_periphotostim_avg(arr=cell_avg_stim_traces, expobj=expobj,
-                                  figsize=[5, 4], y_lims=y_lims_periphotostim_trace, fig=fig, ax=ax2, show=False,
-                                  title=('responses of all photostim targets'),
-                                  y_label=y_label, x_label='Time post-stimulation (seconds)')
+        ax2 = fig.add_subplot(gs[-1, 0:2])
+        y_label = 'dF/F'
+        cell_avg_stim_traces = expobj.SLMTargets_stims_dffAvg
+        aoplot.plot_periphotostim_avg(arr=cell_avg_stim_traces, expobj=expobj,
+                                      figsize=[5, 4], y_lims=y_lims_periphotostim_trace, fig=fig, ax=ax2, show=False,
+                                      title=('responses of all photostim targets'),
+                                      y_label=y_label, x_label='Time post-stimulation (seconds)')
 
-    # fig.show()
+        # fig.show()
 
-    if hasattr(expobj, 'stims_in_sz'):
+        if hasattr(expobj, 'stims_in_sz'):
 
-        # make response magnitude and response success rate figure
-        # fig, (ax1, ax2, ax3, ax4) = plt.subplots(figsize=((5 * 4), 5), nrows=1, ncols=4)
-        # stims out sz
-        ax3 = fig.add_subplot(gs[-1, 2:4])
-        data = [[np.mean(expobj.responses_SLMtargets_outsz.loc[i]) for i in range(expobj.n_targets_total)]]
-        fig, ax3 = pj.plot_hist_density(data, x_label='response magnitude (dF/F)', title='stims_out_sz - ',
-                                     fig=fig, ax=ax3, show=False)
-        ax4 = fig.add_subplot(gs[-1, 4])
-        fig, ax4 = pj.plot_bar_with_points(data=[list(expobj.StimSuccessRate_SLMtargets_outsz.values())],
-                                           x_tick_labels=[trial],
-                                           ylims=[0, 100], bar=False, y_label='% success stims.',
-                                           title='target success rate (stims out sz)', expand_size_x=2,
-                                           show=False, fig=fig, ax=ax4)
-        # stims in sz
-        ax5 = fig.add_subplot(gs[-1, 5:7])
-        data = [[np.mean(expobj.responses_SLMtargets_insz.loc[i]) for i in range(expobj.n_targets_total)]]
-        fig, ax5 = pj.plot_hist_density(data, x_label='response magnitude (dF/stdF)', title='stims_in_sz - ',
-                                        fig=fig, ax=ax5, show=False)
-        ax6 = fig.add_subplot(gs[-1, 7])
-        fig, ax6 = pj.plot_bar_with_points(data=[list(expobj.StimSuccessRate_SLMtargets_insz.values())],
-                                        x_tick_labels=[trial],
-                                        ylims=[0, 100], bar=False, y_label='% success stims.',
-                                        title='target success rate (stims in sz)', expand_size_x=2,
-                                        show=False, fig=fig, ax=ax6)
-        fig.tight_layout()
-        if save_results:
-            save = expobj.analysis_save_path[:-17] + '/results/' + '%s_%s_slm_targets_responses_dFF' % (expobj.metainfo['animal prep.'], trial)
-            os.makedirs(expobj.analysis_save_path[:-17] + '/results') if not os.path.exists(expobj.analysis_save_path[:-17] + '/results') else None
-            print('saving png and svg to: %s' % save)
-            fig.savefig(fname=save + '.png', transparent=True, format='png')
-            fig.savefig(fname=save + '.svg', transparent=True, format='svg')
+            # make response magnitude and response success rate figure
+            # fig, (ax1, ax2, ax3, ax4) = plt.subplots(figsize=((5 * 4), 5), nrows=1, ncols=4)
+            # stims out sz
+            ax3 = fig.add_subplot(gs[-1, 2:4])
+            data = [[np.mean(expobj.responses_SLMtargets_outsz.loc[i]) for i in range(expobj.n_targets_total)]]
+            fig, ax3 = pj.plot_hist_density(data, x_label='response magnitude (dF/F)', title='stims_out_sz - ',
+                                         fig=fig, ax=ax3, show=False)
+            ax4 = fig.add_subplot(gs[-1, 4])
+            fig, ax4 = pj.plot_bar_with_points(data=[list(expobj.StimSuccessRate_SLMtargets_outsz.values())],
+                                               x_tick_labels=[trial],
+                                               ylims=[0, 100], bar=False, y_label='% success stims.',
+                                               title='target success rate (stims out sz)', expand_size_x=2,
+                                               show=False, fig=fig, ax=ax4)
+            # stims in sz
+            ax5 = fig.add_subplot(gs[-1, 5:7])
+            data = [[np.mean(expobj.responses_SLMtargets_insz.loc[i]) for i in range(expobj.n_targets_total)]]
+            fig, ax5 = pj.plot_hist_density(data, x_label='response magnitude (dF/stdF)', title='stims_in_sz - ',
+                                            fig=fig, ax=ax5, show=False)
+            ax6 = fig.add_subplot(gs[-1, 7])
+            fig, ax6 = pj.plot_bar_with_points(data=[list(expobj.StimSuccessRate_SLMtargets_insz.values())],
+                                            x_tick_labels=[trial],
+                                            ylims=[0, 100], bar=False, y_label='% success stims.',
+                                            title='target success rate (stims in sz)', expand_size_x=2,
+                                            show=False, fig=fig, ax=ax6)
+            fig.tight_layout()
+            if save_results:
+                save = expobj.analysis_save_path[:-17] + '/results/' + '%s_%s_slm_targets_responses_dFF' % (expobj.metainfo['animal prep.'], trial)
+                os.makedirs(expobj.analysis_save_path[:-17] + '/results') if not os.path.exists(expobj.analysis_save_path[:-17] + '/results') else None
+                print('saving png and svg to: %s' % save)
+                fig.savefig(fname=save + '.png', transparent=True, format='png')
+                fig.savefig(fname=save + '.svg', transparent=True, format='svg')
 
-        fig.show()
+            fig.show()
 
-    else:
-        # no sz
-        # fig, (ax1, ax2) = plt.subplots(figsize=((5 * 2), 5), nrows=1, ncols=2)
-        data = [[np.mean(expobj.responses_SLMtargets.loc[i]) for i in range(expobj.n_targets_total)]]
-        ax3 = fig.add_subplot(gs[-1, 2:4])
-        fig, ax3 = pj.plot_hist_density(data, x_label='response magnitude (dF/F)', title='no sz', show=False, fig=fig, ax=ax3)
-        ax4 = fig.add_subplot(gs[-1, 4])
-        fig, ax4 = pj.plot_bar_with_points(data=[list(expobj.StimSuccessRate_SLMtargets.values())], x_tick_labels=[trial],
-                                           ylims=[0, 100], bar=False, show=False, fig=fig, ax=ax4,
-                                           y_label='% success stims.', title='target success rate (pre4ap)',
-                                           expand_size_x=2)
+        else:
+            # no sz
+            # fig, (ax1, ax2) = plt.subplots(figsize=((5 * 2), 5), nrows=1, ncols=2)
+            data = [[np.mean(expobj.responses_SLMtargets.loc[i]) for i in range(expobj.n_targets_total)]]
+            ax3 = fig.add_subplot(gs[-1, 2:4])
+            fig, ax3 = pj.plot_hist_density(data, x_label='response magnitude (dF/F)', title='no sz', show=False, fig=fig, ax=ax3)
+            ax4 = fig.add_subplot(gs[-1, 4])
+            fig, ax4 = pj.plot_bar_with_points(data=[list(expobj.StimSuccessRate_SLMtargets.values())], x_tick_labels=[trial],
+                                               ylims=[0, 100], bar=False, show=False, fig=fig, ax=ax4,
+                                               y_label='% success stims.', title='target success rate (pre4ap)',
+                                               expand_size_x=2)
 
-        zero_point = abs(v_lims_periphotostim_heatmap[0]/v_lims_periphotostim_heatmap[1])
-        c = ColorConverter().to_rgb
-        if cmap is None:
-            cmap = pj.make_colormap([c('blue'), c('white'), zero_point - 0.20, c('white'), c('red')])
-        ax5 = fig.add_subplot(gs[-1, 5:])
-        fig, ax5 = aoplot.plot_traces_heatmap(arr=cell_avg_stim_traces, expobj=expobj, vmin=v_lims_periphotostim_heatmap[0], vmax=v_lims_periphotostim_heatmap[1],
-                                              stim_on=expobj.pre_stim, stim_off=expobj.pre_stim + expobj.stim_duration_frames + 1, cbar=False,
-                                              title=(expobj.metainfo['animal prep.'] + ' ' + expobj.metainfo[
-                                              'trial'] + ' - SLM targets raw Flu'), show=False, fig=fig, ax=ax5, x_label='Frames', y_label='Neurons',
-                                              xlims=(0, expobj.pre_stim + expobj.stim_duration_frames + expobj.post_stim),
-                                              cmap=cmap)
+            zero_point = abs(v_lims_periphotostim_heatmap[0]/v_lims_periphotostim_heatmap[1])
+            c = ColorConverter().to_rgb
+            if cmap is None:
+                cmap = pj.make_colormap([c('blue'), c('white'), zero_point - 0.20, c('white'), c('red')])
+            ax5 = fig.add_subplot(gs[-1, 5:])
+            fig, ax5 = aoplot.plot_traces_heatmap(arr=cell_avg_stim_traces, expobj=expobj, vmin=v_lims_periphotostim_heatmap[0], vmax=v_lims_periphotostim_heatmap[1],
+                                                  stim_on=expobj.pre_stim, stim_off=expobj.pre_stim + expobj.stim_duration_frames + 1, cbar=False,
+                                                  title=(expobj.metainfo['animal prep.'] + ' ' + expobj.metainfo[
+                                                  'trial'] + ' - SLM targets raw Flu'), show=False, fig=fig, ax=ax5, x_label='Frames', y_label='Neurons',
+                                                  xlims=(0, expobj.pre_stim + expobj.stim_duration_frames + expobj.post_stim),
+                                                  cmap=cmap)
 
-        fig.tight_layout()
-        if save_results:
-            save = expobj.analysis_save_path[:-17] + '/results/' + '%s_%s_slm_targets_responses_dFF' % (expobj.metainfo['animal prep.'], trial)
-            os.makedirs(expobj.analysis_save_path[:-17] + '/results') if not os.path.exists(expobj.analysis_save_path[:-17] + '/results') else None
-            print('saving png and svg to: %s' % save)
-            fig.savefig(fname=save+'.png', transparent=True, format='png')
-            fig.savefig(fname=save+'.svg', transparent=True,  format='svg')
+            fig.tight_layout()
+            if save_results:
+                save = expobj.analysis_save_path[:-17] + '/results/' + '%s_%s_slm_targets_responses_dFF' % (expobj.metainfo['animal prep.'], trial)
+                os.makedirs(expobj.analysis_save_path[:-17] + '/results') if not os.path.exists(expobj.analysis_save_path[:-17] + '/results') else None
+                print('saving png and svg to: %s' % save)
+                fig.savefig(fname=save+'.png', transparent=True, format='png')
+                fig.savefig(fname=save+'.svg', transparent=True,  format='svg')
 
-        fig.show()
+            fig.show()
 
 ###### NON TARGETS analysis + plottings
 def run_allopticalAnalysisNontargets(expobj, normalize_to='pre_stim', to_plot=True, save_plot_suffix='', do_processing=True):

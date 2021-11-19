@@ -38,7 +38,7 @@ os.makedirs(save_path_prefix) if not os.path.exists(save_path_prefix) else None
 ######### ZONE FOR CALLING THIS SCRIPT DIRECTLY FROM THE SSH SERVER ###########
 """
 
-# %% aoresults-SLMtargets-8.1-dc) PLOT - absolute stim responses vs. TIME to seizure onset
+# %% 8.1-dc) PLOT - absolute stim responses vs. TIME to seizure onset
 
 """todo for this analysis:
 - average over targets for plot containing all exps
@@ -796,17 +796,17 @@ for exp in allopticalResults.pre_4ap_trials:
     # plt.savefig('/home/pshah/mnt/qnap/Analysis/%s/%s/results/%s_%s.png' % (date, j[:-6], date, j))
     # fig.show()
 
-# for i in range(len(response_traces_successes[cell][:-1])):
+"""# for i in range(len(response_traces_successes[cell][:-1])):
 #     plt.plot(response_traces_successes[cell][:-1][i])
 # plt.show()
 
 # for i in responses_magnitudes_successes.keys():
 #     print(len(responses_magnitudes_successes))
-
+"""
 
 # %% 5.0-main) TODO collect SLM targets responses for stims dynamically over time
 
-# plot the target photostim responses for individual targets for each stim over the course of the trial
+"""# plot the target photostim responses for individual targets for each stim over the course of the trial
 #    (normalize to each target's overall mean response) and plot over the timecourse of the trial
 
 # # ls = pj.flattenOnce(allopticalResults.post_4ap_trials)
@@ -822,7 +822,7 @@ for exp in allopticalResults.pre_4ap_trials:
 #     for j in range(len(allopticalResults.trial_maps['post'][key])):
 #         # import expobj
 #         expobj, experiment = aoutils.import_expobj(aoresults_map_id='post %s.%s' % (key, j), do_processing=True)
-
+"""
 
 
 # %% 5.1) collect SLM targets responses for stims dynamically over time - APPROACH #1 - CALCULATING RESPONSE MAGNITUDE AT EACH STIM PER TARGET
