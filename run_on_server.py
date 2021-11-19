@@ -57,9 +57,7 @@ stim_responses_tracedFF_comparisons_dict = {}
 for i in range(len(allopticalResults.pre_4ap_trials)):
     prep = allopticalResults.pre_4ap_trials[i][0][:-6]
     pre4aptrial = allopticalResults.pre_4ap_trials[i][0][-5:]
-    date = list(allopticalResults.slmtargets_stim_responses_tracedFF.loc[
-                allopticalResults.slmtargets_stim_responses_tracedFF['prep_trial'] == '%s %s' % (
-                prep, pre4aptrial), 'date'])[0]
+    date = allopticalResults.metainfo.loc[allopticalResults.metainfo['prep_trial'] == f"{prep} {pre4aptrial}", 'date'].values[0]
     print(f"\n{i}, {date}, {prep}")
 
 

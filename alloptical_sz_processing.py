@@ -233,7 +233,7 @@ for on, off in zip(on_, end):
     sz_num += 1
 
 
-# %% 3) responses of targets during seizures, but EXCLUDE STIMS WHERE THE CELL IS INSIDE THE SZ BOUND -- should this be in ARCHIVEDalloptical_results_photostim.py???? -- yeah most of this code should probably be retired - and current location is in alloptical_results_photostim_SLMtargets.py
+# %% archive-3) responses of targets during seizures, but EXCLUDE STIMS WHERE THE CELL IS INSIDE THE SZ BOUND -- should this be in ARCHIVEDalloptical_results_photostim.py???? -- yeah most of this code should probably be retired - and current location is in alloptical_results_photostim_SLMtargets.py
 
 if hasattr(expobj, 'stims_in_sz'):
 

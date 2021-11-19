@@ -770,6 +770,12 @@ class alloptical(TwoPhotonImaging):
         self.SLMTargets_stims_raw = []
         self.SLMTargets_stims_rawAvg = []
 
+        self.SLMTargets_tracedFF_stims_dff = []
+        self.SLMTargets_tracedFF_stims_dffAvg = []
+        self.SLMTargets_tracedFF_stims_dfstdF = []
+        self.SLMTargets_tracedFF_stims_dfstdF_avg = []
+        self.SLMTargets_tracedFF_stims_raw = []
+        self.SLMTargets_tracedFF_stims_rawAvg = []
 
         ## NON PHOTOSTIM SLM TARGETS
 
@@ -2000,7 +2006,7 @@ class alloptical(TwoPhotonImaging):
         return x
 
     # calculate reliability of photostim responsiveness of all of the targeted cells (found in s2p output)
-    def calculate_SLMTarget_responses_dff(self, threshold=10, stims_to_use: list = None):
+    def calculate_SLMTarget_responses_dff(self, process: str,  threshold=10, stims_to_use: list = None):
         """
         calculations of dFF responses to photostimulation of SLM Targets. Includes calculating reliability of slm targets,
         saving success stim locations, and saving stim response magnitudes as pandas dataframe.
@@ -2017,21 +2023,35 @@ class alloptical(TwoPhotonImaging):
         else:
             AssertionError('no stims set to analyse [1]')
 
+        # choose between .SLMTargets_stims_dff and .SLMTargets_stims_tracedFF for data to process
+        if process == 'dF/prestimF':
+            if hasattr(self, 'SLMTargets_stims_dff'):
+                targets_traces = self.SLMTargets_stims_dff
+            else:
+                AssertionError('no SLMTargets_stims_dff attr. [2]')
+        elif process == 'trace dFF':
+            if hasattr(self, 'SLMTargets_stims_dff'):
+                targets_traces = self.SLMTargets_tracedFF_stims_dff
+            else:
+                AssertionError('no SLMTargets_tracedFF_stims_dff attr. [2]')
+        else:
+            ValueError('need to assign to process: dF/prestimF or trace dFF')
+
         # initializing pandas df that collects responses of stimulations
         if hasattr(self, 'SLMTargets_stims_dff'):
             d = {}
             for stim in stims_idx:
-                d[stim] = [None] * self.SLMTargets_stims_dff.shape[0]
-            df = pd.DataFrame(d, index=range(self.SLMTargets_stims_dff.shape[0]))  # population dataframe
+                d[stim] = [None] * targets_traces.shape[0]
+            df = pd.DataFrame(d, index=range(targets_traces.shape[0]))  # population dataframe
         else:
             AssertionError('no SLMTargets_stims_dff attr. [2]')
 
         # initializing pandas df for binary showing of success and fails (1= success, 0= fails)
         hits_slmtargets = {}  # to be converted in pandas df below - will contain 1 for every success stim, 0 for non success stims
         for stim in stims_idx:
-            hits_slmtargets[stim] = [None] * self.SLMTargets_stims_dff.shape[0]  # start with 0 for all stims
+            hits_slmtargets[stim] = [None] * targets_traces.shape[0]  # start with 0 for all stims
         hits_slmtargets_df = pd.DataFrame(hits_slmtargets,
-                                          index=range(self.SLMTargets_stims_dff.shape[0]))  # population dataframe
+                                          index=range(targets_traces.shape[0]))  # population dataframe
 
         reliability_slmtargets = {}  # dict will be used to store the reliability results for each targeted cell
 
@@ -2044,7 +2064,7 @@ class alloptical(TwoPhotonImaging):
             counter = 0
             responses = []
             for stim_idx in stims_idx:
-                dff_trace = self.SLMTargets_stims_dff[target_idx][stim_idx]
+                dff_trace = targets_traces[target_idx][stim_idx]
                 response_result = np.mean(dff_trace[self.pre_stim + self.stim_duration_frames + 1:
                                                     self.pre_stim + self.stim_duration_frames +
                                                     self.post_stim_response_frames_window])  # calculate the dF over pre-stim mean F response within the response window
@@ -2064,7 +2084,7 @@ class alloptical(TwoPhotonImaging):
         return reliability_slmtargets, hits_slmtargets_df, df, traces_dff_successes
 
     # retrieves photostim avg traces for each SLM target, also calculates the reliability % for each SLM target
-    def calculate_SLMTarget_SuccessStims(self, hits_df, stims_idx_l: list, exclude_stims_targets: dict = {}):
+    def calculate_SLMTarget_SuccessStims(self, hits_df, process: str, stims_idx_l: list, exclude_stims_targets: dict = {}):
         """uses outputs of calculate_SLMTarget_responses_dff to calculate overall successrate of the specified stims
 
         :param hits_df: pandas dataframe of targets x stims where 1 denotes successful stim response (0 is failure)
@@ -2076,6 +2096,22 @@ class alloptical(TwoPhotonImaging):
             traces_SLMtargets_successes_avg: np.array; photostims avg traces for each SLM target (successful stims only)
 
         """
+
+        # choose between .SLMTargets_stims_dff and .SLMTargets_stims_tracedFF for data to process
+        if process == 'dF/prestimF':
+            if hasattr(self, 'SLMTargets_stims_dff'):
+                targets_traces = self.SLMTargets_stims_dff
+            else:
+                AssertionError('no SLMTargets_stims_dff attr. [2]')
+        elif process == 'trace dFF':
+            if hasattr(self, 'SLMTargets_stims_dff'):
+                targets_traces = self.SLMTargets_tracedFF_stims_dff
+            else:
+                AssertionError('no SLMTargets_tracedFF_stims_dff attr. [2]')
+        else:
+            ValueError('need to assign to process: dF/prestimF or trace dFF')
+
+
 
         traces_SLMtargets_successes_avg_dict = {}
         traces_SLMtargets_failures_avg_dict = {}
@@ -2097,11 +2133,11 @@ class alloptical(TwoPhotonImaging):
                     counter += 1
                     if hits_df.loc[target_idx, stim_idx] == 1:
                         success += 1
-                        dff_trace = self.SLMTargets_stims_dff[target_idx][stim_idx]
+                        dff_trace = targets_traces[target_idx][stim_idx]
                         traces_SLMtargets_successes_l.append(dff_trace)
                     else:
                         success += 0
-                        dff_trace = self.SLMTargets_stims_dff[target_idx][stim_idx]
+                        dff_trace = targets_traces[target_idx][stim_idx]
                         traces_SLMtargets_failures_l.append(dff_trace)
 
             if counter > 0:
@@ -4588,45 +4624,11 @@ def run_alloptical_processing_photostim(expobj, to_suite2p=None, baseline_trials
     else:
         raise Exception('something very weird has happened. exptype for expobj not defined as pre or post 4ap [1.]')
 
+    #### PART 2 OF THIS FUNCTION
     # photostim. SUCCESS RATE MEASUREMENTS and PLOT - SLM PHOTOSTIM TARGETED CELLS
     # measure, for each cell, the pct of trials in which the dF_stdF > 20% post stim (normalized to pre-stim avgF for the trial and cell)
     # can plot this as a bar plot for now showing the distribution of the reliability measurement
-
-
-    if 'post' in expobj.metainfo['exptype']:
-        seizure_filter = True
-
-        print('\n Calculating stim success rates and response magnitudes (of SLM targets) *********** [2.1]')
-        expobj.StimSuccessRate_SLMtargets, expobj.hits_SLMtargets, expobj.responses_SLMtargets, expobj.traces_SLMtargets_successes = \
-            expobj.calculate_SLMTarget_responses_dff(threshold=10, stims_to_use=expobj.stim_start_frames)
-
-        if hasattr(expobj, 'stims_out_sz'):
-            stims_outsz_idx = [expobj.stim_start_frames.index(stim) for stim in expobj.stims_out_sz]
-            if len(stims_outsz_idx) > 0:
-                print('|- calculating stim success rates (outsz) - %s stims [2.2]' % len(stims_outsz_idx))
-                expobj.outsz_StimSuccessRate_SLMtargets, expobj.outsz_traces_SLMtargets_successes_avg, \
-                expobj.outsz_traces_SLMtargets_failures_avg = \
-                    expobj.calculate_SLMTarget_SuccessStims(hits_df=expobj.hits_SLMtargets, stims_idx_l=stims_outsz_idx)
-
-        if hasattr(expobj, 'stims_in_sz'):
-            if hasattr(expobj, 'slmtargets_szboundary_stim'):
-                stims_insz_idx = [expobj.stim_start_frames.index(stim) for stim in expobj.stims_in_sz]
-                if len(stims_insz_idx) > 0:
-                    print('|- calculating stim success rates (insz) - %s stims [2.3]' % len(stims_insz_idx))
-                    expobj.insz_StimSuccessRate_SLMtargets, expobj.insz_traces_SLMtargets_successes_avg,\
-                        expobj.insz_traces_SLMtargets_failures_avg = \
-                        expobj.calculate_SLMTarget_SuccessStims(hits_df=expobj.hits_SLMtargets, stims_idx_l=stims_insz_idx,
-                                                                exclude_stims_targets=expobj.slmtargets_szboundary_stim)
-            else:
-                print('No slmtargets_szboundary_stim (sz boundary classification not done) for: %s %s' % (
-                expobj.metainfo['animal prep.'], expobj.metainfo['trial']), ' [2.4] ')
-                # delattr(expobj, 'insz_traces_SLMtargets_successes_avg')
-
-        else:
-            print('No stims in sz for: %s %s' % (expobj.metainfo['animal prep.'], expobj.metainfo['trial']), ' [2.5] ')
-
-
-    elif 'pre' in expobj.metainfo['exptype']:
+    if 'pre' in expobj.metainfo['exptype']:
         seizure_filter = False
         print('\n Calculating stim success rates and response magnitudes (of SLM targets) *********** [3.]')
         expobj.StimSuccessRate_SLMtargets, expobj.hits_SLMtargets, expobj.responses_SLMtargets, expobj.traces_SLMtargets_successes = \
@@ -4644,6 +4646,47 @@ def run_alloptical_processing_photostim(expobj, to_suite2p=None, baseline_trials
         expobj.dfstdF_traces_avg, expobj.raw_traces, expobj.raw_traces_avg = \
             get_nontargets_stim_traces_norm(expobj=expobj, normalize_to='pre-stim', pre_stim=expobj.pre_stim,
                                                     post_stim=expobj.post_stim)
+
+    elif 'post' in expobj.metainfo['exptype']:
+        seizure_filter = True
+
+        print('\n Calculating stim success rates and response magnitudes (of SLM targets) *********** [2.1]')
+        expobj.StimSuccessRate_SLMtargets, expobj.hits_SLMtargets, expobj.responses_SLMtargets, expobj.traces_SLMtargets_successes = \
+            expobj.calculate_SLMTarget_responses_dff(process='dF/prestimF', threshold=10, stims_to_use=expobj.stim_start_frames)
+
+        expobj.StimSuccessRate_SLMtargets_tracedFF, expobj.hits_SLMtargets_tracedFF, expobj.responses_SLMtargets_tracedFF, expobj.traces_SLMtargets_tracedFF_successes = \
+            expobj.calculate_SLMTarget_responses_dff(process='trace dFF', threshold=10, stims_to_use=expobj.stim_start_frames)
+
+
+        if hasattr(expobj, 'stims_out_sz'):
+            stims_outsz_idx = [expobj.stim_start_frames.index(stim) for stim in expobj.stims_out_sz]
+            if len(stims_outsz_idx) > 0:
+                print('|- calculating stim success rates (outsz) - %s stims [2.2]' % len(stims_outsz_idx))
+                expobj.outsz_StimSuccessRate_SLMtargets, expobj.outsz_traces_SLMtargets_successes_avg, expobj.outsz_traces_SLMtargets_failures_avg = \
+                    expobj.calculate_SLMTarget_SuccessStims(process='dF/prestimF', hits_df=expobj.hits_SLMtargets, stims_idx_l=stims_outsz_idx)
+
+                expobj.outsz_StimSuccessRate_SLMtargets_tracedFF, expobj.outsz_traces_SLMtargets_tracedFF_successes_avg, expobj.outsz_traces_SLMtargets_tracedFF_failures_avg = \
+                    expobj.calculate_SLMTarget_SuccessStims(process='trace dFF', hits_df=expobj.hits_SLMtargets_tracedFF, stims_idx_l=stims_outsz_idx)
+
+        if hasattr(expobj, 'stims_in_sz'):
+            if hasattr(expobj, 'slmtargets_szboundary_stim'):
+                stims_insz_idx = [expobj.stim_start_frames.index(stim) for stim in expobj.stims_in_sz]
+                if len(stims_insz_idx) > 0:
+                    print('|- calculating stim success rates (insz) - %s stims [2.3]' % len(stims_insz_idx))
+                    expobj.insz_StimSuccessRate_SLMtargets, expobj.insz_traces_SLMtargets_successes_avg, expobj.insz_traces_SLMtargets_failures_avg = \
+                        expobj.calculate_SLMTarget_SuccessStims(process='dF/prestimF', hits_df=expobj.hits_SLMtargets, stims_idx_l=stims_insz_idx, exclude_stims_targets=expobj.slmtargets_szboundary_stim)
+
+                    expobj.insz_StimSuccessRate_SLMtargets_tracedFF, expobj.insz_traces_SLMtargets_tracedFF_successes_avg, expobj.insz_traces_SLMtargets_tracedFF_failures_avg = \
+                        expobj.calculate_SLMTarget_SuccessStims(process='trace dFF', hits_df=expobj.hits_SLMtargets_tracedFF, stims_idx_l=stims_insz_idx, exclude_stims_targets=expobj.slmtargets_szboundary_stim)
+
+            else:
+                print('No slmtargets_szboundary_stim (sz boundary classification not done) for: %s %s' % (
+                expobj.metainfo['animal prep.'], expobj.metainfo['trial']), ' [2.4] ')
+
+        else:
+            print('No stims in sz for: %s %s' % (expobj.metainfo['animal prep.'], expobj.metainfo['trial']), ' [2.5] ')
+
+
 
 
     expobj.save()
