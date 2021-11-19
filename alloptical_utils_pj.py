@@ -112,26 +112,31 @@ def import_expobj(aoresults_map_id: str = None, trial: str = None, prep: str = N
 
     # other misc. things you want to do when importing expobj -- should be temp code basically - not essential for actual importing of expobj
     if do_processing:
-        if expobj.metainfo['animal prep.'] not in expobj.analysis_save_path:
-            expobj.analysis_save_path = "/home/pshah/mnt/qnap/Analysis/%s/%s/%s_%s" % (date, expobj.metainfo['animal prep.'], date, trial)
-            # expobj.analysis_save_path = expobj.analysis_save_path + '/' + expobj.metainfo['animal prep.'] + '/' + expobj.metainfo['date'] + '_' + expobj.metainfo['trial']
+        ###### RUNNING EXTRA PROCESSING FOR dFF TRACES COLLECTION RESPONSES:
+        expobj.raw_traces_from_targets(force_redo=True)
+        run_alloptical_processing_photostim(expobj, plots=False, force_redo=False)
 
-        if not expobj.pre_stim == int(1.0 * expobj.fps):
-            print('updating expobj.pre_stim_sec to 1 sec')
-            expobj.pre_stim = int(1.0 * expobj.fps)
 
-        if not hasattr(expobj, 'pre_stim_response_frames_window'):
-            expobj.pre_stim_response_window_msec = 500  # msec
-            expobj.pre_stim_response_frames_window = int(expobj.fps * expobj.pre_stim_response_window_msec / 1000)  # length of the pre stim response test window (in frames)
-
-        if not hasattr(expobj, 'subset_frames') and hasattr(expobj, 'curr_trial_frames'):
-            expobj.subset_frames = expobj.curr_trial_frames
-            expobj.save()
-
-        if not hasattr(expobj, 'neuropil'):
-            # running s2p Processing
-            expobj.s2pProcessing(s2p_path=expobj.s2p_path, subset_frames=expobj.curr_trial_frames, subtract_neuropil=True,
-                                 baseline_frames=expobj.baseline_frames, force_redo=True)
+        # if expobj.metainfo['animal prep.'] not in expobj.analysis_save_path:
+        #     expobj.analysis_save_path = "/home/pshah/mnt/qnap/Analysis/%s/%s/%s_%s" % (date, expobj.metainfo['animal prep.'], date, trial)
+        #     # expobj.analysis_save_path = expobj.analysis_save_path + '/' + expobj.metainfo['animal prep.'] + '/' + expobj.metainfo['date'] + '_' + expobj.metainfo['trial']
+        #
+        # if not expobj.pre_stim == int(1.0 * expobj.fps):
+        #     print('updating expobj.pre_stim_sec to 1 sec')
+        #     expobj.pre_stim = int(1.0 * expobj.fps)
+        #
+        # if not hasattr(expobj, 'pre_stim_response_frames_window'):
+        #     expobj.pre_stim_response_window_msec = 500  # msec
+        #     expobj.pre_stim_response_frames_window = int(expobj.fps * expobj.pre_stim_response_window_msec / 1000)  # length of the pre stim response test window (in frames)
+        #
+        # if not hasattr(expobj, 'subset_frames') and hasattr(expobj, 'curr_trial_frames'):
+        #     expobj.subset_frames = expobj.curr_trial_frames
+        #     expobj.save()
+        #
+        # if not hasattr(expobj, 'neuropil'):
+        #     # running s2p Processing
+        #     expobj.s2pProcessing(s2p_path=expobj.s2p_path, subset_frames=expobj.curr_trial_frames, subtract_neuropil=True,
+        #                          baseline_frames=expobj.baseline_frames, force_redo=True)
 
 
     return expobj, experiment
@@ -4525,9 +4530,9 @@ def run_alloptical_processing_photostim(expobj, to_suite2p=None, baseline_trials
         aoplot.plot_SLMtargets_Locs(expobj, background=expobj.meanFluImg_registered,
                                     title='SLM targets location w/ registered mean Flu img')
 
-    # collect SLM photostim individual targets -- individual, full traces, dff normalized
-    expobj.dff_SLMTargets = normalize_dff(np.array(expobj.raw_SLMTargets))
-    expobj.save()
+    # # collect SLM photostim individual targets -- individual, full traces, dff normalized
+    # expobj.dff_SLMTargets = normalize_dff(np.array(expobj.raw_SLMTargets))
+    # expobj.save()
 
     # collect and plot peri- photostim traces for individual SLM target, incl. individual traces for each stim
     # all stims (use for pre-4ap trials)
