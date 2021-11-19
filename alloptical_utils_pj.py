@@ -716,7 +716,7 @@ class alloptical(TwoPhotonImaging):
 
     def __init__(self, paths, metainfo, stimtype, quick=False):
         # self.metainfo = metainfo
-        self.slmtargets_sz_stim = None
+        self.slmtargets_szboundary_stim = None
         self.stim_type = stimtype
         self.naparm_path = paths[2]
         self.paq_path = paths[3]
@@ -949,11 +949,11 @@ class alloptical(TwoPhotonImaging):
                 print('collecting stim traces for cell %s' % subselect_cells[cell_idx]) if subselect_cells else None
 
                 if filter_sz:
-                    if self.slmtargets_sz_stim is not None and hasattr(self, 'slmtargets_szboundary_stim'):
+                    if self.slmtargets_szboundary_stim is not None and hasattr(self, 'slmtargets_szboundary_stim'):
                         flu = []
                         for stim in stim_timings:
-                            if stim in self.slmtargets_sz_stim.keys():  # some stims dont have sz boundaries because of issues with their TIFFs not being made properly (not readable in Fiji), usually it is the first TIFF in a seizure
-                                if cell_idx not in self.slmtargets_sz_stim[stim]:
+                            if stim in self.slmtargets_szboundary_stim.keys():  # some stims dont have sz boundaries because of issues with their TIFFs not being made properly (not readable in Fiji), usually it is the first TIFF in a seizure
+                                if cell_idx not in self.slmtargets_szboundary_stim[stim]:
                                     flu.append(targets_trace[cell_idx][stim - pre_stim: stim + self.stim_duration_frames + post_stim])
                     else:
                         flu = []
@@ -3153,8 +3153,8 @@ class Post4ap(alloptical):
     def is_cell_insz(self, cell, stim):
         """for a given cell and stim, return True if cell is inside the sz boundary."""
         if hasattr(self, 'slmtargets_szboundary_stim'):
-            if stim in self.slmtargets_sz_stim.keys():
-                if cell in self.slmtargets_sz_stim[stim]:
+            if stim in self.slmtargets_szboundary_stim.keys():
+                if cell in self.slmtargets_szboundary_stim[stim]:
                     return True
                 else:
                     return False
@@ -3217,7 +3217,7 @@ class Post4ap(alloptical):
 
         ## process in sz stims - use all cells
         # mean pre and post stimulus (within post-stim response window) flu trace values for all cells, all trials
-        stims_sz = [i for i, stim in enumerate(expobj.stim_start_frames) if stim in list(expobj.slmtargets_sz_stim.keys())]
+        stims_sz = [i for i, stim in enumerate(expobj.stim_start_frames) if stim in list(expobj.slmtargets_szboundary_stim.keys())]
         expobj.analysis_array_insz = expobj.dfstdF_traces[:, stims_sz, :]  # NOTE: USING dF/stdF TRACES
         expobj.raw_traces_insz = expobj.raw_traces[:, stims_sz, :]
         expobj.dff_traces_insz = expobj.dff_traces[:, stims_sz, :]
@@ -3234,7 +3234,7 @@ class Post4ap(alloptical):
         ## add nan's where necessary
         for x, stim_idx in enumerate(stims_sz):
             stim = expobj.stim_start_frames[stim_idx]
-            exclude_cells_list = [idx for idx, cell in enumerate(expobj.s2p_nontargets) if cell in expobj.slmtargets_sz_stim[stim]]
+            exclude_cells_list = [idx for idx, cell in enumerate(expobj.s2p_nontargets) if cell in expobj.slmtargets_szboundary_stim[stim]]
             analysis_array_insz_[exclude_cells_list, x, :] = [np.nan] * expobj.analysis_array_insz.shape[2]
             raw_traces_[exclude_cells_list, x, :] = [np.nan] * expobj.raw_traces_insz.shape[2]
             dff_traces_[exclude_cells_list, x, :] = [np.nan] * expobj.dff_traces_insz.shape[2]
