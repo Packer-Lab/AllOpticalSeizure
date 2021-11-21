@@ -42,8 +42,8 @@ from numba import njit
 
 
 # %%
-def import_expobj(aoresults_map_id: str = None, trial: str = None, prep: str = None, date: str = None, pkl_path: str = None, verbose: bool = True,
-                  do_processing: bool = False):
+def import_expobj(aoresults_map_id: str = None, trial: str = None, prep: str = None, date: str = None, pkl_path: str = None,
+                  verbose: bool = True, do_processing: bool = False):
 
     """
     primary function for importing of saved expobj files saved pickel files.
@@ -113,7 +113,6 @@ def import_expobj(aoresults_map_id: str = None, trial: str = None, prep: str = N
     # other misc. things you want to do when importing expobj -- should be temp code basically - not essential for actual importing of expobj
     if do_processing:
         ###### RUNNING EXTRA PROCESSING FOR dFF TRACES COLLECTION RESPONSES:
-        expobj.raw_traces_from_targets(force_redo=True)
         run_alloptical_processing_photostim(expobj, plots=False, force_redo=False)
 
 
@@ -949,7 +948,7 @@ class alloptical(TwoPhotonImaging):
                 print('collecting stim traces for cell %s' % subselect_cells[cell_idx]) if subselect_cells else None
 
                 if filter_sz:
-                    if self.slmtargets_szboundary_stim is not None and hasattr(self, 'slmtargets_szboundary_stim'):
+                    if hasattr(self, 'slmtargets_szboundary_stim') and self.slmtargets_szboundary_stim is not None:
                         flu = []
                         for stim in stim_timings:
                             if stim in self.slmtargets_szboundary_stim.keys():  # some stims dont have sz boundaries because of issues with their TIFFs not being made properly (not readable in Fiji), usually it is the first TIFF in a seizure
@@ -2715,6 +2714,8 @@ class Post4ap(alloptical):
         ## PHOTOSTIM SLM TARGETS
         self.responses_SLMtargets_outsz = []  # dF/prestimF responses for all SLM targets for photostim trials outside sz
         self.responses_SLMtargets_insz = []  # dF/prestimF responses for all SLM targets for photostim trials inside sz - excluding targets inside the sz boundary
+        self.responses_SLMtargets_tracedFF_outsz = []  # dF/prestimF responses for all SLM targets for photostim trials outside sz
+        self.responses_SLMtargets_tracedFF_insz = []  # dF/prestimF responses for all SLM targets for photostim trials inside sz - excluding targets inside the sz boundary
 
 
         self.save()
@@ -4671,6 +4672,12 @@ def run_alloptical_processing_photostim(expobj, to_suite2p=None, baseline_trials
                 expobj.outsz_StimSuccessRate_SLMtargets_tracedFF, expobj.outsz_traces_SLMtargets_tracedFF_successes_avg, expobj.outsz_traces_SLMtargets_tracedFF_failures_avg = \
                     expobj.calculate_SLMTarget_SuccessStims(process='trace dFF', hits_df=expobj.hits_SLMtargets_tracedFF, stims_idx_l=stims_outsz_idx)
 
+                expobj.StimSuccessRate_SLMtargets_outsz, expobj.hits_SLMtargets_outsz, expobj.responses_SLMtargets_outsz, expobj.traces_SLMtargets_successes_outsz = \
+                    expobj.get_SLMTarget_responses_dff(process='dF/prestimF', threshold=10, stims_to_use=expobj.stims_out_sz)
+
+                expobj.StimSuccessRate_SLMtargets_tracedFF_outsz, expobj.hits_SLMtargets_tracedFF_outsz, expobj.responses_SLMtargets_tracedFF_outsz, expobj.traces_SLMtargets_tracedFF_successes_outsz = \
+                    expobj.get_SLMTarget_responses_dff(process='trace dFF', threshold=10, stims_to_use=expobj.stim_start_frames)
+
         if hasattr(expobj, 'stims_in_sz'):
             if hasattr(expobj, 'slmtargets_szboundary_stim'):
                 stims_insz_idx = [expobj.stim_start_frames.index(stim) for stim in expobj.stims_in_sz]
@@ -4681,6 +4688,13 @@ def run_alloptical_processing_photostim(expobj, to_suite2p=None, baseline_trials
 
                     expobj.insz_StimSuccessRate_SLMtargets_tracedFF, expobj.insz_traces_SLMtargets_tracedFF_successes_avg, expobj.insz_traces_SLMtargets_tracedFF_failures_avg = \
                         expobj.calculate_SLMTarget_SuccessStims(process='trace dFF', hits_df=expobj.hits_SLMtargets_tracedFF, stims_idx_l=stims_insz_idx, exclude_stims_targets=expobj.slmtargets_szboundary_stim)
+
+                    expobj.StimSuccessRate_SLMtargets_insz, expobj.hits_SLMtargets_insz, expobj.responses_SLMtargets_insz, expobj.traces_SLMtargets_successes_insz = \
+                        expobj.get_SLMTarget_responses_dff(process='dF/prestimF', threshold=10, stims_to_use=expobj.stims_in_sz)
+
+                    expobj.StimSuccessRate_SLMtargets_tracedFF_insz, expobj.hits_SLMtargets_tracedFF_insz, expobj.responses_SLMtargets_tracedFF_insz, expobj.traces_SLMtargets_tracedFF_successes_insz = \
+                        expobj.get_SLMTarget_responses_dff(process='trace dFF', threshold=10, stims_to_use=expobj.stim_start_frames)
+
 
             else:
                 print('No slmtargets_szboundary_stim (sz boundary classification not done) for: %s %s' % (

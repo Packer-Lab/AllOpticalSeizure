@@ -96,14 +96,14 @@ ax.set_ylabel('responses')
 
 fig.suptitle(f"All exps, all targets relative to closest sz onset")
 fig.tight_layout(pad=1.8)
-save_path_full = f"{save_path_prefix}/responsescore-vs-szonset_time_allexps.png"
+save_path_full = f"{save_path_prefix}/responsescore-dFF-vs-szonset_time_allexps.png"
 print(f'\nsaving figure to {save_path_full}')
 fig.savefig(save_path_full)
 fig.show()
 
 fig2.suptitle(f"all exps. individual")
 fig2.tight_layout(pad=1.8)
-save_path_full = f"{save_path_prefix}/responsescore-vs-szonset_time_individualexps.png"
+save_path_full = f"{save_path_prefix}/responsescore-dFF-vs-szonset_time_individualexps.png"
 print(f'\nsaving figure2 to {save_path_full}')
 fig2.savefig(save_path_full)
 fig2.show()
@@ -548,8 +548,8 @@ if run_processing:
                 # raw_traces_stims = expobj.SLMTargets_stims_raw[:, stims, :]
                 if len(expobj.stims_out_sz) > 0:
                     print('\n Calculating stim success rates and response magnitudes (outsz) [1.4.2] ***********')
-                    expobj.StimSuccessRate_SLMtargets_outsz, expobj.hits_SLMtargets_outsz, expobj.responses_SLMtargets_outsz, expobj.traces_SLMtargets_successes_outsz = \
-                        expobj.get_SLMTarget_responses_dff(threshold=10, stims_to_use=expobj.stims_out_sz)
+                    # expobj.StimSuccessRate_SLMtargets_outsz, expobj.hits_SLMtargets_outsz, expobj.responses_SLMtargets_outsz, expobj.traces_SLMtargets_successes_outsz = \
+                    #     expobj.get_SLMTarget_responses_dff(threshold=10, stims_to_use=expobj.stims_out_sz)
                     success_responses = expobj.hits_SLMtargets_outsz * expobj.responses_SLMtargets_outsz
                     success_responses = success_responses.replace(0, np.NaN).mean(axis=1)
                     allopticalResults.slmtargets_stim_responses.loc[allopticalResults.slmtargets_stim_responses[
@@ -559,8 +559,8 @@ if run_processing:
                 # raw_traces_stims = expobj.SLMTargets_stims_raw[:, stims, :]
                 if len(expobj.stims_in_sz) > 0:
                     print('\n Calculating stim success rates and response magnitudes (insz) [1.4.3] ***********')
-                    expobj.StimSuccessRate_SLMtargets_insz, expobj.hits_SLMtargets_insz, expobj.responses_SLMtargets_insz, expobj.traces_SLMtargets_successes_insz = \
-                        expobj.get_SLMTarget_responses_dff(threshold=10, stims_to_use=expobj.stims_in_sz)
+                    # expobj.StimSuccessRate_SLMtargets_insz, expobj.hits_SLMtargets_insz, expobj.responses_SLMtargets_insz, expobj.traces_SLMtargets_successes_insz = \
+                    #     expobj.get_SLMTarget_responses_dff(threshold=10, stims_to_use=expobj.stims_in_sz)
 
                     success_responses = expobj.hits_SLMtargets_insz * expobj.responses_SLMtargets_insz
                     success_responses = success_responses.replace(0, np.NaN).mean(axis=1)
