@@ -582,25 +582,44 @@ def flattenOnce(list, asarray=False):
 # custom colorbar for heatmaps
 from matplotlib.colors import LinearSegmentedColormap
 
-def make_general_plot(data_arr, x_range=None, figsize: tuple = (5, 5), ncols=1, nrows=1, **kwargs):
+def make_general_plot(data_arr, x_range=None, figsize: tuple = (5, 5), ncols=1, nrows=1, twin_x=False,
+                      plot_avg=True, plot_std=True, **kwargs):
     # plots to compare dFF normalization for each trace - temp
     f, axs = plt.subplots(nrows=nrows, ncols=ncols, figsize=figsize)
+    # prepare for plotting over multiple axes if called for
+    if type(axs) is np.array:
+        num_axes = len(axs)
+    else:
+        num_axes = 1
+        axs = np.array([axs])
 
     # create data arrays in the correct format for plotting
     if type(data_arr) is list:
         data_arr = np.asarray(data_arr)
-    ndims = data_arr.ndim
-    if ndims == 1:
-        num_traces = 1
-        data_arr = np.array(data_arr)  # nest the 1 dimensional data arr so can be used by range(1) for loop below
-    elif ndims > 1:
-        num_traces = len(data_arr)
+    num_traces = len(data_arr)
+
+    # check if plotting multi-traces on 1 axis (but not twinx style!):
+    if num_traces > num_axes and num_axes == 1:
+        alpha = 0.3
+    elif num_axes > 1:
+        alpha = 1
+        plot_avg = False  # turn off plotting of average trace
+        plot_std = False  # turn off plotting of std trace from data
+
+    # add twin x if called for:
+    if num_traces == 2 and twin_x is True:
+        ax = axs[0]
+        ax2 = ax.twinx()
+        axs = np.array([ax, ax2])
+        num_axes = 2
+
+    print(f'\nPlotting {num_traces} data traces across {num_axes} axes') if not twin_x else print(f'\nPlotting {num_traces} data traces across 1 axes (with twin_x)')
 
     # create x_range to use for plotting
     if x_range is not None:
         if type(x_range) is list:
             x_range = np.asarray(x_range)
-        assert x_range.shape == data_arr.shape, print('mismatch between data to plot and x_range provided for this data')
+        assert x_range.shape == data_arr.shape, print('|- AssertionError: mismatch between data to plot and x_range provided for this data')
     else:
         x_range = np.empty_like(data_arr)
         for i in range(num_traces):
@@ -610,31 +629,41 @@ def make_general_plot(data_arr, x_range=None, figsize: tuple = (5, 5), ncols=1, 
     if 'colors' not in kwargs.keys():
         colors = make_random_color_array(num_traces)
     else:
-        assert type(kwargs['colors']) is list, print('provide colors argument in list form')
-        assert len(kwargs['colors']) == num_traces, print('provide enough colors as number of traces to plot')
-
+        assert type(kwargs['colors']) is list, print('|- AssertionError: provide colors argument in list form')
+        assert len(kwargs['colors']) == num_traces, print('|- AssertionError: provide enough colors as number of traces to plot')
+        colors = kwargs['colors']
 
     # check integrity of function call arguments
-    assert len(kwargs['y_labels']) == num_traces if 'y_labels' in kwargs.keys() else None
-    assert len(kwargs['x_labels']) == num_traces if 'x_labels' in kwargs.keys() else None
-    assert len(kwargs['ax_titles']) == num_traces if 'ax_titles' in kwargs.keys() else None
+    if 'y_labels' in kwargs.keys():
+        assert len(kwargs['y_labels']) == num_traces
+    if 'x_labels' in kwargs.keys():
+        assert len(kwargs['x_labels']) == num_traces
+    if 'ax_titles' in kwargs.keys():
+        assert len(kwargs['ax_titles']) == num_traces
 
-    # prepare for plotting over multiple axes if called for
-    if type(axs) is np.array:
-        num_axes = len(axs)
-    else:
-        num_axes = 1
-        axs = np.array([axs])
-
+    # make the plot using each provided data trace
     ax_counter = 0
-    for i in range(num_traces):
-        axs[ax_counter].plot(x_range[i], data_arr[i], color=colors[i])
-        axs[ax_counter].set_ylabel(kwargs['y_labels'][i]) if 'y_labels' in kwargs.keys() else None
-        axs[ax_counter].set_xlabel(kwargs['x_labels'][i]) if 'x_labels' in kwargs.keys() else None
-        if num_axes > 1:
-            ax_counter += 1
+    if plot_std is False:  # only plot individual lines if plot_std is inactive
+        print(f'\- plotting {num_traces} individual traces on {num_axes} axes')
+        for i in range(num_traces):
+            axs[ax_counter].plot(x_range[i], data_arr[i], color=colors[i], alpha=alpha)
+            axs[ax_counter].set_ylabel(kwargs['y_labels'][i]) if 'y_labels' in kwargs.keys() else None
+            axs[ax_counter].set_xlabel(kwargs['x_labels'][i]) if 'x_labels' in kwargs.keys() else None
+            if num_axes > 1:
+                ax_counter += 1
+    if num_axes == 1 and twin_x is False:
+        if plot_avg:
+            print(f'\- plotting average trace of {data_arr.shape[0]} traces on 1 axis')
+            axs[ax_counter].plot(x_range[0], np.mean(data_arr, axis=0), color='black', alpha=1, zorder=data_arr.shape[0]+1)
+        if plot_std:
+            print(f'\- plotting std trace of {data_arr.shape[0]} traces on 1 axis')
+            std_low = np.mean(data_arr, axis=0) - np.std(data_arr, axis=0)
+            std_high = np.mean(data_arr, axis=0) + np.std(data_arr, axis=0)
+            axs[ax_counter].fill_between(x_range[0], std_low, std_high, color='gray', alpha=0.5, zorder=0)
 
-    f.suptitle(kwargs['suptitle']) if 'suptitle' in kwargs.keys() else None
+
+
+    f.suptitle(kwargs['suptitle'], wrap=True) if 'suptitle' in kwargs.keys() else None
     f.show()
 
 

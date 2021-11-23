@@ -75,7 +75,7 @@ for i in range(len(allopticalResults.pre_4ap_trials)):
 
         expobj, experiment = aoutils.import_expobj(trial=pre4aptrial, date=date, prep=prep, verbose=False, do_processing=False)
         # collect raw Flu data from SLM targets
-        expobj.collect_traces_from_targets(force_redo=True)
+        expobj.collect_traces_from_targets(force_redo=False)
         aoutils.run_alloptical_processing_photostim(expobj, plots=False, force_redo=False)
 
         df = expobj.responses_SLMtargets_tracedFF.T  # df == stim frame x cells (photostim targets)
@@ -93,7 +93,7 @@ for i in range(len(allopticalResults.pre_4ap_trials)):
                     print(f'\------ importing {prep} {pre4aptrial_} - pre4ap trial')
                     expobj, experiment = aoutils.import_expobj(trial=pre4aptrial_, date=date, prep=prep, verbose=False, do_processing=False)
                     # collect raw Flu data from SLM targets
-                    expobj.collect_traces_from_targets(force_redo=True)
+                    expobj.collect_traces_from_targets(force_redo=False)
                     aoutils.run_alloptical_processing_photostim(expobj, plots=False, force_redo=False)
 
                     df_ = expobj.responses_SLMtargets_tracedFF.T
@@ -134,7 +134,7 @@ for i in range(len(allopticalResults.pre_4ap_trials)):
         print(f'|-- importing {prep} {post4aptrial} - post4ap trial')
         expobj, experiment = aoutils.import_expobj(trial=post4aptrial, date=date, prep=prep, verbose=False, do_processing=False)
         # collect raw Flu data from SLM targets
-        expobj.collect_traces_from_targets(force_redo=True)
+        expobj.collect_traces_from_targets(force_redo=False)
         aoutils.run_alloptical_processing_photostim(expobj, plots=False, force_redo=False)
 
         if hasattr(expobj, 'responses_SLMtargets_tracedFF_outsz'):
@@ -155,7 +155,7 @@ for i in range(len(allopticalResults.pre_4ap_trials)):
                         print(f'\------ importing {prep} {post4aptrial_} - post4ap trial')
                         expobj, experiment = aoutils.import_expobj(trial=post4aptrial_, date=date, prep=prep, verbose=False, do_processing=False)
                         # collect raw Flu data from SLM targets
-                        expobj.collect_traces_from_targets(force_redo=True)
+                        expobj.collect_traces_from_targets(force_redo=False)
                         aoutils.run_alloptical_processing_photostim(expobj, plots=False, force_redo=False)
 
                         if hasattr(expobj, 'responses_SLMtargets_tracedFF_outsz'):
@@ -190,7 +190,7 @@ for i in range(len(allopticalResults.pre_4ap_trials)):
         # load up post-4ap trial and stim responses
         expobj, experiment = aoutils.import_expobj(trial=post4aptrial, date=date, prep=prep, verbose=False, do_processing=False)
         # collect raw Flu data from SLM targets
-        expobj.collect_traces_from_targets(force_redo=True)
+        expobj.collect_traces_from_targets(force_redo=False)
         aoutils.run_alloptical_processing_photostim(expobj, plots=False, force_redo=False)
 
         if hasattr(expobj, 'slmtargets_szboundary_stim'):
@@ -226,7 +226,7 @@ for i in range(len(allopticalResults.pre_4ap_trials)):
                             # load up post-4ap trial and stim responses
                             expobj, experiment = aoutils.import_expobj(trial=post4aptrial_, date=date, prep=prep, verbose=False, do_processing=False)
                             # collect raw Flu data from SLM targets
-                            expobj.collect_traces_from_targets(force_redo=True)
+                            expobj.collect_traces_from_targets(force_redo=False)
                             aoutils.run_alloptical_processing_photostim(expobj, plots=False, force_redo=False)
 
                             if hasattr(expobj, 'responses_SLMtargets_tracedFF_insz'):

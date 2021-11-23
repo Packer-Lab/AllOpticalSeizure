@@ -863,16 +863,12 @@ class alloptical(TwoPhotonImaging):
             # targets_trace_dFF_full = normalize_dff(targets_trace_full, threshold_pct=10)
             # self.dFF_SLMTargets = targets_trace_dFF_full[:, self.curr_trial_frames[0] - start * 2000: self.curr_trial_frames[1] - (start * 2000)]
 
-            # plots to compare dFF normalization for each trace - temp
+            # plots to compare dFF normalization for each trace - temp checking for one target
             target = 0
-            f, axs = plt.subplots(nrows=2, ncols=1, figsize=[20, 10])
-            axs[0].plot(self.raw_SLMTargets[target], color='blue')
-            axs[0].set_ylabel('raw values')
-            axs[1].plot(range(len(self.dFF_SLMTargets[target])), self.dFF_SLMTargets[target], color='green')
-            axs[1].set_ylabel('dFF values')
-            f.suptitle(f"raw trace (blue), dFF trace (norm. to bottom 10 pct) (green) ")
-            f.show()
-
+            pj.make_general_plot(data_arr=[self.raw_SLMTargets[target], self.dFF_SLMTargets[target][::4]],
+                                 x_range=[range(len(self.raw_SLMTargets[target])), range(len(self.dFF_SLMTargets[target]))[::4]],
+                                 figsize=(20,5), nrows=1, ncols=1, suptitle=f"raw trace (blue), dFF trace (norm. to bottom 10 pct) (green)",
+                                 colors=['blue', 'green'], y_labels=['raw values', 'dFF values'])
 
             self.meanFluImg_registered = np.mean(mean_img_stack, axis=0)
 
@@ -891,7 +887,7 @@ class alloptical(TwoPhotonImaging):
         :return: lists of individual targets dFF traces, and averaged targets dFF over all stims for each target
         """
 
-        print(f"\n ---------- Collecting stim trace snippets of SLM targets for {self.metainfo['exptype']} {self.metainfo['animal prep.']} {self.metainfo['trial']}[1.] ---------- ")
+        print(f"\n---------- Collecting {process} stim trace snippets of SLM targets for {self.metainfo['exptype']} {self.metainfo['animal prep.']} {self.metainfo['trial']} [1.] ---------- ")
 
         if filter_sz:
             print('\-filter_sz active')
@@ -961,7 +957,7 @@ class alloptical(TwoPhotonImaging):
 
         else:
             for cell_idx in range(num_cells):
-                print('collecting stim traces for cell %s' % subselect_cells[cell_idx]) if subselect_cells else None
+                print('\- collecting stim traces for cell %s' % subselect_cells[cell_idx]) if subselect_cells else None
 
                 if filter_sz:
                     if hasattr(self, 'slmtargets_szboundary_stim') and self.slmtargets_szboundary_stim is not None:
@@ -1015,7 +1011,11 @@ class alloptical(TwoPhotonImaging):
             targets_dfstdF_avg = np.mean(targets_dfstdF, axis=1)
             targets_raw_avg = np.mean(targets_raw, axis=1)
 
-            print(f"shape of targets_dff_avg: {targets_dff_avg.shape}")
+            ## plotting trace snippets for targets_dff to check data processing quality
+            pj.make_general_plot(data_arr=targets_dff_avg, ncols=1, nrows=1, figsize=(6,6), suptitle=f"Avg photostim response ({process}): {targets_dff_avg.shape[0]} targets from {self.metainfo['exptype']} {self.metainfo['animal prep.']} {self.metainfo['trial']}")
+
+
+            print(f"|- shape of targets_dff_avg: {targets_dff_avg.shape}")
             return targets_dff, targets_dff_avg, targets_dfstdF, targets_dfstdF_avg, targets_raw, targets_raw_avg
 
     def _parseNAPARMxml(self):
@@ -2034,7 +2034,7 @@ class alloptical(TwoPhotonImaging):
         :param stims_to_use: ls of stims to retrieve photostim trial dFF responses
         :return:
         """
-        print('\n ---------- Calculating stim evoked responses (of SLM targets) ---------- [1.]')
+        print(f'\n---------- Calculating {process} stim evoked responses (of SLM targets) ---------- [1.]')
         if stims_to_use is None:
             stims_to_use = range(len(self.stim_start_frames))
             stims_idx = [self.stim_start_frames.index(stim) for stim in stims_to_use]
@@ -2117,7 +2117,7 @@ class alloptical(TwoPhotonImaging):
 
         """
 
-        print('\n ---------- Calculating stim success rates, and separating stims into successes and failures (of SLM targets) ---------- [1.]')
+        print(f'\n---------- Calculating {process} stim success rates, and separating stims into successes and failures (of SLM targets) ---------- [1.]')
 
         # choose between .SLMTargets_stims_dff and .SLMTargets_stims_tracedFF for data to process
         if process == 'dF/prestimF':
@@ -4383,7 +4383,7 @@ def run_alloptical_processing_photostim(expobj, to_suite2p=None, baseline_trials
     :return: n/a
     """
 
-    print(f"\n Running alloptical_processing_photostim for {expobj.metainfo['animal prep.']}, {expobj.metainfo['trial']}------------------------------")
+    print(f"\nRunning alloptical_processing_photostim for {expobj.metainfo['animal prep.']}, {expobj.metainfo['trial']} ------------------------------")
 
     if force_redo:
         expobj._findTargetsAreas()
