@@ -567,6 +567,8 @@ def plot_periphotostim_avg(arr=None, pre_stim_sec=1.0, post_stim_sec=3.0, title=
 
     if 'alpha' in kwargs.keys():
         alpha = kwargs['alpha']
+    else:
+        alpha = 0.2
 
     if x_label is None or not 'Frames' in x_label or 'frames' in x_label:
         x = x_time  # set the x plotting range
@@ -623,8 +625,10 @@ def plot_periphotostim_avg(arr=None, pre_stim_sec=1.0, post_stim_sec=3.0, title=
             ax.set_title((title + ' - %s' % len_ + ' traces'), horizontalalignment='center', verticalalignment='top',
                          pad=20, fontsize=10, wrap=True)
     if 'show' in kwargs.keys():
+        fig.tight_layout(pad=0.9)
         fig.show() if kwargs['show'] else None
     else:
+        fig.tight_layout(pad=0.9)
         fig.show()
 
 

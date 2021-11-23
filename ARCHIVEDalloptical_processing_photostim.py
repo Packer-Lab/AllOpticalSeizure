@@ -68,7 +68,7 @@ aoutils.s2pMaskStack(obj=expobj, pkl_list=[pkl_path], s2p_path=expobj.s2p_path, 
 # %% STA - raw SLM targets processing
 
 # collect raw Flu data from SLM targets
-expobj.raw_traces_from_targets(force_redo=True)
+expobj.collect_traces_from_targets(force_redo=True)
 
 plot = True
 if plot:

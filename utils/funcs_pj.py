@@ -44,7 +44,7 @@ def corrcoef_array(array):
 
     return corr, result
 
-def points_in_circle_np(radius, x0=0, y0=0, ):
+def points_in_circle_np(radius, x0=0, y0=0):
     x_ = np.arange(x0 - radius - 1, x0 + radius + 1, dtype=int)
     y_ = np.arange(y0 - radius - 1, y0 + radius + 1, dtype=int)
     x, y = np.where((x_[:, np.newaxis] - x0) ** 2 + (y_ - y0) ** 2 <= radius ** 2)
@@ -581,6 +581,61 @@ def flattenOnce(list, asarray=False):
 ############### PLOTTING FUNCTIONS #####################################################################################
 # custom colorbar for heatmaps
 from matplotlib.colors import LinearSegmentedColormap
+
+def make_general_plot(data_arr, x_range=None, figsize: tuple = (5, 5), ncols=1, nrows=1, **kwargs):
+    # plots to compare dFF normalization for each trace - temp
+    f, axs = plt.subplots(nrows=nrows, ncols=ncols, figsize=figsize)
+
+    # create data arrays in the correct format for plotting
+    if type(data_arr) is list:
+        data_arr = np.asarray(data_arr)
+    ndims = data_arr.ndim
+    if ndims == 1:
+        num_traces = 1
+        data_arr = np.array(data_arr)  # nest the 1 dimensional data arr so can be used by range(1) for loop below
+    elif ndims > 1:
+        num_traces = len(data_arr)
+
+    # create x_range to use for plotting
+    if x_range is not None:
+        if type(x_range) is list:
+            x_range = np.asarray(x_range)
+        assert x_range.shape == data_arr.shape, print('mismatch between data to plot and x_range provided for this data')
+    else:
+        x_range = np.empty_like(data_arr)
+        for i in range(num_traces):
+            x_range[i] = range(len(data_arr[i]))
+
+    # make random colors for plotting
+    if 'colors' not in kwargs.keys():
+        colors = make_random_color_array(num_traces)
+    else:
+        assert type(kwargs['colors']) is list, print('provide colors argument in list form')
+        assert len(kwargs['colors']) == num_traces, print('provide enough colors as number of traces to plot')
+
+
+    # check integrity of function call arguments
+    assert len(kwargs['y_labels']) == num_traces if 'y_labels' in kwargs.keys() else None
+    assert len(kwargs['x_labels']) == num_traces if 'x_labels' in kwargs.keys() else None
+    assert len(kwargs['ax_titles']) == num_traces if 'ax_titles' in kwargs.keys() else None
+
+    # prepare for plotting over multiple axes if called for
+    if type(axs) is np.array:
+        num_axes = len(axs)
+    else:
+        num_axes = 1
+        axs = np.array([axs])
+
+    ax_counter = 0
+    for i in range(num_traces):
+        axs[ax_counter].plot(x_range[i], data_arr[i], color=colors[i])
+        axs[ax_counter].set_ylabel(kwargs['y_labels'][i]) if 'y_labels' in kwargs.keys() else None
+        axs[ax_counter].set_xlabel(kwargs['x_labels'][i]) if 'x_labels' in kwargs.keys() else None
+        if num_axes > 1:
+            ax_counter += 1
+
+    f.suptitle(kwargs['suptitle']) if 'suptitle' in kwargs.keys() else None
+    f.show()
 
 
 def make_colormap(seq):
