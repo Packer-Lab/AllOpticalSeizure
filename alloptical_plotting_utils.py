@@ -10,10 +10,11 @@ from funcsforprajay import funcs as pj
 from matplotlib import pyplot as plt
 import alloptical_utils_pj as aoutils
 import tifffile as tf
-
+import functools
 
 ## works
 def plot_piping_decorator(plotting_func):
+    @functools.wraps(plotting_func)
     def inner(**kwargs):
         print(f'perform action 1')
         print(f'original kwargs {kwargs}')
@@ -54,9 +55,9 @@ def plot_piping_decorator(plotting_func):
 
     return inner
 
-@fig_piping_decorator
+@plot_piping_decorator
 def example_decorated_plot(title='', **kwargs):
-    fig, ax = kwargs['fig'], kwargs['ax']
+    fig, ax = kwargs['fig'], kwargs['ax']  # need to add atleast this line to each plotting function's definition
     print(f'kwargs inside example_decorated_plot definition: {kwargs}')
     ax.plot(np.random.rand(10))
     ax.set_title(title)
@@ -66,6 +67,7 @@ def example_decorated_plot(title='', **kwargs):
 # example_decorated_plot(title='A plot', show=True)  # these are the original kwargs
 
 
+# %%
 ### plot the location of all SLM targets, along with option for plotting the mean img of the current trial
 def plot_SLMtargets_Locs(expobj, targets_coords: list = None, background: np.ndarray = None, **kwargs):
     """

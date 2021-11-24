@@ -405,7 +405,7 @@ for prep in allopticalResults.stim_responses.keys():
                 stims_relative_sz = []
                 for stim_idx in stims:
                     stim_frame = expobj.stim_start_frames[stim_idx]
-                    closest_sz_onset = pj.findClosest(ls=expobj.seizure_lfp_onsets, input=stim_frame)[0]
+                    closest_sz_onset = pj.findClosest(arr=expobj.seizure_lfp_onsets, input=stim_frame)[0]
                     time_diff = (closest_sz_onset - stim_frame) / expobj.fps  # time difference in seconds
                     stims_relative_sz.append(round(time_diff, 3))
 
@@ -659,7 +659,7 @@ for prep in allopticalResults.stim_responses.keys():
                 stims_relative_sz = []
                 for stim_idx in stims:
                     stim_frame = expobj.stim_start_frames[stim_idx]
-                    closest_sz_onset = pj.findClosest(ls=expobj.seizure_lfp_onsets, input=stim_frame)[0]
+                    closest_sz_onset = pj.findClosest(arr=expobj.seizure_lfp_onsets, input=stim_frame)[0]
                     time_diff = (closest_sz_onset - stim_frame) / expobj.fps  # time difference in seconds
                     stims_relative_sz.append(round(time_diff, 3))
 

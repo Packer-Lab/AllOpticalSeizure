@@ -35,6 +35,51 @@ os.makedirs(save_path_prefix) if not os.path.exists(save_path_prefix) else None
 ######### ZONE FOR CALLING THIS SCRIPT DIRECTLY FROM THE SSH SERVER ###########
 """
 
+# %% aoanalysis-6.1.1) DATA COLLECTION - absolute stim responses vs. TIME to seizure onset - responses: delta(dFF) from whole trace - for loop over all experiments to collect responses in terms of sz onset time
+
+stim_relative_szonset_vs_avg_dFFresponse_alltargets_atstim = {}
+
+for prep in allopticalResults.stim_responses_tracedFF.keys():
+    # prep = 'PS07's
+
+    for key in list(allopticalResults.stim_responses_tracedFF[prep].keys()):
+        # key = list(allopticalResults.stim_responses_tracedFF[prep].keys())[0]
+        # comp = 2
+        if 'post-4ap' in allopticalResults.stim_responses_tracedFF[prep][key]:
+            post_4ap_df = allopticalResults.stim_responses_tracedFF[prep][key]['post-4ap']
+            if len(post_4ap_df) > 0:
+                post4aptrial = key[-5:]
+                print(f'working on.. {prep} {key}, post4ap trial: {post4aptrial}')
+                stim_relative_szonset_vs_avg_dFFresponse_alltargets_atstim[f"{prep} {post4aptrial}"] = [[], []]
+                expobj, experiment = aoutils.import_expobj(trial=post4aptrial, prep=prep, verbose=False)
+
+                # transform the rows of the stims responses dataframe to relative time to seizure
+                stims = list(post_4ap_df.index)
+                stims_relative_sz = []
+                for stim_idx in stims:
+                    stim_frame = expobj.stim_start_frames[stim_idx]
+                    closest_sz_onset = pj.findClosest(arr=expobj.seizure_lfp_onsets, input=stim_frame)[0]
+                    time_diff = (closest_sz_onset - stim_frame) / expobj.fps  # time difference in seconds
+                    stims_relative_sz.append(round(time_diff, 3))
+
+                cols = [col for col in post_4ap_df.columns]
+                post_4ap_df_zscore_stim_relative_to_sz = post_4ap_df[cols]
+                post_4ap_df_zscore_stim_relative_to_sz.index = stims_relative_sz  # take the original zscored df and assign a new index where the col names are times relative to sz onset
+
+                # take average of all targets at a specific time to seizure onset
+                post_4ap_df_zscore_stim_relative_to_sz['avg'] = post_4ap_df_zscore_stim_relative_to_sz.T.mean()
+
+                stim_relative_szonset_vs_avg_dFFresponse_alltargets_atstim[f"{prep} {post4aptrial}"][0].append(stims_relative_sz)
+                stim_relative_szonset_vs_avg_dFFresponse_alltargets_atstim[f"{prep} {post4aptrial}"][1].append(post_4ap_df_zscore_stim_relative_to_sz['avg'].tolist())
+
+    allopticalResults.stim_relative_szonset_vs_avg_dFFresponse_alltargets_atstim = stim_relative_szonset_vs_avg_dFFresponse_alltargets_atstim
+    print(f"length of allopticalResults.stim_relative_szonset_vs_avg_dFFresponse_alltargets_atstim dict: {len(allopticalResults.stim_relative_szonset_vs_avg_dFFresponse_alltargets_atstim.keys())}")
+    allopticalResults.save()
+
+sys.exit()
+
+
+
 # %% aoanalysis-6.1.0-dc) DATA COLLECTION: organize SLMTargets stim responses - across all appropriate pre4ap, post4ap trial comparisons - using whole trace dFF responses
 """ doing it in this way so that its easy to use in the response vs. stim times relative to seizure onset code (as this has already been coded up)"""
 
@@ -271,48 +316,6 @@ for i in range(len(allopticalResults.pre_4ap_trials)):
     allopticalResults.save()
 
 
-# %% aoanalysis-6.1.1) DATA COLLECTION - absolute stim responses vs. TIME to seizure onset - responses: delta(dFF) from whole trace - for loop over all experiments to collect responses in terms of sz onset time
-
-stim_relative_szonset_vs_avg_dFFresponse_alltargets_atstim = {}
-
-for prep in allopticalResults.stim_responses_tracedFF.keys():
-    # prep = 'PS07's
-
-    for key in list(allopticalResults.stim_responses_tracedFF[prep].keys()):
-        # key = list(allopticalResults.stim_responses_tracedFF[prep].keys())[0]
-        # comp = 2
-        if 'post-4ap' in allopticalResults.stim_responses_tracedFF[prep][key]:
-            post_4ap_df = allopticalResults.stim_responses_tracedFF[prep][key]['post-4ap']
-            if len(post_4ap_df) > 0:
-                post4aptrial = key[-5:]
-                print(f'working on.. {prep} {key}, post4ap trial: {post4aptrial}')
-                stim_relative_szonset_vs_avg_dFFresponse_alltargets_atstim[f"{prep} {post4aptrial}"] = [[], []]
-                expobj, experiment = aoutils.import_expobj(trial=post4aptrial, prep=prep, verbose=False)
-
-                # transform the rows of the stims responses dataframe to relative time to seizure
-                stims = list(post_4ap_df.index)
-                stims_relative_sz = []
-                for stim_idx in stims:
-                    stim_frame = expobj.stim_start_frames[stim_idx]
-                    closest_sz_onset = pj.findClosest(list=expobj.seizure_lfp_onsets, input=stim_frame)[0]
-                    time_diff = (closest_sz_onset - stim_frame) / expobj.fps  # time difference in seconds
-                    stims_relative_sz.append(round(time_diff, 3))
-
-                cols = [col for col in post_4ap_df.columns]
-                post_4ap_df_zscore_stim_relative_to_sz = post_4ap_df[cols]
-                post_4ap_df_zscore_stim_relative_to_sz.index = stims_relative_sz  # take the original zscored df and assign a new index where the col names are times relative to sz onset
-
-                # take average of all targets at a specific time to seizure onset
-                post_4ap_df_zscore_stim_relative_to_sz['avg'] = post_4ap_df_zscore_stim_relative_to_sz.T.mean()
-
-                stim_relative_szonset_vs_avg_dFFresponse_alltargets_atstim[f"{prep} {post4aptrial}"][0].append(stims_relative_sz)
-                stim_relative_szonset_vs_avg_dFFresponse_alltargets_atstim[f"{prep} {post4aptrial}"][1].append(post_4ap_df_zscore_stim_relative_to_sz['avg'].tolist())
-
-    allopticalResults.stim_relative_szonset_vs_avg_dFFresponse_alltargets_atstim = stim_relative_szonset_vs_avg_dFFresponse_alltargets_atstim
-    print(len(allopticalResults.stim_relative_szonset_vs_avg_dFFresponse_alltargets_atstim.keys()))
-    allopticalResults.save()
-
-sys.exit()
 
 
 
