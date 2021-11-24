@@ -6,7 +6,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.ticker as mticker
 from utils.paq_utils import paq_read, frames_discard
-import utils.funcs_pj as pj
+from funcsforprajay import funcs as pj
 from matplotlib import pyplot as plt
 import alloptical_utils_pj as aoutils
 import tifffile as tf

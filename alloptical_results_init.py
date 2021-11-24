@@ -10,7 +10,7 @@ import statsmodels as sm
 import matplotlib.pyplot as plt
 import alloptical_utils_pj as aoutils
 import alloptical_plotting_utils as aoplot
-import utils.funcs_pj as pj
+from funcsforprajay import funcs as pj
 
 # import results superobject that will collect analyses from various individual experiments
 results_object_path = '/home/pshah/mnt/qnap/Analysis/alloptical_results_superobject.pkl'

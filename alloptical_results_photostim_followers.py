@@ -10,7 +10,7 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 import alloptical_utils_pj as aoutils
 import alloptical_plotting_utils as aoplot
-import utils.funcs_pj as pj
+from funcsforprajay import funcs as pj
 import tifffile as tf
 from skimage.transform import resize
 from mpl_toolkits import mplot3d

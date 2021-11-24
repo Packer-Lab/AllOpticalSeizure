@@ -3,7 +3,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import alloptical_utils_pj as aoutils
 import alloptical_plotting_utils as aoplot
-import utils.funcs_pj as pj
+from funcsforprajay import funcs as pj
 
 
 # import onePstim superobject that will collect analyses from various individual experiments

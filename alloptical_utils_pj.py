@@ -13,7 +13,7 @@ import itertools
 import os
 import sys
 
-from utils.funcs_pj import SaveDownsampledTiff, subselect_tiff, make_tiff_stack, convert_to_8bit
+# from utils.funcs_pj import SaveDownsampledTiff, subselect_tiff, make_tiff_stack, convert_to_8bit
 
 sys.path.append('/home/pshah/Documents/code/')
 # from Vape.utils.paq2py import *
@@ -33,7 +33,8 @@ import csv
 import warnings
 import bisect
 
-from utils import funcs_pj as pj
+# from utils import funcs_pj as pj
+from funcsforprajay import funcs as pj
 from utils.paq_utils import paq_read, frames_discard
 import alloptical_plotting_utils as aoplot
 import pickle
@@ -192,7 +193,7 @@ class TwoPhotonImaging:
         if not quick and save_downsampled_tiff:
             stack = self.mean_raw_flu_trace(save_pkl=True)
             if save_downsampled_tiff:
-                SaveDownsampledTiff(stack=stack, save_as=analysis_save_path + '/%s_%s_downsampled.tif' % (
+                pj.SaveDownsampledTiff(stack=stack, save_as=analysis_save_path + '/%s_%s_downsampled.tif' % (
                 metainfo['date'], metainfo['trial']))  # specify path in Analysis folder to save pkl object')
 
         if suite2p_run:
@@ -662,11 +663,11 @@ class TwoPhotonImaging:
 
         if os.path.exists(tif_path_save):
             if force_stack:
-                make_tiff_stack(sorted_paths, save_as=tif_path_save)
+                pj.make_tiff_stack(sorted_paths, save_as=tif_path_save)
             else:
                 pass
         else:
-            make_tiff_stack(sorted_paths, save_as=tif_path_save)
+            pj.make_tiff_stack(sorted_paths, save_as=tif_path_save)
 
         if not os.path.exists(tif_path_save2) or force_crop:
             with tf.TiffWriter(tif_path_save2, bigtiff=True) as tif:
@@ -1481,7 +1482,7 @@ class alloptical(TwoPhotonImaging):
         # #             target_image_scaled = target_image_scaled[y1:y2, x1:x2]
         # #             tf.imwrite(os.path.join(naparm_path, 'target_image_scaled.tif'), target_image_scaled)
         # else:
-        #     #             image_8bit = convert_to_8bit(target_image_scaled, np.unit8)
+        #     #             image_8bit = pj.convert_to_8bit(target_image_scaled, np.unit8)
         #     #             tf.imwrite(os.path.join(naparm_path, 'target_image_scaled.tif'), image_8bit)
         #     tf.imwrite(os.path.join(naparm_path, 'target_image_scaled.tif'), target_image_scaled)
 
@@ -1871,14 +1872,14 @@ class alloptical(TwoPhotonImaging):
                         self.metainfo['date'], self.metainfo['trial'], stim)
                     if os.path.exists(save_path):
                         print("saving stim_img tiff to... %s" % save_path_stim) if verbose else None
-                        avg_sub8 = convert_to_8bit(avg_sub, 0, 255)
+                        avg_sub8 = pj.convert_to_8bit(avg_sub, 0, 255)
                         tf.imwrite(save_path_stim,
                                    avg_sub8, photometric='minisblack')
                     else:
                         print('making new directory for saving images at:', save_path)
                         os.mkdir(save_path)
                         print("saving as... %s" % save_path_stim)
-                        avg_sub8 = convert_to_8bit(avg_sub, 0, 255)
+                        avg_sub8 = pj.convert_to_8bit(avg_sub, 0, 255)
                         tf.imwrite(save_path_stim,
                                    avg_sub, photometric='minisblack')
 
@@ -2765,7 +2766,7 @@ class Post4ap(alloptical):
                                                                                      self.metainfo['trial'],
                                                                                      select_frames[0], select_frames[1],
                                                                                      on_off_type)
-            subselect_tiff(tiff_stack=stack, select_frames=select_frames, save_as=save_as)
+            pj.subselect_tiff(tiff_stack=stack, select_frames=select_frames, save_as=save_as)
         print('\ndone. saved to:', self.analysis_save_path)
 
     def collect_seizures_info(self, seizures_lfp_timing_matarray=None, discard_all=True):
@@ -2917,7 +2918,7 @@ class Post4ap(alloptical):
                 counter += 1
 
                 ## create downsampled TIFFs for each sz
-                SaveDownsampledTiff(stack=im_sub, save_as=self.analysis_save_path + '%s_%s_sz%s_downsampled.tiff' % (self.metainfo['date'], self.metainfo['trial'], counter))
+                pj.SaveDownsampledTiff(stack=im_sub, save_as=self.analysis_save_path + '%s_%s_sz%s_downsampled.tiff' % (self.metainfo['date'], self.metainfo['trial'], counter))
 
                 self.meanszimages_r = True
 

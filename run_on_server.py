@@ -15,7 +15,8 @@ import statsmodels as sm
 
 import alloptical_utils_pj as aoutils
 import alloptical_plotting_utils as aoplot
-import utils.funcs_pj as pj
+# import utils.funcs_pj as pj
+from funcsforprajay import funcs as pj
 
 from skimage import draw
 

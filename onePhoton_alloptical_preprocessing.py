@@ -1,6 +1,5 @@
 ### code for analysis of one photon photostim experiments
 
-import utils.funcs_pj as pjf
 import matplotlib.pyplot as plt
 import numpy as np
 import os

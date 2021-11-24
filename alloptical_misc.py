@@ -1,4 +1,4 @@
-import utils.funcs_pj as pj
+from funcsforprajay import funcs as pj
 from utils.paq_utils import paq_read, frames_discard
 import alloptical_utils_pj as aoutils
 import alloptical_plotting_utils as aoplot

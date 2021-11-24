@@ -1,6 +1,6 @@
 ### code for preprocessing (initiating expobj classes) of interneuron experiments
 
-import utils.funcs_pj as pj
+from funcsforprajay import funcs as pj
 import matplotlib.pyplot as plt
 import numpy as np
 import os
