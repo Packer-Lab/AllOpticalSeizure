@@ -34,6 +34,270 @@ expobj, experiment = aoutils.import_expobj(prep='RL109', trial='t-013')
 ######### ZONE FOR CALLING THIS SCRIPT DIRECTLY FROM THE SSH SERVER ###########
 """
 
+sys.exit()
+
+
+
+"""# ########### END OF // ZONE FOR CALLING THIS SCRIPT DIRECTLY FROM THE SSH SERVER ###########
+########### END OF // ZONE FOR CALLING THIS SCRIPT DIRECTLY FROM THE SSH SERVER ###########
+########### END OF // ZONE FOR CALLING THIS SCRIPT DIRECTLY FROM THE SSH SERVER ###########
+########### END OF // ZONE FOR CALLING THIS SCRIPT DIRECTLY FROM THE SSH SERVER ###########
+########### END OF // ZONE FOR CALLING THIS SCRIPT DIRECTLY FROM THE SSH SERVER ###########
+########### END OF // ZONE FOR CALLING THIS SCRIPT DIRECTLY FROM THE SSH SERVER ###########
+########### END OF // ZONE FOR CALLING THIS SCRIPT DIRECTLY FROM THE SSH SERVER ###########
+########### END OF // ZONE FOR CALLING THIS SCRIPT DIRECTLY FROM THE SSH SERVER ###########
+"""
+
+
+# %% 1) lists of trials to analyse for pre4ap and post4ap trials within experiments
+
+allopticalResults.pre_4ap_trials = [
+    ['RL108 t-009'],
+    ['RL108 t-010'],
+    ['RL109 t-007'],
+    ['RL109 t-008'],
+    ['RL109 t-013'],  # - pickle truncated .21/10/18 - analysis func jupyter run on .21/11/12
+    ['RL109 t-014'],
+    ['PS04 t-012',  # 'PS04 t-014',  - not sure what's wrong with PS04, but the photostim and Flu are falling out of sync .21/10/09
+     'PS04 t-017'],
+    ['PS05 t-010'],
+    ['PS07 t-007'],
+    ['PS07 t-009'],
+    # ['PS06 t-008', 'PS06 t-009', 'PS06 t-010'],  # matching post4ap trial cannot be analysed
+    ['PS06 t-011'],
+    # ['PS06 t-012'],  # matching post4ap trial cannot be analysed
+    # ['PS11 t-007'],
+    ['PS11 t-010'],
+    # ['PS17 t-005'],
+    # ['PS17 t-006', 'PS17 t-007'],
+    # ['PS18 t-006']
+]
+
+allopticalResults.post_4ap_trials = [
+    ['RL108 t-013'],
+    ['RL108 t-011'],
+    ['RL109 t-020'],
+    ['RL109 t-021'],
+    ['RL109 t-018'],
+    ['RL109 t-016', 'RL109 t-017'],
+    ['PS04 t-018'],
+    ['PS05 t-012'],
+    ['PS07 t-011'],
+    ['PS07 t-017'],
+    # ['PS06 t-014', 'PS06 t-015'], - missing seizure_lfp_onsets (no paired measurements mat file for trial .21/10/09)
+    ['PS06 t-013'],
+    # ['PS06 t-016'], - no seizures, missing seizure_lfp_onsets (no paired measurements mat file for trial .21/10/09)
+    # ['PS11 t-016'],
+    ['PS11 t-011'],
+    # ['PS17 t-011'],
+    # ['PS17 t-009'],
+    # ['PS18 t-008']
+]
+
+assert len(allopticalResults.pre_4ap_trials) == len(allopticalResults.post_4ap_trials), print('pre trials %s ' % len(allopticalResults.pre_4ap_trials),
+                                                                                              'post trials %s ' % len(allopticalResults.post_4ap_trials))
+
+
+allopticalResults.trial_maps = {'pre': {}, 'post': {}}
+allopticalResults.trial_maps['pre'] = {
+    'a': ['RL108 t-009'],
+    # 'b': ['RL108 t-010'],
+    # 'c': ['RL109 t-007'],
+    'd': ['RL109 t-008'],
+    'e': ['RL109 t-013'],
+    'f': ['RL109 t-014'],
+    # 'g': ['PS04 t-012',  # 'PS04 t-014',  # - temp just until PS04 gets reprocessed
+    #       'PS04 t-017'],
+    'h': ['PS05 t-010'],
+    'i': ['PS07 t-007'],
+    'j': ['PS07 t-009'],
+    # 'k': ['PS06 t-008', 'PS06 t-009', 'PS06 t-010'],
+    'l': ['PS06 t-011'],
+    # 'm': ['PS06 t-012'],  # - t-016 missing sz lfp onsets
+    # 'n': ['PS11 t-007'],
+    'o': ['PS11 t-010'],
+    # 'p': ['PS17 t-005'],
+    # 'q': ['PS17 t-006', 'PS17 t-007'],
+    # 'r': ['PS18 t-006']
+}
+
+allopticalResults.trial_maps['post'] = {
+    'a': ['RL108 t-013'],
+    # 'b': ['RL108 t-011'], -- need to redo sz boundary classifying processing
+    # 'c': ['RL109 t-020'], -- need to redo sz boundary classifying processing
+    'd': ['RL109 t-021'],
+    'e': ['RL109 t-018'],
+    'f': ['RL109 t-016', 'RL109 t-017'],
+    # 'g': ['PS04 t-018'],  -- need to redo sz boundary classifying processing
+    'h': ['PS05 t-012'],
+    'i': ['PS07 t-011'],
+    'j': ['PS07 t-017'],
+    # 'k': ['PS06 t-014', 'PS06 t-015'],  # - missing seizure_lfp_onsets
+    'l': ['PS06 t-013'],
+    # 'm': ['PS06 t-016'],  # - missing seizure_lfp_onsets - LFP signal not clear, but there is seizures on avg Flu trace
+    # 'n': ['PS11 t-016'],
+    'o': ['PS11 t-011'],
+    # 'p': ['PS17 t-011'],
+    # 'q': ['PS17 t-009'],
+    # 'r': ['PS18 t-008']
+}
+
+assert len(allopticalResults.trial_maps['pre'].keys()) == len(allopticalResults.trial_maps['post'].keys())
+
+allopticalResults.save()
+
+
+
+
+
+# %% 2) adding slm targets responses to alloptical results allopticalResults.slmtargets_stim_responses
+
+"""Not sure if this code is actually necessary..."""
+
+animal_prep = 'PS07'
+date = '2021-01-19'
+# trial = 't-009'
+
+pre4ap_trials = ['t-007', 't-008', 't-009']
+post4ap_trials = ['t-011', 't-016', 't-017']
+
+# pkl_path = "/home/pshah/mnt/qnap/Analysis/%s/%s/%s_%s/%s_%s.pkl" % (
+#     date, animal_prep, date, trial, date, trial)  # specify path in Analysis folder to save pkl object
+#
+# expobj, _ = aoutils.import_expobj(pkl_path=pkl_path)
+
+counter = allopticalResults.slmtargets_stim_responses.shape[0] + 1
+# counter = 6
+
+for trial in pre4ap_trials + post4ap_trials:
+    print(counter)
+    pkl_path = "/home/pshah/mnt/qnap/Analysis/%s/%s/%s_%s/%s_%s.pkl" % (
+        date, animal_prep, date, trial, date, trial)  # specify path in Analysis folder to save pkl object
+
+    expobj, _ = aoutils.import_expobj(pkl_path=pkl_path)
+
+    # add trials info to experiment
+    expobj.metainfo['pre4ap_trials'] = pre4ap_trials
+    expobj.metainfo['post4ap_trials'] = post4ap_trials
+    expobj.save()
+
+    # save to results object:
+    allopticalResults.slmtargets_stim_responses.loc[counter, 'prep_trial'] = '%s %s' % (
+        expobj.metainfo['animal prep.'], expobj.metainfo['trial'])
+    allopticalResults.slmtargets_stim_responses.loc[counter, 'date'] = expobj.metainfo['date']
+    allopticalResults.slmtargets_stim_responses.loc[counter, 'exptype'] = expobj.metainfo['exptype']
+    if 'post' in expobj.metainfo['exptype']:
+        if hasattr(expobj, 'stims_in_sz'):
+            allopticalResults.slmtargets_stim_responses.loc[counter, 'mean response (dF/stdF all targets)'] = np.mean(
+                [[np.mean(expobj.outsz_responses_SLMtargets[i]) for i in range(expobj.n_targets_total)]])
+            allopticalResults.slmtargets_stim_responses.loc[counter, 'mean reliability (>0.3 dF/stdF)'] = np.mean(
+                list(expobj.outsz_StimSuccessRate_SLMtargets.values()))
+        else:
+            if not hasattr(expobj, 'seizure_lfp_onsets'):
+                raise AttributeError(
+                    'stims have not been classified as in or out of sz, no seizure lfp onsets for this trial')
+            else:
+                raise AttributeError(
+                    'stims have not been classified as in or out of sz, but seizure lfp onsets attr was found, so need to troubleshoot further')
+
+    else:
+        allopticalResults.slmtargets_stim_responses.loc[counter, 'mean response (dF/stdF all targets)'] = np.mean(
+            [[np.mean(expobj.responses_SLMtargets[i]) for i in range(expobj.n_targets_total)]])
+        allopticalResults.slmtargets_stim_responses.loc[counter, 'mean reliability (>0.3 dF/stdF)'] = np.mean(
+            list(expobj.StimSuccessRate_SLMtargets.values()))
+
+    allopticalResults.slmtargets_stim_responses.loc[counter, 'mean response (dFF all targets)'] = np.nan
+    counter += 1
+
+allopticalResults.save()
+allopticalResults.slmtargets_stim_responses
+
+
+
+
+
+
+
+# %% #### -------------------- ALL OPTICAL PHOTOSTIM ANALYSIS ################################################
+
+# specify trials to run code on
+code_run_list_all = []
+for i in ['pre', 'post']:
+    for key in list(allopticalResults.trial_maps[i].keys()):
+        for j in range(len(allopticalResults.trial_maps[i][key])):
+            code_run_list_all.append((i, key, j))
+
+code_run_list_pre = []
+for key in list(allopticalResults.trial_maps['pre'].keys()):
+    for j in range(len(allopticalResults.trial_maps['pre'][key])):
+        code_run_list_pre.append(('pre', key, j))
+
+code_run_list_post4ap = []
+for key in list(allopticalResults.trial_maps['post'].keys()):
+    for j in range(len(allopticalResults.trial_maps['post'][key])):
+        code_run_list_post4ap.append(('post', key, j))
+
+
+short_list_pre = [('pre', 'e', '0')]
+short_list_post = [('post', 'e', '0')]
+
+# %% 5.0-main)  RUN DATA ANALYSIS OF NON TARGETS:
+# #  - Analysis of responses of non-targets from suite2p ROIs in response to photostim trials - broken down by pre-4ap, outsz and insz (excl. sz boundary)
+
+
+# # import expobj
+# expobj, experiment = aoutils.import_expobj(aoresults_map_id='pre g.1')
+# aoutils.run_allopticalAnalysisNontargets(expobj, normalize_to='pre-stim', do_processing=False,
+#                                          save_plot_suffix='Nontargets_responses_2021-10-24/%s_%s.png' % (expobj.metainfo['animal prep.'], expobj.metainfo['trial']))
+
+
+# expobj.dff_traces, expobj.dff_traces_avg, expobj.dfstdF_traces, \
+# expobj.dfstdF_traces_avg, expobj.raw_traces, expobj.raw_traces_avg = \
+#     aoutils.get_nontargets_stim_traces_norm(expobj=expobj, normalize_to='pre-stim', pre_stim_sec=expobj.pre_stim_sec,
+#                                             post_stim_sec=expobj.post_stim_sec)
+
+# 5.0.1) re-calculating and plotting of excluded s2p ROIs and SLM target coordinates
+
+for (i, key, j) in code_run_list_all:
+    if (i, key, j) in short_list_pre or (i, key, j) in short_list_post:
+        # import expobj
+        expobj, experiment = aoutils.import_expobj(aoresults_map_id=f'{i} {key}.{j}')
+
+        if not hasattr(expobj, 's2p_nontargets'):
+            expobj._parseNAPARMgpl()
+            expobj._findTargetsAreas()
+            expobj._findTargetedS2pROIs(force_redo=True, plot=False)
+            expobj.save()
+        assert hasattr(expobj, 's2p_nontargets')
+        save_path = save_path_prefix + f"/{expobj.metainfo['animal prep.']} {expobj.metainfo['trial']} - s2p ROIs plot.png"
+        aoplot.s2pRoiImage(expobj, save_fig=save_path)
+
+
+
+# %% 5.1) for loop to go through each expobj to analyze nontargets - pre4ap trials
+
+# ls = ['PS05 t-010', 'PS06 t-011', 'PS11 t-010', 'PS17 t-005', 'PS17 t-006', 'PS17 t-007', 'PS18 t-006']
+ls = pj.flattenOnce(allopticalResults.pre_4ap_trials)
+for (i, key, j) in code_run_list_pre:
+    # import expobj
+    expobj, experiment = aoutils.import_expobj(aoresults_map_id='pre %s.%s' % (key, j))
+    aoutils.run_allopticalAnalysisNontargets(expobj, normalize_to='pre-stim', do_processing=True, to_plot=True,
+                                             save_plot_suffix=f"{save_path_prefix[-31:]}/{expobj.metainfo['animal prep.']}_{expobj.metainfo['trial']}-pre4ap.png")
+
+
+# test: adding correct stim filters when analysing data to exclude stims/cells in seizure boundaries - this should be done, but not thouroughly tested necessarily yet //
+# 5.1) for loop to go through each expobj to analyze nontargets - post4ap trials
+# ls = ['RL108 t-013', 'RL109 t-021', 'RL109 t-016']
+missing_slmtargets_sz_stim = []
+ls = pj.flattenOnce(allopticalResults.post_4ap_trials)
+for (i, key, j) in code_run_list_all:
+    # import expobj
+    expobj, experiment = aoutils.import_expobj(aoresults_map_id='post %s.%s' % (key, j), do_processing=True)
+    if hasattr(expobj, 'slmtargets_szboundary_stim'):
+        aoutils.run_allopticalAnalysisNontargetsPost4ap(expobj, normalize_to='pre-stim', do_processing=True, to_plot=True,
+                                                        save_plot_suffix=f"{save_path_prefix[-31:]}/{expobj.metainfo['animal prep.']}_{expobj.metainfo['trial']}-post4ap.png")
+    else:
+        missing_slmtargets_sz_stim.append(f"{expobj.metainfo['animal prep.']} {expobj.metainfo['trial']}")
 
 
 # %% 5.2) collect average stats for each prep, and summarize into the appropriate data point
@@ -169,10 +433,7 @@ allopticalResults.negsig_responders_traces = np.asarray(negsig_responders_traces
 allopticalResults.save()
 
 
-
-
-
-# %% 6.0.0) DATA COLLECTION: organize SLMTargets stim responses - across all appropriate pre4ap, post4ap trial comparisons - responses are dF/prestimF
+# %% 4.0.0) DATA COLLECTION SLMTargets: organize SLMTargets stim responses - across all appropriate pre4ap, post4ap trial comparisons - responses are dF/prestimF
 """ doing it in this way so that its easy to use in the response vs. stim times relative to seizure onset code (as this has already been coded up)"""
 
 trials_skip = [
@@ -382,7 +643,7 @@ for i in range(len(allopticalResults.pre_4ap_trials)):
 allopticalResults.stim_responses = stim_responses_comparisons_dict
 allopticalResults.save()
 
-# %% 6.0.1) DATA COLLECTION - absolute stim responses vs. TIME to seizure onset - responses: dF/prestimF - for loop over all experiments to collect responses in terms of sz onset time
+# %% 4.0.1) DATA COLLECTION SLMTargets - absolute stim responses vs. TIME to seizure onset - responses: dF/prestimF - for loop over all experiments to collect responses in terms of sz onset time
 
 stim_relative_szonset_vs_avg_response_alltargets_atstim = {}
 
@@ -424,7 +685,7 @@ allopticalResults.stim_relative_szonset_vs_avg_response_alltargets_atstim = stim
 allopticalResults.save()
 
 
-# %% 6.1.0-dc) DATA COLLECTION: organize SLMTargets stim responses - across all appropriate pre4ap, post4ap trial comparisons - using whole trace dFF responses
+# %% 4.1.0-dc) DATA COLLECTION SLMTargets: organize SLMTargets stim responses - across all appropriate pre4ap, post4ap trial comparisons - using whole trace dFF responses
 """ doing it in this way so that its easy to use in the response vs. stim times relative to seizure onset code (as this has already been coded up)"""
 
 trials_skip = [
@@ -662,7 +923,7 @@ for i in range(len(allopticalResults.pre_4ap_trials)):
 
 
 
-# %% 6.1.1) DATA COLLECTION - absolute stim responses vs. TIME to seizure onset - responses: delta(dFF) from whole trace - for loop over all experiments to collect responses in terms of sz onset time
+# %% 4.1.1) DATA COLLECTION SLMTargets - absolute stim responses vs. TIME to seizure onset - responses: delta(dFF) from whole trace - for loop over all experiments to collect responses in terms of sz onset time
 
 stim_relative_szonset_vs_avg_dFFresponse_alltargets_atstim = {}
 
@@ -702,275 +963,6 @@ for prep in allopticalResults.stim_responses_tracedFF.keys():
     allopticalResults.stim_relative_szonset_vs_avg_dFFresponse_alltargets_atstim = stim_relative_szonset_vs_avg_dFFresponse_alltargets_atstim
     print(f"length of allopticalResults.stim_relative_szonset_vs_avg_dFFresponse_alltargets_atstim dict: {len(allopticalResults.stim_relative_szonset_vs_avg_dFFresponse_alltargets_atstim.keys())}")
     allopticalResults.save()
-
-sys.exit()
-
-
-
-sys.exit()
-"""# ########### END OF // ZONE FOR CALLING THIS SCRIPT DIRECTLY FROM THE SSH SERVER ###########
-########### END OF // ZONE FOR CALLING THIS SCRIPT DIRECTLY FROM THE SSH SERVER ###########
-########### END OF // ZONE FOR CALLING THIS SCRIPT DIRECTLY FROM THE SSH SERVER ###########
-########### END OF // ZONE FOR CALLING THIS SCRIPT DIRECTLY FROM THE SSH SERVER ###########
-########### END OF // ZONE FOR CALLING THIS SCRIPT DIRECTLY FROM THE SSH SERVER ###########
-########### END OF // ZONE FOR CALLING THIS SCRIPT DIRECTLY FROM THE SSH SERVER ###########
-########### END OF // ZONE FOR CALLING THIS SCRIPT DIRECTLY FROM THE SSH SERVER ###########
-########### END OF // ZONE FOR CALLING THIS SCRIPT DIRECTLY FROM THE SSH SERVER ###########
-"""
-
-
-# %% 1) lists of trials to analyse for pre4ap and post4ap trials within experiments
-
-allopticalResults.pre_4ap_trials = [
-    ['RL108 t-009'],
-    ['RL108 t-010'],
-    ['RL109 t-007'],
-    ['RL109 t-008'],
-    ['RL109 t-013'],  # - pickle truncated .21/10/18 - analysis func jupyter run on .21/11/12
-    ['RL109 t-014'],
-    ['PS04 t-012',  # 'PS04 t-014',  - not sure what's wrong with PS04, but the photostim and Flu are falling out of sync .21/10/09
-     'PS04 t-017'],
-    ['PS05 t-010'],
-    ['PS07 t-007'],
-    ['PS07 t-009'],
-    # ['PS06 t-008', 'PS06 t-009', 'PS06 t-010'],  # matching post4ap trial cannot be analysed
-    ['PS06 t-011'],
-    # ['PS06 t-012'],  # matching post4ap trial cannot be analysed
-    # ['PS11 t-007'],
-    ['PS11 t-010'],
-    # ['PS17 t-005'],
-    # ['PS17 t-006', 'PS17 t-007'],
-    # ['PS18 t-006']
-]
-
-allopticalResults.post_4ap_trials = [
-    ['RL108 t-013'],
-    ['RL108 t-011'],
-    ['RL109 t-020'],
-    ['RL109 t-021'],
-    ['RL109 t-018'],
-    ['RL109 t-016', 'RL109 t-017'],
-    ['PS04 t-018'],
-    ['PS05 t-012'],
-    ['PS07 t-011'],
-    ['PS07 t-017'],
-    # ['PS06 t-014', 'PS06 t-015'], - missing seizure_lfp_onsets (no paired measurements mat file for trial .21/10/09)
-    ['PS06 t-013'],
-    # ['PS06 t-016'], - no seizures, missing seizure_lfp_onsets (no paired measurements mat file for trial .21/10/09)
-    # ['PS11 t-016'],
-    ['PS11 t-011'],
-    # ['PS17 t-011'],
-    # ['PS17 t-009'],
-    # ['PS18 t-008']
-]
-
-assert len(allopticalResults.pre_4ap_trials) == len(allopticalResults.post_4ap_trials), print('pre trials %s ' % len(allopticalResults.pre_4ap_trials),
-                                                                                              'post trials %s ' % len(allopticalResults.post_4ap_trials))
-
-
-allopticalResults.trial_maps = {'pre': {}, 'post': {}}
-allopticalResults.trial_maps['pre'] = {
-    'a': ['RL108 t-009'],
-    # 'b': ['RL108 t-010'],
-    # 'c': ['RL109 t-007'],
-    'd': ['RL109 t-008'],
-    'e': ['RL109 t-013'],
-    'f': ['RL109 t-014'],
-    # 'g': ['PS04 t-012',  # 'PS04 t-014',  # - temp just until PS04 gets reprocessed
-    #       'PS04 t-017'],
-    'h': ['PS05 t-010'],
-    'i': ['PS07 t-007'],
-    'j': ['PS07 t-009'],
-    # 'k': ['PS06 t-008', 'PS06 t-009', 'PS06 t-010'],
-    'l': ['PS06 t-011'],
-    # 'm': ['PS06 t-012'],  # - t-016 missing sz lfp onsets
-    # 'n': ['PS11 t-007'],
-    'o': ['PS11 t-010'],
-    # 'p': ['PS17 t-005'],
-    # 'q': ['PS17 t-006', 'PS17 t-007'],
-    # 'r': ['PS18 t-006']
-}
-
-allopticalResults.trial_maps['post'] = {
-    'a': ['RL108 t-013'],
-    # 'b': ['RL108 t-011'], -- need to redo sz boundary classifying processing
-    # 'c': ['RL109 t-020'], -- need to redo sz boundary classifying processing
-    'd': ['RL109 t-021'],
-    'e': ['RL109 t-018'],
-    'f': ['RL109 t-016', 'RL109 t-017'],
-    # 'g': ['PS04 t-018'],  -- need to redo sz boundary classifying processing
-    'h': ['PS05 t-012'],
-    'i': ['PS07 t-011'],
-    'j': ['PS07 t-017'],
-    # 'k': ['PS06 t-014', 'PS06 t-015'],  # - missing seizure_lfp_onsets
-    'l': ['PS06 t-013'],
-    # 'm': ['PS06 t-016'],  # - missing seizure_lfp_onsets - LFP signal not clear, but there is seizures on avg Flu trace
-    # 'n': ['PS11 t-016'],
-    'o': ['PS11 t-011'],
-    # 'p': ['PS17 t-011'],
-    # 'q': ['PS17 t-009'],
-    # 'r': ['PS18 t-008']
-}
-
-assert len(allopticalResults.trial_maps['pre'].keys()) == len(allopticalResults.trial_maps['post'].keys())
-
-allopticalResults.save()
-
-
-
-
-
-# %% 2) adding slm targets responses to alloptical results allopticalResults.slmtargets_stim_responses
-
-"""Not sure if this code is actually necessary..."""
-
-animal_prep = 'PS07'
-date = '2021-01-19'
-# trial = 't-009'
-
-pre4ap_trials = ['t-007', 't-008', 't-009']
-post4ap_trials = ['t-011', 't-016', 't-017']
-
-# pkl_path = "/home/pshah/mnt/qnap/Analysis/%s/%s/%s_%s/%s_%s.pkl" % (
-#     date, animal_prep, date, trial, date, trial)  # specify path in Analysis folder to save pkl object
-#
-# expobj, _ = aoutils.import_expobj(pkl_path=pkl_path)
-
-counter = allopticalResults.slmtargets_stim_responses.shape[0] + 1
-# counter = 6
-
-for trial in pre4ap_trials + post4ap_trials:
-    print(counter)
-    pkl_path = "/home/pshah/mnt/qnap/Analysis/%s/%s/%s_%s/%s_%s.pkl" % (
-        date, animal_prep, date, trial, date, trial)  # specify path in Analysis folder to save pkl object
-
-    expobj, _ = aoutils.import_expobj(pkl_path=pkl_path)
-
-    # add trials info to experiment
-    expobj.metainfo['pre4ap_trials'] = pre4ap_trials
-    expobj.metainfo['post4ap_trials'] = post4ap_trials
-    expobj.save()
-
-    # save to results object:
-    allopticalResults.slmtargets_stim_responses.loc[counter, 'prep_trial'] = '%s %s' % (
-        expobj.metainfo['animal prep.'], expobj.metainfo['trial'])
-    allopticalResults.slmtargets_stim_responses.loc[counter, 'date'] = expobj.metainfo['date']
-    allopticalResults.slmtargets_stim_responses.loc[counter, 'exptype'] = expobj.metainfo['exptype']
-    if 'post' in expobj.metainfo['exptype']:
-        if hasattr(expobj, 'stims_in_sz'):
-            allopticalResults.slmtargets_stim_responses.loc[counter, 'mean response (dF/stdF all targets)'] = np.mean(
-                [[np.mean(expobj.outsz_responses_SLMtargets[i]) for i in range(expobj.n_targets_total)]])
-            allopticalResults.slmtargets_stim_responses.loc[counter, 'mean reliability (>0.3 dF/stdF)'] = np.mean(
-                list(expobj.outsz_StimSuccessRate_SLMtargets.values()))
-        else:
-            if not hasattr(expobj, 'seizure_lfp_onsets'):
-                raise AttributeError(
-                    'stims have not been classified as in or out of sz, no seizure lfp onsets for this trial')
-            else:
-                raise AttributeError(
-                    'stims have not been classified as in or out of sz, but seizure lfp onsets attr was found, so need to troubleshoot further')
-
-    else:
-        allopticalResults.slmtargets_stim_responses.loc[counter, 'mean response (dF/stdF all targets)'] = np.mean(
-            [[np.mean(expobj.responses_SLMtargets[i]) for i in range(expobj.n_targets_total)]])
-        allopticalResults.slmtargets_stim_responses.loc[counter, 'mean reliability (>0.3 dF/stdF)'] = np.mean(
-            list(expobj.StimSuccessRate_SLMtargets.values()))
-
-    allopticalResults.slmtargets_stim_responses.loc[counter, 'mean response (dFF all targets)'] = np.nan
-    counter += 1
-
-allopticalResults.save()
-allopticalResults.slmtargets_stim_responses
-
-
-
-
-# %% 3) make a metainfo attribute to store all metainfo types of info for all experiments/trials
-allopticalResults.metainfo = allopticalResults.slmtargets_stim_responses.loc[:, ['prep_trial', 'date', 'exptype']]
-
-
-
-# %%#### -------------------- ALL OPTICAL PHOTOSTIM ANALYSIS ################################################
-
-# specify trials to run code on
-code_run_list_all = []
-for i in ['pre', 'post']:
-    for key in list(allopticalResults.trial_maps[i].keys()):
-        for j in range(len(allopticalResults.trial_maps[i][key])):
-            code_run_list_all.append((i, key, j))
-
-code_run_list_pre = []
-for key in list(allopticalResults.trial_maps['pre'].keys()):
-    for j in range(len(allopticalResults.trial_maps['pre'][key])):
-        code_run_list_pre.append(('pre', key, j))
-
-code_run_list_post4ap = []
-for key in list(allopticalResults.trial_maps['post'].keys()):
-    for j in range(len(allopticalResults.trial_maps['post'][key])):
-        code_run_list_post4ap.append(('post', key, j))
-
-
-short_list_pre = [('pre', 'e', '0')]
-short_list_post = [('post', 'e', '0')]
-# %% 5.0-main)  RUN DATA ANALYSIS OF NON TARGETS:
-# #  - Analysis of responses of non-targets from suite2p ROIs in response to photostim trials - broken down by pre-4ap, outsz and insz (excl. sz boundary)
-
-
-# # import expobj
-# expobj, experiment = aoutils.import_expobj(aoresults_map_id='pre g.1')
-# aoutils.run_allopticalAnalysisNontargets(expobj, normalize_to='pre-stim', do_processing=False,
-#                                          save_plot_suffix='Nontargets_responses_2021-10-24/%s_%s.png' % (expobj.metainfo['animal prep.'], expobj.metainfo['trial']))
-
-
-# expobj.dff_traces, expobj.dff_traces_avg, expobj.dfstdF_traces, \
-# expobj.dfstdF_traces_avg, expobj.raw_traces, expobj.raw_traces_avg = \
-#     aoutils.get_nontargets_stim_traces_norm(expobj=expobj, normalize_to='pre-stim', pre_stim_sec=expobj.pre_stim_sec,
-#                                             post_stim_sec=expobj.post_stim_sec)
-
-# 5.0.1) re-calculating and plotting of excluded s2p ROIs and SLM target coordinates
-
-for (i, key, j) in code_run_list_all:
-    if (i, key, j) in short_list_pre or (i, key, j) in short_list_post:
-        # import expobj
-        expobj, experiment = aoutils.import_expobj(aoresults_map_id=f'{i} {key}.{j}')
-
-        if not hasattr(expobj, 's2p_nontargets'):
-            expobj._parseNAPARMgpl()
-            expobj._findTargetsAreas()
-            expobj._findTargetedS2pROIs(force_redo=True, plot=False)
-            expobj.save()
-        assert hasattr(expobj, 's2p_nontargets')
-        save_path = save_path_prefix + f"/{expobj.metainfo['animal prep.']} {expobj.metainfo['trial']} - s2p ROIs plot.png"
-        aoplot.s2pRoiImage(expobj, save_fig=save_path)
-
-
-
-# %% 5.1) for loop to go through each expobj to analyze nontargets - pre4ap trials
-
-# ls = ['PS05 t-010', 'PS06 t-011', 'PS11 t-010', 'PS17 t-005', 'PS17 t-006', 'PS17 t-007', 'PS18 t-006']
-ls = pj.flattenOnce(allopticalResults.pre_4ap_trials)
-for (i, key, j) in code_run_list_pre:
-    # import expobj
-    expobj, experiment = aoutils.import_expobj(aoresults_map_id='pre %s.%s' % (key, j))
-    aoutils.run_allopticalAnalysisNontargets(expobj, normalize_to='pre-stim', do_processing=True, to_plot=True,
-                                             save_plot_suffix=f"{save_path_prefix[-31:]}/{expobj.metainfo['animal prep.']}_{expobj.metainfo['trial']}-pre4ap.png")
-
-
-# test: adding correct stim filters when analysing data to exclude stims/cells in seizure boundaries - this should be done, but not thouroughly tested necessarily yet //
-# 5.1) for loop to go through each expobj to analyze nontargets - post4ap trials
-# ls = ['RL108 t-013', 'RL109 t-021', 'RL109 t-016']
-missing_slmtargets_sz_stim = []
-ls = pj.flattenOnce(allopticalResults.post_4ap_trials)
-for (i, key, j) in code_run_list_all:
-    # import expobj
-    expobj, experiment = aoutils.import_expobj(aoresults_map_id='post %s.%s' % (key, j), do_processing=True)
-    if hasattr(expobj, 'slmtargets_szboundary_stim'):
-        aoutils.run_allopticalAnalysisNontargetsPost4ap(expobj, normalize_to='pre-stim', do_processing=True, to_plot=True,
-                                                        save_plot_suffix=f"{save_path_prefix[-31:]}/{expobj.metainfo['animal prep.']}_{expobj.metainfo['trial']}-post4ap.png")
-    else:
-        missing_slmtargets_sz_stim.append(f"{expobj.metainfo['animal prep.']} {expobj.metainfo['trial']}")
-
-
 
 
 #########################################################################################################################
