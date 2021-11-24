@@ -16,7 +16,7 @@ from funcsforprajay.wrappers import print_start_end_plot, plot_piping_decorator
 # %%
 ### plot the location of all SLM targets, along with option for plotting the mean img of the current trial
 @print_start_end_plot
-@plot_piping_decorator(figsize_=(5,5))
+@plot_piping_decorator(figsize=(5,5))
 def plot_SLMtargets_Locs(expobj, targets_coords: list = None, background: np.ndarray = None, fig=None, ax=None, **kwargs):
     """
     plot SLM target coordinate locations
@@ -89,7 +89,7 @@ def plot_SLMtargets_Locs(expobj, targets_coords: list = None, background: np.nda
 
 # simple plot of the location of the given cell(s) against a black FOV
 @print_start_end_plot
-@plot_piping_decorator(figsize_=(5,5))
+@plot_piping_decorator(figsize=(5,5))
 def plot_cells_loc(expobj, cells: list, title=None, background: np.array = None, scatter_only: bool = False,
                    show_s2p_targets: bool = True, color_float_list: list = None, cmap: str = 'Reds', invert_y = True, fig=None, ax=None, **kwargs):
     """
@@ -329,7 +329,7 @@ def plot_photostim_traces(array, expobj, title='', y_min=None, y_max=None, x_lab
 
 
 @print_start_end_plot
-@plot_piping_decorator(figsize_=(10,6))
+@plot_piping_decorator(figsize=(10,6))
 def plot_photostim_traces_overlap(array, expobj, exclude_id=[], y_spacing_factor=1, title='',
                                   x_axis='Time (seconds)', save_fig=None, fig=None, ax=None, **kwargs):
     '''
@@ -423,7 +423,7 @@ def plot_photostim_traces_overlap(array, expobj, exclude_id=[], y_spacing_factor
 
 ### photostim analysis - PLOT avg over photostim. trials traces for the provided traces
 @print_start_end_plot
-@plot_piping_decorator(figsize_=(5,5.5))
+@plot_piping_decorator(figsize=(5,5.5))
 def plot_periphotostim_avg2(dataset, fps=None, legend_labels=None, colors=None, avg_with_std=False,
                             title='high quality plot', pre_stim_sec=None, ylim=None, fig=None, ax=None, **kwargs):
 
@@ -532,7 +532,7 @@ def plot_periphotostim_avg2(dataset, fps=None, legend_labels=None, colors=None, 
 
 ### photostim analysis - PLOT avg over all photstim. trials traces from PHOTOSTIM TARGETTED cells
 @print_start_end_plot
-@plot_piping_decorator(figsize_=(5,5.5))
+@plot_piping_decorator(figsize=(5,5.5))
 def plot_periphotostim_avg(arr=None, pre_stim_sec=1.0, post_stim_sec=3.0, title='', expobj=None,
                            avg_only: bool = False, x_label=None, y_label=None, fig=None, ax=None, **kwargs):
     """
@@ -812,7 +812,7 @@ def plot_flu_trace(expobj, cell, x_lims=None, slm_group=None, to_plot='raw', fig
 
 # make a plot with the paq file LFP signal to visualize these classifications
 @print_start_end_plot
-@plot_piping_decorator(figsize_=(10,3))
+@plot_piping_decorator(figsize=(10,3))
 def plot_lfp_stims(expobj, title='LFP signal with photostim. shown (in different colors relative to seizure timing)', shrink_text = 1,
                    x_axis: str = 'paq', sz_markings: bool = True, fig=None, ax=None, **kwargs):
 
@@ -830,10 +830,10 @@ def plot_lfp_stims(expobj, title='LFP signal with photostim. shown (in different
     if 'linewidth' in kwargs and kwargs['linewidth'] is not None:
         lw = kwargs['linewidth']
     else:
-        lw = 0.5
+        lw = 1
 
     fig, ax = plotLfpSignal(expobj=expobj, fig=fig, ax=ax, stim_lines=False, show=False, stim_span_color='', x_axis=x_axis,
-                            sz_markings=sz_markings, color='slategray', downsample=True, linewidth=lw)
+                            sz_markings=sz_markings, color='steelblue', downsample=True, linewidth=lw)
     # y_loc = np.percentile(expobj.lfp_signal, 75)
     y_loc = 0 # location of where to place the stim markers on the plot
 
@@ -912,7 +912,7 @@ def plot_lfp_stims(expobj, title='LFP signal with photostim. shown (in different
 
 # plot the whole pre stim to post stim period as a cool heatmap
 @print_start_end_plot
-@plot_piping_decorator(figsize_=(4,10))
+@plot_piping_decorator(figsize=(4,10))
 def plot_traces_heatmap(arr, expobj, vmin=None, vmax=None, stim_on = None, stim_off= None, figsize=None, title=None, xlims=None, x_label='Frames',
                         cmap='bwr', show=True, cbar: bool = False, fig=None, ax=None, **kwargs):
     """
@@ -1049,7 +1049,7 @@ def xyloc_responses(expobj, df, label='response magnitude', clim=[-10, +10], plo
 
 # plots the raw trace for the Flu mean of the FOV (similar to the ZProject in Fiji)
 @print_start_end_plot
-@plot_piping_decorator(figsize_=(10,3))
+@plot_piping_decorator(figsize=(10,3))
 def plotMeanRawFluTrace(expobj, stim_span_color='white', stim_lines: bool = True, title='raw Flu trace', x_axis='time', shrink_text=1,
                         fig=None, ax=None, **kwargs):
     """make plot of mean Ca trace averaged over the whole FOV"""
@@ -1133,7 +1133,7 @@ def plotMeanRawFluTrace(expobj, stim_span_color='white', stim_lines: bool = True
 
 # plots the raw trace for the Flu mean of the FOV
 @print_start_end_plot
-@plot_piping_decorator(figsize_=(10,3))
+@plot_piping_decorator(figsize=(10,3))
 def plotLfpSignal(expobj, stim_span_color='powderblue', downsample: bool = True, stim_lines: bool = True, sz_markings: bool = False,
                   title='LFP trace', x_axis='time', hide_xlabel=False, fig=None, ax=None, **kwargs):
     """make plot of LFP with also showing stim locations
@@ -1196,7 +1196,7 @@ def plotLfpSignal(expobj, stim_span_color='powderblue', downsample: bool = True,
             for sz_onset in expobj.seizure_lfp_onsets:
                 ax.axvline(x=expobj.frame_clock_actual[sz_onset] - expobj.frame_start_time_actual, color='black', linestyle='--', linewidth=1.0, zorder=0)
             for sz_offset in expobj.seizure_lfp_offsets:
-                ax.axvline(x=expobj.frame_clock_actual[sz_offset] - expobj.frame_start_time_actual, color='black', linestyle='--', linewidth=1.0, zorder=0)
+                ax.axvline(x=expobj.frame_clock_actual[sz_offset] - expobj.frame_start_time_actual, color='gray', linestyle='--', linewidth=1.0, zorder=0)
 
     # change x axis ticks to seconds
     if 'time' in x_axis or 'Time' in x_axis:
@@ -1251,7 +1251,7 @@ def plotLfpSignal(expobj, stim_span_color='powderblue', downsample: bool = True,
     # return fig, ax if 'fig' in kwargs.keys() else None
 
 @print_start_end_plot
-@plot_piping_decorator(figsize_=(4,5))
+@plot_piping_decorator(figsize=(4,5))
 def plot_flu_1pstim_avg_trace(expobj, title='Average trace of stims', individual_traces=False, x_axis='time', stim_span_color='white',
                               y_axis: str = 'raw', quantify: bool = False, stims_to_analyze: list = None, write_full_text: bool = True,
                               fig=None, ax=None, **kwargs):
@@ -1399,7 +1399,7 @@ def plot_flu_1pstim_avg_trace(expobj, title='Average trace of stims', individual
     #             return flu_list, round(response, 4), decay_constant
 
 @print_start_end_plot
-@plot_piping_decorator(figsize_=(4,5))
+@plot_piping_decorator(figsize=(4,5))
 def plot_lfp_1pstim_avg_trace(expobj, title='Average LFP peri- stims', individual_traces=False, x_axis='time', pre_stim=1.0, post_stim=5.0,
                               optoloopback: bool = False, stims_to_analyze: list = None, shrink_text: int = 1, write_full_text: bool = False,
                               fig=None, ax=None, **kwargs):

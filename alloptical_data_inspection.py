@@ -27,15 +27,15 @@ expobj, experiment = aoutils.import_expobj(prep='RL109', trial='t-017')
 
 # aoplot.plotMeanRawFluTrace(expobj=expobj, stim_span_color=None, x_axis='Time', figsize=(20,3))
 
-fig, axs = plt.subplots(2, 1, figsize=(20,6))
-fig, ax = aoplot.plotMeanRawFluTrace(expobj=expobj, stim_span_color=None, x_axis='Time', fig=fig, ax=axs[0], show=False)
+fig, axs = plt.subplots(2, 1, figsize=(20, 6))
+fig, ax = aoplot.plotMeanRawFluTrace(expobj=expobj, stim_span_color=None, x_axis='frames', fig=fig, ax=axs[0], show=False)
 fig, ax = aoplot.plotLfpSignal(expobj=expobj, stim_span_color='', x_axis='time', fig=fig, ax=axs[1], show=False)
 fig.show()
 
 aoplot.plot_SLMtargets_Locs(expobj=expobj, background=expobj.meanFluImg_registered)
 aoplot.plot_lfp_stims(expobj=expobj, x_axis='Time')
 
-expobj.plot_single_frame_tiff(frame_num=10020)
+expobj.plot_single_frame_tiff(frame_num=10040)
 expobj.plot_single_frame_tiff(frame_num=700)
 expobj.plot_single_frame_tiff(frame_num=501)
 expobj.plot_single_frame_tiff(frame_num=301)

@@ -26,7 +26,7 @@ os.makedirs(save_path_prefix) if not os.path.exists(save_path_prefix) else None
 # expobj, experiment = aoutils.import_expobj(aoresults_map_id='pre e.1')  # PLACEHOLDER IMPORT OF EXPOBJ TO MAKE THE CODE WORK
 
 
-# %%
+#
 """######### ZONE FOR CALLING THIS SCRIPT DIRECTLY FROM THE SSH SERVER ###########
 ######### ZONE FOR CALLING THIS SCRIPT DIRECTLY FROM THE SSH SERVER ###########
 ######### ZONE FOR CALLING THIS SCRIPT DIRECTLY FROM THE SSH SERVER ###########
@@ -37,6 +37,36 @@ os.makedirs(save_path_prefix) if not os.path.exists(save_path_prefix) else None
 ######### ZONE FOR CALLING THIS SCRIPT DIRECTLY FROM THE SSH SERVER ###########
 ######### ZONE FOR CALLING THIS SCRIPT DIRECTLY FROM THE SSH SERVER ###########
 """
+
+# %% 8.2-cd) PLOT - absolute stim responses vs. TIME to seizure onset - using trace dFF processed data
+
+"""todo for this analysis:
+- average over targets for plot containing all exps
+"""
+
+# plotting of post_4ap zscore_stim_relative_to_sz onset
+print(f"plotting averages from trials: {list(allopticalResults.stim_relative_szonset_vs_avg_dFFresponse_alltargets_atstim.keys())}")
+
+preps = np.unique([prep[:-6] for prep in allopticalResults.stim_relative_szonset_vs_avg_dFFresponse_alltargets_atstim.keys()])
+
+exps = list(allopticalResults.stim_relative_szonset_vs_avg_dFFresponse_alltargets_atstim.keys())
+
+x_points = []
+y_points = []
+ax_titles = []
+for i in range(len(preps)):
+    print(i)
+    for key in allopticalResults.stim_relative_szonset_vs_avg_dFFresponse_alltargets_atstim.keys():
+        if preps[i] in key:
+            print(key)
+            sz_time = allopticalResults.stim_relative_szonset_vs_avg_dFFresponse_alltargets_atstim[key][0]
+            responses = allopticalResults.stim_relative_szonset_vs_avg_dFFresponse_alltargets_atstim[key][1]
+            x_points.append(sz_time)
+            y_points.append(responses)
+            ax_titles.append(key)
+
+pj.make_general_scatter(x_list=pj.flattenOnce(x_points), y_data=pj.flattenOnce(y_points), ax_titles=ax_titles)
+
 
 # %% 8.2-cd) PLOT - absolute stim responses vs. TIME to seizure onset - using trace dFF processed data
 
@@ -68,6 +98,7 @@ axs[0, 0].set_ylabel(ylabel)
 # prep for single small plot with all experiments
 fig, ax = plt.subplots(figsize=(4, 3))
 colors = pj.make_random_color_array(n_colors=len(preps))
+
 for i in range(len(preps)):
     print(i)
     for key in allopticalResults.stim_relative_szonset_vs_avg_dFFresponse_alltargets_atstim.keys():
@@ -75,6 +106,7 @@ for i in range(len(preps)):
             print(key)
             sz_time = allopticalResults.stim_relative_szonset_vs_avg_dFFresponse_alltargets_atstim[key][0]
             responses = allopticalResults.stim_relative_szonset_vs_avg_dFFresponse_alltargets_atstim[key][1]
+
             # xes = list(np.where(np.isnan(responses[0]))[0])
             # responses_to_plot = [responses[0][i] for i in range(len(responses)) if i not in xes]
             # sz_time_plot = [sz_time[0][i] for i in range(len(responses)) if i not in xes]

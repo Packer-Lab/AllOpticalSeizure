@@ -643,7 +643,7 @@ class TwoPhotonImaging:
         if title is not None:
             plt.suptitle(title)
         else:
-            plt.suptitle('frame num: %s' % frame_num)
+            plt.suptitle(f"{self.metainfo['animal prep.']} {self.metainfo['trial']} frame num: {frame_num}")
         plt.show()
         return stack
 
@@ -2733,17 +2733,21 @@ class Post4ap(alloptical):
                                                                                  self.metainfo['trial'],
                                                                                  self.metainfo['date']))
 
-        # collect information about seizures
-        self.collect_seizures_info(seizures_lfp_timing_matarray=paths[5], discard_all=discard_all)
-
-
         #### initializing data processing, data analysis and/or results associated attr's
+
+        ## SEIZURES RELATED ATTRIBUTES
+        self.seizure_frames = []  # frame #s inside seizure
+        self.seizure_lfp_onsets = []  # frame #s corresponding to ONSET of seizure as manually inspected from the LFP signal
+        self.seizure_lfp_offsets = []  # frame #s corresponding to OFFSET of seizure as manually inspected from the LFP signal
 
         ## PHOTOSTIM SLM TARGETS
         self.responses_SLMtargets_outsz = []  # dF/prestimF responses for all SLM targets for photostim trials outside sz
         self.responses_SLMtargets_insz = []  # dF/prestimF responses for all SLM targets for photostim trials inside sz - excluding targets inside the sz boundary
         self.responses_SLMtargets_tracedFF_outsz = []  # dF/prestimF responses for all SLM targets for photostim trials outside sz
         self.responses_SLMtargets_tracedFF_insz = []  # dF/prestimF responses for all SLM targets for photostim trials inside sz - excluding targets inside the sz boundary
+
+        # collect information about seizures
+        self.collect_seizures_info(seizures_lfp_timing_matarray=paths[5], discard_all=discard_all)
 
 
         self.save()
@@ -2785,11 +2789,12 @@ class Post4ap(alloptical):
 
         # print(paq[0]['data'][0])  # print the frame clock signal from the .paq file to make sure its being read properly
         # NOTE: the output of all of the following function is in dimensions of the FRAME CLOCK (not official paq clock time)
-        if seizures_lfp_timing_matarray is not None:
+        if self.seizures_lfp_timing_matarray is not None:
             print('-- using matlab array to collect seizures %s: ' % seizures_lfp_timing_matarray)
             bad_frames, self.seizure_frames, self.seizure_lfp_onsets, self.seizure_lfp_offsets = frames_discard(
                 paq=paq[0], input_array=self.seizures_lfp_timing_matarray, total_frames=self.n_frames,
                 discard_all=discard_all)
+            print(f"|- sz frame # onsets: {self.seizure_lfp_onsets}, \n|- sz frame # offsets {self.seizure_lfp_offsets}")
         else:
             print('-- no matlab array given to use for finding seizures.')
             bad_frames = frames_discard(paq=paq[0], input_array=seizures_lfp_timing_matarray,
@@ -2825,7 +2830,7 @@ class Post4ap(alloptical):
                                         sz_start - stim) < 10 * self.fps]  # select stims that occur within 5 seconds afterof the sz offset
             print(' \n|- stims_in_sz:', self.stims_in_sz, ' \n|- stims_out_sz:', self.stims_out_sz,
                   ' \n|- stims_bf_sz:', self.stims_bf_sz, ' \n|- stims_af_sz:', self.stims_af_sz)
-            aoplot.plot_lfp_stims(self)
+            aoplot.plot_lfp_stims(expobj=self)
         self.save_pkl()
 
     def find_closest_sz_frames(self):
