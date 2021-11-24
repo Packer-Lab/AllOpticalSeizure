@@ -18,7 +18,7 @@ from funcsforprajay import funcs as pj
 results_object_path = '/home/pshah/mnt/qnap/Analysis/alloptical_results_superobject.pkl'
 allopticalResults = aoutils.import_resultsobj(pkl_path=results_object_path)
 
-save_path_prefix = '/home/pshah/mnt/qnap/Analysis/Results_figs/SLMtargets_responses_2021-11-20'
+save_path_prefix = '/home/pshah/mnt/qnap/Analysis/Results_figs/SLMtargets_responses_2021-11-23'
 os.makedirs(save_path_prefix) if not os.path.exists(save_path_prefix) else None
 
 
@@ -71,7 +71,7 @@ for i in range(len(allopticalResults.pre_4ap_trials)):
         expobj, experiment = aoutils.import_expobj(trial=pre4aptrial, date=date, prep=prep, verbose=False, do_processing=False)
         # collect raw Flu data from SLM targets
         expobj.collect_traces_from_targets(force_redo=False)
-        aoutils.run_alloptical_processing_photostim(expobj, plots=False, force_redo=False)
+        aoutils.run_alloptical_processing_photostim(expobj, plots=False, force_redo=False)  # REVIEW PROGRESS: pre4ap seems to be working fine till here for trace_dFF processing
 
         df = expobj.responses_SLMtargets_tracedFF.T  # df == stim frame x cells (photostim targets)
         if len(allopticalResults.pre_4ap_trials[i]) > 1:
@@ -294,7 +294,7 @@ for prep in allopticalResults.stim_responses_tracedFF.keys():
                 stims_relative_sz = []
                 for stim_idx in stims:
                     stim_frame = expobj.stim_start_frames[stim_idx]
-                    closest_sz_onset = pj.findClosest(ls=expobj.seizure_lfp_onsets, input=stim_frame)[0]
+                    closest_sz_onset = pj.findClosest(list=expobj.seizure_lfp_onsets, input=stim_frame)[0]
                     time_diff = (closest_sz_onset - stim_frame) / expobj.fps  # time difference in seconds
                     stims_relative_sz.append(round(time_diff, 3))
 

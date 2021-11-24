@@ -12,7 +12,7 @@ import alloptical_utils_pj as aoutils
 import tifffile as tf
 
 
-def plot_piping_decorator(func):
+def plot_piping_decorator(plotting_func):
     def inner(*args, **kwargs):
         print(f'perform action 1')
         print(f'original kwargs {kwargs}')
@@ -26,7 +26,6 @@ def plot_piping_decorator(func):
             else:
                 print('making fig, ax')
                 fig, ax = plt.subplots()
-
 
         print(f"new kwargs {kwargs}")
 
@@ -47,12 +46,12 @@ def plot_piping_decorator(func):
 
     return inner
 
-@fig_piping_decorator
+@plot_piping_decorator
 def example_decorated_plot(fig, ax, title='', **kwargs):
     print(f'kwargs inside make_plot definition: {kwargs}')
     ax.plot(np.random.rand(10))
     ax.set_title(title)
-fig, ax = example_decorated_plot(title='A plot', show=True)  # these are the original kwargs
+# fig, ax = example_decorated_plot(title='A plot', show=True)  # these are the original kwargs
 
 
 ### plot the location of all SLM targets, along with option for plotting the mean img of the current trial
