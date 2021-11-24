@@ -50,6 +50,28 @@ sys.exit()
 ########### END OF // ZONE FOR CALLING THIS SCRIPT DIRECTLY FROM THE SSH SERVER ###########
 """
 
+# %% 0)
+code_run_list_all = []
+for i in ['pre', 'post']:
+    for key in list(allopticalResults.trial_maps[i].keys()):
+        for j in range(len(allopticalResults.trial_maps[i][key])):
+            code_run_list_all.append((i, key, j))
+
+code_run_list_pre = []
+for key in list(allopticalResults.trial_maps['pre'].keys()):
+    for j in range(len(allopticalResults.trial_maps['pre'][key])):
+        code_run_list_pre.append(('pre', key, j))
+
+code_run_list_post4ap = []
+for key in list(allopticalResults.trial_maps['post'].keys()):
+    for j in range(len(allopticalResults.trial_maps['post'][key])):
+        code_run_list_post4ap.append(('post', key, j))
+
+
+short_list_pre = [('pre', 'e', '0')]
+short_list_post = [('post', 'e', '0')]
+
+
 # %% 1.0-main) RUN DATA ANALYSIS OF NON TARGETS:
 # #  - Analysis of responses of non-targets from suite2p ROIs in response to photostim trials - broken down by pre-4ap, outsz and insz (excl. sz boundary)
 
@@ -65,7 +87,7 @@ sys.exit()
 #     aoutils.get_nontargets_stim_traces_norm(expobj=expobj, normalize_to='pre-stim', pre_stim_sec=expobj.pre_stim_sec,
 #                                             post_stim_sec=expobj.post_stim_sec)
 
-# 2.0.1) re-calculating and plotting of excluded s2p ROIs and SLM target coordinates
+# 1.0.1) re-calculating and plotting of excluded s2p ROIs and SLM target coordinates
 
 for (i, key, j) in code_run_list_all:
     if (i, key, j) in short_list_pre or (i, key, j) in short_list_post:
