@@ -10,66 +10,14 @@ from funcsforprajay import funcs as pj
 from matplotlib import pyplot as plt
 import alloptical_utils_pj as aoutils
 import tifffile as tf
-import functools
 
-## works
-def plot_piping_decorator(plotting_func):
-    @functools.wraps(plotting_func)
-    def inner(**kwargs):
-        print(f'perform action 1')
-        print(f'original kwargs {kwargs}')
-        return_fig_obj = False
-        if 'fig' in kwargs.keys() and 'ax' in kwargs.keys():
-            if kwargs['fig'] is None or kwargs['ax'] is None:
-                print('making fig, ax [1]')
-                kwargs['fig'], kwargs['ax'] = plt.subplots()
-            else:
-                return_fig_obj = True
-        else:
-            if 'figsize' in kwargs.keys():
-                kwargs['fig'], kwargs['ax'] = plt.subplots(figsize=kwargs['figsize'])
-            else:
-                print('making fig, ax [2]')
-                kwargs['fig'], kwargs['ax'] = plt.subplots()
-
-
-        print(f"new kwargs {kwargs}")
-
-        print(f'perform action 2')
-        plotting_func(**kwargs)   # these kwargs are the original kwargs defined at the respective plotting_func call + any additional kwargs defined in inner()
-
-        print(f'perform action 3')
-        kwargs['fig'].suptitle('this title was decorated')
-        if 'show' in kwargs.keys():
-            if kwargs['show'] is True:
-                print(f'showing fig...[3]')
-                kwargs['fig'].show()
-            else:
-                print(f"value of return_fig_obj is {return_fig_obj} [4]")
-                return (kwargs['fig'], kwargs['ax']) if return_fig_obj else None
-        else:
-            kwargs['fig'].show()
-
-        print(f"value of return_fig_obj is {return_fig_obj} [5]")
-        return (kwargs['fig'], kwargs['ax']) if return_fig_obj else None
-
-    return inner
-
-@plot_piping_decorator
-def example_decorated_plot(title='', **kwargs):
-    fig, ax = kwargs['fig'], kwargs['ax']  # need to add atleast this line to each plotting function's definition
-    print(f'kwargs inside example_decorated_plot definition: {kwargs}')
-    ax.plot(np.random.rand(10))
-    ax.set_title(title)
-
-# fig, ax = plt.subplots(figsize=(3,3))
-# fig, ax = example_decorated_plot(fig=fig, ax=ax, title='A plot', show=True)  # these are the original kwargs
-# example_decorated_plot(title='A plot', show=True)  # these are the original kwargs
-
+from funcsforprajay.wrappers import print_start_end_plot, plot_piping_decorator
 
 # %%
 ### plot the location of all SLM targets, along with option for plotting the mean img of the current trial
-def plot_SLMtargets_Locs(expobj, targets_coords: list = None, background: np.ndarray = None, **kwargs):
+@print_start_end_plot
+@plot_piping_decorator
+def plot_SLMtargets_Locs(expobj, targets_coords: list = None, background: np.ndarray = None, fig=fig, ax=ax, **kwargs):
     """
     plot SLM target coordinate locations
 
@@ -80,14 +28,14 @@ def plot_SLMtargets_Locs(expobj, targets_coords: list = None, background: np.nda
     :return:
     """
 
-    if 'fig' in kwargs.keys():
-        fig = kwargs['fig']
-        ax = kwargs['ax']
-    else:
-        if 'figsize' in kwargs.keys():
-            fig, ax = plt.subplots(figsize=kwargs['figsize'])
-        else:
-            fig, ax = plt.subplots()
+    # if 'fig' in kwargs.keys():
+    #     fig = kwargs['fig']
+    #     ax = kwargs['ax']
+    # else:
+    #     if 'figsize' in kwargs.keys():
+    #         fig, ax = plt.subplots(figsize=kwargs['figsize'])
+    #     else:
+    #         fig, ax = plt.subplots()
 
     if background is None:
         black = np.zeros((expobj.frame_x, expobj.frame_y), dtype='uint16')
@@ -128,20 +76,21 @@ def plot_SLMtargets_Locs(expobj, targets_coords: list = None, background: np.nda
     else:
         ax.set_title('SLM targets location - %s %s' % (expobj.metainfo['animal prep.'], expobj.metainfo['trial']))
 
-    if 'show' in kwargs.keys():
-        if kwargs['show'] is True:
-            fig.show()
-        else:
-            return fig, ax
-    else:
-        fig.show()
-
-    return fig, ax if 'fig' in kwargs.keys() else None
-
+    # if 'show' in kwargs.keys():
+    #     if kwargs['show'] is True:
+    #         fig.show()
+    #     else:
+    #         return fig, ax
+    # else:
+    #     fig.show()
+    #
+    # return fig, ax if 'fig' in kwargs.keys() else None
 
 # simple plot of the location of the given cell(s) against a black FOV
+@print_start_end_plot
+@plot_piping_decorator
 def plot_cells_loc(expobj, cells: list, title=None, background: np.array = None, scatter_only: bool = False,
-                   show_s2p_targets: bool = True, color_float_list: list = None, cmap: str = 'Reds', invert_y = True, **kwargs):
+                   show_s2p_targets: bool = True, color_float_list: list = None, cmap: str = 'Reds', invert_y = True, fig=fig, ax=ax, **kwargs):
     """
     plots an image of the FOV to show the locations of cells given in cells ls.
     :param background: either 2dim numpy array to use as the backsplash or None (where black backsplash will be created)
@@ -159,12 +108,12 @@ def plot_cells_loc(expobj, cells: list, title=None, background: np.array = None,
             ax: a ax plt.subplots() instance, if provided use this ax for plotting
     """
 
-    # if there is a fig and ax provided in the function call then use those, otherwise start anew
-    if 'fig' in kwargs.keys():
-        fig = kwargs['fig']
-        ax = kwargs['ax']
-    else:
-        fig, ax = plt.subplots()
+    # # if there is a fig and ax provided in the function call then use those, otherwise start anew
+    # if 'fig' in kwargs.keys():
+    #     fig = kwargs['fig']
+    #     ax = kwargs['ax']
+    # else:
+    #     fig, ax = plt.subplots()
 
     x_list = []
     y_list = []
@@ -229,16 +178,15 @@ def plot_cells_loc(expobj, cells: list, title=None, background: np.array = None,
         if kwargs['invert_y']:
             ax.invert_yaxis()
 
-    if 'show' in kwargs.keys():
-        if kwargs['show'] is True:
-            fig.show()
-        else:
-            pass
-    else:
-        fig.show()
-
-    return fig, ax if 'fig' in kwargs.keys() else None
-
+    # if 'show' in kwargs.keys():
+    #     if kwargs['show'] is True:
+    #         fig.show()
+    #     else:
+    #         pass
+    # else:
+    #     fig.show()
+    #
+    # return fig, ax if 'fig' in kwargs.keys() else None
 
 # plot to show s2p ROIs location, colored as specified
 def s2pRoiImage(expobj, save_fig: str = None):
@@ -300,7 +248,6 @@ def s2pRoiImage(expobj, save_fig: str = None):
     plt.show()
     plt.savefig(save_fig) if save_fig else None
 
-
 ### plotting the distribution of radius and aspect ratios - should this be running before the filtering step which is right below????????
 def plot_cell_radius_aspectr(expobj, stat, to_plot, min_vline: int = 4, max_vline: int = 12):
     radius = []
@@ -325,9 +272,6 @@ def plot_cell_radius_aspectr(expobj, stat, to_plot, min_vline: int = 4, max_vlin
     plt.suptitle('All cells - %s' % title, y=0.95)
     plt.show()
     return to_plot_
-
-
-
 
 ### plot entire trace of individual targeted cells as super clean subplots, with the same y-axis lims
 def plot_photostim_traces(array, expobj, title='', y_min=None, y_max=None, x_label=None,
@@ -379,9 +323,10 @@ def plot_photostim_traces(array, expobj, title='', y_min=None, y_max=None, x_lab
 
     fig.show()
 
-
+@print_start_end_plot
+@plot_piping_decorator
 def plot_photostim_traces_overlap(array, expobj, exclude_id=[], y_spacing_factor=1, title='',
-                                  x_axis='Time (seconds)', save_fig=None, **kwargs):
+                                  x_axis='Time (seconds)', save_fig=None, fig=fig, ax=ax, **kwargs):
     '''
     :param array:
     :param expobj:
@@ -450,36 +395,40 @@ def plot_photostim_traces_overlap(array, expobj, exclude_id=[], y_spacing_factor
     if save_fig is not None:
         plt.savefig(save_fig)
 
-    # finalize plot, set title, and show or return axes
-    if 'fig' in kwargs.keys():
-        ax.set_title((title + ' - %s' % len_ + ' cells'), horizontalalignment='center', verticalalignment='top', pad=20,
-                     fontsize=10, wrap=True)
-        # ax.title.set_text((title + ' - %s' % len_ + ' cells'), wrap=True)
-        return fig, ax
-    else:
-        ax.set_title((title + ' - %s' % len_ + ' cells'), horizontalalignment='center', verticalalignment='top', pad=20,
-                     fontsize=10, wrap=True)
-    if 'show' in kwargs.keys():
-        if kwargs['show'] is True:
-            fig.show()
-        else:
-            pass
-    else:
-        fig.show()
+    ax.set_title((title + ' - %s' % len_ + ' cells'), horizontalalignment='center', verticalalignment='top', pad=20,
+                 fontsize=10, wrap=True)
 
+    # # finalize plot, set title, and show or return axes
+    # if 'fig' in kwargs.keys():
+    #     ax.set_title((title + ' - %s' % len_ + ' cells'), horizontalalignment='center', verticalalignment='top', pad=20,
+    #                  fontsize=10, wrap=True)
+    #     # ax.title.set_text((title + ' - %s' % len_ + ' cells'), wrap=True)
+    #     return fig, ax
+    # else:
+    #     ax.set_title((title + ' - %s' % len_ + ' cells'), horizontalalignment='center', verticalalignment='top', pad=20,
+    #                  fontsize=10, wrap=True)
+    # if 'show' in kwargs.keys():
+    #     if kwargs['show'] is True:
+    #         fig.show()
+    #     else:
+    #         pass
+    # else:
+    #     fig.show()
 
 ### photostim analysis - PLOT avg over photostim. trials traces for the provided traces
+@print_start_end_plot
+@plot_piping_decorator
 def plot_periphotostim_avg2(dataset, fps=None, legend_labels=None, colors=None, avg_with_std=False,
-                            title='high quality plot', pre_stim_sec=None, ylim=None, **kwargs):
+                            title='high quality plot', pre_stim_sec=None, ylim=None, fig=fig, ax=ax, **kwargs):
 
-    if 'fig' in kwargs.keys():
-        fig = kwargs['fig']
-        ax = kwargs['ax']
-    else:
-        if 'figsize' in kwargs.keys():
-            fig, ax = plt.subplots(figsize=kwargs['figsize'])
-        else:
-            fig, ax = plt.subplots(figsize=[5, 4])
+    # if 'fig' in kwargs.keys():
+    #     fig = kwargs['fig']
+    #     ax = kwargs['ax']
+    # else:
+    #     if 'figsize' in kwargs.keys():
+    #         fig, ax = plt.subplots(figsize=kwargs['figsize'])
+    #     else:
+    #         fig, ax = plt.subplots(figsize=[5, 4])
 
 
 
@@ -558,26 +507,27 @@ def plot_periphotostim_avg2(dataset, fps=None, legend_labels=None, colors=None, 
         ax.set_ylabel(kwargs['ylabel'])
     else:
         pass
-    ax.set_title(title)
 
 
 
     if 'savepath' in kwargs.keys():
         plt.savefig(kwargs['savepath'])
 
-    # finalize plot, set title, and show or return axes
-    if 'show' in kwargs.keys():
-        fig.show() if kwargs['show'] else None
-    else:
-        fig.show()
-
-    if 'fig' in kwargs.keys():
-        return fig, ax
-
+    # # finalize plot, set title, and show or return axes
+    # ax.set_title(title)
+    # if 'show' in kwargs.keys():
+    #     fig.show() if kwargs['show'] else None
+    # else:
+    #     fig.show()
+    #
+    # if 'fig' in kwargs.keys():
+    #     return fig, ax
 
 ### photostim analysis - PLOT avg over all photstim. trials traces from PHOTOSTIM TARGETTED cells
+@print_start_end_plot
+@plot_piping_decorator
 def plot_periphotostim_avg(arr=None, pre_stim_sec=1.0, post_stim_sec=3.0, title='', expobj=None,
-                           avg_only: bool = False, x_label=None, y_label=None, **kwargs):
+                           avg_only: bool = False, x_label=None, y_label=None, fig=fig, ax=ax, **kwargs):
     """
     plot trace across all stims
     :param arr: Flu traces to plot (will be plotted as individual traces unless avg_only is True) dimensions should be cells x stims x frames
@@ -687,7 +637,6 @@ def plot_periphotostim_avg(arr=None, pre_stim_sec=1.0, post_stim_sec=3.0, title=
         fig.tight_layout(pad=0.9)
         fig.show()
 
-
 ### photostim analysis - PLOT avg over photostim. trials traces for the provided traces
 def plot_periphotostim_addition(dataset, normalize: list = None, fps=None, legend_labels: list = None, colors=None, xlabel='Frames',ylabel='ylabel', avg_with_std=False,
                             title='high quality plot', pre_stim_sec=None, ylim=None, **kwargs):
@@ -790,13 +739,11 @@ def plot_periphotostim_addition(dataset, normalize: list = None, fps=None, legen
     else:
         return auc
 
-
 def plot_s2p_raw(expobj, cell_id):
     plt.figure(figsize=(50, 3))
     plt.plot(expobj.baseline_raw[expobj.cell_id.index(cell_id)], linewidth=0.5, c='black')
     plt.xlim(0, len(expobj.baseline_raw[0]))
     plt.show()
-
 
 ### (full) plot individual cell's flu or dFF trace, with photostim. timings for that cell
 def plot_flu_trace(expobj, cell, x_lims=None, slm_group=None, to_plot='raw', figsize=(20, 3), linewidth=0.10, show=True):
@@ -854,19 +801,20 @@ def plot_flu_trace(expobj, cell, x_lims=None, slm_group=None, to_plot='raw', fig
     # plt.ylim(0, 300)
     plt.show() if show else None
 
-
 # make a plot with the paq file LFP signal to visualize these classifications
+@print_start_end_plot
+@plot_piping_decorator
 def plot_lfp_stims(expobj, title='LFP signal with photostim. shown (in different colors relative to seizure timing)', shrink_text = 1,
-                   x_axis: str = 'paq', sz_markings: bool = True, **kwargs):
+                   x_axis: str = 'paq', sz_markings: bool = True, fig=fig, ax=ax, **kwargs):
 
-    if 'fig' in kwargs.keys():
-        fig = kwargs['fig']
-        ax = kwargs['ax']
-    else:
-        if 'figsize' in kwargs.keys():
-            fig, ax = plt.subplots(figsize=kwargs['figsize'])
-        else:
-            fig, ax = plt.subplots(figsize=[20, 3])
+    # if 'fig' in kwargs.keys():
+    #     fig = kwargs['fig']
+    #     ax = kwargs['ax']
+    # else:
+    #     if 'figsize' in kwargs.keys():
+    #         fig, ax = plt.subplots(figsize=kwargs['figsize'])
+    #     else:
+    #         fig, ax = plt.subplots(figsize=[20, 3])
 
     # plot LFP signal
     # ax.plot(expobj.lfp_signal, zorder=0, linewidth=0.5)
@@ -892,7 +840,7 @@ def plot_lfp_stims(expobj, title='LFP signal with photostim. shown (in different
             expobj.stim_start_frames = list(expobj.stim_start_frames)
         x = [(expobj.stim_start_times[expobj.stim_start_frames.index(stim)] - expobj.frame_start_time_actual) for stim in expobj.stims_in_sz]
         x_out = [(expobj.stim_start_times[expobj.stim_start_frames.index(stim)] - expobj.frame_start_time_actual) for stim in expobj.stims_out_sz]
-                 # if stim not in expobj.stims_bf_sz and stim not in expobj.stims_af_sz]
+        # if stim not in expobj.stims_bf_sz and stim not in expobj.stims_af_sz]
         x_bf = [(expobj.stim_start_times[expobj.stim_start_frames.index(stim)] - expobj.frame_start_time_actual) for stim in expobj.stims_bf_sz]
         x_af = [(expobj.stim_start_times[expobj.stim_start_frames.index(stim)] - expobj.frame_start_time_actual) for stim in expobj.stims_af_sz]
 
@@ -934,26 +882,29 @@ def plot_lfp_stims(expobj, title='LFP signal with photostim. shown (in different
 
     ax.set_ylabel('LFP - voltage (mV)')
 
-    if not 'fig' in kwargs.keys():
-        ax.set_title((expobj.metainfo['animal prep.'] + ' ' + expobj.metainfo['trial'] + ' ' + title), wrap=True)
+    ax.set_title((expobj.metainfo['animal prep.'] + ' ' + expobj.metainfo['trial'] + ' ' + title), wrap=True)
 
-    # show or return axes objects
-    if 'show' in kwargs.keys():
-        plt.show() if kwargs['show'] else None
-    else:
-        plt.show()
-
-    if 'fig' in kwargs.keys():
-        ax.text(0.99, 0.95, 'LFP trace with stims %s %s %s' % (expobj.metainfo['exptype'], expobj.metainfo['animal prep.'], expobj.metainfo['trial']),
-                verticalalignment='top', horizontalalignment='right',
-                transform=ax.transAxes, fontweight='bold',
-                color='black', fontsize=10 * shrink_text)
-        return fig, ax, ax2
-
+    # if not 'fig' in kwargs.keys():
+    #     ax.set_title((expobj.metainfo['animal prep.'] + ' ' + expobj.metainfo['trial'] + ' ' + title), wrap=True)
+    #
+    # # show or return axes objects
+    # if 'show' in kwargs.keys():
+    #     plt.show() if kwargs['show'] else None
+    # else:
+    #     plt.show()
+    #
+    # if 'fig' in kwargs.keys():
+    #     ax.text(0.99, 0.95, 'LFP trace with stims %s %s %s' % (expobj.metainfo['exptype'], expobj.metainfo['animal prep.'], expobj.metainfo['trial']),
+    #             verticalalignment='top', horizontalalignment='right',
+    #             transform=ax.transAxes, fontweight='bold',
+    #             color='black', fontsize=10 * shrink_text)
+    return ax2
 
 # plot the whole pre stim to post stim period as a cool heatmap
+@print_start_end_plot
+@plot_piping_decorator
 def plot_traces_heatmap(arr, expobj, vmin=None, vmax=None, stim_on = None, stim_off= None, figsize=None, title=None, xlims=None, x_label='Frames',
-                        cmap='bwr', show=True, cbar: bool = False, **kwargs):
+                        cmap='bwr', show=True, cbar: bool = False, fig=fig, ax=ax, **kwargs):
     """
     plot the whole pre stim to post stim period as a cool heatmap
     :param arr: cells x frames array
@@ -966,14 +917,14 @@ def plot_traces_heatmap(arr, expobj, vmin=None, vmax=None, stim_on = None, stim_
     :param xlims:
     :return:
     """
-    if 'fig' in kwargs.keys():
-        fig = kwargs['fig']
-        ax = kwargs['ax']
-    else:
-        if 'figsize' in kwargs.keys():
-            fig, ax = plt.subplots(figsize=kwargs['figsize'])
-        else:
-            fig, ax = plt.subplots(figsize=[5, 5])
+    # if 'fig' in kwargs.keys():
+    #     fig = kwargs['fig']
+    #     ax = kwargs['ax']
+    # else:
+    #     if 'figsize' in kwargs.keys():
+    #         fig, ax = plt.subplots(figsize=kwargs['figsize'])
+    #     else:
+    #         fig, ax = plt.subplots(figsize=[5, 5])
 
     # ax = ax.imshow(arr, aspect='auto', cmap=cmap)
     # # plt.set_cmap(cmap)
@@ -1019,18 +970,17 @@ def plot_traces_heatmap(arr, expobj, vmin=None, vmax=None, stim_on = None, stim_
     if 'y_label' in kwargs.keys():
         ax.set_ylabel(kwargs['y_label'])
 
-    # finalize plot, set title, and show or return axes
-    if 'fig' in kwargs.keys():
-        ax.title.set_text(title)
-        return fig, ax
-    else:
-        ax.set_title(title, fontsize=10, wrap=True)
-
-    if 'show' in kwargs.keys():
-        plt.show() if kwargs['show'] is True else None
-    else:
-        plt.show()
-
+    # # finalize plot, set title, and show or return axes
+    # if 'fig' in kwargs.keys():
+    #     ax.title.set_text(title)
+    #     return fig, ax
+    # else:
+    #     ax.set_title(title, fontsize=10, wrap=True)
+    #
+    # if 'show' in kwargs.keys():
+    #     plt.show() if kwargs['show'] is True else None
+    # else:
+    #     plt.show()
 
 # plot to show the response magnitude of each cell as the actual's filling in the cell's ROI pixels.
 def xyloc_responses(expobj, df, label='response magnitude', clim=[-10, +10], plot_target_coords=True, title='', save_fig: str = None):
@@ -1085,29 +1035,27 @@ def xyloc_responses(expobj, df, label='response magnitude', clim=[-10, +10], plo
     if save_fig is not None:
         plt.savefig(save_fig)
 
-
-
-
-
 # plots the raw trace for the Flu mean of the FOV (similar to the ZProject in Fiji)
+@print_start_end_plot
+@plot_piping_decorator
 def plotMeanRawFluTrace(expobj, stim_span_color='white', stim_lines: bool = True, title='raw Flu trace', x_axis='time', shrink_text=1,
-                        **kwargs):
+                        fig=fig, ax=ax, **kwargs):
     """make plot of mean Ca trace averaged over the whole FOV"""
 
-    # if there is a fig and ax provided in the function call then use those, otherwise start anew
-    if 'fig' in kwargs.keys():
-        fig = kwargs['fig']
-        ax = kwargs['ax']
-    else:
-        if 'figsize' in kwargs.keys():
-            fig, ax = plt.subplots(figsize=kwargs['figsize'])
-        else:
-            if 'xlims' in kwargs.keys():
-                fig, ax = plt.subplots(figsize=[10 * (kwargs['xlims'][1] - kwargs['xlims'][0]) / 2000, 3])
-                fig.tight_layout(pad=0)
-            else:
-                fig, ax = plt.subplots(figsize=[10 * len(expobj.meanRawFluTrace) / 2000, 3])
-                fig.tight_layout(pad=0)
+    # # if there is a fig and ax provided in the function call then use those, otherwise start anew
+    # if 'fig' in kwargs.keys():
+    #     fig = kwargs['fig']
+    #     ax = kwargs['ax']
+    # else:
+    #     if 'figsize' in kwargs.keys():
+    #         fig, ax = plt.subplots(figsize=kwargs['figsize'])
+    #     else:
+    #         if 'xlims' in kwargs.keys():
+    #             fig, ax = plt.subplots(figsize=[10 * (kwargs['xlims'][1] - kwargs['xlims'][0]) / 2000, 3])
+    #             fig.tight_layout(pad=0)
+    #         else:
+    #             fig, ax = plt.subplots(figsize=[10 * len(expobj.meanRawFluTrace) / 2000, 3])
+    #             fig.tight_layout(pad=0)
 
     # change linewidth
     if 'linewidth' in kwargs:
@@ -1150,40 +1098,43 @@ def plotMeanRawFluTrace(expobj, stim_span_color='white', stim_lines: bool = True
     if 'ylims' in kwargs.keys() and kwargs['ylims'] is not None:
         ax.set_ylim(kwargs['ylims'])
 
-    # add title
-    if not 'fig' in kwargs.keys():
-        ax.set_title(
-            '%s %s %s %s' % (title, expobj.metainfo['exptype'], expobj.metainfo['animal prep.'], expobj.metainfo['trial']))
+    ax.set_title('%s %s %s %s' % (title, expobj.metainfo['exptype'], expobj.metainfo['animal prep.'], expobj.metainfo['trial']))
 
-    if 'show' in kwargs.keys():
-        plt.show() if kwargs['show'] else None
-    else:
-        plt.show()
-
-    if 'fig' in kwargs.keys():
-        # adding text because adding title doesn't seem to want to work when piping subplots
-        ax.text(0.98, 0.97, f"Avg. FOV Flu Trace - {expobj.metainfo['exptype']} {expobj.metainfo['animal prep.']} {expobj.metainfo['trial']}",
-                verticalalignment='top', horizontalalignment='right',
-                transform=ax.transAxes, fontweight='bold',
-                color='black', fontsize=10 * shrink_text)
-        return fig, ax
-
+    # # add title
+    # if not 'fig' in kwargs.keys():
+    #     ax.set_title(
+    #         '%s %s %s %s' % (title, expobj.metainfo['exptype'], expobj.metainfo['animal prep.'], expobj.metainfo['trial']))
+    #
+    # if 'show' in kwargs.keys():
+    #     plt.show() if kwargs['show'] else None
+    # else:
+    #     plt.show()
+    #
+    # if 'fig' in kwargs.keys():
+    #     # adding text because adding title doesn't seem to want to work when piping subplots
+    #     ax.text(0.98, 0.97, f"Avg. FOV Flu Trace - {expobj.metainfo['exptype']} {expobj.metainfo['animal prep.']} {expobj.metainfo['trial']}",
+    #             verticalalignment='top', horizontalalignment='right',
+    #             transform=ax.transAxes, fontweight='bold',
+    #             color='black', fontsize=10 * shrink_text)
+    #     return fig, ax
 
 # plots the raw trace for the Flu mean of the FOV
+@print_start_end_plot
+@plot_piping_decorator
 def plotLfpSignal(expobj, stim_span_color='powderblue', downsample: bool = True, stim_lines: bool = True, sz_markings: bool = False,
-                  title='LFP trace', x_axis='time', hide_xlabel=False, **kwargs):
+                  title='LFP trace', x_axis='time', hide_xlabel=False, fig=fig, ax=ax, **kwargs):
     """make plot of LFP with also showing stim locations
     NOTE: ONLY PLOTTING LFP SIGNAL CROPPED TO 2P IMAGING FRAME START AND END TIMES - SO CUTTING OUT THE LFP SIGNAL BEFORE AND AFTER"""
 
-    # if there is a fig and ax provided in the function call then use those, otherwise start anew
-    if 'fig' in kwargs.keys():
-        fig = kwargs['fig']
-        ax = kwargs['ax']
-    else:
-        if 'figsize' in kwargs.keys():
-            fig, ax = plt.subplots(figsize=kwargs['figsize'])
-        else:
-            fig, ax = plt.subplots(figsize=[60 * (expobj.stim_start_times[-1] + 1e5 - (expobj.stim_start_times[0] - 1e5)) / 1e7, 3])
+    # # if there is a fig and ax provided in the function call then use those, otherwise start anew
+    # if 'fig' in kwargs.keys():
+    #     fig = kwargs['fig']
+    #     ax = kwargs['ax']
+    # else:
+    #     if 'figsize' in kwargs.keys():
+    #         fig, ax = plt.subplots(figsize=kwargs['figsize'])
+    #     else:
+    #         fig, ax = plt.subplots(figsize=[60 * (expobj.stim_start_times[-1] + 1e5 - (expobj.stim_start_times[0] - 1e5)) / 1e7, 3])
 
     if 'alpha' in kwargs:
         alpha = kwargs['alpha']
@@ -1270,22 +1221,26 @@ def plotLfpSignal(expobj, stim_span_color='powderblue', downsample: bool = True,
 
 
     # add title
-    if not 'fig' in kwargs.keys():
-        ax.set_title(
-            '%s - %s %s %s' % (title, expobj.metainfo['exptype'], expobj.metainfo['animal prep.'], expobj.metainfo['trial']))
+    ax.set_title(
+        '%s - %s %s %s' % (title, expobj.metainfo['exptype'], expobj.metainfo['animal prep.'], expobj.metainfo['trial']))
 
-    # options for showing plot or returning plot
-    if 'show' in kwargs.keys():
-        plt.show() if kwargs['show'] else None
-    else:
-        plt.show()
+    # if not 'fig' in kwargs.keys():
+    #     ax.set_title(
+    #         '%s - %s %s %s' % (title, expobj.metainfo['exptype'], expobj.metainfo['animal prep.'], expobj.metainfo['trial']))
+    #
+    # # options for showing plot or returning plot
+    # if 'show' in kwargs.keys():
+    #     plt.show() if kwargs['show'] else None
+    # else:
+    #     plt.show()
 
+    # return fig, ax if 'fig' in kwargs.keys() else None
 
-    return fig, ax if 'fig' in kwargs.keys() else None
-
+@print_start_end_plot
+@plot_piping_decorator
 def plot_flu_1pstim_avg_trace(expobj, title='Average trace of stims', individual_traces=False, x_axis='time', stim_span_color='white',
                               y_axis: str = 'raw', quantify: bool = False, stims_to_analyze: list = None, write_full_text: bool = True,
-                              **kwargs):
+                              fig=fig, ax=ax, **kwargs):
     # fig, ax = plt.subplots()
     # if there is a fig and ax provided in the function call then use those, otherwise start anew
     if 'fig' in kwargs.keys():
@@ -1400,47 +1355,49 @@ def plot_flu_1pstim_avg_trace(expobj, title='Average trace of stims', individual
     else:
         ax.set_ylim([-0.5, 1.0])
 
-    # options for showing plot or returning plot
-    if 'show' in kwargs.keys():
-        if kwargs['show'] is True:
-            plt.show()
-            if quantify:
-                return flu_list, round(response, 4), decay_constant
-        else:
-            if 'fig' in kwargs.keys():
-                if quantify:
-                    return fig, ax, flu_list, round(response, 4), decay_constant
-                else:
-                    return fig, ax
-            else:
-                if quantify:
-                    return flu_list, round(response, 4), decay_constant
-    else:
-        plt.show()
-        if 'fig' in kwargs.keys():
-            if quantify:
-                return fig, ax, flu_list, round(response, 4), decay_constant
-            else:
-                return fig, ax,
-        else:
-            if quantify:
-                return flu_list, round(response, 4), decay_constant
+    if quantify:
+        return flu_list, round(response, 4), decay_constant
 
+    # # options for showing plot or returning plot
+    # if 'show' in kwargs.keys():
+    #     if kwargs['show'] is True:
+    #         plt.show()
+    #         if quantify:
+    #             return flu_list, round(response, 4), decay_constant
+    #     else:
+    #         if 'fig' in kwargs.keys():
+    #             if quantify:
+    #                 return fig, ax, flu_list, round(response, 4), decay_constant
+    #             else:
+    #                 return fig, ax
+    #         else:
+    #             if quantify:
+    #                 return flu_list, round(response, 4), decay_constant
+    # else:
+    #     plt.show()
+    #     if 'fig' in kwargs.keys():
+    #         if quantify:
+    #             return fig, ax, flu_list, round(response, 4), decay_constant
+    #         else:
+    #             return fig, ax,
+    #     else:
+    #         if quantify:
+    #             return flu_list, round(response, 4), decay_constant
 
-
-
+@print_start_end_plot
+@plot_piping_decorator
 def plot_lfp_1pstim_avg_trace(expobj, title='Average LFP peri- stims', individual_traces=False, x_axis='time', pre_stim=1.0, post_stim=5.0,
-                              optoloopback: bool = False, stims_to_analyze: list = None, shrink_text: int = 1, write_full_text: bool = False, **kwargs):
+                              optoloopback: bool = False, stims_to_analyze: list = None, shrink_text: int = 1, write_full_text: bool = False, fig=fig, ax=ax, **kwargs):
     # fig, ax = plt.subplots()
     # if there is a fig and ax provided in the function call then use those, otherwise start anew
-    if 'fig' in kwargs.keys():
-        fig = kwargs['fig']
-        ax = kwargs['ax']
-    else:
-        if 'figsize' in kwargs.keys():
-            fig, ax = plt.subplots(figsize=kwargs['figsize'])
-        else:
-            fig, ax = plt.subplots()
+    # if 'fig' in kwargs.keys():
+    #     fig = kwargs['fig']
+    #     ax = kwargs['ax']
+    # else:
+    #     if 'figsize' in kwargs.keys():
+    #         fig, ax = plt.subplots(figsize=kwargs['figsize'])
+    #     else:
+    #         fig, ax = plt.subplots()
 
     stim_duration = int(np.mean([expobj.stim_end_times[idx] - expobj.stim_start_times[idx] for idx in range(len(expobj.stim_start_times))]) + 0.01*expobj.paq_rate)
     pre_stim = pre_stim  # seconds
@@ -1536,20 +1493,24 @@ def plot_lfp_1pstim_avg_trace(expobj, title='Average LFP peri- stims', individua
         '%s %s %s %s' % (title, expobj.metainfo['exptype'], expobj.metainfo['animal prep.'], expobj.metainfo['trial']),
     fontsize=10*shrink_text)
 
-    # options for showing plot or returning plot
-    if 'show' in kwargs.keys():
-        plt.show() if kwargs['show'] else None
-    else:
-        plt.show()
+    ax.text(0.98, 0.97, '%s %s' % (expobj.metainfo['animal prep.'], expobj.metainfo['trial']),
+            verticalalignment='top', horizontalalignment='right',
+            transform=ax.transAxes, fontweight='bold',
+            color='black', fontsize=10 * shrink_text)
 
-    if 'fig' in kwargs.keys():
-        ax.text(0.98, 0.97, '%s %s' % (expobj.metainfo['animal prep.'], expobj.metainfo['trial']),
-                verticalalignment='top', horizontalalignment='right',
-                transform=ax.transAxes, fontweight='bold',
-                color='black', fontsize=10 * shrink_text)
-        return fig, ax
+    # # options for showing plot or returning plot
+    # if 'show' in kwargs.keys():
+    #     plt.show() if kwargs['show'] else None
+    # else:
+    #     plt.show()
+    #
+    # if 'fig' in kwargs.keys():
+    #     ax.text(0.98, 0.97, '%s %s' % (expobj.metainfo['animal prep.'], expobj.metainfo['trial']),
+    #             verticalalignment='top', horizontalalignment='right',
+    #             transform=ax.transAxes, fontweight='bold',
+    #             color='black', fontsize=10 * shrink_text)
+    #     return fig, ax
 
-    # plt.show()
 
 ### below are plotting functions that I am still working on coding:
 
