@@ -31,7 +31,7 @@ def plot_piping_decorator(func):
         print(f"new kwargs {kwargs}")
 
         print(f'perform action 2')
-        func(fig=fig, ax=ax, **kwargs)   # these are the original kwargs + any additional kwargs defined in inner()
+        plotting_func(fig=fig, ax=ax, **kwargs)   # these are the original kwargs + any additional kwargs defined in inner()
 
         print(f'perform action 3')
         fig.suptitle('this title was decorated')
