@@ -12,7 +12,6 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
 
-from skimage import draw
 
 # # import results superobject that will collect analyses from various individual experiments
 results_object_path = '/home/pshah/mnt/qnap/Analysis/alloptical_results_superobject.pkl'

@@ -2035,7 +2035,7 @@ class alloptical(TwoPhotonImaging):
         :param stims_to_use: ls of stims to retrieve photostim trial dFF responses
         :return:
         """
-        print(f'\n---------- Calculating {process} stim evoked responses (of SLM targets) ---------- [1.]')
+        print(f'\n---------- Calculating {process} stim evoked responses (of SLM targets) [1.] ---------- ')
         if stims_to_use is None:
             stims_to_use = range(len(self.stim_start_frames))
             stims_idx = [self.stim_start_frames.index(stim) for stim in stims_to_use]
@@ -2049,12 +2049,12 @@ class alloptical(TwoPhotonImaging):
             if hasattr(self, 'SLMTargets_stims_dff'):
                 targets_traces = self.SLMTargets_stims_dff
             else:
-                AssertionError('no SLMTargets_stims_dff attr. [2]')
+                AssertionError('no SLMTargets_stims_dff attr. [1.2]')
         elif process == 'trace dFF':
             if hasattr(self, 'SLMTargets_stims_dff'):
                 targets_traces = self.SLMTargets_tracedFF_stims_dff
             else:
-                AssertionError('no SLMTargets_tracedFF_stims_dff attr. [1.2]')
+                AssertionError('no SLMTargets_tracedFF_stims_dff attr. [1.3]')
         else:
             ValueError('need to assign to process: dF/prestimF or trace dFF')
 
@@ -2087,8 +2087,7 @@ class alloptical(TwoPhotonImaging):
             for stim_idx in stims_idx:
                 dff_trace = targets_traces[target_idx][stim_idx]
                 response_result = np.mean(dff_trace[self.pre_stim + self.stim_duration_frames + 1:
-                                                    self.pre_stim + self.stim_duration_frames +
-                                                    self.post_stim_response_frames_window])  # calculate the dF over pre-stim mean F response within the response window
+                                                    self.pre_stim + self.stim_duration_frames + self.post_stim_response_frames_window])  # calculate the dF over pre-stim mean F response within the response window
                 responses.append(round(response_result, 2))
                 if response_result >= threshold:
                     success += 1
@@ -2118,19 +2117,19 @@ class alloptical(TwoPhotonImaging):
 
         """
 
-        print(f'\n---------- Calculating {process} stim success rates, and separating stims into successes and failures (of SLM targets) ---------- [1.]')
+        print(f'\n---------- Calculating {process} stim success rates, and separating stims into successes and failures (of SLM targets) [1.] ----------')
 
         # choose between .SLMTargets_stims_dff and .SLMTargets_stims_tracedFF for data to process
         if process == 'dF/prestimF':
             if hasattr(self, 'SLMTargets_stims_dff'):
                 targets_traces = self.SLMTargets_stims_dff
             else:
-                AssertionError('no SLMTargets_stims_dff attr. [2]')
+                AssertionError('no SLMTargets_stims_dff attr. [1.2]')
         elif process == 'trace dFF':
             if hasattr(self, 'SLMTargets_stims_dff'):
                 targets_traces = self.SLMTargets_tracedFF_stims_dff
             else:
-                AssertionError('no SLMTargets_tracedFF_stims_dff attr. [2]')
+                AssertionError('no SLMTargets_tracedFF_stims_dff attr. [1.3]')
         else:
             ValueError('need to assign to process: dF/prestimF or trace dFF')
 

@@ -7,10 +7,6 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
 
-from scipy import stats, signal
-import statsmodels.api
-import statsmodels as sm
-
 import alloptical_utils_pj as aoutils
 import alloptical_plotting_utils as aoplot
 from funcsforprajay import funcs as pj

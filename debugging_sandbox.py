@@ -35,122 +35,164 @@ save_path_prefix = '/home/pshah/mnt/qnap/Analysis/Results_figs/'
 
 
 ########
-
-prep='RL108'
-trial='t-013'
-expobj, experiment = aoutils.import_expobj(trial=trial, prep=prep, verbose=False)
+#
+# prep='RL108'
+# trial='t-013'
+# expobj, experiment = aoutils.import_expobj(trial=trial, prep=prep, verbose=False)
 
 # aoplot.plot_lfp_stims(expobj, xlims=[0.2e7, 1.0e7], linewidth=1.0)
 
 
+
 # %%
-# plots the raw trace for the Flu mean of the FOV
-def plotLfpSignal(expobj, stim_span_color='powderblue', downsample: bool = True, stim_lines: bool = True, sz_markings: bool = False,
-                  title='LFP trace', x_axis='time', hide_xlabel=False, **kwargs):
-    """make plot of LFP with also showing stim locations
-    NOTE: ONLY PLOTTING LFP SIGNAL CROPPED TO 2P IMAGING FRAME START AND END TIMES - SO CUTTING OUT THE LFP SIGNAL BEFORE AND AFTER"""
 
-    # if there is a fig and ax provided in the function call then use those, otherwise start anew
-    if 'fig' in kwargs.keys():
-        fig = kwargs['fig']
-        ax = kwargs['ax']
-    else:
-        if 'figsize' in kwargs.keys():
-            fig, ax = plt.subplots(figsize=kwargs['figsize'])
+def smart_divide(func):
+    def inner(**kwargs):
+        print("I am going to divide", kwargs['a'], "and", kwargs['b'])
+        kwargs['a'] = 20
+        kwargs['b'] = 5
+
+        if kwargs['b'] == 0:
+            print("Whoops! cannot divide")
+            return
+
+        print(f"new kwargs {kwargs}")
+        return func(**kwargs)
+    return inner
+
+
+@smart_divide
+def divide(**kwargs):
+    print(kwargs['a']/kwargs['b'])
+    print(kwargs['c'])
+divide(a=2, b=5, c=10)
+
+# %% works
+def fig_piping_decorator(func):
+    def inner(*args, **kwargs):
+        print(f'perform action 1')
+        if 'fig' in kwargs.keys() and 'ax' in kwargs.keys():
+            if kwargs['fig'] is not None and kwargs['ax'] is not None:
+                fig = kwargs['fig']
+                ax = kwargs['ax']
         else:
-            fig, ax = plt.subplots(figsize=[60 * (expobj.stim_start_times[-1] + 1e5 - (expobj.stim_start_times[0] - 1e5)) / 1e7, 3])
-
-    if 'alpha' in kwargs:
-        alpha = kwargs['alpha']
-    else:
-        alpha = 1
-
-    # plot LFP signal
-    if 'color' in kwargs:
-        color = kwargs['color']
-    else:
-        color = 'steelblue'
-
-    # option for downsampling of data plot trace
-    x = range(len(expobj.lfp_signal[expobj.frame_start_time_actual: expobj.frame_end_time_actual]))
-    signal = expobj.lfp_signal[expobj.frame_start_time_actual: expobj.frame_end_time_actual]
-    if downsample:
-        labels = list(range(0, int(len(signal) / expobj.paq_rate * 1), 30))[::2]
-        down = 1000
-        signal = signal[::down]
-        x = x[::down]
-        assert len(x) == len(signal), print('something went wrong with the downsampling')
-
-    # change linewidth
-    if 'linewidth' in kwargs:
-        lw = kwargs['linewidth']
-    else:
-        lw = 0.4
-
-    ax.plot(x, signal, c=color, zorder=1, linewidth=lw, alpha=alpha)  ## NOTE: ONLY PLOTTING LFP SIGNAL RELATED TO
-    ax.margins(0)
-
-    # plot stims
-    if stim_span_color != '':
-        for stim in expobj.stim_start_times:
-            stim = (stim - expobj.frame_start_time_actual)
-            ax.axvspan(stim - 8, 1 + stim + expobj.stim_duration_frames / expobj.fps * expobj.paq_rate, color=stim_span_color, zorder=1, alpha=0.5)
-    else:
-        if stim_lines:
-            for line in expobj.stim_start_times:
-                line = (line - expobj.frame_start_time_actual)
-                ax.axvline(x=line+2, color='black', linestyle='--', linewidth=0.6, zorder=0)
-
-    # plot seizure onset and offset markings
-    if sz_markings:
-        if hasattr(expobj, 'seizure_lfp_onsets'):
-            for sz_onset in expobj.seizure_lfp_onsets:
-                ax.axvline(x=expobj.frame_clock_actual[sz_onset] - expobj.frame_start_time_actual, color='black', linestyle='--', linewidth=1.0, zorder=0)
-            for sz_offset in expobj.seizure_lfp_offsets:
-                ax.axvline(x=expobj.frame_clock_actual[sz_offset] - expobj.frame_start_time_actual, color='black', linestyle='--', linewidth=1.0, zorder=0)
-
-    # change x axis ticks to seconds
-    if 'time' in x_axis or 'Time' in x_axis:
-        # set x ticks at every 30 seconds
-        # labels = ls(range(0, int(len(signal) / expobj.paq_rate * down), 30))[::2]
-        # print('x_axis labels: ', labels)
-        ax.set_xticks(ticks=[(label * expobj.paq_rate) for label in labels])
-        ax.set_xticklabels(labels)
-        ax.tick_params(axis='both', which='both', length=3)
-        if not hide_xlabel:
-            ax.set_xlabel('Time (secs)')
-
-        # label_format = '{:,.2f}'
-        # labels = [item for item in ax.get_xticks()]
-        # for item in labels:
-        #     labels[labels.index(item)] = int(round(item / expobj.paq_rate, 2))
-        # ticks_loc = ax.get_xticks().tolist()
-        # ax.xaxis.set_major_locator(mticker.FixedLocator(ticks_loc))
-        # ax.set_xticklabels([label_format.format(x) for x in labels])
-        # ax.set_xlabel('Time (secs)')
-    else:
-        ax.set_xlabel('paq clock')
-    ax.set_ylabel('Voltage')
-    # ax.set_xlim([expobj.frame_start_time_actual, expobj.frame_end_time_actual])  ## this should be limited to the 2p acquisition duration only
-
-    # set ylimits:
-    if 'ylims' in kwargs:
-        ax.set_ylim(kwargs['ylims'])
-    else:
-        ax.set_ylim([np.mean(expobj.lfp_signal) - 10, np.mean(expobj.lfp_signal) + 10])
-
-    # add title
-    if not 'fig' in kwargs.keys():
-        ax.set_title(
-            '%s - %s %s %s' % (title, expobj.metainfo['exptype'], expobj.metainfo['animal prep.'], expobj.metainfo['trial']))
-
-    # options for showing plot or returning plot
-    if 'show' in kwargs.keys():
-        plt.show() if kwargs['show'] else None
-    else:
-        plt.show()
+            print('hello')
+            if 'figsize' in kwargs.keys():
+                kwargs['fig'], kwargs['ax'] = plt.subplots(figsize=kwargs['figsize'])
+            else:
+                kwargs['fig'], kwargs['ax'] = plt.subplots()
 
 
-    return fig, ax if 'fig' in kwargs.keys() else None
+        print(f"new kwargs {kwargs}")
 
-plotLfpSignal(expobj, downsample=True, figsize=(10,3), x_axis='paq clock')
+        print(f'perform action 2')
+        func(**kwargs)
+
+        print(f'perform action 3')
+        kwargs['fig'].suptitle('this title was decorated')
+        if 'show' in kwargs.keys():
+            if kwargs['show'] is True:
+                fig.show()
+            else:
+                return fig, ax
+        else:
+            kwargs['fig'].show()
+
+        return kwargs['fig'], kwargs['ax'] if 'fig' in kwargs.keys() else None
+
+    return inner
+
+@fig_piping_decorator
+def make_plot(title='', **kwargs):
+    kwargs['ax'].plot(np.arange(10))
+    kwargs['ax'].set_title(title)
+
+make_plot(title='A plot')
+
+
+# %% works
+def fig_piping_decorator(func):
+    def inner(*args, **kwargs):
+        print(f'perform action 1')
+        print(f'original kwargs {kwargs}')
+        if 'fig' in kwargs.keys() and 'ax' in kwargs.keys():
+            if kwargs['fig'] is not None and kwargs['ax'] is not None:
+                fig = kwargs['fig']
+                ax = kwargs['ax']
+        else:
+            print('making fig, ax')
+            if 'figsize' in kwargs.keys():
+                kwargs['fig'], kwargs['ax'] = plt.subplots(figsize=kwargs['figsize'])
+            else:
+                kwargs['fig'], kwargs['ax'] = plt.subplots()
+
+
+        print(f"new kwargs {kwargs}")
+
+        print(f'perform action 2')
+        func(**kwargs)
+
+        print(f'perform action 3')
+        kwargs['fig'].suptitle('this title was decorated')
+        if 'show' in kwargs.keys():
+            if kwargs['show'] is True:
+                kwargs['fig'].show()
+            else:
+                return kwargs['fig'], kwargs['ax']
+        else:
+            kwargs['fig'].show()
+
+        return kwargs['fig'], kwargs['ax'] if 'fig' in kwargs.keys() else None
+
+    return inner
+
+@fig_piping_decorator
+def make_plot(title='', fig=None, ax=None, **kwargs):
+    ax.plot(np.random.rand(10))
+    ax.set_title(title)
+
+fig, ax = make_plot(title='A plot', show=False)
+
+
+# %% works
+def fig_piping_decorator(func):
+    def inner(*args, **kwargs):
+        print(f'perform action 1')
+        print(f'original kwargs {kwargs}')
+        if 'fig' in kwargs.keys() and 'ax' in kwargs.keys():
+            if kwargs['fig'] is not None and kwargs['ax'] is not None:
+                fig = kwargs['fig']
+                ax = kwargs['ax']
+        else:
+            if 'figsize' in kwargs.keys():
+                fig, ax = plt.subplots(figsize=kwargs['figsize'])
+            else:
+                print('making fig, ax')
+                fig, ax = plt.subplots()
+
+
+        print(f"new kwargs {kwargs}")
+
+        print(f'perform action 2')
+        func(fig=fig, ax=ax, **kwargs)   # these are the original kwargs + any additional kwargs defined in inner()
+
+        print(f'perform action 3')
+        fig.suptitle('this title was decorated')
+        if 'show' in kwargs.keys():
+            if kwargs['show'] is True:
+                fig.show()
+            else:
+                return fig, ax
+        else:
+            fig.show()
+
+        return fig, ax if 'fig' in kwargs.keys() else None
+
+    return inner
+
+@fig_piping_decorator
+def make_plot(fig, ax, title='', **kwargs):
+    ax.plot(np.random.rand(10))
+    ax.set_title(title)
+
+fig, ax = make_plot(title='A plot', show=True)  # these are the original kwargs

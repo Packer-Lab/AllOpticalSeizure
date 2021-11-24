@@ -5,7 +5,6 @@ sys.path.append('/home/pshah/Documents/code/')
 import alloptical_utils_pj as aoutils
 import alloptical_plotting_utils as aoplot
 from funcsforprajay import funcs as pj
-# import funcsforprajay.funcs as pj
 
 import numpy as np
 import pandas as pd

@@ -1,10 +1,6 @@
 ### code for analysis of one photon photostim experiments
 
-import matplotlib.pyplot as plt
-import numpy as np
-import os
 import alloptical_utils_pj as aoutils
-import alloptical_plotting_utils as aoplot
 
 animal_prep = 'PS07'
 data_path_base = '/home/pshah/mnt/qnap/Data/2021-01-19/'

@@ -9,16 +9,10 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
 
-from scipy import stats, signal
-import statsmodels.api
-import statsmodels as sm
-
 import alloptical_utils_pj as aoutils
 import alloptical_plotting_utils as aoplot
-# import utils.funcs_pj as pj
 from funcsforprajay import funcs as pj
 
-from skimage import draw
 
 # # import results superobject that will collect analyses from various individual experiments
 results_object_path = '/home/pshah/mnt/qnap/Analysis/alloptical_results_superobject.pkl'

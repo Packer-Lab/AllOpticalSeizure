@@ -1,7 +1,8 @@
+import alloptical_utils_pj as aoutils
+
+
 # Step #1) in all optical experiment analysis - preprocessing the data to prep for suite2p analysis and creating some starter experiment objects
 
-# sys.path.append('/home/pshah/Documents/code/PackerLab_pycharm/')
-import alloptical_utils_pj as aoutils
 
 # 1) ### prepare trial and photostim experiment information below before running run_photostim_processing()
 data_path_base = '/home/pshah/mnt/qnap/Data/2020-12-19'

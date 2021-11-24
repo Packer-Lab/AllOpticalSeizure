@@ -12,6 +12,42 @@ import alloptical_utils_pj as aoutils
 import tifffile as tf
 
 
+def plot_piping_decorator(func):
+    def inner(*args, **kwargs):
+        print(f'perform action 1')
+        print(f'original kwargs {kwargs}')
+        if 'fig' in kwargs.keys() and 'ax' in kwargs.keys():
+            if kwargs['fig'] is not None and kwargs['ax'] is not None:
+                fig = kwargs['fig']
+                ax = kwargs['ax']
+        else:
+            if 'figsize' in kwargs.keys():
+                fig, ax = plt.subplots(figsize=kwargs['figsize'])
+            else:
+                print('making fig, ax')
+                fig, ax = plt.subplots()
+
+
+        print(f"new kwargs {kwargs}")
+
+        print(f'perform action 2')
+        func(fig=fig, ax=ax, **kwargs)   # these are the original kwargs + any additional kwargs defined in inner()
+
+        print(f'perform action 3')
+        fig.suptitle('this title was decorated')
+        if 'show' in kwargs.keys():
+            if kwargs['show'] is True:
+                fig.show()
+            else:
+                return fig, ax
+        else:
+            fig.show()
+
+        return fig, ax if 'fig' in kwargs.keys() else None
+
+    return inner
+
+
 ### plot the location of all SLM targets, along with option for plotting the mean img of the current trial
 def plot_SLMtargets_Locs(expobj, targets_coords: list = None, background: np.ndarray = None, **kwargs):
     """

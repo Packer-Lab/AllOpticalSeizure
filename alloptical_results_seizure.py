@@ -3,9 +3,6 @@ import os
 import sys
 import numpy as np
 import pandas as pd
-from scipy import stats, signal
-import statsmodels.api
-import statsmodels as sm
 import seaborn as sns
 import matplotlib.pyplot as plt
 import alloptical_utils_pj as aoutils
