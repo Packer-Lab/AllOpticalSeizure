@@ -155,7 +155,7 @@ fig, ax = make_plot(title='A plot', show=False)
 
 
 # %% works
-def fig_piping_decorator(func):
+def plot_piping_decorator(plotting_func):
     def inner(**kwargs):
         print(f'perform action 1')
         print(f'original kwargs {kwargs}')
@@ -177,7 +177,7 @@ def fig_piping_decorator(func):
         print(f"new kwargs {kwargs}")
 
         print(f'perform action 2')
-        func(**kwargs)   # these are the original kwargs + any additional kwargs defined in inner()
+        plotting_func(**kwargs)   # these kwargs are the original kwargs defined at the respective plotting_func call + any additional kwargs defined in inner()
 
         print(f'perform action 3')
         kwargs['fig'].suptitle('this title was decorated')
@@ -197,12 +197,13 @@ def fig_piping_decorator(func):
     return inner
 
 @fig_piping_decorator
-def make_plot(title='', **kwargs):
+def example_decorated_plot(title='', **kwargs):
     fig, ax = kwargs['fig'], kwargs['ax']
-    print(f'kwargs inside make_plot definition: {kwargs}')
+    print(f'kwargs inside example_decorated_plot definition: {kwargs}')
     ax.plot(np.random.rand(10))
     ax.set_title(title)
 
 
-fig, ax = plt.subplots(figsize=(3,3)); fig, ax = make_plot(fig=fig, ax=ax, title='A plot', show=False)  # these are the original kwargs
-# make_plot(title='A plot', show=True)  # these are the original kwargs
+fig, ax = plt.subplots(figsize=(3,3))
+fig, ax = example_decorated_plot(fig=fig, ax=ax, title='A plot', show=True)  # these are the original kwargs
+# example_decorated_plot(title='A plot', show=True)  # these are the original kwargs

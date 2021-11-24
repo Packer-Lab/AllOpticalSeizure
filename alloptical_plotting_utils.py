@@ -12,46 +12,58 @@ import alloptical_utils_pj as aoutils
 import tifffile as tf
 
 
+## works
 def plot_piping_decorator(plotting_func):
-    def inner(*args, **kwargs):
+    def inner(**kwargs):
         print(f'perform action 1')
         print(f'original kwargs {kwargs}')
+        return_fig_obj = False
         if 'fig' in kwargs.keys() and 'ax' in kwargs.keys():
-            if kwargs['fig'] is not None and kwargs['ax'] is not None:
-                fig = kwargs['fig']
-                ax = kwargs['ax']
+            if kwargs['fig'] is None or kwargs['ax'] is None:
+                print('making fig, ax [1]')
+                kwargs['fig'], kwargs['ax'] = plt.subplots()
+            else:
+                return_fig_obj = True
         else:
             if 'figsize' in kwargs.keys():
-                fig, ax = plt.subplots(figsize=kwargs['figsize'])
+                kwargs['fig'], kwargs['ax'] = plt.subplots(figsize=kwargs['figsize'])
             else:
-                print('making fig, ax')
-                fig, ax = plt.subplots()
+                print('making fig, ax [2]')
+                kwargs['fig'], kwargs['ax'] = plt.subplots()
+
 
         print(f"new kwargs {kwargs}")
 
         print(f'perform action 2')
-        plotting_func(fig=fig, ax=ax, **kwargs)   # these kwargs are the original kwargs defined at the respective plotting_func call + any additional kwargs defined in inner()
+        plotting_func(**kwargs)   # these kwargs are the original kwargs defined at the respective plotting_func call + any additional kwargs defined in inner()
 
         print(f'perform action 3')
-        fig.suptitle('this title was decorated')
+        kwargs['fig'].suptitle('this title was decorated')
         if 'show' in kwargs.keys():
             if kwargs['show'] is True:
-                fig.show()
+                print(f'showing fig...[3]')
+                kwargs['fig'].show()
             else:
-                return fig, ax
+                print(f"value of return_fig_obj is {return_fig_obj} [4]")
+                return (kwargs['fig'], kwargs['ax']) if return_fig_obj else None
         else:
-            fig.show()
+            kwargs['fig'].show()
 
-        return fig, ax if 'fig' in kwargs.keys() else None
+        print(f"value of return_fig_obj is {return_fig_obj} [5]")
+        return (kwargs['fig'], kwargs['ax']) if return_fig_obj else None
 
     return inner
 
-@plot_piping_decorator
-def example_decorated_plot(fig, ax, title='', **kwargs):
-    print(f'kwargs inside make_plot definition: {kwargs}')
+@fig_piping_decorator
+def example_decorated_plot(title='', **kwargs):
+    fig, ax = kwargs['fig'], kwargs['ax']
+    print(f'kwargs inside example_decorated_plot definition: {kwargs}')
     ax.plot(np.random.rand(10))
     ax.set_title(title)
-# fig, ax = example_decorated_plot(title='A plot', show=True)  # these are the original kwargs
+
+# fig, ax = plt.subplots(figsize=(3,3))
+# fig, ax = example_decorated_plot(fig=fig, ax=ax, title='A plot', show=True)  # these are the original kwargs
+# example_decorated_plot(title='A plot', show=True)  # these are the original kwargs
 
 
 ### plot the location of all SLM targets, along with option for plotting the mean img of the current trial
