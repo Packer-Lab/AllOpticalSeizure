@@ -149,7 +149,7 @@ allopticalResults.save()
 
 
 
-# %% 5.0-main)  RUN DATA ANALYSIS OF NON TARGETS:
+# %% 2.0-main) RUN DATA ANALYSIS OF NON TARGETS:
 # #  - Analysis of responses of non-targets from suite2p ROIs in response to photostim trials - broken down by pre-4ap, outsz and insz (excl. sz boundary)
 
 
@@ -164,7 +164,7 @@ allopticalResults.save()
 #     aoutils.get_nontargets_stim_traces_norm(expobj=expobj, normalize_to='pre-stim', pre_stim_sec=expobj.pre_stim_sec,
 #                                             post_stim_sec=expobj.post_stim_sec)
 
-# 5.0.1) re-calculating and plotting of excluded s2p ROIs and SLM target coordinates
+# 2.0.1) re-calculating and plotting of excluded s2p ROIs and SLM target coordinates
 
 for (i, key, j) in code_run_list_all:
     if (i, key, j) in short_list_pre or (i, key, j) in short_list_post:
@@ -182,7 +182,7 @@ for (i, key, j) in code_run_list_all:
 
 
 
-# %% 5.1) for loop to go through each expobj to analyze nontargets - pre4ap trials
+# %% 2.1) for loop to go through each expobj to analyze nontargets - pre4ap trials
 
 # ls = ['PS05 t-010', 'PS06 t-011', 'PS11 t-010', 'PS17 t-005', 'PS17 t-006', 'PS17 t-007', 'PS18 t-006']
 ls = pj.flattenOnce(allopticalResults.pre_4ap_trials)
@@ -194,7 +194,7 @@ for (i, key, j) in code_run_list_pre:
 
 
 # test: adding correct stim filters when analysing data to exclude stims/cells in seizure boundaries - this should be done, but not thouroughly tested necessarily yet //
-# 5.1) for loop to go through each expobj to analyze nontargets - post4ap trials
+# 2.1) for loop to go through each expobj to analyze nontargets - post4ap trials
 # ls = ['RL108 t-013', 'RL109 t-021', 'RL109 t-016']
 missing_slmtargets_sz_stim = []
 ls = pj.flattenOnce(allopticalResults.post_4ap_trials)
@@ -208,7 +208,7 @@ for (i, key, j) in code_run_list_all:
         missing_slmtargets_sz_stim.append(f"{expobj.metainfo['animal prep.']} {expobj.metainfo['trial']}")
 
 
-# %% 5.2) collect average stats for each prep, and summarize into the appropriate data point
+# %% 2.2) collect average stats for each prep, and summarize into the appropriate data point
 num_sig_responders = pd.DataFrame(columns=['pre4ap_pos', 'pre4ap_neg', 'post4ap_pos', 'post4ap_neg', '# of suite2p ROIs'])
 possig_responders_traces = []
 negsig_responders_traces = []
