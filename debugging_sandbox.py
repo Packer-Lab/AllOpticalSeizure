@@ -156,7 +156,7 @@ fig, ax = make_plot(title='A plot', show=False)
 
 # %% works
 def fig_piping_decorator(func):
-    def inner(*args, **kwargs):
+    def inner(**kwargs):
         print(f'perform action 1')
         print(f'original kwargs {kwargs}')
         if 'fig' in kwargs.keys() and 'ax' in kwargs.keys():
@@ -192,6 +192,7 @@ def fig_piping_decorator(func):
 
 @fig_piping_decorator
 def make_plot(fig, ax, title='', **kwargs):
+    print(f'kwargs inside make_plot definition: {kwargs}')
     ax.plot(np.random.rand(10))
     ax.set_title(title)
 

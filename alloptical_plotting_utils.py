@@ -31,7 +31,7 @@ def plot_piping_decorator(func):
         print(f"new kwargs {kwargs}")
 
         print(f'perform action 2')
-        plotting_func(fig=fig, ax=ax, **kwargs)   # these are the original kwargs + any additional kwargs defined in inner()
+        plotting_func(fig=fig, ax=ax, **kwargs)   # these kwargs are the original kwargs defined at the respective plotting_func call + any additional kwargs defined in inner()
 
         print(f'perform action 3')
         fig.suptitle('this title was decorated')
@@ -46,6 +46,13 @@ def plot_piping_decorator(func):
         return fig, ax if 'fig' in kwargs.keys() else None
 
     return inner
+
+@fig_piping_decorator
+def example_decorated_plot(fig, ax, title='', **kwargs):
+    print(f'kwargs inside make_plot definition: {kwargs}')
+    ax.plot(np.random.rand(10))
+    ax.set_title(title)
+fig, ax = example_decorated_plot(title='A plot', show=True)  # these are the original kwargs
 
 
 ### plot the location of all SLM targets, along with option for plotting the mean img of the current trial
