@@ -22,6 +22,7 @@ allopticalResults = aoutils.import_resultsobj(pkl_path=results_object_path)
 save_path_prefix = '/home/pshah/mnt/qnap/Analysis/Results_figs/SLMtargets_responses_2021-11-24'
 os.makedirs(save_path_prefix) if not os.path.exists(save_path_prefix) else None
 
+expobj, experiment = aoutils.import_expobj(prep='RL109', trial='t-013')
 
 # expobj, experiment = aoutils.import_expobj(aoresults_map_id='pre e.1')  # PLACEHOLDER IMPORT OF EXPOBJ TO MAKE THE CODE WORK
 
@@ -62,66 +63,40 @@ pre4ap_trial = i[j][-5:]
 # POST4AP TRIAL
 i = allopticalResults.post_4ap_trials[0]
 j = 0
-prep = i[j][:-6]
-trial = i[j][-5:]
+post4ap_prep = i[j][:-6]
+post4ap_trial = i[j][-5:]
 
-trials_run = [f"{pre4ap_prep} {pre4ap_trial}"]
+trials_run = [f"{pre4ap_prep} {pre4ap_trial}", f"{post4ap_prep} {post4ap_trial}"]
 
 @aoutils.run_for_loop_across_exps(trials_run=trials_run)
-def plot_peristim_avg_traces_alltargets(**kwargs):
-    # # PRE4AP TRIAL
-    # i = allopticalResults.pre_4ap_trials[0]
-    # j = 0
-    # prep = i[j][:-6]
-    # trial = i[j][-5:]
-    # print('\nprogress @ ', prep, trial, ' [1.1.0]')
-    # expobj, experiment = aoutils.import_expobj(trial=trial, prep=prep, verbose=False)
-    #
-    # to_plot = 'dFF'
+def plot_peristim_avg_traces_alltargets(to_plot='delta dF', **kwargs):
 
     expobj = kwargs['expobj'] if 'expobj' in kwargs.keys() else KeyError('need to provide expobj as keyword argument')
-    to_plot = 'dFF'
     if to_plot == 'dFstdF':
         arr = np.asarray([i for i in expobj.SLMTargets_tracedFF_stims_dfstdF_avg])
         # arr = np.asarray([i for i in expobj.SLMTargets_stims_dfstdF_avg])
         y_label = 'dFstdF (normalized to prestim period)'
         y_lims = [-0.25, 1.75]
-    elif to_plot == 'dFF':
+    elif to_plot == 'delta dF':
         # arr = np.asarray([i for i in expobj.SLMTargets_stims_dffAvg])
         arr = np.asarray([i for i in expobj.SLMTargets_tracedFF_stims_dffAvg])
-        y_label = 'dFF (normalized to prestim period)'
+        y_label = 'delta dF (relative to prestim)'
         y_lims = [-15, 75]
+    else:
+        raise TypeError('unrecognized call to to_plot! (valid options are `dFstdF` or `delta dF`) ')
 
-    aoplot.plot_periphotostim_avg(arr=arr, expobj=expobj, pre_stim_sec=expobj.pre_stim / expobj.fps, post_stim_sec=expobj.post_stim / expobj.fps,
-                                  title=(f'{expobj.metainfo["animal prep."]} {expobj.metainfo["trial"]} - trace dFF - photostim targets'), figsize=[8, 6], y_label=y_label,
-                                  x_label='Time', y_lims=y_lims)
+    # aoplot.plot_periphotostim_avg(arr=arr, expobj=expobj, pre_stim_sec=expobj.pre_stim / expobj.fps, post_stim_sec=expobj.post_stim / expobj.fps,
+    #                               title=(f'{expobj.metainfo["animal prep."]} {expobj.metainfo["trial"]} - trace dFF - photostim targets'), figsize=[8, 6], y_label=y_label,
+    #                               x_label='Time', y_lims=y_lims)
 
-plot_peristim_avg_traces_alltargets()
+    x_range = [np.linspace(0, arr.shape[1] / expobj.fps, arr.shape[1])] * arr.shape[0]
+    pj.make_general_plot(data_arr=arr, x_range=x_range, v_span=(expobj.pre_stim / expobj.fps, (expobj.pre_stim + expobj.stim_duration_frames)/expobj.fps),
+                         y_label=y_label, x_label='Time (secs)', title=(f'{expobj.metainfo["animal prep."]} {expobj.metainfo["trial"]} - trace dFF - photostim targets'),
+                         fontsize=12, figsize=(4,4))
 
 
-# %%  POST4AP TRIAL
-i = allopticalResults.post_4ap_trials[0]
-j = 0
-prep = i[j][:-6]
-trial = i[j][-5:]
-print('\nprogress @ ', prep, trial, ' [1.1.0]')
-expobj, experiment = aoutils.import_expobj(trial=trial, prep=prep, verbose=False)
+plot_peristim_avg_traces_alltargets(to_plot='delta dF')
 
-to_plot = 'dFF'
-
-if to_plot == 'dFstdF':
-    arr = np.asarray([i for i in expobj.SLMTargets_tracedFF_stims_dfstdF_avg])
-    # arr = np.asarray([i for i in expobj.SLMTargets_stims_dfstdF_avg])
-    y_label = 'dFstdF (normalized to prestim period)'
-    y_lims = [-0.25, 1.75]
-elif to_plot == 'dFF':
-    # arr = np.asarray([i for i in expobj.SLMTargets_stims_dffAvg])
-    arr = np.asarray([i for i in expobj.SLMTargets_tracedFF_stims_dffAvg])
-    y_label = 'dFF (normalized to prestim period)'
-    y_lims = [-15, 75]
-aoplot.plot_periphotostim_avg(arr=arr, expobj=expobj, pre_stim_sec=expobj.pre_stim / expobj.fps, post_stim_sec=expobj.post_stim / expobj.fps,
-                              title=(f'{prep} {trial} - trace dFF - photostim targets'), figsize=[4, 4], y_label=y_label,
-                              x_label='Time', y_lims=y_lims)
 
 
 # %% 1) plot peri-photostim avg traces for all trials analyzed to make sure they look alright -- plot as little postage stamps
@@ -132,6 +107,8 @@ aoplot.plot_periphotostim_avg(arr=arr, expobj=expobj, pre_stim_sec=expobj.pre_st
 # add text in plot for avg dF_stdF value of successes, and % of successes
 
 """
+
+####### decorated ######################################################################################################
 
 # make one figure for each prep/trial (one little plot for each cell in that prep)
 for exp in allopticalResults.pre_4ap_trials:
@@ -145,172 +122,169 @@ for exp in allopticalResults.pre_4ap_trials:
                 date, j[:-6], date, j[-5:], date, j[-5:])  # specify path in Analysis folder to save pkl object
 
             expobj, _ = aoutils.import_expobj(pkl_path=pkl_path)
-            if calc_dff_stims:
-                pass
-                # print('\n Calculating stim success rates and response magnitudes [4.1] ***********')
-                # expobj.StimSuccessRate_SLMtargets, expobj.hits_SLMtargets, expobj.responses_SLMtargets = \
-                #     aoutils.calculate_SLMTarget_responses_dff(expobj, threshold=10,
-                #                                               stims_to_use=expobj.stim_start_frames)
-                # expobj.save()
 
-            # raw_traces_stims = expobj.SLMTargets_stims_raw
+####### decorated ######################################################################################################
 
-            # expobj.post_stim_response_window_msec = 500
-            # expobj.post_stim_response_frames_window = int(expobj.fps * expobj.post_stim_response_window_msec / 1000)
+def plot_postage_stamps_photostim_traces(**kwargs):
+    expobj = kwargs['expobj'] if 'expobj' in kwargs.keys() else KeyError('need to provide expobj as keyword argument')
 
-            nrows = expobj.n_targets_total // 4
-            if expobj.n_targets_total % 4 > 0:
-                nrows += 1
-            ncols = 4
-            fig, axs = plt.subplots(nrows=nrows, ncols=ncols, figsize=(ncols * 3, nrows * 3),
-                                    constrained_layout=True)
-            counter = 0
-            axs[0, 0].set_xlabel('Frames')
-            axs[0, 0].set_ylabel('% dFF')
+    nrows = expobj.n_targets_total // 4
+    if expobj.n_targets_total % 4 > 0:
+        nrows += 1
+    ncols = 4
+    fig, axs = plt.subplots(nrows=nrows, ncols=ncols, figsize=(ncols * 3, nrows * 3),
+                            constrained_layout=True)
+    counter = 0
+    axs[0, 0].set_xlabel('Frames')
+    axs[0, 0].set_ylabel('% dFF')
 
-            responses_magnitudes_successes = {}
-            response_traces_successes = {}
-            responses_magnitudes_failures = {}
-            response_traces_failures = {}
+    responses_magnitudes_successes = {}
+    response_traces_successes = {}
+    responses_magnitudes_failures = {}
+    response_traces_failures = {}
 
-            for cell in range(expobj.SLMTargets_stims_dff.shape[0]):
-                a = counter // 4
-                b = counter % 4
-                print('\n%s' % counter)
-                if cell not in responses_magnitudes_successes.keys():
-                    responses_magnitudes_successes[cell] = []
-                    response_traces_successes[cell] = np.zeros((expobj.SLMTargets_stims_dff.shape[-1]))
-                    responses_magnitudes_failures[cell] = []
-                    response_traces_failures[cell] = np.zeros((expobj.SLMTargets_stims_dff.shape[-1]))
+    for cell in range(expobj.SLMTargets_stims_dff.shape[0]):
+        a = counter // 4
+        b = counter % 4
+        print('\n%s' % counter)
+        if cell not in responses_magnitudes_successes.keys():
+            responses_magnitudes_successes[cell] = []
+            response_traces_successes[cell] = np.zeros((expobj.SLMTargets_stims_dff.shape[-1]))
+            responses_magnitudes_failures[cell] = []
+            response_traces_failures[cell] = np.zeros((expobj.SLMTargets_stims_dff.shape[-1]))
 
-                # reliability = expobj.StimSuccessRate_SLMtargets[cell]
-                # f, axs = plt.subplots(figsize=(5, 12), nrows=3)
-                # fig, ax = plt.subplots(figsize=(3, 3))
+        # reliability = expobj.StimSuccessRate_SLMtargets[cell]
+        # f, axs = plt.subplots(figsize=(5, 12), nrows=3)
+        # fig, ax = plt.subplots(figsize=(3, 3))
 
-                success_stims = np.where(expobj.responses_SLMtargets.loc[cell] >= 0.1 * 100)
-                fail_stims = np.where(expobj.responses_SLMtargets.loc[cell] < 0.1 * 100)
-                for i in success_stims[0]:
-                    trace = expobj.SLMTargets_stims_dff[cell][i]
-                    axs[a, b].plot(trace, color='skyblue', zorder=2, alpha=0.05)
+        success_stims = np.where(expobj.responses_SLMtargets.loc[cell] >= 0.1 * 100)
+        fail_stims = np.where(expobj.responses_SLMtargets.loc[cell] < 0.1 * 100)
+        for i in success_stims[0]:
+            trace = expobj.SLMTargets_stims_dff[cell][i]
+            axs[a, b].plot(trace, color='skyblue', zorder=2, alpha=0.05)
 
-                for i in fail_stims[0]:
-                    trace = expobj.SLMTargets_stims_dff[cell][i]
-                    axs[a, b].plot(trace, color='gray', zorder=3, alpha=0.05)
+        for i in fail_stims[0]:
+            trace = expobj.SLMTargets_stims_dff[cell][i]
+            axs[a, b].plot(trace, color='gray', zorder=3, alpha=0.05)
 
-                success_avg = np.nanmean(expobj.SLMTargets_stims_dff[cell][success_stims], axis=0)
-                failures_avg = np.nanmean(expobj.SLMTargets_stims_dff[cell][fail_stims], axis=0)
-                axs[a, b].plot(success_avg, color='navy', linewidth=2, zorder=4)
-                axs[a, b].plot(failures_avg, color='black', linewidth=2, zorder=4)
-                axs[a, b].set_ylim([-0.1 * 100, 0.6 * 100])
-                axs[a, b].text(0.98, 0.97,
-                               'Success rate: %s' % ('{:,.1f}'.format(expobj.StimSuccessRate_SLMtargets[cell])),
-                               verticalalignment='top', horizontalalignment='right',
-                               transform=axs[a, b].transAxes, fontweight='bold',
-                               color='black')
-                axs[a, b].margins(0)
-                axs[a, b].axvspan(expobj.pre_stim, expobj.pre_stim + expobj.stim_duration_frames, color='mistyrose',
-                                  zorder=0)
+        success_avg = np.nanmean(expobj.SLMTargets_stims_dff[cell][success_stims], axis=0)
+        failures_avg = np.nanmean(expobj.SLMTargets_stims_dff[cell][fail_stims], axis=0)
+        axs[a, b].plot(success_avg, color='navy', linewidth=2, zorder=4)
+        axs[a, b].plot(failures_avg, color='black', linewidth=2, zorder=4)
+        axs[a, b].set_ylim([-0.1 * 100, 0.6 * 100])
+        axs[a, b].text(0.98, 0.97,
+                       'Success rate: %s' % ('{:,.1f}'.format(expobj.StimSuccessRate_SLMtargets[cell])),
+                       verticalalignment='top', horizontalalignment='right',
+                       transform=axs[a, b].transAxes, fontweight='bold',
+                       color='black')
+        axs[a, b].margins(0)
+        axs[a, b].axvspan(expobj.pre_stim, expobj.pre_stim + expobj.stim_duration_frames, color='mistyrose',
+                          zorder=0)
 
-                counter += 1
-            fig.suptitle((str(exp) + ' %s - %s targets' % ('- values: pct. dff', len(expobj.SLMTargets_stims_dff))))
-            fig.savefig('/home/pshah/mnt/qnap/Analysis/%s/%s/results/%s_%s_individual targets dFF.png' % (
-            date, j[:-6], date, j))
-            fig.show()
+        counter += 1
+    fig.suptitle((str(exp) + ' %s - %s targets' % ('- values: pct. dff', len(expobj.SLMTargets_stims_dff))))
+    fig.savefig('/home/pshah/mnt/qnap/Analysis/%s/%s/results/%s_%s_individual targets dFF.png' % (
+    date, j[:-6], date, j))
+    fig.show()
 
-        # for x in range(expobj.SLMTargets_stims_dff[cell].shape[0]):
-        #     response = expobj.responses_SLMtargets.loc[cell, expobj.]
-        #     trace = expobj.SLMTargets_stims_dff[cell][x]
-        #
-        #     response = np.mean(trace[expobj.pre_stim_sec + expobj.stim_duration_frames + 1:
-        #                                          expobj.pre_stim_sec + expobj.stim_duration_frames +
-        #                                          expobj.post_stim_response_frames_window])  # calculate the dF over pre-stim mean F response within the response window
-        #     if response >= 0.1*100:
-        #         responses_magnitudes_successes[cell].append(round(response, 2))
-        #         response_traces_successes[cell] = np.vstack((trace, response_traces_successes[cell]))
-        #         axs[a, b].plot(trace, color='skyblue', zorder=2, alpha=0.05)
-        #     else:
-        #         responses_magnitudes_failures[cell].append(round(response, 2))
-        #         response_traces_failures[cell] = np.vstack((trace, response_traces_failures[cell]))
-        #         axs[a, b].plot(trace, color='gray', zorder=3, alpha=0.05)
-        # make plot for each individual cell
+plot_postage_stamps_photostim_traces()
 
-        #     success_plots = np.nanmean(response_traces_successes[cell][:-1], axis=0)
-        #     failures_plots = np.nanmean(response_traces_failures[cell][:-1], axis=0)
-        #     axs[a, b].plot(success_plots, color='navy', linewidth=2, zorder=4)
-        #     axs[a, b].plot(failures_plots, color='black', linewidth=2, zorder=4)
-        #     axs[a, b].axvspan(expobj.pre_stim_sec, expobj.pre_stim_sec + expobj.stim_duration_frames, color='mistyrose',
-        #                       zorder=0)
-        #     # ax.plot(response_traces_failures[cell][1:], color='black', zorder=1, alpha=0.1)
-        #     # ax.plot(np.mean(expobj.SLMTargets_stims_raw[0], axis=0), color='black', zorder=1)
-        #     axs[a, b].set_ylim([-0.2*100, 1.2*100])
-        #     axs[a, b].text(0.98, 0.97, 'Success rate: %s' % ('{:,.2f}'.format(
-        #         len(responses_magnitudes_successes[cell]) / (
-        #                     len(responses_magnitudes_failures[cell]) + len(responses_magnitudes_successes[cell])))),
-        #                    verticalalignment='top', horizontalalignment='right',
-        #                    transform=axs[a, b].transAxes, fontweight='bold',
-        #                    color='black')
-        #     counter += 1
-        # fig.suptitle((str(i) + ' %s - %s targets' % ('- % dff', len(expobj.SLMTargets_stims_dff))), y=0.995)
-        # plt.savefig('/home/pshah/mnt/qnap/Analysis/%s/%s/results/%s_%s.png' % (date, j[:-6], date, j))
-        # fig.show()
 
-    #     for trace in raw_traces_stims[cell]:
-    #         # calculate dFF (noramlized to pre-stim) for each trace
-    #         # axs[0].plot(trace, color='black', alpha=0.1)
-    #         pre_stim_mean = np.mean(trace[0:expobj.pre_stim_sec])
-    #         response_trace = (trace - pre_stim_mean)
-    #         response_trace1 = response_trace / pre_stim_mean
-    #         # if np.nanmax(response_trace) > 1e100 and np.nanmin(response_trace) < -1e100:
-    #         #     print('\n%s' % np.nanmean(response_trace))
-    #         #     print(np.nanmax(response_trace))
-    #         #     print(np.nanmin(response_trace))
-    #         std_pre = np.std(trace[0:expobj.pre_stim_sec])
-    #         response_trace2 = response_trace / std_pre
-    #         measure = 'dF/F'
-    #         to_plot = response_trace1
-    #         # axs[1].plot(response_trace, color='green', alpha=0.1)
-    #         # axs[2].plot(response_trace2, color='purple', alpha=0.1)
-    #     # axs[2].axvspan(expobj.pre_stim_sec + expobj.stim_duration_frames, expobj.pre_stim_sec + expobj.stim_duration_frames + 1 + expobj.post_stim_response_frames_window, color='tomato')
-    #         # response_trace = response_trace / std_pre
-    #         # if dff_threshold:  # calculate dFF response for each stim trace
-    #         #     response_trace = ((trace - pre_stim_mean)) #/ pre_stim_mean) * 100
-    #         # else:  # calculate dF_stdF response for each stim trace
-    #         #     pass
+# for x in range(expobj.SLMTargets_stims_dff[cell].shape[0]):
+    #     response = expobj.responses_SLMtargets.loc[cell, expobj.]
+    #     trace = expobj.SLMTargets_stims_dff[cell][x]
     #
-    #         # calculate if the current trace beats the threshold for calculating reliability (note that this happens over a specific window just after the photostim)
-    #         response = np.mean(to_plot[expobj.pre_stim_sec + expobj.stim_duration_frames + 1:
-    #                                              expobj.pre_stim_sec + expobj.stim_duration_frames +
-    #                                              expobj.post_stim_response_frames_window])  # calculate the dF over pre-stim mean F response within the response window
-    #
-    #         # response_result = response / std_pre  # normalize the delta F above pre-stim mean using std of the pre-stim
-    #         # response_trace = response_trace / std_pre
-    #         if response >= 0.2:
-    #             responses_magnitudes_successes[cell].append(round(response, 2))
-    #             response_traces_successes[cell] = np.vstack((to_plot, response_traces_successes[cell]))
-    #             axs[a, b].plot(to_plot, color='seagreen', zorder=3, alpha=0.1)
-    #         else:
-    #             responses_magnitudes_failures[cell].append(round(response, 2))
-    #             response_traces_failures[cell] = np.vstack((to_plot, response_traces_failures[cell]))
-    #             axs[a, b].plot(to_plot, color='gray', zorder=2, alpha=0.1)
-    #
-    #     # make plot for each individual cell
+    #     response = np.mean(trace[expobj.pre_stim_sec + expobj.stim_duration_frames + 1:
+    #                                          expobj.pre_stim_sec + expobj.stim_duration_frames +
+    #                                          expobj.post_stim_response_frames_window])  # calculate the dF over pre-stim mean F response within the response window
+    #     if response >= 0.1*100:
+    #         responses_magnitudes_successes[cell].append(round(response, 2))
+    #         response_traces_successes[cell] = np.vstack((trace, response_traces_successes[cell]))
+    #         axs[a, b].plot(trace, color='skyblue', zorder=2, alpha=0.05)
+    #     else:
+    #         responses_magnitudes_failures[cell].append(round(response, 2))
+    #         response_traces_failures[cell] = np.vstack((trace, response_traces_failures[cell]))
+    #         axs[a, b].plot(trace, color='gray', zorder=3, alpha=0.05)
+    # make plot for each individual cell
+
     #     success_plots = np.nanmean(response_traces_successes[cell][:-1], axis=0)
     #     failures_plots = np.nanmean(response_traces_failures[cell][:-1], axis=0)
-    #     axs[a, b].plot(success_plots, color='darkgreen', linewidth=2, zorder=4)
+    #     axs[a, b].plot(success_plots, color='navy', linewidth=2, zorder=4)
     #     axs[a, b].plot(failures_plots, color='black', linewidth=2, zorder=4)
     #     axs[a, b].axvspan(expobj.pre_stim_sec, expobj.pre_stim_sec + expobj.stim_duration_frames, color='mistyrose',
     #                       zorder=0)
     #     # ax.plot(response_traces_failures[cell][1:], color='black', zorder=1, alpha=0.1)
     #     # ax.plot(np.mean(expobj.SLMTargets_stims_raw[0], axis=0), color='black', zorder=1)
-    #     axs[a, b].set_ylim([-0.2, 1.2])
-    #     axs[a, b].text(0.98, 0.97, 'Success rate: %s' % ('{:,.2f}'.format(len(responses_magnitudes_successes[cell]) / (len(responses_magnitudes_failures[cell]) + len(responses_magnitudes_successes[cell])))),
-    #             verticalalignment='top', horizontalalignment='right',
-    #             transform=axs[a, b].transAxes, fontweight='bold',
-    #             color='black')
+    #     axs[a, b].set_ylim([-0.2*100, 1.2*100])
+    #     axs[a, b].text(0.98, 0.97, 'Success rate: %s' % ('{:,.2f}'.format(
+    #         len(responses_magnitudes_successes[cell]) / (
+    #                     len(responses_magnitudes_failures[cell]) + len(responses_magnitudes_successes[cell])))),
+    #                    verticalalignment='top', horizontalalignment='right',
+    #                    transform=axs[a, b].transAxes, fontweight='bold',
+    #                    color='black')
     #     counter += 1
-    # fig.suptitle((str(i) + ' %s - %s targets' % (measure, len(raw_traces_stims))), y=0.995)
+    # fig.suptitle((str(i) + ' %s - %s targets' % ('- % dff', len(expobj.SLMTargets_stims_dff))), y=0.995)
     # plt.savefig('/home/pshah/mnt/qnap/Analysis/%s/%s/results/%s_%s.png' % (date, j[:-6], date, j))
     # fig.show()
+
+#     for trace in raw_traces_stims[cell]:
+#         # calculate dFF (noramlized to pre-stim) for each trace
+#         # axs[0].plot(trace, color='black', alpha=0.1)
+#         pre_stim_mean = np.mean(trace[0:expobj.pre_stim_sec])
+#         response_trace = (trace - pre_stim_mean)
+#         response_trace1 = response_trace / pre_stim_mean
+#         # if np.nanmax(response_trace) > 1e100 and np.nanmin(response_trace) < -1e100:
+#         #     print('\n%s' % np.nanmean(response_trace))
+#         #     print(np.nanmax(response_trace))
+#         #     print(np.nanmin(response_trace))
+#         std_pre = np.std(trace[0:expobj.pre_stim_sec])
+#         response_trace2 = response_trace / std_pre
+#         measure = 'dF/F'
+#         to_plot = response_trace1
+#         # axs[1].plot(response_trace, color='green', alpha=0.1)
+#         # axs[2].plot(response_trace2, color='purple', alpha=0.1)
+#     # axs[2].axvspan(expobj.pre_stim_sec + expobj.stim_duration_frames, expobj.pre_stim_sec + expobj.stim_duration_frames + 1 + expobj.post_stim_response_frames_window, color='tomato')
+#         # response_trace = response_trace / std_pre
+#         # if dff_threshold:  # calculate dFF response for each stim trace
+#         #     response_trace = ((trace - pre_stim_mean)) #/ pre_stim_mean) * 100
+#         # else:  # calculate dF_stdF response for each stim trace
+#         #     pass
+#
+#         # calculate if the current trace beats the threshold for calculating reliability (note that this happens over a specific window just after the photostim)
+#         response = np.mean(to_plot[expobj.pre_stim_sec + expobj.stim_duration_frames + 1:
+#                                              expobj.pre_stim_sec + expobj.stim_duration_frames +
+#                                              expobj.post_stim_response_frames_window])  # calculate the dF over pre-stim mean F response within the response window
+#
+#         # response_result = response / std_pre  # normalize the delta F above pre-stim mean using std of the pre-stim
+#         # response_trace = response_trace / std_pre
+#         if response >= 0.2:
+#             responses_magnitudes_successes[cell].append(round(response, 2))
+#             response_traces_successes[cell] = np.vstack((to_plot, response_traces_successes[cell]))
+#             axs[a, b].plot(to_plot, color='seagreen', zorder=3, alpha=0.1)
+#         else:
+#             responses_magnitudes_failures[cell].append(round(response, 2))
+#             response_traces_failures[cell] = np.vstack((to_plot, response_traces_failures[cell]))
+#             axs[a, b].plot(to_plot, color='gray', zorder=2, alpha=0.1)
+#
+#     # make plot for each individual cell
+#     success_plots = np.nanmean(response_traces_successes[cell][:-1], axis=0)
+#     failures_plots = np.nanmean(response_traces_failures[cell][:-1], axis=0)
+#     axs[a, b].plot(success_plots, color='darkgreen', linewidth=2, zorder=4)
+#     axs[a, b].plot(failures_plots, color='black', linewidth=2, zorder=4)
+#     axs[a, b].axvspan(expobj.pre_stim_sec, expobj.pre_stim_sec + expobj.stim_duration_frames, color='mistyrose',
+#                       zorder=0)
+#     # ax.plot(response_traces_failures[cell][1:], color='black', zorder=1, alpha=0.1)
+#     # ax.plot(np.mean(expobj.SLMTargets_stims_raw[0], axis=0), color='black', zorder=1)
+#     axs[a, b].set_ylim([-0.2, 1.2])
+#     axs[a, b].text(0.98, 0.97, 'Success rate: %s' % ('{:,.2f}'.format(len(responses_magnitudes_successes[cell]) / (len(responses_magnitudes_failures[cell]) + len(responses_magnitudes_successes[cell])))),
+#             verticalalignment='top', horizontalalignment='right',
+#             transform=axs[a, b].transAxes, fontweight='bold',
+#             color='black')
+#     counter += 1
+# fig.suptitle((str(i) + ' %s - %s targets' % (measure, len(raw_traces_stims))), y=0.995)
+# plt.savefig('/home/pshah/mnt/qnap/Analysis/%s/%s/results/%s_%s.png' % (date, j[:-6], date, j))
+# fig.show()
+
 
 """# for i in range(len(response_traces_successes[cell][:-1])):
 #     plt.plot(response_traces_successes[cell][:-1][i])

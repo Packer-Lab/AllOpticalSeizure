@@ -179,26 +179,21 @@ def run_for_loop_across_exps(run_pre4ap_trials=False, run_post4ap_trials=False, 
         # print('INITIATING FOR LOOP ----- ')
         if len(trials_run) > 0:
             print(f"{'-' * 5} RUNNING SPECIFIED TRIALS from `trials_run` {'-' * 5}")
-            if len(trials_run) == 1:
-                trials_run = [trials_run]
 
             def for_loop_trials_run(func):
                 @functools.wraps(func)
                 def inner(*args, **kwargs):
                     counter1 = 0
-                    for i, x in enumerate(trials_run):
-                        counter2 = 0
-                        for j, y in enumerate(x):
-                            print(i, j, y)
-                            prep = trials_run[i][j][:-6]
-                            trial = trials_run[i][j][-5:]
-                            expobj, _ = import_expobj(prep=prep, trial=trial, verbose=False)
+                    for i, exp_prep in enumerate(trials_run):
+                        print(i, exp_prep)
+                        prep = exp_prep[:-6]
+                        trial = exp_prep[-5:]
+                        expobj, _ = import_expobj(prep=prep, trial=trial, verbose=False)
 
-                            working_on(expobj)
-                            func(expobj=expobj, **kwargs)
-                            end_working_on(expobj)
+                        working_on(expobj)
+                        func(expobj=expobj, **kwargs)
+                        end_working_on(expobj)
 
-                            counter2 += 1
                     counter1 += 1
 
                 return inner
