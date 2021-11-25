@@ -235,25 +235,25 @@ for on, off in zip(on_, end):
 
 # %% archive-3) responses of targets during seizures, but EXCLUDE STIMS WHERE THE CELL IS INSIDE THE SZ BOUND -- should this be in ARCHIVEDalloptical_results_photostim.py???? -- yeah most of this code should probably be retired - and current location is in alloptical_results_photostim_SLMtargets.py
 
-if hasattr(expobj, 'stims_in_sz'):
+# if hasattr(expobj, 'stims_in_sz'):
+#
+#     # stims during sz
+#     stims = [expobj.stim_start_frames.index(stim) for stim in expobj.stims_in_sz]
+#     if len(stims) > 0:
+#         expobj.insz_StimSuccessRate_SLMtargets, expobj.insz_hits_SLMtargets, expobj.insz_responses_SLMtargets = \
+#             aoutils.get_SLMTarget_responses_dff(expobj, threshold=10, stims_to_use=stims)
+#
+#     # stims outside sz
+#     stims = [expobj.stim_start_frames.index(stim) for stim in expobj.stims_out_sz]
+#     # raw_traces_stims = expobj.SLMTargets_stims_raw[:, stims, :]
+#     if len(stims) > 0:
+#         expobj.outsz_StimSuccessRate_SLMtargets, expobj.outsz_hits_SLMtargets, expobj.outsz_responses_SLMtargets = \
+#             aoutils.get_SLMTarget_responses_dff(expobj, threshold=10, stims_to_use=stims)
+# else:
+#     expobj.StimSuccessRate_SLMtargets, expobj.hits_SLMtargets, expobj.responses_SLMtargets = \
+#         aoutils.get_SLMTarget_responses_dff(expobj, threshold=10, stims_to_use=None)
 
-    # stims during sz
-    stims = [expobj.stim_start_frames.index(stim) for stim in expobj.stims_in_sz]
-    if len(stims) > 0:
-        expobj.insz_StimSuccessRate_SLMtargets, expobj.insz_hits_SLMtargets, expobj.insz_responses_SLMtargets = \
-            aoutils.get_SLMTarget_responses_dff(expobj, threshold=10, stims_to_use=stims)
-
-    # stims outside sz
-    stims = [expobj.stim_start_frames.index(stim) for stim in expobj.stims_out_sz]
-    # raw_traces_stims = expobj.SLMTargets_stims_raw[:, stims, :]
-    if len(stims) > 0:
-        expobj.outsz_StimSuccessRate_SLMtargets, expobj.outsz_hits_SLMtargets, expobj.outsz_responses_SLMtargets = \
-            aoutils.get_SLMTarget_responses_dff(expobj, threshold=10, stims_to_use=stims)
-
-
-else:
-    expobj.StimSuccessRate_SLMtargets, expobj.hits_SLMtargets, expobj.responses_SLMtargets = \
-        aoutils.get_SLMTarget_responses_dff(expobj, threshold=10, stims_to_use=None)
+assert hasattr(expobj, 'stims_in_sz'), AttributeError(f"{expobj.metainfo['animal prep.']} {expobj.metainfo['trial']} doesn't have stims_in_sz attr.")
 
 # collect stim responses with stims excluded as necessary
 targets_avgresponses_exclude_stims_sz = {}
@@ -341,46 +341,46 @@ def slm_targets_responses(expobj, experiment, trial, y_spacing_factor=2, figsize
         # expobj.raw_traces_from_targets(force_redo=force_redo, save=True)
         # expobj.save()
 
-        if hasattr(expobj, 'stims_in_sz'):
-            seizure_filter = True
-
-            stims = [expobj.stim_start_frames.index(stim) for stim in expobj.stims_out_sz]
-            # raw_traces_stims = expobj.SLMTargets_stims_raw[:, stims, :]
-            if len(stims) > 0:
-                expobj.outsz_StimSuccessRate_SLMtargets, expobj.outsz_hits_SLMtargets, expobj.outsz_responses_SLMtargets = \
-                    aoutils.calculate_SLMTarget_responses_dff(expobj, threshold=dff_threshold, stims_to_use=stims)
-
-                # expobj.outsz_StimSuccessRate_SLMtargets, expobj.outsz_hits_SLMtargets, expobj.outsz_responses_SLMtargets = \
-                #     calculate_StimSuccessRate(expobj, cell_ids=SLMtarget_ids, raw_traces_stims=raw_traces_stims,
-                #                               dff_threshold=10, post_stim_response_frames_window=expobj.post_stim_response_frames_window,
-                #                               pre_stim_sec=expobj.pre_stim_sec, sz_filter=seizure_filter,
-                #                               verbose=True, plot=False)
-
-            stims = [expobj.stim_start_frames.index(stim) for stim in expobj.stims_in_sz]
-            # raw_traces_stims = expobj.SLMTargets_stims_raw[:, stims, :]
-            if len(stims) > 0:
-                expobj.insz_StimSuccessRate_SLMtargets, expobj.insz_hits_SLMtargets, expobj.insz_responses_SLMtargets = \
-                    aoutils.calculate_SLMTarget_responses_dff(expobj, threshold=dff_threshold, stims_to_use=stims)
-
-                # expobj.insz_StimSuccessRate_SLMtargets, expobj.insz_hits_SLMtargets, expobj.insz_responses_SLMtargets = \
-                #     calculate_StimSuccessRate(expobj, cell_ids=SLMtarget_ids, raw_traces_stims=raw_traces_stims,
-                #                               dff_threshold=10, post_stim_response_frames_window=expobj.post_stim_response_frames_window,
-                #                               pre_stim_sec=expobj.pre_stim_sec, sz_filter=seizure_filter,
-                #                               verbose=True, plot=False)
-
-        else:
-            seizure_filter = False
-            print('\n Calculating stim success rates and response magnitudes ***********')
-            expobj.StimSuccessRate_SLMtargets, expobj.hits_SLMtargets, expobj.responses_SLMtargets = \
-                aoutils.calculate_SLMTarget_responses_dff(expobj, threshold=dff_threshold, stims_to_use=expobj.stim_start_frames)
-
-            # expobj.StimSuccessRate_SLMtargets, expobj.hits_SLMtargets, expobj.responses_SLMtargets = \
-            #     calculate_StimSuccessRate(expobj, cell_ids=SLMtarget_ids, raw_traces_stims=expobj.SLMTargets_stims_raw,
-            #                               dff_threshold=10, post_stim_response_frames_window=expobj.post_stim_response_frames_window,
-            #                               pre_stim_sec=expobj.pre_stim_sec, sz_filter=seizure_filter,
-            #                               verbose=True, plot=False)
-
-        expobj.save()
+        # if hasattr(expobj, 'stims_in_sz'):
+        #     seizure_filter = True
+        #
+        #     stims = [expobj.stim_start_frames.index(stim) for stim in expobj.stims_out_sz]
+        #     # raw_traces_stims = expobj.SLMTargets_stims_raw[:, stims, :]
+        #     if len(stims) > 0:
+        #         expobj.outsz_StimSuccessRate_SLMtargets, expobj.outsz_hits_SLMtargets, expobj.outsz_responses_SLMtargets = \
+        #             aoutils.calculate_SLMTarget_responses_dff(expobj, threshold=dff_threshold, stims_to_use=stims)
+        #
+        #         # expobj.outsz_StimSuccessRate_SLMtargets, expobj.outsz_hits_SLMtargets, expobj.outsz_responses_SLMtargets = \
+        #         #     calculate_StimSuccessRate(expobj, cell_ids=SLMtarget_ids, raw_traces_stims=raw_traces_stims,
+        #         #                               dff_threshold=10, post_stim_response_frames_window=expobj.post_stim_response_frames_window,
+        #         #                               pre_stim_sec=expobj.pre_stim_sec, sz_filter=seizure_filter,
+        #         #                               verbose=True, plot=False)
+        #
+        #     stims = [expobj.stim_start_frames.index(stim) for stim in expobj.stims_in_sz]
+        #     # raw_traces_stims = expobj.SLMTargets_stims_raw[:, stims, :]
+        #     if len(stims) > 0:
+        #         expobj.insz_StimSuccessRate_SLMtargets, expobj.insz_hits_SLMtargets, expobj.insz_responses_SLMtargets = \
+        #             aoutils.calculate_SLMTarget_responses_dff(expobj, threshold=dff_threshold, stims_to_use=stims)
+        #
+        #         # expobj.insz_StimSuccessRate_SLMtargets, expobj.insz_hits_SLMtargets, expobj.insz_responses_SLMtargets = \
+        #         #     calculate_StimSuccessRate(expobj, cell_ids=SLMtarget_ids, raw_traces_stims=raw_traces_stims,
+        #         #                               dff_threshold=10, post_stim_response_frames_window=expobj.post_stim_response_frames_window,
+        #         #                               pre_stim_sec=expobj.pre_stim_sec, sz_filter=seizure_filter,
+        #         #                               verbose=True, plot=False)
+        #
+        # else:
+        #     seizure_filter = False
+        #     print('\n Calculating stim success rates and response magnitudes ***********')
+        #     expobj.StimSuccessRate_SLMtargets, expobj.hits_SLMtargets, expobj.responses_SLMtargets = \
+        #         aoutils.calculate_SLMTarget_responses_dff(expobj, threshold=dff_threshold, stims_to_use=expobj.stim_start_frames)
+        #
+        #     # expobj.StimSuccessRate_SLMtargets, expobj.hits_SLMtargets, expobj.responses_SLMtargets = \
+        #     #     calculate_StimSuccessRate(expobj, cell_ids=SLMtarget_ids, raw_traces_stims=expobj.SLMTargets_stims_raw,
+        #     #                               dff_threshold=10, post_stim_response_frames_window=expobj.post_stim_response_frames_window,
+        #     #                               pre_stim_sec=expobj.pre_stim_sec, sz_filter=seizure_filter,
+        #     #                               verbose=True, plot=False)
+        #
+        # expobj.save()
 
 
     ####################################################################################################################

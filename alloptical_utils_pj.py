@@ -768,6 +768,7 @@ class alloptical(TwoPhotonImaging):
         ## PHOTOSTIM SLM TARGETS
         self.responses_SLMtargets = []  # dF/prestimF responses for all SLM targets for each photostim trial
         self.responses_SLMtargets_tracedFF = []  # poststim dFF - prestim dFF responses for all SLM targets for each photostim trial
+        self.StimSuccessRate_SLMtargets = []
 
         # .get_alltargets_stim_traces_norm(pre_stim=expobj.pre_stim, post_stim=expobj.post_stim, stims=expobj.stim_start_frames)
         # - various attrs. for collecting photostim timed trace snippets from raw Flu values
@@ -2757,6 +2758,9 @@ class Post4ap(alloptical):
         self.responses_SLMtargets_tracedFF_outsz = []  # dF/prestimF responses for all SLM targets for photostim trials outside sz
         self.responses_SLMtargets_tracedFF_insz = []  # dF/prestimF responses for all SLM targets for photostim trials inside sz - excluding targets inside the sz boundary
 
+        self.StimSuccessRate_SLMtargets_outsz = []  # photostim sucess rate (not sure exactly if across all stims or not?)
+        self.StimSuccessRate_SLMtargets_insz = []  # photostim sucess rate (not sure exactly if across all stims or not?)
+
         # collect information about seizures
         self.collect_seizures_info(seizures_lfp_timing_matarray=paths[5], discard_all=discard_all)
 
@@ -4552,7 +4556,7 @@ def run_alloptical_processing_photostim(expobj, to_suite2p=None, baseline_trials
             expobj.get_SLMTarget_responses_dff(process='trace dFF', threshold=10, stims_to_use=expobj.stim_start_frames)
 
 
-        if hasattr(expobj, 'stims_out_sz'):
+        if expobj.stims_out_sz > 1:
             stims_outsz_idx = [expobj.stim_start_frames.index(stim) for stim in expobj.stims_out_sz]
             if len(stims_outsz_idx) > 0:
                 print('|- calculating stim responses (outsz) - %s stims [2.2.1]' % len(stims_outsz_idx))
@@ -4570,7 +4574,7 @@ def run_alloptical_processing_photostim(expobj, to_suite2p=None, baseline_trials
                     expobj.calculate_SLMTarget_SuccessStims(process='trace dFF', hits_slmtargets_df=expobj.hits_SLMtargets_tracedFF_outsz, stims_idx_l=stims_outsz_idx)
 
 
-        if hasattr(expobj, 'stims_in_sz'):
+        if expobj.stims_in_sz > 1:
             if hasattr(expobj, 'slmtargets_szboundary_stim'):
                 stims_insz_idx = [expobj.stim_start_frames.index(stim) for stim in expobj.stims_in_sz]
                 if len(stims_insz_idx) > 0:

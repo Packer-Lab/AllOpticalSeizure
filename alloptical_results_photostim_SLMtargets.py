@@ -127,11 +127,12 @@ for exp in allopticalResults.pre_4ap_trials:
 
             expobj, _ = aoutils.import_expobj(pkl_path=pkl_path)
             if calc_dff_stims:
-                print('\n Calculating stim success rates and response magnitudes [4.1] ***********')
-                expobj.StimSuccessRate_SLMtargets, expobj.hits_SLMtargets, expobj.responses_SLMtargets = \
-                    aoutils.calculate_SLMTarget_responses_dff(expobj, threshold=10,
-                                                              stims_to_use=expobj.stim_start_frames)
-                expobj.save()
+                pass
+                # print('\n Calculating stim success rates and response magnitudes [4.1] ***********')
+                # expobj.StimSuccessRate_SLMtargets, expobj.hits_SLMtargets, expobj.responses_SLMtargets = \
+                #     aoutils.calculate_SLMTarget_responses_dff(expobj, threshold=10,
+                #                                               stims_to_use=expobj.stim_start_frames)
+                # expobj.save()
 
             # raw_traces_stims = expobj.SLMTargets_stims_raw
 
@@ -369,12 +370,12 @@ for i in allopticalResults.pre_4ap_trials:
             expobj.save()
 
 
-        if not hasattr(expobj, 'traces_SLMtargets_successes_avg'):
-            print('running .calculate_SLMTarget_SuccessStims method for expobj of %s, %s [1.1.1]' % (prep, trial))
-            expobj.stims_idx = [expobj.stim_start_frames.index(stim) for stim in expobj.stim_start_frames]
-            expobj.StimSuccessRate_SLMtargets, expobj.traces_SLMtargets_successes_avg, \
-            expobj.traces_SLMtargets_failures_avg = \
-                expobj.calculate_SLMTarget_SuccessStims(hits_df=expobj.hits_SLMtargets, stims_idx_l=expobj.stims_idx)
+        # if not hasattr(expobj, 'traces_SLMtargets_successes_avg'):
+        #     print('running .calculate_SLMTarget_SuccessStims method for expobj of %s, %s [1.1.1]' % (prep, trial))
+        #     expobj.stims_idx = [expobj.stim_start_frames.index(stim) for stim in expobj.stim_start_frames]
+        #     expobj.StimSuccessRate_SLMtargets, expobj.traces_SLMtargets_successes_avg, \
+        #     expobj.traces_SLMtargets_failures_avg = \
+        #         expobj.calculate_SLMTarget_SuccessStims(hits_df=expobj.hits_SLMtargets, stims_idx_l=expobj.stims_idx)
 
         if to_plot == 'successes':
             array_to_plot = np.asarray([expobj.traces_SLMtargets_successes_avg[key] for key in
