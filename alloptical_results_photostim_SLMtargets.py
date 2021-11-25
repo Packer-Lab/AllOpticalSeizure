@@ -202,38 +202,45 @@ plot_postage_stamps_photostim_traces()
 
 
 # %% 2) BAR PLOT FOR PHOTOSTIM RESPONSE MAGNITUDE B/W PRE AND POST 4AP TRIALS - TODO plot delta (trace dFF) responses
+
+# to_process = 'mean response (dF/stdF all targets)'
+to_process = 'mean response (delta(trace_dFF) all targets)'
+
 pre4ap_response_magnitude = []
 for i in allopticalResults.pre_4ap_trials:
     x = [allopticalResults.slmtargets_stim_responses.loc[
-             allopticalResults.slmtargets_stim_responses['prep_trial'] == trial, 'mean response (dF/stdF all targets)'].values[0] for trial in i]
+             allopticalResults.slmtargets_stim_responses['prep_trial'] == trial, to_process].values[0] for trial in i]
     pre4ap_response_magnitude.append(np.mean(x))
 
 post4ap_response_magnitude = []
 for i in allopticalResults.post_4ap_trials:
     x = [allopticalResults.slmtargets_stim_responses.loc[
-             allopticalResults.slmtargets_stim_responses[
-                 'prep_trial'] == trial, 'mean response (dF/stdF all targets)'].values[0] for trial in i]
+             allopticalResults.slmtargets_stim_responses['prep_trial'] == trial, to_process].values[0] for trial in i]
     post4ap_response_magnitude.append(np.mean(x))
 
 pj.plot_bar_with_points(data=[pre4ap_response_magnitude, post4ap_response_magnitude], paired=True,
                         colors=['black', 'purple'], bar=False, expand_size_y=1.1, expand_size_x=0.6,
-                        xlims=True, x_tick_labels=['pre-4ap', 'post-4ap'], title='Avg. Response magnitude',
-                        y_label='response magnitude')
+                        xlims=True, x_tick_labels=['pre-4ap', 'post-4ap'], title='Avg. delta(trace_dFF) magnitude',
+                        y_label='delta(trace_dFF) magnitude')
 
 
 # %% 3) BAR PLOT FOR PHOTOSTIM RESPONSE RELIABILITY B/W PRE AND POST 4AP TRIALS
+
+# to_process = 'mean reliability (>0.3 dF/stdF)'
+to_process = 'mean reliability (>10 delta(trace_dFF))'
+
 pre4ap_reliability = []
 for i in allopticalResults.pre_4ap_trials:
     x = [allopticalResults.slmtargets_stim_responses.loc[
              allopticalResults.slmtargets_stim_responses[
-                 'prep_trial'] == trial, 'mean reliability (>0.3 dF/stdF)'].values[0] for trial in i]
+                 'prep_trial'] == trial, to_process].values[0] for trial in i]
     pre4ap_reliability.append(np.mean(x))
 
 post4ap_reliability = []
 for i in allopticalResults.post_4ap_trials:
     x = [allopticalResults.slmtargets_stim_responses.loc[
              allopticalResults.slmtargets_stim_responses[
-                 'prep_trial'] == trial, 'mean reliability (>0.3 dF/stdF)'].values[0] for trial in i]
+                 'prep_trial'] == trial, to_process].values[0] for trial in i]
     post4ap_reliability.append(np.mean(x))
 
 pj.plot_bar_with_points(data=[pre4ap_reliability, post4ap_reliability], paired=True,

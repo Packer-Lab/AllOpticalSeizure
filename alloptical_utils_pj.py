@@ -151,6 +151,21 @@ def import_resultsobj(pkl_path: str):
     return resultsobj
 
 
+# dictionary of terms, phrases, etc. that are particular to this analysis
+idiom_dictionary = {
+    'delta(trace_dFF)': "photostim measurement; measuring photostim responses with post-stim minus pre-stim, where the post-stim "
+                        "and pre-stim values are dFF values obtained from normalization of the whole trace within the present t-series"
+}
+
+def define(x):
+    try:
+        print(f"{x}:    {idiom_dictionary[x]}") if type(x) is str else print('ERROR: please provide a string object as the key')
+    except KeyError:
+        print('input not found in idiom_dictionary, you should CONSIDER ADDING IT RIGHT NOW!')
+
+def show_idioms():
+    print(f"entries in idiom_dictionary: \n {list(idiom_dictionary.keys())}")
+
 ## DECORATORS
 def working_on(expobj):
     print(f"Working on: {expobj.metainfo['exptype']} {expobj.metainfo['animal prep.']} {expobj.metainfo['trial']} ... ")

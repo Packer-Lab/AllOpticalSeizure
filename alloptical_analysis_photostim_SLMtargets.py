@@ -93,7 +93,7 @@ def add_slmtargets_responses_tracedFF(**kwargs):
 add_slmtargets_responses_tracedFF()
 
 allopticalResults.slmtargets_stim_responses
-# allopticalResults.save()
+allopticalResults.save()
 
 
 # sys.exit()
