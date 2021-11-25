@@ -49,7 +49,7 @@ expobj, experiment = aoutils.import_expobj(prep='RL109', trial='t-013')
 """
 
 
-# %% 1) lists of trials to analyse for pre4ap and post4ap trials within experiments
+# %% 1) lists of trials to analyse for run_pre4ap_trials and run_post4ap_trials trials within experiments
 
 allopticalResults.pre_4ap_trials = [
     ['RL108 t-009'],
@@ -63,9 +63,9 @@ allopticalResults.pre_4ap_trials = [
     ['PS05 t-010'],
     ['PS07 t-007'],
     ['PS07 t-009'],
-    # ['PS06 t-008', 'PS06 t-009', 'PS06 t-010'],  # matching post4ap trial cannot be analysed
+    # ['PS06 t-008', 'PS06 t-009', 'PS06 t-010'],  # matching run_post4ap_trials trial cannot be analysed
     ['PS06 t-011'],
-    # ['PS06 t-012'],  # matching post4ap trial cannot be analysed
+    # ['PS06 t-012'],  # matching run_post4ap_trials trial cannot be analysed
     # ['PS11 t-007'],
     ['PS11 t-010'],
     # ['PS17 t-005'],

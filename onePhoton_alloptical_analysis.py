@@ -36,7 +36,7 @@ aoplot.plot_flu_1pstim_avg_trace(expobj, x_axis='time', individual_traces=True, 
 if 'pre' in expobj.metainfo['exptype']:
     aoplot.plot_lfp_1pstim_avg_trace(expobj, x_axis='time', individual_traces=False, pre_stim=0.25, post_stim=0.75, write_full_text=True,
                                      optoloopback=True, figsize=(3,3), shrink_text=0.8, stims_to_analyze=expobj.stim_start_frames,
-                                     title='Avg. pre4ap stims LFP')
+                                     title='Avg. run_pre4ap_trials stims LFP')
 
 if 'post' in expobj.metainfo['exptype']:
     aoplot.plot_lfp_1pstim_avg_trace(expobj, x_axis='time', individual_traces=False, pre_stim=0.25, post_stim=0.75, write_full_text=True,

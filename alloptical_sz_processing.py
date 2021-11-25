@@ -38,7 +38,7 @@ ls2 = [
 
 #%% 1) defining trials to run for analysis
 
-# this list should line up with the analysis list for post4ap trials
+# this list should line up with the analysis list for run_post4ap_trials trials
 ls = [
     ['RL108 t-013'],
     ['RL108 t-011'],
@@ -65,7 +65,7 @@ ls = [
 
 trials_without_flip_stims = []
 
-# using post4ap experiments from allopticalResults attr. in for loop for processing:
+# using run_post4ap_trials experiments from allopticalResults attr. in for loop for processing:
 
 # for i in allopticalResults.post_4ap_trials:
 for i in ls2:
@@ -465,7 +465,7 @@ def slm_targets_responses(expobj, experiment, trial, y_spacing_factor=2, figsize
         ax4 = fig.add_subplot(gs[-1, 4])
         fig, ax4 = pj.plot_bar_with_points(data=[list(expobj.StimSuccessRate_SLMtargets.values())], x_tick_labels=[trial],
                                            ylims=[0, 100], bar=False, show=False, fig=fig, ax=ax4,
-                                           y_label='% success stims.', title='target success rate (pre4ap)',
+                                           y_label='% success stims.', title='target success rate (run_pre4ap_trials)',
                                            expand_size_x=2)
 
         zero_point = abs(v_lims_periphotostim_heatmap[0]/v_lims_periphotostim_heatmap[1])
@@ -574,12 +574,12 @@ for key in list(allopticalResults.trial_maps['post'].keys()):
     # import initial expobj
     expobj, experiment = aoutils.import_expobj(aoresults_map_id='pre %s.0' % key, verbose=False)
     prep = expobj.metainfo['animal prep.']
-    # look at all post4ap trials in expobj
+    # look at all run_post4ap_trials trials in expobj
     if 'post-4ap trials' in expobj.metainfo.keys():
         a = 'post-4ap trials'
     elif 'post4ap_trials' in expobj.metainfo.keys():
         a = 'post4ap_trials'
-    # for loop over all of those post4ap trials
+    # for loop over all of those run_post4ap_trials trials
     for trial in expobj.metainfo['%s' % a]:
         # import expobj
         expobj, experiment = aoutils.import_expobj(prep=prep, trial=trial, verbose=False)
@@ -656,12 +656,12 @@ for key in list(allopticalResults.trial_maps['post'].keys()):
     # import initial expobj
     expobj, experiment = aoutils.import_expobj(aoresults_map_id='pre %s.0' % key, verbose=False)
     prep = expobj.metainfo['animal prep.']
-    # look at all post4ap trials in expobj
+    # look at all run_post4ap_trials trials in expobj
     if 'post-4ap trials' in expobj.metainfo.keys():
         a = 'post-4ap trials'
     elif 'post4ap_trials' in expobj.metainfo.keys():
         a = 'post4ap_trials'
-    # for loop over all of those post4ap trials
+    # for loop over all of those run_post4ap_trials trials
     for trial in expobj.metainfo['%s' % a]:
         # import expobj
         expobj, experiment = aoutils.import_expobj(prep=prep, trial=trial, verbose=False)

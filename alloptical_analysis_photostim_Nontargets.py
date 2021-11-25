@@ -105,7 +105,7 @@ for (i, key, j) in code_run_list_all:
 
 
 
-# %% 1.1) for loop to go through each expobj to analyze nontargets - pre4ap trials
+# %% 1.1) for loop to go through each expobj to analyze nontargets - run_pre4ap_trials trials
 
 # ls = ['PS05 t-010', 'PS06 t-011', 'PS11 t-010', 'PS17 t-005', 'PS17 t-006', 'PS17 t-007', 'PS18 t-006']
 ls = pj.flattenOnce(allopticalResults.pre_4ap_trials)
@@ -117,7 +117,7 @@ for (i, key, j) in code_run_list_pre:
 
 
 # test: adding correct stim filters when analysing data to exclude stims/cells in seizure boundaries - this should be done, but not thouroughly tested necessarily yet //
-# 2.1) for loop to go through each expobj to analyze nontargets - post4ap trials
+# 2.1) for loop to go through each expobj to analyze nontargets - run_post4ap_trials trials
 # ls = ['RL108 t-013', 'RL109 t-021', 'RL109 t-016']
 missing_slmtargets_sz_stim = []
 ls = pj.flattenOnce(allopticalResults.post_4ap_trials)
@@ -192,7 +192,7 @@ for key in list(allopticalResults.trial_maps['pre'].keys()):
     pre4ap_num_neg = pre4ap_num_neg / n_trials
 
 
-    num_suite2p_rois = len(expobj.good_cells)  # this will be the same number for pre and post4ap (as they should be the same cells)
+    num_suite2p_rois = len(expobj.good_cells)  # this will be the same number for pre and run_post4ap_trials (as they should be the same cells)
 
 
     # post-4ap trials calculations

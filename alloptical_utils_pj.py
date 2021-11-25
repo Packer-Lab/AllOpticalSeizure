@@ -149,12 +149,104 @@ def import_resultsobj(pkl_path: str):
         print(f"|-DONE IMPORT of {(type(resultsobj))} resultsobj \n\n")
     return resultsobj
 
-# # # import results superobject that will collect analyses from various individual experiments
-results_object_path = '/home/pshah/mnt/qnap/Analysis/alloptical_results_superobject.pkl'
-try:
-    allopticalResults = import_resultsobj(pkl_path=results_object_path)
-except FileNotFoundError:
-    print(f'not able to get allopticalResults object from {results_object_path}')
+
+## DECORATORS
+def working_on(expobj):
+    print(f"Working on: {expobj.metainfo['exptype']} {expobj.metainfo['animal prep.']} {expobj.metainfo['trial']} ... ")
+
+
+def end_working_on(expobj):
+    print(
+        f"Working on: {expobj.metainfo['exptype']} {expobj.metainfo['animal prep.']} {expobj.metainfo['trial']} \ end\n")
+
+
+trials_skip = [
+    'RL108 t-011',
+    'RL109 t-017'  # RL109 t-017 doesn't have sz boundaries yet.. just updated the sz onset/offset's
+]
+
+trials_run = [
+    'PS11 t-010'
+]
+
+def run_for_loop_across_exps(run_pre4ap_trials=True, run_post4ap_trials=False, trials_skip=[], trials_run=[]):
+    """decorator to use for for-looping through experiment trials across run_pre4ap_trials and run_post4ap_trials.
+    the trials to for loop through are defined in allopticalResults.pre_4ap_trials and allopticalResults.post_4ap_trials"""
+
+    if run_pre4ap_trials:
+        print(f"{'-' * 5} RUNNING PRE4AP TRIALS {'-' * 5}")
+
+        def for_loop_pre4ap(func):
+            def inner(*args, **kwargs):
+                counter_i = 0
+                for i, x in enumerate(allopticalResults.pre_4ap_trials):
+                    counter_j = 0
+                    for j, exp_prep in enumerate(x):
+                        if exp_prep in trials_skip:
+                            pass
+                        else:
+                            print(i, j, exp_prep)
+                            prep = exp_prep[:-6]
+                            pre4aptrial = exp_prep[-5:]
+                            expobj, _ = import_expobj(prep=prep, trial=pre4aptrial, verbose=False)
+
+                            working_on(expobj)
+                            func(expobj=expobj, **kwargs)
+                            end_working_on(expobj)
+
+                        counter_j += 1
+                    counter_i += 1
+            return inner
+        return for_loop_pre4ap
+
+    if run_post4ap_trials:
+        print(f"{'-' * 5} RUNNING POST4AP TRIALS {'-' * 5}")
+
+        def for_loop_post4ap(func):
+            def inner(*args, **kwargs):
+                counter_i = 0
+                for i, x in enumerate(allopticalResults.post_4ap_trials):
+                    counter_j = 0
+                    for j, exp_prep in enumerate(x):
+                        if exp_prep in trials_skip:
+                            pass
+                        else:
+                            print(i, j, exp_prep)
+                            prep = allopticalResults.post_4ap_trials[i][j][:-6]
+                            post4aptrial = allopticalResults.post_4ap_trials[i][j][-5:]
+                            expobj, _ = import_expobj(prep=prep, trial=post4aptrial, verbose=False)
+
+                            working_on(expobj)
+                            func(expobj=expobj, **kwargs)
+                            end_working_on(expobj)
+
+                        counter_j += 1
+                    counter_i += 1
+            return inner
+        return for_loop_post4ap
+
+    if len(trials_run) > 1:
+        print(f"{'-' * 5} RUNNING SPECIFIED TRIALS from `trials_run` {'-' * 5}")
+
+        def for_loop_trials_run(func):
+            def inner(*args, **kwargs):
+                counter1 = 0
+                for i, x in enumerate(trials_run):
+                    counter2 = 0
+                    for j, y in enumerate(x):
+                        print(i, j, y)
+                        prep = trials_run[i][j][:-6]
+                        trial = trials_run[i][j][-5:]
+                        expobj, _ = import_expobj(prep=prep, trial=trial, verbose=False)
+
+                        working_on(expobj)
+                        func(expobj=expobj, **kwargs)
+                        end_working_on(expobj)
+
+                        counter2 += 1
+                counter1 += 1
+            return inner
+        return for_loop_trials_run
 
 
 ## CLASS DEFINITIONS
@@ -2910,7 +3002,7 @@ class Post4ap(alloptical):
 
             tiffs_loc = '%s/*Ch3.tif' % self.tiff_path_dir
             tiff_path = glob.glob(tiffs_loc)[0]
-            print('loading up post4ap tiff from: ', tiff_path)
+            print('loading up run_post4ap_trials tiff from: ', tiff_path)
             im_stack = tf.imread(tiff_path, key=range(self.n_frames))
             print('Processing seizures from experiment tiff (wait for all seizure comparisons to be processed), \n '
                   'total tiff shape: ', im_stack.shape)
@@ -3840,11 +3932,11 @@ class AllOpticalResults:  ## initiated in allOptical-results.ipynb
                                                                     'mean reliability (>0.3 dF/stdF)': []})  # gets filled in allOptical-results.ipynb
 
 
-        # large dictionary containing direct pre4ap and post4ap trial comparisons for each experiments, and stim responses
-        # for pre4ap data and stim responses for post4ap data (also broken down by outsz and insz) - responses are dF/prestimF
+        # large dictionary containing direct run_pre4ap_trials and run_post4ap_trials trial comparisons for each experiments, and stim responses
+        # for run_pre4ap_trials data and stim responses for run_post4ap_trials data (also broken down by outsz and insz) - responses are dF/prestimF
         self.stim_responses = {}  # get defined in alloptical_analysis_photostim
 
-        # for pre4ap data and stim responses for post4ap data (also broken down by outsz and insz) - responses are taken using whole trace dFF
+        # for run_pre4ap_trials data and stim responses for run_post4ap_trials data (also broken down by outsz and insz) - responses are taken using whole trace dFF
         self.stim_responses_tracedFF = {}  # get defined in alloptical_analysis_photostim
 
 
@@ -3874,6 +3966,14 @@ class AllOpticalResults:  ## initiated in allOptical-results.ipynb
         self.save_pkl()
 
 #
+
+# # # import results superobject that will collect analyses from various individual experiments
+results_object_path = '/home/pshah/mnt/qnap/Analysis/alloptical_results_superobject.pkl'
+try:
+    allopticalResults = import_resultsobj(pkl_path=results_object_path)  # this needs to be run AFTER defining the AllOpticalResults class
+except FileNotFoundError:
+    print(f'not able to get allopticalResults object from {results_object_path}')
+
 
 ########
 
@@ -4766,7 +4866,7 @@ def fig_non_targets_responses(expobj, plot_subset: bool = True, save_fig=None):
         print('saving figure output to:', save_fig)
         plt.savefig(save_fig)
 
-###### NON TARGETS analysis - post4ap experiments + plotting
+###### NON TARGETS analysis - run_post4ap_trials experiments + plotting
 def run_allopticalAnalysisNontargetsPost4ap(expobj, normalize_to='pre_stim', to_plot=True, save_plot_suffix='', do_processing=True):
     if do_processing:
 

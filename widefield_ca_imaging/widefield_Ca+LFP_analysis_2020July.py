@@ -34,7 +34,7 @@ plt.plot(voltage[-18045640:], linewidth=0.2); plt.suptitle('LFP voltage'); plt.s
 
 #%% DOWNSAMPLING or CROPPING OF A TIFF FILE (USEFULL IF YOU WANT TO DOWNLOAD TO LOCAL COMPUTER AND WATCH THE TIFF)
 
-# import first tiff and make a downsampled tiff for sample: HF98 - pre4ap baseline widefield Ca imaging
+# import first tiff and make a downsampled tiff for sample: HF98 - run_pre4ap_trials baseline widefield Ca imaging
 
 # open tiff file
 tiff_path = '/home/pshah/mnt/qnap/Analysis/2020-07-16/HF95/wide4x4ap_010.tif'

@@ -16,7 +16,7 @@ date = data_path_base[-10:]
 trial = 't-013'  # note that %s magic command in the code below will be using these trials listed here
 comments = 'photostim: 9 cells x 4 groups; 5mW per cell; preset: 2020-11-25_PS_250ms-stim-50hz (approach #1); same targets and protocol as t011 but random vs ekmeans group assignment'
 naparms_loc = '/photostim/2020-12-19_RL109_ps_014/'  # make sure to include '/' at the end to indicate the child directory
-exp_type = 'pre 4ap 2p all optical'  # use 'post' and '4ap' in the description to create the appropriate post4ap exp object
+exp_type = 'pre 4ap 2p all optical'  # use 'post' and '4ap' in the description to create the appropriate run_post4ap_trials exp object
 analysis_save_path = '/home/pshah/mnt/qnap/Analysis/%s/%s/' % (date, animal_prep)
 
 pre4ap_trials = ['']  # add all optical t-series from pre4ap_trials

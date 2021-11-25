@@ -38,72 +38,9 @@ expobj, experiment = aoutils.import_expobj(prep='RL109', trial='t-013')
 """
 
 
-# %% decorators for for looping through experiment trials
-
-def working_on(expobj):
-    print(f"Working on: {expobj.metainfo['exptype']} {expobj.metainfo['animal prep.']} {expobj.metainfo['trial']} ... ")
-
-
-def end_working_on(expobj):
-    print(
-        f"Working on: {expobj.metainfo['exptype']} {expobj.metainfo['animal prep.']} {expobj.metainfo['trial']} \ end\n")
-
-
-def for_loop_exps(pre4ap=True, post4ap=False):
-    if pre4ap:
-        print(f"{'-' * 5} RUNNING PRE4AP TRIALS {'-' * 5}")
-
-        def for_loop_pre4ap(func):
-            def inner(*args, **kwargs):
-                counter1 = 0
-                for i, x in enumerate(allopticalResults.pre_4ap_trials):
-                    counter2 = 0
-                    for j, y in enumerate(x):
-                        print(i, j, y)
-                        prep = allopticalResults.pre_4ap_trials[i][j][:-6]
-                        pre4aptrial = allopticalResults.pre_4ap_trials[i][j][-5:]
-                        expobj, _ = aoutils.import_expobj(prep=prep, trial=pre4aptrial, verbose=False)
-
-                        working_on(expobj)
-                        func(expobj=expobj, **kwargs)
-                        end_working_on(expobj)
-
-                        counter2 += 1
-                counter1 += 1
-
-            return inner
-        return for_loop_pre4ap
-
-    if post4ap:
-        print(f"{'-' * 5} RUNNING POST4AP TRIALS {'-' * 5}")
-
-        def for_loop_post4ap(func):
-            def inner(*args, **kwargs):
-                counter1 = 0
-                for i, x in enumerate(allopticalResults.post_4ap_trials):
-                    counter2 = 0
-                    for j, y in enumerate(x):
-                        print(i, j, y)
-                        prep = allopticalResults.post_4ap_trials[i][j][:-6]
-                        post4aptrial = allopticalResults.post_4ap_trials[i][j][-5:]
-                        expobj, _ = aoutils.import_expobj(prep=prep, trial=post4aptrial, verbose=False)
-
-                        working_on(expobj)
-                        func(expobj=expobj, **kwargs)
-                        end_working_on(expobj)
-
-                        counter2 += 1
-                counter1 += 1
-            return inner
-        return for_loop_post4ap
-
-
 # %% 1) adding slm targets responses to alloptical results allopticalResults.slmtargets_stim_responses
 
-# TODO need to update code to use new trace dFF processed values
-# TODO need to update code to collect SLM target stim responses from all preps/exps
-
-@for_loop_exps(pre4ap=True)
+@aoutils.run_for_loop_across_exps(run_pre4ap_trials=True, run_post4ap_trials=True)
 def add_slmtargets_responses_tracedFF(**kwargs):
     print("|- adding slm targets trace dFF responses to allopticalResults.slmtargets_stim_responses")
     print(kwargs)
@@ -140,8 +77,8 @@ def add_slmtargets_responses_tracedFF(**kwargs):
         if expobj.stims_in_sz > 1:
             prep_trial = f"{expobj.metainfo['animal prep.']} {expobj.metainfo['trial']}"
 
-            # dFstdF_response = np.mean([[np.mean(expobj.responses_SLMtargets_insz[i]) for i in range(expobj.n_targets_total)]])
-            # allopticalResults.slmtargets_stim_responses.loc[allopticalResults.slmtargets_stim_responses['prep_trial'] == prep_trial, 'mean response (dF/stdF all targets) insz'] = dFstdF_response
+            dFstdF_response = np.mean([[np.mean(expobj.responses_SLMtargets_insz[i]) for i in range(expobj.n_targets_total)]])
+            allopticalResults.slmtargets_stim_responses.loc[allopticalResults.slmtargets_stim_responses['prep_trial'] == prep_trial, 'mean response (dF/stdF all targets) insz'] = dFstdF_response
 
             reliability = np.mean(list(expobj.StimSuccessRate_SLMtargets_outsz.values()))
             allopticalResults.slmtargets_stim_responses.loc[allopticalResults.slmtargets_stim_responses[
@@ -155,8 +92,8 @@ def add_slmtargets_responses_tracedFF(**kwargs):
 
 add_slmtargets_responses_tracedFF()
 
+allopticalResults.slmtargets_stim_responses
 # allopticalResults.save()
-# allopticalResults.slmtargets_stim_responses
 
 
 # sys.exit()
@@ -192,7 +129,7 @@ for key in list(allopticalResults.trial_maps['post'].keys()):
 short_list_pre = [('pre', 'e', '0')]
 short_list_post = [('post', 'e', '0')]
 
-# %% 2.1) DATA COLLECTION SLMTargets: organize SLMTargets stim responses - across all appropriate pre4ap, post4ap trial comparisons - responses are dF/prestimF
+# %% 2.1) DATA COLLECTION SLMTargets: organize SLMTargets stim responses - across all appropriate run_pre4ap_trials, run_post4ap_trials trial comparisons - responses are dF/prestimF
 """ doing it in this way so that its easy to use in the response vs. stim times relative to seizure onset code (as this has already been coded up)"""
 
 trials_skip = [
@@ -214,7 +151,7 @@ for i in range(len(allopticalResults.pre_4ap_trials)):
     if f"{prep} {pre4aptrial}" not in trials_skip:
 
         # load up pre-4ap trial
-        print(f'|-- importing {prep} {pre4aptrial} - pre4ap trial')
+        print(f'|-- importing {prep} {pre4aptrial} - run_pre4ap_trials trial')
 
         expobj, experiment = aoutils.import_expobj(trial=pre4aptrial, date=date, prep=prep, verbose=False)
 
@@ -231,7 +168,7 @@ for i in range(len(allopticalResults.pre_4ap_trials)):
                     prep, pre4aptrial_), 'date'])[0]
 
                     # load up pre-4ap trial
-                    print(f'|-- importing {prep} {pre4aptrial_} - pre4ap trial')
+                    print(f'|-- importing {prep} {pre4aptrial_} - run_pre4ap_trials trial')
                     expobj, experiment = aoutils.import_expobj(trial=pre4aptrial_, date=date, prep=prep, verbose=False)
                     df_ = expobj.responses_SLMtargets.T
 
@@ -264,7 +201,7 @@ for i in range(len(allopticalResults.pre_4ap_trials)):
         print(f'TEST 1.1 - working on {prep} {post4aptrial}')
 
         # load up post-4ap trial and stim responses
-        print(f'|-- importing {prep} {post4aptrial} - post4ap trial')
+        print(f'|-- importing {prep} {post4aptrial} - run_post4ap_trials trial')
         expobj, experiment = aoutils.import_expobj(trial=post4aptrial, date=date, prep=prep, verbose=False)
         if hasattr(expobj, 'responses_SLMtargets_outsz'):
             df = expobj.responses_SLMtargets_outsz.T
@@ -282,7 +219,7 @@ for i in range(len(allopticalResults.pre_4ap_trials)):
                                         prep, pre4aptrial), 'date'])[0]
 
                         # load up post-4ap trial and stim responses
-                        print(f'|-- importing {prep} {post4aptrial_} - post4ap trial')
+                        print(f'|-- importing {prep} {post4aptrial_} - run_post4ap_trials trial')
                         expobj, experiment = aoutils.import_expobj(trial=post4aptrial_, date=date, prep=prep,
                                                                    verbose=False)
                         if hasattr(expobj, 'responses_SLMtargets_outsz'):
@@ -304,7 +241,7 @@ for i in range(len(allopticalResults.pre_4ap_trials)):
             allopticalResults.outsz_missing.append('%s %s' % (post4aptrial, prep))
 
         ##### POST-4ap trials - IN SZ PHOTOSTIMS - only PENUMBRA cells
-        # post4aptrial = allopticalResults.post_4ap_trials[i][0][-5:] -- same as post4ap OUTSZ for loop one above
+        # post4aptrial = allopticalResults.post_4ap_trials[i][0][-5:] -- same as run_post4ap_trials OUTSZ for loop one above
 
         # skipping some trials that need fixing of the expobj
         # if f"{prep} {post4aptrial}" not in trials_skip:
@@ -393,7 +330,7 @@ for i in range(len(allopticalResults.pre_4ap_trials)):
 allopticalResults.stim_responses_comparisons = stim_responses_comparisons_dict
 allopticalResults.save()
 
-# %% 2.2) DATA COLLECTION SLMTargets: organize SLMTargets stim responses - across all appropriate pre4ap, post4ap trial comparisons - using whole trace dFF responses
+# %% 2.2) DATA COLLECTION SLMTargets: organize SLMTargets stim responses - across all appropriate run_pre4ap_trials, run_post4ap_trials trial comparisons - using whole trace dFF responses
 """ doing it in this way so that its easy to use in the response vs. stim times relative to seizure onset code (as this has already been coded up)"""
 
 trials_skip = [
@@ -416,20 +353,20 @@ for i in range(len(allopticalResults.pre_4ap_trials)):
     allopticalResults.metainfo.loc[allopticalResults.metainfo['prep_trial'] == f"{prep} {pre4aptrial}", 'date'].values[
         0]
     print("\n\n\n-------------------------------------------")
-    print(f"{i}, {date}, {prep}, pre4ap trial: {pre4aptrial}, post4ap trial: {post4aptrial}")
+    print(f"{i}, {date}, {prep}, run_pre4ap_trials trial: {pre4aptrial}, run_post4ap_trials trial: {post4aptrial}")
 
     # skipping some trials that need fixing of the expobj
     if f"{prep} {pre4aptrial}" not in trials_skip:
 
         # load up pre-4ap trial
-        print(f'|-- importing {prep} {pre4aptrial} - pre4ap trial')
+        print(f'|-- importing {prep} {pre4aptrial} - run_pre4ap_trials trial')
 
         expobj, experiment = aoutils.import_expobj(trial=pre4aptrial, date=date, prep=prep, verbose=False,
                                                    do_processing=False)
         # collect raw Flu data from SLM targets
         expobj.collect_traces_from_targets(force_redo=False)
         aoutils.run_alloptical_processing_photostim(expobj, plots=False,
-                                                    force_redo=False)  # REVIEW PROGRESS: pre4ap seems to be working fine till here for trace_dFF processing
+                                                    force_redo=False)  # REVIEW PROGRESS: run_pre4ap_trials seems to be working fine till here for trace_dFF processing
 
         df = expobj.responses_SLMtargets_tracedFF.T  # df == stim frame x cells (photostim targets)
         if len(allopticalResults.pre_4ap_trials[i]) > 1:
@@ -444,7 +381,7 @@ for i in range(len(allopticalResults.pre_4ap_trials)):
                     prep, pre4aptrial_), 'date'])[0]
 
                     # load up pre-4ap trial
-                    print(f'\------ importing {prep} {pre4aptrial_} - pre4ap trial')
+                    print(f'\------ importing {prep} {pre4aptrial_} - run_pre4ap_trials trial')
                     expobj, experiment = aoutils.import_expobj(trial=pre4aptrial_, date=date, prep=prep, verbose=False,
                                                                do_processing=False)
                     # collect raw Flu data from SLM targets
@@ -474,16 +411,16 @@ for i in range(len(allopticalResults.pre_4ap_trials)):
 
 
     else:
-        print(f"|-- skipping: {prep} pre4ap trial {pre4aptrial}")
+        print(f"|-- skipping: {prep} run_pre4ap_trials trial {pre4aptrial}")
 
     ##### POST-4ap trials - OUT OF SZ PHOTOSTIMS
-    print(f'TEST 1.1 - working on {prep}, post4ap trial {post4aptrial}')
+    print(f'TEST 1.1 - working on {prep}, run_post4ap_trials trial {post4aptrial}')
 
     # skipping some trials that need fixing of the expobj
     if f"{prep} {post4aptrial}" not in trials_skip:
 
         # load up post-4ap trial and stim responses
-        print(f'|-- importing {prep} {post4aptrial} - post4ap trial')
+        print(f'|-- importing {prep} {post4aptrial} - run_post4ap_trials trial')
         expobj, experiment = aoutils.import_expobj(trial=post4aptrial, date=date, prep=prep, verbose=False,
                                                    do_processing=False)
         # collect raw Flu data from SLM targets
@@ -506,7 +443,7 @@ for i in range(len(allopticalResults.pre_4ap_trials)):
                                         prep, pre4aptrial), 'date'])[0]
 
                         # load up post-4ap trial and stim responses
-                        print(f'\------ importing {prep} {post4aptrial_} - post4ap trial')
+                        print(f'\------ importing {prep} {post4aptrial_} - run_post4ap_trials trial')
                         expobj, experiment = aoutils.import_expobj(trial=post4aptrial_, date=date, prep=prep,
                                                                    verbose=False, do_processing=False)
                         # collect raw Flu data from SLM targets
@@ -523,7 +460,7 @@ for i in range(len(allopticalResults.pre_4ap_trials)):
                                 post4aptrial_, prep))
                             allopticalResults.outsz_missing.append('%s %s' % (post4aptrial_, prep))
                     else:
-                        print(f"\---- ***** skipping: {prep} post4ap trial {post4aptrial_}")
+                        print(f"\---- ***** skipping: {prep} run_post4ap_trials trial {post4aptrial_}")
 
             stim_responses_tracedFF_comparisons_dict[prep][f'{comparison_number}']['post-4ap'] = df
 
@@ -533,7 +470,7 @@ for i in range(len(allopticalResults.pre_4ap_trials)):
             allopticalResults.outsz_missing.append('%s %s' % (post4aptrial, prep))
 
         ##### POST-4ap trials - IN SZ PHOTOSTIMS - only PENUMBRA cells
-        # post4aptrial = allopticalResults.post_4ap_trials[i][0][-5:] -- same as post4ap OUTSZ for loop one above
+        # post4aptrial = allopticalResults.post_4ap_trials[i][0][-5:] -- same as run_post4ap_trials OUTSZ for loop one above
 
         # skipping some trials that need fixing of the expobj
         # if f"{prep} {post4aptrial}" not in trials_skip:
@@ -602,7 +539,7 @@ for i in range(len(allopticalResults.pre_4ap_trials)):
                                     post4aptrial_, prep))
                                 allopticalResults.insz_missing.append('%s %s' % (post4aptrial_, prep))
                         else:
-                            print(f"\-- ***** skipping: {prep} post4ap trial {post4aptrial_}")
+                            print(f"\-- ***** skipping: {prep} run_post4ap_trials trial {post4aptrial_}")
 
                 stim_responses_tracedFF_comparisons_dict[prep][f"{comparison_number}"]['in sz'] = df
             else:
@@ -613,17 +550,17 @@ for i in range(len(allopticalResults.pre_4ap_trials)):
             print(f"**** need to run collecting slmtargets_szboundary_stim for {prep} {post4aptrial} [5]")
 
     else:
-        print(f"\-- ***** skipping: {prep} post4ap trial {post4aptrial}")
+        print(f"\-- ***** skipping: {prep} run_post4ap_trials trial {post4aptrial}")
         if not hasattr(expobj, 'responses_SLMtargets_tracedFF_outsz'):
             print(
-                f'\-- **** need to run collecting outsz responses SLMtargets attr for post4ap trial {post4aptrial}, {prep} **** [1]')
+                f'\-- **** need to run collecting outsz responses SLMtargets attr for run_post4ap_trials trial {post4aptrial}, {prep} **** [1]')
 
         if not hasattr(expobj, 'slmtargets_szboundary_stim'):
             print(
-                f'**** need to run collecting insz responses SLMtargets attr for post4ap trial {post4aptrial}, {prep} **** [2]')
+                f'**** need to run collecting insz responses SLMtargets attr for run_post4ap_trials trial {post4aptrial}, {prep} **** [2]')
         if hasattr(expobj, 'responses_SLMtargets_tracedFF_insz'):
             print(
-                f'**** need to run collecting in sz responses SLMtargets attr for post4ap trial {post4aptrial}, {prep} **** [3]')
+                f'**** need to run collecting in sz responses SLMtargets attr for run_post4ap_trials trial {post4aptrial}, {prep} **** [3]')
 
     ## switch out the comparison_number to something more readable
     new_key = f"{pre4aptrial} vs. {post4aptrial}"
@@ -814,7 +751,7 @@ for expprep in list(allopticalResults.stim_responses_zscores.keys())[:3]:
             fig, ax = aoplot.plotMeanRawFluTrace(expobj=expobj, stim_span_color='white', x_axis='frames', show=False,
                                                  fig=fig, ax=ax)
             ax2 = ax.twinx()
-            ## retrieve the appropriate zscored database - pre4ap stims
+            ## retrieve the appropriate zscored database - run_pre4ap_trials stims
             targets = [x for x in list(pre4ap_df.columns) if type(x) == str and '_z' in x]
             for target in targets:
                 for stim_idx in pre4ap_df.index[:-2]:
@@ -827,7 +764,7 @@ for expprep in list(allopticalResults.stim_responses_zscores.keys())[:3]:
                                 color=target_colors[targets.index(target)], alpha=0.70, s=15, zorder=4)
 
             ax2.axhline(y=0)
-            ax2.set_ylabel('Response mag. (zscored to pre4ap)')
+            ax2.set_ylabel('Response mag. (zscored to run_pre4ap_trials)')
             ax2.margins(x=0)
 
             ax3 = axs[counter + 1]
@@ -874,10 +811,10 @@ for expprep in post4ap_trials_stimresponses_zscores:
                 ax.margins(x=0)
 
                 ax2 = ax.twinx()
-                ## retrieve the appropriate zscored database - post4ap (outsz) stims
+                ## retrieve the appropriate zscored database - run_post4ap_trials (outsz) stims
                 targets = [x for x in list(post4ap_df.columns) if type(x) == str and '_z' in x]
                 assert len(targets) == len(SLMtarget_ids), print(
-                    'mismatch in SLMtargets_ids and targets post4ap out sz')
+                    'mismatch in SLMtargets_ids and targets run_post4ap_trials out sz')
                 for target in targets:
                     for stim_idx in post4ap_df.index[:-2]:
                         response = post4ap_df.loc[stim_idx, target]
@@ -900,7 +837,7 @@ for expprep in post4ap_trials_stimresponses_zscores:
                                         color=target_colors[targets.index(target)], alpha=0.70, s=15, zorder=4)
 
                 ax2.axhline(y=0)
-                ax2.set_ylabel('Response mag. (zscored to pre4ap)')
+                ax2.set_ylabel('Response mag. (zscored to run_pre4ap_trials)')
                 ax2.margins(x=0)
 
                 ax3 = axs[counter + 1]
@@ -930,7 +867,7 @@ for prep in allopticalResults.stim_responses_comparisons.keys():
             post_4ap_df = allopticalResults.stim_responses_comparisons[prep][key]['post-4ap']
             if len(post_4ap_df) > 0:
                 post4aptrial = key[-5:]
-                print(f'working on.. {prep} {key}, post4ap trial: {post4aptrial}')
+                print(f'working on.. {prep} {key}, run_post4ap_trials trial: {post4aptrial}')
                 stim_relative_szonset_vs_avg_response_alltargets_atstim[f"{prep} {post4aptrial}"] = [[], []]
                 expobj, experiment = aoutils.import_expobj(trial=post4aptrial, prep=prep, verbose=False)
 
@@ -972,7 +909,7 @@ for prep in allopticalResults.stim_responses_tracedFF_comparisons.keys():
             post_4ap_df = allopticalResults.stim_responses_tracedFF_comparisons[prep][key]['post-4ap']
             if len(post_4ap_df) > 0:
                 post4aptrial = key[-5:]
-                print(f'working on.. {prep} {key}, post4ap trial: {post4aptrial}')
+                print(f'working on.. {prep} {key}, run_post4ap_trials trial: {post4aptrial}')
                 stim_relative_szonset_vs_avg_dFFresponse_alltargets_atstim[f"{prep} {post4aptrial}"] = [[], []]
                 expobj, experiment = aoutils.import_expobj(trial=post4aptrial, prep=prep, verbose=False)
 
@@ -1097,7 +1034,7 @@ ax1.set_ylabel('response magnitude')
 ax1.set_title('')
 fig1.show()
 
-# %% 8.0-main) avg responses in space around photostim targets - pre vs. post4ap
+# %% 8.0-main) avg responses in space around photostim targets - pre vs. run_post4ap_trials
 
 
 # %% archive-1) adding slm targets responses to alloptical results allopticalResults.slmtargets_stim_responses

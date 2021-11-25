@@ -141,7 +141,7 @@ for expprep in list(allopticalResults.stim_responses_zscores.keys()):
             ax = axs[counter]
             fig, ax = aoplot.plotMeanRawFluTrace(expobj=expobj, stim_span_color='white', x_axis='frames', show=False, fig=fig, ax=ax)
             ax2 = ax.twinx()
-            ## retrieve the appropriate zscored database - pre4ap stims
+            ## retrieve the appropriate zscored database - run_pre4ap_trials stims
             targets = [x for x in list(pre4ap_df.columns) if type(x) == str and '_z' in x]
             for target in targets:
                 for stim_idx in pre4ap_df.index[:-2]:
@@ -194,7 +194,7 @@ for expprep in list(allopticalResults.stim_responses_zscores.keys()):
                 ax.margins(x=0)
 
                 ax2 = ax.twinx()
-                ## retrieve the appropriate zscored database - post4ap (outsz) stims
+                ## retrieve the appropriate zscored database - run_post4ap_trials (outsz) stims
                 targets = [x for x in list(post4ap_df.columns) if type(x) == str and '_z' in x]
                 for target in targets:
                     for stim_idx in post4ap_df.index[:-2]:
@@ -213,7 +213,7 @@ for expprep in list(allopticalResults.stim_responses_zscores.keys()):
                         rand = np.random.randint(-15, 25, 1)[0] #* 1/(abs(response)**1/2)  # jittering around the stim_frame for the plot
                         ax2.scatter(x=expobj.stim_start_frames[stim_idx] + rand, y=response, color=target_colors[targets.index(target)], alpha=0.70, s=15, zorder=4)
                         ax2.axhline(y=0)
-                        ax2.set_ylabel('Response mag. (zscored to pre4ap)')
+                        ax2.set_ylabel('Response mag. (zscored to run_pre4ap_trials)')
                 ax2.margins(x=0)
 
                 ax3 = axs[counter+1]
@@ -478,7 +478,7 @@ for i in ls:
 
 
 
-# %% 5.2.2) PLOT - measuring avg raw pre-stim stdF for all non-targets - pre4ap vs. post4ap histogram comparison
+# %% 5.2.2) PLOT - measuring avg raw pre-stim stdF for all non-targets - run_pre4ap_trials vs. run_post4ap_trials histogram comparison
 ncols = 3
 nrows = 4
 fig, axs = plt.subplots(ncols=ncols, nrows=nrows, figsize=(8, 8))
@@ -496,7 +496,7 @@ for key in list(allopticalResults.trial_maps['pre'].keys()):
 
     # plot the histogram
     ax = axs[counter // ncols, counter % ncols]
-    fig, ax = pj.plot_hist_density([allunits_prestdF_pre4ap_, allunits_prestdF_post4ap_], x_label=None, legend_labels=['pre4ap', 'post4ap'],
+    fig, ax = pj.plot_hist_density([allunits_prestdF_pre4ap_, allunits_prestdF_post4ap_], x_label=None, legend_labels=['run_pre4ap_trials', 'run_post4ap_trials'],
                                    title=f"{expobj.metainfo['animal prep.']} {expobj.metainfo['trial']} ", show_legend=False,
                                    fill_color=['gray', 'purple'], num_bins=100, fig=fig, ax=ax, show=False, shrink_text=0.7,
                                    figsize=(4, 5))
@@ -505,13 +505,13 @@ axs[0, 0].legend()
 axs[0, 0].set_ylabel('density')
 axs[0, 0].set_xlabel('Avg. prestim std F')
 fig.tight_layout()
-fig.suptitle('All exps. prestim std F distribution - pre vs. post4ap')
-save_path = save_path_prefix + f"/All exps. prestim std F distribution - pre vs. post4ap.png"
+fig.suptitle('All exps. prestim std F distribution - pre vs. run_post4ap_trials')
+save_path = save_path_prefix + f"/All exps. prestim std F distribution - pre vs. run_post4ap_trials.png"
 plt.savefig(save_path)
 fig.show()
 
 
-# 5.2.2.1) PLOT - measuring avg raw pre-stim stdF for all non-targets - pre4ap only
+# 5.2.2.1) PLOT - measuring avg raw pre-stim stdF for all non-targets - run_pre4ap_trials only
 # key = 'h'; j = 0
 
 sig_units_prestdF_pre4ap = []
@@ -547,7 +547,7 @@ for key in list(allopticalResults.trial_maps['pre'].keys()):
 
 axs[0, 0].set_ylabel('density')
 axs[0, 0].set_xlabel('prestim std F')
-title = 'All exps. prestim std F distribution - pre4ap only'
+title = 'All exps. prestim std F distribution - run_pre4ap_trials only'
 fig.tight_layout()
 fig.suptitle(title)
 save_path = save_path_prefix + f"/{title}.png"
@@ -557,7 +557,7 @@ fig.show()
 
 
 
-# 5.2.2.2) PLOT - measuring avg raw pre-stim stdF for all non-targets - post4ap trials
+# 5.2.2.2) PLOT - measuring avg raw pre-stim stdF for all non-targets - run_post4ap_trials trials
 sig_units_prestdF_post4ap = []
 nonsig_units_prestdF_post4ap = []
 allunits_prestdF_post4ap = []
@@ -594,7 +594,7 @@ for key in list(allopticalResults.trial_maps['post'].keys()):
 
 axs[0, 0].set_ylabel('density')
 axs[0, 0].set_xlabel('prestim std F')
-title = 'All exps. prestim std F distribution - post4ap only'
+title = 'All exps. prestim std F distribution - run_post4ap_trials only'
 fig.tight_layout()
 fig.suptitle(title)
 save_path = save_path_prefix + f"/{title}.png"
@@ -606,7 +606,7 @@ fig.show()
 
 
 
-# %% 5.2.3) PLOT - measuring avg. raw prestim F - do post4ap cells have a lower avg. raw prestim F?
+# %% 5.2.3) PLOT - measuring avg. raw prestim F - do run_post4ap_trials cells have a lower avg. raw prestim F?
 
 ncols = 3
 nrows = 4
@@ -617,22 +617,22 @@ for key in list(allopticalResults.trial_maps['pre'].keys()):
     j = 0  # get just the first trial from the allopticalResults.trial_maps
 
     expobj, experiment = aoutils.import_expobj(aoresults_map_id='pre %s.%s' % (key, j))  # import expobj
-    raw_meanprestim_pre4ap = np.mean(np.mean(expobj.raw_traces[:, :, expobj.pre_stim_frames_test], axis=2), axis=1)  # collect mean prestim for raw traces avg over trials - pre4ap
+    raw_meanprestim_pre4ap = np.mean(np.mean(expobj.raw_traces[:, :, expobj.pre_stim_frames_test], axis=2), axis=1)  # collect mean prestim for raw traces avg over trials - run_pre4ap_trials
 
     expobj, experiment = aoutils.import_expobj(aoresults_map_id='post %s.%s' % (key, j))  # import expobj
-    raw_meanprestim_post4ap = np.mean(np.mean(expobj.raw_traces[:, :, expobj.pre_stim_frames_test], axis=2), axis=1)  # collect mean prestim for raw traces avg over trials - post4ap
+    raw_meanprestim_post4ap = np.mean(np.mean(expobj.raw_traces[:, :, expobj.pre_stim_frames_test], axis=2), axis=1)  # collect mean prestim for raw traces avg over trials - run_post4ap_trials
 
     # plot the histogram
     ax = axs[counter // ncols, counter % ncols]
     fig, ax = pj.plot_hist_density([raw_meanprestim_pre4ap, raw_meanprestim_post4ap], x_label=None, y_label=None,
-                                   legend_labels=['pre4ap', 'post4ap'], title=f"{expobj.metainfo['animal prep.']} {expobj.metainfo['trial']} ",
+                                   legend_labels=['run_pre4ap_trials', 'run_post4ap_trials'], title=f"{expobj.metainfo['animal prep.']} {expobj.metainfo['trial']} ",
                                    show_legend=False, fill_color=['gray', 'purple'], num_bins=100, fig=fig, ax=ax, show=False,
                                    shrink_text=0.7, figsize=(4, 5))
     counter += 1
 axs[0, 0].legend()
 axs[0, 0].set_ylabel('density')
 axs[0, 0].set_xlabel('Avg. prestim F')
-title = 'All exps. prestim mean F distribution - pre vs. post4ap'
+title = 'All exps. prestim mean F distribution - pre vs. run_post4ap_trials'
 fig.tight_layout()
 fig.suptitle(title)
 save_path = save_path_prefix + f"/{title}.png"
@@ -683,7 +683,7 @@ data = [pre4ap_neg, post4ap_neg]
 pj.plot_bar_with_points(data, x_tick_labels=['pre4ap_neg', 'post4ap_neg'], colors=['skyblue', 'steelblue'],
                         bar=True, paired=True, expand_size_x=0.6, expand_size_y=1.3, title='# of Negative responders',
                         y_label='# of sig. responders', ax=axs[1], fig=fig, show=False)
-title = 'number of pos and neg responders pre vs. post4ap'
+title = 'number of pos and neg responders pre vs. run_post4ap_trials'
 fig.suptitle(title)
 save_path = save_path_prefix + f"/{title}.png"
 plt.savefig(save_path)
@@ -728,7 +728,7 @@ for exp in experiments:
                 else:
                     fps = 30
 
-                fig, ax = aoplot.plot_periphotostim_avg2(dataset=[mean_pre4ap_, mean_post4ap_], fps=fps, legend_labels=[f"pre4ap {len(mean_pre4ap_)} cells", f"post4ap {len(mean_post4ap_)} cells"],
+                fig, ax = aoplot.plot_periphotostim_avg2(dataset=[mean_pre4ap_, mean_post4ap_], fps=fps, legend_labels=[f"run_pre4ap_trials {len(mean_pre4ap_)} cells", f"run_post4ap_trials {len(mean_post4ap_)} cells"],
                                                colors=['black', 'green'], avg_with_std=True, title=f"{allopticalResults.num_sig_responders_df.index[row]}", ylim=[-0.5, 1.0],
                                                pre_stim_sec=allopticalResults.pre_stim_sec, fig=fig, ax=ax, show=False, fontsize='small',
                                                          xlabel=None, ylabel=None)
@@ -773,7 +773,7 @@ for exp in experiments:
                 else:
                     fps = 30
 
-                fig, ax = aoplot.plot_periphotostim_avg2(dataset=[mean_pre4ap_, mean_post4ap_], fps=fps, legend_labels=[f"pre4ap {len(mean_pre4ap_)} cells", f"post4ap {len(mean_post4ap_)} cells"],
+                fig, ax = aoplot.plot_periphotostim_avg2(dataset=[mean_pre4ap_, mean_post4ap_], fps=fps, legend_labels=[f"run_pre4ap_trials {len(mean_pre4ap_)} cells", f"run_post4ap_trials {len(mean_post4ap_)} cells"],
                                                colors=['black', 'red'], avg_with_std=True, title=f"{allopticalResults.num_sig_responders_df.index[row]}", ylim=[-0.5, 1.0],
                                                pre_stim_sec=allopticalResults.pre_stim_sec, fig=fig, ax=ax, show=False, fontsize='small',
                                                          xlabel=None, ylabel=None)
@@ -945,15 +945,15 @@ for exp in experiments:
 
 fig, axs = plt.subplots(ncols=2, nrows=1, figsize=[4,3])
 data = [pre4ap_pos_auc, post4ap_pos_auc]
-pj.plot_bar_with_points(data, x_tick_labels=['pre4ap', 'post4ap'], colors=['lightgreen', 'forestgreen'],
+pj.plot_bar_with_points(data, x_tick_labels=['run_pre4ap_trials', 'run_post4ap_trials'], colors=['lightgreen', 'forestgreen'],
                         bar=False, paired=True, expand_size_x=0.4, expand_size_y=1.2, title='pos responders',
                         y_label='norm. evoked activity (a.u.)', fig=fig, ax=axs[0], show=False, shrink_text=0.7)
 
 data = [pre4ap_neg_auc, post4ap_neg_auc]
-pj.plot_bar_with_points(data, x_tick_labels=['pre4ap', 'post4ap'], colors=['skyblue', 'steelblue'],
+pj.plot_bar_with_points(data, x_tick_labels=['run_pre4ap_trials', 'run_post4ap_trials'], colors=['skyblue', 'steelblue'],
                         bar=False, paired=True, expand_size_x=0.5, expand_size_y=1.2, title='neg responders',
                         y_label='norm. evoked activity (a.u.)', fig=fig, ax=axs[1], show=False, shrink_text=0.7)
-title = 'network evoked photostim activity - nontargets - pre vs. post4ap'
+title = 'network evoked photostim activity - nontargets - pre vs. run_post4ap_trials'
 fig.suptitle(title, fontsize=8.5)
 save_path = save_path_prefix + f"/{title}.png"
 plt.savefig(save_path)
@@ -963,7 +963,7 @@ fig.show()
 
 """# 5.5.3) # # -  total post stim response evoked across all cells recorded
     # - like maybe add up all trials (sig and non sig), and all cells
-    # - and compare pre-4ap and post-4ap (exp by exp, maybe normalizing the peak value per comparison from pre4ap?)
+    # - and compare pre-4ap and post-4ap (exp by exp, maybe normalizing the peak value per comparison from run_pre4ap_trials?)
     # - or just make one graph per comparison and show all to Adam?
 """
 
@@ -1052,11 +1052,11 @@ for i in allopticalResults.pre_4ap_trials:
                 data_traces.append(trace_)
             data_traces = np.array(data_traces)
             stim_dur = 3 / expobj.fps
-            title = '%s stims only, all exps. - avg. responses of photostim targets - pre4ap stims' % to_plot
+            title = '%s stims only, all exps. - avg. responses of photostim targets - run_pre4ap_trials stims' % to_plot
         else:
             data_traces = array_to_plot
             stim_dur = expobj.stim_duration_frames / expobj.fps
-            title = '%s stims only - avg. responses of photostim targets - pre4ap stims %s %s' % (to_plot, prep, trial)
+            title = '%s stims only - avg. responses of photostim targets - run_pre4ap_trials stims %s %s' % (to_plot, prep, trial)
         # make plot
         f, ax, d = aoplot.plot_periphotostim_avg(arr=data_traces, expobj=expobj, stim_duration=stim_dur, y_lims=[0, 50],
                                                  pre_stim_sec=0.25, post_stim_sec=2.75, avg_only=avg_only, title=title,
@@ -1792,5 +1792,5 @@ fig1.show()
 
 
 
-# %% 9.0-main) avg responses around photostim targets - pre vs. post4ap
+# %% 9.0-main) avg responses around photostim targets - pre vs. run_post4ap_trials
 

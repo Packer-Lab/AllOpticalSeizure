@@ -51,7 +51,7 @@ os.makedirs(save_path_prefix) if not os.path.exists(save_path_prefix) else None
 """
 
 
-# %% 0) plot representative experiment plot for stim responses - showing pre4ap and post4ap
+# %% 0) plot representative experiment plot for stim responses - showing run_pre4ap_trials and run_post4ap_trials
 
 # PRE4AP TRIAL
 i = allopticalResults.pre_4ap_trials[0]
@@ -399,11 +399,11 @@ for i in allopticalResults.pre_4ap_trials:
                 data_traces.append(trace_)
             data_traces = np.array(data_traces)
             stim_dur = 3 / expobj.fps
-            title = '%s stims only, all exps. - avg. responses of photostim targets - pre4ap stims' % to_plot
+            title = '%s stims only, all exps. - avg. responses of photostim targets - run_pre4ap_trials stims' % to_plot
         else:
             data_traces = array_to_plot
             stim_dur = expobj.stim_duration_frames / expobj.fps
-            title = '%s stims only - avg. responses of photostim targets - pre4ap stims %s %s' % (to_plot, prep, trial)
+            title = '%s stims only - avg. responses of photostim targets - run_pre4ap_trials stims %s %s' % (to_plot, prep, trial)
         # make plot
         f, ax, d = aoplot.plot_periphotostim_avg(arr=data_traces, expobj=expobj, stim_duration=stim_dur, y_lims=[0, 50],
                                                  pre_stim_sec=0.25, post_stim_sec=2.75, avg_only=avg_only, title=title,
