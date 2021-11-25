@@ -155,20 +155,9 @@ def import_resultsobj(pkl_path: str):
 def working_on(expobj):
     print(f"Working on: {expobj.metainfo['exptype']} {expobj.metainfo['animal prep.']} {expobj.metainfo['trial']} ... ")
 
-
 def end_working_on(expobj):
     print(
-        f"Working on: {expobj.metainfo['exptype']} {expobj.metainfo['animal prep.']} {expobj.metainfo['trial']} \ end\n")
-
-
-trials_skip = [
-    'RL108 t-011',
-    'RL109 t-017'  # RL109 t-017 doesn't have sz boundaries yet.. just updated the sz onset/offset's
-]
-
-trials_run = [
-    'PS11 t-010'
-]
+        f"Finished on: {expobj.metainfo['exptype']} {expobj.metainfo['animal prep.']} {expobj.metainfo['trial']} \ \ \n")
 
 
 def run_for_loop_across_exps(run_pre4ap_trials=False, run_post4ap_trials=False, trials_skip=[], trials_run=[]):
@@ -876,8 +865,9 @@ class alloptical(TwoPhotonImaging):
 
         ## PHOTOSTIM SLM TARGETS
         self.responses_SLMtargets = []  # dF/prestimF responses for all SLM targets for each photostim trial
-        self.responses_SLMtargets_tracedFF = []  # poststim dFF - prestim dFF responses for all SLM targets for each photostim trial
+        self.responses_SLMtargets_tracedFF = []  # delta(poststim dFF and prestim dFF) responses for all SLM targets for each photostim trial - from trace dFF processed trials
         self.StimSuccessRate_SLMtargets = []
+        self.StimSuccessRate_SLMtargets_tracedFF = []
 
         # .get_alltargets_stim_traces_norm(pre_stim=expobj.pre_stim, post_stim=expobj.post_stim, stims=expobj.stim_start_frames)
         # - various attrs. for collecting photostim timed trace snippets from raw Flu values

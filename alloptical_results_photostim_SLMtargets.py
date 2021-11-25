@@ -101,32 +101,44 @@ plot_peristim_avg_traces_alltargets(to_plot='delta dF')
 
 # %% 1) plot peri-photostim avg traces for all trials analyzed to make sure they look alright -- plot as little postage stamps
 
-"""# plot avg of successes in green
-# plot avg of failures in gray
-# plot line at dF_stdF = 0.3
-# add text in plot for avg dF_stdF value of successes, and % of successes
 
-"""
+# PRE4AP TRIAL
+i = allopticalResults.pre_4ap_trials[0]
+j = 0
+pre4ap_prep = i[j][:-6]
+pre4ap_trial = i[j][-5:]
 
-####### decorated ######################################################################################################
+# POST4AP TRIAL
+i = allopticalResults.post_4ap_trials[0]
+j = 0
+post4ap_prep = i[j][:-6]
+post4ap_trial = i[j][-5:]
 
-# make one figure for each prep/trial (one little plot for each cell in that prep)
-for exp in allopticalResults.pre_4ap_trials:
-    # exp = ['RL108 t-009']
-    calc_dff_stims = False
-    for j in exp:
-        if 'PS18' in j:
-            date = allopticalResults.slmtargets_stim_responses.loc[
-                allopticalResults.slmtargets_stim_responses['prep_trial'] == j, 'date'].values[0]
-            pkl_path = "/home/pshah/mnt/qnap/Analysis/%s/%s/%s_%s/%s_%s.pkl" % (
-                date, j[:-6], date, j[-5:], date, j[-5:])  # specify path in Analysis folder to save pkl object
+trials_run = [f"{pre4ap_prep} {pre4ap_trial}", f"{post4ap_prep} {post4ap_trial}"][0]
 
-            expobj, _ = aoutils.import_expobj(pkl_path=pkl_path)
-
-####### decorated ######################################################################################################
-
-def plot_postage_stamps_photostim_traces(**kwargs):
+@aoutils.run_for_loop_across_exps(trials_run=[trials_run])
+def plot_postage_stamps_photostim_traces(to_plot='delta dF',**kwargs):
     expobj = kwargs['expobj'] if 'expobj' in kwargs.keys() else KeyError('need to provide expobj as keyword argument')
+
+    if to_plot == 'delta dF':
+        responses = expobj.responses_SLMtargets_tracedFF
+        hits = expobj.hits_SLMtargets_tracedFF
+        trace_snippets = expobj.SLMTargets_tracedFF_stims_dff  # TODO confirm that the pre-stim period has mean of 0 for all these traces!
+        stimsuccessrates = expobj.StimSuccessRate_SLMtargets_tracedFF
+        y_label = 'delta dF'
+    elif to_plot == 'dFF':
+        responses = expobj.responses_SLMtargets
+        hits = expobj.hits_SLMtargets
+        trace_snippets = expobj.SLMTargets_stims_dff
+        stimsuccessrates = expobj.StimSuccessRate_SLMtargets
+        y_label = '% dFF'
+    else:
+        raise ValueError('must provide to_plot as either `dFF` or `delta dF`')
+
+    responses_magnitudes_successes = {}
+    response_traces_successes = {}
+    responses_magnitudes_failures = {}
+    response_traces_failures = {}
 
     nrows = expobj.n_targets_total // 4
     if expobj.n_targets_total % 4 > 0:
@@ -135,65 +147,61 @@ def plot_postage_stamps_photostim_traces(**kwargs):
     fig, axs = plt.subplots(nrows=nrows, ncols=ncols, figsize=(ncols * 3, nrows * 3),
                             constrained_layout=True)
     counter = 0
-    axs[0, 0].set_xlabel('Frames')
-    axs[0, 0].set_ylabel('% dFF')
+    axs[0, 0].set_xlabel('Time (secs)')
+    axs[0, 0].set_ylabel(y_label)
 
-    responses_magnitudes_successes = {}
-    response_traces_successes = {}
-    responses_magnitudes_failures = {}
-    response_traces_failures = {}
-
-    for cell in range(expobj.SLMTargets_stims_dff.shape[0]):
+    for cell in range(trace_snippets.shape[0]):
         a = counter // 4
         b = counter % 4
-        print('\n%s' % counter)
+        alpha = 1 * (stimsuccessrates[cell] / 100)
+        print(f'plotting target #{counter}, success rate: {stimsuccessrates[cell]}\n')
         if cell not in responses_magnitudes_successes.keys():
             responses_magnitudes_successes[cell] = []
-            response_traces_successes[cell] = np.zeros((expobj.SLMTargets_stims_dff.shape[-1]))
+            response_traces_successes[cell] = np.zeros((trace_snippets.shape[-1]))
             responses_magnitudes_failures[cell] = []
-            response_traces_failures[cell] = np.zeros((expobj.SLMTargets_stims_dff.shape[-1]))
+            response_traces_failures[cell] = np.zeros((trace_snippets.shape[-1]))
 
-        # reliability = expobj.StimSuccessRate_SLMtargets[cell]
-        # f, axs = plt.subplots(figsize=(5, 12), nrows=3)
-        # fig, ax = plt.subplots(figsize=(3, 3))
+        success_stims = np.where(hits.loc[cell] == 1)
+        fail_stims = np.where(hits.loc[cell] == 0)
 
-        success_stims = np.where(expobj.responses_SLMtargets.loc[cell] >= 0.1 * 100)
-        fail_stims = np.where(expobj.responses_SLMtargets.loc[cell] < 0.1 * 100)
+        x_range = np.linspace(0, len(trace_snippets[cell][0]) / expobj.fps, len(trace_snippets[cell][0]))
+
+        # success_stims = np.where(expobj.responses_SLMtargets.loc[cell] >= 0.1 * 100)
+        # fail_stims = np.where(expobj.responses_SLMtargets.loc[cell] < 0.1 * 100)
         for i in success_stims[0]:
-            trace = expobj.SLMTargets_stims_dff[cell][i]
-            axs[a, b].plot(trace, color='skyblue', zorder=2, alpha=0.05)
+            trace = trace_snippets[cell][i]
+            axs[a, b].plot(x_range, trace, color='skyblue', zorder=2, alpha=0.05)
 
         for i in fail_stims[0]:
-            trace = expobj.SLMTargets_stims_dff[cell][i]
-            axs[a, b].plot(trace, color='gray', zorder=3, alpha=0.05)
+            trace = trace_snippets[cell][i]
+            axs[a, b].plot(x_range, trace, color='gray', zorder=3, alpha=0.05)
 
-        success_avg = np.nanmean(expobj.SLMTargets_stims_dff[cell][success_stims], axis=0)
-        failures_avg = np.nanmean(expobj.SLMTargets_stims_dff[cell][fail_stims], axis=0)
-        axs[a, b].plot(success_avg, color='navy', linewidth=2, zorder=4)
-        axs[a, b].plot(failures_avg, color='black', linewidth=2, zorder=4)
-        axs[a, b].set_ylim([-0.1 * 100, 0.6 * 100])
-        axs[a, b].text(0.98, 0.97,
-                       'Success rate: %s' % ('{:,.1f}'.format(expobj.StimSuccessRate_SLMtargets[cell])),
+        if len(success_stims[0]) > 5:
+            success_avg = np.nanmean(trace_snippets[cell][success_stims], axis=0)
+            axs[a, b].plot(x_range, success_avg, color='navy', linewidth=2, zorder=4, alpha=1)
+        if len(fail_stims[0]) > 5:
+            failures_avg = np.nanmean(trace_snippets[cell][fail_stims], axis=0)
+            axs[a, b].plot(x_range, failures_avg, color='black', linewidth=2, zorder=4, alpha=1)
+        axs[a, b].set_ylim([-0.2 * 100, 1.0 * 100])
+        axs[a, b].text(0.98, 0.97, f"Success rate: {stimsuccessrates[cell]:.0f}%",
                        verticalalignment='top', horizontalalignment='right',
                        transform=axs[a, b].transAxes, fontweight='bold',
                        color='black')
         axs[a, b].margins(0)
-        axs[a, b].axvspan(expobj.pre_stim, expobj.pre_stim + expobj.stim_duration_frames, color='mistyrose',
+        axs[a, b].axvspan(expobj.pre_stim / expobj.fps, (expobj.pre_stim + expobj.stim_duration_frames) / expobj.fps, color='mistyrose',
                           zorder=0)
 
         counter += 1
-    fig.suptitle((str(exp) + ' %s - %s targets' % ('- values: pct. dff', len(expobj.SLMTargets_stims_dff))))
-    # fig.savefig('/home/pshah/mnt/qnap/Analysis/%s/%s/results/%s_%s_individual targets dFF.png' % (
-    date, j[:-6], date, j))
+    fig.suptitle(f"{expobj.metainfo['animal prep.']} {expobj.metainfo['trial']} - {len(trace_snippets)} targets",
+                 y = 0.995)
+    # fig.savefig('/home/pshah/mnt/qnap/Analysis/%s/%s/results/%s_%s_individual targets dFF.png' % (date, j[:-6], date, j))
+    fig.tight_layout(pad=1.8)
     fig.show()
 
 plot_postage_stamps_photostim_traces()
 
 
-
-
-
-# %% 2) BAR PLOT FOR PHOTOSTIM RESPONSE MAGNITUDE B/W PRE AND POST 4AP TRIALS - tODO plot delta (trace dFF) responses
+# %% 2) BAR PLOT FOR PHOTOSTIM RESPONSE MAGNITUDE B/W PRE AND POST 4AP TRIALS - TODO plot delta (trace dFF) responses
 pre4ap_response_magnitude = []
 for i in allopticalResults.pre_4ap_trials:
     x = [allopticalResults.slmtargets_stim_responses.loc[
