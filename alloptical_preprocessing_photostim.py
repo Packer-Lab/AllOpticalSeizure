@@ -18,6 +18,11 @@ comments = 'photostim: 9 cells x 4 groups; 5mW per cell; preset: 2020-11-25_PS_2
 naparms_loc = '/photostim/2020-12-19_RL109_ps_014/'  # make sure to include '/' at the end to indicate the child directory
 exp_type = 'pre 4ap 2p all optical'  # use 'post' and '4ap' in the description to create the appropriate post4ap exp object
 analysis_save_path = '/home/pshah/mnt/qnap/Analysis/%s/%s/' % (date, animal_prep)
+
+pre4ap_trials = ['']  # add all optical t-series from pre4ap_trials
+post4ap_trials = ['']  # add all optical t-series from post4ap_trials
+
+
 # paqs_loc = '%s/%s_RL111_%s.paq' % (data_path_base, date, '008')  # path to the .paq files for the selected trials
 ######
 
@@ -37,14 +42,18 @@ if 'post' in exp_type and 'no seizure' not in comments:
 else:
     matlab_pairedmeasurements_path = None
 
+
 metainfo = {
     'animal prep.': animal_prep,
     'trial': trial,
     'date': date,
     'exptype': exp_type,
     'data_path_base': data_path_base,
-    'comments': comments
+    'comments': comments,
+    'pre4ap_trials': pre4ap_trials,
+    'post4ap_trials': post4ap_trials
 }
+
 
 expobj = aoutils.run_photostim_preprocessing(trial, exp_type=exp_type, new_tiffs=new_tiffs, metainfo=metainfo,
                                              tiffs_loc_dir=tiffs_loc_dir, tiffs_loc=tiffs_loc, naparms_loc=(data_path_base+naparms_loc),

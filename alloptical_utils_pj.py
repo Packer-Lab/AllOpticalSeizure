@@ -73,7 +73,10 @@ def import_expobj(aoresults_map_id: str = None, trial: str = None, prep: str = N
 
     if pkl_path is None:
         if date is None:
-            date = allopticalResults.metainfo.loc[allopticalResults.metainfo['prep_trial'] == f"{prep} {trial}", 'date'].values[0]
+            try:
+                date = allopticalResults.metainfo.loc[allopticalResults.metainfo['prep_trial'] == f"{prep} {trial}", 'date'].values[0]
+            except ValueError:
+                print('not able to find date in allopticalResults.metainfo')
         pkl_path = "/home/pshah/mnt/qnap/Analysis/%s/%s/%s_%s/%s_%s.pkl" % (date, prep, date, trial, date, trial)
 
 
@@ -146,6 +149,14 @@ def import_resultsobj(pkl_path: str):
         print(f"|-DONE IMPORT of {(type(resultsobj))} resultsobj \n\n")
     return resultsobj
 
+# # # import results superobject that will collect analyses from various individual experiments
+results_object_path = '/home/pshah/mnt/qnap/Analysis/alloptical_results_superobject.pkl'
+try:
+    allopticalResults = import_resultsobj(pkl_path=results_object_path)
+except FileNotFoundError:
+    print(f'not able to get allopticalResults object from {results_object_path}')
+
+
 ## CLASS DEFINITIONS
 class TwoPhotonImaging:
 
@@ -161,7 +172,7 @@ class TwoPhotonImaging:
         self.tiff_path_dir = tiff_path_dir
         self.tiff_path = tiff_path
         self.paq_path = paq_path
-        self.metainfo = metainfo
+        self.metainfo = metainfo  # dict containing appropriate metainformation fields for the experimental trial
         self.analysis_save_path = analysis_save_path
 
         # create analysis save path location
@@ -680,7 +691,7 @@ class TwoPhotonImaging:
                 print('saving cropped tiff ', reg_tif_crop.shape)
                 tif.save(reg_tif_crop)
 
-    def s2pMeanImage(s2p_path):
+    def s2pMeanImage(self, s2p_path):
         os.chdir(s2p_path)
 
         ops = np.load('ops.npy', allow_pickle=True).item()
@@ -2673,12 +2684,12 @@ class alloptical(TwoPhotonImaging):
                 s2p_path = s2p_path
 
                 # mean image from s2p
-                mean_img = s2pMeanImage(s2p_path)
+                mean_img = obj.s2pMeanImage(s2p_path)
                 mean_img = np.expand_dims(mean_img, axis=0)
                 stack = np.append(stack, mean_img, axis=0)
 
                 # mask images from s2p
-                mask_img, targets_s2p_img = s2pMasks(obj=expobj, s2p_path=s2p_path, cell_ids=cell_ids)
+                mask_img, targets_s2p_img = obj.s2pMasks(s2p_path=s2p_path, cell_ids=cell_ids)
                 mask_img = np.expand_dims(mask_img, axis=0)
                 targets_s2p_img = np.expand_dims(targets_s2p_img, axis=0)
                 # targets_s2p_img_1 = np.expand_dims(targets_s2p_img_1, axis=0)
@@ -2701,7 +2712,7 @@ class alloptical(TwoPhotonImaging):
                 # stack = np.append(stack, ps_sta_img, axis=0)
 
                 # target images
-                targ_img = getTargetImage(expobj)
+                targ_img = obj.getTargetImage(expobj)
                 targ_img = np.expand_dims(targ_img, axis=0)
                 stack = np.append(stack, targ_img, axis=0)
 
@@ -3816,12 +3827,13 @@ class AllOpticalResults:  ## initiated in allOptical-results.ipynb
         # just create an empty class object that you will throw results and analyses into
         self.pkl_path = save_path
 
-        self.metainfo = pd.DataFrame()  # gets defined in allOptical-results.ipynb
+        self.metainfo = pd.DataFrame()  # gets filled in alloptical_results_init.py
+        #
         self.slmtargets_stim_responses = pd.DataFrame({'prep_trial': [], 'date': [], 'exptype': [],
                                                                     'stim_setup': [],
                                                                     'mean response (dF/stdF all targets)': [],
-                                                                    'mean response (dFF all targets)': [],
-                                                                    'mean reliability (>0.3 dF/stdF)': []})  # gets defined in allOptical-results.ipynb
+                                                                    'mean response delta(trace_dFF) all targets)': [],  ## TODO this is the field to fill with mean photostim responses .21/11/25
+                                                                    'mean reliability (>0.3 dF/stdF)': []})  # gets filled in allOptical-results.ipynb
 
 
         # large dictionary containing direct pre4ap and post4ap trial comparisons for each experiments, and stim responses
@@ -4368,7 +4380,7 @@ def run_photostim_preprocessing(trial, exp_type, tiffs_loc_dir, tiffs_loc, napar
 
     # make processed tiffs
     if processed_tiffs:
-        rm_artifacts_tiffs(expobj, tiffs_loc=tiffs_loc, new_tiffs=new_tiffs)
+        expobj.rm_artifacts_tiffs(expobj, tiffs_loc=tiffs_loc, new_tiffs=new_tiffs)
 
     print('\n----- COMPLETED RUNNING run_photostim_processing() *******')
     print(metainfo)
@@ -4782,9 +4794,6 @@ def run_allopticalAnalysisNontargetsPost4ap(expobj, normalize_to='pre_stim', to_
 
 
 
-# # # import results superobject that will collect analyses from various individual experiments
-results_object_path = '/home/pshah/mnt/qnap/Analysis/alloptical_results_superobject.pkl'
-allopticalResults = import_resultsobj(pkl_path=results_object_path)
 
 # %% ARCHIVE
 
