@@ -38,7 +38,7 @@ expobj, experiment = aoutils.import_expobj(prep='RL109', trial='t-013')
 """
 
 
-# %% 1) adding slm targets responses to alloptical results allopticalResults.slmtargets_stim_responses
+# 1) adding slm targets responses to alloptical results allopticalResults.slmtargets_stim_responses
 
 @aoutils.run_for_loop_across_exps(run_pre4ap_trials=True, run_post4ap_trials=True)
 def add_slmtargets_responses_tracedFF(**kwargs):

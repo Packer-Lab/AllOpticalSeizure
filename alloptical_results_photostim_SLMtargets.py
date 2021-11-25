@@ -56,31 +56,50 @@ os.makedirs(save_path_prefix) if not os.path.exists(save_path_prefix) else None
 # PRE4AP TRIAL
 i = allopticalResults.pre_4ap_trials[0]
 j = 0
+pre4ap_prep = i[j][:-6]
+pre4ap_trial = i[j][-5:]
+
+# POST4AP TRIAL
+i = allopticalResults.post_4ap_trials[0]
+j = 0
 prep = i[j][:-6]
 trial = i[j][-5:]
-print('\nprogress @ ', prep, trial, ' [1.1.0]')
-expobj, experiment = aoutils.import_expobj(trial=trial, prep=prep, verbose=False)
 
-to_plot = 'dFF'
+trials_run = [f"{pre4ap_prep} {pre4ap_trial}"]
 
-if to_plot == 'dFstdF':
-    arr = np.asarray([i for i in expobj.SLMTargets_tracedFF_stims_dfstdF_avg])
-    # arr = np.asarray([i for i in expobj.SLMTargets_stims_dfstdF_avg])
-    y_label = 'dFstdF (normalized to prestim period)'
-    y_lims = [-0.25, 1.75]
-elif to_plot == 'dFF':
-    # arr = np.asarray([i for i in expobj.SLMTargets_stims_dffAvg])
-    arr = np.asarray([i for i in expobj.SLMTargets_tracedFF_stims_dffAvg])
-    y_label = 'dFF (normalized to prestim period)'
-    y_lims = [-15, 75]
-aoplot.plot_periphotostim_avg(arr=arr, expobj=expobj, pre_stim_sec=expobj.pre_stim / expobj.fps, post_stim_sec=expobj.post_stim / expobj.fps,
-                              title=(f'{prep} {trial} - trace dFF - photostim targets'), figsize=[4, 4], y_label=y_label,
-                              x_label='Time', y_lims=y_lims)
+@aoutils.run_for_loop_across_exps(trials_run=trials_run)
+def plot_peristim_avg_traces_alltargets(**kwargs):
+    # # PRE4AP TRIAL
+    # i = allopticalResults.pre_4ap_trials[0]
+    # j = 0
+    # prep = i[j][:-6]
+    # trial = i[j][-5:]
+    # print('\nprogress @ ', prep, trial, ' [1.1.0]')
+    # expobj, experiment = aoutils.import_expobj(trial=trial, prep=prep, verbose=False)
+    #
+    # to_plot = 'dFF'
+
+    expobj = kwargs['expobj'] if 'expobj' in kwargs.keys() else KeyError('need to provide expobj as keyword argument')
+    to_plot = 'dFF'
+    if to_plot == 'dFstdF':
+        arr = np.asarray([i for i in expobj.SLMTargets_tracedFF_stims_dfstdF_avg])
+        # arr = np.asarray([i for i in expobj.SLMTargets_stims_dfstdF_avg])
+        y_label = 'dFstdF (normalized to prestim period)'
+        y_lims = [-0.25, 1.75]
+    elif to_plot == 'dFF':
+        # arr = np.asarray([i for i in expobj.SLMTargets_stims_dffAvg])
+        arr = np.asarray([i for i in expobj.SLMTargets_tracedFF_stims_dffAvg])
+        y_label = 'dFF (normalized to prestim period)'
+        y_lims = [-15, 75]
+
+    aoplot.plot_periphotostim_avg(arr=arr, expobj=expobj, pre_stim_sec=expobj.pre_stim / expobj.fps, post_stim_sec=expobj.post_stim / expobj.fps,
+                                  title=(f'{expobj.metainfo["animal prep."]} {expobj.metainfo["trial"]} - trace dFF - photostim targets'), figsize=[8, 6], y_label=y_label,
+                                  x_label='Time', y_lims=y_lims)
+
+plot_peristim_avg_traces_alltargets()
 
 
-
-
-#  POST4AP TRIAL
+# %%  POST4AP TRIAL
 i = allopticalResults.post_4ap_trials[0]
 j = 0
 prep = i[j][:-6]

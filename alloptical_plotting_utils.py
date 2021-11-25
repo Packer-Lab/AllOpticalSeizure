@@ -567,14 +567,14 @@ def plot_periphotostim_avg(arr=None, pre_stim_sec=1.0, post_stim_sec=3.0, title=
     len_ = len(arr)
     flu_avg = np.mean(arr, axis=0)
 
-    if 'fig' in kwargs.keys():
-        fig = kwargs['fig']
-        ax = kwargs['ax']
-    else:
-        if 'figsize' in kwargs.keys():
-            fig, ax = plt.subplots(figsize=kwargs['figsize'])
-        else:
-            fig, ax = plt.subplots(figsize=[5, 4])
+    # if 'fig' in kwargs.keys():
+    #     fig = kwargs['fig']
+    #     ax = kwargs['ax']
+    # else:
+    #     if 'figsize' in kwargs.keys():
+    #         fig, ax = plt.subplots(figsize=kwargs['figsize'])
+    #     else:
+    #         fig, ax = plt.subplots(figsize=[5, 4])
 
     # ax.margins(x=0.07)
 
@@ -626,23 +626,29 @@ def plot_periphotostim_avg(arr=None, pre_stim_sec=1.0, post_stim_sec=3.0, title=
     if 'savepath' in kwargs.keys():
         plt.savefig(kwargs['savepath'])
 
-    # finalize plot, set title, and show or return axes
-    if 'fig' in kwargs.keys():
-        if title is not None:
-            ax.set_title((title + ' - %s' % len_ + ' traces'), horizontalalignment='center', verticalalignment='top',
-                         pad=20, fontsize=10, wrap=True)
-            # ax.title.set_text((title + ' - %s' % len_ + ' traces'), wrap=True)
-        return fig, ax, [exp_prestim/fps, x, flu_avg]
-    else:
-        if title is not None:
-            ax.set_title((title + ' - %s' % len_ + ' traces'), horizontalalignment='center', verticalalignment='top',
-                         pad=20, fontsize=10, wrap=True)
-    if 'show' in kwargs.keys():
-        fig.tight_layout(pad=0.9)
-        fig.show() if kwargs['show'] else None
-    else:
-        fig.tight_layout(pad=0.9)
-        fig.show()
+    if title is not None:
+        ax.set_title((title + ' - %s' % len_ + ' traces'), horizontalalignment='center', verticalalignment='top',
+                     pad=20, fontsize=10, wrap=True)
+
+
+
+    # # finalize plot, set title, and show or return axes
+    # if 'fig' in kwargs.keys():
+    #     if title is not None:
+    #         ax.set_title((title + ' - %s' % len_ + ' traces'), horizontalalignment='center', verticalalignment='top',
+    #                      pad=20, fontsize=10, wrap=True)
+    #         # ax.title.set_text((title + ' - %s' % len_ + ' traces'), wrap=True)
+    #     return fig, ax, [exp_prestim/fps, x, flu_avg]
+    # else:
+    #     if title is not None:
+    #         ax.set_title((title + ' - %s' % len_ + ' traces'), horizontalalignment='center', verticalalignment='top',
+    #                      pad=20, fontsize=10, wrap=True)
+    # if 'show' in kwargs.keys():
+    #     fig.tight_layout(pad=0.9)
+    #     fig.show() if kwargs['show'] else None
+    # else:
+    #     fig.tight_layout(pad=0.9)
+    #     fig.show()
 
 
 ### photostim analysis - PLOT avg over photostim. trials traces for the provided traces
