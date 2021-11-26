@@ -43,67 +43,124 @@ trials_skip = [
     'RL109 t-020',  # RL109 t-020 doesn't have sz boundaries yet..
 ]
 
-# %% 3.1)  TODO DATA COLLECTION - COMPARISON OF RESPONSE MAGNITUDE OF SUCCESS STIMS. FROM PRE-4AP, OUT-SZ AND IN-SZ
+# %% 3.1-dc)  TODO DATA COLLECTION - COMPARISON OF RESPONSE MAGNITUDE OF SUCCESS STIMS. FROM PRE-4AP, OUT-SZ AND IN-SZ
 
 
 ## collecting the response magnitudes of success stims
-for i in allopticalResults.post_4ap_trials + allopticalResults.pre_4ap_trials:
-    for j in range(len(i)):
-        prep = i[j][:-6]
-        trial = i[j][-5:]
-        print('\nprogress @ ', prep, trial, ' [1.4.1]')
-        expobj, experiment = aoutils.import_expobj(trial=trial, prep=prep, verbose=False)
 
-        if 'post' in expobj.metainfo['exptype']:
-            # raw_traces_stims = expobj.SLMTargets_stims_raw[:, stims, :]
-            if len(expobj.stims_out_sz) > 0:
-                print('\n Calculating stim success rates and response magnitudes (outsz) [1.4.2] ***********')
-                # expobj.StimSuccessRate_SLMtargets_outsz, expobj.hits_SLMtargets_outsz, expobj.responses_SLMtargets_outsz, expobj.traces_SLMtargets_successes_outsz = \
-                #     expobj.get_SLMTarget_responses_dff(threshold=10, stims_to_use=expobj.stims_out_sz)
-                success_responses = expobj.hits_SLMtargets_outsz * expobj.responses_SLMtargets_outsz
-                success_responses = success_responses.replace(0, np.NaN).mean(axis=1)
-                allopticalResults.slmtargets_stim_responses.loc[allopticalResults.slmtargets_stim_responses[
-                                                                    'prep_trial'] == i[
-                                                                    j], 'mean dFF response outsz (hits, all targets)'] = success_responses.mean()
-                print(success_responses.mean())
+# ####### decorated ##########
+# for i in allopticalResults.post_4ap_trials + allopticalResults.pre_4ap_trials:
+#     for j in range(len(i)):
+#         prep = i[j][:-6]
+#         trial = i[j][-5:]
+#         print('\nprogress @ ', prep, trial, ' [1.4.1]')
+#         expobj, experiment = aoutils.import_expobj(trial=trial, prep=prep, verbose=False)
+#
+#
+# ####### decorated ##########
 
-            # raw_traces_stims = expobj.SLMTargets_stims_raw[:, stims, :]
-            if len(expobj.stims_in_sz) > 0:
-                print('\n Calculating stim success rates and response magnitudes (insz) [1.4.3] ***********')
-                # expobj.StimSuccessRate_SLMtargets_insz, expobj.hits_SLMtargets_insz, expobj.responses_SLMtargets_insz, expobj.traces_SLMtargets_successes_insz = \
-                #     expobj.get_SLMTarget_responses_dff(threshold=10, stims_to_use=expobj.stims_in_sz)
+@aoutils.run_for_loop_across_exps(run_pre4ap_trials=True, run_post4ap_trials=True)
+def collect_response_mag_successes_deltatracedFF(**kwargs):
+    expobj = kwargs['expobj']
+    exp_prep = f"{expobj['animal prep.']} {expobj['trial']}"
 
-                success_responses = expobj.hits_SLMtargets_insz * expobj.responses_SLMtargets_insz
-                success_responses = success_responses.replace(0, np.NaN).mean(axis=1)
-                allopticalResults.slmtargets_stim_responses.loc[allopticalResults.slmtargets_stim_responses[
-                                                                    'prep_trial'] == i[
-                                                                    j], 'mean dFF response insz (hits, all targets)'] = success_responses.mean()
-                print(success_responses.mean())
-
-
-        elif 'pre' in expobj.metainfo['exptype']:
-            seizure_filter = False
-            print('\n Calculating stim success rates and response magnitudes [1.4.4] ***********')
-            # expobj.StimSuccessRate_SLMtargets, expobj.hits_SLMtargets, expobj.responses_SLMtargets, expobj.traces_SLMtargets_successes = \
-            #     expobj.get_SLMTarget_responses_dff(threshold=10, stims_to_use=expobj.stim_start_frames)
-
-            success_responses = expobj.hits_SLMtargets * expobj.responses_SLMtargets
+    if 'post' in expobj.metainfo['exptype']:
+        # raw_traces_stims = expobj.SLMTargets_stims_raw[:, stims, :]
+        # OUTSZ
+        if len(expobj.stims_out_sz) > 0:
+            success_responses = expobj.hits_SLMtargets_tracedFF_outsz * expobj.responses_SLMtargets_tracedFF_outsz
             success_responses = success_responses.replace(0, np.NaN).mean(axis=1)
             allopticalResults.slmtargets_stim_responses.loc[allopticalResults.slmtargets_stim_responses[
-                                                                'prep_trial'] == i[
-                                                                j], 'mean dFF response (hits, all targets)'] = success_responses.mean()
+                                                                'prep_trial'] == exp_prep, 'mean delta(trace_dFF) response outsz (hits, all targets)'] = success_responses.mean()
             print(success_responses.mean())
 
-        expobj.save()
+        # raw_traces_stims = expobj.SLMTargets_stims_raw[:, stims, :]
+        # INSZ
+        if len(expobj.stims_in_sz) > 0:
+            success_responses = expobj.hits_SLMtargets_tracedFF_insz * expobj.responses_SLMtargets_tracedFF_insz
+            success_responses = success_responses.replace(0, np.NaN).mean(axis=1)
+            allopticalResults.slmtargets_stim_responses.loc[allopticalResults.slmtargets_stim_responses[
+                                                                'prep_trial'] == exp_prep, 'mean delta(trace_dFF) response insz (hits, all targets)'] = success_responses.mean()
+            print(success_responses.mean())
+
+    # PRE4AP
+    elif 'pre' in expobj.metainfo['exptype']:
+        success_responses = expobj.hits_SLMtargets_tracedFF * expobj.responses_SLMtargets_tracedFF
+        success_responses = success_responses.replace(0, np.NaN).mean(axis=1)
+        allopticalResults.slmtargets_stim_responses.loc[allopticalResults.slmtargets_stim_responses[
+                                                            'prep_trial'] == exp_prep, 'mean delta(trace_dFF) response (hits, all targets)'] = success_responses.mean()
+        print(success_responses.mean())
+
+    expobj.save()
+
+collect_response_mag_successes_deltatracedFF()
+
+allopticalResults.save()
 
 
+# %% 3.2-dc)  TODO DATA COLLECTION - COMPARISON OF RESPONSE MAGNITUDE OF FAILURES STIMS. FROM PRE-4AP, OUT-SZ AND IN-SZ
+
+
+## collecting the response magnitudes of FAILURES stims
+
+# ####### decorated ##########
+# for i in allopticalResults.post_4ap_trials + allopticalResults.pre_4ap_trials:
+#     for j in range(len(i)):
+#         prep = i[j][:-6]
+#         trial = i[j][-5:]
+#         print('\nprogress @ ', prep, trial, ' [1.4.1]')
+#         expobj, experiment = aoutils.import_expobj(trial=trial, prep=prep, verbose=False)
+#
+#
+# ####### decorated ##########
+
+@aoutils.run_for_loop_across_exps(run_pre4ap_trials=True, run_post4ap_trials=True)
+def collect_response_mag_failures_deltatracedFF(**kwargs):
+    expobj = kwargs['expobj']
+    exp_prep = f"{expobj['animal prep.']} {expobj['trial']}"
+
+    if 'post' in expobj.metainfo['exptype']:
+        # raw_traces_stims = expobj.SLMTargets_stims_raw[:, stims, :]
+        # OUTSZ
+        if len(expobj.stims_out_sz) > 0:
+            inverse = (expobj.hits_SLMtargets_tracedFF_outsz - 1) * -1
+            success_responses = inverse * expobj.responses_SLMtargets_tracedFF_outsz
+            success_responses = success_responses.replace(0, np.NaN).mean(axis=1)
+            allopticalResults.slmtargets_stim_responses.loc[allopticalResults.slmtargets_stim_responses[
+                                                                'prep_trial'] == exp_prep, 'mean delta(trace_dFF) response outsz (hits, all targets)'] = success_responses.mean()
+            print(success_responses.mean())
+
+        # raw_traces_stims = expobj.SLMTargets_stims_raw[:, stims, :]
+        # INSZ
+        if len(expobj.stims_in_sz) > 0:
+            inverse = (expobj.hits_SLMtargets_tracedFF_insz - 1) * -1
+            success_responses = inverse * expobj.responses_SLMtargets_tracedFF_insz
+            success_responses = success_responses.replace(0, np.NaN).mean(axis=1)
+            allopticalResults.slmtargets_stim_responses.loc[allopticalResults.slmtargets_stim_responses[
+                                                                'prep_trial'] == exp_prep, 'mean delta(trace_dFF) response insz (hits, all targets)'] = success_responses.mean()
+            print(success_responses.mean())
+
+    # PRE4AP
+    elif 'pre' in expobj.metainfo['exptype']:
+        inverse = (expobj.hits_SLMtargets - 1) * -1
+        success_responses = inverse * expobj.responses_SLMtargets_tracedFF
+        success_responses = success_responses.replace(0, np.NaN).mean(axis=1)
+        allopticalResults.slmtargets_stim_responses.loc[allopticalResults.slmtargets_stim_responses[
+                                                            'prep_trial'] == exp_prep, 'mean delta(trace_dFF) response (hits, all targets)'] = success_responses.mean()
+        print(success_responses.mean())
+
+    expobj.save()
+
+collect_response_mag_failures_deltatracedFF()
 
 allopticalResults.save()
 
 
 
 
-# %% 3.2)  TODO DATA COLLECTION - COMPARISON OF RESPONSE MAGNITUDE OF FAILURES STIMS. FROM PRE-4AP, OUT-SZ AND IN-SZ
+
+
+# %% 3.2 archived) DATA COLLECTION - COMPARISON OF RESPONSE MAGNITUDE OF FAILURES STIMS. FROM PRE-4AP, OUT-SZ AND IN-SZ
 
 run_processing = 0
 

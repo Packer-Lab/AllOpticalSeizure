@@ -634,27 +634,27 @@ ax.set_ylabel('dFF (norm. to pre-stim F)')
 f.show()
 
 
-# %% 5.1) bar PLOT - COMPARISON OF RESPONSE MAGNITUDE OF SUCCESS STIMS. FROM PRE-4AP, OUT-SZ AND IN-SZ
+# %% 5.1) TODO bar PLOT - COMPARISON OF RESPONSE MAGNITUDE OF SUCCESS STIMS. FROM PRE-4AP, OUT-SZ AND IN-SZ
 ## make bar plot using the collected response magnitudes
 pre4ap_response_magnitude = []
 for i in allopticalResults.pre_4ap_trials:
     x = [allopticalResults.slmtargets_stim_responses.loc[
              allopticalResults.slmtargets_stim_responses[
-                 'prep_trial'] == trial, 'mean dFF response (hits, all targets)'].values[0] for trial in i]
+                 'prep_trial'] == trial, 'mean delta(trace_dFF) response (hits, all targets)'].values[0] for trial in i]
     pre4ap_response_magnitude.append(np.mean(x))
 
 outsz_response_magnitude = []
 for i in allopticalResults.post_4ap_trials:
     x = [allopticalResults.slmtargets_stim_responses.loc[
              allopticalResults.slmtargets_stim_responses[
-                 'prep_trial'] == trial, 'mean dFF response outsz (hits, all targets)'].values[0] for trial in i]
+                 'prep_trial'] == trial, 'mean delta(trace_dFF) response outsz (hits, all targets)'].values[0] for trial in i]
     outsz_response_magnitude.append(np.mean(x))
 
 insz_response_magnitude = []
 for i in allopticalResults.post_4ap_trials:
     x = [allopticalResults.slmtargets_stim_responses.loc[
              allopticalResults.slmtargets_stim_responses[
-                 'prep_trial'] == trial, 'mean dFF response insz (hits, all targets)'].values[0] for trial in i]
+                 'prep_trial'] == trial, 'mean delta(trace_dFF) response insz (hits, all targets)'].values[0] for trial in i]
     insz_response_magnitude.append(np.mean(x))
 
 pj.plot_bar_with_points(data=[pre4ap_response_magnitude, outsz_response_magnitude, insz_response_magnitude], paired=True,
@@ -662,7 +662,7 @@ pj.plot_bar_with_points(data=[pre4ap_response_magnitude, outsz_response_magnitud
                         xlims=True, x_tick_labels=['pre-4ap', 'outsz', 'insz'], title='Avg. Response magnitude of hits',
                         y_label='response magnitude (dFF)')
 
-# %% 5.2) bar PLOT - COMPARISON OF RESPONSE MAGNITUDE OF SUCCESS STIMS. FROM PRE-4AP, OUT-SZ AND IN-SZ
+# %% 5.2) TODO bar PLOT - COMPARISON OF RESPONSE MAGNITUDE OF SUCCESS STIMS. FROM PRE-4AP, OUT-SZ AND IN-SZ
 ## make bar plot using the collected response magnitudes
 pre4ap_response_magnitude = []
 for i in allopticalResults.pre_4ap_trials:

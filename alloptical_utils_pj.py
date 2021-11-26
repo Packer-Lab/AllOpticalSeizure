@@ -974,8 +974,12 @@ class alloptical(TwoPhotonImaging):
         ## PHOTOSTIM SLM TARGETS
         self.responses_SLMtargets = []  # dF/prestimF responses for all SLM targets for each photostim trial
         self.responses_SLMtargets_tracedFF = []  # delta(poststim dFF and prestim dFF) responses for all SLM targets for each photostim trial - from trace dFF processed trials
-        self.StimSuccessRate_SLMtargets = []
+        self.StimSuccessRate_SLMtargets_dfprestimf = []
+        self.StimSuccessRate_SLMtargets_dfstdf = []
         self.StimSuccessRate_SLMtargets_tracedFF = []
+        self.hits_SLMtargets_tracedFF = []
+        self.hits_SLMtargets_dfprestimf = []
+        self.hits_SLMtargets_dfstdf = []
 
         # .get_alltargets_stim_traces_norm(pre_stim=expobj.pre_stim, post_stim=expobj.post_stim, stims=expobj.stim_start_frames)
         # - various attrs. for collecting photostim timed trace snippets from raw Flu values
