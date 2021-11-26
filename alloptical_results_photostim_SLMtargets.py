@@ -203,8 +203,8 @@ plot_postage_stamps_photostim_traces()
 
 # %% 2) BAR PLOT FOR PHOTOSTIM RESPONSE MAGNITUDE B/W PRE AND POST 4AP TRIALS - TODO plot delta (trace dFF) responses
 
-to_process = 'mean response (dF/prestimF all targets)'
-y_label = 'dF/prestimF'
+y_label = 'delta(trace_dFF)'
+to_process = f"mean response ({y_label} all targets)"
 
 pre4ap_response_magnitude = []
 for i in allopticalResults.pre_4ap_trials:
@@ -219,14 +219,16 @@ for i in allopticalResults.post_4ap_trials:
     post4ap_response_magnitude.append(np.mean(x))
 
 pj.plot_bar_with_points(data=[pre4ap_response_magnitude, post4ap_response_magnitude], paired=True, shrink_text=0.9,
-                        colors=['black', 'purple'], bar=False, expand_size_y=1.1, expand_size_x=0.5,
-                        xlims=True, x_tick_labels=['pre-4ap', 'post-4ap'], title=f"{to_process}", y_label=y_label)
+                        colors=['gray', 'purple'], bar=False, expand_size_y=1.1, expand_size_x=0.5, #ylims=[-50, 100],
+                        x_tick_labels=['pre-4ap', 'post-4ap'], title=f"Mean {y_label}", y_label=y_label, title_pad=10)
 
 
 # %% 3) BAR PLOT FOR PHOTOSTIM RESPONSE RELIABILITY B/W PRE AND POST 4AP TRIALS
 
-# to_process = 'mean reliability (>0.3 dF/stdF)'
-to_process = 'mean reliability (>10 delta(trace_dFF))'
+plot = '(>0.3 dF/stdF)'
+# plot = '(>10 delta(trace_dFF))'
+to_process = f'mean reliability {plot}'
+
 
 pre4ap_reliability = []
 for i in allopticalResults.pre_4ap_trials:
@@ -243,8 +245,8 @@ for i in allopticalResults.post_4ap_trials:
     post4ap_reliability.append(np.mean(x))
 
 pj.plot_bar_with_points(data=[pre4ap_reliability, post4ap_reliability], paired=True,
-                        colors=['black', 'purple'], bar=False, expand_size_y=1.1, expand_size_x=0.6,
-                        xlims=True, x_tick_labels=['pre-4ap', 'post-4ap'], title='Avg. Response Reliability',
+                        colors=['gray', 'purple'], bar=False, expand_size_y=1.1, expand_size_x=0.6,
+                        xlims=True, x_tick_labels=['pre-4ap', 'post-4ap'], title=f'Avg. Reliability {plot}',
                         y_label='% success rate of photostim')
 
 
@@ -267,6 +269,8 @@ for i in allopticalResults.pre_4ap_trials:
         trial = i[j][-5:]
         print('\nprogress @ ', prep, trial, ' [1.1.0]')
         expobj, experiment = aoutils.import_expobj(trial=trial, prep=prep, verbose=False)
+
+def plot_avg_stim_traces_allexps(redo_processing=False, avg_only=True, to_plot='successes'):
 
         if redo_processing:
             aoutils.run_alloptical_processing_photostim(expobj, to_suite2p=expobj.suite2p_trials, baseline_trials=expobj.baseline_trials,
