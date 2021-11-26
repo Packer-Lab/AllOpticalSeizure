@@ -2988,13 +2988,27 @@ class Post4ap(alloptical):
         self.seizure_lfp_offsets = []  # frame #s corresponding to OFFSET of seizure as manually inspected from the LFP signal
 
         ## PHOTOSTIM SLM TARGETS
-        self.responses_SLMtargets_outsz = []  # dF/prestimF responses for all SLM targets for photostim trials outside sz
-        self.responses_SLMtargets_insz = []  # dF/prestimF responses for all SLM targets for photostim trials inside sz - excluding targets inside the sz boundary
-        self.responses_SLMtargets_tracedFF_outsz = []  # dF/prestimF responses for all SLM targets for photostim trials outside sz
-        self.responses_SLMtargets_tracedFF_insz = []  # dF/prestimF responses for all SLM targets for photostim trials inside sz - excluding targets inside the sz boundary
+        self.responses_SLMtargets_dfstdf_outsz = []  # dFstdF responses for all SLM targets for photostim trials outside sz
+        self.responses_SLMtargets_dfstdf_insz = []  # dFstdF responses for all SLM targets for photostim trials outside sz - excluding targets inside the sz boundary
+        self.responses_SLMtargets_dfprestimf_outsz = []  # dF/prestimF responses for all SLM targets for photostim trials outside sz
+        self.responses_SLMtargets_dfprestimf_insz = []  # dF/prestimF responses for all SLM targets for photostim trials inside sz - excluding targets inside the sz boundary
+        self.responses_SLMtargets_tracedFF_outsz = []  # delta(trace_dFF) responses for all SLM targets for photostim trials outside sz
+        self.responses_SLMtargets_tracedFF_insz = []  # delta(trace_dFF) responses for all SLM targets for photostim trials inside sz - excluding targets inside the sz boundary
 
         self.StimSuccessRate_SLMtargets_outsz = []  # photostim sucess rate (not sure exactly if across all stims or not?)
         self.StimSuccessRate_SLMtargets_insz = []  # photostim sucess rate (not sure exactly if across all stims or not?)
+
+
+        ## breaking down success and failure stims
+        self.outsz_traces_SLMtargets_tracedFF_successes_avg = []  # trace snippets for only successful stims - delta(trace_dff) - outsz stims
+        self.outsz_traces_SLMtargets_tracedFF_failures_avg = []  # trace snippets for only failure stims - delta(trace_dff) - outsz stims
+        self.outsz_traces_SLMtargets_successes_avg_dfstdf = []  # trace snippets for only successful stims - normalized by dfstdf - outsz stims
+        self.outsz_traces_SLMtargets_failures_avg_dfstdf = []  # trace snippets for only failure stims - normalized by dfstdf - outsz stims
+        self.insz_traces_SLMtargets_tracedFF_successes_avg = []  # trace snippets for only successful stims - delta(trace_dff) - insz stims only (not sure if sz boundary considered for excluding targets)
+        self.insz_traces_SLMtargets_tracedFF_failures_avg = []  # trace snippets for only failure stims - delta(trace_dff) - ^^^
+        self.insz_traces_SLMtargets_successes_avg_dfstdf = []  # trace snippets for only successful stims - normalized by dfstdf - ^^^
+        self.insz_traces_SLMtargets_failures_avg_dfstdf = []  # trace snippets for only failures stims - normalized by dfstdf - ^^^
+
 
         # collect information about seizures
         self.collect_seizures_info(seizures_lfp_timing_matarray=paths[5], discard_all=discard_all)
