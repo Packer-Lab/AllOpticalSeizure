@@ -254,7 +254,7 @@ pj.plot_bar_with_points(data=[pre4ap_reliability, post4ap_reliability], paired=T
 
 
 
-# %% 4-dc) plot responses of SLM TARGETS in response to photostim trials - broken down by pre-4ap, outsz and insz (excl. sz bound)
+# %% 4) plot responses of SLM TARGETS in response to photostim trials - broken down by pre-4ap, outsz and insz (excl. sz bound)
 # - with option to plot only successful or only failure stims!
 
 # ## 4.1) PRE-4AP TRIALS
@@ -304,7 +304,7 @@ def plot_avg_stim_traces_pre4apexps(process='dfstdf', to_plot='successes', avg_o
         if process == 'delta(trace_dFF)':
             array_to_plot = np.asarray([expobj.traces_SLMtargets_tracedFF_failures_avg[key] for key in
                             expobj.traces_SLMtargets_tracedFF_failures_avg.keys()])
-            y_lims = [-30, 80]
+            y_lims = [-30, 100]
         elif process == 'dfstdf':
             array_to_plot = np.asarray([expobj.traces_SLMtargets_failures_avg_dfstdf[key] for key in
                             expobj.traces_SLMtargets_failures_avg_dfstdf.keys()])
@@ -374,11 +374,11 @@ allopticalResults.save()
 
 
 
-# %% ## 4.2) TODO POST-4AP TRIALS - IN SZ STIMS - EXCLUDE STIMS/CELLS INSIDE SZ BOUNDARY
+# %% 4.2) PLOT AVG PERISTIM RESPONSES OF SLM TARGETS ACROSS POST-4AP TRIALS - IN SZ STIMS - EXCLUDE STIMS/CELLS INSIDE SZ BOUNDARY
 
 
 avgtraces = {'insz': {}}
-@aoutils.run_for_loop_across_exps(run_post4ap_trialsn=True) #, trials_run=pj.flattenOnce(allopticalResults.pre_4ap_trials[:3]))
+@aoutils.run_for_loop_across_exps(run_post4ap_trials=True) #, trials_run=pj.flattenOnce(allopticalResults.pre_4ap_trials[:3]))
 def plot_avg_stim_traces_inszexps(process='dfstdf', to_plot='successes', avg_only=True, f=None, ax=None,
                                   **kwargs):
     """
@@ -422,7 +422,7 @@ def plot_avg_stim_traces_inszexps(process='dfstdf', to_plot='successes', avg_onl
         if process == 'delta(trace_dFF)':
             array_to_plot = np.asarray([expobj.insz_traces_SLMtargets_tracedFF_failures_avg[key] for key in
                             expobj.insz_traces_SLMtargets_tracedFF_failures_avg.keys()])
-            y_lims = [-30, 80]
+            y_lims = [-30, 100]
         elif process == 'dfstdf':
             array_to_plot = np.asarray([expobj.insz_traces_SLMtargets_failures_avg_dfstdf[key] for key in
                             expobj.insz_traces_SLMtargets_failures_avg_dfstdf.keys()])
@@ -469,104 +469,27 @@ def plot_avg_stim_traces_inszexps(process='dfstdf', to_plot='successes', avg_onl
 
 f, ax = plt.subplots(figsize=[5, 4])
 avgtraces['insz']['successes_delta(trace_dFF)'] = plot_avg_stim_traces_inszexps(to_plot='successes', process='delta(trace_dFF)', dffAvgTraces=[],
-                                                                                    f=f, ax=ax)
+                                                                                f=f, ax=ax)
 f.show()
 
 f, ax = plt.subplots(figsize=[5, 4])
 avgtraces['insz']['failures_delta(trace_dFF)'] = plot_avg_stim_traces_inszexps(to_plot='failures', process='delta(trace_dFF)', dffAvgTraces=[],
-                                                                                   f=f, ax=ax)
+                                                                               f=f, ax=ax)
 f.show()
 
 f, ax = plt.subplots(figsize=[5, 4])
 avgtraces['insz']['successes_dfstdf'] = plot_avg_stim_traces_inszexps(to_plot='successes', process='dfstdf', dffAvgTraces=[],
-                                                                          f=f, ax=ax)
+                                                                      f=f, ax=ax)
 f.show()
 
 f, ax = plt.subplots(figsize=[5, 4])
 avgtraces['insz']['failures_dfstdf'] = plot_avg_stim_traces_inszexps(to_plot='failures', process='dfstdf', dffAvgTraces=[],
-                                                                         f=f, ax=ax)
+                                                                     f=f, ax=ax)
 f.show()
 
 
 allopticalResults.avgTraces['insz'] = avgtraces['insz']
 allopticalResults.save()
-
-
-# %%
-
-
-
-# ### archiving ipr
-# run_processing = False  # flag to use when rerunning this whole for loop multiple times
-# avg_only = True
-# to_plot = 'failures'  # use for plotting either 'successes' stim responses or 'failures' stim responses
-#
-# dffTraces_insz = []
-# f, ax = plt.subplots(figsize=[5, 4])
-# for i in allopticalResults.post_4ap_trials:
-#     for j in range(len(i)):
-#         # pass
-#         # i = allopticalResults.post_4ap_trials[0]
-#         # j = 0
-#         # prep = 'RL109'
-#         # trial = 't-016'
-#         prep = i[j][:-6]
-#         trial = i[j][-5:]
-#         print('\nprogress @ ', prep, trial, ' [1.2.1]')
-#         expobj, experiment = aoutils.import_expobj(trial=trial, prep=prep, verbose=False)
-#
-#         if 'post' in expobj.metainfo['exptype']:
-#             if run_processing:
-#                 aoutils.run_alloptical_processing_photostim(expobj, to_suite2p=expobj.suite2p_trials, baseline_trials=expobj.baseline_trials,
-#                                                             plots=False, force_redo=False)
-#             expobj.save()
-#
-#         #### use expobj.hits_SLMtargets for determining which photostim trials to use - setting this up to only plot successfull trials
-#         if not hasattr(expobj, 'insz_traces_SLMtargets_successes_avg'):
-#             stims_insz_idx = [expobj.stim_start_frames.index(stim) for stim in expobj.stims_in_sz]
-#             if len(stims_insz_idx) > 0:
-#                 print('|- calculating stim success rates (insz) - %s stims [1.3.3]' % len(stims_insz_idx))
-#                 expobj.insz_StimSuccessRate_SLMtargets, expobj.insz_traces_SLMtargets_successes_avg, \
-#                 expobj.insz_traces_SLMtargets_failures_avg = \
-#                     expobj.calculate_SLMTarget_SuccessStims(hits_df=expobj.hits_SLMtargets,
-#                                                             stims_idx_l=stims_insz_idx,
-#                                                             exclude_stims_targets=expobj.slmtargets_szboundary_stim)
-#
-#         if to_plot == 'successes':
-#             array_to_plot = np.asarray([expobj.insz_traces_SLMtargets_successes_avg[key] for key in expobj.insz_traces_SLMtargets_successes_avg.keys()])
-#         elif to_plot == 'failures':
-#             array_to_plot = np.asarray([expobj.insz_traces_SLMtargets_failures_avg[key] for key in expobj.insz_traces_SLMtargets_failures_avg.keys()])
-#
-#         y_label = 'pct. dFF (normalized to prestim period)'
-#
-#         if avg_only:
-#             # modify matrix to exclude data from stim_dur period and replace with a flat line
-#             data_traces = []
-#             for trace in array_to_plot:
-#                 trace_ = trace[:expobj.pre_stim]
-#                 trace_ = np.append(trace_, [[15]*3])  # setting 5 frames as stimduration
-#                 trace_ = np.append(trace_, trace[-expobj.post_stim:])
-#                 data_traces.append(trace_)
-#             data_traces = np.array(data_traces)
-#             stim_dur = 3 / expobj.fps
-#             title = '%s stims only, all exps. - avg. responses of photostim targets - in sz stims' % to_plot
-#         else:
-#             data_traces = array_to_plot
-#             stim_dur = expobj.stim_duration_frames / expobj.fps
-#             title = '%s stims only - avg. responses of photostim targets - in sz stims %s %s' % (to_plot, prep, trial)
-#
-#         f, ax, d = aoplot.plot_periphotostim_avg(arr=data_traces, expobj=expobj,
-#                                                  stim_duration=stim_dur, y_lims=[0, 50], title=title, avg_only=avg_only,
-#                                                  pre_stim_sec=0.25, post_stim_sec=2.75,
-#                                                  y_label=y_label, x_label='Time (secs)', fig=f, ax=ax, show=False)
-#
-#         print('|- shape of dFF array: ', data_traces.shape, ' [1.2.4]')
-#         dffTraces_insz.append(d)
-#
-# f.show()
-# allopticalResults.dffTraces_outsz = np.asarray(dffTraces_insz)
-# allopticalResults.save()
-
 
 
 # %% ## 4.3) POST-4AP TRIALS (OUT SZ STIMS)
