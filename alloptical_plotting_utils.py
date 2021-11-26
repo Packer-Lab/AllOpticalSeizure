@@ -534,7 +534,7 @@ def plot_periphotostim_avg2(dataset, fps=None, legend_labels=None, colors=None, 
 @print_start_end_plot
 @plot_piping_decorator(figsize=(5,5.5))
 def plot_periphotostim_avg(arr=None, pre_stim_sec=1.0, post_stim_sec=3.0, title='', expobj=None,
-                           avg_only: bool = False, x_label=None, y_label=None, fig=None, ax=None, **kwargs):
+                           avg_only: bool = False, x_label=None, y_label=None, fig=None, ax=None, pad=20, **kwargs):
     """
     plot trace across all stims
     :param arr: Flu traces to plot (will be plotted as individual traces unless avg_only is True) dimensions should be cells x stims x frames
@@ -546,6 +546,7 @@ def plot_periphotostim_avg(arr=None, pre_stim_sec=1.0, post_stim_sec=3.0, title=
     :param y_label: y axis label
     :param kwargs:
         options include:
+            'stim_duration': photostimulation duration in secs
             'y_lims': tuple, y min and max of the plot
             'edgecolor': str, edgecolor of the individual traces behind the mean trace
             'savepath': str, path to save plot to
@@ -580,8 +581,8 @@ def plot_periphotostim_avg(arr=None, pre_stim_sec=1.0, post_stim_sec=3.0, title=
             x_label = x_label + 'post-stimulation relative'
 
         if avg_only is True:
-            ax.axvspan(0 - 1/fps, 0 + stim_duration + 1 / fps, alpha=alpha, color='plum', zorder = 3)
-            ax.axvspan(0 - 1/fps, 0 + stim_duration + 1 / fps, alpha=alpha, color='plum', zorder = 3)
+            # ax.axvspan(exp_prestim/fps, (exp_prestim + stim_duration + 1) / fps, alpha=alpha, color='plum', zorder = 3)
+            ax.axvspan(0 - 1/fps, 0 + stim_duration + 1 / fps, alpha=alpha, color='plum', zorder = 3)  # note that we are setting 0 as the stimulation time
         else:
             ax.axvspan(0 - 1/fps, 0 - 1/fps + stim_duration, alpha=alpha, color='plum', zorder = 3)  # note that we are setting 0 as the stimulation time
     else:
@@ -608,9 +609,12 @@ def plot_periphotostim_avg(arr=None, pre_stim_sec=1.0, post_stim_sec=3.0, title=
         else:
             ax.set_xlim(exp_prestim - int(pre_stim_sec * fps), exp_prestim + int(stim_duration * fps) + int(post_stim_sec * fps) + 1)
 
+    # spine options
     ax.spines['top'].set_visible(False)
     ax.spines['right'].set_visible(False)
+    ax.spines['left'].set_visible(False)
 
+    # set axis labels
     ax.set_xlabel(x_label)
     ax.set_ylabel(y_label)
 
@@ -619,8 +623,10 @@ def plot_periphotostim_avg(arr=None, pre_stim_sec=1.0, post_stim_sec=3.0, title=
 
     if title is not None:
         ax.set_title((title + ' - %s' % len_ + ' traces'), horizontalalignment='center', verticalalignment='top',
-                     pad=20, fontsize=10, wrap=True)
+                     pad=pad, fontsize=10, wrap=True)
 
+    if avg_only:
+        return flu_avg
 
 ### photostim analysis - PLOT avg over photostim. trials traces for the provided traces
 def plot_periphotostim_addition(dataset, normalize: list = None, fps=None, legend_labels: list = None, colors=None, xlabel='Frames',ylabel='ylabel', avg_with_std=False,

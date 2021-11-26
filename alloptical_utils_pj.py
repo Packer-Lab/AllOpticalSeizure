@@ -160,7 +160,12 @@ def import_resultsobj(pkl_path: str):
 # dictionary of terms, phrases, etc. that are particular to this analysis
 idiom_dictionary = {
     'delta(trace_dFF)': "photostim measurement; measuring photostim responses with post-stim minus pre-stim, where the post-stim "
-                        "and pre-stim values are dFF values obtained from normalization of the whole trace within the present t-series"
+                        "and pre-stim values are dFF values obtained from normalization of the whole trace within the present t-series",
+    'dfprestimf': "photostim meausurement; measuring photostim responses as (post-stim minus pre-stim)/(mean[pre-stim period], "
+                  "where the original trace is the raw (neuropil subtracted) trace",
+    'dfstdf': "photostim measurement; measuring photostim responses as (post-stim minus pre-stim)/(std[pre-stim period], "
+              "where the original trace is the raw (neuropil subtracted) trace"
+
 }
 
 def define(x):
@@ -200,10 +205,11 @@ def run_for_loop_across_exps(run_pre4ap_trials=False, run_post4ap_trials=False, 
                     expobj, _ = import_expobj(prep=prep, trial=trial, verbose=False)
 
                     working_on(expobj)
-                    try:
-                        func(expobj=expobj, **kwargs)
-                    except:
-                        print('Cannot have both trials_run, and run_pre4ap_trials or run_post4ap_trials active on the same call.')
+                    func(expobj=expobj, **kwargs)
+                    # try:
+                    #     func(expobj=expobj, **kwargs)
+                    # except:
+                    #     print('Exception on the wrapped function call')
                     end_working_on(expobj)
                 counter1 += 1
 
@@ -212,6 +218,7 @@ def run_for_loop_across_exps(run_pre4ap_trials=False, run_post4ap_trials=False, 
             if run_pre4ap_trials:
                 print(f"\n{'-' * 5} RUNNING PRE4AP TRIALS {'-' * 5}")
                 counter_i = 0
+                res = []
                 for i, x in enumerate(allopticalResults.pre_4ap_trials):
                     counter_j = 0
                     for j, exp_prep in enumerate(x):
@@ -224,15 +231,16 @@ def run_for_loop_across_exps(run_pre4ap_trials=False, run_post4ap_trials=False, 
                             expobj, _ = import_expobj(prep=prep, trial=pre4aptrial, verbose=False)
 
                             working_on(expobj)
-                            try:
-                                func(expobj=expobj, **kwargs)
-                            except:
-                                print('Cannot have both trials_run, and run_pre4ap_trials or run_post4ap_trials active on the same call.')
+                            res_ = func(expobj=expobj, **kwargs)
+                            # try:
+                            #     func(expobj=expobj, **kwargs)
+                            # except:
+                            #     print('Exception on the wrapped function call')
                             end_working_on(expobj)
+                            res.append(res_)
                         counter_j += 1
                     counter_i += 1
-
-
+                return res if len(res) > 1 else None
 
             if run_post4ap_trials:
                 print(f"\n{'-' * 5} RUNNING POST4AP TRIALS {'-' * 5}")
@@ -249,10 +257,11 @@ def run_for_loop_across_exps(run_pre4ap_trials=False, run_post4ap_trials=False, 
                             expobj, _ = import_expobj(prep=prep, trial=post4aptrial, verbose=False)
 
                             working_on(expobj)
-                            try:
-                                func(expobj=expobj, **kwargs)
-                            except:
-                                print('Cannot have both trials_run, and run_pre4ap_trials or run_post4ap_trials active on the same call.')
+                            func(expobj=expobj, **kwargs)
+                            # try:
+                            #     func(expobj=expobj, **kwargs)
+                            # except:
+                            #     print('Exception on the wrapped function call')
                             end_working_on(expobj)
                         counter_j += 1
                     counter_i += 1
@@ -983,6 +992,15 @@ class alloptical(TwoPhotonImaging):
         self.SLMTargets_tracedFF_stims_dfstdF_avg = []
         self.SLMTargets_tracedFF_stims_raw = []
         self.SLMTargets_tracedFF_stims_rawAvg = []
+
+        ## breaking down success and failure stims
+        self.traces_SLMtargets_successes_avg_dfstdf = []  # trace snippets for only successful stims - normalized by dfstdf
+        self.traces_SLMtargets_successes_avg_dfprestimf = []  # trace snippets for only successful stims - normalized by dfprestimf
+        self.traces_SLMtargets_tracedFF_successes_avg = []  # trace snippets for only successful stims - delta(trace_dff)
+        self.traces_SLMtargets_failures_avg_dfstdf = []  # trace snippets for only failure stims - normalized by dfstdf
+        self.traces_SLMtargets_failures_avg_dfprestimf = []  # trace snippets for only failure stims - normalized by dfstdf
+        self.traces_SLMtargets_tracedFF_failures_avg = []  # trace snippets for only successful stims - delta(trace_dff)
+
 
         ## NON PHOTOSTIM SLM TARGETS
 
@@ -4055,6 +4073,7 @@ class AllOpticalResults:  ## initiated in allOptical-results.ipynb
 
         self.metainfo = pd.DataFrame()  # gets filled in alloptical_results_init.py
 
+        ## DATA CONTAINING ATTRS
         self.slmtargets_stim_responses = pd.DataFrame({'prep_trial': [], 'date': [], 'exptype': [],
                                                        'stim_setup': [],
                                                        'mean response (dF/stdF all targets)': [],
@@ -4064,6 +4083,8 @@ class AllOpticalResults:  ## initiated in allOptical-results.ipynb
         # large dictionary containing direct run_pre4ap_trials and run_post4ap_trials trial comparisons for each experiments, and stim responses
         # for run_pre4ap_trials data and stim responses for run_post4ap_trials data (also broken down by outsz and insz) - responses are dF/prestimF
         self.stim_responses = {}  # get defined in alloptical_analysis_photostim
+
+        self.avgTraces = {}  # dictionary containing avg traces for each experiment type (pre4ap, outsz, insz) --> processing type (dfstdf or delta(trace_dFF)) _ response type (success or failures)
 
         # for run_pre4ap_trials data and stim responses for run_post4ap_trials data (also broken down by outsz and insz) - responses are taken using whole trace dFF
         self.stim_responses_tracedFF = {}  # get defined in alloptical_analysis_photostim
