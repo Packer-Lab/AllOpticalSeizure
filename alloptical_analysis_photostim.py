@@ -49,7 +49,7 @@ expobj, experiment = aoutils.import_expobj(prep='RL109', trial='t-013')
 """
 
 
-# %% 1) lists of trials to analyse for run_pre4ap_trials and run_post4ap_trials trials within experiments
+# %% superceded in aoresults-init-1) lists of trials to analyse for run_pre4ap_trials and run_post4ap_trials trials within experiments
 
 allopticalResults.pre_4ap_trials = [
     ['RL108 t-009'],

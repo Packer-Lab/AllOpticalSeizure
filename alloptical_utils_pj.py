@@ -149,6 +149,7 @@ def import_expobj(aoresults_map_id: str = None, trial: str = None, prep: str = N
 
 
 def import_resultsobj(pkl_path: str):
+    assert os.path.exists(pkl_path)
     with open(pkl_path, 'rb') as f:
         print(f"\nimporting resultsobj from: {pkl_path} ... ")
         resultsobj = pickle.load(f)
@@ -184,78 +185,87 @@ def end_working_on(expobj):
 def run_for_loop_across_exps(run_pre4ap_trials=False, run_post4ap_trials=False, trials_skip=[], trials_run=[]):
     """decorator to use for for-looping through experiment trials across run_pre4ap_trials and run_post4ap_trials.
     the trials to for loop through are defined in allopticalResults.pre_4ap_trials and allopticalResults.post_4ap_trials"""
+    # if len(trials_run) > 0 or run_pre4ap_trials is True or run_post4ap_trials is True:
+    print(f"\n {'..'*5} INITIATING FOR LOOP ACROSS EXPS {'..'*5}\n")
+    def main_for_loop(func):
+        @functools.wraps(func)
+        def inner(*args, **kwargs):
+            if len(trials_run) > 0:
+                print(f"\n{'-' * 5} RUNNING SPECIFIED TRIALS from `trials_run` {'-' * 5}")
+                counter1 = 0
+                for i, exp_prep in enumerate(trials_run):
+                    # print(i, exp_prep)
+                    prep = exp_prep[:-6]
+                    trial = exp_prep[-5:]
+                    expobj, _ = import_expobj(prep=prep, trial=trial, verbose=False)
 
-
-    if len(trials_run) > 0 or run_pre4ap_trials is True or run_post4ap_trials is True:
-        print(f"\n {'..'*5} INITIATING FOR LOOP ACROSS EXPS {'..'*5}\n")
-        def main_for_loop(func):
-            @functools.wraps(func)
-            def inner(*args, **kwargs):
-                if len(trials_run) > 0:
-                    print(f"\n{'-' * 5} RUNNING SPECIFIED TRIALS from `trials_run` {'-' * 5}")
-                    counter1 = 0
-                    for i, exp_prep in enumerate(trials_run):
-                        print(i, exp_prep)
-                        prep = exp_prep[:-6]
-                        trial = exp_prep[-5:]
-                        expobj, _ = import_expobj(prep=prep, trial=trial, verbose=False)
-
-                        working_on(expobj)
+                    working_on(expobj)
+                    try:
                         func(expobj=expobj, **kwargs)
-                        end_working_on(expobj)
-                    counter1 += 1
+                    except:
+                        print('Cannot have both trials_run, and run_pre4ap_trials or run_post4ap_trials active on the same call.')
+                    end_working_on(expobj)
+                counter1 += 1
 
 
 
-                if run_pre4ap_trials:
-                    print(f"\n{'-' * 5} RUNNING PRE4AP TRIALS {'-' * 5}")
-                    counter_i = 0
-                    for i, x in enumerate(allopticalResults.pre_4ap_trials):
-                        counter_j = 0
-                        for j, exp_prep in enumerate(x):
-                            if exp_prep in trials_skip:
-                                pass
-                            else:
-                                print(i, j, exp_prep)
-                                prep = exp_prep[:-6]
-                                pre4aptrial = exp_prep[-5:]
-                                expobj, _ = import_expobj(prep=prep, trial=pre4aptrial, verbose=False)
+            if run_pre4ap_trials:
+                print(f"\n{'-' * 5} RUNNING PRE4AP TRIALS {'-' * 5}")
+                counter_i = 0
+                for i, x in enumerate(allopticalResults.pre_4ap_trials):
+                    counter_j = 0
+                    for j, exp_prep in enumerate(x):
+                        if exp_prep in trials_skip:
+                            pass
+                        else:
+                            # print(i, j, exp_prep)
+                            prep = exp_prep[:-6]
+                            pre4aptrial = exp_prep[-5:]
+                            expobj, _ = import_expobj(prep=prep, trial=pre4aptrial, verbose=False)
 
-                                working_on(expobj)
+                            working_on(expobj)
+                            try:
                                 func(expobj=expobj, **kwargs)
-                                end_working_on(expobj)
-                            counter_j += 1
-                        counter_i += 1
+                            except:
+                                print('Cannot have both trials_run, and run_pre4ap_trials or run_post4ap_trials active on the same call.')
+                            end_working_on(expobj)
+                        counter_j += 1
+                    counter_i += 1
 
 
 
-                if run_post4ap_trials:
-                    print(f"\n{'-' * 5} RUNNING POST4AP TRIALS {'-' * 5}")
-                    counter_i = 0
-                    for i, x in enumerate(allopticalResults.post_4ap_trials):
-                        counter_j = 0
-                        for j, exp_prep in enumerate(x):
-                            if exp_prep in trials_skip:
-                                pass
-                            else:
-                                print(i, j, exp_prep)
-                                prep = allopticalResults.post_4ap_trials[i][j][:-6]
-                                post4aptrial = allopticalResults.post_4ap_trials[i][j][-5:]
-                                expobj, _ = import_expobj(prep=prep, trial=post4aptrial, verbose=False)
+            if run_post4ap_trials:
+                print(f"\n{'-' * 5} RUNNING POST4AP TRIALS {'-' * 5}")
+                counter_i = 0
+                for i, x in enumerate(allopticalResults.post_4ap_trials):
+                    counter_j = 0
+                    for j, exp_prep in enumerate(x):
+                        if exp_prep in trials_skip:
+                            pass
+                        else:
+                            # print(i, j, exp_prep)
+                            prep = allopticalResults.post_4ap_trials[i][j][:-6]
+                            post4aptrial = allopticalResults.post_4ap_trials[i][j][-5:]
+                            expobj, _ = import_expobj(prep=prep, trial=post4aptrial, verbose=False)
 
-                                working_on(expobj)
+                            working_on(expobj)
+                            try:
                                 func(expobj=expobj, **kwargs)
-                                end_working_on(expobj)
-                            counter_j += 1
-                        counter_i += 1
+                            except:
+                                print('Cannot have both trials_run, and run_pre4ap_trials or run_post4ap_trials active on the same call.')
+                            end_working_on(expobj)
+                        counter_j += 1
+                    counter_i += 1
 
 
-                print(f" {'--' * 5} COMPLETED FOR LOOP ACROSS EXPS {'--' * 5}\n")
-            return inner
-        return main_for_loop
+            print(f" {'--' * 5} COMPLETED FOR LOOP ACROSS EXPS {'--' * 5}\n")
+        return inner
+    return main_for_loop
 
-    elif len(trials_run) > 0 and (run_pre4ap_trials is True or run_post4ap_trials is True):
-        raise Exception('Cannot have both trials_run, and run_pre4ap_trials or run_post4ap_trials active on the same call.')
+    # elif len(trials_run) > 0 and (run_pre4ap_trials is True or run_post4ap_trials is True):
+    #     raise Exception('Cannot have both trials_run, and run_pre4ap_trials or run_post4ap_trials active on the same call.')
+
+
 
 
     #### superceded with above
@@ -2245,21 +2255,30 @@ class alloptical(TwoPhotonImaging):
         elif stims_to_use:
             stims_idx = [self.stim_start_frames.index(stim) for stim in stims_to_use]
         else:
-            AssertionError('no stims set to analyse [1.1]')
+            AttributeError('no stims set to analyse [1.1]')
 
-        # choose between .SLMTargets_stims_dff and .SLMTargets_stims_tracedFF for data to process
+        # choose between .SLMTargets_stims_dff, or .SLMTargets_stims_dfstdF and .SLMTargets_stims_tracedFF for data to process
         if process == 'dF/prestimF':
             if hasattr(self, 'SLMTargets_stims_dff'):
                 targets_traces = self.SLMTargets_stims_dff
+                threshold=10
             else:
-                AssertionError('no SLMTargets_stims_dff attr. [1.2]')
+                AttributeError('no SLMTargets_stims_dff attr. [1.2]')
+        elif process == 'dF/stdF':
+            if hasattr(self, 'SLMTargets_stims_dfstdF'):
+                targets_traces = self.SLMTargets_stims_dfstdF
+                threshold = 0.3
+            else:
+                AttributeError('no SLMTargets_stims_dff attr. [1.2]')
+
         elif process == 'trace dFF':
             if hasattr(self, 'SLMTargets_stims_dff'):
                 targets_traces = self.SLMTargets_tracedFF_stims_dff
+                threshold=10
             else:
-                AssertionError('no SLMTargets_tracedFF_stims_dff attr. [1.3]')
+                AttributeError('no SLMTargets_tracedFF_stims_dff attr. [1.3]')
         else:
-            ValueError('need to assign to process: dF/prestimF or trace dFF')
+            ValueError('need to assign to process: dF/prestimF or dF/stdF or trace dFF')
 
         # initializing pandas df that collects responses of stimulations
         if hasattr(self, 'SLMTargets_stims_dff'):
@@ -2268,7 +2287,7 @@ class alloptical(TwoPhotonImaging):
                 d[stim] = [None] * targets_traces.shape[0]
             df = pd.DataFrame(d, index=range(targets_traces.shape[0]))  # population dataframe
         else:
-            AssertionError('no SLMTargets_stims_dff attr. [1.2]')
+            AttributeError('no SLMTargets_stims_dff attr. [1.2]')
 
         # initializing pandas df for binary showing of success and fails (1= success, 0= fails)
         hits_slmtargets = {}  # to be converted in pandas df below - will contain 1 for every success stim, 0 for non success stims
@@ -2324,19 +2343,25 @@ class alloptical(TwoPhotonImaging):
         print(
             f'\n---------- Calculating {process} stim success rates, and separating stims into successes and failures (of SLM targets) [1.] ----------')
 
-        # choose between .SLMTargets_stims_dff and .SLMTargets_stims_tracedFF for data to process
+        # choose between .SLMTargets_stims_dff, or .SLMTargets_stims_dfstdF and .SLMTargets_stims_tracedFF for data to process
         if process == 'dF/prestimF':
             if hasattr(self, 'SLMTargets_stims_dff'):
                 targets_traces = self.SLMTargets_stims_dff
             else:
-                AssertionError('no SLMTargets_stims_dff attr. [1.2]')
+                AttributeError('no SLMTargets_stims_dff attr. [1.2]')
+        elif process == 'dF/stdF':
+            if hasattr(self, 'SLMTargets_stims_dfstdF'):
+                targets_traces = self.SLMTargets_stims_dfstdF
+            else:
+                AttributeError('no SLMTargets_stims_dff attr. [1.2]')
+
         elif process == 'trace dFF':
             if hasattr(self, 'SLMTargets_stims_dff'):
                 targets_traces = self.SLMTargets_tracedFF_stims_dff
             else:
-                AssertionError('no SLMTargets_tracedFF_stims_dff attr. [1.3]')
+                AttributeError('no SLMTargets_tracedFF_stims_dff attr. [1.3]')
         else:
-            ValueError('need to assign to process: dF/prestimF or trace dFF')
+            ValueError('need to assign to process: dF/prestimF or dF/stdF or trace dFF')
 
         traces_SLMtargets_successes_avg_dict = {}
         traces_SLMtargets_failures_avg_dict = {}
@@ -4024,11 +4049,12 @@ class OnePhotonResults:
 
 class AllOpticalResults:  ## initiated in allOptical-results.ipynb
     def __init__(self, save_path: str):
+        print(f"\n {'--'*5} CREATING NEW ALLOPTICAL RESULTS {'--'*5} \n")
         # just create an empty class object that you will throw results and analyses into
         self.pkl_path = save_path
 
         self.metainfo = pd.DataFrame()  # gets filled in alloptical_results_init.py
-        #
+
         self.slmtargets_stim_responses = pd.DataFrame({'prep_trial': [], 'date': [], 'exptype': [],
                                                        'stim_setup': [],
                                                        'mean response (dF/stdF all targets)': [],
@@ -4739,81 +4765,119 @@ def run_alloptical_processing_photostim(expobj, to_suite2p=None, baseline_trials
     # can plot this as a bar plot for now showing the distribution of the reliability measurement
     if 'pre' in expobj.metainfo['exptype']:
         seizure_filter = False
-        expobj.StimSuccessRate_SLMtargets, expobj.hits_SLMtargets, expobj.responses_SLMtargets, expobj.traces_SLMtargets_successes = \
+        # dF/stdF
+        expobj.StimSuccessRate_SLMtargets_dfstdf, expobj.hits_SLMtargets_dfstdf, expobj.responses_SLMtargets_dfstdf, expobj.traces_SLMtargets_successes_dfstdf = \
+            expobj.get_SLMTarget_responses_dff(process='dF/stdF', threshold=0.3, stims_to_use=expobj.stim_start_frames)
+
+        # dF/prestimF
+        expobj.StimSuccessRate_SLMtargets_dfprestimf, expobj.hits_SLMtargets_dfprestimf, expobj.responses_SLMtargets_dfprestimf, expobj.traces_SLMtargets_successes_dfprestimf = \
             expobj.get_SLMTarget_responses_dff(process='dF/prestimF', threshold=10,
                                                stims_to_use=expobj.stim_start_frames)
-
+        # dF/stdF
         expobj.stims_idx = [expobj.stim_start_frames.index(stim) for stim in expobj.stim_start_frames]
-        expobj.StimSuccessRate_SLMtargets, expobj.traces_SLMtargets_successes_avg, expobj.traces_SLMtargets_failures_avg = \
+        expobj.StimSuccessRate_SLMtargets_dfstdf, expobj.traces_SLMtargets_successes_avg_dfstdf, expobj.traces_SLMtargets_failures_avg_dfstdf = \
+            expobj.calculate_SLMTarget_SuccessStims(process='dF/stdF', hits_slmtargets_df=expobj.hits_SLMtargets,
+                                                    stims_idx_l=expobj.stims_idx)
+        # dF/prestimF
+        expobj.StimSuccessRate_SLMtargets_dfprestimf, expobj.traces_SLMtargets_successes_avg_dfprestimf, expobj.traces_SLMtargets_failures_avg_dfprestimf = \
             expobj.calculate_SLMTarget_SuccessStims(process='dF/prestimF', hits_slmtargets_df=expobj.hits_SLMtargets,
                                                     stims_idx_l=expobj.stims_idx)
-
+        # trace dFF
         expobj.StimSuccessRate_SLMtargets_tracedFF, expobj.hits_SLMtargets_tracedFF, expobj.responses_SLMtargets_tracedFF, expobj.traces_SLMtargets_tracedFF_successes = \
             expobj.get_SLMTarget_responses_dff(process='trace dFF', threshold=10, stims_to_use=expobj.stim_start_frames)
-
+        # trace dFF
         expobj.StimSuccessRate_SLMtargets_tracedFF, expobj.traces_SLMtargets_tracedFF_successes_avg, expobj.traces_SLMtargets_tracedFF_failures_avg = \
             expobj.calculate_SLMTarget_SuccessStims(process='trace dFF',
                                                     hits_slmtargets_df=expobj.hits_SLMtargets_tracedFF,
                                                     stims_idx_l=expobj.stims_idx)
 
+
+        ## GET NONTARGETS TRACES - not changed yet to handle the trace dFF processing
         expobj.dff_traces, expobj.dff_traces_avg, expobj.dfstdF_traces, expobj.dfstdF_traces_avg, expobj.raw_traces, expobj.raw_traces_avg = \
             get_nontargets_stim_traces_norm(expobj=expobj, normalize_to='pre-stim', pre_stim=expobj.pre_stim,
                                             post_stim=expobj.post_stim)
 
     elif 'post' in expobj.metainfo['exptype']:
         seizure_filter = True
-
-        # calculating stim responses (all trial) - %s stims [2.1.1]
-        expobj.StimSuccessRate_SLMtargets, expobj.hits_SLMtargets, expobj.responses_SLMtargets, expobj.traces_SLMtargets_successes = \
+        print('|- calculating stim responses (all trials) - %s stims [2.2.1]' % len(expobj.stim_start_frames))
+        # dF/stdF
+        expobj.StimSuccessRate_SLMtargets_dfstdf, expobj.hits_SLMtargets_dfstdf, expobj.responses_SLMtargets_dfstdf, expobj.traces_SLMtargets_successes_dfstdf = \
+            expobj.get_SLMTarget_responses_dff(process='dF/stdF', threshold=0.3,
+                                               stims_to_use=expobj.stim_start_frames)
+        # dF/prestimF
+        expobj.StimSuccessRate_SLMtargets_dfprestimf, expobj.hits_SLMtargets_dfprestimf, expobj.responses_SLMtargets_dfprestimf, expobj.traces_SLMtargets_successes_dfprestimf = \
             expobj.get_SLMTarget_responses_dff(process='dF/prestimF', threshold=10,
                                                stims_to_use=expobj.stim_start_frames)
-
+        # trace dFF
         expobj.StimSuccessRate_SLMtargets_tracedFF, expobj.hits_SLMtargets_tracedFF, expobj.responses_SLMtargets_tracedFF, expobj.traces_SLMtargets_tracedFF_successes = \
             expobj.get_SLMTarget_responses_dff(process='trace dFF', threshold=10, stims_to_use=expobj.stim_start_frames)
 
+        ### STIMS OUT OF SEIZURE
         if len(expobj.stims_out_sz) > 1:
             stims_outsz_idx = [expobj.stim_start_frames.index(stim) for stim in expobj.stims_out_sz]
             if len(stims_outsz_idx) > 0:
                 print('|- calculating stim responses (outsz) - %s stims [2.2.1]' % len(stims_outsz_idx))
-                expobj.StimSuccessRate_SLMtargets_outsz, expobj.hits_SLMtargets_outsz, expobj.responses_SLMtargets_outsz, expobj.traces_SLMtargets_successes_outsz = \
+                # dF/stdF
+                expobj.StimSuccessRate_SLMtargets_dfstdf_outsz, expobj.hits_SLMtargets_dfstdf_outsz, expobj.responses_SLMtargets_dfstdf_outsz, expobj.traces_SLMtargets_successes_dfstdf_outsz = \
+                    expobj.get_SLMTarget_responses_dff(process='dF/stdF', threshold=0.3,
+                                                       stims_to_use=expobj.stims_out_sz)
+                # dF/prestimF
+                expobj.StimSuccessRate_SLMtargets_dfprestimf_outsz, expobj.hits_SLMtargets_dfprestimf_outsz, expobj.responses_SLMtargets_dfprestimf_outsz, expobj.traces_SLMtargets_successes_dfprestimf_outsz = \
                     expobj.get_SLMTarget_responses_dff(process='dF/prestimF', threshold=10,
                                                        stims_to_use=expobj.stims_out_sz)
-
+                # trace dFF
                 expobj.StimSuccessRate_SLMtargets_tracedFF_outsz, expobj.hits_SLMtargets_tracedFF_outsz, expobj.responses_SLMtargets_tracedFF_outsz, expobj.traces_SLMtargets_tracedFF_successes_outsz = \
                     expobj.get_SLMTarget_responses_dff(process='trace dFF', threshold=10,
-                                                       stims_to_use=expobj.stim_start_frames)
+                                                       stims_to_use=expobj.stims_out_sz)
 
                 print('|- calculating stim success rates (outsz) - %s stims [2.2.0]' % len(stims_outsz_idx))
-                expobj.outsz_StimSuccessRate_SLMtargets, expobj.outsz_traces_SLMtargets_successes_avg, expobj.outsz_traces_SLMtargets_failures_avg = \
+                # dF/stdF
+                expobj.outsz_StimSuccessRate_SLMtargets_dfstdf, expobj.outsz_traces_SLMtargets_successes_avg_dfstdf, expobj.outsz_traces_SLMtargets_failures_avg_dfstdf = \
+                    expobj.calculate_SLMTarget_SuccessStims(process='dF/stdF',
+                                                            hits_slmtargets_df=expobj.hits_SLMtargets_outsz,
+                                                            stims_idx_l=stims_outsz_idx)
+                # dF/prestimF
+                expobj.outsz_StimSuccessRate_SLMtargets_dfprestimf, expobj.outsz_traces_SLMtargets_successes_avg_dfprestimf, expobj.outsz_traces_SLMtargets_failures_avg_dfprestimf = \
                     expobj.calculate_SLMTarget_SuccessStims(process='dF/prestimF',
                                                             hits_slmtargets_df=expobj.hits_SLMtargets_outsz,
                                                             stims_idx_l=stims_outsz_idx)
-
+                # trace dFF
                 expobj.outsz_StimSuccessRate_SLMtargets_tracedFF, expobj.outsz_traces_SLMtargets_tracedFF_successes_avg, expobj.outsz_traces_SLMtargets_tracedFF_failures_avg = \
                     expobj.calculate_SLMTarget_SuccessStims(process='trace dFF',
                                                             hits_slmtargets_df=expobj.hits_SLMtargets_tracedFF_outsz,
                                                             stims_idx_l=stims_outsz_idx)
 
+        ### STIMS IN SEIZURE
         if len(expobj.stims_in_sz) > 1:
             if hasattr(expobj, 'slmtargets_szboundary_stim'):
                 stims_insz_idx = [expobj.stim_start_frames.index(stim) for stim in expobj.stims_in_sz]
                 if len(stims_insz_idx) > 0:
                     print('|- calculating stim responses (insz) - %s stims [2.3.1]' % len(stims_insz_idx))
-                    expobj.StimSuccessRate_SLMtargets_insz, expobj.hits_SLMtargets_insz, expobj.responses_SLMtargets_insz, expobj.traces_SLMtargets_successes_insz = \
+                    # dF/stdF
+                    expobj.StimSuccessRate_SLMtargets_dfstdf_insz, expobj.hits_SLMtargets_dfstdf_insz, expobj.responses_SLMtargets_dfstdf_insz, expobj.traces_SLMtargets_successes_dfstdf_insz = \
+                        expobj.get_SLMTarget_responses_dff(process='dF/stdF', threshold=0.3,
+                                                           stims_to_use=expobj.stims_in_sz)
+                    # dF/prestimF
+                    expobj.StimSuccessRate_SLMtargets_dfprestimf_insz, expobj.hits_SLMtargets_dfprestimf_insz, expobj.responses_SLMtargets_dfprestimf_insz, expobj.traces_SLMtargets_successes_dfprestimf_insz = \
                         expobj.get_SLMTarget_responses_dff(process='dF/prestimF', threshold=10,
                                                            stims_to_use=expobj.stims_in_sz)
-
+                    # trace dFF
                     expobj.StimSuccessRate_SLMtargets_tracedFF_insz, expobj.hits_SLMtargets_tracedFF_insz, expobj.responses_SLMtargets_tracedFF_insz, expobj.traces_SLMtargets_tracedFF_successes_insz = \
                         expobj.get_SLMTarget_responses_dff(process='trace dFF', threshold=10,
-                                                           stims_to_use=expobj.stim_start_frames)
+                                                           stims_to_use=expobj.stims_in_sz)
 
                     print('|- calculating stim success rates (insz) - %s stims [2.3.0]' % len(stims_insz_idx))
-                    expobj.insz_StimSuccessRate_SLMtargets, expobj.insz_traces_SLMtargets_successes_avg, expobj.insz_traces_SLMtargets_failures_avg = \
+                    # dF/stdF
+                    expobj.insz_StimSuccessRate_SLMtargets_dfstdf, expobj.insz_traces_SLMtargets_successes_avg_dfstdf, expobj.insz_traces_SLMtargets_failures_avg_dfstdf = \
+                        expobj.calculate_SLMTarget_SuccessStims(process='dF/stdF',
+                                                                hits_slmtargets_df=expobj.hits_SLMtargets_insz,
+                                                                stims_idx_l=stims_insz_idx)
+                    # dF/prestimF
+                    expobj.insz_StimSuccessRate_SLMtargets_dfprestimf, expobj.insz_traces_SLMtargets_successes_avg_dfprestimf, expobj.insz_traces_SLMtargets_failures_avg_dfprestimf = \
                         expobj.calculate_SLMTarget_SuccessStims(process='dF/prestimF',
                                                                 hits_slmtargets_df=expobj.hits_SLMtargets_insz,
-                                                                stims_idx_l=stims_insz_idx,
-                                                                exclude_stims_targets=expobj.slmtargets_szboundary_stim)
-
+                                                                stims_idx_l=stims_insz_idx)
+                    # trace dFF
                     expobj.insz_StimSuccessRate_SLMtargets_tracedFF, expobj.insz_traces_SLMtargets_tracedFF_successes_avg, expobj.insz_traces_SLMtargets_tracedFF_failures_avg = \
                         expobj.calculate_SLMTarget_SuccessStims(process='trace dFF',
                                                                 hits_slmtargets_df=expobj.hits_SLMtargets_tracedFF_insz,

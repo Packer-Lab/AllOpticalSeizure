@@ -1,7 +1,7 @@
 ## script dedicated to code that focuses on analysis re: SLM targets data
 
 # %% IMPORT MODULES AND TRIAL expobj OBJECT
-import sys;
+import sys
 import os
 
 sys.path.append('/home/pshah/Documents/code/PackerLab_pycharm/')
@@ -44,75 +44,6 @@ trials_skip = [
 ]
 
 
-# %% 1) adding slm targets responses to alloptical results allopticalResults.slmtargets_stim_responses
-
-@aoutils.run_for_loop_across_exps(run_pre4ap_trials=False, run_post4ap_trials=True, trials_skip=trials_skip)
-def add_slmtargets_responses_tracedFF(**kwargs):
-    print("|- adding slm targets trace dFF responses to allopticalResults.slmtargets_stim_responses")
-    print(kwargs)
-    expobj = kwargs['expobj'] if 'expobj' in kwargs.keys() else KeyError('need to provide expobj as keyword argument')
-
-    if 'pre' in expobj.metainfo['exptype']:
-        prep_trial = f"{expobj.metainfo['animal prep.']} {expobj.metainfo['trial']}"
-        # dFstdF_response = np.mean([[np.mean(expobj.responses_SLMtargets[i]) for i in range(expobj.n_targets_total)]])  # these are not dFstdF responses right now!!!
-        # allopticalResults.slmtargets_stim_responses.loc[allopticalResults.slmtargets_stim_responses['prep_trial'] == prep_trial, 'mean response (dF/stdF all targets)'] = dFstdF_response
-
-        dFprestimF_response = np.mean([[np.mean(expobj.responses_SLMtargets.loc[i, :]) for i in range(expobj.n_targets_total)]])  #
-        allopticalResults.slmtargets_stim_responses.loc[allopticalResults.slmtargets_stim_responses['prep_trial'] == prep_trial, 'mean response (dF/prestimF all targets)'] = dFprestimF_response
-
-
-        reliability = np.mean(list(expobj.StimSuccessRate_SLMtargets_tracedFF.values()))
-        allopticalResults.slmtargets_stim_responses.loc[allopticalResults.slmtargets_stim_responses['prep_trial'] == prep_trial, 'mean reliability (>10 delta(trace_dFF))'] = reliability
-
-        delta_trace_dFF_response = np.mean([[np.mean(expobj.responses_SLMtargets_tracedFF.loc[i, :]) for i in range(expobj.n_targets_total)]])
-        allopticalResults.slmtargets_stim_responses.loc[allopticalResults.slmtargets_stim_responses['prep_trial'] == prep_trial, 'mean response (delta(trace_dFF) all targets)'] = delta_trace_dFF_response
-
-    elif 'post' in expobj.metainfo['exptype']:
-        prep_trial = f"{expobj.metainfo['animal prep.']} {expobj.metainfo['trial']}"
-        # dFstdF_response = np.mean([[np.mean(expobj.responses_SLMtargets_outsz[i]) for i in range(expobj.n_targets_total)]])  # these are not dFstdF responses!!!
-        # allopticalResults.slmtargets_stim_responses.loc[allopticalResults.slmtargets_stim_responses['prep_trial'] == prep_trial, 'mean response (dF/stdF all targets)'] = dFstdF_response
-
-        dFprestimF_response = np.mean([[np.mean(expobj.responses_SLMtargets_outsz.loc[i, :]) for i in range(expobj.n_targets_total)]])  #
-        allopticalResults.slmtargets_stim_responses.loc[allopticalResults.slmtargets_stim_responses['prep_trial'] == prep_trial, 'mean response (dF/prestimF all targets)'] = dFprestimF_response
-
-        reliability = np.mean(list(expobj.StimSuccessRate_SLMtargets_tracedFF_outsz.values()))
-        allopticalResults.slmtargets_stim_responses.loc[allopticalResults.slmtargets_stim_responses['prep_trial'] == prep_trial, 'mean reliability (>10 delta(trace_dFF))'] = reliability
-
-        delta_trace_dFF_response = np.mean([[np.mean(expobj.responses_SLMtargets_tracedFF_outsz.loc[i, :]) for i in range(expobj.n_targets_total)]])
-        allopticalResults.slmtargets_stim_responses.loc[allopticalResults.slmtargets_stim_responses['prep_trial'] == prep_trial, 'mean response (delta(trace_dFF) all targets)'] = delta_trace_dFF_response
-
-        if len(expobj.stims_in_sz) > 0:
-            prep_trial = f"{expobj.metainfo['animal prep.']} {expobj.metainfo['trial']}"
-
-            # dFstdF_response = np.mean([[np.mean(expobj.responses_SLMtargets_insz[i]) for i in range(expobj.n_targets_total)]])
-            # allopticalResults.slmtargets_stim_responses.loc[allopticalResults.slmtargets_stim_responses['prep_trial'] == prep_trial, 'mean response (dF/stdF all targets) insz'] = dFstdF_response
-
-            dFprestimF_response = np.mean([[np.mean(expobj.responses_SLMtargets_insz.loc[i, :]) for i in range(expobj.n_targets_total)]])  #
-            allopticalResults.slmtargets_stim_responses.loc[allopticalResults.slmtargets_stim_responses['prep_trial'] == prep_trial, 'mean response (dF/prestimF all targets) insz'] = dFprestimF_response
-
-            reliability = np.mean(list(expobj.StimSuccessRate_SLMtargets_insz.values()))
-            allopticalResults.slmtargets_stim_responses.loc[allopticalResults.slmtargets_stim_responses['prep_trial'] == prep_trial, 'mean reliability (>10 delta(trace_dFF)) insz'] = reliability
-
-            delta_trace_dFF_response = np.mean([[np.mean(expobj.responses_SLMtargets_tracedFF_insz.loc[i, :]) for i in range(expobj.n_targets_total)]])
-            allopticalResults.slmtargets_stim_responses.loc[allopticalResults.slmtargets_stim_responses['prep_trial'] == prep_trial, 'mean response (delta(trace_dFF) all targets) insz'] = delta_trace_dFF_response
-
-
-add_slmtargets_responses_tracedFF()
-
-allopticalResults.slmtargets_stim_responses
-allopticalResults.save()
-
-# ## check allopticalResults.slmtargets_stim_responses
-# allopticalResults.slmtargets_stim_responses[allopticalResults.slmtargets_stim_responses['prep_trial'].isin(pj.flattenOnce(allopticalResults.post_4ap_trials))]['mean response (delta(trace_dFF) all targets)']
-# allopticalResults.slmtargets_stim_responses[allopticalResults.slmtargets_stim_responses['prep_trial'].isin(pj.flattenOnce(allopticalResults.pre_4ap_trials))]['mean response (delta(trace_dFF) all targets)']
-
-# %% troubleshoot
-
-prep_trial = 'RL109 t-020'
-
-expobj, _ = aoutils.import_expobj(exp_prep=prep_trial)
-
-aoutils.run_alloptical_processing_photostim(expobj, plots=False)
 
 # sys.exit()
 """# ########### END OF // ZONE FOR CALLING THIS SCRIPT DIRECTLY FROM THE SSH SERVER ###########
@@ -124,6 +55,77 @@ aoutils.run_alloptical_processing_photostim(expobj, plots=False)
 ########### END OF // ZONE FOR CALLING THIS SCRIPT DIRECTLY FROM THE SSH SERVER ###########
 ########### END OF // ZONE FOR CALLING THIS SCRIPT DIRECTLY FROM THE SSH SERVER ###########
 """
+
+
+
+# %% aoanalysis-photostim-SLMtargets-1) adding slm targets responses to alloptical results allopticalResults.slmtargets_stim_responses
+
+@aoutils.run_for_loop_across_exps(run_pre4ap_trials=True, run_post4ap_trials=True)
+def add_slmtargets_responses_tracedFF(**kwargs):
+    print("|- adding slm targets trace dFF responses to allopticalResults.slmtargets_stim_responses")
+    print(kwargs)
+    expobj = kwargs['expobj'] if 'expobj' in kwargs.keys() else KeyError('need to provide expobj as keyword argument')
+
+    if 'pre' in expobj.metainfo['exptype']:
+        prep_trial = f"{expobj.metainfo['animal prep.']} {expobj.metainfo['trial']}"
+        dFstdF_response = np.mean([[np.mean(expobj.responses_SLMtargets_dfstdf[i]) for i in range(expobj.n_targets_total)]])  # these are not dFstdF responses right now!!!
+        allopticalResults.slmtargets_stim_responses.loc[allopticalResults.slmtargets_stim_responses['prep_trial'] == prep_trial, 'mean response (dF/stdF all targets)'] = dFstdF_response
+
+        dFprestimF_response = np.mean([[np.mean(expobj.responses_SLMtargets_dfprestimf.loc[i, :]) for i in range(expobj.n_targets_total)]])  #
+        allopticalResults.slmtargets_stim_responses.loc[allopticalResults.slmtargets_stim_responses['prep_trial'] == prep_trial, 'mean response (dF/prestimF all targets)'] = dFprestimF_response
+
+        reliability = np.mean(list(expobj.StimSuccessRate_SLMtargets_tracedFF.values()))
+        allopticalResults.slmtargets_stim_responses.loc[allopticalResults.slmtargets_stim_responses['prep_trial'] == prep_trial, 'mean reliability (>10 delta(trace_dFF))'] = reliability
+
+        delta_trace_dFF_response = np.mean([[np.mean(expobj.responses_SLMtargets_tracedFF.loc[i, :]) for i in range(expobj.n_targets_total)]])
+        allopticalResults.slmtargets_stim_responses.loc[allopticalResults.slmtargets_stim_responses['prep_trial'] == prep_trial, 'mean response (delta(trace_dFF) all targets)'] = delta_trace_dFF_response
+
+        print(f"|- {prep_trial}: delta trace dFF response: {delta_trace_dFF_response:.2f}, reliability: {reliability:.2f},  dFprestimF_response: {dFprestimF_response:.2f}")
+
+    elif 'post' in expobj.metainfo['exptype']:
+        prep_trial = f"{expobj.metainfo['animal prep.']} {expobj.metainfo['trial']}"
+        dFstdF_response = np.mean([[np.mean(expobj.responses_SLMtargets_dfstdf_outsz[i]) for i in range(expobj.n_targets_total)]])  # these are not dFstdF responses right now!!!
+        allopticalResults.slmtargets_stim_responses.loc[allopticalResults.slmtargets_stim_responses['prep_trial'] == prep_trial, 'mean response (dF/stdF all targets)'] = dFstdF_response
+
+        dFprestimF_response = np.mean([[np.mean(expobj.responses_SLMtargets_dfprestimf_outsz.loc[i, :]) for i in range(expobj.n_targets_total)]])  #
+        allopticalResults.slmtargets_stim_responses.loc[allopticalResults.slmtargets_stim_responses['prep_trial'] == prep_trial, 'mean response (dF/prestimF all targets)'] = dFprestimF_response
+
+        reliability = np.mean(list(expobj.StimSuccessRate_SLMtargets_tracedFF_outsz.values()))
+        allopticalResults.slmtargets_stim_responses.loc[allopticalResults.slmtargets_stim_responses['prep_trial'] == prep_trial, 'mean reliability (>10 delta(trace_dFF))'] = reliability
+
+        delta_trace_dFF_response = np.mean([[np.mean(expobj.responses_SLMtargets_tracedFF_outsz.loc[i, :]) for i in range(expobj.n_targets_total)]])
+        allopticalResults.slmtargets_stim_responses.loc[allopticalResults.slmtargets_stim_responses['prep_trial'] == prep_trial, 'mean response (delta(trace_dFF) all targets)'] = delta_trace_dFF_response
+
+        print(f"|- {prep_trial} (outsz): delta trace dFF response: {delta_trace_dFF_response:.2f}, reliability: {reliability:.2f},  dFprestimF_response: {dFprestimF_response:.2f}")
+
+        if len(expobj.stims_in_sz) > 0:
+            prep_trial = f"{expobj.metainfo['animal prep.']} {expobj.metainfo['trial']}"
+
+            dFstdF_response = np.mean([[np.mean(expobj.responses_SLMtargets_dfstdf_insz[i]) for i in range(expobj.n_targets_total)]])  # these are not dFstdF responses right now!!!
+            allopticalResults.slmtargets_stim_responses.loc[allopticalResults.slmtargets_stim_responses['prep_trial'] == prep_trial, 'mean response (dF/stdF all targets) insz'] = dFstdF_response
+
+            dFprestimF_response = np.mean([[np.mean(expobj.responses_SLMtargets_dfprestimf_insz.loc[i, :]) for i in range(expobj.n_targets_total)]])  #
+            allopticalResults.slmtargets_stim_responses.loc[allopticalResults.slmtargets_stim_responses['prep_trial'] == prep_trial, 'mean response (dF/prestimF all targets) insz'] = dFprestimF_response
+
+            reliability = np.mean(list(expobj.StimSuccessRate_SLMtargets_insz.values()))
+            allopticalResults.slmtargets_stim_responses.loc[allopticalResults.slmtargets_stim_responses['prep_trial'] == prep_trial, 'mean reliability (>10 delta(trace_dFF)) insz'] = reliability
+
+            delta_trace_dFF_response = np.mean([[np.mean(expobj.responses_SLMtargets_tracedFF_insz.loc[i, :]) for i in range(expobj.n_targets_total)]])
+            allopticalResults.slmtargets_stim_responses.loc[allopticalResults.slmtargets_stim_responses['prep_trial'] == prep_trial, 'mean response (delta(trace_dFF) all targets) insz'] = delta_trace_dFF_response
+
+            print(f"|- {prep_trial}: delta trace dFF response (in sz): {delta_trace_dFF_response:.2f}, reliability (in sz): {reliability:.2f},  dFprestimF_response (in sz): {dFprestimF_response:.2f}")
+
+add_slmtargets_responses_tracedFF()
+
+allopticalResults.slmtargets_stim_responses
+allopticalResults.save()
+
+## check allopticalResults.slmtargets_stim_responses
+allopticalResults.slmtargets_stim_responses[allopticalResults.slmtargets_stim_responses['prep_trial'].isin(pj.flattenOnce(allopticalResults.post_4ap_trials))]['mean response (delta(trace_dFF) all targets)']
+allopticalResults.slmtargets_stim_responses[allopticalResults.slmtargets_stim_responses['prep_trial'].isin(pj.flattenOnce(allopticalResults.post_4ap_trials))]['mean response (delta(trace_dFF) all targets) insz']
+allopticalResults.slmtargets_stim_responses[allopticalResults.slmtargets_stim_responses['prep_trial'].isin(pj.flattenOnce(allopticalResults.pre_4ap_trials))]['mean response (delta(trace_dFF) all targets)']
+
+
 
 # %% 0) #### -------------------- ALL OPTICAL PHOTOSTIM ANALYSIS ################################################
 
@@ -146,6 +148,7 @@ for key in list(allopticalResults.trial_maps['post'].keys()):
 
 short_list_pre = [('pre', 'e', '0')]
 short_list_post = [('post', 'e', '0')]
+
 
 # %% 2.1) DATA COLLECTION SLMTargets: organize SLMTargets stim responses - across all appropriate run_pre4ap_trials, run_post4ap_trials trial comparisons - responses are dF/prestimF
 """ doing it in this way so that its easy to use in the response vs. stim times relative to seizure onset code (as this has already been coded up)"""
