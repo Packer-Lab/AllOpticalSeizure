@@ -43,7 +43,7 @@ from numba import njit
 
 ## UTILITY FUNCTIONS
 def import_expobj(aoresults_map_id: str = None, trial: str = None, prep: str = None, date: str = None,
-                  pkl_path: str = None,
+                  pkl_path: str = None, exp_prep: str = None,
                   verbose: bool = True, do_processing: bool = False):
     """
     primary function for importing of saved expobj files saved pickel files.
@@ -70,6 +70,10 @@ def import_expobj(aoresults_map_id: str = None, trial: str = None, prep: str = N
             num_ = 0
         prep, trial = allopticalResults.trial_maps[exp_type][id][num_].split(' ')
 
+    if exp_prep is not None:
+        prep = exp_prep[:-6]
+        trial = exp_prep[-5:]
+
     if pkl_path is None:
         if date is None:
             try:
@@ -88,6 +92,7 @@ def import_expobj(aoresults_map_id: str = None, trial: str = None, prep: str = N
             expobj.metainfo['comments'])
         print('|- DONE IMPORT of %s' % experiment) if verbose else None
 
+    # update pkl_path using the provided pkl_path for this expobj (if new)
     if pkl_path is not None:
         if expobj.pkl_path != pkl_path:
             expobj.pkl_path = pkl_path
@@ -166,6 +171,7 @@ def define(x):
 def show_idioms():
     print(f"entries in idiom_dictionary: \n {list(idiom_dictionary.keys())}")
 
+
 ## DECORATORS
 def working_on(expobj):
     print(f"Working on: {expobj.metainfo['exptype']} {expobj.metainfo['animal prep.']} {expobj.metainfo['trial']} ... ")
@@ -179,14 +185,14 @@ def run_for_loop_across_exps(run_pre4ap_trials=False, run_post4ap_trials=False, 
     """decorator to use for for-looping through experiment trials across run_pre4ap_trials and run_post4ap_trials.
     the trials to for loop through are defined in allopticalResults.pre_4ap_trials and allopticalResults.post_4ap_trials"""
 
-    try:  # was trying to use this to handle the case when there is nothing provided to run, but doesn't seem to catch the TypeError that results when that happens
-        # print('INITIATING FOR LOOP ----- ')
-        if len(trials_run) > 0:
-            print(f"{'-' * 5} RUNNING SPECIFIED TRIALS from `trials_run` {'-' * 5}")
 
-            def for_loop_trials_run(func):
-                @functools.wraps(func)
-                def inner(*args, **kwargs):
+    if len(trials_run) > 0 or run_pre4ap_trials is True or run_post4ap_trials is True:
+        print(f"\n {'..'*5} INITIATING FOR LOOP ACROSS EXPS {'..'*5}\n")
+        def main_for_loop(func):
+            @functools.wraps(func)
+            def inner(*args, **kwargs):
+                if len(trials_run) > 0:
+                    print(f"\n{'-' * 5} RUNNING SPECIFIED TRIALS from `trials_run` {'-' * 5}")
                     counter1 = 0
                     for i, exp_prep in enumerate(trials_run):
                         print(i, exp_prep)
@@ -197,19 +203,12 @@ def run_for_loop_across_exps(run_pre4ap_trials=False, run_post4ap_trials=False, 
                         working_on(expobj)
                         func(expobj=expobj, **kwargs)
                         end_working_on(expobj)
-
                     counter1 += 1
 
-                return inner
 
-            return for_loop_trials_run
 
-        if run_pre4ap_trials:
-            print(f"{'-' * 5} RUNNING PRE4AP TRIALS {'-' * 5}")
-
-            def for_loop_pre4ap(func):
-                @functools.wraps(func)
-                def inner(*args, **kwargs):
+                if run_pre4ap_trials:
+                    print(f"\n{'-' * 5} RUNNING PRE4AP TRIALS {'-' * 5}")
                     counter_i = 0
                     for i, x in enumerate(allopticalResults.pre_4ap_trials):
                         counter_j = 0
@@ -225,20 +224,13 @@ def run_for_loop_across_exps(run_pre4ap_trials=False, run_post4ap_trials=False, 
                                 working_on(expobj)
                                 func(expobj=expobj, **kwargs)
                                 end_working_on(expobj)
-
                             counter_j += 1
                         counter_i += 1
 
-                return inner
 
-            return for_loop_pre4ap
 
-        if run_post4ap_trials:
-            print(f"{'-' * 5} RUNNING POST4AP TRIALS {'-' * 5}")
-
-            def for_loop_post4ap(func):
-                @functools.wraps(func)
-                def inner(*args, **kwargs):
+                if run_post4ap_trials:
+                    print(f"\n{'-' * 5} RUNNING POST4AP TRIALS {'-' * 5}")
                     counter_i = 0
                     for i, x in enumerate(allopticalResults.post_4ap_trials):
                         counter_j = 0
@@ -254,17 +246,99 @@ def run_for_loop_across_exps(run_pre4ap_trials=False, run_post4ap_trials=False, 
                                 working_on(expobj)
                                 func(expobj=expobj, **kwargs)
                                 end_working_on(expobj)
-
                             counter_j += 1
                         counter_i += 1
 
-                return inner
 
-            return for_loop_post4ap
+                print(f" {'--' * 5} COMPLETED FOR LOOP ACROSS EXPS {'--' * 5}\n")
+            return inner
+        return main_for_loop
 
-    except TypeError:
-        print('Nothing ran because nothing was specified in the decorator call to run')
+    elif len(trials_run) > 0 and (run_pre4ap_trials is True or run_post4ap_trials is True):
+        raise Exception('Cannot have both trials_run, and run_pre4ap_trials or run_post4ap_trials active on the same call.')
 
+
+    #### superceded with above
+    # if len(trials_run) > 0:
+    #     print(f"{'-' * 5} RUNNING SPECIFIED TRIALS from `trials_run` {'-' * 5}")
+    #
+    #     def for_loop_trials_run(func):
+    #         @functools.wraps(func)
+    #         def inner(*args, **kwargs):
+    #             counter1 = 0
+    #             for i, exp_prep in enumerate(trials_run):
+    #                 print(i, exp_prep)
+    #                 prep = exp_prep[:-6]
+    #                 trial = exp_prep[-5:]
+    #                 expobj, _ = import_expobj(prep=prep, trial=trial, verbose=False)
+    #
+    #                 working_on(expobj)
+    #                 func(expobj=expobj, **kwargs)
+    #                 end_working_on(expobj)
+    #
+    #             counter1 += 1
+    #
+    #         return inner
+    #
+    #     return for_loop_trials_run
+    #
+    # if run_pre4ap_trials:
+    #     print(f"\n{'-' * 5} RUNNING PRE4AP TRIALS {'-' * 5}")
+    #
+    #     def for_loop_pre4ap(func):
+    #         @functools.wraps(func)
+    #         def inner(*args, **kwargs):
+    #             counter_i = 0
+    #             for i, x in enumerate(allopticalResults.pre_4ap_trials):
+    #                 counter_j = 0
+    #                 for j, exp_prep in enumerate(x):
+    #                     if exp_prep in trials_skip:
+    #                         pass
+    #                     else:
+    #                         print(i, j, exp_prep)
+    #                         prep = exp_prep[:-6]
+    #                         pre4aptrial = exp_prep[-5:]
+    #                         expobj, _ = import_expobj(prep=prep, trial=pre4aptrial, verbose=False)
+    #
+    #                         working_on(expobj)
+    #                         func(expobj=expobj, **kwargs)
+    #                         end_working_on(expobj)
+    #
+    #                     counter_j += 1
+    #                 counter_i += 1
+    #
+    #         return inner
+    #
+    #     return for_loop_pre4ap
+    #
+    # if run_post4ap_trials:
+    #     print(f"\n{'-' * 5} RUNNING POST4AP TRIALS {'-' * 5}")
+    #
+    #     def for_loop_post4ap(func):
+    #         @functools.wraps(func)
+    #         def inner(*args, **kwargs):
+    #             counter_i = 0
+    #             for i, x in enumerate(allopticalResults.post_4ap_trials):
+    #                 counter_j = 0
+    #                 for j, exp_prep in enumerate(x):
+    #                     if exp_prep in trials_skip:
+    #                         pass
+    #                     else:
+    #                         print(i, j, exp_prep)
+    #                         prep = allopticalResults.post_4ap_trials[i][j][:-6]
+    #                         post4aptrial = allopticalResults.post_4ap_trials[i][j][-5:]
+    #                         expobj, _ = import_expobj(prep=prep, trial=post4aptrial, verbose=False)
+    #
+    #                         working_on(expobj)
+    #                         func(expobj=expobj, **kwargs)
+    #                         end_working_on(expobj)
+    #
+    #                     counter_j += 1
+    #                 counter_i += 1
+    #
+    #         return inner
+    #
+    #     return for_loop_post4ap
 
 
 
@@ -1021,7 +1095,11 @@ class alloptical(TwoPhotonImaging):
             f"\n---------- Collecting {process} stim trace snippets of SLM targets for {self.metainfo['exptype']} {self.metainfo['animal prep.']} {self.metainfo['trial']} [1.] ---------- ")
 
         if filter_sz:
-            print('\-filter_sz active')
+            print('|-filter_sz active')
+            if hasattr(self, 'slmtargets_szboundary_stim') and self.slmtargets_szboundary_stim is not None:
+                pass
+            else:
+                print('|- WARNING: classifying of sz boundaries not completed for this expobj, not collecting any stim trace snippets', self.metainfo['animal prep.'], self.metainfo['trial'])
 
         if stims is None:
             stim_timings = self.stim_start_frames
@@ -1100,8 +1178,7 @@ class alloptical(TwoPhotonImaging):
                                                stim - pre_stim: stim + self.stim_duration_frames + post_stim])
                     else:
                         flu = []
-                        print('classifying of sz boundaries not completed for this expobj',
-                              self.metainfo['animal prep.'], self.metainfo['trial'])
+                        # print('classifying of sz boundaries not completed for this expobj, not collecting any stim trace snippets', self.metainfo['animal prep.'], self.metainfo['trial'])
                     # flu = [targets_trace[cell_idx][stim - pre_stim_sec: stim + self.stim_duration_frames + post_stim_sec] for
                     #        stim
                     #        in stim_timings if
@@ -1118,11 +1195,9 @@ class alloptical(TwoPhotonImaging):
                         trace = flu[i]
                         mean_pre = np.mean(trace[0:pre_stim])
                         if process == 'trace raw':
-                            trace_dff = ((
-                                                     trace - mean_pre) / mean_pre) * 100  # values of trace_dff are %dF/prestimF compared to raw
+                            trace_dff = ((trace - mean_pre) / mean_pre) * 100  # values of trace_dff are %dF/prestimF compared to raw
                         elif process == 'trace dFF':
-                            trace_dff = (
-                                        trace - mean_pre)  # don't need to do mean normalization if process traces that are already dFF normalized
+                            trace_dff = (trace - mean_pre)  # don't need to do mean normalization if process traces that are already dFF normalized
                         else:
                             ValueError('need to provide `process` as either `trace raw` or `trace dFF`')
                         std_pre = np.std(trace[0:pre_stim])
@@ -1150,7 +1225,7 @@ class alloptical(TwoPhotonImaging):
             # ## plotting trace snippets for targets_dff to check data processing quality
             # pj.make_general_plot(data_arr=targets_dff_avg, ncols=1, nrows=1, figsize=(6,6), suptitle=f"Avg photostim response ({process}): {targets_dff_avg.shape[0]} targets from {self.metainfo['exptype']} {self.metainfo['animal prep.']} {self.metainfo['trial']}")
 
-            print(f"|- shape of targets_dff_avg: {targets_dff_avg.shape}")
+            print(f"|- returning targets stims array of shape: {targets_dff.shape[0]} targets, {targets_dff.shape[1]} stims, {targets_dff.shape[2]} frames")
             return targets_dff, targets_dff_avg, targets_dfstdF, targets_dfstdF_avg, targets_raw, targets_raw_avg
 
     def _parseNAPARMxml(self):
@@ -3957,8 +4032,7 @@ class AllOpticalResults:  ## initiated in allOptical-results.ipynb
         self.slmtargets_stim_responses = pd.DataFrame({'prep_trial': [], 'date': [], 'exptype': [],
                                                        'stim_setup': [],
                                                        'mean response (dF/stdF all targets)': [],
-                                                       'mean response delta(trace_dFF) all targets)': [],
-                                                       ## TODO this is the field to fill with mean photostim responses .21/11/25
+                                                       'mean response delta(trace_dFF) all targets)': [],  # TODO this is the field to fill with mean photostim responses .21/11/25
                                                        'mean reliability (>0.3 dF/stdF)': []})  # gets filled in allOptical-results.ipynb
 
         # large dictionary containing direct run_pre4ap_trials and run_post4ap_trials trial comparisons for each experiments, and stim responses
@@ -4697,7 +4771,7 @@ def run_alloptical_processing_photostim(expobj, to_suite2p=None, baseline_trials
         expobj.StimSuccessRate_SLMtargets_tracedFF, expobj.hits_SLMtargets_tracedFF, expobj.responses_SLMtargets_tracedFF, expobj.traces_SLMtargets_tracedFF_successes = \
             expobj.get_SLMTarget_responses_dff(process='trace dFF', threshold=10, stims_to_use=expobj.stim_start_frames)
 
-        if expobj.stims_out_sz > 1:
+        if len(expobj.stims_out_sz) > 1:
             stims_outsz_idx = [expobj.stim_start_frames.index(stim) for stim in expobj.stims_out_sz]
             if len(stims_outsz_idx) > 0:
                 print('|- calculating stim responses (outsz) - %s stims [2.2.1]' % len(stims_outsz_idx))
@@ -4720,7 +4794,7 @@ def run_alloptical_processing_photostim(expobj, to_suite2p=None, baseline_trials
                                                             hits_slmtargets_df=expobj.hits_SLMtargets_tracedFF_outsz,
                                                             stims_idx_l=stims_outsz_idx)
 
-        if expobj.stims_in_sz > 1:
+        if len(expobj.stims_in_sz) > 1:
             if hasattr(expobj, 'slmtargets_szboundary_stim'):
                 stims_insz_idx = [expobj.stim_start_frames.index(stim) for stim in expobj.stims_in_sz]
                 if len(stims_insz_idx) > 0:

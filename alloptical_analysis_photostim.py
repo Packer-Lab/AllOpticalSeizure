@@ -53,8 +53,8 @@ expobj, experiment = aoutils.import_expobj(prep='RL109', trial='t-013')
 
 allopticalResults.pre_4ap_trials = [
     ['RL108 t-009'],
-    ['RL108 t-010'],
-    ['RL109 t-007'],
+    # ['RL108 t-010'],
+    # ['RL109 t-007'],
     ['RL109 t-008'],
     ['RL109 t-013'],  # - pickle truncated .21/10/18 - analysis func jupyter run on .21/11/12
     ['RL109 t-014'],
@@ -75,12 +75,12 @@ allopticalResults.pre_4ap_trials = [
 
 allopticalResults.post_4ap_trials = [
     ['RL108 t-013'],
-    ['RL108 t-011'],
-    ['RL109 t-020'],
+    # ['RL108 t-011'],
+    # ['RL109 t-020'],
     ['RL109 t-021'],
     ['RL109 t-018'],
     ['RL109 t-016', 'RL109 t-017'],
-    ['PS04 t-018'],
+    # ['PS04 t-018'],
     ['PS05 t-012'],
     ['PS07 t-011'],
     ['PS07 t-017'],
