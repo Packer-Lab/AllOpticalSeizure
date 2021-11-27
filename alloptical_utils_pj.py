@@ -164,7 +164,8 @@ idiom_dictionary = {
     'dfprestimf': "photostim meausurement; measuring photostim responses as (post-stim minus pre-stim)/(mean[pre-stim period], "
                   "where the original trace is the raw (neuropil subtracted) trace",
     'dfstdf': "photostim measurement; measuring photostim responses as (post-stim minus pre-stim)/(std[pre-stim period], "
-              "where the original trace is the raw (neuropil subtracted) trace"
+              "where the original trace is the raw (neuropil subtracted) trace",
+    'hits': "successful photostim responses, as defined based on a certain threshold level for dfstdf (>0.3 above prestim) and delta(trace_dFF) (>10 above prestim)"
 
 }
 
@@ -237,14 +238,16 @@ def run_for_loop_across_exps(run_pre4ap_trials=False, run_post4ap_trials=False, 
                             # except:
                             #     print('Exception on the wrapped function call')
                             end_working_on(expobj)
-                            res.append(res_)
+                            res.append(res_) if res_ is not None else None
                         counter_j += 1
                     counter_i += 1
-                return res if len(res) > 1 else None
+                if len(res) > 0:
+                    return res
 
             if run_post4ap_trials:
                 print(f"\n{'-' * 5} RUNNING POST4AP TRIALS {'-' * 5}")
                 counter_i = 0
+                res = []
                 for i, x in enumerate(allopticalResults.post_4ap_trials):
                     counter_j = 0
                     for j, exp_prep in enumerate(x):
@@ -257,15 +260,17 @@ def run_for_loop_across_exps(run_pre4ap_trials=False, run_post4ap_trials=False, 
                             expobj, _ = import_expobj(prep=prep, trial=post4aptrial, verbose=False)
 
                             working_on(expobj)
-                            func(expobj=expobj, **kwargs)
+                            res_ = func(expobj=expobj, **kwargs)
                             # try:
                             #     func(expobj=expobj, **kwargs)
                             # except:
                             #     print('Exception on the wrapped function call')
                             end_working_on(expobj)
+                            res.append(res_) if res_ is not None else None
                         counter_j += 1
                     counter_i += 1
-
+                if len(res) > 0:
+                    return res
 
             print(f" {'--' * 5} COMPLETED FOR LOOP ACROSS EXPS {'--' * 5}\n")
         return inner
