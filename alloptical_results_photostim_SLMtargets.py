@@ -806,9 +806,7 @@ for expprep in list(allopticalResults.stim_responses_zscores['dfprestimf'].keys(
             print(f"|- finished on expobj: {expprep} {pre4ap_trial}, counter @ {counter}\n")
 
 fig.suptitle(f"Photostim responses - pre-4ap", y=0.99)
-save_path_full = f"{save_path_prefix}/pre4ap_indivtrial_zscore_responses_dfprestimf.png"
-print(f'\nsaving figure to {save_path_full}')
-fig.savefig(save_path_full)
+aoutils.save_figure(fig, save_path_suffix="SLM-targets_pre4ap-indivtrial-zscore-responses_dfprestimf.png")
 fig.show()
 
 ### POST 4AP
@@ -879,9 +877,7 @@ for expprep in post4ap_trials_stimresponses_zscores:
                 print(f"|- finished on expobj: {expprep} {post4ap_trial}, counter @ {counter}\n")
 
 fig.suptitle(f"Photostim responses - post-4ap", y=0.99)
-save_path_full = f"{save_path_prefix}/post4ap_indivtrial_zscore_responses_dfprestimf.png"
-print(f'\nsaving figure to {save_path_full}')
-fig.savefig(save_path_full)
+aoutils.save_figure(fig, save_path_suffix="SLM-targets_post4ap-indivtrial-zscore-responses_dfprestimf.png")
 fig.show()
 
 
@@ -940,9 +936,7 @@ for expprep in list(allopticalResults.stim_responses_zscores['delta(trace_dFF)']
             print(f"|- finished on expobj: {expprep} {pre4ap_trial}, counter @ {counter}\n")
 
 fig.suptitle(f"Photostim responses - pre-4ap", y=0.99)
-save_path_full = f"{save_path_prefix}/pre4ap_indivtrial_zscore_responses_delta(trace_dFF).png"
-print(f'\nsaving figure to {save_path_full}')
-fig.savefig(save_path_full)
+aoutils.save_figure(fig, save_path_suffix="SLM-targets_pre4ap-indivtrial-zscore-responses_delta(trace_dFF)).png")
 fig.show()
 
 ### POST 4AP
@@ -1013,9 +1007,7 @@ for expprep in post4ap_trials_stimresponses_zscores:
                 print(f"|- finished on expobj: {expprep} {post4ap_trial}, counter @ {counter}\n")
 
 fig.suptitle(f"Photostim responses - post-4ap", y=0.99)
-save_path_full = f"{save_path_prefix}/post4ap_indivtrial_zscore_responses_delta(trace_dFF).png"
-print(f'\nsaving figure to {save_path_full}')
-fig.savefig(save_path_full)
+aoutils.save_figure(fig, save_path_suffix="SLM-targets_post4ap-indivtrial-zscore-responses_delta(trace_dFF)).png")
 fig.show()
 
 

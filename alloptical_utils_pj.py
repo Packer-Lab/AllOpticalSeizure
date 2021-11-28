@@ -7,6 +7,7 @@ import functools
 import re
 import glob
 import time
+from datetime import datetime
 
 import pandas as pd
 import itertools
@@ -46,6 +47,8 @@ from numba import njit
 ## SET OPTIONS
 pd.set_option('max_columns', None)
 pd.set_option('max_rows', 10)
+
+
 
 
 ## UTILITY FUNCTIONS
@@ -185,8 +188,6 @@ def define(x):
 def show_idioms():
     print(f"entries in idiom_dictionary: \n {list(idiom_dictionary.keys())}")
 
-
-## DECORATORS
 def working_on(expobj):
     print(f"Working on: {expobj.metainfo['exptype']} {expobj.metainfo['animal prep.']} {expobj.metainfo['trial']} ... ")
 
@@ -194,7 +195,20 @@ def end_working_on(expobj):
     print(
         f"Finished on: {expobj.metainfo['exptype']} {expobj.metainfo['animal prep.']} {expobj.metainfo['trial']} \ \ \n")
 
+def save_figure(fig, save_path_suffix: str = None, save_path_full: str = None):
+    if not save_path_full and save_path_suffix:
+        ## SET DEFAULT FIGURE SAVE DIRECTORY
+        today_date = datetime.today().strftime('%Y-%m-%d')
+        save_path_prefix = f"/home/pshah/mnt/qnap/Analysis/Results_figs/{today_date}/"
+        os.makedirs(save_path_prefix) if not os.path.exists(save_path_prefix) else None
+        save_path_full = save_path_prefix + save_path_suffix
+    else:
+        ValueError('not able to determine where to save figure to!')
+    print(f'\nsaving figure to: {save_path_full}')
+    fig.savefig(save_path_full)
 
+
+## DECORATORS
 def run_for_loop_across_exps(run_pre4ap_trials=False, run_post4ap_trials=False, trials_skip=[], trials_run=[]):
     """decorator to use for for-looping through experiment trials across run_pre4ap_trials and run_post4ap_trials.
     the trials to for loop through are defined in allopticalResults.pre_4ap_trials and allopticalResults.post_4ap_trials"""
