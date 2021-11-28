@@ -783,7 +783,7 @@ def plot_flu_trace(expobj, cell, x_lims=None, slm_group=None, to_plot='raw', fig
         for i in expobj.stim_start_frames:  # select all stim trigger frames from the trial
             plt.axvline(x=i - 1, c='gray', alpha=0.1)
 
-    if len(expobj.seizure_frames) > 0:
+    if expobj.seizure_frames:
         plt.scatter(expobj.seizure_frames, y=[-20] * len(expobj.seizure_frames), c='g', linewidth=0.10)
 
     if x_lims:
@@ -798,6 +798,8 @@ def plot_flu_trace(expobj, cell, x_lims=None, slm_group=None, to_plot='raw', fig
 @plot_piping_decorator(figsize=(10,3))
 def plot_lfp_stims(expobj, title='LFP signal with photostim. shown (in different colors relative to seizure timing)', shrink_text = 1,
                    x_axis: str = 'paq', sz_markings: bool = True, fig=None, ax=None, **kwargs):
+
+    print(f"\t \- PLOTTING LFP stims trace ... ")
 
     # if 'fig' in kwargs.keys():
     #     fig = kwargs['fig']
@@ -1037,6 +1039,8 @@ def plotMeanRawFluTrace(expobj, stim_span_color='white', stim_lines: bool = True
                         fig=None, ax=None, **kwargs):
     """make plot of mean Ca trace averaged over the whole FOV"""
 
+    print(f"\t \- PLOTTING mean raw flu trace ... ")
+
     # # if there is a fig and ax provided in the function call then use those, otherwise start anew
     # if 'fig' in kwargs.keys():
     #     fig = kwargs['fig']
@@ -1121,6 +1125,8 @@ def plotLfpSignal(expobj, stim_span_color='powderblue', downsample: bool = True,
                   title='LFP trace', x_axis='time', hide_xlabel=False, fig=None, ax=None, **kwargs):
     """make plot of LFP with also showing stim locations
     NOTE: ONLY PLOTTING LFP SIGNAL CROPPED TO 2P IMAGING FRAME START AND END TIMES - SO CUTTING OUT THE LFP SIGNAL BEFORE AND AFTER"""
+
+    print(f"\t \- PLOTTING LFP Signal trace ... ")
 
     # # if there is a fig and ax provided in the function call then use those, otherwise start anew
     # if 'fig' in kwargs.keys():
@@ -1220,7 +1226,7 @@ def plotLfpSignal(expobj, stim_span_color='powderblue', downsample: bool = True,
     ax.set_title(
         '%s - %s %s %s' % (title, expobj.metainfo['exptype'], expobj.metainfo['animal prep.'], expobj.metainfo['trial']))
 
-    return None
+    # return None
     # if not 'fig' in kwargs.keys():
     #     ax.set_title(
     #         '%s - %s %s %s' % (title, expobj.metainfo['exptype'], expobj.metainfo['animal prep.'], expobj.metainfo['trial']))

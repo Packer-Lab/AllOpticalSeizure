@@ -604,7 +604,7 @@ def plot_flu_trace(exp_obj=exp_obj, idx=idx, slm_group=group, to_plot='raw'):
     for i in exp_obj.stim_start_frames[0][slm_group::exp_obj.n_groups]:
         plt.axvline(x=i - 1, c='gray', alpha=0.1)
 
-    if len(exp_obj.seizure_frames) > 0:
+    if exp_obj.seizure_frames:
         plt.scatter(exp_obj.seizure_frames, y=[-20] * len(exp_obj.seizure_frames), c='g', linewidth=0.10)
 
     # plt.ylim(0, 300)

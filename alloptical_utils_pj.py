@@ -6,6 +6,8 @@
 import functools
 import re
 import glob
+import time
+
 import pandas as pd
 import itertools
 
@@ -26,6 +28,7 @@ from suite2p.run_s2p import run_s2p
 import matplotlib.pyplot as plt
 import seaborn as sns
 import numpy as np
+import pandas as pd
 import xml.etree.ElementTree as ET
 import tifffile as tf
 import csv
@@ -39,6 +42,10 @@ import alloptical_plotting_utils as aoplot
 import pickle
 
 from numba import njit
+
+## SET OPTIONS
+pd.set_option('max_columns', None)
+pd.set_option('max_rows', 10)
 
 
 ## UTILITY FUNCTIONS
@@ -196,7 +203,7 @@ def run_for_loop_across_exps(run_pre4ap_trials=False, run_post4ap_trials=False, 
     def main_for_loop(func):
         @functools.wraps(func)
         def inner(*args, **kwargs):
-            if len(trials_run) > 0:
+            if trials_run:
                 print(f"\n{'-' * 5} RUNNING SPECIFIED TRIALS from `trials_run` {'-' * 5}")
                 counter1 = 0
                 for i, exp_prep in enumerate(trials_run):
@@ -241,7 +248,7 @@ def run_for_loop_across_exps(run_pre4ap_trials=False, run_post4ap_trials=False, 
                             res.append(res_) if res_ is not None else None
                         counter_j += 1
                     counter_i += 1
-                if len(res) > 0:
+                if res:
                     return res
 
             if run_post4ap_trials:
@@ -269,7 +276,7 @@ def run_for_loop_across_exps(run_pre4ap_trials=False, run_post4ap_trials=False, 
                             res.append(res_) if res_ is not None else None
                         counter_j += 1
                     counter_i += 1
-                if len(res) > 0:
+                if res:
                     return res
 
             print(f" {'--' * 5} COMPLETED FOR LOOP ACROSS EXPS {'--' * 5}\n")
@@ -423,6 +430,17 @@ class TwoPhotonImaging:
             self.s2pProcessing(s2p_path=self.suite2p_path)
 
         self.save_pkl(pkl_path=pkl_path)
+
+    def __repr__(self):
+        lastmod = time.ctime(os.path.getmtime(self.pkl_path))
+        if not hasattr(self, 'metainfo'):
+            information = f"uninitialized"
+        else:
+            prep = self.metainfo['animal prep.']
+            trial = self.metainfo['trial']
+            information = f"{prep} {trial}"
+        return repr(f"({information}) TwoPhotonImaging experimental data object, last saved: {lastmod}")
+
 
     def s2pRun(self, ops, db, user_batch_size):
 
@@ -977,7 +995,7 @@ class alloptical(TwoPhotonImaging):
         #### initializing data processing, data analysis and/or results associated attr's
 
         ## PHOTOSTIM SLM TARGETS
-        self.responses_SLMtargets = []  # dF/prestimF responses for all SLM targets for each photostim trial
+        self.responses_SLMtargets_dfprestimf = []  # dF/prestimF responses for all SLM targets for each photostim trial
         self.responses_SLMtargets_tracedFF = []  # delta(poststim dFF and prestim dFF) responses for all SLM targets for each photostim trial - from trace dFF processed trials
         self.StimSuccessRate_SLMtargets_dfprestimf = []
         self.StimSuccessRate_SLMtargets_dfstdf = []
@@ -1015,6 +1033,18 @@ class alloptical(TwoPhotonImaging):
 
         ##
         self.save()
+
+    def __repr__(self):
+        lastmod = time.ctime(os.path.getmtime(self.pkl_path))
+        if not hasattr(self, 'metainfo'):
+            information = f"uninitialized"
+        else:
+            prep = self.metainfo['animal prep.']
+            trial = self.metainfo['trial']
+            information = f"{prep} {trial}"
+
+        return repr(f"({information}) TwoPhotonImaging.alloptical experimental data object, last saved: {lastmod}")
+
 
     def subset_frames_current_trial(self, to_suite2p, trial, baseline_trials, force_redo: bool = False, save=True):
 
@@ -3024,6 +3054,17 @@ class Post4ap(alloptical):
 
         self.save()
 
+    def __repr__(self):
+        lastmod = time.ctime(os.path.getmtime(self.pkl_path))
+        if not hasattr(self, 'metainfo'):
+            information = f"uninitialized"
+        else:
+            prep = self.metainfo['animal prep.']
+            trial = self.metainfo['trial']
+            information = f"{prep} {trial}"
+        return repr(f"({information}) TwoPhotonImaging.alloptical.Post4ap experimental data object, last saved: {lastmod}")
+
+
     def subselect_tiffs_sz(self, onsets, offsets, on_off_type: str):
         """subselect raw tiff movie over all seizures as marked by onset and offsets. save under analysis path for object.
         Note that the onsets and offsets definitions may vary, so check exactly what was used in those args."""
@@ -3625,6 +3666,17 @@ class OnePhotonStim(TwoPhotonImaging):
 
         print('\n-----DONE OnePhotonStim init of trial # %s-----' % trial)
 
+    def __repr__(self):
+        lastmod = time.ctime(os.path.getmtime(self.pkl_path))
+        if not hasattr(self, 'metainfo'):
+            information = f"uninitialized"
+        else:
+            prep = self.metainfo['animal prep.']
+            trial = self.metainfo['trial']
+            information = f"{prep} {trial}"
+
+        return repr(f"({information}) TwoPhotonImaging.OnePhotonStim experimental data object, last saved: {lastmod}")
+
     def paqProcessing(self, **kwargs):
 
         print('\n-----processing paq file for 1p photostim...')
@@ -4084,6 +4136,11 @@ class OnePhotonResults:
 
         self.save(pkl_path=self.pkl_path)
 
+    def __repr__(self):
+        lastmod = time.ctime(os.path.getmtime(self.pkl_path))
+        return repr(f"OnePhotonResults experimental results object, last saved: {lastmod}")
+
+
     def save(self, pkl_path: str = None):
         TwoPhotonImaging.save_pkl(self, pkl_path=pkl_path)
 
@@ -4116,9 +4173,18 @@ class AllOpticalResults:  ## initiated in allOptical-results.ipynb
         self.stim_relative_szonset_vs_avg_response_alltargets_atstim = {}
 
         # responses of targets at each stim (timed relative to the closest sz onset location) - using whole trace dFF
-        self.stim_relative_szonset_vs_avg_dFFresponse_alltargets_atstim = {}
+        self.stim_relative_szonset_vs_deltatracedFFresponse_alltargets_atstim = {}
+
+
+        self.stim_responses_zscores = {}  # zscores of photostim responses - zscored to pre4ap trials
+
+
 
         self.save_pkl(pkl_path=self.pkl_path)
+
+    def __repr__(self):
+        lastmod = time.ctime(os.path.getmtime(self.pkl_path))
+        return repr(f"AllOpticalResults experimental results object, last saved: {lastmod}")
 
     def save_pkl(self, pkl_path: str = None):
         if pkl_path is None:
@@ -4625,7 +4691,7 @@ def run_photostim_preprocessing(trial, exp_type, tiffs_loc_dir, tiffs_loc, napar
     # if 'post' in exp_type and '4ap' in exp_type:
     #     expobj.collect_seizures_info(seizures_lfp_timing_matarray=matlab_pairedmeasurements_path, discard_all=discard_all)
 
-    if len(expobj.bad_frames) > 0:
+    if expobj.bad_frames:
         print('***  Collected a total of ', len(expobj.bad_frames),
               'photostim + seizure/CSD frames +  additional bad frames to bad_frames.npy  ***')
 
@@ -4857,9 +4923,9 @@ def run_alloptical_processing_photostim(expobj, to_suite2p=None, baseline_trials
             expobj.get_SLMTarget_responses_dff(process='trace dFF', threshold=10, stims_to_use=expobj.stim_start_frames)
 
         ### STIMS OUT OF SEIZURE
-        if len(expobj.stims_out_sz) > 1:
+        if expobj.stims_out_sz:
             stims_outsz_idx = [expobj.stim_start_frames.index(stim) for stim in expobj.stims_out_sz]
-            if len(stims_outsz_idx) > 0:
+            if stims_outsz_idx:
                 print('|- calculating stim responses (outsz) - %s stims [2.2.1]' % len(stims_outsz_idx))
                 # dF/stdF
                 expobj.StimSuccessRate_SLMtargets_dfstdf_outsz, expobj.hits_SLMtargets_dfstdf_outsz, expobj.responses_SLMtargets_dfstdf_outsz, expobj.traces_SLMtargets_successes_dfstdf_outsz = \
@@ -4892,10 +4958,10 @@ def run_alloptical_processing_photostim(expobj, to_suite2p=None, baseline_trials
                                                             stims_idx_l=stims_outsz_idx)
 
         ### STIMS IN SEIZURE
-        if len(expobj.stims_in_sz) > 1:
+        if expobj.stims_in_sz:
             if hasattr(expobj, 'slmtargets_szboundary_stim'):
                 stims_insz_idx = [expobj.stim_start_frames.index(stim) for stim in expobj.stims_in_sz]
-                if len(stims_insz_idx) > 0:
+                if stims_insz_idx:
                     print('|- calculating stim responses (insz) - %s stims [2.3.1]' % len(stims_insz_idx))
                     # dF/stdF
                     expobj.StimSuccessRate_SLMtargets_dfstdf_insz, expobj.hits_SLMtargets_dfstdf_insz, expobj.responses_SLMtargets_dfstdf_insz, expobj.traces_SLMtargets_successes_dfstdf_insz = \

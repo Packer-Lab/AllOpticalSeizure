@@ -660,7 +660,7 @@ aoplot.plot_periphotostim_avg(arr=expobj.SLMTargets_stims_dfstdF_avg, expobj=exp
 
 # %% plotting of photostim. success rate
 
-data = [np.mean(expobj.responses_SLMtargets[i]) for i in range(expobj.n_targets_total)]
+data = [np.mean(expobj.responses_SLMtargets_dfprestimf[i]) for i in range(expobj.n_targets_total)]
 
 pj.plot_hist_density([data], x_label='response magnitude (dF/stdF)')
 pj.plot_bar_with_points(data=[list(expobj.StimSuccessRate_SLMtargets.values())], x_tick_labels=[expobj.metainfo['trial']], ylims=[0, 100], bar=False, y_label='% success stims.',

@@ -49,7 +49,7 @@ for i in [0, 45, 90, 135, 180]:
     avg = np.zeros([full_img_rot.shape[0], 1])
     for i in range(len(full_img_rot)):
         x = full_img_rot[i][full_img_rot[i]!=0]
-        if len(x) > 0:
+        if x:
             avg[i] = x.mean()
         else:
             avg[i] = 0

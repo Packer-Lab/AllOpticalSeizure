@@ -93,11 +93,11 @@ ax2 = axs[0].twinx()
 
 ## calculate and plot the response magnitude for each target at each stim;
 #   where response magnitude is classified as response of each target at a particular stim relative to the mean response from the whole trial
-for target in expobj.responses_SLMtargets.index:
-    mean_response = np.mean(expobj.responses_SLMtargets.iloc[target, :])
+for target in expobj.responses_SLMtargets_dfprestimf.index:
+    mean_response = np.mean(expobj.responses_SLMtargets_dfprestimf.iloc[target, :])
     # print(mean_response)
-    for i in expobj.responses_SLMtargets.columns:
-        response = expobj.responses_SLMtargets.iloc[target, i] - mean_response
+    for i in expobj.responses_SLMtargets_dfprestimf.columns:
+        response = expobj.responses_SLMtargets_dfprestimf.iloc[target, i] - mean_response
         rand = np.random.randint(-15, 25, 1)[0] #* 1/(abs(response)**1/2)  # jittering around the stim_frame for the plot
         ax2.scatter(x=expobj.stim_start_frames[i] + rand, y=response, color=target_colors[target], alpha=0.70, s=15, zorder=4)
         ax2.axhline(y=0)
@@ -1290,10 +1290,10 @@ if run_processing:
             elif 'pre' in expobj.metainfo['exptype']:
                 seizure_filter = False
                 print('\n Calculating stim success rates and response magnitudes [1.4.4] ***********')
-                expobj.StimSuccessRate_SLMtargets, expobj.hits_SLMtargets, expobj.responses_SLMtargets, expobj.traces_SLMtargets_successes = \
+                expobj.StimSuccessRate_SLMtargets, expobj.hits_SLMtargets, expobj.responses_SLMtargets_dfprestimf, expobj.traces_SLMtargets_successes = \
                     expobj.get_SLMTarget_responses_dff(threshold=15, stims_to_use=expobj.stim_start_frames)
 
-                success_responses = expobj.hits_SLMtargets * expobj.responses_SLMtargets
+                success_responses = expobj.hits_SLMtargets * expobj.responses_SLMtargets_dfprestimf
                 success_responses = success_responses.replace(0, np.NaN).mean(axis=1)
                 allopticalResults.slmtargets_stim_responses.loc[allopticalResults.slmtargets_stim_responses[
                                                                     'prep_trial'] == i[j], 'mean dFF response (hits, all targets)'] = success_responses.mean()
@@ -1359,7 +1359,7 @@ if run_processing:
 
             elif 'pre' in expobj.metainfo['exptype']:
                 inverse = (expobj.hits_SLMtargets - 1) * -1
-                failure_responses = inverse * expobj.responses_SLMtargets
+                failure_responses = inverse * expobj.responses_SLMtargets_dfprestimf
                 failure_responses = failure_responses.replace(0, np.NaN).mean(axis=1)
                 allopticalResults.slmtargets_stim_responses.loc[allopticalResults.slmtargets_stim_responses[
                                                                     'prep_trial'] == i[j], 'mean dFF response (failures, all targets)'] = failure_responses.mean()
@@ -1465,7 +1465,7 @@ for exp in allopticalResults.pre_4ap_trials:
             expobj, _ = aoutils.import_expobj(pkl_path=pkl_path)
             if calc_dff_stims:
                 print('\n Calculating stim success rates and response magnitudes [4.1] ***********')
-                expobj.StimSuccessRate_SLMtargets, expobj.hits_SLMtargets, expobj.responses_SLMtargets = \
+                expobj.StimSuccessRate_SLMtargets, expobj.hits_SLMtargets, expobj.responses_SLMtargets_dfprestimf = \
                     aoutils.calculate_SLMTarget_responses_dff(expobj, threshold=10,
                                                               stims_to_use=expobj.stim_start_frames)
                 expobj.save()
@@ -1504,8 +1504,8 @@ for exp in allopticalResults.pre_4ap_trials:
                 # f, axs = plt.subplots(figsize=(5, 12), nrows=3)
                 # fig, ax = plt.subplots(figsize=(3, 3))
 
-                success_stims = np.where(expobj.responses_SLMtargets.loc[cell] >= 0.1 * 100)
-                fail_stims = np.where(expobj.responses_SLMtargets.loc[cell] < 0.1 * 100)
+                success_stims = np.where(expobj.responses_SLMtargets_dfprestimf.loc[cell] >= 0.1 * 100)
+                fail_stims = np.where(expobj.responses_SLMtargets_dfprestimf.loc[cell] < 0.1 * 100)
                 for i in success_stims[0]:
                     trace = expobj.SLMTargets_stims_dff[cell][i]
                     axs[a, b].plot(trace, color='skyblue', zorder=2, alpha=0.05)
@@ -1535,7 +1535,7 @@ for exp in allopticalResults.pre_4ap_trials:
             fig.show()
 
         # for x in range(expobj.SLMTargets_stims_dff[cell].shape[0]):
-        #     response = expobj.responses_SLMtargets.loc[cell, expobj.]
+        #     response = expobj.responses_SLMtargets_dfprestimf.loc[cell, expobj.]
         #     trace = expobj.SLMTargets_stims_dff[cell][x]
         #
         #     response = np.mean(trace[expobj.pre_stim_sec + expobj.stim_duration_frames + 1:
@@ -1721,15 +1721,15 @@ responses = []
 distance_to_sz = []
 responses_ = []
 distance_to_sz_ = []
-for target in expobj.responses_SLMtargets.keys():
-    mean_response = np.mean(expobj.responses_SLMtargets[target])
+for target in expobj.responses_SLMtargets_dfprestimf.keys():
+    mean_response = np.mean(expobj.responses_SLMtargets_dfprestimf[target])
     target_coord = expobj.target_coords_all[target]
     # print(mean_response)
 
     # calculate response magnitude at each stim time for selected target
     for i in range(len(expobj.stim_times)):
         # the response magnitude of the current SLM target at the current stim time (relative to the mean of the responses of the target over this trial)
-        response = expobj.responses_SLMtargets[target][i] / mean_response  # changed to division by mean response instead of substracting
+        response = expobj.responses_SLMtargets_dfprestimf[target][i] / mean_response  # changed to division by mean response instead of substracting
         min_distance = pj.calc_distance_2points((0, 0), (expobj.frame_x,
                                                          expobj.frame_y))  # maximum distance possible between two points within the FOV, used as the starting point when the sz has not invaded FOV yet
 

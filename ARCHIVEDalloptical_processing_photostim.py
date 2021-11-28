@@ -105,7 +105,7 @@ expobj.SLMTargets_stims_dfstdF_avg, expobj.SLMTargets_stims_raw, expobj.SLMTarge
 
 SLMtarget_ids = list(range(len(expobj.SLMTargets_stims_dfstdF)))
 
-expobj.StimSuccessRate_SLMtargets, expobj.hits_SLMtargets, expobj.responses_SLMtargets = \
+expobj.StimSuccessRate_SLMtargets, expobj.hits_SLMtargets, expobj.responses_SLMtargets_dfprestimf = \
     aoutils.calculate_StimSuccessRate(expobj, cell_ids=SLMtarget_ids, raw_traces_stims=expobj.SLMTargets_stims_raw, dfstdf_threshold=0.3,
                                       pre_stim=expobj.pre_stim, sz_filter=False,
                                       verbose=True, plot=False)
@@ -119,7 +119,7 @@ allOpticalresults = aoutils.import_resultsobj(pkl_path=results_object_path)
 
 # %%
 mean_reliability_rate = round(np.mean(list(expobj.StimSuccessRate_SLMtargets.values())), 2)
-mean_response_dfstdf = round(np.mean(list(expobj.responses_SLMtargets.values())), 2)
+mean_response_dfstdf = round(np.mean(list(expobj.responses_SLMtargets_dfprestimf.values())), 2)
 mean_response_dff = np.nan
 
 prep_trial = '%s %s' % (expobj.metainfo['animal prep.'], expobj.metainfo['trial'])
