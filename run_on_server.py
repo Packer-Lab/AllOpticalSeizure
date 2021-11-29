@@ -72,6 +72,11 @@ os.makedirs(save_path_prefix) if not os.path.exists(save_path_prefix) else None
 
 # aoutils.run_alloptical_processing_photostim(expobj, plots=False)
 
+# %%
+
+
+
+sys.exit(0)
 # %% aoanalysis-photostim-zscoring-1.1) DATA COLLECTION: dfprestimf; organize and convert SLMTargets stim responses to Z-SCORES - relative to pre-4ap scores - make sure to compare the appropriate pre and post 4ap trial comparisons
 
 trials_skip = [

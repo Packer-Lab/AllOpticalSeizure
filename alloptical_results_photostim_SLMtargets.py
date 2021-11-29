@@ -751,7 +751,7 @@ ax2.margins(x=0)
 fig.suptitle(f"Photostim responses - {exp}-4ap {expobj.metainfo['animal prep.']} {expobj.metainfo['trial']}")
 fig.show()
 
-# %% 6.2-dc TODO) COLLECT + PLOT SLM targets responses for stims dynamically over time - APPROACH #2 - USING Z-SCORED PHOTOSTIM RESPONSES
+# %% aoresults-photostim-slmtargets-6.2-dc TODO) COLLECT + PLOT SLM targets responses for stims dynamically over time - APPROACH #2 - USING Z-SCORED PHOTOSTIM RESPONSES
 
 print(f"---------------------------------------------------------")
 print(f"plotting zscored photostim responses over the whole trial")
@@ -761,7 +761,7 @@ print(f"---------------------------------------------------------")
 trials = list(allopticalResults.trial_maps['pre'].keys())
 fig, axs = plt.subplots(nrows=len(trials) * 2, ncols=1, figsize=[20, 6 * len(trials)])
 counter = 0
-for expprep in list(allopticalResults.stim_responses_zscores['dfprestimf'].keys())[:3]:
+for expprep in list(allopticalResults.stim_responses_zscores['dfprestimf'].keys()):
     for trials_comparisons in allopticalResults.stim_responses_zscores['dfprestimf'][expprep]:
         pre4ap_trial = trials_comparisons[:5]
         post4ap_trial = trials_comparisons[-5:]
@@ -882,7 +882,7 @@ fig.show()
 
 
 
-# %% 6.3-dc TODO) COLLECT + PLOT: SLM targets responses for stims dynamically over time - APPROACH #2 - USING TRACE-dFF PHOTOSTIM RESPONSES
+# %% aoresults-photostim-slmtargets-6.3-dc TODO) COLLECT + PLOT: SLM targets responses for stims dynamically over time - APPROACH #2 - USING TRACE-dFF PHOTOSTIM RESPONSES
 
 print(f"---------------------------------------------------------")
 print(f"plotting zscored photostim responses over the whole trial")
@@ -892,7 +892,7 @@ print(f"---------------------------------------------------------")
 trials = list(allopticalResults.trial_maps['pre'].keys())
 fig, axs = plt.subplots(nrows=len(trials) * 2, ncols=1, figsize=[20, 6 * len(trials)])
 counter = 0
-for expprep in list(allopticalResults.stim_responses_zscores['delta(trace_dFF)'].keys())[:3]:
+for expprep in list(allopticalResults.stim_responses_zscores['delta(trace_dFF)'].keys()):
     for trials_comparisons in allopticalResults.stim_responses_zscores['delta(trace_dFF)'][expprep]:
         pre4ap_trial = trials_comparisons[:5]
         post4ap_trial = trials_comparisons[-5:]
@@ -1011,7 +1011,7 @@ aoutils.save_figure(fig, save_path_suffix="SLM-targets_post4ap-indivtrial-zscore
 fig.show()
 
 
-# %% 7.2.1-cd) PLOT - absolute stim responses vs. TIME to seizure onset - using trace dFF processed data - using new general scatter func code
+# %% 7.2.1-cd) PLOT - absolute stim responses vs. TIME to seizure onset - using trace dFF processed data + using new general scatter func code
 
 """todo for this analysis:
 - average over targets for plot containing all exps
@@ -1063,13 +1063,13 @@ nrows = len(exps) // ncols
 if len(exps) % ncols > 0:
     nrows += 1
 
-fig2, axs = plt.subplots(nrows=nrows, ncols=ncols, figsize=[(ncols * 4), (nrows * 3)])
+fig2, axs = plt.subplots(nrows=nrows, ncols=ncols, figsize=[(ncols * 3), (nrows * 3)])
 counter = 0
 axs[0, 0].set_xlabel(xlabel)
 axs[0, 0].set_ylabel(ylabel)
 
 # prep for single small plot with all experiments
-fig, ax = plt.subplots(figsize=(4, 3))
+fig, ax = plt.subplots(figsize=(3, 3))
 colors = pj.make_random_color_array(n_colors=len(preps))
 
 for i in range(len(preps)):
@@ -1087,14 +1087,14 @@ for i in range(len(preps)):
             #     print(f"plotting responses for {key}")
 
             # ax.scatter(x=sz_time_plot, y=responses_to_plot, facecolors=colors[i], alpha=0.2, lw=0)
-            ax.scatter(x=sz_time, y=responses, facecolors=colors[i], alpha=0.2, lw=0)
+            ax.scatter(x=sz_time, y=responses, facecolors=colors[i], alpha=0.2, lw=0, s=40)
 
             a = counter // ncols
             b = counter % ncols
 
             # make plot for individual key/experiment trial
             ax2 = axs[a, b]
-            ax2.scatter(x=sz_time, y=responses, facecolors=colors[i], alpha=0.8, lw=0)
+            ax2.scatter(x=sz_time, y=responses, facecolors=colors[i], alpha=0.8, lw=0, s=40)
             ax2.set_xlim(-50, 50)
             ax2.set_title(f"{key}")
             counter += 1
@@ -1103,19 +1103,21 @@ ax.set_xlim(-50, 50)
 ax.set_xlabel(xlabel)
 ax.set_ylabel(ylabel)
 
-fig.suptitle(f"All exps, all targets relative to closest sz onset")
+fig.suptitle(f"All exps, all targets relative to closest sz onset", wrap=True)
 fig.tight_layout(pad=1.8)
-save_path_full = f"{save_path_prefix}/responsescore-dFF-vs-szonset_time_allexps.png"
-print(f'\nsaving figure to {save_path_full}')
-fig.savefig(save_path_full)
+# save_path_full = f"{save_path_prefix}/responsescore-dFF-vs-szonset_time_allexps.png"
+# print(f'\nsaving figure to {save_path_full}')
+# fig.savefig(save_path_full)
+aoutils.save_figure(fig, save_path_suffix="responsescore-dFF-vs-szonset_time_allexps.png")
 fig.show()
 
 fig2.suptitle(f"all exps. individual")
 fig2.tight_layout(pad=1.8)
-save_path_full = f"{save_path_prefix}/responsescore-dFF-vs-szonset_time_individualexps.png"
-print(f'\nsaving figure2 to {save_path_full}')
-fig2.savefig(save_path_full)
-fig2.show()
+# save_path_full = f"{save_path_prefix}/responsescore-dFF-vs-szonset_time_individualexps.png"
+# print(f'\nsaving figure2 to {save_path_full}')
+# fig2.savefig(save_path_full)
+aoutils.save_figure(fig, save_path_suffix="responsescore-dFF-vs-szonset_time_individualexps.png")
+# fig2.show()
 
 
 allopticalResults.save()
@@ -1139,13 +1141,13 @@ nrows = len(exps) // ncols
 if len(exps) % ncols > 0:
     nrows += 1
 
-fig2, axs = plt.subplots(nrows=nrows, ncols=ncols, figsize=[(ncols * 4), (nrows * 3)])
+fig2, axs = plt.subplots(nrows=nrows, ncols=ncols, figsize=[(ncols * 3), (nrows * 3)])
 counter = 0
 axs[0, 0].set_xlabel('Time to closest seizure onset (secs)')
 axs[0, 0].set_ylabel('responses (z scored)')
 
 # prep for single small plot with all experiments
-fig, ax = plt.subplots(figsize=(4, 3))
+fig, ax = plt.subplots(figsize=(3, 3))
 colors = pj.make_random_color_array(n_colors=len(preps))
 for i in range(len(preps)):
     print(i)
@@ -1154,35 +1156,38 @@ for i in range(len(preps)):
             print(key)
             sz_time = allopticalResults.stim_relative_szonset_vs_avg_zscore_alltargets_atstim[key][0]
             z_scores = allopticalResults.stim_relative_szonset_vs_avg_zscore_alltargets_atstim[key][1]
-            ax.scatter(x=sz_time, y=z_scores, facecolors=colors[i], alpha=0.2, lw=0)
+            ax.scatter(x=sz_time, y=z_scores, facecolors=colors[i], alpha=0.2, lw=0, s=65)
+            ax.margins(x=2)
 
             a = counter // ncols
             b = counter % ncols
 
             # make plot for individual key/experiment trial
             ax2 = axs[a, b]
-            ax2.scatter(x=sz_time, y=z_scores, facecolors=colors[i], alpha=0.8, lw=0)
+            ax2.scatter(x=sz_time, y=z_scores, facecolors=colors[i], alpha=0.8, lw=0, s=65)
             ax2.set_xlim(-300, 250)
             ax2.set_title(f"{key}")
             counter += 1
 
-ax.set_xlim(-300, 250)
+ax.set_xlim(-60, 60)
 ax.set_xlabel('Time to closest seizure onset (secs)')
 ax.set_ylabel('responses (z scored)')
 
-fig.suptitle(f"All exps, all targets relative to closest sz onset")
-fig.tight_layout(pad=1.8)
-save_path_full = f"{save_path_prefix}/zscore-vs-szonset_time_allexps.png"
-print(f'\nsaving figure to {save_path_full}')
-fig.savefig(save_path_full)
+fig.suptitle(f"All exps, all targets relative to closest sz onset", wrap=True)
+fig.tight_layout(pad=1.2)
+# save_path_full = f"{save_path_prefix}/zscore-vs-szonset_time_allexps.png"
+# print(f'\nsaving figure to {save_path_full}')
+# fig.savefig(save_path_full)
+aoutils.save_figure(fig, save_path_suffix='zscore-vs-szonset_time_allexps.png')
 fig.show()
 
 fig2.suptitle(f"all exps. individual")
 fig2.tight_layout(pad=1.8)
-save_path_full = f"{save_path_prefix}/zscore-vs-szonset_time_individualexps.png"
-print(f'\nsaving figure2 to {save_path_full}')
-fig2.savefig(save_path_full)
-fig2.show()
+# save_path_full = f"{save_path_prefix}/zscore-vs-szonset_time_individualexps.png"
+# print(f'\nsaving figure2 to {save_path_full}')
+# fig2.savefig(save_path_full)
+aoutils.save_figure(fig2, save_path_suffix='zscore-vs-szonset_time_individualexps.png')
+# fig2.show()
 
 # %% 7.1.1) PLOT - absolute stim responses vs. TIME to seizure onset
 
