@@ -449,85 +449,161 @@ class TwoPhotonImaging:
                 for file in os.listdir(tiff_path):
                     if file.endswith('.xml'):
                         path = os.path.join(tiff_path, file)
+                tiff_path = os.path.dirname(tiff_path)
+            return path
+        except:
+            raise Exception('ERROR: Could not find or load xml file for this acquisition from %s' % tiff_path)
+
+    @property
+    def env_path(self):
+        tiff_path = self.tiff_path_dir
+        path = []
+
+        try:  # look for xml file in path, or two paths up (achieved by decreasing count in while loop)
+            count = 2
+            while count != 0 and not path:
+                count -= 1
+                for file in os.listdir(tiff_path):
                     if file.endswith('.env'):
                         env_path = os.path.join(tiff_path, file)
                 tiff_path = os.path.dirname(tiff_path)
-
+            return env_path
         except:
-            raise Exception('ERROR: Could not find or load xml for this acquisition from %s' % tiff_path)
-        return path
+            raise Exception('ERROR: Could not find or load env file for this acquisition from %s' % tiff_path)
+
 
     def _parsePVMetadata(self):
 
-        print('\n-----parsing PV Metadata')
+        print('\n-----parsing PV Metadata (Nothing in this function right now though... it has been refactored in properties)')
 
-        xml_tree = ET.parse(path)  # parse xml from a path
+        # xml_tree = ET.parse(self.xml_path)  # parse xml from a path
+        # root = xml_tree.getroot()  # make xml tree structure
+        #
+        # sequence = root.find('Sequence')
+        # acq_type = sequence.get('type')
+        #
+        # if 'ZSeries' in acq_type:
+        #     n_planes = len(sequence.findall('Frame'))
+        # else:
+        #     n_planes = 1
+
+        # frame_period = float(self._getPVStateShard(self.xml_path, 'framePeriod')[0])
+        # fps = 1 / frame_period
+
+        # frame_x = int(self._getPVStateShard(self.xml_path, 'pixelsPerLine')[0])
+
+        # frame_y = int(self._getPVStateShard(self.xml_path, 'linesPerFrame')[0])
+
+        # zoom = float(self._getPVStateShard(self.xml_path, 'opticalZoom')[0])
+
+        # scanVolts, _, index = self._getPVStateShard(self.xml_path, 'currentScanCenter')
+        # for scanVolts, index in zip(scanVolts, index):
+        #     if index == 'XAxis':
+        #         scan_x = float(scanVolts)
+        #     if index == 'YAxis':
+        #         scan_y = float(scanVolts)
+
+        # pixelSize, _, index = self._getPVStateShard(self.xml_path, 'micronsPerPixel')
+        # for pixelSize, index in zip(pixelSize, index):
+        #     if index == 'XAxis':
+        #         pix_sz_x = float(pixelSize)
+        #     if index == 'YAxis':
+        #         pix_sz_y = float(pixelSize)
+
+        # env_tree = ET.parse(self.env_path)
+        # env_root = env_tree.getroot()
+        #
+        # elem_list = env_root.find('TSeries')
+
+        # n_frames = elem_list[0].get('repetitions') # Rob would get the n_frames from env file
+        # change this to getting the last actual index from the xml file
+
+        # n_frames = root.findall('Sequence/Frame')[-1].get('index')
+
+        # self.fps = fps
+        # self.frame_x = frame_x
+        # self.frame_y = frame_y
+        # self.n_planes = n_planes
+        # self.pix_sz_x = pix_sz_x
+        # self.pix_sz_y = pix_sz_y
+        # self.scan_x = scan_x
+        # self.scan_y = scan_y
+        # self.zoom = zoom
+        # self.n_frames = int(n_frames)
+
+        # print('n planes:', n_planes,
+        #       '\nn frames:', int(n_frames),
+        #       '\nfps:', fps,
+        #       '\nframe size (px):', frame_x, 'x', frame_y,
+        #       '\nzoom:', zoom,
+        #       '\npixel size (um):', pix_sz_x, pix_sz_y,
+        #       '\nscan centre (V):', scan_x, scan_y
+        #       )
+
+    @property
+    def n_planes(self):
+        xml_tree = ET.parse(self.xml_path)  # parse xml from a path
         root = xml_tree.getroot()  # make xml tree structure
 
         sequence = root.find('Sequence')
         acq_type = sequence.get('type')
 
         if 'ZSeries' in acq_type:
-            n_planes = len(sequence.findall('Frame'))
-
+            return len(sequence.findall('Frame'))
         else:
-            n_planes = 1
+            return 1
 
-        frame_period = float(self._getPVStateShard(path, 'framePeriod')[0])
-        fps = 1 / frame_period
+    @property
+    def n_frames(self):
+        xml_tree = ET.parse(self.xml_path)  # parse xml from a path
+        root = xml_tree.getroot()  # make xml tree structure
 
-        frame_x = int(self._getPVStateShard(path, 'pixelsPerLine')[0])
+        return root.findall('Sequence/Frame')[-1].get('index')
 
-        frame_y = int(self._getPVStateShard(path, 'linesPerFrame')[0])
+    @property
+    def fps(self):
+        frame_period = float(self._getPVStateShard(self.xml_path, 'framePeriod')[0])
+        return (1 / frame_period)
 
-        zoom = float(self._getPVStateShard(path, 'opticalZoom')[0])
-
-        scanVolts, _, index = self._getPVStateShard(path, 'currentScanCenter')
-        for scanVolts, index in zip(scanVolts, index):
-            if index == 'XAxis':
-                scan_x = float(scanVolts)
-            if index == 'YAxis':
-                scan_y = float(scanVolts)
-
-        pixelSize, _, index = self._getPVStateShard(path, 'micronsPerPixel')
-        for pixelSize, index in zip(pixelSize, index):
-            if index == 'XAxis':
-                pix_sz_x = float(pixelSize)
-            if index == 'YAxis':
-                pix_sz_y = float(pixelSize)
-
-        env_tree = ET.parse(env_path)
-        env_root = env_tree.getroot()
-
-        elem_list = env_root.find('TSeries')
-        # n_frames = elem_list[0].get('repetitions') # Rob would get the n_frames from env file
-        # change this to getting the last actual index from the xml file
-
-        n_frames = root.findall('Sequence/Frame')[-1].get('index')
-
-        self.fps = fps
-        self.frame_x = frame_x
-        self.frame_y = frame_y
-        self.n_planes = n_planes
-        self.pix_sz_x = pix_sz_x
-        self.pix_sz_y = pix_sz_y
-        self.scan_x = scan_x
-        self.scan_y = scan_y
-        self.zoom = zoom
-        self.n_frames = int(n_frames)
-
-        print('n planes:', n_planes,
-              '\nn frames:', int(n_frames),
-              '\nfps:', fps,
-              '\nframe size (px):', frame_x, 'x', frame_y,
-              '\nzoom:', zoom,
-              '\npixel size (um):', pix_sz_x, pix_sz_y,
-              '\nscan centre (V):', scan_x, scan_y
-              )
+    @property
+    def zoom(self):
+        return float(self._getPVStateShard(self.xml_path, 'opticalZoom')[0])
 
     @property
     def frame_x(self):
-        return int(self._getPVStateShard(path, 'pixelsPerLine')[0])
+        return int(self._getPVStateShard(self.xml_path, 'pixelsPerLine')[0])
+
+    @property
+    def frame_y(self):
+        return int(self._getPVStateShard(self.xml_path, 'linesPerFrame')[0])
+
+    @property
+    def pix_sz_x(self):
+        pixelSize, _, index = self._getPVStateShard(self.xml_path, 'micronsPerPixel')
+        for pixelSize, index in zip(pixelSize, index):
+            if index == 'XAxis':
+                return float(pixelSize)
+
+    @property
+    def pix_sz_y(self):
+        pixelSize, _, index = self._getPVStateShard(self.xml_path, 'micronsPerPixel')
+        for pixelSize, index in zip(pixelSize, index):
+            if index == 'YAxis':
+                return float(pixelSize)
+
+    @property
+    def scan_x(self):
+        scanVolts, _, index = self._getPVStateShard(self.xml_path, 'currentScanCenter')
+        for scanVolts, index in zip(scanVolts, index):
+            if index == 'XAxis':
+                return float(scanVolts)
+
+    @property
+    def scan_y(self):
+        scanVolts, _, index = self._getPVStateShard(self.xml_path, 'currentScanCenter')
+        for scanVolts, index in zip(scanVolts, index):
+            if index == 'YAxis':
+                return float(scanVolts)
 
     def s2pProcessing(self, s2p_path, subset_frames=None, subtract_neuropil=True, baseline_frames=[],
                       force_redo: bool = False, save=True):
