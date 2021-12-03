@@ -248,7 +248,7 @@ def s2pRoiImage(expobj, save_fig: str = None):
     plt.suptitle(f"{expobj.metainfo['animal prep.']} {expobj.metainfo['trial']} - s2p nontargets (blue), exclude (yellow), targets (red); target_areas (white)",
                  y=0.97, fontsize=7)
     plt.show()
-    plt.savefig(save_fig) if save_fig else None
+    aoutils.save_figure(fig, save_path_suffix=f"{save_fig}") if save_fig else None
 
 
 ### plotting the distribution of radius and aspect ratios - should this be running before the filtering step which is right below????????

@@ -19,10 +19,6 @@ from mpl_toolkits import mplot3d
 results_object_path = '/home/pshah/mnt/qnap/Analysis/alloptical_results_superobject.pkl'
 allopticalResults = aoutils.import_resultsobj(pkl_path=results_object_path)
 
-save_path_prefix = '/home/pshah/mnt/qnap/Analysis/Results_figs/Nontargets_responses_2021-11-11'
-os.makedirs(save_path_prefix) if not os.path.exists(save_path_prefix) else None
-
-
 expobj, experiment = aoutils.import_expobj(aoresults_map_id='pre e.1')  # PLACEHOLDER IMPORT OF EXPOBJ TO MAKE THE CODE WORK
 
 
@@ -52,170 +48,77 @@ expobj, experiment = aoutils.import_expobj(aoresults_map_id='pre e.1')  # PLACEH
 """
 
 
+
 # %% 1.1.1-dc) PLOT - dF/F of significant pos. and neg. responders that were derived from dF/stdF method
-print('\n----------------------------------------------------------------')
-print('plotting dFF for significant cells ')
-print('----------------------------------------------------------------')
 
-expobj.sig_cells = [expobj.s2p_nontargets[i] for i, x in enumerate(expobj.sig_units) if x]
-expobj.pos_sig_cells = [expobj.sig_cells[i] for i in np.where(np.nanmean(expobj.post_array_responses[expobj.sig_units, :], axis=1) > 0)[0]]
-expobj.neg_sig_cells = [expobj.sig_cells[i] for i in np.where(np.nanmean(expobj.post_array_responses[expobj.sig_units, :], axis=1) < 0)[0]]
+@aoutils.run_for_loop_across_exps(run_pre4ap_trials=True, run_post4ap_trials=True)
+def plot_dff_significant_pos_neg_responders(**kwargs):
 
-f, ax = plt.subplots(nrows=2, ncols=2, figsize=(10, 10), sharex=True)
-# plot peristim avg dFF of pos_sig_cells
-selection = [expobj.s2p_nontargets.index(i) for i in expobj.pos_sig_cells]
-x = expobj.dff_traces_avg[selection]
-y_label = 'pct. dFF (normalized to prestim period)'
-f, ax[0, 0], _ = aoplot.plot_periphotostim_avg(arr=x, expobj=expobj, pre_stim_sec=1, post_stim_sec=3,
-                              title='positive sig. responders', y_label=y_label, fig=f, ax=ax[0, 0], show=False,
-                              x_label=None, y_lims=[-50, 200])
+    expobj = kwargs['expobj']
+    print('\n----------------------------------------------------------------')
+    print('plotting dFF for significant cells ')
+    print('----------------------------------------------------------------')
 
-# plot peristim avg dFF of neg_sig_cells
-selection = [expobj.s2p_nontargets.index(i) for i in expobj.neg_sig_cells]
-x = expobj.dff_traces_avg[selection]
-y_label = None
-f, ax[0, 1], _ = aoplot.plot_periphotostim_avg(arr=x, expobj=expobj, pre_stim_sec=1, post_stim_sec=3,
-                              title='negative sig. responders', y_label=None, fig=f, ax=ax[0, 1], show=False,
-                              x_label=None, y_lims=[-50, 200])
+    expobj.sig_cells = [expobj.s2p_nontargets[i] for i, x in enumerate(expobj.sig_units) if x]
+    expobj.pos_sig_cells = [expobj.sig_cells[i] for i in np.where(np.nanmean(expobj.post_array_responses[expobj.sig_units, :], axis=1) > 0)[0]]
+    expobj.neg_sig_cells = [expobj.sig_cells[i] for i in np.where(np.nanmean(expobj.post_array_responses[expobj.sig_units, :], axis=1) < 0)[0]]
 
-# plot peristim avg dFstdF of pos_sig_cells
-selection = [expobj.s2p_nontargets.index(i) for i in expobj.pos_sig_cells]
-x = expobj.dfstdF_traces_avg[selection]
-y_label = 'dF/stdF'
-f, ax[1, 0], _ = aoplot.plot_periphotostim_avg(arr=x, expobj=expobj, pre_stim_sec=1, post_stim_sec=3,
-                              title=None, y_label=y_label, fig=f, ax=ax[1, 0], show=False,
-                              x_label='Time (seconds) ', y_lims=[-1, 1])
+    f, ax = plt.subplots(nrows=2, ncols=2, figsize=(10, 10), sharex=True)
+    # plot peristim avg dFF of pos_sig_cells
+    selection = [expobj.s2p_nontargets.index(i) for i in expobj.pos_sig_cells]
+    x = expobj.dff_traces_avg[selection]
+    y_label = 'pct. dFF (normalized to prestim period)'
+    f, ax[0, 0] = aoplot.plot_periphotostim_avg(arr=x, expobj=expobj, pre_stim_sec=1, post_stim_sec=3,
+                                                   title='positive sig. responders', y_label=y_label, fig=f, ax=ax[0, 0], show=False,
+                                                   x_label=None, y_lims=[-50, 200])
 
-# plot peristim avg dFstdF of neg_sig_cells
-selection = [expobj.s2p_nontargets.index(i) for i in expobj.neg_sig_cells]
-x = expobj.dfstdF_traces_avg[selection]
-y_label = None
-f, ax[1, 1], _ = aoplot.plot_periphotostim_avg(arr=x, expobj=expobj, pre_stim_sec=1, post_stim_sec=3,
-                              title=None, y_label=y_label, fig=f, ax=ax[1, 1], show=False,
-                              x_label='Time (seconds) ', y_lims=[-1, 1])
-f.show()
+    # plot peristim avg dFF of neg_sig_cells
+    selection = [expobj.s2p_nontargets.index(i) for i in expobj.neg_sig_cells]
+    x = expobj.dff_traces_avg[selection]
+    y_label = None
+    f, ax[0, 1] = aoplot.plot_periphotostim_avg(arr=x, expobj=expobj, pre_stim_sec=1, post_stim_sec=3,
+                                                   title='negative sig. responders', y_label=None, fig=f, ax=ax[0, 1], show=False,
+                                                   x_label=None, y_lims=[-50, 200])
 
+    # plot peristim avg dFstdF of pos_sig_cells
+    selection = [expobj.s2p_nontargets.index(i) for i in expobj.pos_sig_cells]
+    x = expobj.dfstdF_traces_avg[selection]
+    y_label = 'dF/stdF'
+    f, ax[1, 0] = aoplot.plot_periphotostim_avg(arr=x, expobj=expobj, pre_stim_sec=1, post_stim_sec=3,
+                                  title=None, y_label=y_label, fig=f, ax=ax[1, 0], show=False,
+                                  x_label='Time (seconds) ', y_lims=[-1, 1])
 
+    # plot peristim avg dFstdF of neg_sig_cells
+    selection = [expobj.s2p_nontargets.index(i) for i in expobj.neg_sig_cells]
+    x = expobj.dfstdF_traces_avg[selection]
+    y_label = None
+    f, ax[1, 1] = aoplot.plot_periphotostim_avg(arr=x, expobj=expobj, pre_stim_sec=1, post_stim_sec=3,
+                                  title=None, y_label=y_label, fig=f, ax=ax[1, 1], show=False,
+                                  x_label='Time (seconds) ', y_lims=[-1, 1])
+    f.suptitle(f"{expobj.metainfo['exptype']} {expobj.metainfo['animal prep.']} {expobj.metainfo['trial']} - significant +ve and -ve responders")
+    f.tight_layout(pad=1.3)
+    f.show()
+plot_dff_significant_pos_neg_responders()
 
-# %% 1.1.2-dc) PLOT - creating large figures collating multiple plots describing responses of non targets to photostim for individual expobj's -- collecting code in aoutils.fig_non_targets_responses()
-plot_subset = False
+# %% 1.1.2) PLOT - large figures collating multiple plots describing responses of non targets to photostim for individual expobj's
 
-if plot_subset:
-    selection = np.random.randint(0, expobj.dff_traces_avg.shape[0], 100)
-else:
-    selection = np.arange(expobj.dff_traces_avg.shape[0])
-
-#### SUITE2P NON-TARGETS - PLOTTING OF AVG PERI-PHOTOSTIM RESPONSES
-f = plt.figure(figsize=[30, 10])
-gs = f.add_gridspec(2, 9)
-
-# %% 1.1.2.1-dc) PLOT OF PERI-STIM AVG TRACES FOR ALL SIGNIFICANT AND NON-SIGNIFICANT RESPONDERS - also breaking down positive and negative responders
-
-# PLOT AVG PHOTOSTIM PRE- POST- TRACE AVGed OVER ALL PHOTOSTIM. TRIALS
-a1 = f.add_subplot(gs[0, 0:2])
-x = expobj.dff_traces_avg[selection]
-y_label = 'pct. dFF (normalized to prestim period)'
-aoplot.plot_periphotostim_avg(arr=x, expobj=expobj, pre_stim_sec=1, post_stim_sec=4,
-                              title=None, y_label=y_label, fig=f, ax=a1, show=False,
-                              x_label='Time (seconds)', y_lims=[-50, 200])
-# PLOT AVG PHOTOSTIM PRE- POST- TRACE AVGed OVER ALL PHOTOSTIM. TRIALS
-a2 = f.add_subplot(gs[0, 2:4])
-x = expobj.dfstdF_traces_avg[selection]
-y_label = 'dFstdF (normalized to prestim period)'
-aoplot.plot_periphotostim_avg(arr=x, expobj=expobj, pre_stim_sec=1, post_stim_sec=4,
-                              title=None, y_label=y_label, fig=f, ax=a2, show=False,
-                              x_label='Time (seconds)', y_lims=[-1, 3])
-# PLOT HEATMAP OF AVG PRE- POST TRACE AVGed OVER ALL PHOTOSTIM. TRIALS - ALL CELLS (photostim targets at top) - Lloyd style :D - df/f
-a3 = f.add_subplot(gs[0, 4:6])
-vmin = -1
-vmax = 1
-aoplot.plot_traces_heatmap(expobj.dfstdF_traces_avg, expobj=expobj, vmin=vmin, vmax=vmax, stim_on=int(1 * expobj.fps),
-                           stim_off=int(1 * expobj.fps + expobj.stim_duration_frames - 1), xlims=(0, expobj.dfstdF_traces_avg.shape[1]),
-                           title='dF/F heatmap for all nontargets', x_label='Time', cbar=True,
-                           fig=f, ax=a3, show=False)
-# PLOT HEATMAP OF AVG PRE- POST TRACE AVGed OVER ALL PHOTOSTIM. TRIALS - ALL CELLS (photostim targets at top) - Lloyd style :D - df/stdf
-a4 = f.add_subplot(gs[0, -3:-1])
-vmin = -100
-vmax = 100
-aoplot.plot_traces_heatmap(expobj.dff_traces_avg, expobj=expobj, vmin=vmin, vmax=vmax, stim_on=int(1 * expobj.fps),
-                           stim_off=int(1 * expobj.fps + expobj.stim_duration_frames - 1), xlims=(0, expobj.dfstdF_traces_avg.shape[1]),
-                           title='dF/stdF heatmap for all nontargets', x_label='Time', cbar=True,
-                           fig=f, ax=a4, show=False)
-
-# plot PERI-STIM AVG TRACES of sig nontargets
-a10 = f.add_subplot(gs[1, 0:2])
-x = expobj.dfstdF_traces_avg[expobj.sig_units]
-aoplot.plot_periphotostim_avg(arr=x, expobj=expobj, pre_stim_sec=1, post_stim_sec=3, fig=f, ax=a10, show=False,
-                              title='significant responders', y_label='dFstdF (normalized to prestim period)',
-                              x_label='Time (seconds)', y_lims=[-1, 3])
-
-# plot PERI-STIM AVG TRACES of nonsig nontargets
-a11 = f.add_subplot(gs[1, 2:4])
-x = expobj.dfstdF_traces_avg[~expobj.sig_units]
-aoplot.plot_periphotostim_avg(arr=x, expobj=expobj, pre_stim_sec=1, post_stim_sec=3, fig=f, ax=a11, show=False,
-                              title='non-significant responders', y_label='dFstdF (normalized to prestim period)',
-                              x_label='Time (seconds)', y_lims=[-1, 3])
-
-# plot PERI-STIM AVG TRACES of sig. positive responders
-a12 = f.add_subplot(gs[1, 4:6])
-x = expobj.dfstdF_traces_avg[expobj.sig_units][
-    np.where(np.nanmean(expobj.post_array_responses[expobj.sig_units, :], axis=1) > 0)[0]]
-aoplot.plot_periphotostim_avg(arr=x, expobj=expobj, pre_stim_sec=1, post_stim_sec=3, fig=f, ax=a12, show=False,
-                              title='positive signif. responders', y_label='dFstdF (normalized to prestim period)',
-                              x_label='Time (seconds)', y_lims=[-1, 3])
-
-# plot PERI-STIM AVG TRACES of sig. negative responders
-a13 = f.add_subplot(gs[1, -3:-1])
-x = expobj.dfstdF_traces_avg[expobj.sig_units][
-    np.where(np.nanmean(expobj.post_array_responses[expobj.sig_units, :], axis=1) < 0)[0]]
-aoplot.plot_periphotostim_avg(arr=x, expobj=expobj, pre_stim_sec=1, post_stim_sec=3, fig=f, ax=a13, show=False,
-                              title='negative signif. responders', y_label='dFstdF (normalized to prestim period)',
-                              x_label='Time (seconds)', y_lims=[-1, 3])
-
-# %% 1.1.2.2-dc) PLOT - quantifying responses of non targets to photostim
-# bar plot of avg post stim response quantified between responders and non-responders
-a04 = f.add_subplot(gs[0, -1])
-sig_responders_avgresponse = np.nanmean(expobj.post_array_responses[expobj.sig_units, :], axis=1)
-nonsig_responders_avgresponse = np.nanmean(expobj.post_array_responses[~expobj.sig_units], axis=1)
-data = np.asarray([sig_responders_avgresponse, nonsig_responders_avgresponse])
-pj.plot_bar_with_points(data=data, title='Avg stim response magnitude of cells', colors=['green', 'gray'], y_label='avg dF/stdF', bar=False,
-                        text_list=['%s pct' % (np.round((len(sig_responders_avgresponse)/expobj.post_array_responses.shape[0]), 2) * 100),
-                                   '%s pct' % (np.round((len(nonsig_responders_avgresponse)/expobj.post_array_responses.shape[0]), 2) * 100)],
-                        text_y_pos=1.43, text_shift=1.7, x_tick_labels=['significant', 'non-significant'], expand_size_y=1.5, expand_size_x=0.6,
-                        fig=f, ax=a04, show=False)
-
-
-# bar plot of avg post stim response quantified between responders and non-responders
-a14 = f.add_subplot(gs[1, -1])
-possig_responders_avgresponse = np.nanmean(expobj.post_array_responses[expobj.sig_units, :], axis=1)[np.where(np.nanmean(expobj.post_array_responses[expobj.sig_units, :], axis=1) > 0)[0]]
-negsig_responders_avgresponse = np.nanmean(expobj.post_array_responses[expobj.sig_units, :], axis=1)[np.where(np.nanmean(expobj.post_array_responses[expobj.sig_units, :], axis=1) < 0)[0]]
-nonsig_responders_avgresponse = np.nanmean(expobj.post_array_responses[~expobj.sig_units], axis=1)
-data = np.asarray([possig_responders_avgresponse, negsig_responders_avgresponse, nonsig_responders_avgresponse])
-pj.plot_bar_with_points(data=data, title='Avg stim response magnitude of cells', colors=['green', 'blue', 'gray'], y_label='avg dF/stdF', bar=False,
-                        text_list=['%s pct' % (np.round((len(possig_responders_avgresponse)/expobj.post_array_responses.shape[0]) * 100, 1)),
-                                   '%s pct' % (np.round((len(negsig_responders_avgresponse)/expobj.post_array_responses.shape[0]) * 100, 1)),
-                                   '%s pct' % (np.round((len(nonsig_responders_avgresponse)/expobj.post_array_responses.shape[0]) * 100, 1))],
-                        text_y_pos=1.43, text_shift=1.2, x_tick_labels=['pos. significant', 'neg. significant', 'non-significant'], expand_size_y=1.5, expand_size_x=0.5,
-                        fig=f, ax=a14, show=False)
-
-f.suptitle(
-    ('%s %s %s' % (expobj.metainfo['animal prep.'], expobj.metainfo['trial'], expobj.metainfo['exptype'])))
-f.show()
-
-
-
-
+@aoutils.run_for_loop_across_exps(run_pre4ap_trials=True, run_post4ap_trials=True)
+def create_fig_non_targets_responses(**kwargs):
+    expobj = kwargs['expobj']
+    aoutils.fig_non_targets_responses(expobj=expobj)
+create_fig_non_targets_responses()
 
 
 # %% 1.2.1) PLOT - scatter plot 1) response magnitude vs. prestim std F, and 2) response magnitude vs. prestim mean F
 ## TODO check if these plots are coming out okay...
+## TODO make plots using the trace dFF processed data
 
 # 1.2.1.1) scatter plot response magnitude vs. prestim std F
 ls = ['post']
 for i in ls:
     ncols = 3
     nrows = 4
-    fig, axs = plt.subplots(ncols=ncols, nrows=nrows, figsize=(10, 10))
+    fig, axs = plt.subplots(ncols=ncols, nrows=nrows, figsize=(10, 12))
     counter = 0
 
     j = 0
@@ -249,10 +152,10 @@ for i in ls:
     axs[0, 0].legend()
     axs[0, 0].set_xlabel('Avg. prestim std F')
     axs[0, 0].set_ylabel('Avg. mag (dF/stdF)')
-    fig.tight_layout()
     fig.suptitle(f'All exps. prestim std F vs. response mag (dF/stdF) distribution - {i}4ap', y = 0.98)
-    save_path = save_path_prefix + f"/scatter prestim std F vs. plot response magnitude - {i}4ap.png"
-    plt.savefig(save_path)
+    fig.tight_layout(pad=1.3)
+    aoutils.save_figure(fig, save_path_suffix=f"scatter prestim std F vs. plot response magnitude - {i}4ap.png")
+    # plt.savefig(save_path)
     fig.show()
 
 # 1.2.1.2) scatter plot response magnitude vs. prestim mean F
@@ -260,7 +163,7 @@ ls = ['pre', 'post']
 for i in ls:
     ncols = 3
     nrows = 4
-    fig, axs = plt.subplots(ncols=ncols, nrows=nrows, figsize=(10, 10))
+    fig, axs = plt.subplots(ncols=ncols, nrows=nrows, figsize=(10, 12))
     counter = 0
 
     j = 0
@@ -294,10 +197,10 @@ for i in ls:
     axs[0, 0].legend()
     axs[0, 0].set_xlabel('Avg. prestim mean F')
     axs[0, 0].set_ylabel('Avg. mag (dF/stdF)')
-    fig.tight_layout()
     fig.suptitle(f'All exps. prestim mean F vs. response mag (dF/stdF) distribution - {i}4ap')
-    save_path = save_path_prefix + f"/scatter plot prestim mean F vs. response magnitude - {i}4ap.png"
-    plt.savefig(save_path)
+    fig.tight_layout(pad=1.3)
+    aoutils.save_figure(fig, save_path_suffix=f"scatter plot prestim mean F vs. response magnitude - {i}4ap.png")
+    # plt.savefig(save_path)
     fig.show()
 
 
@@ -329,10 +232,10 @@ for key in list(allopticalResults.trial_maps['pre'].keys()):
 axs[0, 0].legend()
 axs[0, 0].set_ylabel('density')
 axs[0, 0].set_xlabel('Avg. prestim std F')
-fig.tight_layout()
 fig.suptitle('All exps. prestim std F distribution - pre vs. run_post4ap_trials')
-save_path = save_path_prefix + f"/All exps. prestim std F distribution - pre vs. run_post4ap_trials.png"
-plt.savefig(save_path)
+fig.tight_layout(pad=1.3)
+aoutils.save_figure(fig, f"All exps. prestim std F distribution - pre vs. run_post4ap_trials.png")
+# plt.savefig(save_path)
 fig.show()
 
 
@@ -373,10 +276,10 @@ for key in list(allopticalResults.trial_maps['pre'].keys()):
 axs[0, 0].set_ylabel('density')
 axs[0, 0].set_xlabel('prestim std F')
 title = 'All exps. prestim std F distribution - run_pre4ap_trials only'
-fig.tight_layout()
 fig.suptitle(title)
-save_path = save_path_prefix + f"/{title}.png"
-plt.savefig(save_path)
+fig.tight_layout(pad=1.3)
+aoutils.save_figure(fig, save_path_suffix=f"{title}.png")
+# plt.savefig(save_path)
 fig.show()
 
 
@@ -420,10 +323,10 @@ for key in list(allopticalResults.trial_maps['post'].keys()):
 axs[0, 0].set_ylabel('density')
 axs[0, 0].set_xlabel('prestim std F')
 title = 'All exps. prestim std F distribution - run_post4ap_trials only'
-fig.tight_layout()
 fig.suptitle(title)
-save_path = save_path_prefix + f"/{title}.png"
-plt.savefig(save_path)
+fig.tight_layout(pad=1.3)
+aoutils.save_figure(fig, save_path_suffix=f"{title}.png")
+# plt.savefig(save_path)
 fig.show()
 
 
@@ -458,10 +361,10 @@ axs[0, 0].legend()
 axs[0, 0].set_ylabel('density')
 axs[0, 0].set_xlabel('Avg. prestim F')
 title = 'All exps. prestim mean F distribution - pre vs. run_post4ap_trials'
-fig.tight_layout()
 fig.suptitle(title)
-save_path = save_path_prefix + f"/{title}.png"
-plt.savefig(save_path)
+fig.tight_layout(pad=1.3)
+aoutils.save_figure(fig, save_path_suffix=f"{title}.png")
+# plt.savefig(save_path)
 fig.show()
 
 
@@ -510,8 +413,9 @@ pj.plot_bar_with_points(data, x_tick_labels=['pre4ap_neg', 'post4ap_neg'], color
                         y_label='# of sig. responders', ax=axs[1], fig=fig, show=False)
 title = 'number of pos and neg responders pre vs. run_post4ap_trials'
 fig.suptitle(title)
-save_path = save_path_prefix + f"/{title}.png"
-plt.savefig(save_path)
+fig.tight_layout(pad=1.3)
+aoutils.save_figure(fig, save_path_suffix=f"{title}.png")
+# plt.savefig(save_path)
 fig.show()
 
 
@@ -562,10 +466,10 @@ for exp in experiments:
 axs[0, 0].set_ylabel('dF/stdF')
 axs[0, 0].set_xlabel('Time post stim (secs)')
 title = 'Avg. periphotostim positive responders'
-fig.tight_layout()
 fig.suptitle(title)
-save_path = save_path_prefix + f"/{title}.png"
-plt.savefig(save_path)
+fig.tight_layout(pad=1.3)
+aoutils.save_figure(fig, save_path_suffix=f"{title}.png")
+# plt.savefig(save_path)
 fig.show()
 
 # fig2.suptitle('Summed response of positive responders')
@@ -607,10 +511,10 @@ for exp in experiments:
 axs[0, 0].set_ylabel('dF/stdF')
 axs[0, 0].set_xlabel('Time post stim (secs)')
 title = 'Avg. periphotostim negative responders'
-fig.tight_layout()
 fig.suptitle(title)
-save_path = save_path_prefix + f"/{title}.png"
-plt.savefig(save_path)
+fig.tight_layout(pad=1.3)
+aoutils.save_figure(fig, save_path_suffix=f"{title}.png")
+# plt.savefig(save_path)
 fig.show()
 
 
@@ -669,10 +573,10 @@ for exp in experiments:
 axs[0, 0].set_ylabel('norm. total response (a.u.)')
 axs[0, 0].set_xlabel('Time post stim (secs)')
 title = 'Summed response of positive responders'
-fig.tight_layout()
 fig.suptitle(title)
-save_path = save_path_prefix + f"/{title}.png"
-plt.savefig(save_path)
+fig.tight_layout(pad=1.3)
+aoutils.save_figure(fig, save_path_suffix=f"{title}.png")
+# plt.savefig(save_path)
 fig.show()
 
 
@@ -723,9 +627,9 @@ axs[0, 0].set_ylabel('norm. total response (a.u.)')
 axs[0, 0].set_xlabel('Time post stim (secs)')
 title = 'Summed response of negative responders'
 fig.suptitle(title)
-fig.tight_layout()
-save_path = save_path_prefix + f"/{title}.png"
-plt.savefig(save_path)
+fig.tight_layout(pad=1.3)
+aoutils.save_figure(fig, save_path_suffix=f"{title}.png")
+# plt.savefig(save_path)
 fig.show()
 
 allopticalResults.auc_responders_df = auc_responders
@@ -780,8 +684,9 @@ pj.plot_bar_with_points(data, x_tick_labels=['run_pre4ap_trials', 'run_post4ap_t
                         y_label='norm. evoked activity (a.u.)', fig=fig, ax=axs[1], show=False, shrink_text=0.7)
 title = 'network evoked photostim activity - nontargets - pre vs. run_post4ap_trials'
 fig.suptitle(title, fontsize=8.5)
-save_path = save_path_prefix + f"/{title}.png"
-plt.savefig(save_path)
+fig.tight_layout(pad=1.3)
+aoutils.save_figure(fig, save_path_suffix=f"{title}.png")
+# plt.savefig(save_path)
 fig.show()
 
 

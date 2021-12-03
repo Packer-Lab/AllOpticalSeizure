@@ -17,9 +17,6 @@ from skimage import draw
 results_object_path = '/home/pshah/mnt/qnap/Analysis/alloptical_results_superobject.pkl'
 allopticalResults = aoutils.import_resultsobj(pkl_path=results_object_path)
 
-save_path_prefix = '/home/pshah/mnt/qnap/Analysis/Results_figs/SLMtargets_responses_2021-11-17'
-os.makedirs(save_path_prefix) if not os.path.exists(save_path_prefix) else None
-
 
 expobj, experiment = aoutils.import_expobj(prep='RL109', trial='t-013')
 

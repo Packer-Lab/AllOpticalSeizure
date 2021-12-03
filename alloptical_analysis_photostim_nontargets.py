@@ -1,6 +1,6 @@
-## script dedicated to code that focuses on analysis re: Non targets data
+# script dedicated to code that focuses on analysis re: Non targets data
 
-# %% IMPORT MODULES AND TRIAL expobj OBJECT
+# IMPORT MODULES AND TRIAL expobj OBJECT
 import sys; import os
 sys.path.append('/home/pshah/Documents/code/PackerLab_pycharm/')
 sys.path.append('/home/pshah/Documents/code/')
@@ -19,10 +19,6 @@ from skimage import draw
 results_object_path = '/home/pshah/mnt/qnap/Analysis/alloptical_results_superobject.pkl'
 allopticalResults = aoutils.import_resultsobj(pkl_path=results_object_path)
 
-save_path_prefix = '/home/pshah/mnt/qnap/Analysis/Results_figs/SLMtargets_responses_2021-11-17'
-os.makedirs(save_path_prefix) if not os.path.exists(save_path_prefix) else None
-
-
 expobj, experiment = aoutils.import_expobj(prep='RL109', trial='t-013')
 
 """######### ZONE FOR CALLING THIS SCRIPT DIRECTLY FROM THE SSH SERVER ###########
@@ -36,10 +32,7 @@ expobj, experiment = aoutils.import_expobj(prep='RL109', trial='t-013')
 ######### ZONE FOR CALLING THIS SCRIPT DIRECTLY FROM THE SSH SERVER ###########
 """
 
-sys.exit()
-
-
-
+# sys.exit()
 """# ########### END OF // ZONE FOR CALLING THIS SCRIPT DIRECTLY FROM THE SSH SERVER ###########
 ########### END OF // ZONE FOR CALLING THIS SCRIPT DIRECTLY FROM THE SSH SERVER ###########
 ########### END OF // ZONE FOR CALLING THIS SCRIPT DIRECTLY FROM THE SSH SERVER ###########
@@ -100,35 +93,57 @@ for (i, key, j) in code_run_list_all:
             expobj._findTargetedS2pROIs(force_redo=True, plot=False)
             expobj.save()
         assert hasattr(expobj, 's2p_nontargets')
-        save_path = save_path_prefix + f"/{expobj.metainfo['animal prep.']} {expobj.metainfo['trial']} - s2p ROIs plot.png"
-        aoplot.s2pRoiImage(expobj, save_fig=save_path)
+        # save_path = save_path_prefix + f"/{expobj.metainfo['animal prep.']} {expobj.metainfo['trial']} - s2p ROIs plot.png"
+        aoplot.s2pRoiImage(expobj, save_fig=f"/{expobj.metainfo['animal prep.']} {expobj.metainfo['trial']} - s2p ROIs plot.png")
 
 
 
-# %% 1.1) for loop to go through each expobj to analyze nontargets - run_pre4ap_trials trials
+# %% 1.1) for loop to go through each expobj to analyze nontargets - run_pre4ap_trials trials - TODO - update using trace_dFF processed data
 
-# ls = ['PS05 t-010', 'PS06 t-011', 'PS11 t-010', 'PS17 t-005', 'PS17 t-006', 'PS17 t-007', 'PS18 t-006']
-ls = pj.flattenOnce(allopticalResults.pre_4ap_trials)
-for (i, key, j) in code_run_list_pre:
-    # import expobj
-    expobj, experiment = aoutils.import_expobj(aoresults_map_id='pre %s.%s' % (key, j))
-    aoutils.run_allopticalAnalysisNontargets(expobj, normalize_to='pre-stim', do_processing=True, to_plot=True,
-                                             save_plot_suffix=f"{save_path_prefix[-31:]}/{expobj.metainfo['animal prep.']}_{expobj.metainfo['trial']}-pre4ap.png")
+# ######### decorated ################################
+# # ls = ['PS05 t-010', 'PS06 t-011', 'PS11 t-010', 'PS17 t-005', 'PS17 t-006', 'PS17 t-007', 'PS18 t-006']
+# ls = pj.flattenOnce(allopticalResults.pre_4ap_trials)
+# for (i, key, j) in code_run_list_pre:
+#     # import expobj
+#     expobj, experiment = aoutils.import_expobj(aoresults_map_id='pre %s.%s' % (key, j))
+# ######### decorated ################################
+@aoutils.run_for_loop_across_exps(run_pre4ap_trials=True, run_post4ap_trials=False)
+def run_allopticalNontargets(**kwargs):
+    expobj = kwargs['expobj']
+    if not hasattr(expobj, 's2p_nontargets'):
+        expobj._parseNAPARMgpl()
+        expobj._findTargetsAreas()
+        expobj._findTargetedS2pROIs(force_redo=True, plot=False)
+        expobj.save()
 
+    aoutils.run_allopticalAnalysisNontargets(expobj=expobj, normalize_to='pre-stim', do_processing=True, to_plot=True,
+                                             save_plot_suffix=f"{expobj.metainfo['animal prep.']}_{expobj.metainfo['trial']}-pre4ap.png")
+run_allopticalNontargets()
 
 # test: adding correct stim filters when analysing data to exclude stims/cells in seizure boundaries - this should be done, but not thouroughly tested necessarily yet //
 # 2.1) for loop to go through each expobj to analyze nontargets - run_post4ap_trials trials
-# ls = ['RL108 t-013', 'RL109 t-021', 'RL109 t-016']
+# ######### decorated ################################
+# # ls = ['RL108 t-013', 'RL109 t-021', 'RL109 t-016']
+# missing_slmtargets_sz_stim = []
+# ls = pj.flattenOnce(allopticalResults.post_4ap_trials)
+# for (i, key, j) in code_run_list_all:
+#     # import expobj
+#     expobj, experiment = aoutils.import_expobj(aoresults_map_id='post %s.%s' % (key, j), do_processing=True)
+# ######### decorated ################################
+
 missing_slmtargets_sz_stim = []
-ls = pj.flattenOnce(allopticalResults.post_4ap_trials)
-for (i, key, j) in code_run_list_all:
-    # import expobj
-    expobj, experiment = aoutils.import_expobj(aoresults_map_id='post %s.%s' % (key, j), do_processing=True)
+@aoutils.run_for_loop_across_exps(run_pre4ap_trials=False, run_post4ap_trials=True)
+def run_allopticalNontargets(missing_slmtargets_sz_stim, **kwargs):
+    expobj = kwargs['expobj']
+    force_redo = True if not hasattr(expobj, 's2p_nontargets') else False
     if hasattr(expobj, 'slmtargets_szboundary_stim'):
-        aoutils.run_allopticalAnalysisNontargetsPost4ap(expobj, normalize_to='pre-stim', do_processing=True, to_plot=True,
-                                                        save_plot_suffix=f"{save_path_prefix[-31:]}/{expobj.metainfo['animal prep.']}_{expobj.metainfo['trial']}-post4ap.png")
+        aoutils.run_allopticalAnalysisNontargetsPost4ap(expobj=expobj, normalize_to='pre-stim', do_processing=True,
+                                                        to_plot=True, force_redo=force_redo,
+                                                        save_plot_suffix=f"{expobj.metainfo['animal prep.']}_{expobj.metainfo['trial']}-post4ap.png")
     else:
         missing_slmtargets_sz_stim.append(f"{expobj.metainfo['animal prep.']} {expobj.metainfo['trial']}")
+run_allopticalNontargets(missing_slmtargets_sz_stim=missing_slmtargets_sz_stim)
+
 
 
 # %% 1.2) collect average stats for each prep, and summarize into the appropriate data point

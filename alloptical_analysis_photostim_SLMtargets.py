@@ -24,7 +24,7 @@ allopticalResults = aoutils.import_resultsobj(pkl_path=results_object_path)
 save_path_prefix = '/home/pshah/mnt/qnap/Analysis/Results_figs/SLMtargets_responses_2021-11-17'
 os.makedirs(save_path_prefix) if not os.path.exists(save_path_prefix) else None
 
-expobj, experiment = aoutils.import_expobj(prep='RL109', trial='t-013')
+expobj, experiment = aoutils.import_expobj(prep='RL109', trial='t-013', verbose=True)
 
 """######### ZONE FOR CALLING THIS SCRIPT DIRECTLY FROM THE SSH SERVER ###########
 ######### ZONE FOR CALLING THIS SCRIPT DIRECTLY FROM THE SSH SERVER ###########
@@ -42,6 +42,107 @@ trials_skip = [
     'RL109 t-017',  # RL109 t-017 doesn't have sz boundaries yet.. just updated the sz onset/offset's
     'RL109 t-020',  # RL109 t-020 doesn't have sz boundaries yet..
 ]
+
+
+# %% 5.0-dc) TODO collect targets responses for stims vs. distance (starting with old code)- top priority right now
+
+key = 'e'
+j = 0
+exp = 'post'
+expobj, experiment = aoutils.import_expobj(aoresults_map_id=f"{exp} {key}.{j}")
+
+# expobj.calcMinDistanceToSz()
+
+# %%
+
+# plot response magnitude vs. distance
+for i, stim_frame in enumerate(expobj.slmtargets_szboundary_stim):
+    target = 0
+    # calculate the min distance of slm target to s2p cells classified inside of sz boundary at the current stim
+    targetsInSz = expobj.slmtargets_szboundary_stim[stim_frame]
+    target_coord = expobj.target_coords_all[target]
+    min_distance = 1200
+    for j, _ in enumerate(targetsInSz):
+        dist = pj.calc_distance_2points(target_coord, tuple(expobj.stat[j]['med']))  # distance in pixels
+        if dist < min_distance:
+            min_distance = dist
+
+fig1, ax1 = plt.subplots(figsize=[5, 5])
+responses = []
+distance_to_sz = []
+responses_ = []
+distance_to_sz_ = []
+for target in expobj.responses_SLMtargets_dfprestimf.keys():
+    mean_response = np.mean(expobj.responses_SLMtargets_dfprestimf[target])
+    target_coord = expobj.target_coords_all[target]
+    # print(mean_response)
+
+    # calculate response magnitude at each stim time for selected target
+    for i, _ in enumerate(expobj.stim_start_frames):
+        # the response magnitude of the current SLM target at the current stim time (relative to the mean of the responses of the target over this trial)
+        response = expobj.responses_SLMtargets_dfprestimf[target][i] / mean_response  # changed to division by mean response instead of substracting
+        min_distance = pj.calc_distance_2points((0, 0), (expobj.frame_x,
+                                                         expobj.frame_y))  # maximum distance possible between two points within the FOV, used as the starting point when the sz has not invaded FOV yet
+
+        if hasattr(expobj, 'cells_sz_stim') and expobj.stim_start_frames[i] in list(
+                expobj.cells_sz_stim.keys()):  # calculate distance to sz only for stims where cell locations in or out of sz boundary are defined in the seizures
+            if expobj.stim_start_frames[i] in expobj.stims_in_sz:
+                # collect cells from this stim that are in sz
+                s2pcells_sz = expobj.cells_sz_stim[expobj.stim_start_frames[i]]
+
+                # classify the SLM target as in or out of sz, if out then continue with mesauring distance to seizure wavefront,
+                # if in sz then assign negative value for distance to sz wavefront
+                sz_border_path = "%s/boundary_csv/2020-12-18_%s_stim-%s.tif_border.csv" % (
+                expobj.analysis_save_path, expobj.metainfo['trial'], expobj.stim_start_frames[i])
+
+                in_sz_bool = expobj._InOutSz(cell_med=[target_coord[1], target_coord[0]],
+                                             sz_border_path=sz_border_path)
+
+                if expobj.stim_start_frames[i] in expobj.not_flip_stims:
+                    flip = False
+                else:
+                    flip = True
+                    in_sz_bool = not in_sz_bool
+
+                if in_sz_bool is True:
+                    min_distance = -1
+
+                else:
+                    ## working on add feature for edgecolor of scatter plot based on calculated distance to seizure
+                    ## -- thinking about doing this as comparing distances between all targets and all suite2p ROIs,
+                    #     and the shortest distance that is found for each SLM target is that target's distance to seizure wavefront
+                    # calculate the min distance of slm target to s2p cells classified inside of sz boundary at the current stim
+                    if len(s2pcells_sz) > 0:
+                        for j in range(len(s2pcells_sz)):
+                            s2p_idx = expobj.cell_id.index(s2pcells_sz[j])
+                            dist = pj.calc_distance_2points(target_coord, tuple(
+                                [expobj.stat[s2p_idx]['med'][1], expobj.stat[s2p_idx]['med'][0]]))  # distance in pixels
+                            if dist < min_distance:
+                                min_distance = dist
+
+        if min_distance > 600:
+            distance_to_sz_.append(min_distance + np.random.randint(-10, 10, 1)[0] - 165)
+            responses_.append(response)
+        elif min_distance > 0:
+            distance_to_sz.append(min_distance)
+            responses.append(response)
+
+# calculate linear regression line
+ax1.plot(range(int(min(distance_to_sz)), int(max(distance_to_sz))),
+         np.poly1d(np.polyfit(distance_to_sz, responses, 1))(range(int(min(distance_to_sz)), int(max(distance_to_sz)))),
+         color='black')
+
+ax1.scatter(x=distance_to_sz, y=responses, color='cornflowerblue',
+            alpha=0.5, s=16,
+            zorder=0)  # use cmap correlated to distance from seizure to define colors of each target at each individual stim times
+ax1.scatter(x=distance_to_sz_, y=responses_, color='firebrick',
+            alpha=0.5, s=16,
+            zorder=0)  # use cmap correlated to distance from seizure to define colors of each target at each individual stim times
+ax1.set_xlabel('distance to seizure front (pixels)')
+ax1.set_ylabel('response magnitude')
+ax1.set_title('')
+fig1.show()
+
 
 # %% 3.1) DATA COLLECTION - COMPARISON OF RESPONSE MAGNITUDE OF SUCCESS STIMS. FROM PRE-4AP, OUT-SZ AND IN-SZ
 
@@ -360,7 +461,7 @@ for i in range(len(allopticalResults.pre_4ap_trials)):
         # post4aptrial = allopticalResults.post_4ap_trials[i][0][-5:] -- same as run_post4ap_trials OUTSZ for loop one above
 
         # skipping some trials that need fixing of the expobj
-        # if f"{prep} {post4aptrial}" not in trials_skip:
+        # if f"{prep} {post4aptrial}" not in skip_trials:
         #     print(f'TEST 1.2 - working on {prep} {post4aptrial}')
 
         # using the same skip statement as in the main for loop here
@@ -588,7 +689,7 @@ for i in range(len(allopticalResults.pre_4ap_trials)):
         # post4aptrial = allopticalResults.post_4ap_trials[i][0][-5:] -- same as run_post4ap_trials OUTSZ for loop one above
 
         # skipping some trials that need fixing of the expobj
-        # if f"{prep} {post4aptrial}" not in trials_skip:
+        # if f"{prep} {post4aptrial}" not in skip_trials:
         #     print(f'TEST 1.2 - working on {prep} {post4aptrial}')
 
         # using the same skip statement as in the main for loop here
@@ -773,102 +874,10 @@ for prep in allopticalResults.stim_responses_tracedFF_comparisons.keys():
         f"\tlength of allopticalResults.stim_relative_szonset_vs_avg_dFFresponse_alltargets_atstim dict: {len(allopticalResults.stim_relative_szonset_vs_deltatracedFFresponse_alltargets_atstim.keys())}")
     allopticalResults.save()
 
-# %% 5.0-dc) TODO collect targets responses for stims vs. distance (starting with old code)- low priority right now
 
-key = 'e'
-j = 0
-exp = 'post'
-expobj, experiment = aoutils.import_expobj(aoresults_map_id=f"{exp} {key}.{j}")
+# %% 6.0-main) avg responses in 200um space around photostim targets - pre vs. run_post4ap_trials
 
-# plot response magnitude vs. distance
-for i in range(len(expobj.stim_times)):
-    # calculate the min distance of slm target to s2p cells classified inside of sz boundary at the current stim
-    s2pcells = expobj.cells_sz_stim[expobj.stim_start_frames[i]]
-    target_coord = expobj.target_coords_all[target]
-    min_distance = 1000
-    for j in range(len(s2pcells)):
-        dist = pj.calc_distance_2points(target_coord, tuple(expobj.stat[j]['med']))  # distance in pixels
-        if dist < min_distance:
-            min_distance = dist
 
-fig1, ax1 = plt.subplots(figsize=[5, 5])
-responses = []
-distance_to_sz = []
-responses_ = []
-distance_to_sz_ = []
-for target in expobj.responses_SLMtargets_dfprestimf.keys():
-    mean_response = np.mean(expobj.responses_SLMtargets_dfprestimf[target])
-    target_coord = expobj.target_coords_all[target]
-    # print(mean_response)
-
-    # calculate response magnitude at each stim time for selected target
-    for i in range(len(expobj.stim_times)):
-        # the response magnitude of the current SLM target at the current stim time (relative to the mean of the responses of the target over this trial)
-        response = expobj.responses_SLMtargets_dfprestimf[target][
-                       i] / mean_response  # changed to division by mean response instead of substracting
-        min_distance = pj.calc_distance_2points((0, 0), (expobj.frame_x,
-                                                         expobj.frame_y))  # maximum distance possible between two points within the FOV, used as the starting point when the sz has not invaded FOV yet
-
-        if hasattr(expobj, 'cells_sz_stim') and expobj.stim_start_frames[i] in list(
-                expobj.cells_sz_stim.keys()):  # calculate distance to sz only for stims where cell locations in or out of sz boundary are defined in the seizures
-            if expobj.stim_start_frames[i] in expobj.stims_in_sz:
-                # collect cells from this stim that are in sz
-                s2pcells_sz = expobj.cells_sz_stim[expobj.stim_start_frames[i]]
-
-                # classify the SLM target as in or out of sz, if out then continue with mesauring distance to seizure wavefront,
-                # if in sz then assign negative value for distance to sz wavefront
-                sz_border_path = "%s/boundary_csv/2020-12-18_%s_stim-%s.tif_border.csv" % (
-                expobj.analysis_save_path, expobj.metainfo['trial'], expobj.stim_start_frames[i])
-
-                in_sz_bool = expobj._InOutSz(cell_med=[target_coord[1], target_coord[0]],
-                                             sz_border_path=sz_border_path)
-
-                if expobj.stim_start_frames[i] in expobj.not_flip_stims:
-                    flip = False
-                else:
-                    flip = True
-                    in_sz_bool = not in_sz_bool
-
-                if in_sz_bool is True:
-                    min_distance = -1
-
-                else:
-                    ## working on add feature for edgecolor of scatter plot based on calculated distance to seizure
-                    ## -- thinking about doing this as comparing distances between all targets and all suite2p ROIs,
-                    #     and the shortest distance that is found for each SLM target is that target's distance to seizure wavefront
-                    # calculate the min distance of slm target to s2p cells classified inside of sz boundary at the current stim
-                    if len(s2pcells_sz) > 0:
-                        for j in range(len(s2pcells_sz)):
-                            s2p_idx = expobj.cell_id.index(s2pcells_sz[j])
-                            dist = pj.calc_distance_2points(target_coord, tuple(
-                                [expobj.stat[s2p_idx]['med'][1], expobj.stat[s2p_idx]['med'][0]]))  # distance in pixels
-                            if dist < min_distance:
-                                min_distance = dist
-
-        if min_distance > 600:
-            distance_to_sz_.append(min_distance + np.random.randint(-10, 10, 1)[0] - 165)
-            responses_.append(response)
-        elif min_distance > 0:
-            distance_to_sz.append(min_distance)
-            responses.append(response)
-
-# calculate linear regression line
-ax1.plot(range(int(min(distance_to_sz)), int(max(distance_to_sz))),
-         np.poly1d(np.polyfit(distance_to_sz, responses, 1))(range(int(min(distance_to_sz)), int(max(distance_to_sz)))),
-         color='black')
-
-ax1.scatter(x=distance_to_sz, y=responses, color='cornflowerblue',
-            alpha=0.5, s=16,
-            zorder=0)  # use cmap correlated to distance from seizure to define colors of each target at each individual stim times
-ax1.scatter(x=distance_to_sz_, y=responses_, color='firebrick',
-            alpha=0.5, s=16,
-            zorder=0)  # use cmap correlated to distance from seizure to define colors of each target at each individual stim times
-ax1.set_xlabel('distance to seizure front (pixels)')
-ax1.set_ylabel('response magnitude')
-ax1.set_title('')
-fig1.show()
-
-# %% 6.0-main) avg responses in space around photostim targets - pre vs. run_post4ap_trials
 
 
 # %% archive-1) adding slm targets responses to alloptical results allopticalResults.slmtargets_stim_responses

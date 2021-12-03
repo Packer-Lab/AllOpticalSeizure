@@ -336,7 +336,7 @@ def slm_targets_responses(expobj, experiment, trial, y_spacing_factor=2, figsize
     # make rolling average for these plots to smooth out the traces a little more
 
     # force_redo = False
-    if force_redo:
+    # if force_redo:
         # expobj._findTargets()
         # expobj.raw_traces_from_targets(force_redo=force_redo, save=True)
         # expobj.save()

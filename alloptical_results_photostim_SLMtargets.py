@@ -19,10 +19,7 @@ from mpl_toolkits import mplot3d
 results_object_path = '/home/pshah/mnt/qnap/Analysis/alloptical_results_superobject.pkl'
 allopticalResults = aoutils.import_resultsobj(pkl_path=results_object_path)
 
-save_path_prefix = '/home/pshah/mnt/qnap/Analysis/Results_figs/SLMtargets_responses_2021-11-27'
-os.makedirs(save_path_prefix) if not os.path.exists(save_path_prefix) else None
-
-# PLACEHOLDER IMPORT OF EXPOBJ TO MAKE THE EDITOR NOT THROW ERRORS
+# PLACEHOLDER IMPORT OF EXPOBJ TO during code development
 expobj, experiment = aoutils.import_expobj(prep='RL109', trial='t-013')
 # expobj, experiment = aoutils.import_expobj(aoresults_map_id='pre e.1')
 
@@ -69,7 +66,7 @@ post4ap_trial = i[j][-5:]
 
 trials_run = [f"{pre4ap_prep} {pre4ap_trial}", f"{post4ap_prep} {post4ap_trial}"]
 
-@aoutils.run_for_loop_across_exps(trials_run=trials_run)
+@aoutils.run_for_loop_across_exps(run_trials=trials_run)
 def plot_peristim_avg_traces_alltargets(to_plot='delta dF', **kwargs):
 
     expobj = kwargs['expobj'] if 'expobj' in kwargs.keys() else KeyError('need to provide expobj as keyword argument')
@@ -117,7 +114,7 @@ post4ap_trial = i[j][-5:]
 
 trials_run = [f"{pre4ap_prep} {pre4ap_trial}", f"{post4ap_prep} {post4ap_trial}"][0]
 
-@aoutils.run_for_loop_across_exps(trials_run=[trials_run])
+@aoutils.run_for_loop_across_exps(run_trials=[trials_run])
 def plot_postage_stamps_photostim_traces(to_plot='delta dF',**kwargs):
     expobj = kwargs['expobj'] if 'expobj' in kwargs.keys() else KeyError('need to provide expobj as keyword argument')
 
@@ -261,7 +258,7 @@ pj.plot_bar_with_points(data=[pre4ap_reliability, post4ap_reliability], paired=T
 # ## 4.1) PRE-4AP TRIALS
 
 avgtraces = {'pre4ap': {}}
-@aoutils.run_for_loop_across_exps(run_pre4ap_trials=True) #, trials_run=pj.flattenOnce(allopticalResults.pre_4ap_trials[:3]))
+@aoutils.run_for_loop_across_exps(run_pre4ap_trials=True) #, run_trials=pj.flattenOnce(allopticalResults.pre_4ap_trials[:3]))
 def plot_avg_stim_traces_pre4apexps(process='dfstdf', to_plot='successes', avg_only=True, f=None, ax=None,
                                     **kwargs):
     """
@@ -379,7 +376,7 @@ allopticalResults.save()
 
 
 avgtraces = {'insz': {}}
-@aoutils.run_for_loop_across_exps(run_post4ap_trials=True) #, trials_run=pj.flattenOnce(allopticalResults.pre_4ap_trials[:3]))
+@aoutils.run_for_loop_across_exps(run_post4ap_trials=True) #, run_trials=pj.flattenOnce(allopticalResults.pre_4ap_trials[:3]))
 def plot_avg_stim_traces_inszexps(process='dfstdf', to_plot='successes', avg_only=True, f=None, ax=None,
                                   **kwargs):
     """
@@ -496,7 +493,7 @@ allopticalResults.save()
 # %% 4.3) POST-4AP TRIALS (OUT SZ STIMS) - separated by success and failures
 
 avgtraces = {'outsz': {}}
-@aoutils.run_for_loop_across_exps(run_post4ap_trials=True) #, trials_run=pj.flattenOnce(allopticalResults.pre_4ap_trials[:3]))
+@aoutils.run_for_loop_across_exps(run_post4ap_trials=True) #, run_trials=pj.flattenOnce(allopticalResults.pre_4ap_trials[:3]))
 def plot_avg_stim_traces_outszexps(process='dfstdf', to_plot='successes', avg_only=True, f=None, ax=None,
                                   **kwargs):
     """
@@ -715,7 +712,127 @@ pj.plot_bar_with_points(data=[pre4ap_response_magnitude, outsz_response_magnitud
 #         expobj, experiment = aoutils.import_expobj(aoresults_map_id='post %s.%s' % (key, j), do_processing=True)
 """
 
-# %% 6.1) COLLECT + PLOT SLM targets responses for stims dynamically over time - APPROACH #1 - CALCULATING RESPONSE MAGNITUDE AT EACH STIM PER TARGET
+# %% 6.1) COLLECT + PLOT SLM targets responses for stims dynamically over time - APPROACH #1 - CALCULATING RESPONSE MAGNITUDE AT EACH STIM PER TARGET - using delta(trace_dFF)
+
+print(f"---------------------------------------------------------")
+print(f"plotting zscored photostim responses over the whole trial")
+print(f"---------------------------------------------------------")
+
+### PRE 4AP
+trials = list(allopticalResults.trial_maps['pre'].keys())
+fig, axs = plt.subplots(nrows=len(trials) * 2, ncols=1, figsize=[20, 6 * len(trials)])
+counter = 0
+for expprep in list(allopticalResults.stim_responses_tracedFF.keys()):
+    # expprep = list(allopticalResults.stim_responses_tracedFF.keys())[0]
+    for trials_comparisons in allopticalResults.stim_responses_tracedFF[expprep]:
+        # trials_comparisons = list(allopticalResults.stim_responses_tracedFF[expprep].keys())[0]
+        pre4ap_trial = trials_comparisons[:5]
+        # post4ap_trial = trials_comparisons[-5:]
+
+        # PRE 4AP STUFF
+        if f"{expprep} {pre4ap_trial}" in pj.flattenOnce(allopticalResults.pre_4ap_trials):
+            pre4ap_df = allopticalResults.stim_responses_tracedFF[expprep][trials_comparisons]['pre-4ap']
+
+            print(f"working on expobj: {expprep} {pre4ap_trial}, counter @ {counter}")
+            expobj, experiment = aoutils.import_expobj(prep=expprep, trial=pre4ap_trial, verbose=False)
+
+            SLMtarget_ids = list(range(len(expobj.SLMTargets_stims_dfstdF)))
+            target_colors = pj.make_random_color_array(len(SLMtarget_ids))
+            # --- plot with mean FOV fluorescence signal
+            # fig, axs = plt.subplots(ncols=1, nrows=2, figsize=[20, 6])
+            ax = axs[counter]
+            # fig, ax = plt.subplots(figsize=[10, 3])
+            aoplot.plotMeanRawFluTrace(expobj=expobj, stim_span_color='white', x_axis='frames', show=False, fig=fig, ax=ax)
+            ax2 = ax.twinx()
+            ## retrieve the appropriate zscored database - run_pre4ap_trials stims
+            targets = [x for x in list(pre4ap_df.columns)]
+            for target in targets:
+                for stim_idx in pre4ap_df.index[:-2]:
+                    # if i == 'pre':
+                    #     stim_idx = expobj.stim_start_frames.index(stim_idx)  # MINOR BUG: appears that for some reason the stim_idx of the allopticalResults.stim_responses_tracedFF for pre-4ap are actually the frames themselves
+                    response = pre4ap_df.loc[stim_idx, target]
+                    rand = np.random.randint(-15, 25, 1)[0]  # * 1/(abs(response)**1/2)  # jittering around the stim_frame for the plot
+                    ax2.scatter(x=expobj.stim_start_frames[stim_idx] + rand, y=response,
+                                color=target_colors[targets.index(target)], alpha=0.70, s=15, zorder=4)
+
+            ax2.axhline(y=0)
+            ax2.set_ylabel('Response mag. (delta(trace_dFF))')
+            ax2.margins(x=0)
+
+            ax3 = axs[counter + 1]
+            ax3_2 = ax3.twinx()
+            fig, ax3, ax3_2 = aoplot.plot_lfp_stims(expobj=expobj, x_axis='Time', show=False, fig=fig, ax=ax3, ax2=ax3_2)
+            fig.tight_layout(pad=1.5)
+            counter += 2
+            print(f"|- finished on expobj: {expprep} {pre4ap_trial}, counter @ {counter}\n")
+
+fig.suptitle(f"Photostim responses - pre-4ap", y=0.99)
+aoutils.save_figure(fig, save_path_suffix="SLM-targets_pre4ap-indivtrial-responses_delta(trace_dFF)).png")
+fig.show()
+
+print(f"---------------------------------------------------------")
+print(f"plotting zscored photostim responses over the whole trial")
+print(f"---------------------------------------------------------")
+
+
+# %% POST 4AP
+trials = list(allopticalResults.trial_maps['post'].keys())
+fig, axs = plt.subplots(nrows=len(trials) * 2, ncols=1, figsize=[20, 6 * len(trials)])
+counter = 0
+for expprep in list(allopticalResults.stim_responses_tracedFF.keys()):
+    # expprep = list(allopticalResults.stim_responses_tracedFF.keys())[0]
+    for trials_comparisons in allopticalResults.stim_responses_tracedFF[expprep]:
+        # trials_comparisons = list(allopticalResults.stim_responses_tracedFF[expprep].keys())[0]
+        # pre4ap_trial = trials_comparisons[:5]
+        post4ap_trial = trials_comparisons[-5:]
+
+        # POST 4AP Trials
+        if f"{expprep} {post4ap_trial}" in pj.flattenOnce(allopticalResults.post_4ap_trials):
+            post4ap_df = allopticalResults.stim_responses_tracedFF[expprep][trials_comparisons]['pre-4ap']
+
+            print(f"working on expobj: {expprep} {post4ap_trial}, counter @ {counter}")
+            expobj, experiment = aoutils.import_expobj(prep=expprep, trial=post4ap_trial, verbose=False)
+
+            SLMtarget_ids = list(range(len(expobj.SLMTargets_stims_dfstdF)))
+            target_colors = pj.make_random_color_array(len(SLMtarget_ids))
+            # --- plot with mean FOV fluorescence signal
+            # fig, axs = plt.subplots(ncols=1, nrows=2, figsize=[20, 6])
+            ax = axs[counter]
+            # fig, ax = plt.subplots(figsize=[10, 3])
+            aoplot.plotMeanRawFluTrace(expobj=expobj, stim_span_color='white', x_axis='frames', show=False, fig=fig, ax=ax)
+            ax2 = ax.twinx()
+            ## retrieve the appropriate zscored database - run_post4ap_trials stims
+            targets = [x for x in list(post4ap_df.columns)]
+            for target in targets:
+                for stim_idx in post4ap_df.index[:-2]:
+                    # if i == 'post':
+                    #     stim_idx = expobj.stim_start_frames.index(stim_idx)  # MINOR BUG: appears that for some reason the stim_idx of the allopticalResults.stim_responses_tracedFF for pre-4ap are actually the frames themselves
+                    response = post4ap_df.loc[stim_idx, target]
+                    rand = np.random.randint(-15, 25, 1)[0]  # * 1/(abs(response)**1/2)  # jittering around the stim_frame for the plot
+                    ax2.scatter(x=expobj.stim_start_frames[stim_idx] + rand, y=response,
+                                color=target_colors[targets.index(target)], alpha=0.70, s=15, zorder=4)
+
+            ax2.axhline(y=0)
+            ax2.set_ylabel('Response mag. (delta(trace_dFF))')
+            ax2.margins(x=0)
+
+            ax3 = axs[counter + 1]
+            ax3_2 = ax3.twinx()
+            fig, ax3, ax3_2 = aoplot.plot_lfp_stims(expobj=expobj, x_axis='Time', show=False, fig=fig, ax=ax3, ax2=ax3_2)
+            fig.tight_layout(pad=1.5)
+            counter += 2
+            print(f"|- finished on expobj: {expprep} {post4ap_trial}, counter @ {counter}\n")
+
+fig.suptitle(f"Photostim responses - post-4ap", y=0.99)
+aoutils.save_figure(fig, save_path_suffix="SLM-targets_post4ap-indivtrial-responses_delta(trace_dFF)).png")
+fig.show()
+
+
+# %%
+
+
+
+### archived
 key = 'e'
 j = 0
 exp = 'post'
@@ -751,7 +868,7 @@ ax2.margins(x=0)
 fig.suptitle(f"Photostim responses - {exp}-4ap {expobj.metainfo['animal prep.']} {expobj.metainfo['trial']}")
 fig.show()
 
-# %% aoresults-photostim-slmtargets-6.2-dc TODO) COLLECT + PLOT SLM targets responses for stims dynamically over time - APPROACH #2 - USING Z-SCORED PHOTOSTIM RESPONSES
+# %% 6.2) COLLECT + PLOT SLM targets responses for stims dynamically over time - APPROACH #2 - USING Z-SCORED PHOTOSTIM RESPONSES
 
 print(f"---------------------------------------------------------")
 print(f"plotting zscored photostim responses over the whole trial")
@@ -882,7 +999,7 @@ fig.show()
 
 
 
-# %% aoresults-photostim-slmtargets-6.3-dc TODO) COLLECT + PLOT: SLM targets responses for stims dynamically over time - APPROACH #2 - USING TRACE-dFF PHOTOSTIM RESPONSES
+# %% 6.3) COLLECT + PLOT: SLM targets responses for stims dynamically over time - APPROACH #2 - USING TRACE-dFF PHOTOSTIM RESPONSES
 
 print(f"---------------------------------------------------------")
 print(f"plotting zscored photostim responses over the whole trial")
@@ -1248,16 +1365,18 @@ ax.set_ylabel('responses')
 
 fig.suptitle(f"All exps, all targets relative to closest sz onset")
 fig.tight_layout(pad=1.8)
-save_path_full = f"{save_path_prefix}/responsescore-vs-szonset_time_allexps.png"
-print(f'\nsaving figure to {save_path_full}')
-fig.savefig(save_path_full)
+# save_path_full = f"{save_path_prefix}/responsescore-vs-szonset_time_allexps.png"
+# print(f'\nsaving figure to {save_path_full}')
+# fig.savefig(save_path_full)
+aoutils.save_figure(fig, save_path_suffix='responsescore-vs-szonset_time_allexps.png')
 fig.show()
 
 fig2.suptitle(f"all exps. individual")
 fig2.tight_layout(pad=1.8)
-save_path_full = f"{save_path_prefix}/responsescore-vs-szonset_time_individualexps.png"
-print(f'\nsaving figure2 to {save_path_full}')
-fig2.savefig(save_path_full)
+# save_path_full = f"{save_path_prefix}/responsescore-vs-szonset_time_individualexps.png"
+# print(f'\nsaving figure2 to {save_path_full}')
+# fig2.savefig(save_path_full)
+aoutils.save_figure(fig2, save_path_suffix='responsescore-vs-szonset_time_individualexps.png')
 fig2.show()
 
 

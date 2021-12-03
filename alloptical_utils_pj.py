@@ -100,7 +100,8 @@ def import_expobj(aoresults_map_id: str = None, trial: str = None, prep: str = N
         experiment = '%s: %s, %s, %s' % (
             expobj.metainfo['animal prep.'], expobj.metainfo['trial'], expobj.metainfo['exptype'],
             expobj.metainfo['comments'])
-        print('|- DONE IMPORT of %s' % experiment) if verbose else None
+        print(f'|- loading {pkl_path}') if verbose else None
+        print(f'|- DONE IMPORT of {experiment}') if verbose else None
 
     # update pkl_path using the provided pkl_path for this expobj (if new)
     if pkl_path is not None:
@@ -189,11 +190,11 @@ def show_idioms():
     print(f"entries in idiom_dictionary: \n {list(idiom_dictionary.keys())}")
 
 def working_on(expobj):
-    print(f"Working on: {expobj.metainfo['exptype']} {expobj.metainfo['animal prep.']} {expobj.metainfo['trial']} ... ")
+    print(f"STARTING on: {expobj.metainfo['exptype']} {expobj.metainfo['animal prep.']} {expobj.metainfo['trial']} ... ")
 
 def end_working_on(expobj):
     print(
-        f"Finished on: {expobj.metainfo['exptype']} {expobj.metainfo['animal prep.']} {expobj.metainfo['trial']} \ \ \n")
+        f"FINISHED on: {expobj.metainfo['exptype']} {expobj.metainfo['animal prep.']} {expobj.metainfo['trial']} \ \ \n")
 
 def save_figure(fig, save_path_suffix: str = None, save_path_full: str = None):
     if not save_path_full and save_path_suffix:
@@ -209,18 +210,18 @@ def save_figure(fig, save_path_suffix: str = None, save_path_full: str = None):
 
 
 ## DECORATORS
-def run_for_loop_across_exps(run_pre4ap_trials=False, run_post4ap_trials=False, trials_skip=[], trials_run=[]):
+def run_for_loop_across_exps(run_pre4ap_trials=False, run_post4ap_trials=False, skip_trials=[], run_trials=[]):
     """decorator to use for for-looping through experiment trials across run_pre4ap_trials and run_post4ap_trials.
     the trials to for loop through are defined in allopticalResults.pre_4ap_trials and allopticalResults.post_4ap_trials"""
-    # if len(trials_run) > 0 or run_pre4ap_trials is True or run_post4ap_trials is True:
+    # if len(run_trials) > 0 or run_pre4ap_trials is True or run_post4ap_trials is True:
     print(f"\n {'..'*5} INITIATING FOR LOOP ACROSS EXPS {'..'*5}\n")
     def main_for_loop(func):
         @functools.wraps(func)
         def inner(*args, **kwargs):
-            if trials_run:
+            if run_trials:
                 print(f"\n{'-' * 5} RUNNING SPECIFIED TRIALS from `trials_run` {'-' * 5}")
                 counter1 = 0
-                for i, exp_prep in enumerate(trials_run):
+                for i, exp_prep in enumerate(run_trials):
                     # print(i, exp_prep)
                     prep = exp_prep[:-6]
                     trial = exp_prep[-5:]
@@ -244,7 +245,7 @@ def run_for_loop_across_exps(run_pre4ap_trials=False, run_post4ap_trials=False, 
                 for i, x in enumerate(allopticalResults.pre_4ap_trials):
                     counter_j = 0
                     for j, exp_prep in enumerate(x):
-                        if exp_prep in trials_skip:
+                        if exp_prep in skip_trials:
                             pass
                         else:
                             # print(i, j, exp_prep)
@@ -272,7 +273,7 @@ def run_for_loop_across_exps(run_pre4ap_trials=False, run_post4ap_trials=False, 
                 for i, x in enumerate(allopticalResults.post_4ap_trials):
                     counter_j = 0
                     for j, exp_prep in enumerate(x):
-                        if exp_prep in trials_skip:
+                        if exp_prep in skip_trials:
                             pass
                         else:
                             # print(i, j, exp_prep)
@@ -297,102 +298,14 @@ def run_for_loop_across_exps(run_pre4ap_trials=False, run_post4ap_trials=False, 
         return inner
     return main_for_loop
 
-    # elif len(trials_run) > 0 and (run_pre4ap_trials is True or run_post4ap_trials is True):
-    #     raise Exception('Cannot have both trials_run, and run_pre4ap_trials or run_post4ap_trials active on the same call.')
-
-
-
-
-    #### superceded with above
-    # if len(trials_run) > 0:
-    #     print(f"{'-' * 5} RUNNING SPECIFIED TRIALS from `trials_run` {'-' * 5}")
-    #
-    #     def for_loop_trials_run(func):
-    #         @functools.wraps(func)
-    #         def inner(*args, **kwargs):
-    #             counter1 = 0
-    #             for i, exp_prep in enumerate(trials_run):
-    #                 print(i, exp_prep)
-    #                 prep = exp_prep[:-6]
-    #                 trial = exp_prep[-5:]
-    #                 expobj, _ = import_expobj(prep=prep, trial=trial, verbose=False)
-    #
-    #                 working_on(expobj)
-    #                 func(expobj=expobj, **kwargs)
-    #                 end_working_on(expobj)
-    #
-    #             counter1 += 1
-    #
-    #         return inner
-    #
-    #     return for_loop_trials_run
-    #
-    # if run_pre4ap_trials:
-    #     print(f"\n{'-' * 5} RUNNING PRE4AP TRIALS {'-' * 5}")
-    #
-    #     def for_loop_pre4ap(func):
-    #         @functools.wraps(func)
-    #         def inner(*args, **kwargs):
-    #             counter_i = 0
-    #             for i, x in enumerate(allopticalResults.pre_4ap_trials):
-    #                 counter_j = 0
-    #                 for j, exp_prep in enumerate(x):
-    #                     if exp_prep in trials_skip:
-    #                         pass
-    #                     else:
-    #                         print(i, j, exp_prep)
-    #                         prep = exp_prep[:-6]
-    #                         pre4aptrial = exp_prep[-5:]
-    #                         expobj, _ = import_expobj(prep=prep, trial=pre4aptrial, verbose=False)
-    #
-    #                         working_on(expobj)
-    #                         func(expobj=expobj, **kwargs)
-    #                         end_working_on(expobj)
-    #
-    #                     counter_j += 1
-    #                 counter_i += 1
-    #
-    #         return inner
-    #
-    #     return for_loop_pre4ap
-    #
-    # if run_post4ap_trials:
-    #     print(f"\n{'-' * 5} RUNNING POST4AP TRIALS {'-' * 5}")
-    #
-    #     def for_loop_post4ap(func):
-    #         @functools.wraps(func)
-    #         def inner(*args, **kwargs):
-    #             counter_i = 0
-    #             for i, x in enumerate(allopticalResults.post_4ap_trials):
-    #                 counter_j = 0
-    #                 for j, exp_prep in enumerate(x):
-    #                     if exp_prep in trials_skip:
-    #                         pass
-    #                     else:
-    #                         print(i, j, exp_prep)
-    #                         prep = allopticalResults.post_4ap_trials[i][j][:-6]
-    #                         post4aptrial = allopticalResults.post_4ap_trials[i][j][-5:]
-    #                         expobj, _ = import_expobj(prep=prep, trial=post4aptrial, verbose=False)
-    #
-    #                         working_on(expobj)
-    #                         func(expobj=expobj, **kwargs)
-    #                         end_working_on(expobj)
-    #
-    #                     counter_j += 1
-    #                 counter_i += 1
-    #
-    #         return inner
-    #
-    #     return for_loop_post4ap
-
-
+    # elif len(run_trials) > 0 and (run_pre4ap_trials is True or run_post4ap_trials is True):
+    #     raise Exception('Cannot have both run_trials, and run_pre4ap_trials or run_post4ap_trials active on the same call.')
 
 ## CLASS DEFINITIONS
 class TwoPhotonImaging:
 
     def __init__(self, tiff_path_dir, tiff_path, paq_path, metainfo, analysis_save_path, suite2p_path=None,
-                 suite2p_run=False,
-                 save_downsampled_tiff: bool = False, quick=False):
+                 suite2p_run=False, save_downsampled_tiff: bool = False, quick=False):
         """
         :param suite2p_path: path to the suite2p outputs (plane0 file? or ops file? not sure yet)
         :param suite2p_run: set to true if suite2p is already run for this trial
@@ -400,24 +313,21 @@ class TwoPhotonImaging:
 
         print('\n***** CREATING NEW TwoPhotonImaging with the following metainfo: ', metainfo)
 
-        self.tiff_path_dir = tiff_path_dir
         self.tiff_path = tiff_path
         self.paq_path = paq_path
-        self.metainfo = metainfo  # dict containing appropriate metainformation fields for the experimental trial
+        self.metainfo = {'animal prep.': None, 'trial': None, 'date': None, 'exptype': None, 'data_path_base': None, 'comments': None,
+                         'pre4ap_trials': None, 'post4ap_trials': None}  # dict containing appropriate metainformation fields for the experimental trial
         self.analysis_save_path = analysis_save_path
 
         # create analysis save path location
-        if os.path.exists(analysis_save_path):
-            self.analysis_save_path = analysis_save_path
-        else:
-            self.analysis_save_path = analysis_save_path
-            print('making analysis save folder at: \n  %s' % self.analysis_save_path)
+        self.analysis_save_path = analysis_save_path
+        if not os.path.exists(analysis_save_path):
+            print('\t\-making new analysis save folder at: \n  %s' % self.analysis_save_path)
             os.makedirs(self.analysis_save_path)
 
-        # create pkl path and save expobj to pkl object
-        pkl_path = "%s/%s_%s.pkl" % (self.analysis_save_path, metainfo['date'],
-                                     metainfo['trial'])  # specify path in Analysis folder to save pkl object
-        self.save_pkl(pkl_path=pkl_path)
+        self.pkl_path = f"{self.analysis_save_path}/{self.metainfo['date']}_{self.metainfo['trial']}"  # specify path in Analysis folder to save pkl object
+        # save expobj to pkl object
+        self.save_pkl(pkl_path=self.pkl_path)
 
         # if os.path.exists(self.analysis_save_path):
         #     pass
@@ -443,7 +353,7 @@ class TwoPhotonImaging:
             self.suite2p_path = suite2p_path
             self.s2pProcessing(s2p_path=self.suite2p_path)
 
-        self.save_pkl(pkl_path=pkl_path)
+        self.save_pkl(pkl_path=self.pkl_path)
 
     def __repr__(self):
         lastmod = time.ctime(os.path.getmtime(self.pkl_path))
@@ -455,6 +365,9 @@ class TwoPhotonImaging:
             information = f"{prep} {trial}"
         return repr(f"({information}) TwoPhotonImaging experimental data object, last saved: {lastmod}")
 
+    @property
+    def tiff_path_dir(self):
+        return self.tiff_path[:[(s.start(), s.end()) for s in re.finditer('/', self.tiff_path)][-1][0]]  # this is the directory where the Bruker xml files associated with the 2p imaging TIFF are located
 
     def s2pRun(self, ops, db, user_batch_size):
 
@@ -524,10 +437,8 @@ class TwoPhotonImaging:
 
         return value, description, index
 
-    def _parsePVMetadata(self):
-
-        print('\n-----parsing PV Metadata')
-
+    @property
+    def xml_path(self):
         tiff_path = self.tiff_path_dir
         path = []
 
@@ -544,6 +455,11 @@ class TwoPhotonImaging:
 
         except:
             raise Exception('ERROR: Could not find or load xml for this acquisition from %s' % tiff_path)
+        return path
+
+    def _parsePVMetadata(self):
+
+        print('\n-----parsing PV Metadata')
 
         xml_tree = ET.parse(path)  # parse xml from a path
         root = xml_tree.getroot()  # make xml tree structure
@@ -608,6 +524,10 @@ class TwoPhotonImaging:
               '\npixel size (um):', pix_sz_x, pix_sz_y,
               '\nscan centre (V):', scan_x, scan_y
               )
+
+    @property
+    def frame_x(self):
+        return int(self._getPVStateShard(path, 'pixelsPerLine')[0])
 
     def s2pProcessing(self, s2p_path, subset_frames=None, subtract_neuropil=True, baseline_frames=[],
                       force_redo: bool = False, save=True):
@@ -1869,7 +1789,7 @@ class alloptical(TwoPhotonImaging):
             --- COPIED FROM ROB'S VAPE INTERAREAL_ANALYSIS.PY ON NOV 5 2021 ---
             '''
 
-            print('searching for targeted cells... [Rob version]')
+            print('searching for targeted cells in suite2p results... [Rob version]')
             ##### IDENTIFYING S2P ROIs THAT ARE WITHIN THE SLM TARGET SPIRAL AREAS
             # make all target area coords in to a binary mask
             targ_img = np.zeros([self.frame_x, self.frame_y], dtype='uint16')
@@ -1922,13 +1842,11 @@ class alloptical(TwoPhotonImaging):
             targ_cell_ids = np.unique(targ_cell)[1:] - 1  # correct the cell id due to zero indexing
             self.exclude_cells = np.zeros([self.n_units], dtype='bool')
             self.exclude_cells[targ_cell_ids] = True
-            self.s2p_cells_exclude = [self.cell_id[i] for i in np.where(self.exclude_cells)[
-                0]]  # get ls of s2p cells that were photostim targetted
+            self.s2p_cells_exclude = [self.cell_id[i] for i in np.where(self.exclude_cells)[0]]  # get ls of s2p cells that were photostim targetted
 
             self.n_exclude_cells = np.sum(self.exclude_cells)
 
             print('------- Search completed.')
-            self.save()
             print(f"Number of exclude cells: {self.n_exclude_cells}")
 
             # define non targets from suite2p ROIs (exclude cells in the SLM targets exclusion - .s2p_cells_exclude)
@@ -1936,10 +1854,11 @@ class alloptical(TwoPhotonImaging):
                                    cell not in self.s2p_cells_exclude]  ## exclusion of cells that are classified as s2p_cell_targets
 
             print(f"Number of good, s2p non_targets: {len(self.s2p_nontargets)}")
+            self.save()
 
             if plot:
                 fig, ax = plt.subplots(figsize=[6, 6])
-                fig, ax = aoplot.plot_cells_loc(self, cells=self.s2p_cell_targets, show=False, fig=fig, ax=ax,
+                fig, ax = aoplot.plot_cells_loc(expobj=self, cells=self.s2p_cell_targets, show=False, fig=fig, ax=ax,
                                                 show_s2p_targets=True,
                                                 title=f"s2p cell targets (red-filled) and target areas (white) {self.metainfo['trial']}/{self.metainfo['animal prep.']}",
                                                 invert_y=True)
@@ -3078,6 +2997,9 @@ class Post4ap(alloptical):
             information = f"{prep} {trial}"
         return repr(f"({information}) TwoPhotonImaging.alloptical.Post4ap experimental data object, last saved: {lastmod}")
 
+    @property
+    def szNum(self):
+        return len(self.seizure_lfp_onsets) - (len(self.seizure_lfp_onsets) - len(self.seizure_lfp_offsets))
 
     def subselect_tiffs_sz(self, onsets, offsets, on_off_type: str):
         """subselect raw tiff movie over all seizures as marked by onset and offsets. save under analysis path for object.
@@ -3548,8 +3470,7 @@ class Post4ap(alloptical):
         print('----------------------------------------------------------------')
 
         # define non targets from suite2p ROIs (exclude cells in the SLM targets exclusion - .s2p_cells_exclude)
-        expobj.s2p_nontargets = [cell for cell in expobj.good_cells if
-                                 cell not in expobj.s2p_cells_exclude]  ## exclusion of cells that are classified as s2p_cell_targets
+        expobj.s2p_nontargets = [cell for cell in expobj.good_cells if cell not in expobj.s2p_cells_exclude]  ## exclusion of cells that are classified as s2p_cell_targets
 
         ## collecting nontargets stim traces from in sz imaging frames
         # - - collect stim traces as usual for all stims, then use the sz boundary dictionary to nan cells/stims insize sz boundary
@@ -3607,14 +3528,14 @@ class Post4ap(alloptical):
             raw_traces_[exclude_cells_list, x, :] = [np.nan] * expobj.raw_traces_insz.shape[2]
             dff_traces_[exclude_cells_list, x, :] = [np.nan] * expobj.dff_traces_insz.shape[2]
 
-        # mean pre and post stimulus (within post-stim response window) flu trace values for all cells, all trials
+        # mean pre and post stimulus (within post-stim response window) flu trace values for all trials, with excluded cells
         expobj.analysis_array_insz_exclude = analysis_array_insz_
         expobj.raw_traces_insz = raw_traces_
         expobj.dff_traces_insz = dff_traces_
 
-        expobj.pre_array_insz_exclude = np.nanmean(expobj.analysis_array[:, :, expobj.pre_stim_frames_test],
+        expobj.pre_array_insz_exclude = np.nanmean(expobj.analysis_array_insz_exclude[:, :, expobj.pre_stim_frames_test],
                                                    axis=1)  # [cells x prestim frames] (avg'd taken over all stims)
-        expobj.post_array_insz_exclude = np.nanmean(expobj.analysis_array[:, :, expobj.post_stim_frames_slice],
+        expobj.post_array_insz_exclude = np.nanmean(expobj.analysis_array_insz_exclude[:, :, expobj.post_stim_frames_slice],
                                                     axis=1)  # [cells x poststim frames] (avg'd taken over all stims)
 
         # measure avg response value for each trial, all cells --> return array with 3 axes [cells x response_magnitude_per_stim (avg'd taken over response window)]
@@ -3631,6 +3552,46 @@ class Post4ap(alloptical):
                                                                  array2=expobj.post_array_insz_exclude)
 
         expobj.save() if save else None
+
+    def calcMinDistanceToSz(expobj):
+        """
+        Make a dataframe of stim frames x cells, with values being the minimum distance to the sz boundary at the stim.
+
+        :param expobj:
+        :return:
+        """
+        expobj.distance_to_sz = {}
+        for cells in ['SLM Targets', 's2p ROIs']:
+
+            print(f'\t\- Calculating min distances to sz boundaries for {cells} ... ')
+
+            if cells == 'SLM Targets':
+                coordinates = expobj.target_coords_all
+                indexes = range(len(expobj.target_coords_all))
+            elif cells == 's2p ROIs':
+                indexes = expobj.s2p_nontargets
+                coordinates = []
+                for stat_ in expobj.stat:
+                    coordinates.append(stat_['med']) if stat_['original_index'] in indexes else None
+            else:
+                raise Exception('cells argument not set properly')
+
+            df = pd.DataFrame(data=None, index=indexes, columns=expobj.slmtargets_szboundary_stim.keys())
+            for i, stim_frame in enumerate(expobj.slmtargets_szboundary_stim):
+                # target = 0
+                # calculate the min distance of slm target to s2p cells classified inside of sz boundary at the current stim
+                targetsInSz = expobj.slmtargets_szboundary_stim[stim_frame]
+                for i, target_coord in enumerate(coordinates):
+                    # min_distance = 1200
+                    distances = []
+                    for j, _ in enumerate(targetsInSz):
+                        dist = pj.calc_distance_2points(target_coord,
+                                                        tuple(expobj.stat[j]['med']))  # distance in pixels
+                        distances.append(dist)
+
+                    df.loc[i, stim_frame] = round(np.min(distances), 2) if len(distances) > 1 else None
+
+            expobj.distance_to_sz[cells] = df
 
 
 class OnePhotonStim(TwoPhotonImaging):
@@ -4165,7 +4126,7 @@ class AllOpticalResults:  ## initiated in allOptical-results.ipynb
         # just create an empty class object that you will throw results and analyses into
         self.pkl_path = save_path
 
-        self.metainfo = pd.DataFrame()  # gets filled in alloptical_results_init.py
+        self.metainfo = pd.DataFrame(columns=['prep_trial', 'date', 'exptype'])  # gets filled in alloptical_results_init.py
 
         ## DATA CONTAINING ATTRS
         self.slmtargets_stim_responses = pd.DataFrame({'prep_trial': [], 'date': [], 'exptype': [],
@@ -4778,9 +4739,8 @@ def run_alloptical_processing_photostim(expobj, to_suite2p=None, baseline_trials
             aoplot.plot_SLMtargets_Locs(expobj)
             aoplot.plot_lfp_stims(expobj)
 
-        ####################################################################################################################
         # prep for importing data from suite2p for this whole experiment
-        # determine which frames to retrieve from the overall total s2p output
+        ####################################################################################################################
 
         if not hasattr(expobj, 'suite2p_trials'):
             if to_suite2p is None:
@@ -4793,25 +4753,11 @@ def run_alloptical_processing_photostim(expobj, to_suite2p=None, baseline_trials
             expobj.baseline_trials = baseline_trials
             expobj.save()
 
-        # main function that imports suite2p data and starts adding attributes to the expobj
+        # determine which frames to retrieve from the overall total s2p output
         expobj.subset_frames_current_trial(trial=expobj.metainfo['trial'], to_suite2p=expobj.suite2p_trials,
                                            baseline_trials=expobj.baseline_trials, force_redo=force_redo)
-        expobj.s2pProcessing(s2p_path=expobj.s2p_path, subset_frames=expobj.curr_trial_frames, subtract_neuropil=True,
-                             baseline_frames=expobj.baseline_frames, force_redo=True)
-        good_cells, events_loc_cells, flu_events_cells, stds = expobj._good_cells(cell_ids=expobj.cell_id,
-                                                                                  raws=expobj.raw,
-                                                                                  photostim_frames=expobj.photostim_frames,
-                                                                                  std_thresh=2.5, save=False)
-
-        # expobj.target_coords_all = expobj.target_coords
-        expobj._findTargetedS2pROIs(force_redo=True)
-        aoplot.s2pRoiImage(expobj)
-        expobj.s2pMaskStack(pkl_list=[expobj.pkl_path], s2p_path=expobj.s2p_path,
-                            parent_folder=expobj.analysis_save_path, force_redo=force_redo)
 
         ####################################################################################################################
-        # STA - raw SLM targets processing
-
         # collect raw Flu data from SLM targets
         expobj.collect_traces_from_targets(force_redo=force_redo)
 
@@ -5043,8 +4989,8 @@ def run_allopticalAnalysisNontargets(expobj, normalize_to='pre_stim', to_plot=Tr
         expobj.save()
 
     # make figure containing plots showing average responses of nontargets to photostim
-    save_plot_path = expobj.analysis_save_path[:30] + 'Results_figs/' + save_plot_suffix
-    fig_non_targets_responses(expobj=expobj, plot_subset=False, save_fig=save_plot_path) if to_plot else None
+    # save_plot_path = expobj.analysis_save_path[:30] + 'Results_figs/' + save_plot_suffix
+    fig_non_targets_responses(expobj=expobj, plot_subset=False, save_fig_suffix=save_plot_suffix) if to_plot else None
 
     print('\n** FIN. * allopticalAnalysisNontargets * %s %s **** ' % (
     expobj.metainfo['animal prep.'], expobj.metainfo['trial']))
@@ -5052,7 +4998,7 @@ def run_allopticalAnalysisNontargets(expobj, normalize_to='pre_stim', to_plot=Tr
         '-------------------------------------------------------------------------------------------------------------\n\n')
 
 
-def fig_non_targets_responses(expobj, plot_subset: bool = True, save_fig=None):
+def fig_non_targets_responses(expobj, plot_subset: bool = True, save_fig_suffix=None):
     print('\n----------------------------------------------------------------')
     print('plotting nontargets responses ')
     print('----------------------------------------------------------------')
@@ -5090,7 +5036,7 @@ def fig_non_targets_responses(expobj, plot_subset: bool = True, save_fig=None):
     a3 = f.add_subplot(gs[0, 4:6])
     vmin = -1
     vmax = 1
-    aoplot.plot_traces_heatmap(expobj.dfstdF_traces_avg, expobj=expobj, vmin=vmin, vmax=vmax,
+    aoplot.plot_traces_heatmap(arr=expobj.dfstdF_traces_avg, expobj=expobj, vmin=vmin, vmax=vmax,
                                stim_on=int(1 * expobj.fps),
                                stim_off=int(1 * expobj.fps + expobj.stim_duration_frames),
                                xlims=(0, expobj.dfstdF_traces_avg.shape[1]),
@@ -5100,7 +5046,7 @@ def fig_non_targets_responses(expobj, plot_subset: bool = True, save_fig=None):
     a4 = f.add_subplot(gs[0, -3:-1])
     vmin = -100
     vmax = 100
-    aoplot.plot_traces_heatmap(expobj.dff_traces_avg, expobj=expobj, vmin=vmin, vmax=vmax, stim_on=int(1 * expobj.fps),
+    aoplot.plot_traces_heatmap(arr=expobj.dff_traces_avg, expobj=expobj, vmin=vmin, vmax=vmax, stim_on=int(1 * expobj.fps),
                                stim_off=int(1 * expobj.fps + expobj.stim_duration_frames),
                                xlims=(0, expobj.dfstdF_traces_avg.shape[1]),
                                title='dF/F heatmap for all nontargets', x_label='Time', cbar=True,
@@ -5185,23 +5131,31 @@ def fig_non_targets_responses(expobj, plot_subset: bool = True, save_fig=None):
     f.tight_layout()
     f.show()
 
-    if save_fig is not None:
-        _path = save_fig[:[i for i in re.finditer('/', save_fig)][-1].end()]
-        os.makedirs(_path) if not os.path.exists(_path) else None
-        print('saving figure output to:', save_fig)
-        plt.savefig(save_fig)
+    save_figure(f, save_fig_suffix) if save_fig_suffix is not None else None
+        # _path = save_fig_suffix[:[i for i in re.finditer('/', save_fig_suffix)][-1].end()]
+        # os.makedirs(_path) if not os.path.exists(_path) else None
+        # print('saving figure output to:', save_fig_suffix)
+        # plt.savefig(save_fig_suffix)
 
 
 ###### NON TARGETS analysis - run_post4ap_trials experiments + plotting
 def run_allopticalAnalysisNontargetsPost4ap(expobj, normalize_to='pre_stim', to_plot=True, save_plot_suffix='',
-                                            do_processing=True):
+                                            do_processing=True, force_redo=False):
     if do_processing:
 
-        good_cells, events_loc_cells, flu_events_cells, stds = expobj._good_cells(cell_ids=expobj.cell_id,
-                                                                                  raws=expobj.raw,
-                                                                                  photostim_frames=expobj.photostim_frames,
-                                                                                  std_thresh=2.5, save=False)
-        # set the correct test response windows
+        if force_redo:
+            expobj.s2pProcessing(s2p_path=expobj.s2p_path, subset_frames=expobj.curr_trial_frames, subtract_neuropil=True,
+                                 baseline_frames=expobj.baseline_frames, force_redo=True)
+            good_cells, events_loc_cells, flu_events_cells, stds = expobj._good_cells(cell_ids=expobj.cell_id,
+                                                                                      raws=expobj.raw,
+                                                                                      photostim_frames=expobj.photostim_frames,
+                                                                                      std_thresh=2.5, save=False)
+
+            # expobj.target_coords_all = expobj.target_coords
+            expobj._findTargetedS2pROIs(force_redo=True)
+            aoplot.s2pRoiImage(expobj)
+            expobj.s2pMaskStack(pkl_list=[expobj.pkl_path], s2p_path=expobj.s2p_path,
+                                parent_folder=expobj.analysis_save_path, force_redo=True)
         if not expobj.pre_stim == int(1.0 * expobj.fps):
             print('updating expobj.pre_stim_sec to 1 sec')
             expobj.pre_stim = int(1.0 * expobj.fps)  # length of pre stim trace collected (in frames)
@@ -5213,8 +5167,7 @@ def run_allopticalAnalysisNontargetsPost4ap(expobj, normalize_to='pre_stim', to_
             expobj.pre_stim_response_frames_window = int(
                 expobj.fps * expobj.pre_stim_response_window_msec / 1000)  # length of the pre stim response test window (in frames)
 
-        expobj._trialProcessing_nontargets(normalize_to,
-                                           save=False)  # todo need to use a specific _trialProcessing_nontargets for Post4ap to run statistical tests exactly on either the stims in sz or out sz
+        expobj._trialProcessing_nontargets(normalize_to, save=False)  # todo need to use a specific _trialProcessing_nontargets for Post4ap to run statistical tests exactly on either the stims in sz or out sz
         expobj.sig_units = expobj._sigTestAvgResponse_nontargets(p_vals=expobj.wilcoxons, alpha=0.1, save=False)
         expobj.sig_units_insz = expobj._sigTestAvgResponse_nontargets(p_vals=expobj.wilcoxons_insz, alpha=0.1,
                                                                       save=False)
@@ -5224,13 +5177,12 @@ def run_allopticalAnalysisNontargetsPost4ap(expobj, normalize_to='pre_stim', to_
         expobj.save()
 
     # make figure containing plots showing average responses of nontargets to photostim
-    save_plot_path = expobj.analysis_save_path[:30] + 'Results_figs/' + save_plot_suffix
-    fig_non_targets_responses(expobj=expobj, plot_subset=False, save_fig=save_plot_path) if to_plot else None
+    # save_plot_path = expobj.analysis_save_path[:30] + 'Results_figs/' + save_plot_suffix
+    fig_non_targets_responses(expobj=expobj, plot_subset=False, save_fig_suffix=save_plot_suffix) if to_plot else None
 
-    print('\n** FIN. * allopticalAnalysisNontargets * %s %s **** ' % (
+    print('\n\t-- Complete. - allopticalAnalysisNontargets - %s %s --- ' % (
     expobj.metainfo['animal prep.'], expobj.metainfo['trial']))
-    print(
-        '-------------------------------------------------------------------------------------------------------------\n\n')
+    print('------------------------------------------')
 
 
 # %% ARCHIVE

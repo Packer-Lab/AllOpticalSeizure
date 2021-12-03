@@ -19,9 +19,6 @@ from funcsforprajay import funcs as pj
 results_object_path = '/home/pshah/mnt/qnap/Analysis/alloptical_results_superobject.pkl'
 allopticalResults = aoutils.import_resultsobj(pkl_path=results_object_path)
 
-save_path_prefix = '/home/pshah/mnt/qnap/Analysis/Results_figs/SLMtargets_responses_2021-11-23'
-os.makedirs(save_path_prefix) if not os.path.exists(save_path_prefix) else None
-
 
 # expobj, experiment = aoutils.import_expobj(prep='RL109', trial='t-013')
 
@@ -220,7 +217,7 @@ for i, _ in enumerate(allopticalResults.pre_4ap_trials):
 
 
     # skipping some trials that need fixing of the expobj
-    # if f"{prep} {post4aptrial}" not in trials_skip:
+    # if f"{prep} {post4aptrial}" not in skip_trials:
     #     print(f'TEST 1.2 - working on {prep} {post4aptrial}')
 
     # using the same skip statement as in the main for loop here
@@ -455,7 +452,7 @@ for i, _ in enumerate(allopticalResults.pre_4ap_trials):
 
 
     # skipping some trials that need fixing of the expobj
-    # if f"{prep} {post4aptrial}" not in trials_skip:
+    # if f"{prep} {post4aptrial}" not in skip_trials:
     #     print(f'TEST 1.2 - working on {prep} {post4aptrial}')
 
     # using the same skip statement as in the main for loop here
