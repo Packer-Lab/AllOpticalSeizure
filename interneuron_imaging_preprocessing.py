@@ -26,10 +26,10 @@ for trial in trials:
         'data_path_base': '/home/pshah/mnt/qnap/Data/%s_old_copy/' % date,
         'comments': comments
     }
-    expobj = aoutils.TwoPhotonImaging(tiff_path_dir=metainfo['data_path_base']+'%s_%s' % (date, trial),
-                                      tiff_path=metainfo['data_path_base']+'%s_%s/%s_%s_Cycle00001_Ch3.tif' % (date, trial, date, trial),
-                                      paq_path=metainfo['data_path_base']+'%s_%s_%s.paq' % (date, prep, trial[-3:]), metainfo=metainfo,
-                                      analysis_save_path='/home/pshah/mnt/qnap/Analysis/%s/%s/' % (date, prep), quick=False)
+    expobj = aoutils.TwoPhotonImaging(
+        tiff_path=metainfo['data_path_base'] + '%s_%s/%s_%s_Cycle00001_Ch3.tif' % (date, trial, date, trial),
+        paq_path=metainfo['data_path_base'] + '%s_%s_%s.paq' % (date, prep, trial[-3:]), metainfo=metainfo,
+        analysis_save_path='/home/pshah/mnt/qnap/Analysis/%s/%s/' % (date, prep), quick=False)
     expobj.paqProcessing()
     expobj.save()
     print('tiff path: ', expobj.tiff_path)

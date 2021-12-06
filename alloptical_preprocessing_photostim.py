@@ -17,7 +17,7 @@ trial = 't-013'  # note that %s magic command in the code below will be using th
 comments = 'photostim: 9 cells x 4 groups; 5mW per cell; preset: 2020-11-25_PS_250ms-stim-50hz (approach #1); same targets and protocol as t011 but random vs ekmeans group assignment'
 naparms_loc = '/photostim/2020-12-19_RL109_ps_014/'  # make sure to include '/' at the end to indicate the child directory
 exp_type = 'pre 4ap 2p all optical'  # use 'post' and '4ap' in the description to create the appropriate run_post4ap_trials exp object
-analysis_save_path = '/home/pshah/mnt/qnap/Analysis/%s/%s/' % (date, animal_prep)
+analysis_save_path = f'/home/pshah/mnt/qnap/Analysis/{date}/{animal_prep}/{animal_prep}_{trial}'
 
 pre4ap_trials = ['']  # add all optical t-series from pre4ap_trials
 post4ap_trials = ['']  # add all optical t-series from post4ap_trials
@@ -28,9 +28,9 @@ post4ap_trials = ['']  # add all optical t-series from post4ap_trials
 
 ## everything below should autopopulate and run automatically
 paqs_loc = '%s/%s_%s_%s.paq' % (data_path_base, date, animal_prep, trial[2:])  # path to the .paq files for the selected trials
-tiffs_loc_dir = '%s/%s_%s' % (data_path_base, date, trial)
-analysis_save_path = analysis_save_path + tiffs_loc_dir[-16:]
-tiffs_loc = '%s/%s_%s_Cycle00001_Ch3.tif' % (tiffs_loc_dir, date, trial)
+# tiffs_loc_dir = '%s/%s_%s' % (data_path_base, date, trial)
+# tiffs_loc = '%s/%s_%s_Cycle00001_Ch3.tif' % (tiffs_loc_dir, date, trial)
+tiffs_loc = f'{data_path_base}/{date}_{trial}/{date}_{trial}_Cycle00001_Ch3.tif'
 # pkl_path = "%s/%s_%s.pkl" % (analysis_save_path, date, trial)  # specify path in Analysis folder to save pkl object
 # paqs_loc = '%s/%s_RL109_010.paq' % (data_path_base, date)  # path to the .paq files for the selected trials
 new_tiffs = tiffs_loc[:-19]  # where new tiffs from rm_artifacts_tiffs will be saved
@@ -55,10 +55,12 @@ metainfo = {
 }
 
 
-expobj = aoutils.run_photostim_preprocessing(trial, exp_type=exp_type, new_tiffs=new_tiffs, metainfo=metainfo,
-                                             tiffs_loc_dir=tiffs_loc_dir, tiffs_loc=tiffs_loc, naparms_loc=(data_path_base+naparms_loc),
-                                             paqs_loc=paqs_loc, matlab_pairedmeasurements_path=matlab_pairedmeasurements_path,
-                                             processed_tiffs=False, discard_all=True, analysis_save_path=analysis_save_path)
+expobj = aoutils.run_photostim_preprocessing(trial, exp_type=exp_type, tiffs_loc=tiffs_loc,
+                                             naparms_loc=(data_path_base + naparms_loc), paqs_loc=paqs_loc,
+                                             metainfo=metainfo, new_tiffs=new_tiffs,
+                                             matlab_pairedmeasurements_path=matlab_pairedmeasurements_path,
+                                             processed_tiffs=False, discard_all=True,
+                                             analysis_save_path=analysis_save_path)
 
 # %% 2) ### the below is usually run from jupyter notebooks dedicated to each experiment prep.
 to_suite2p = ['t-002', 't-006', 't-007', 't-008', 't-009', 't-011', 't-016', 't-017'] # specify all trials that were used in the suite2p runtotal_frames_stitched = 0

@@ -18,9 +18,10 @@ import sys
 # from utils.funcs_pj import SaveDownsampledTiff, subselect_tiff, make_tiff_stack, convert_to_8bit
 
 sys.path.append('/home/pshah/Documents/code/')
+# import warnings
 # from Vape.utils.paq2py import *
-from matplotlib.colors import ColorConverter
-from Vape.utils.utils_funcs import *
+# from Vape.utils.utils_funcs import *
+from Vape.utils.utils_funcs import s2p_loader
 from Vape.utils import STAMovieMaker_noGUI as STAMM
 import scipy.stats as stats
 import statsmodels.api
@@ -33,7 +34,6 @@ import pandas as pd
 import xml.etree.ElementTree as ET
 import tifffile as tf
 import csv
-import warnings
 import bisect
 
 # from utils import funcs_pj as pj
@@ -103,14 +103,11 @@ def import_expobj(aoresults_map_id: str = None, trial: str = None, prep: str = N
         print(f'|- loading {pkl_path}') if verbose else None
         print(f'|- DONE IMPORT of {experiment}') if verbose else None
 
-    # update pkl_path using the provided pkl_path for this expobj (if new)
+    # move expobj to the official pkl_path from the provided pkl_path that expobj was loaded from (if different)
     if pkl_path is not None:
         if expobj.pkl_path != pkl_path:
-            expobj.pkl_path = pkl_path
-            print('updated expobj.pkl_path ', pkl_path)
-            expobj.analysis_save_path = expobj.pkl_path[:-20]
-            print('updated expobj.analysis_save_path ', expobj.analysis_save_path)
-            expobj.save()
+            expobj.save_pkl(pkl_path=expobj.pkl_path)
+            print('saved expobj to pkl_path: ', expobj.pkl_path)
 
     ### roping in some extraneous processing steps if there's expobj's that haven't completed for them
     if expobj.analysis_save_path[-1] != '/':
@@ -176,8 +173,11 @@ idiom_dictionary = {
                   "where the original trace is the raw (neuropil subtracted) trace",
     'dfstdf': "photostim measurement; measuring photostim responses as (post-stim minus pre-stim)/(std[pre-stim period], "
               "where the original trace is the raw (neuropil subtracted) trace",
-    'hits': "successful photostim responses, as defined based on a certain threshold level for dfstdf (>0.3 above prestim) and delta(trace_dFF) (>10 above prestim)"
-
+    'hits': "successful photostim responses, as defined based on a certain threshold level for dfstdf (>0.3 above prestim) and delta(trace_dFF) (>10 above prestim)",
+    'SLM Targets': "ROI placed on the motion registered TIFF based on the primary target coordinate and expanding a circle of 10um? diameter centered on the coordinate",
+    's2p ROIs': "all ROIs derived directly from the suite2p output",
+    's2p nontargets': "suite2p ROIs excluding those which are filtered out for being in the target exclusion zone",
+    'good cells': "good cells are suite2p ROIs which have some sort of a Flu transient based on a sliding window and std filtering process"
 }
 
 def define(x):
@@ -235,7 +235,6 @@ def run_for_loop_across_exps(run_pre4ap_trials=False, run_post4ap_trials=False, 
                     #     print('Exception on the wrapped function call')
                     end_working_on(expobj)
                 counter1 += 1
-
 
 
             if run_pre4ap_trials:
@@ -304,7 +303,7 @@ def run_for_loop_across_exps(run_pre4ap_trials=False, run_post4ap_trials=False, 
 ## CLASS DEFINITIONS
 class TwoPhotonImaging:
 
-    def __init__(self, tiff_path_dir, tiff_path, paq_path, metainfo, analysis_save_path, suite2p_path=None,
+    def __init__(self, tiff_path, paq_path, metainfo, analysis_save_path, suite2p_path=None,
                  suite2p_run=False, save_downsampled_tiff: bool = False, quick=False):
         """
         :param suite2p_path: path to the suite2p outputs (plane0 file? or ops file? not sure yet)
@@ -320,12 +319,11 @@ class TwoPhotonImaging:
         self.analysis_save_path = analysis_save_path
 
         # create analysis save path location
-        self.analysis_save_path = analysis_save_path
         if not os.path.exists(analysis_save_path):
             print('\t\-making new analysis save folder at: \n  %s' % self.analysis_save_path)
             os.makedirs(self.analysis_save_path)
 
-        self.pkl_path = f"{self.analysis_save_path}/{self.metainfo['date']}_{self.metainfo['trial']}"  # specify path in Analysis folder to save pkl object
+        # self.pkl_path = f"{self.analysis_save_path}{self.metainfo['date']}_{self.metainfo['trial']}.pkl"  # specify path in Analysis folder to save pkl object
         # save expobj to pkl object
         self.save_pkl(pkl_path=self.pkl_path)
 
@@ -366,8 +364,21 @@ class TwoPhotonImaging:
         return repr(f"({information}) TwoPhotonImaging experimental data object, last saved: {lastmod}")
 
     @property
+    def t_series_name(self):
+        return f'{self.metainfo["animal prep."]} {self.metainfo["trial"]}'
+
+    @property
     def tiff_path_dir(self):
         return self.tiff_path[:[(s.start(), s.end()) for s in re.finditer('/', self.tiff_path)][-1][0]]  # this is the directory where the Bruker xml files associated with the 2p imaging TIFF are located
+
+    @property
+    def pkl_path(self):
+        """specify path in Analysis folder to save pkl object"""
+        return f"{self.analysis_save_path}{self.metainfo['date']}_{self.metainfo['trial']}.pkl"
+
+    @pkl_path.setter
+    def pkl_path(self, path: str):
+        self.pkl_path = path
 
     def s2pRun(self, ops, db, user_batch_size):
 
@@ -436,41 +447,6 @@ class TwoPhotonImaging:
             raise Exception('ERROR: no element or subelement with that key')
 
         return value, description, index
-
-    @property
-    def xml_path(self):
-        tiff_path = self.tiff_path_dir
-        path = []
-
-        try:  # look for xml file in path, or two paths up (achieved by decreasing count in while loop)
-            count = 2
-            while count != 0 and not path:
-                count -= 1
-                for file in os.listdir(tiff_path):
-                    if file.endswith('.xml'):
-                        path = os.path.join(tiff_path, file)
-                tiff_path = os.path.dirname(tiff_path)
-            return path
-        except:
-            raise Exception('ERROR: Could not find or load xml file for this acquisition from %s' % tiff_path)
-
-    @property
-    def env_path(self):
-        tiff_path = self.tiff_path_dir
-        path = []
-
-        try:  # look for xml file in path, or two paths up (achieved by decreasing count in while loop)
-            count = 2
-            while count != 0 and not path:
-                count -= 1
-                for file in os.listdir(tiff_path):
-                    if file.endswith('.env'):
-                        env_path = os.path.join(tiff_path, file)
-                tiff_path = os.path.dirname(tiff_path)
-            return env_path
-        except:
-            raise Exception('ERROR: Could not find or load env file for this acquisition from %s' % tiff_path)
-
 
     def _parsePVMetadata(self):
 
@@ -541,6 +517,41 @@ class TwoPhotonImaging:
         #       )
 
     @property
+    def xml_path(self):
+        tiff_path = self.tiff_path_dir
+        path = []
+
+        try:  # look for xml file in path, or two paths up (achieved by decreasing count in while loop)
+            count = 2
+            while count != 0 and not path:
+                count -= 1
+                for file in os.listdir(tiff_path):
+                    if file.endswith('.xml'):
+                        path = os.path.join(tiff_path, file)
+                tiff_path = os.path.dirname(tiff_path)
+            return path
+        except:
+            raise Exception('ERROR: Could not find or load xml file for this acquisition from %s' % tiff_path)
+
+    @property
+    def env_path(self):
+        tiff_path = self.tiff_path_dir
+        path = []
+
+        try:  # look for xml file in path, or two paths up (achieved by decreasing count in while loop)
+            count = 2
+            while count != 0 and not path:
+                count -= 1
+                for file in os.listdir(tiff_path):
+                    if file.endswith('.env'):
+                        env_path = os.path.join(tiff_path, file)
+                tiff_path = os.path.dirname(tiff_path)
+            return env_path
+        except:
+            raise Exception('ERROR: Could not find or load env file for this acquisition from %s' % tiff_path)
+
+
+    @property
     def n_planes(self):
         xml_tree = ET.parse(self.xml_path)  # parse xml from a path
         root = xml_tree.getroot()  # make xml tree structure
@@ -561,9 +572,26 @@ class TwoPhotonImaging:
         return root.findall('Sequence/Frame')[-1].get('index')
 
     @property
+    def frame_avg(self):
+        frame_avg = int(self._getPVStateShard(self.xml_path, 'rastersPerFrame')[0])
+        # print('Frame averaging:', frame_avg)
+        return frame_avg
+
+    @property
     def fps(self):
         frame_period = float(self._getPVStateShard(self.xml_path, 'framePeriod')[0])
+        print(f"{frame_period} fps")
         return (1 / frame_period)
+
+    @property
+    def laser_power(self):
+        laser_powers, lasers, _ = self._getPVStateShard(self.xml_path,'laserPower')
+        for power,laser in zip(laser_powers,lasers):
+            if laser == 'Imaging':
+                imaging_power = float(power)
+                return imaging_power
+        # print('Imaging laser power:', imaging_power)
+
 
     @property
     def zoom(self):
@@ -730,8 +758,7 @@ class TwoPhotonImaging:
                     self.cell_area.append(1)
 
     def _good_cells(self, cell_ids: list, raws: np.ndarray, photostim_frames: list, std_thresh: int,
-                    radiuses: list = None,
-                    min_radius_pix: int = 2.5, max_radius_pix: int = 10, save=True):
+                    radiuses: list = None, min_radius_pix: int = 2.5, max_radius_pix: int = 10, save=True):
         """
         This function is used for filtering for "good" cells based on detection of Flu deflections that are above some std threshold based on std_thresh.
         Note: a moving averaging window of 4 frames is used to find Flu deflections above std threshold.
@@ -956,7 +983,7 @@ class TwoPhotonImaging:
 
         with open(self.pkl_path, 'wb') as f:
             pickle.dump(self, f)
-        print("\n\t -- expobj saved to %s -- " % pkl_path)
+        print(f"\n\t -- Saving expobj saved to {pkl_path} -- ")
 
     def save(self):
         self.save_pkl()
@@ -966,7 +993,6 @@ class alloptical(TwoPhotonImaging):
 
     def __init__(self, paths, metainfo, stimtype, quick=False):
         # self.metainfo = metainfo
-        self.slmtargets_szboundary_stim = None
         self.stim_type = stimtype
         self.naparm_path = paths[2]
         self.paq_path = paths[3]
@@ -976,9 +1002,8 @@ class alloptical(TwoPhotonImaging):
 
         self.seizure_frames = []
 
-        TwoPhotonImaging.__init__(self, tiff_path_dir=paths[0], tiff_path=paths[1], paq_path=paths[3],
-                                  metainfo=metainfo, analysis_save_path=paths[4],
-                                  suite2p_path=None, suite2p_run=False, quick=quick)
+        TwoPhotonImaging.__init__(self, tiff_path=paths[1], paq_path=paths[3], metainfo=metainfo,
+                                  analysis_save_path=paths[4], suite2p_path=None, suite2p_run=False, quick=quick)
 
         # self.tiff_path_dir = paths[0]
         # self.tiff_path = paths[1]
@@ -3035,6 +3060,9 @@ class Post4ap(alloptical):
         self.seizure_lfp_onsets = []  # frame #s corresponding to ONSET of seizure as manually inspected from the LFP signal
         self.seizure_lfp_offsets = []  # frame #s corresponding to OFFSET of seizure as manually inspected from the LFP signal
 
+        ##
+        self.slmtargets_szboundary_stim = {}  # dictionary of cells classification either inside or outside of boundary
+
         ## PHOTOSTIM SLM TARGETS
         self.responses_SLMtargets_dfstdf_outsz = []  # dFstdF responses for all SLM targets for photostim trials outside sz
         self.responses_SLMtargets_dfstdf_insz = []  # dFstdF responses for all SLM targets for photostim trials outside sz - excluding targets inside the sz boundary
@@ -3057,8 +3085,11 @@ class Post4ap(alloptical):
         self.insz_traces_SLMtargets_successes_avg_dfstdf = []  # trace snippets for only successful stims - normalized by dfstdf - ^^^
         self.insz_traces_SLMtargets_failures_avg_dfstdf = []  # trace snippets for only failures stims - normalized by dfstdf - ^^^
 
+        ##
+        self.distance_to_sz = {'SLM Targets': {},
+                               's2p nontargets': {}}  # calculating the distance between the sz wavefront and cells
 
-        # collect information about seizures
+        ## collect information about seizures
         self.collect_seizures_info(seizures_lfp_timing_matarray=paths[5], discard_all=discard_all)
 
         self.save()
@@ -3636,38 +3667,43 @@ class Post4ap(alloptical):
         :param expobj:
         :return:
         """
-        expobj.distance_to_sz = {}
-        for cells in ['SLM Targets', 's2p ROIs']:
+        if hasattr(expobj, 'slmtargets_szboundary_stim'):
+            for cells in ['SLM Targets', 's2p nontargets']:
 
-            print(f'\t\- Calculating min distances to sz boundaries for {cells} ... ')
+                print(f'\t\- Calculating min distances to sz boundaries for {cells} ... ')
 
-            if cells == 'SLM Targets':
-                coordinates = expobj.target_coords_all
-                indexes = range(len(expobj.target_coords_all))
-            elif cells == 's2p ROIs':
-                indexes = expobj.s2p_nontargets
-                coordinates = []
-                for stat_ in expobj.stat:
-                    coordinates.append(stat_['med']) if stat_['original_index'] in indexes else None
-            else:
-                raise Exception('cells argument not set properly')
+                if cells == 'SLM Targets':
+                    coordinates = expobj.target_coords_all
+                    indexes = range(len(expobj.target_coords_all))
+                elif cells == 's2p ROIs':
+                    indexes = expobj.s2p_nontargets
+                    coordinates = []
+                    for stat_ in expobj.stat:
+                        coordinates.append(stat_['med']) if stat_['original_index'] in indexes else None
+                else:
+                    raise Exception('cells argument not set properly')
 
-            df = pd.DataFrame(data=None, index=indexes, columns=expobj.slmtargets_szboundary_stim.keys())
-            for i, stim_frame in enumerate(expobj.slmtargets_szboundary_stim):
-                # target = 0
-                # calculate the min distance of slm target to s2p cells classified inside of sz boundary at the current stim
-                targetsInSz = expobj.slmtargets_szboundary_stim[stim_frame]
-                for i, target_coord in enumerate(coordinates):
-                    # min_distance = 1200
-                    distances = []
-                    for j, _ in enumerate(targetsInSz):
-                        dist = pj.calc_distance_2points(target_coord,
-                                                        tuple(expobj.stat[j]['med']))  # distance in pixels
-                        distances.append(dist)
+                df = pd.DataFrame(data=None, index=indexes, columns=expobj.slmtargets_szboundary_stim.keys())
+                for i, stim_frame in enumerate(expobj.slmtargets_szboundary_stim):
+                    # target = 0
+                    # calculate the min distance of slm target to s2p cells classified inside of sz boundary at the current stim
+                    targetsInSz = expobj.slmtargets_szboundary_stim[stim_frame]
+                    for i, target_coord in enumerate(coordinates):
+                        # min_distance = 1200
+                        distances = []
+                        for j, _ in enumerate(targetsInSz):
+                            dist = pj.calc_distance_2points(target_coord,
+                                                            tuple(expobj.stat[j]['med']))  # distance in pixels
+                            distances.append(dist)
 
-                    df.loc[i, stim_frame] = round(np.min(distances), 2) if len(distances) > 1 else None
+                        df.loc[i, stim_frame] = round(np.min(distances), 2) if len(distances) > 1 else None
 
-            expobj.distance_to_sz[cells] = df
+                expobj.distance_to_sz[cells] = df
+
+                expobj.save()
+        else:
+            print('expobj doesnot have slmtargets_szboundary_stim completed')
+            return f"{expobj.metainfo['animal prep.']} {expobj.metainfo['trial']}"
 
 
 class OnePhotonStim(TwoPhotonImaging):
@@ -3705,8 +3741,8 @@ class OnePhotonStim(TwoPhotonImaging):
         self.tiff_path_dir = paths[0]
         self.tiff_path = paths[1]
         self.paq_path = paths[2]
-        TwoPhotonImaging.__init__(self, self.tiff_path_dir, self.tiff_path, self.paq_path, metainfo=metainfo,
-                                  save_downsampled_tiff=True, analysis_save_path=analysis_save_path, quick=False)
+        TwoPhotonImaging.__init__(self, self.tiff_path, self.paq_path, metainfo=metainfo,
+                                  analysis_save_path=analysis_save_path, save_downsampled_tiff=True, quick=False)
         self.paqProcessing()
 
         # add all frames as bad frames incase want to include this trial in suite2p run
@@ -3965,8 +4001,8 @@ class onePstim(TwoPhotonImaging):
         self.tiff_path_dir = paths[0]
         self.tiff_path = paths[1]
         self.paq_path = paths[2]
-        TwoPhotonImaging.__init__(self, self.tiff_path_dir, self.tiff_path, self.paq_path, metainfo=metainfo,
-                                  save_downsampled_tiff=True, analysis_save_path=analysis_save_path, quick=False)
+        TwoPhotonImaging.__init__(self, self.tiff_path, self.paq_path, metainfo=metainfo,
+                                  analysis_save_path=analysis_save_path, save_downsampled_tiff=True, quick=False)
         self.paqProcessing()
 
         # add all frames as bad frames incase want to include this trial in suite2p run
@@ -4702,7 +4738,7 @@ def calculate_StimSuccessRate(expobj, cell_ids: list, raw_traces_stims=None, dfs
     return reliability_cells, hits_cells, responses_cells
 
 
-def run_photostim_preprocessing(trial, exp_type, tiffs_loc_dir, tiffs_loc, naparms_loc, paqs_loc, metainfo,
+def run_photostim_preprocessing(trial, exp_type, tiffs_loc, naparms_loc, paqs_loc, metainfo,
                                 new_tiffs, matlab_pairedmeasurements_path=None, processed_tiffs=True, discard_all=False,
                                 quick=False,
                                 analysis_save_path=''):
@@ -4710,7 +4746,7 @@ def run_photostim_preprocessing(trial, exp_type, tiffs_loc_dir, tiffs_loc, napar
     print('-----Processing trial # %s-----' % trial)
     print('----------------------------------------\n')
 
-    paths = [[tiffs_loc_dir, tiffs_loc, naparms_loc, paqs_loc, analysis_save_path, matlab_pairedmeasurements_path]]
+    paths = [[tiffs_loc, naparms_loc, paqs_loc, analysis_save_path, matlab_pairedmeasurements_path]]
     print(
         'tiffs_loc_dir, tiffs_loc, naparms_loc, paqs_loc, analysis_save_path paths, and matlab_pairedmeasurement_path:\n',
         paths)

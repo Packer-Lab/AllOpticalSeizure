@@ -43,7 +43,7 @@ def run_spont_processing(trial, paths, analysis_save_path, metainfo, discard_all
 
     print('\n Processing spont. trial # %s' % trial)
 
-    expobj = aoutils.TwoPhotonImaging(tiff_path_dir, tiff_path, paq_path, metainfo, analysis_save_path=analysis_save_path)
+    expobj = aoutils.TwoPhotonImaging(tiff_path, paq_path, metainfo, analysis_save_path=analysis_save_path)
 
     expobj.bad_frames = prep4suite2p(expobj, trial, paths, discard_all=discard_all)
 
