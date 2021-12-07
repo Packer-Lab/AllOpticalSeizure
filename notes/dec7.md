@@ -14,9 +14,8 @@
 
 4) mm201 collection angle discussion - would 8degrees be good enough? (bergamo is 14degrees)
 
-5) workflow design for processing package
+5) progress on measuring responses to seizure distance
+- currently, implementing code for measuring distance between each cell and the seizure wavefront line
 
-6) progress on measuring responses to seizure distance
-- currently implementing code for measuring distance between each cell and the seizure wavefront line
+6) reference letter for scholarship application
 
-8) reference letter for scholarship application

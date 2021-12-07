@@ -38,8 +38,8 @@ def plot_SLMtargets_Locs(expobj, targets_coords: list = None, background: np.nda
     #         fig, ax = plt.subplots()
 
     if background is None:
-        black = np.zeros((expobj.frame_x, expobj.frame_y), dtype='uint16')
-        ax.imshow(black, cmap='gray')
+        background = np.zeros((expobj.frame_x, expobj.frame_y), dtype='uint16')
+        ax.imshow(background, cmap='gray')
     else:
         ax.imshow(background, cmap='gray')
 
@@ -56,14 +56,13 @@ def plot_SLMtargets_Locs(expobj, targets_coords: list = None, background: np.nda
                 edgecolors = 'yellowgreen'
             for (x, y) in expobj.target_coords_all:
                 ax.scatter(x=x, y=y, edgecolors=edgecolors, facecolors='none', linewidths=2.0)
-    else:
+    elif targets_coords:
         if 'edgecolors' in kwargs.keys():
             edgecolors = kwargs['edgecolors']
         else:
             edgecolors = 'yellowgreen'
-        for (x, y) in targets_coords:
-            ax.scatter(x=x, y=y, edgecolors=edgecolors, facecolors='none', linewidths=2.0)
-
+        pj.plot_coordinates(coords=targets_coords, frame_x=expobj.frame_x, frame_y=expobj.frame_y, edgecolors=edgecolors,
+                            background=background, fig=fig, ax=ax)
 
     ax.margins(0)
     fig.tight_layout()

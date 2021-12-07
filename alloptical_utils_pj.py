@@ -34,6 +34,7 @@ import csv
 import bisect
 from funcsforprajay import funcs as pj
 from funcsforprajay import pnt2line
+from funcsforprajay.wrappers import print_start_end_plot, plot_piping_decorator
 from utils.paq_utils import paq_read, frames_discard
 import alloptical_plotting_utils as aoplot
 import pickle
@@ -3053,6 +3054,244 @@ class alloptical(TwoPhotonImaging):
                 print('\ns2p ROI + photostim targets masks saved in TIFF to: ', save_path)
 
 
+    #### plotting functions
+    ### plot the location of all SLM targets, along with option for plotting the mean img of the current trial
+    # @print_start_end_plot
+    @plot_piping_decorator(figsize=(5, 5))
+    def plot_SLMtargets_Locs(expobj, targets_coords: list = None, background: np.ndarray = None, fig=None, ax=None,
+                             **kwargs):
+        """
+        plot SLM target coordinate locations
+
+        :param expobj:
+        :param targets_coords: ls containing (x,y) coordinates of targets to plot
+        :param background:
+        :param kwargs:
+        :return:
+        """
+
+        # if 'fig' in kwargs.keys():
+        #     fig = kwargs['fig']
+        #     ax = kwargs['ax']
+        # else:
+        #     if 'figsize' in kwargs.keys():
+        #         fig, ax = plt.subplots(figsize=kwargs['figsize'])
+        #     else:
+        #         fig, ax = plt.subplots()
+
+        if background is None:
+            background = np.zeros((expobj.frame_x, expobj.frame_y), dtype='uint16')
+            ax.imshow(background, cmap='gray')
+        else:
+            ax.imshow(background, cmap='gray')
+
+        colors = pj.make_random_color_array(len(expobj.target_coords))
+        if targets_coords is None:
+            if len(expobj.target_coords) > 1:
+                for i in range(len(expobj.target_coords)):
+                    for (x, y) in expobj.target_coords[i]:
+                        ax.scatter(x=x, y=y, edgecolors=colors[i], facecolors='none', linewidths=2.0)
+            else:
+                if 'edgecolors' in kwargs.keys():
+                    edgecolors = kwargs['edgecolors']
+                else:
+                    edgecolors = 'yellowgreen'
+                for (x, y) in expobj.target_coords_all:
+                    ax.scatter(x=x, y=y, edgecolors=edgecolors, facecolors='none', linewidths=2.0)
+        elif targets_coords:
+            if 'edgecolors' in kwargs.keys():
+                edgecolors = kwargs['edgecolors']
+            else:
+                edgecolors = 'yellowgreen'
+            pj.plot_coordinates(coords=targets_coords, frame_x=expobj.frame_x, frame_y=expobj.frame_y,
+                                edgecolors=edgecolors,
+                                background=background, fig=fig, ax=ax)
+
+        ax.margins(0)
+        fig.tight_layout()
+
+        if 'title' in kwargs.keys():
+            if kwargs['title'] is not None:
+                ax.set_title(kwargs['title'])
+            else:
+                pass
+        else:
+            ax.set_title('SLM targets location - %s %s' % (expobj.metainfo['animal prep.'], expobj.metainfo['trial']))
+
+        # if 'show' in kwargs.keys():
+        #     if kwargs['show'] is True:
+        #         fig.show()
+        #     else:
+        #         return fig, ax
+        # else:
+        #     fig.show()
+        #
+        # return fig, ax if 'fig' in kwargs.keys() else None
+
+    # simple plot of the location of the given cell(s) against a black FOV
+    # @print_start_end_plot
+    @plot_piping_decorator(figsize=(5, 5))
+    def plot_cells_loc(expobj, cells: list, title=None, background: np.array = None, scatter_only: bool = False,
+                       show_s2p_targets: bool = True, color_float_list: list = None, cmap: str = 'Reds', invert_y=True,
+                       fig=None, ax=None, **kwargs):
+        """
+        plots an image of the FOV to show the locations of cells given in cells ls.
+        :param background: either 2dim numpy array to use as the backsplash or None (where black backsplash will be created)
+        :param expobj: alloptical or 2p imaging object
+        :param edgecolor: str to specify edgecolor of the scatter plot for cells
+        :param cells: ls of cells to plot
+        :param title: str title for plot
+        :param color_float_list: if given, it will be used to color the cells according a colormap
+        :param cmap: cmap to be used in conjuction with the color_float_array argument
+        :param show_s2p_targets: if True, then will prioritize coloring of cell points based on whether they were photostim targets
+        :param kwargs: optional arguments
+                invert_y: if True, invert the reverse the direction of the y axis
+                show: if True, show the plot
+                fig: a fig plt.subplots() instance, if provided use this fig for making figure
+                ax: a ax plt.subplots() instance, if provided use this ax for plotting
+        """
+
+        # # if there is a fig and ax provided in the function call then use those, otherwise start anew
+        # if 'fig' in kwargs.keys():
+        #     fig = kwargs['fig']
+        #     ax = kwargs['ax']
+        # else:
+        #     fig, ax = plt.subplots()
+
+        x_list = []
+        y_list = []
+        for cell in cells:
+            y, x = expobj.stat[expobj.cell_id.index(cell)]['med']
+            x_list.append(x)
+            y_list.append(y)
+
+            if show_s2p_targets:
+                if hasattr(expobj, 's2p_cell_targets'):
+                    if cell in expobj.s2p_cell_targets:
+                        color_ = '#F02A71'
+                    else:
+                        color_ = 'none'
+                else:
+                    color_ = 'none'
+                ax.scatter(x=x, y=y, edgecolors=None, facecolors=color_, linewidths=0.8)
+            elif color_float_list:
+                # ax.scatter(x=x, y=y, edgecolors='none', c=color_float_list[cells.index(cell)], linewidths=0.8,
+                #            cmap=cmap)
+                pass
+            else:
+                if 'edgecolors' in kwargs.keys():
+                    edgecolors = kwargs['edgecolors']
+                else:
+                    edgecolors = 'yellowgreen'
+                ax.scatter(x=x, y=y, edgecolors=edgecolors, facecolors='none', linewidths=0.8)
+
+        if color_float_list:
+            ac = ax.scatter(x=x_list, y=y_list, edgecolors='none', c=color_float_list, linewidths=0.8,
+                            cmap=cmap, zorder=1)
+
+            plt.colorbar(ac, ax=ax)
+
+        if not scatter_only:
+            if background is None:
+                black = np.zeros((expobj.frame_x, expobj.frame_y), dtype='uint16')
+                ax.imshow(black, cmap='Greys_r', zorder=0)
+                ax.set_xlim(0, expobj.frame_x)
+                ax.set_ylim(0, expobj.frame_y)
+            else:
+                ax.imshow(background, cmap='Greys_r', zorder=0)
+
+        if title is not None:
+            plt.suptitle(title, wrap=True)
+
+        if 'text' in kwargs.keys():
+            if kwargs['text'] is not None:
+                ax.text(0.99, 0.95, kwargs['text'],
+                        verticalalignment='top', horizontalalignment='right',
+                        transform=ax.transAxes, fontweight='bold',
+                        color='white', fontsize=10)
+
+        if 'hide_axis_labels' in kwargs.keys():
+            ax.set_xticks(ticks=[])
+            ax.set_xticklabels([])
+            ax.set_yticks(ticks=[])
+            ax.set_yticklabels([])
+
+        if 'invert_y' in kwargs.keys():
+            if kwargs['invert_y']:
+                ax.invert_yaxis()
+
+        # if 'show' in kwargs.keys():
+        #     if kwargs['show'] is True:
+        #         fig.show()
+        #     else:
+        #         pass
+        # else:
+        #     fig.show()
+        #
+        # return fig, ax if 'fig' in kwargs.keys() else None
+
+    # plot to show s2p ROIs location, colored as specified
+    def s2pRoiImage(expobj, save_fig: str = None):
+        """
+        plot to show the classification of each cell as the actual's filling in the cell's ROI pixels.
+
+        :param expobj: expobj associated with data
+        :param df: pandas dataframe (cell_id x stim frames)
+        :param clim: color limits
+        :param plot_target_coords: bool, if True plot the actual X and Y coords of all photostim cell targets
+        :param save_fig: where to save the save figure (optional)
+        :return:
+        """
+        fig, ax = plt.subplots(figsize=(5, 5))
+        if expobj.frame_x == 512:
+            s = 0.003 * (1024 / expobj.frame_x * 4)
+        else:
+            s = 0.003
+        ##### targets areas image
+        targ_img = np.zeros([expobj.frame_x, expobj.frame_y], dtype='float')
+        target_areas_exclude = np.array(expobj.target_areas_exclude)
+        targ_img[target_areas_exclude[:, :, 1], target_areas_exclude[:, :, 0]] = 1
+        x = np.asarray(list(range(expobj.frame_x)) * expobj.frame_y)
+        y = np.asarray([i_y for i_y in range(expobj.frame_y) for i_x in range(expobj.frame_x)])
+        img = targ_img.flatten()
+        im_array = np.array([x, y], dtype=np.float)
+        ax.scatter(im_array[0], im_array[1], c=img, cmap='gray', s=s, zorder=0, alpha=1)
+
+        ##### suite2p ROIs areas image - nontargets
+        for n in expobj.s2p_nontargets:
+            idx = expobj.cell_id.index(n)
+            ypix = expobj.stat[idx]['ypix']
+            xpix = expobj.stat[idx]['xpix']
+            ax.scatter(xpix, ypix, c='lightsteelblue', s=s, zorder=1, alpha=1)
+
+        ##### suite2p ROIs areas image - exclude cells
+        for n in expobj.s2p_cells_exclude:
+            idx = expobj.cell_id.index(n)
+            ypix = expobj.stat[idx]['ypix']
+            xpix = expobj.stat[idx]['xpix']
+            ax.scatter(xpix, ypix, c='yellow', s=s, zorder=2, alpha=1)
+
+        ##### suite2p ROIs areas image - targeted cells
+        for n in expobj.s2p_cell_targets:
+            idx = expobj.cell_id.index(n)
+            ypix = expobj.stat[idx]['ypix']
+            xpix = expobj.stat[idx]['xpix']
+            ax.scatter(xpix, ypix, c='red', s=s, zorder=3, alpha=1)
+
+        ax.set_xlim([0, expobj.frame_x])
+        ax.set_ylim([0, expobj.frame_y])
+        plt.margins(x=0, y=0)
+        plt.gca().invert_yaxis()
+        # plt.gca().invert_xaxis()
+        # fig.show()
+
+        plt.suptitle(
+            f"{expobj.metainfo['animal prep.']} {expobj.metainfo['trial']} - s2p nontargets (blue), exclude (yellow), targets (red); target_areas (white)",
+            y=0.97, fontsize=7)
+        plt.show()
+        save_figure(fig, save_path_suffix=f"{save_fig}") if save_fig else None
+
+
 class Post4ap(alloptical):
 
     def __init__(self, paths, metainfo, stimtype, discard_all):
@@ -3673,7 +3912,7 @@ class Post4ap(alloptical):
 
         expobj.save() if save else None
 
-    def calcMinDistanceToSz(expobj):
+    def calcMinDistanceToSz(expobj, plot_counter=0):
         """
         Make a dataframe of stim frames x cells, with values being the minimum distance to the sz boundary at the stim.
 
@@ -3705,25 +3944,34 @@ class Post4ap(alloptical):
                     if targetsInSz:  # debugging set back to zero afterwards
 
                         ## new approach // start
-
                         xline, yline = pj.xycsv(csvpath=expobj.sz_border_path(stim=stim_frame))
-                        for i, target_coord in enumerate(coordinates):
-                            # target_coord = [coordinates[0][0], coordinates[0][1], 0]
-                            dist, nearest = pnt2line.pnt2line(pnt=target_coord, start=[xline[0], yline[0], 0], end=[xline[1], yline[1], 0])
+                        for target_idx, target_coord in enumerate(coordinates):
+                            target_coord_ = [target_coord[0], target_coord[1], 0]
+                            dist, nearest = pnt2line.pnt2line(pnt=target_coord_, start=[xline[0], yline[0], 0], end=[xline[1], yline[1], 0])
+                            dist = round(dist, 2)
+                            if target_idx in targetsInSz:
+                                dist = -dist
+                                # print(dist)
+                                # print("target coord inside sz")
+                            title = f"distance: {dist}, {expobj.t_series_name}, stim: {stim_frame}"
 
-                            fig, ax = plt.subplots()  ## figure for debuggging
-                            aoplot.plot_SLMtargets_Locs(expobj=expobj, targets_coords=[(target_coord[0], target_coord[1])],
-                                                        edgecolors='red', show=False, fig=fig, ax=ax)
 
-                            aoplot.plot_SLMtargets_Locs(expobj=expobj, targets_coords=[(xline[0], yline[0]), (xline[1], yline[1])],
-                                                        edgecolors='green', show=False, fig=fig, ax=ax)
+                            if 10 < plot_counter < 15:
+                                fig, ax = plt.subplots()  ## figure for debuggging
+                                pj.plot_coordinates(coords=[(target_coord_[0], target_coord_[1])], frame_x=expobj.frame_x, frame_y=expobj.frame_y,
+                                                        edgecolors='red', show=False, fig=fig, ax=ax, title=title)
 
-                            aoplot.plot_SLMtargets_Locs(expobj=expobj, targets_coords=[(nearest[0], nearest[1])],
-                                                        edgecolors='yellow', show=False, fig=fig, ax=ax)
-                            fig.show()
+                                pj.plot_coordinates(coords=[(xline[0], yline[0]), (xline[1], yline[1])], frame_x=expobj.frame_x, frame_y=expobj.frame_y,
+                                                        edgecolors='green', show=False, fig=fig, ax=ax, title=title)
 
-                            df.loc[i, stim_frame] = dist
+                                pj.plot_coordinates(coords=[(nearest[0], nearest[1])], frame_x=expobj.frame_x, frame_y=expobj.frame_y,
+                                                        edgecolors='yellow', show=False, fig=fig, ax=ax, title=title)
+                                fig.show()
 
+                            plot_counter += 1
+
+
+                            df.loc[target_idx, stim_frame] = dist
                         ## new approach // end
 
                 expobj.distance_to_sz[cells] = df
