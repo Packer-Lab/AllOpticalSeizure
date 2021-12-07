@@ -15,7 +15,7 @@ from funcsforprajay.wrappers import print_start_end_plot, plot_piping_decorator
 
 # %%
 ### plot the location of all SLM targets, along with option for plotting the mean img of the current trial
-@print_start_end_plot
+# @print_start_end_plot
 @plot_piping_decorator(figsize=(5,5))
 def plot_SLMtargets_Locs(expobj, targets_coords: list = None, background: np.ndarray = None, fig=None, ax=None, **kwargs):
     """

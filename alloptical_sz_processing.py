@@ -146,8 +146,8 @@ for i in ls2:
 
                 ax = axs[counter // ncols, counter % ncols]
 
-                sz_border_path = "%s/boundary_csv/%s_%s_stim-%s.tif_border.csv" % (expobj.analysis_save_path[:-17], expobj.metainfo['date'], trial, stim)
-                if os.path.exists(sz_border_path):
+                # sz_border_path = "%s/boundary_csv/%s_%s_stim-%s.tif_border.csv" % (expobj.analysis_save_path[:-17], expobj.metainfo['date'], trial, stim)
+                if os.path.exists(expobj.sz_border_path):
                     # first round of classifying (dont flip any cells over) - do this in the second round
                     if stim not in expobj.not_flip_stims:
                         flip = False
@@ -155,17 +155,17 @@ for i in ls2:
                         flip = True
 
                     # classification of suite2p ROIs relative to sz boundary
-                    in_sz, out_sz, fig, ax = expobj.classify_cells_sz_bound(sz_border_path, stim=stim, to_plot=True,
+                    in_sz, out_sz, fig, ax = expobj.classify_cells_sz_bound(expobj.sz_border_path, stim=stim, to_plot=True,
                                                                             flip=flip, fig=fig, ax=ax, text='sz %s stim %s' % (sz_num, stim))
                     expobj.s2prois_szboundary_stim[stim] = in_sz
                     # classification of SLM targets relative to sz boundary
-                    in_sz, out_sz, fig, ax = expobj.classify_slmtargets_sz_bound(sz_border_path, stim=stim, to_plot=True, title='%s' % stim, flip=flip, fig=fig, ax=ax)
+                    in_sz, out_sz, fig, ax = expobj.classify_slmtargets_sz_bound(expobj.sz_border_path, stim=stim, to_plot=True, title='%s' % stim, flip=flip, fig=fig, ax=ax)
                     expobj.slmtargets_szboundary_stim[stim] = in_sz  # for each stim, there will be a ls of cells that will be classified as in seizure or out of seizure
 
                     axs[counter // ncols, counter % ncols] = ax
                     counter += 1
                 else:
-                    print(f"sz border path doesn't exist for stim {stim}: {sz_border_path}")
+                    print(f"sz border path doesn't exist for stim {stim}: {expobj.sz_border_path}")
 
             sz_num += 1
 
@@ -213,16 +213,16 @@ for on, off in zip(on_, end):
     for stim in stims_of_interest:
         ax = axs[counter // ncols, counter % ncols]
 
-        sz_border_path = "%s/boundary_csv/%s_%s_stim-%s.tif_border.csv" % (expobj.analysis_save_path[:-17], expobj.metainfo['date'], trial, stim)
-        if not os.path.exists(sz_border_path):
-            print(sz_border_path)
+        # sz_border_path = "%s/boundary_csv/%s_%s_stim-%s.tif_border.csv" % (expobj.analysis_save_path[:-17], expobj.metainfo['date'], trial, stim)
+        if not os.path.exists(expobj.sz_border_path):
+            print(expobj.sz_border_path)
         # first round of classifying (dont flip any cells over) - do this in the second round
         if stim not in expobj.not_flip_stims:
             flip = False
         else:
             flip = True
 
-        in_sz, out_sz, fig, ax = expobj.classify_slmtargets_sz_bound(sz_border_path, stim=stim, to_plot=True, title='%s' % stim, flip=flip, fig=fig, ax=ax)
+        in_sz, out_sz, fig, ax = expobj.classify_slmtargets_sz_bound(expobj.sz_border_path, stim=stim, to_plot=True, title='%s' % stim, flip=flip, fig=fig, ax=ax)
         expobj.slmtargets_szboundary_stim[stim] = in_sz  # for each stim, there will be a ls of cells that will be classified as in seizure or out of seizure
 
         axs[counter // ncols, counter % ncols] = ax

@@ -41,8 +41,7 @@ trials_skip = [
 ]
 
 
-# %% 5.0-dc) TODO collect targets responses for stims vs. distance (starting with old code)- top priority right now
-
+# %% 5.0-dc) COLLECT and PLOT targets responses for stims vs. distance (starting with old code)- top priority right now
 
 x = []
 @aoutils.run_for_loop_across_exps(run_pre4ap_trials=False, run_post4ap_trials=True)
@@ -52,22 +51,13 @@ def run_calculating_min_distance_to_seizure(**kwargs):
     x.append(x_)
 run_calculating_min_distance_to_seizure(x)
 
+
 # %%
-# key = 'e'
-# j = 0
-# exp = 'post'
-# expobj, experiment = aoutils.import_expobj(aoresults_map_id=f"{exp} {key}.{j}")
 
 
 @aoutils.run_for_loop_across_exps(run_pre4ap_trials=False, run_post4ap_trials=True)
 def plot_responses_vs_distance_to_seizure_SLMTargets(**kwargs):
     expobj = kwargs['expobj']
-    responses_all_cells_all_stims = []
-    distance_to_sz_all_cells_all_stims = []
-    # responses_ = []
-    # distance_to_sz_ = []
-
-
     fig, ax = plt.subplots(figsize=[3, 3])
     for target in expobj.responses_SLMtargets_tracedFF.index:
         idx_sz_boundary = [idx for idx, stim in enumerate(expobj.stim_start_frames) if stim in expobj.distance_to_sz['SLM Targets'].columns]
@@ -79,12 +69,50 @@ def plot_responses_vs_distance_to_seizure_SLMTargets(**kwargs):
     fig.suptitle(expobj.t_series_name)
     fig.show()
 
-    responses_all_cells_all_stims.append(responses)
-    distance_to_sz_all_cells_all_stims.append(distance_to_sz)
+plot_responses_vs_distance_to_seizure_SLMTargets()
 
-    return responses_all_cells_all_stims[0], distance_to_sz_all_cells_all_stims[0]
+# %%
 
-ls = plot_responses_vs_distance_to_seizure_SLMTargets()
+@aoutils.run_for_loop_across_exps(run_pre4ap_trials=False, run_post4ap_trials=True)
+def collect_responses_vs_distance_to_seizure_SLMTargets(**kwargs):
+    expobj = kwargs['expobj']
+
+    # make pandas dataframe
+    df = pd.DataFrame(columns=['cells', 'stim_id', 'inorout_sz', 'distance_to_sz', 'response_to_sz'])
+
+    responses_all_cells_all_stims = []
+    distance_to_sz_all_cells_all_stims = []
+    for target in expobj.responses_SLMtargets_tracedFF.index:
+        # idx_sz_boundary = [idx for idx, stim in enumerate(expobj.stim_start_frames) if stim in expobj.distance_to_sz['SLM Targets'].columns]
+        stim_ids = [(idx, stim) for idx, stim in enumerate(expobj.stim_start_frames) if stim in expobj.distance_to_sz['SLM Targets'].columns]
+        inorout_sz = []
+        for idx, stim in stim_ids:
+            if target in expobj.slmtargets_szboundary_stim[stim]: inorout_sz = 'in'
+            else: inorout_sz = 'out'
+            distance_to_sz = expobj.distance_to_sz['SLM Targets'].loc[target, stim]
+            responseslist = expobj.responses_SLMtargets_tracedFF.loc[target, idx]
+            df = df.append({'cells': target, 'stim_id': stim, 'inorout_sz': inorout_sz, 'distance_to_sz': distance_to_sz,
+                            'response_to_sz': responseslist}, ignore_index=True)
+
+        # targets = [target]*len(stim_ids)
+
+    expobj.responses_vs_distance_to_seizure_SLMTargets = df
+
+    expobj.save()
+
+
+collect_responses_vs_distance_to_seizure_SLMTargets()
+
+
+key = 'e'
+j = 0
+exp = 'post'
+expobj, experiment = aoutils.import_expobj(aoresults_map_id=f"{exp} {key}.{j}")
+
+data = expobj.responses_vs_distance_to_seizure_SLMTargets
+g = sns.catplot(x="inorout_sz", y="distance_to_sz", hue="inorout_sz", data=data)
+
+plt.show()
 
 
 

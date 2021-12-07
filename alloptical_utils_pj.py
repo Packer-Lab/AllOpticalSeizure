@@ -9,13 +9,10 @@ import glob
 import time
 from datetime import datetime
 
-import pandas as pd
 import itertools
 
 import os
 import sys
-
-# from utils.funcs_pj import SaveDownsampledTiff, subselect_tiff, make_tiff_stack, convert_to_8bit
 
 sys.path.append('/home/pshah/Documents/code/')
 # import warnings
@@ -35,9 +32,8 @@ import xml.etree.ElementTree as ET
 import tifffile as tf
 import csv
 import bisect
-
-# from utils import funcs_pj as pj
 from funcsforprajay import funcs as pj
+from funcsforprajay import pnt2line
 from utils.paq_utils import paq_read, frames_discard
 import alloptical_plotting_utils as aoplot
 import pickle
@@ -100,7 +96,7 @@ def import_expobj(aoresults_map_id: str = None, trial: str = None, prep: str = N
         experiment = '%s: %s, %s, %s' % (
             expobj.metainfo['animal prep.'], expobj.metainfo['trial'], expobj.metainfo['exptype'],
             expobj.metainfo['comments'])
-        print(f'|- loading {pkl_path}') if verbose else None
+        print(f'\- loading {pkl_path}') if verbose else None
         print(f'|- DONE IMPORT of {experiment}') if verbose else None
 
     # move expobj to the official pkl_path from the provided pkl_path that expobj was loaded from (if different)
@@ -177,7 +173,8 @@ idiom_dictionary = {
     'SLM Targets': "ROI placed on the motion registered TIFF based on the primary target coordinate and expanding a circle of 10um? diameter centered on the coordinate",
     's2p ROIs': "all ROIs derived directly from the suite2p output",
     's2p nontargets': "suite2p ROIs excluding those which are filtered out for being in the target exclusion zone",
-    'good cells': "good cells are suite2p ROIs which have some sort of a Flu transient based on a sliding window and std filtering process"
+    'good cells': "good cells are suite2p ROIs which have some sort of a Flu transient based on a sliding window and std filtering process",
+    'stim_id': "the imaging frame number on which the photostimulation is calculated to have first started"
 }
 
 def define(x):
@@ -362,6 +359,19 @@ class TwoPhotonImaging:
             trial = self.metainfo['trial']
             information = f"{prep} {trial}"
         return repr(f"({information}) TwoPhotonImaging experimental data object, last saved: {lastmod}")
+
+    @property
+    def date(self):
+        return self.metainfo['date']
+
+    @property
+    def prep(self):
+        return self.metainfo['animal prep']
+
+    @property
+    def trial(self):
+        return self.metainfo['trial']
+
 
     @property
     def t_series_name(self):
@@ -550,7 +560,6 @@ class TwoPhotonImaging:
         except:
             raise Exception('ERROR: Could not find or load env file for this acquisition from %s' % tiff_path)
 
-
     @property
     def n_planes(self):
         xml_tree = ET.parse(self.xml_path)  # parse xml from a path
@@ -591,7 +600,6 @@ class TwoPhotonImaging:
                 imaging_power = float(power)
                 return imaging_power
         # print('Imaging laser power:', imaging_power)
-
 
     @property
     def zoom(self):
@@ -3105,8 +3113,12 @@ class Post4ap(alloptical):
         return repr(f"({information}) TwoPhotonImaging.alloptical.Post4ap experimental data object, last saved: {lastmod}")
 
     @property
-    def szNum(self):
+    def numSeizures(self):
         return len(self.seizure_lfp_onsets) - (len(self.seizure_lfp_onsets) - len(self.seizure_lfp_offsets))
+
+    def sz_border_path(expobj, stim):
+        return "%s/boundary_csv/%s_%s_stim-%s.tif_border.csv" % (expobj.analysis_save_path[:-17], expobj.date, expobj.trial, stim)
+
 
     def subselect_tiffs_sz(self, onsets, offsets, on_off_type: str):
         """subselect raw tiff movie over all seizures as marked by onset and offsets. save under analysis path for object.
@@ -3388,17 +3400,18 @@ class Post4ap(alloptical):
             out_sz_final = out_sz
 
         if to_plot:  # plot the sz boundary points
-            xline = []
-            yline = []
-            with open(sz_border_path) as csv_file:
-                csv_file = csv.DictReader(csv_file, fieldnames=None, dialect='excel')
-                for row in csv_file:
-                    xline.append(int(float(row['xcoords'])))
-                    yline.append(int(float(row['ycoords'])))
-            # assumption = line is monotonic
-            line_argsort = np.argsort(yline)
-            xline = np.array(xline)[line_argsort]
-            yline = np.array(yline)[line_argsort]
+            # xline = []
+            # yline = []
+            # with open(sz_border_path) as csv_file:
+            #     csv_file = csv.DictReader(csv_file, fieldnames=None, dialect='excel')
+            #     for row in csv_file:
+            #         xline.append(int(float(row['xcoords'])))
+            #         yline.append(int(float(row['ycoords'])))
+            # # assumption = line is monotonic
+            # line_argsort = np.argsort(yline)
+            # xline = np.array(xline)[line_argsort]
+            # yline = np.array(yline)[line_argsort]
+            xline, yline = pj.xycsv(csvpath=sz_border_path)
 
             # pj.plot_cell_loc(self, cells=[cell], show=False)
             # plot sz boundary points
@@ -3675,7 +3688,7 @@ class Post4ap(alloptical):
                 if cells == 'SLM Targets':
                     coordinates = expobj.target_coords_all
                     indexes = range(len(expobj.target_coords_all))
-                elif cells == 's2p ROIs':
+                elif cells == 's2p nontargets':
                     indexes = expobj.s2p_nontargets
                     coordinates = []
                     for stat_ in expobj.stat:
@@ -3688,15 +3701,61 @@ class Post4ap(alloptical):
                     # target = 0
                     # calculate the min distance of slm target to s2p cells classified inside of sz boundary at the current stim
                     targetsInSz = expobj.slmtargets_szboundary_stim[stim_frame]
-                    for i, target_coord in enumerate(coordinates):
-                        # min_distance = 1200
-                        distances = []
-                        for j, _ in enumerate(targetsInSz):
-                            dist = pj.calc_distance_2points(target_coord,
-                                                            tuple(expobj.stat[j]['med']))  # distance in pixels
-                            distances.append(dist)
 
-                        df.loc[i, stim_frame] = round(np.min(distances), 2) if len(distances) > 1 else None
+                    if targetsInSz:  # debugging set back to zero afterwards
+
+                        ## new approach // start
+
+                        xline, yline = pj.xycsv(csvpath=expobj.sz_border_path(stim=stim_frame))
+                        for i, target_coord in enumerate(coordinates):
+                            # target_coord = [coordinates[0][0], coordinates[0][1], 0]
+                            dist, nearest = pnt2line.pnt2line(pnt=target_coord, start=[xline[0], yline[0], 0], end=[xline[1], yline[1], 0])
+
+                            fig, ax = plt.subplots()  ## figure for debuggging
+                            aoplot.plot_SLMtargets_Locs(expobj=expobj, targets_coords=[(target_coord[0], target_coord[1])],
+                                                        edgecolors='red', show=False, fig=fig, ax=ax)
+
+                            aoplot.plot_SLMtargets_Locs(expobj=expobj, targets_coords=[(xline[0], yline[0]), (xline[1], yline[1])],
+                                                        edgecolors='green', show=False, fig=fig, ax=ax)
+
+                            aoplot.plot_SLMtargets_Locs(expobj=expobj, targets_coords=[(nearest[0], nearest[1])],
+                                                        edgecolors='yellow', show=False, fig=fig, ax=ax)
+                            fig.show()
+
+                            df.loc[i, stim_frame] = dist
+
+                        ## new approach // end
+
+
+
+
+                        ## archived approach // start
+                        for i, target_coord in enumerate(coordinates):
+                            fig, ax = plt.subplots()  ## figure for debuggging
+                            aoplot.plot_SLMtargets_Locs(expobj=expobj,
+                                                        targets_coords=[coordinates[j] for j in targetsInSz],
+                                                        edgecolors='yellowgreen', show=False, fig=fig, ax=ax)
+
+                            # min_distance = 1200
+                            distances = []
+                            for j in targetsInSz:
+                                dist = pj.calc_distance_2points(target_coord, coordinates[j])  # distance in pixels
+                                # aoplot.plot_SLMtargets_Locs(expobj=expobj, targets_coords=[coordinates[j]],
+                                #                             edgecolors='blue', show=False, fig=fig, ax=ax)
+
+                                distances.append(round(dist,2))
+
+                            df.loc[i, stim_frame] = np.min(distances)
+                            aoplot.plot_SLMtargets_Locs(expobj=expobj, targets_coords=[target_coord],
+                                                        edgecolors='red', show=False, fig=fig, ax=ax)
+                            idx_ = distances.index(np.min(distances))
+                            aoplot.plot_SLMtargets_Locs(expobj=expobj, targets_coords=[coordinates[targetsInSz[idx_]]],
+                                                        edgecolors='orange', show=False, fig=fig, ax=ax,
+                                                        title=df.loc[i, stim_frame])
+
+                            fig.show()
+                        ## archived approach // end
+
 
                 expobj.distance_to_sz[cells] = df
 
