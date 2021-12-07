@@ -3726,37 +3726,6 @@ class Post4ap(alloptical):
 
                         ## new approach // end
 
-
-
-
-                        ## archived approach // start
-                        for i, target_coord in enumerate(coordinates):
-                            fig, ax = plt.subplots()  ## figure for debuggging
-                            aoplot.plot_SLMtargets_Locs(expobj=expobj,
-                                                        targets_coords=[coordinates[j] for j in targetsInSz],
-                                                        edgecolors='yellowgreen', show=False, fig=fig, ax=ax)
-
-                            # min_distance = 1200
-                            distances = []
-                            for j in targetsInSz:
-                                dist = pj.calc_distance_2points(target_coord, coordinates[j])  # distance in pixels
-                                # aoplot.plot_SLMtargets_Locs(expobj=expobj, targets_coords=[coordinates[j]],
-                                #                             edgecolors='blue', show=False, fig=fig, ax=ax)
-
-                                distances.append(round(dist,2))
-
-                            df.loc[i, stim_frame] = np.min(distances)
-                            aoplot.plot_SLMtargets_Locs(expobj=expobj, targets_coords=[target_coord],
-                                                        edgecolors='red', show=False, fig=fig, ax=ax)
-                            idx_ = distances.index(np.min(distances))
-                            aoplot.plot_SLMtargets_Locs(expobj=expobj, targets_coords=[coordinates[targetsInSz[idx_]]],
-                                                        edgecolors='orange', show=False, fig=fig, ax=ax,
-                                                        title=df.loc[i, stim_frame])
-
-                            fig.show()
-                        ## archived approach // end
-
-
                 expobj.distance_to_sz[cells] = df
 
                 expobj.save()
