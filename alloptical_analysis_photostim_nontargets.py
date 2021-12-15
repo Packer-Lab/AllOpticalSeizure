@@ -94,7 +94,7 @@ for (i, key, j) in code_run_list_all:
             expobj.save()
         assert hasattr(expobj, 's2p_nontargets')
         # save_path = save_path_prefix + f"/{expobj.metainfo['animal prep.']} {expobj.metainfo['trial']} - s2p ROIs plot.png"
-        aoplot.s2pRoiImage(expobj, save_fig=f"/{expobj.metainfo['animal prep.']} {expobj.metainfo['trial']} - s2p ROIs plot.png")
+        aoplot.s2pRoiImage(expobj, fig_save_name=f"/{expobj.metainfo['animal prep.']} {expobj.metainfo['trial']} - s2p ROIs plot.png")
 
 
 

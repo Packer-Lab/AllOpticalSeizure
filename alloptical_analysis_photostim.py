@@ -53,13 +53,13 @@ allopticalResults.pre_4ap_trials = [
     # ['RL108 t-010'],
     # ['RL109 t-007'],
     ['RL109 t-008'],
-    ['RL109 t-013'],  # - pickle truncated .21/10/18 - analysis func jupyter run on .21/11/12
+    # ['RL109 t-013'],
     ['RL109 t-014'],
-    ['PS04 t-012',  # 'PS04 t-014',  - not sure what's wrong with PS04, but the photostim and Flu are falling out of sync .21/10/09
-     'PS04 t-017'],
+    # ['PS04 t-012',  # 'PS04 t-014',  - not sure what's wrong with PS04, but the photostim and Flu are falling out of sync .21/10/09
+    #  'PS04 t-017'],
     ['PS05 t-010'],
     ['PS07 t-007'],
-    ['PS07 t-009'],
+    # ['PS07 t-009'],
     # ['PS06 t-008', 'PS06 t-009', 'PS06 t-010'],  # matching run_post4ap_trials trial cannot be analysed
     ['PS06 t-011'],
     # ['PS06 t-012'],  # matching run_post4ap_trials trial cannot be analysed
@@ -75,12 +75,12 @@ allopticalResults.post_4ap_trials = [
     # ['RL108 t-011'],
     # ['RL109 t-020'],
     ['RL109 t-021'],
-    ['RL109 t-018'],
+    # ['RL109 t-018'],  - pickle truncated
     ['RL109 t-016', 'RL109 t-017'],
     # ['PS04 t-018'],
     ['PS05 t-012'],
     ['PS07 t-011'],
-    ['PS07 t-017'],
+    # ['PS07 t-017'],
     # ['PS06 t-014', 'PS06 t-015'], - missing seizure_lfp_onsets (no paired measurements mat file for trial .21/10/09)
     ['PS06 t-013'],
     # ['PS06 t-016'], - no seizures, missing seizure_lfp_onsets (no paired measurements mat file for trial .21/10/09)
@@ -101,13 +101,13 @@ allopticalResults.trial_maps['pre'] = {
     # 'b': ['RL108 t-010'],
     # 'c': ['RL109 t-007'],
     'd': ['RL109 t-008'],
-    'e': ['RL109 t-013'],
+    # 'e': ['RL109 t-013'],
     'f': ['RL109 t-014'],
     # 'g': ['PS04 t-012',  # 'PS04 t-014',  # - temp just until PS04 gets reprocessed
     #       'PS04 t-017'],
     'h': ['PS05 t-010'],
     'i': ['PS07 t-007'],
-    'j': ['PS07 t-009'],
+    # 'j': ['PS07 t-009'],
     # 'k': ['PS06 t-008', 'PS06 t-009', 'PS06 t-010'],
     'l': ['PS06 t-011'],
     # 'm': ['PS06 t-012'],  # - t-016 missing sz lfp onsets
@@ -123,12 +123,12 @@ allopticalResults.trial_maps['post'] = {
     # 'b': ['RL108 t-011'], -- need to redo sz boundary classifying processing
     # 'c': ['RL109 t-020'], -- need to redo sz boundary classifying processing
     'd': ['RL109 t-021'],
-    'e': ['RL109 t-018'],
+    # 'e': ['RL109 t-018'], -- need to regenerate - pickle truncated
     'f': ['RL109 t-016', 'RL109 t-017'],
     # 'g': ['PS04 t-018'],  -- need to redo sz boundary classifying processing
     'h': ['PS05 t-012'],
     'i': ['PS07 t-011'],
-    'j': ['PS07 t-017'],
+    # 'j': ['PS07 t-017'],  -- missing slmtargets_szboundary_stim
     # 'k': ['PS06 t-014', 'PS06 t-015'],  # - missing seizure_lfp_onsets
     'l': ['PS06 t-013'],
     # 'm': ['PS06 t-016'],  # - missing seizure_lfp_onsets - LFP signal not clear, but there is seizures on avg Flu trace

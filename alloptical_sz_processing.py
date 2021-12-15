@@ -97,6 +97,8 @@ for i in ls2:
             AssertionError('confirm that sz boundary csv creation has been completed')
             # sys.exit()
 
+        expobj.stimsWithSzWavefront()
+
         # specify stims for classifying cells
         on_ = []
         if 0 in expobj.seizure_lfp_onsets:  # this is used to check if 2p imaging is starting mid-seizure (which should be signified by the first lfp onset being set at frame # 0)
@@ -122,12 +124,12 @@ for i in ls2:
         # break
 
         print(' \nworking on classifying cells for stims start frames...')
-        expobj.slmtargets_szboundary_stim = {}
-        expobj.s2prois_szboundary_stim = {}
+        expobj.slmtargets_szboundary_stim = {}  ## move to __init__
+        expobj.s2prois_szboundary_stim = {}  ## move to __init__ TODO need to implement rest of code for s2prois_szboundary_stim
 
         ######## - all stims in sz are classified, with individual sz events labelled
 
-        stims_of_interest = [stim for stim in expobj.stims_in_sz[1:]]
+        stims_of_interest = pj.flattenOnce(expobj.stims_sz_wavefront)
         print(' \-all stims in seizures: \n \-', stims_of_interest)
         nrows = len(stims_of_interest) // 4 + 1
         if nrows == 1:
@@ -136,9 +138,7 @@ for i in ls2:
         fig, axs = plt.subplots(nrows=nrows, ncols=ncols, figsize=(ncols * 5, nrows * 5))
         counter = 0
 
-        sz_num = 0
-        for on, off in zip(on_, end):
-            stims_of_interest = [stim for stim in expobj.stim_start_frames if on < stim < off if stim != expobj.stims_in_sz[0]]
+        for sz_num, stims_of_interest in enumerate(expobj.stims_sz_wavefront):
             print(' \-- working sz # %s with stims: \n \---' % (sz_num), stims_of_interest)
 
             for stim in stims_of_interest:
@@ -147,7 +147,7 @@ for i in ls2:
                 ax = axs[counter // ncols, counter % ncols]
 
                 # sz_border_path = "%s/boundary_csv/%s_%s_stim-%s.tif_border.csv" % (expobj.analysis_save_path[:-17], expobj.metainfo['date'], trial, stim)
-                if os.path.exists(expobj.sz_border_path):
+                if os.path.exists(expobj.sz_border_path(stim=stim)):
                     # first round of classifying (dont flip any cells over) - do this in the second round
                     if stim not in expobj.not_flip_stims:
                         flip = False
@@ -155,22 +155,20 @@ for i in ls2:
                         flip = True
 
                     # classification of suite2p ROIs relative to sz boundary
-                    in_sz, out_sz, fig, ax = expobj.classify_cells_sz_bound(expobj.sz_border_path, stim=stim, to_plot=True,
+                    in_sz, out_sz, fig, ax = expobj.classify_cells_sz_bound(expobj.sz_border_path(stim=stim), stim=stim, to_plot=True,
                                                                             flip=flip, fig=fig, ax=ax, text='sz %s stim %s' % (sz_num, stim))
                     expobj.s2prois_szboundary_stim[stim] = in_sz
                     # classification of SLM targets relative to sz boundary
-                    in_sz, out_sz, fig, ax = expobj.classify_slmtargets_sz_bound(expobj.sz_border_path, stim=stim, to_plot=True, title='%s' % stim, flip=flip, fig=fig, ax=ax)
+                    in_sz, out_sz, fig, ax = expobj.classify_slmtargets_sz_bound(expobj.sz_border_path(stim=stim), stim=stim, to_plot=True, title='%s' % stim, flip=flip, fig=fig, ax=ax)
                     expobj.slmtargets_szboundary_stim[stim] = in_sz  # for each stim, there will be a ls of cells that will be classified as in seizure or out of seizure
 
                     axs[counter // ncols, counter % ncols] = ax
                     counter += 1
                 else:
-                    print(f"sz border path doesn't exist for stim {stim}: {expobj.sz_border_path}")
-
-            sz_num += 1
+                    print(f"sz border path doesn't exist for stim {stim}: {expobj.sz_border_path(stim=stim)}")
 
         fig.suptitle('%s %s - Avg img around stims during- all stims' % (expobj.metainfo['animal prep.'], expobj.metainfo['trial']), y=0.995)
-        save_path_full = f"{save_path_prefix}/{expobj.metainfo['animal prep.']} {expobj.metainfo['trial']} {sz_num} events.png"
+        save_path_full = f"{save_path_prefix}/{expobj.metainfo['animal prep.']} {expobj.metainfo['trial']} {len(expobj.stims_sz_wavefront)} events.png"
         print(f"saving fig to: {save_path_full}")
         fig.savefig(save_path_full)
         # fig.show()
@@ -198,9 +196,9 @@ expobj.save()
 
 # %% 2.1.2) re-run with new flip stims
 expobj.slmtargets_szboundary_stim = {}
+expobj.s2prois_szboundary_stim = {}
 sz_num = 0
-for on, off in zip(on_, end):
-    stims_of_interest = [stim for stim in expobj.stim_start_frames if on < stim < off if stim != expobj.stims_in_sz[0]]
+for sz_num, stims_of_interest in enumerate(expobj.stims_sz_wavefront):
     print('|-', stims_of_interest)
 
     nrows = len(stims_of_interest) // 4 + 1
@@ -214,15 +212,15 @@ for on, off in zip(on_, end):
         ax = axs[counter // ncols, counter % ncols]
 
         # sz_border_path = "%s/boundary_csv/%s_%s_stim-%s.tif_border.csv" % (expobj.analysis_save_path[:-17], expobj.metainfo['date'], trial, stim)
-        if not os.path.exists(expobj.sz_border_path):
-            print(expobj.sz_border_path)
+        if not os.path.exists(expobj.sz_border_path(stim=stim)):
+            print(expobj.sz_border_path(stim=stim))
         # first round of classifying (dont flip any cells over) - do this in the second round
         if stim not in expobj.not_flip_stims:
             flip = False
         else:
             flip = True
 
-        in_sz, out_sz, fig, ax = expobj.classify_slmtargets_sz_bound(expobj.sz_border_path, stim=stim, to_plot=True, title='%s' % stim, flip=flip, fig=fig, ax=ax)
+        in_sz, out_sz, fig, ax = expobj.classify_slmtargets_sz_bound(expobj.sz_border_path(stim=stim), stim=stim, to_plot=True, title='%s' % stim, flip=flip, fig=fig, ax=ax)
         expobj.slmtargets_szboundary_stim[stim] = in_sz  # for each stim, there will be a ls of cells that will be classified as in seizure or out of seizure
 
         axs[counter // ncols, counter % ncols] = ax

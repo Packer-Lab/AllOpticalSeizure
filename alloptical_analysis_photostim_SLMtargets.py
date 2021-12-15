@@ -21,71 +21,43 @@ from skimage import draw
 results_object_path = '/home/pshah/mnt/qnap/Analysis/alloptical_results_superobject.pkl'
 allopticalResults = aoutils.import_resultsobj(pkl_path=results_object_path)
 
-expobj, experiment = aoutils.import_expobj(prep='RL109', trial='t-013', verbose=True)
+# expobj, experiment = aoutils.import_expobj(prep='RL109', trial='t-013', verbose=True)
+key = 'f'; exp = 'post'; expobj, experiment = aoutils.import_expobj(aoresults_map_id=f"{exp} {key}.0")
 
 """
 ######### ZONE FOR CALLING THIS SCRIPT DIRECTLY FROM THE SSH SERVER ###########
 ######### ZONE FOR CALLING THIS SCRIPT DIRECTLY FROM THE SSH SERVER ###########
 ######### ZONE FOR CALLING THIS SCRIPT DIRECTLY FROM THE SSH SERVER ###########
 ######### ZONE FOR CALLING THIS SCRIPT DIRECTLY FROM THE SSH SERVER ###########
-######### ZONE FOR CALLING THIS SCRIPT DIRECTLY FROM THE SSH SERVER ###########
-######### ZONE FOR CALLING THIS SCRIPT DIRECTLY FROM THE SSH SERVER ###########
-######### ZONE FOR CALLING THIS SCRIPT DIRECTLY FROM THE SSH SERVER ###########
-######### ZONE FOR CALLING THIS SCRIPT DIRECTLY FROM THE SSH SERVER ###########
-######### ZONE FOR CALLING THIS SCRIPT DIRECTLY FROM THE SSH SERVER ###########
 """
 
-trials_skip = [
-    'RL108 t-011',
-    'RL109 t-017',  # RL109 t-017 doesn't have sz boundaries yet.. just updated the sz onset/offset's
-    'RL109 t-020',  # RL109 t-020 doesn't have sz boundaries yet..
-]
+# %% 5.0) calculate/collect min distance to seizure and responses at each distance
+# aoplot.plot_sz_boundary_location(expobj)
 
-
-# %% 5.0-dc) COLLECT and PLOT targets responses for stims vs. distance (starting with old code)- top priority right now
-
-didntwork = []
+no_slmtargets_szboundary_stim = []
 @aoutils.run_for_loop_across_exps(run_pre4ap_trials=False, run_post4ap_trials=True)
 def run_calculating_min_distance_to_seizure(**kwargs):
     print(f"\t|- calculating min distance to seizure")
     expobj = kwargs['expobj']
+    if not hasattr(expobj, 'stimsSzLocations'):
+        expobj.sz_locations_stims()
     x_ = expobj.calcMinDistanceToSz()
-    didntwork.append(x_)
-run_calculating_min_distance_to_seizure(didntwork)
+    no_slmtargets_szboundary_stim.append(x_)
 
 
-# %%
-
-@aoutils.run_for_loop_across_exps(run_pre4ap_trials=False, run_post4ap_trials=True)
-def plot_responses_vs_distance_to_seizure_SLMTargets(**kwargs):
-    print(f"\t|- plotting responses vs. distance to seizure")
+@aoutils.run_for_loop_across_exps(run_pre4ap_trials=False, run_post4ap_trials=True, skip_trials=['RL109 t-017', 'PS07 t-017'])
+def plot_sz_boundary_location(**kwargs):
     expobj = kwargs['expobj']
-    fig, ax = plt.subplots(figsize=[3, 3])
-    for target in expobj.responses_SLMtargets_tracedFF.index:
-        idx_sz_boundary = [idx for idx, stim in enumerate(expobj.stim_start_frames) if stim in expobj.distance_to_sz['SLM Targets'].columns]
-        responses = expobj.responses_SLMtargets_tracedFF.loc[target, idx_sz_boundary]
-        distance_to_sz = expobj.distance_to_sz['SLM Targets'].loc[target, :]
+    aoplot.plot_sz_boundary_location(expobj)
 
-        pj.make_general_scatter(x_list=[distance_to_sz], y_data=[responses], fig=fig, ax=ax, colors=['cornflowerblue'], alpha=0.5, s=30, show=False,
-                                x_label='distance to sz', y_label='response delta (trace dFF)')
-    fig.suptitle(expobj.t_series_name)
-    fig.show()
-
-plot_responses_vs_distance_to_seizure_SLMTargets()
-
-# %%
 
 @aoutils.run_for_loop_across_exps(run_pre4ap_trials=False, run_post4ap_trials=True)
 def collect_responses_vs_distance_to_seizure_SLMTargets(**kwargs):
     print(f"\t|- collecting responses vs. distance to seizure")
-
     expobj = kwargs['expobj']
-
     # make pandas dataframe
     df = pd.DataFrame(columns=['cells', 'stim_id', 'inorout_sz', 'distance_to_sz', 'response_to_sz'])
 
-    responses_all_cells_all_stims = []
-    distance_to_sz_all_cells_all_stims = []
     for target in expobj.responses_SLMtargets_tracedFF.index:
         # idx_sz_boundary = [idx for idx, stim in enumerate(expobj.stim_start_frames) if stim in expobj.distance_to_sz['SLM Targets'].columns]
         stim_ids = [(idx, stim) for idx, stim in enumerate(expobj.stim_start_frames) if stim in expobj.distance_to_sz['SLM Targets'].columns]
@@ -102,19 +74,55 @@ def collect_responses_vs_distance_to_seizure_SLMTargets(**kwargs):
 
     expobj.responses_vs_distance_to_seizure_SLMTargets = df
 
+    # convert distances to microns
+    expobj.responses_vs_distance_to_seizure_SLMTargets['distance_to_sz_um'] = round(expobj.responses_vs_distance_to_seizure_SLMTargets['distance_to_sz'] / expobj.pix_sz_x, 2)
     expobj.save()
 
+
+# run_calculating_min_distance_to_seizure(no_slmtargets_szboundary_stim)
+# plot_sz_boundary_location()
 collect_responses_vs_distance_to_seizure_SLMTargets()
 
 
-# %%
-key = 'e'
-j = 0
-exp = 'post'
-expobj, experiment = aoutils.import_expobj(aoresults_map_id=f"{exp} {key}.{j}")
+# %% 5.1-dc) COLLECT and PLOT targets responses for stims vs. distance
+@aoutils.run_for_loop_across_exps(run_pre4ap_trials=False, run_post4ap_trials=True)
+def plot_responses_vs_distance_to_seizure_SLMTargets(**kwargs):
+    print(f"\t|- plotting responses vs. distance to seizure")
+    expobj = kwargs['expobj']
+    fig, ax = plt.subplots(figsize=[3, 3])
+    for target in expobj.responses_SLMtargets_tracedFF.index:
+        idx_sz_boundary = [idx for idx, stim in enumerate(expobj.stim_start_frames) if stim in expobj.distance_to_sz['SLM Targets'].columns]
+        responses = expobj.responses_SLMtargets_tracedFF.loc[target, idx_sz_boundary]
+        distance_to_sz = expobj.distance_to_sz['SLM Targets'].loc[target, :]
 
-data = expobj.responses_vs_distance_to_seizure_SLMTargets
-g = sns.catplot(x="inorout_sz", y="response_to_sz", data=data, legend=False, kind="violin"); plt.show()
+        pj.make_general_scatter(x_list=[distance_to_sz], y_data=[responses], fig=fig, ax=ax, colors=['cornflowerblue'], alpha=0.5, s=30, show=False,
+                                x_label='distance to sz', y_label='response delta (trace dFF)')
+    fig.suptitle(expobj.t_series_name)
+    fig.show()
+
+# plot_responses_vs_distance_to_seizure_SLMTargets()
+
+
+
+@aoutils.run_for_loop_across_exps(run_post4ap_trials=True)
+def plot_collection_response_distance(**kwargs):
+    print(f"\t|- plotting a collection of plots measuring responses vs. distance to seizure")
+    expobj = kwargs['expobj']
+
+    data = expobj.responses_vs_distance_to_seizure_SLMTargets
+
+    fig, axs = plt.subplots(ncols=4, nrows=1, figsize=[12,3])
+    sns.stripplot(x="inorout_sz", y="distance_to_sz_um", data=data, ax=axs[0], alpha=0.2)
+    sns.violinplot(x="inorout_sz", y="response_to_sz", data=data, legend=False, ax=axs[1])
+    sns.scatterplot(data=data, x='distance_to_sz_um', y='response_to_sz', ax=axs[2], alpha=0.2)
+    expobj.plot_SLMtargets_Locs(fig=fig, ax=axs[3], title=None)
+    fig.suptitle(f"{expobj.t_series_name}")
+    fig.tight_layout(pad=1.1)
+    fig.show()
+
+plot_collection_response_distance()
+
+
 
 
 # %% 3.1) DATA COLLECTION - COMPARISON OF RESPONSE MAGNITUDE OF SUCCESS STIMS. FROM PRE-4AP, OUT-SZ AND IN-SZ
@@ -212,44 +220,8 @@ collect_response_mag_failures_deltatracedFF()
 allopticalResults.save()
 
 
-# sys.exit()
-"""# ########### END OF // ZONE FOR CALLING THIS SCRIPT DIRECTLY FROM THE SSH SERVER ###########
-########### END OF // ZONE FOR CALLING THIS SCRIPT DIRECTLY FROM THE SSH SERVER ###########
-########### END OF // ZONE FOR CALLING THIS SCRIPT DIRECTLY FROM THE SSH SERVER ###########
-########### END OF // ZONE FOR CALLING THIS SCRIPT DIRECTLY FROM THE SSH SERVER ###########
-########### END OF // ZONE FOR CALLING THIS SCRIPT DIRECTLY FROM THE SSH SERVER ###########
-########### END OF // ZONE FOR CALLING THIS SCRIPT DIRECTLY FROM THE SSH SERVER ###########
-########### END OF // ZONE FOR CALLING THIS SCRIPT DIRECTLY FROM THE SSH SERVER ###########
-########### END OF // ZONE FOR CALLING THIS SCRIPT DIRECTLY FROM THE SSH SERVER ###########
-"""
-
-
-
-
-
 
 # %% 0) #### -------------------- ALL OPTICAL PHOTOSTIM ANALYSIS ################################################
-
-# specify trials to run code on
-code_run_list_all = []
-for i in ['pre', 'post']:
-    for key in list(allopticalResults.trial_maps[i].keys()):
-        for j in range(len(allopticalResults.trial_maps[i][key])):
-            code_run_list_all.append((i, key, j))
-
-code_run_list_pre = []
-for key in list(allopticalResults.trial_maps['pre'].keys()):
-    for j in range(len(allopticalResults.trial_maps['pre'][key])):
-        code_run_list_pre.append(('pre', key, j))
-
-code_run_list_post4ap = []
-for key in list(allopticalResults.trial_maps['post'].keys()):
-    for j in range(len(allopticalResults.trial_maps['post'][key])):
-        code_run_list_post4ap.append(('post', key, j))
-
-short_list_pre = [('pre', 'e', '0')]
-short_list_post = [('post', 'e', '0')]
-
 
 # %% 1) adding slm targets responses to alloptical results allopticalResults.slmtargets_stim_responses
 
