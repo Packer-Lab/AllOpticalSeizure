@@ -3996,11 +3996,9 @@ class Post4ap(alloptical):
                 # fig2, ax2 = plt.subplots()  ## figure for debuggging
 
                 for _, stim_frame in enumerate(self.stimsWithSzWavefront):
-                    # target = 0
-                    stim_frame = self.stimsWithSzWavefront[0]
                     targetsInSz = self.slmtargets_szboundary_stim[stim_frame]
 
-                    if targetsInSz and cells == 'SLM Targets':  # debugging set back to zero afterwards
+                    if cells == 'SLM Targets':  # debugging set back to zero afterwards
 
                         coord1, coord2 = self.stimsSzLocations.loc[stim_frame, ['coord1', 'coord2']]
                         # xline, yline = pj.xycsv(csvpath=self.sz_border_path(stim=stim_frame))

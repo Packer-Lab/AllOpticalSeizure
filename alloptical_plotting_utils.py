@@ -15,7 +15,7 @@ import tifffile as tf
 from funcsforprajay.wrappers import print_start_end_plot, plot_piping_decorator
 
 # %%
-@plot_piping_decorator(figsize=(8,4), nrows=1, ncols=2, verbose=False)
+@plot_piping_decorator(figsize=(8,4), nrows=1, ncols=1, verbose=False)
 def plot_sz_boundary_location(expobj, fig=None, ax=None, **kwargs):
     """use for plotting sz boundary location for all stims from a given trial"""
     for i, stim_frame in enumerate(expobj.stims_in_sz):
@@ -34,12 +34,12 @@ def plot_sz_boundary_location(expobj, fig=None, ax=None, **kwargs):
                     edgecolors = 'red'
                 else:
                     edgecolors = 'green'
-                pj.plot_coordinates(coords=[(xline[0], yline[0]), (xline[1], yline[1])], frame_x=expobj.frame_x,
-                                        frame_y=expobj.frame_y, edgecolors=edgecolors, show=False, fig=fig, ax=ax[0], title=f'{expobj.t_series_name} excluded stims (red coords)')
-                ax[0].plot([xline[0], xline[1]], [yline[0], yline[1]], c='white', linestyle='dashed')
+                pj.plot_coordinates(coords=[(xline[0], yline[0]), (xline[1], yline[1])], frame_x=expobj.frame_x, frame_y=expobj.frame_y,
+                                    edgecolors=edgecolors, show=False, fig=fig, ax=ax, title=f'{expobj.t_series_name} excluded stims (red coords)')
+                ax.plot([xline[0], xline[1]], [yline[0], yline[1]], c='white', linestyle='dashed', alpha=0.3)
         print(f"plotting stim # {i}/{len(expobj.stims_in_sz)}", end='\r')
 
-    plot_SLMtargets_Locs(expobj, fig=fig, ax=ax[1], show=False)
+    plot_SLMtargets_Locs(expobj, fig=fig, ax=ax, show=False)
 
 ### plot the location of all SLM targets, along with option for plotting the mean img of the current trial
 # @print_start_end_plot
@@ -66,20 +66,20 @@ def plot_SLMtargets_Locs(expobj, targets_coords: list = None, background: np.nda
         if len(expobj.target_coords) > 1:
             for i in range(len(expobj.target_coords)):
                 for (x, y) in expobj.target_coords[i]:
-                    ax.scatter(x=x, y=y, edgecolors=colors[i], facecolors='none', linewidths=2.0)
+                    ax.scatter(x=x, y=y, edgecolors=colors[i], facecolors=colors[i], linewidths=2.0)
         else:
             if 'edgecolors' in kwargs.keys():
                 edgecolors = kwargs['edgecolors']
             else:
                 edgecolors = 'yellowgreen'
             for (x, y) in expobj.target_coords_all:
-                ax.scatter(x=x, y=y, edgecolors=edgecolors, facecolors='none', linewidths=2.0)
+                ax.scatter(x=x, y=y, edgecolors=edgecolors, facecolors=edgecolors, linewidths=2.0)
     elif targets_coords:
         if 'edgecolors' in kwargs.keys():
             edgecolors = kwargs['edgecolors']
         else:
             edgecolors = 'yellowgreen'
-        pj.plot_coordinates(coords=targets_coords, frame_x=expobj.frame_x, frame_y=expobj.frame_y, edgecolors=edgecolors,
+        pj.plot_coordinates(coords=targets_coords, frame_x=expobj.frame_x, frame_y=expobj.frame_y, edgecolors=edgecolors, facecolors=edgecolors,
                             background=background, fig=fig, ax=ax)
 
     ax.margins(0)
