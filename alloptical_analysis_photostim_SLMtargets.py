@@ -35,7 +35,7 @@ key = 'f'; exp = 'post'; expobj, experiment = aoutils.import_expobj(aoresults_ma
 # aoplot.plot_sz_boundary_location(expobj)
 
 no_slmtargets_szboundary_stim = []
-@aoutils.run_for_loop_across_exps(run_pre4ap_trials=False, run_post4ap_trials=False, run_trials=['RL108 t-013'])
+@aoutils.run_for_loop_across_exps(run_pre4ap_trials=False, run_post4ap_trials=True)
 def run_calculating_min_distance_to_seizure(**kwargs):
     print(f"\t|- calculating min distance to seizure")
     expobj = kwargs['expobj']
@@ -56,7 +56,7 @@ def collect_responses_vs_distance_to_seizure_SLMTargets(response_type: str, **kw
     print(f"\t|- collecting responses vs. distance to seizure")
     expobj = kwargs['expobj']
     # make pandas dataframe
-    df = pd.DataFrame(columns=['cells', 'stim_id', 'inorout_sz', 'distance_to_sz', response_type])
+    df = pd.DataFrame(columns=['cell_id', 'stim_id', 'inorout_sz', 'distance_to_sz', response_type])
 
     for target in expobj.responses_SLMtargets_tracedFF.index:
         # idx_sz_boundary = [idx for idx, stim in enumerate(expobj.stim_start_frames) if stim in expobj.distance_to_sz['SLM Targets'].columns]
@@ -70,18 +70,16 @@ def collect_responses_vs_distance_to_seizure_SLMTargets(response_type: str, **kw
             elif response_type == 'dFF + z scored':
                 ## z - scoring of SLM targets responses:
                 z_scored = expobj.responses_SLMtargets_tracedFF  # initializing z_scored df
-                for target in expobj.responses_SLMtargets_tracedFF.index:
-                    __responses = expobj.responses_SLMtargets_tracedFF.loc[target, :]
-                    z_scored.loc[target, :] = (__responses - __responses.mean()) / (__responses.std(ddof=1))
+                __responses = expobj.responses_SLMtargets_tracedFF.loc[target, :]
+                z_scored.loc[target, :] = (__responses - __responses.mean()) / (__responses.std(ddof=1))
                 responseslist= z_scored.loc[target, idx]
             else:
                 raise ValueError('response_type arg must be `dFF` or `dFF + z scored`')
-            df = df.append({'cells': target, 'stim_id': stim, 'inorout_sz': inorout_sz, 'distance_to_sz': distance_to_sz,
+            df = df.append({'cell_id': target, 'stim_id': stim, 'inorout_sz': inorout_sz, 'distance_to_sz': distance_to_sz,
                             response_type: responseslist}, ignore_index=True)
 
         # targets = [target]*len(stim_ids)
 
-    df.style.set_caption("Hello World")
     expobj.responses_vs_distance_to_seizure_SLMTargets = df
 
     # convert distances to microns
@@ -89,7 +87,7 @@ def collect_responses_vs_distance_to_seizure_SLMTargets(response_type: str, **kw
     expobj.save()
 
 
-run_calculating_min_distance_to_seizure(no_slmtargets_szboundary_stim)
+# run_calculating_min_distance_to_seizure(no_slmtargets_szboundary_stim)
 
 response_type='dFF + z scored'
 collect_responses_vs_distance_to_seizure_SLMTargets(response_type=response_type)
@@ -117,20 +115,20 @@ def plot_collection_response_distance(response_type, **kwargs):
     print(f"\t|- plotting a collection of plots measuring responses vs. distance to seizure")
     expobj = kwargs['expobj']
 
-    data = expobj.responses_vs_distance_to_seizure_SLMTargets
 
+    data = expobj.responses_vs_distance_to_seizure_SLMTargets
     fig, axs = plt.subplots(ncols=4, nrows=1, figsize=[12,3])
     sns.stripplot(x="inorout_sz", y="distance_to_sz_um", data=data, ax=axs[0], alpha=0.2)
     sns.violinplot(x="inorout_sz", y=response_type, data=data, legend=False, ax=axs[1])
     sns.scatterplot(data=data, x='distance_to_sz_um', y=response_type, ax=axs[2], alpha=0.2)
-    aoplot.plot_sz_boundary_location(expobj, fig=fig, ax=axs[3], title=None)
+    # aoplot.plot_sz_boundary_location(expobj, fig=fig, ax=axs[3], title=None)
     # expobj.plot_SLMtargets_Locs(fig=fig, ax=axs[3], title=None)
     fig.suptitle(f"{expobj.t_series_name}")
     fig.tight_layout(pad=1.1)
     fig.show()
 
 # plot_responses_vs_distance_to_seizure_SLMTargets()
-plot_collection_response_distance(response_type=response_type)
+plot_collection_response_distance(response_type='dFF + z scored')
 
 
 expobj, _ = aoutils.import_expobj(prep='RL108', trial='t-013')
