@@ -76,7 +76,7 @@ allopticalResults.post_4ap_trials = [
     # ['RL109 t-020'],
     ['RL109 t-021'],
     # ['RL109 t-018'],  - pickle truncated
-    ['RL109 t-016', 'RL109 t-017'],
+    ['RL109 t-016'],#, 'RL109 t-017'],  - redoing seizure boundary classifications
     # ['PS04 t-018'],
     ['PS05 t-012'],
     ['PS07 t-011'],
@@ -124,7 +124,7 @@ allopticalResults.trial_maps['post'] = {
     # 'c': ['RL109 t-020'], -- need to redo sz boundary classifying processing
     'd': ['RL109 t-021'],
     # 'e': ['RL109 t-018'], -- need to regenerate - pickle truncated
-    'f': ['RL109 t-016', 'RL109 t-017'],
+    'f': ['RL109 t-016'],#, 'RL109 t-017'],  - redoing seizure boundary classifications
     # 'g': ['PS04 t-018'],  -- need to redo sz boundary classifying processing
     'h': ['PS05 t-012'],
     'i': ['PS07 t-011'],

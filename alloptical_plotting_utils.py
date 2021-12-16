@@ -19,18 +19,27 @@ from funcsforprajay.wrappers import print_start_end_plot, plot_piping_decorator
 def plot_sz_boundary_location(expobj, fig=None, ax=None, **kwargs):
     """use for plotting sz boundary location for all stims from a given trial"""
     for i, stim_frame in enumerate(expobj.stims_in_sz):
-        if os.path.exists(expobj.sz_border_path(stim=stim_frame)):
-            xline, yline = pj.xycsv(csvpath=expobj.sz_border_path(stim=stim_frame))
-            pixels = int(50 / expobj.pix_sz_x)
-            if (yline[0] < pixels and yline[1] < pixels) or (
-                    yline[0] > expobj.frame_y - pixels and yline[0] > expobj.frame_y - pixels):
-                edgecolors = 'red'
-            else:
-                edgecolors = 'green'
-            pj.plot_coordinates(coords=[(xline[0], yline[0]), (xline[1], yline[1])], frame_x=expobj.frame_x,
-                                    frame_y=expobj.frame_y, edgecolors=edgecolors, show=False, fig=fig, ax=ax[0], title=f'{expobj.t_series_name} excluded stims (red coords)')
-            ax[0].plot([xline[0], xline[1]], [yline[0], yline[1]], c='white', linestyle='dashed')
-            plot_SLMtargets_Locs(expobj, fig=fig, ax=ax[1], show=False)
+        # if os.path.exists(expobj.sz_border_path(stim=stim_frame)):
+        #     xline, yline = pj.xycsv(csvpath=expobj.sz_border_path(stim=stim_frame))
+        if hasattr(expobj, 'stimsSzLocations'):
+            if ~np.isnan(expobj.stimsSzLocations.loc[stim_frame, 'sz_num']):
+                coord1, coord2 = expobj.stimsSzLocations.loc[stim_frame, ['coord1', 'coord2']]
+                xline = [coord1[0], coord2[0]]
+                yline = [coord1[1], coord2[1]]
+
+
+                pixels = int(50 / expobj.pix_sz_x)
+                if (yline[0] < pixels and yline[1] < pixels) or (
+                        yline[0] > expobj.frame_y - pixels and yline[0] > expobj.frame_y - pixels):
+                    edgecolors = 'red'
+                else:
+                    edgecolors = 'green'
+                pj.plot_coordinates(coords=[(xline[0], yline[0]), (xline[1], yline[1])], frame_x=expobj.frame_x,
+                                        frame_y=expobj.frame_y, edgecolors=edgecolors, show=False, fig=fig, ax=ax[0], title=f'{expobj.t_series_name} excluded stims (red coords)')
+                ax[0].plot([xline[0], xline[1]], [yline[0], yline[1]], c='white', linestyle='dashed')
+        print(f"plotting stim # {i}/{len(expobj.stims_in_sz)}", end='\r')
+
+    plot_SLMtargets_Locs(expobj, fig=fig, ax=ax[1], show=False)
 
 ### plot the location of all SLM targets, along with option for plotting the mean img of the current trial
 # @print_start_end_plot

@@ -3354,8 +3354,8 @@ class Post4ap(alloptical):
     def sz_border_path(expobj, stim):
         return "%s/boundary_csv/%s_%s_stim-%s.tif_border.csv" % (expobj.analysis_save_path[:-17], expobj.date, expobj.trial, stim)
 
-    def _close_to_edge(expobj, yline):
-        """returns whether the yline (meant to represent the two y-values of the two coords representing the seizure wavefront)
+    def _close_to_edge(expobj, yline: tuple):
+        """returns whether the 'yline' (meant to represent the two y-values of the two coords representing the seizure wavefront)
          is close to the edge of the frame"""
         pixels = int(50 / expobj.pix_sz_x)
         if (yline[0] < pixels and yline[1] < pixels) or (
@@ -3386,42 +3386,22 @@ class Post4ap(alloptical):
             # expobj.stims_sz_wavefront.append(stims_of_interest_)
 
             for _, stim in enumerate(stims_of_interest):
-                xline, yline = pj.xycsv(csvpath=expobj.sz_border_path(stim=stim))
-                expobj.stimsSzLocations.loc[stim, :] = [sz_num, [xline[0], yline[0]], [xline[1], yline[1]], None]
+                if os.path.exists(expobj.sz_border_path(stim=stim)):
+                    xline, yline = pj.xycsv(csvpath=expobj.sz_border_path(stim=stim))
+                    expobj.stimsSzLocations.loc[stim, :] = [sz_num, [xline[0], yline[0]], [xline[1], yline[1]], None]
 
-                j = expobj._close_to_edge(yline)
-                expobj.stimsSzLocations.loc[stim, 'wavefront_in_frame'] = j
+                    j = expobj._close_to_edge(tuple(yline))
+                    expobj.stimsSzLocations.loc[stim, 'wavefront_in_frame'] = j
 
             sz_num += 1
         expobj.save()
 
     @property
     def stimsWithSzWavefront(expobj):
-        # expobj.stims_sz_wavefront = []
-        #
-        # # specify stims for classifying cells
-        # on_ = []
-        # if 0 in expobj.seizure_lfp_onsets:  # this is used to check if 2p imaging is starting mid-seizure (which should be signified by the first lfp onset being set at frame # 0)
-        #     on_ = on_ + [expobj.stim_start_frames[0]]
-        # on_.extend(expobj.stims_bf_sz)
-        # if len(expobj.stims_af_sz) != len(on_):
-        #     end = expobj.stims_af_sz + [expobj.stim_start_frames[-1]]
-        # else:
-        #     end = expobj.stims_af_sz
-        # print(f'\t\- seizure start frames: {on_} [{len(on_)}]')
-        # print(f'\t\- seizure end frames: {end} [{len(end)}]')
-        # for on, off in zip(on_, end):
-        #     stims_of_interest = [stim for stim in expobj.stim_start_frames if on < stim < off if stim != expobj.stims_in_sz[0]]
-        #     stims_of_interest = [stim for stim in stims_of_interest if expobj._sz_wavefront_stim(stim=stim)]
-        #     expobj.stims_sz_wavefront.append(stims_of_interest)
-        #
-        # print(f"\t{len(expobj.stims_sz_wavefront)} seizures over stims: \n\t{expobj.stims_sz_wavefront}")
-        # expobj.save()
-
         return list(expobj.stimsSzLocations[expobj.stimsSzLocations['wavefront_in_frame'] == True].index)
 
 
-    def _InOutSz(self, cell_med: list, stim_frame: int, to_plot=False): ## TODO update function description
+    def _InOutSz(self, cell_med: list, stim_frame: int): ## TODO update function description
         """
         Returns True if the given cell's location is inside the seizure boundary which is defined as the coordinates
         given in the .csv sheet.
@@ -3489,7 +3469,7 @@ class Post4ap(alloptical):
         else:
             return False
 
-    def classify_cells_sz_bound(self, sz_border_path, stim, to_plot=True, title=None, flip=False, fig=None, ax=None,
+    def classify_cells_sz_bound(self, stim, to_plot=True, title=None, flip=False, fig=None, ax=None,
                                 text=None):
         """
         using Rob's suggestions to define boundary of the seizure in ImageJ and then read in the ImageJ output,
@@ -3589,7 +3569,7 @@ class Post4ap(alloptical):
         else:
             return in_sz_final, out_sz_final
 
-    def classify_slmtargets_sz_bound(self, sz_border_path, stim, to_plot=True, title=None, flip=False, fig=None,
+    def classify_slmtargets_sz_bound(self, stim, to_plot=True, title=None, flip=False, fig=None,
                                      ax=None):
         """
         going to use Rob's suggestions to define boundary of the seizure in ImageJ and then read in the ImageJ output,
@@ -3702,8 +3682,6 @@ class Post4ap(alloptical):
             # return False  # not all expobj will have the sz boundary classes attr so for those just assume no seizure
             raise Exception(
                 'cannot check for cell inside sz boundary because cell sz classification hasnot been performed yet')
-
-
 
 
     def subselect_tiffs_sz(self, onsets, offsets, on_off_type: str):
@@ -3989,44 +3967,44 @@ class Post4ap(alloptical):
 
         expobj.save() if save else None
 
-    def calcMinDistanceToSz(expobj, plot_counter=0):
+    def calcMinDistanceToSz(self, plot_counter=0):
         """
         Make a dataframe of stim frames x cells, with values being the minimum distance to the sz boundary at the stim.
 
-        :param expobj:
+        :param self:
         :return:
         """
 
-        if hasattr(expobj, 'slmtargets_szboundary_stim'):
+        if hasattr(self, 'slmtargets_szboundary_stim'):
 
             for cells in ['SLM Targets', 's2p nontargets']:
 
                 print(f'\t\- Calculating min distances to sz boundaries for {cells} ... ')
 
                 if cells == 'SLM Targets':
-                    coordinates = expobj.target_coords_all
-                    indexes = range(len(expobj.target_coords_all))
+                    coordinates = self.target_coords_all
+                    indexes = range(len(self.target_coords_all))
                 elif cells == 's2p nontargets':  ## TODO fix collecting min. distances for s2p nontargets
-                    indexes = expobj.s2p_nontargets
+                    indexes = self.s2p_nontargets
                     coordinates = []
-                    for stat_ in expobj.stat:
+                    for stat_ in self.stat:
                         coordinates.append(stat_['med']) if stat_['original_index'] in indexes else None
                 else:
                     raise Exception('cells argument not set properly')
 
-                df = pd.DataFrame(data=None, index=indexes, columns=pj.flattenOnce(expobj.stimsWithSzWavefront))
+                df = pd.DataFrame(data=None, index=indexes, columns=self.stimsWithSzWavefront)
                 # fig2, ax2 = plt.subplots()  ## figure for debuggging
 
-                for _, stim_frame in enumerate(expobj.stimsWithSzWavefront):
+                for _, stim_frame in enumerate(self.stimsWithSzWavefront):
                     # target = 0
-                    stim_frame = expobj.stimsWithSzWavefront[0]
-                    targetsInSz = expobj.slmtargets_szboundary_stim[stim_frame]
+                    stim_frame = self.stimsWithSzWavefront[0]
+                    targetsInSz = self.slmtargets_szboundary_stim[stim_frame]
 
                     if targetsInSz and cells == 'SLM Targets':  # debugging set back to zero afterwards
 
-                        coord1, coord2 = expobj.stimsSzLocations.loc[stim_frame, ['coord1', 'coord2']]
-                        # xline, yline = pj.xycsv(csvpath=expobj.sz_border_path(stim=stim_frame))
-                        if not stim_frame in expobj.stimsWithSzWavefront:
+                        coord1, coord2 = self.stimsSzLocations.loc[stim_frame, ['coord1', 'coord2']]
+                        # xline, yline = pj.xycsv(csvpath=self.sz_border_path(stim=stim_frame))
+                        if stim_frame not in self.stimsWithSzWavefront:
                             # exclude sz stims (set to nan) with unknown absolute locations of sz boundary
                             df.loc[:, stim_frame] = np.nan
                         else:
@@ -4037,17 +4015,17 @@ class Post4ap(alloptical):
                                 if target_idx in targetsInSz:
                                     dist = -dist
                                     # print(dist, "target coord inside sz")
-                                # title = f"distance: {dist}, {expobj.t_series_name}, stim: {stim_frame}"
+                                # title = f"distance: {dist}, {self.t_series_name}, stim: {stim_frame}"
 
                                 # if 10 < plot_counter < 15:
                                 #     fig, ax = plt.subplots()  ## figure for debuggging
-                                #     pj.plot_coordinates(coords=[(target_coord_[0], target_coord_[1])], frame_x=expobj.frame_x, frame_y=expobj.frame_y,
+                                #     pj.plot_coordinates(coords=[(target_coord_[0], target_coord_[1])], frame_x=self.frame_x, frame_y=self.frame_y,
                                 #                             edgecolors='red', show=False, fig=fig, ax=ax, title=title)
                                 #
-                                #     pj.plot_coordinates(coords=[(xline[0], yline[0]), (xline[1], yline[1])], frame_x=expobj.frame_x, frame_y=expobj.frame_y,
+                                #     pj.plot_coordinates(coords=[(xline[0], yline[0]), (xline[1], yline[1])], frame_x=self.frame_x, frame_y=self.frame_y,
                                 #                             edgecolors='green', show=False, fig=fig, ax=ax, title=title)
                                 #
-                                #     pj.plot_coordinates(coords=[(nearest[0], nearest[1])], frame_x=expobj.frame_x, frame_y=expobj.frame_y,
+                                #     pj.plot_coordinates(coords=[(nearest[0], nearest[1])], frame_x=self.frame_x, frame_y=self.frame_y,
                                 #                             edgecolors='yellow', show=False, fig=fig, ax=ax, title=title)
                                 #     fig.show()
                                 #
@@ -4055,13 +4033,13 @@ class Post4ap(alloptical):
 
                                 df.loc[target_idx, stim_frame] = dist
 
-                        # aoplot.plot_sz_boundary_location(expobj)
-                expobj.distance_to_sz[cells] = df  ## set the dataframe for each of SLM Targets and s2p nontargets
+                        # aoplot.plot_sz_boundary_location(self)
+                self.distance_to_sz[cells] = df  ## set the dataframe for each of SLM Targets and s2p nontargets
                 # fig2.show()
-                expobj.save()
+                self.save()
         else:
-            print('expobj doesnot have slmtargets_szboundary_stim completed')
-            return f"{expobj.t_series_name}"
+            print('self doesnot have slmtargets_szboundary_stim completed')
+            return f"{self.t_series_name}"
 
 
 class OnePhotonStim(TwoPhotonImaging):
