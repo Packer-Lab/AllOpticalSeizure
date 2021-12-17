@@ -31,6 +31,54 @@ key = 'f'; exp = 'post'; expobj, experiment = aoutils.import_expobj(aoresults_ma
 ######### ZONE FOR CALLING THIS SCRIPT DIRECTLY FROM THE SSH SERVER ###########
 """
 
+
+# %% 5.1-dc) collect and plot targets responses for stims vs. distance
+@aoutils.run_for_loop_across_exps(run_pre4ap_trials=False, run_post4ap_trials=True, skip_trials=['PS05 t-012'])
+def plot_responses_vs_distance_to_seizure_SLMTargets(**kwargs):
+    print(f"\t|- plotting responses vs. distance to seizure")
+    expobj = kwargs['expobj']
+    fig, ax = plt.subplots(figsize=[3, 3])
+    for target in expobj.responses_SLMtargets_tracedFF.index:
+        idx_sz_boundary = [idx for idx, stim in enumerate(expobj.stim_start_frames) if stim in expobj.distance_to_sz['SLM Targets'].columns]
+        responses = expobj.responses_SLMtargets_tracedFF.loc[target, idx_sz_boundary]
+        distance_to_sz = expobj.distance_to_sz['SLM Targets'].loc[target, :]
+
+        pj.make_general_scatter(x_list=[distance_to_sz], y_data=[responses], fig=fig, ax=ax, colors=['cornflowerblue'], alpha=0.5, s=30, show=False,
+                                x_label='distance to sz', y_label=response_type)
+    fig.suptitle(expobj.t_series_name)
+    fig.show()
+
+
+@aoutils.run_for_loop_across_exps(run_pre4ap_trials=False, run_post4ap_trials=True, skip_trials=['PS05 t-012'])
+def plot_collection_response_distance(response_type, **kwargs):
+    print(f"\t|- plotting a collection of plots measuring responses vs. distance to seizure")
+    expobj = kwargs['expobj']
+
+    if not hasattr(expobj, 'responses_SLMtargets_tracedFF_avg_df'):
+        expobj.avgResponseSzStims_SLMtargets(save=True)
+
+    data = expobj.responses_vs_distance_to_seizure_SLMTargets
+    fig, axs = plt.subplots(ncols=5, nrows=1, figsize=[18, 4])
+    axs[0] = sns.boxplot(data=expobj.responses_SLMtargets_tracedFF_avg_df, x='stim_group', y='avg targets response',
+                         width=0.5, ax=axs[0], palette=['tomato', 'mediumseagreen'])  # plotting mean across stims (len= # of targets)
+    axs[0] = sns.swarmplot(data=expobj.responses_SLMtargets_tracedFF_avg_df, x='stim_group', y='avg targets response',
+                           color=".25", ax=axs[0])
+
+    sns.stripplot(x="inorout_sz", y="distance_to_sz_um", data=data, ax=axs[1], alpha=0.2)
+    sns.violinplot(x="inorout_sz", y=response_type, data=data, legend=False, ax=axs[2])
+    sns.scatterplot(data=data, x='distance_to_sz_um', y=response_type, ax=axs[3], alpha=0.2)
+    aoplot.plot_sz_boundary_location(expobj, fig=fig, ax=axs[4], title=None)
+    fig.suptitle(f"{expobj.t_series_name} - {response_type}")
+    fig.tight_layout(pad=1.1)
+    fig.show()
+
+# plot_responses_vs_distance_to_seizure_SLMTargets()
+plot_collection_response_distance(response_type='dFF + z scored (interictal)')
+
+
+# expobj, _ = aoutils.import_expobj(prep='RL108', trial='t-013')
+
+
 # %% 5.0) calculate/collect min distance to seizure and responses at each distance
 # aoplot.plot_sz_boundary_location(expobj)
 
@@ -103,53 +151,6 @@ run_calculating_min_distance_to_seizure(no_slmtargets_szboundary_stim)
 
 response_type='dFF + z scored (interictal)'
 collect_responses_vs_distance_to_seizure_SLMTargets(response_type=response_type)
-
-
-# %% 5.1-dc) collect and plot targets responses for stims vs. distance
-@aoutils.run_for_loop_across_exps(run_pre4ap_trials=False, run_post4ap_trials=True, skip_trials=['PS05 t-012'])
-def plot_responses_vs_distance_to_seizure_SLMTargets(**kwargs):
-    print(f"\t|- plotting responses vs. distance to seizure")
-    expobj = kwargs['expobj']
-    fig, ax = plt.subplots(figsize=[3, 3])
-    for target in expobj.responses_SLMtargets_tracedFF.index:
-        idx_sz_boundary = [idx for idx, stim in enumerate(expobj.stim_start_frames) if stim in expobj.distance_to_sz['SLM Targets'].columns]
-        responses = expobj.responses_SLMtargets_tracedFF.loc[target, idx_sz_boundary]
-        distance_to_sz = expobj.distance_to_sz['SLM Targets'].loc[target, :]
-
-        pj.make_general_scatter(x_list=[distance_to_sz], y_data=[responses], fig=fig, ax=ax, colors=['cornflowerblue'], alpha=0.5, s=30, show=False,
-                                x_label='distance to sz', y_label=response_type)
-    fig.suptitle(expobj.t_series_name)
-    fig.show()
-
-
-@aoutils.run_for_loop_across_exps(run_pre4ap_trials=False, run_post4ap_trials=True, skip_trials=['PS05 t-012'])
-def plot_collection_response_distance(response_type, **kwargs):
-    print(f"\t|- plotting a collection of plots measuring responses vs. distance to seizure")
-    expobj = kwargs['expobj']
-
-    if not hasattr(expobj, 'responses_SLMtargets_tracedFF_avg_df'):
-        expobj.avgResponseSzStims_SLMtargets(save=True)
-
-    data = expobj.responses_vs_distance_to_seizure_SLMTargets
-    fig, axs = plt.subplots(ncols=5, nrows=1, figsize=[18,3])
-    axs[0] = sns.boxplot(data=expobj.responses_SLMtargets_tracedFF_avg_df, x='stim_group', y='avg targets response',
-                         width=0.5, ax=axs[0])  # plotting mean across stims (len= # of targets)
-    axs[0] = sns.swarmplot(data=expobj.responses_SLMtargets_tracedFF_avg_df, x='stim_group', y='avg targets response',
-                           color=".25", ax=axs[0])
-
-    sns.stripplot(x="inorout_sz", y="distance_to_sz_um", data=data, ax=axs[1], alpha=0.2)
-    sns.violinplot(x="inorout_sz", y=response_type, data=data, legend=False, ax=axs[2])
-    sns.scatterplot(data=data, x='distance_to_sz_um', y=response_type, ax=axs[3], alpha=0.2)
-    # aoplot.plot_sz_boundary_location(expobj, fig=fig, ax=axs[5], title=None)
-    fig.suptitle(f"{expobj.t_series_name} - {response_type}")
-    fig.tight_layout(pad=1.1)
-    fig.show()
-
-# plot_responses_vs_distance_to_seizure_SLMTargets()
-plot_collection_response_distance(response_type='dFF + z scored (interictal)')
-
-
-# expobj, _ = aoutils.import_expobj(prep='RL108', trial='t-013')
 
 
 

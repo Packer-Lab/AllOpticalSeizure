@@ -18,28 +18,65 @@ from funcsforprajay.wrappers import print_start_end_plot, plot_piping_decorator
 @plot_piping_decorator(figsize=(8,4), nrows=1, ncols=1, verbose=False)
 def plot_sz_boundary_location(expobj, fig=None, ax=None, **kwargs):
     """use for plotting sz boundary location for all stims from a given trial"""
-    for i, stim_frame in enumerate(expobj.stims_in_sz):
-        # if os.path.exists(expobj.sz_border_path(stim=stim_frame)):
-        #     xline, yline = pj.xycsv(csvpath=expobj.sz_border_path(stim=stim_frame))
-        if hasattr(expobj, 'stimsSzLocations'):
-            if ~np.isnan(expobj.stimsSzLocations.loc[stim_frame, 'sz_num']):
-                coord1, coord2 = expobj.stimsSzLocations.loc[stim_frame, ['coord1', 'coord2']]
-                xline = [coord1[0], coord2[0]]
-                yline = [coord1[1], coord2[1]]
-
-
-                pixels = int(50 / expobj.pix_sz_x)
-                if (yline[0] < pixels and yline[1] < pixels) or (
-                        yline[0] > expobj.frame_y - pixels and yline[0] > expobj.frame_y - pixels):
-                    edgecolors = 'red'
-                else:
-                    edgecolors = 'green'
-                pj.plot_coordinates(coords=[(xline[0], yline[0]), (xline[1], yline[1])], frame_x=expobj.frame_x, frame_y=expobj.frame_y,
-                                    edgecolors=edgecolors, show=False, fig=fig, ax=ax, title=f'{expobj.t_series_name} excluded stims (red coords)')
-                ax.plot([xline[0], xline[1]], [yline[0], yline[1]], c='white', linestyle='dashed', alpha=0.3)
-        print(f"plotting stim # {i}/{len(expobj.stims_in_sz)}", end='\r')
-
     plot_SLMtargets_Locs(expobj, fig=fig, ax=ax, show=False)
+
+    if len(expobj.stimsSzLocations[expobj.stimsSzLocations['wavefront_in_frame'] == True]) > 1:
+        inframe_coord1_x = np.array(list(expobj.stimsSzLocations[expobj.stimsSzLocations['wavefront_in_frame'] == True]['coord1']))[:,0]
+        inframe_coord1_y = np.array(list(expobj.stimsSzLocations[expobj.stimsSzLocations['wavefront_in_frame'] == True]['coord1']))[:,1]
+        inframe_coord2_x = np.array(list(expobj.stimsSzLocations[expobj.stimsSzLocations['wavefront_in_frame'] == True]['coord2']))[:,0]
+        inframe_coord2_y = np.array(list(expobj.stimsSzLocations[expobj.stimsSzLocations['wavefront_in_frame'] == True]['coord2']))[:,1]
+
+        inframe_coord1 = np.array(list(expobj.stimsSzLocations[expobj.stimsSzLocations['wavefront_in_frame'] == True]['coord1']))
+        inframe_coord2 = np.array(list(expobj.stimsSzLocations[expobj.stimsSzLocations['wavefront_in_frame'] == True]['coord2']))
+
+
+        # fig, ax = plt.subplots()
+        pj.plot_coordinates(coords=inframe_coord1,frame_x=expobj.frame_x, frame_y=expobj.frame_y, show=False, fig=fig, ax=ax,
+                            edgecolors='green')
+        pj.plot_coordinates(coords=inframe_coord2,frame_x=expobj.frame_x, frame_y=expobj.frame_y, show=False, fig=fig, ax=ax,
+                            edgecolors='green')
+        ax.plot([inframe_coord1_x, inframe_coord2_x], [inframe_coord1_y, inframe_coord2_y], c='white', linestyle='dashed', alpha=0.3)
+        # fig.show()
+
+    if len(expobj.stimsSzLocations[expobj.stimsSzLocations['wavefront_in_frame'] == False]) > 1:
+        outframe_coord1_x = np.array(list(expobj.stimsSzLocations[expobj.stimsSzLocations['wavefront_in_frame'] == False]['coord1']))[:,0]
+        outframe_coord1_y = np.array(list(expobj.stimsSzLocations[expobj.stimsSzLocations['wavefront_in_frame'] == False]['coord1']))[:,1]
+        outframe_coord2_x = np.array(list(expobj.stimsSzLocations[expobj.stimsSzLocations['wavefront_in_frame'] == False]['coord2']))[:,0]
+        outframe_coord2_y = np.array(list(expobj.stimsSzLocations[expobj.stimsSzLocations['wavefront_in_frame'] == False]['coord2']))[:,1]
+
+        outframe_coord1 = np.array(list(expobj.stimsSzLocations[expobj.stimsSzLocations['wavefront_in_frame'] == True]['coord1']))
+        outframe_coord2 = np.array(list(expobj.stimsSzLocations[expobj.stimsSzLocations['wavefront_in_frame'] == True]['coord1']))
+
+
+        # fig, ax = plt.subplots()
+        pj.plot_coordinates(coords=outframe_coord1,frame_x=expobj.frame_x, frame_y=expobj.frame_y, show=False, fig=fig, ax=ax,
+                            edgecolors='red')
+        pj.plot_coordinates(coords=outframe_coord2,frame_x=expobj.frame_x, frame_y=expobj.frame_y, show=False, fig=fig, ax=ax,
+                            edgecolors='red')
+        ax.plot([outframe_coord1_x, outframe_coord2_x], [outframe_coord1_y, outframe_coord2_y], c='white', linestyle='dashed', alpha=0.3)
+        # fig.show()
+
+    ax.set_title(f'{expobj.t_series_name} excluded stims (red coords)')
+
+    #
+    # for i, stim_frame in enumerate(expobj.stims_in_sz):
+    #     # if os.path.exists(expobj.sz_border_path(stim=stim_frame)):
+    #     #     xline, yline = pj.xycsv(csvpath=expobj.sz_border_path(stim=stim_frame))
+    #     if hasattr(expobj, 'stimsSzLocations'):
+    #         if ~np.isnan(expobj.stimsSzLocations.loc[stim_frame, 'sz_num']):
+    #             coord1, coord2 = expobj.stimsSzLocations.loc[stim_frame, ['coord1', 'coord2']]
+    #             xline = [coord1[0], coord2[0]]
+    #             yline = [coord1[1], coord2[1]]
+    #
+    #
+    #             pixels = int(50 / expobj.pix_sz_x)
+    #             if expobj.stimsSzLocations[stim_frame, 'wavefront_in_frame']: edgecolors = 'green'
+    #             else: edgecolors = 'red'
+    #             ax.scatter(x=[xline[0], xline[1]], y=[yline[0], yline[1]], edgecolors=edgecolors)
+    #             # pj.plot_coordinates(coords=[(xline[0], yline[0]), (xline[1], yline[1])], frame_x=expobj.frame_x, frame_y=expobj.frame_y,
+    #             #                     edgecolors=edgecolors, show=False, fig=fig, ax=ax, title=f'{expobj.t_series_name} excluded stims (red coords)')
+    #             ax.plot([xline[0], xline[1]], [yline[0], yline[1]], c='white', linestyle='dashed', alpha=0.3)
+    #     print(f"plotting stim # {i}/{len(expobj.stims_in_sz)}", end='\r')
 
 ### plot the location of all SLM targets, along with option for plotting the mean img of the current trial
 # @print_start_end_plot
