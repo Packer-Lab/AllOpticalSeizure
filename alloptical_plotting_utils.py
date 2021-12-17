@@ -18,7 +18,6 @@ from funcsforprajay.wrappers import print_start_end_plot, plot_piping_decorator
 @plot_piping_decorator(figsize=(8,4), nrows=1, ncols=1, verbose=False)
 def plot_sz_boundary_location(expobj, fig=None, ax=None, **kwargs):
     """use for plotting sz boundary location for all stims from a given trial"""
-    plot_SLMtargets_Locs(expobj, fig=fig, ax=ax, show=False)
 
     if len(expobj.stimsSzLocations[expobj.stimsSzLocations['wavefront_in_frame'] == True]) > 1:
         inframe_coord1_x = np.array(list(expobj.stimsSzLocations[expobj.stimsSzLocations['wavefront_in_frame'] == True]['coord1']))[:,0]
@@ -44,8 +43,8 @@ def plot_sz_boundary_location(expobj, fig=None, ax=None, **kwargs):
         outframe_coord2_x = np.array(list(expobj.stimsSzLocations[expobj.stimsSzLocations['wavefront_in_frame'] == False]['coord2']))[:,0]
         outframe_coord2_y = np.array(list(expobj.stimsSzLocations[expobj.stimsSzLocations['wavefront_in_frame'] == False]['coord2']))[:,1]
 
-        outframe_coord1 = np.array(list(expobj.stimsSzLocations[expobj.stimsSzLocations['wavefront_in_frame'] == True]['coord1']))
-        outframe_coord2 = np.array(list(expobj.stimsSzLocations[expobj.stimsSzLocations['wavefront_in_frame'] == True]['coord1']))
+        outframe_coord1 = np.array(list(expobj.stimsSzLocations[expobj.stimsSzLocations['wavefront_in_frame'] == False]['coord1']))
+        outframe_coord2 = np.array(list(expobj.stimsSzLocations[expobj.stimsSzLocations['wavefront_in_frame'] == False]['coord2']))
 
 
         # fig, ax = plt.subplots()
@@ -56,6 +55,7 @@ def plot_sz_boundary_location(expobj, fig=None, ax=None, **kwargs):
         ax.plot([outframe_coord1_x, outframe_coord2_x], [outframe_coord1_y, outframe_coord2_y], c='white', linestyle='dashed', alpha=0.3)
         # fig.show()
 
+    plot_SLMtargets_Locs(expobj, fig=fig, ax=ax, show=False)
     ax.set_title(f'{expobj.t_series_name} excluded stims (red coords)')
 
     #
