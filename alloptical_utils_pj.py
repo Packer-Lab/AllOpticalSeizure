@@ -174,7 +174,8 @@ idiom_dictionary = {
     's2p ROIs': "all ROIs derived directly from the suite2p output",
     's2p nontargets': "suite2p ROIs excluding those which are filtered out for being in the target exclusion zone",
     'good cells': "good cells are suite2p ROIs which have some sort of a Flu transient based on a sliding window and std filtering process",
-    'stim_id': "the imaging frame number on which the photostimulation is calculated to have first started"
+    'stim_id': "the imaging frame number on which the photostimulation is calculated to have first started",
+    'photostim response': 'synonymous with `delta(trace_dFF)`'
 }
 
 def define(x):
@@ -1086,6 +1087,13 @@ class alloptical(TwoPhotonImaging):
 
         return repr(f"({information}) TwoPhotonImaging.alloptical experimental data object, last saved: {lastmod}")
 
+    @property
+    def slmtargets_ids(self):
+        return list(range(len(self.target_coords_all)))
+
+    @property
+    def stims_idx(self):
+        return list(range(len(self.stim_start_frames)))
 
     def subset_frames_current_trial(self, to_suite2p, trial, baseline_trials, force_redo: bool = False, save=True):
 
@@ -1141,7 +1149,7 @@ class alloptical(TwoPhotonImaging):
 
             mean_img_stack = np.zeros([end - start, self.frame_x, self.frame_y])
             # collect mean traces from target areas of each target coordinate by reading in individual registered tiffs that contain frames for current trial
-            targets_trace_full = np.zeros([len(self.target_coords_all), (end - start) * 2000], dtype='float32')
+            targets_trace_full = np.zeros([len(self.slmtargets_ids), (end - start) * 2000], dtype='float32')
             counter = 0
             for i in range(start, end):
                 tif_path_save2 = self.s2p_path + '/reg_tif/' + reg_tif_list[i]
@@ -1171,14 +1179,14 @@ class alloptical(TwoPhotonImaging):
             # targets_trace_dFF_full = normalize_dff(targets_trace_full, threshold_pct=10)
             # self.dFF_SLMTargets = targets_trace_dFF_full[:, self.curr_trial_frames[0] - start * 2000: self.curr_trial_frames[1] - (start * 2000)]
 
-            # plots to compare dFF normalization for each trace - temp checking for one target
-            target = 0
-            pj.make_general_plot(data_arr=[self.raw_SLMTargets[target], self.dFF_SLMTargets[target][::4]],
-                                 x_range=[range(len(self.raw_SLMTargets[target])),
-                                          range(len(self.dFF_SLMTargets[target]))[::4]],
-                                 figsize=(20, 5), nrows=1, ncols=1,
-                                 suptitle=f"raw trace (blue), dFF trace (norm. to bottom 10 pct) (green)",
-                                 colors=['blue', 'green'], y_labels=['raw values', 'dFF values'])
+            # # plots to compare dFF normalization for each trace - temp checking for one target
+            # target = 0
+            # pj.make_general_plot(data_arr=[self.raw_SLMTargets[target], self.dFF_SLMTargets[target][::4]],
+            #                      x_range=[range(len(self.raw_SLMTargets[target])),
+            #                               range(len(self.dFF_SLMTargets[target]))[::4]],
+            #                      figsize=(20, 5), nrows=1, ncols=1,
+            #                      suptitle=f"raw trace (blue), dFF trace (norm. to bottom 10 pct) (green)",
+            #                      colors=['blue', 'green'], y_labels=['raw values', 'dFF values'])
 
             self.meanFluImg_registered = np.mean(mean_img_stack, axis=0)
 
@@ -1219,27 +1227,27 @@ class alloptical(TwoPhotonImaging):
         elif process == 'trace dFF':
             data_to_process = self.dFF_SLMTargets
         else:
-            ValueError('need to provide `process` as either `trace raw` or `trace dFF`')
+            raise ValueError('need to provide `process` as either `trace raw` or `trace dFF`')
 
         if subselect_cells:
-            num_cells = len(data_to_process[subselect_cells])
+            num_targets = len(data_to_process[subselect_cells])
             targets_trace = data_to_process[subselect_cells]
         else:
-            num_cells = len(data_to_process)
+            num_targets = len(self.slmtargets_ids)
             targets_trace = data_to_process
 
         # collect photostim timed average dff traces of photostim targets
         targets_dff = np.zeros(
-            [num_cells, len(self.stim_start_frames), pre_stim + self.stim_duration_frames + post_stim])
-        # SLMTargets_stims_dffAvg = np.zeros([num_cells, pre_stim_sec + post_stim_sec])
+            [num_targets, len(self.stim_start_frames), pre_stim + self.stim_duration_frames + post_stim])
+        # SLMTargets_stims_dffAvg = np.zeros([num_targets, pre_stim_sec + post_stim_sec])
 
         targets_dfstdF = np.zeros(
-            [num_cells, len(self.stim_start_frames), pre_stim + self.stim_duration_frames + post_stim])
-        # targets_dfstdF_avg = np.zeros([num_cells, pre_stim_sec + post_stim_sec])
+            [num_targets, len(self.stim_start_frames), pre_stim + self.stim_duration_frames + post_stim])
+        # targets_dfstdF_avg = np.zeros([num_targets, pre_stim_sec + post_stim_sec])
 
         targets_raw = np.zeros(
-            [num_cells, len(self.stim_start_frames), pre_stim + self.stim_duration_frames + post_stim])
-        # targets_raw_avg = np.zeros([num_cells, pre_stim_sec + post_stim_sec])
+            [num_targets, len(self.stim_start_frames), pre_stim + self.stim_duration_frames + post_stim])
+        # targets_raw_avg = np.zeros([num_targets, pre_stim_sec + post_stim_sec])
 
         if targets_idx is not None:
             print('collecting stim traces for cell ', targets_idx + 1)
@@ -1273,7 +1281,7 @@ class alloptical(TwoPhotonImaging):
             return targets_raw[targets_idx], targets_dff[targets_idx], targets_dfstdF[targets_idx]
 
         else:
-            for cell_idx in range(num_cells):
+            for cell_idx in range(num_targets):
                 print('\- collecting stim traces for cell %s' % subselect_cells[cell_idx]) if subselect_cells else None
 
                 if filter_sz:
@@ -2334,7 +2342,7 @@ class alloptical(TwoPhotonImaging):
                 # y.append(avg)
         return x
 
-    # calculate reliability of photostim responsiveness of all of the targeted cells (found in s2p output)
+    # calculate reliability of photostim responsiveness of all of the targeted cells
     def get_SLMTarget_responses_dff(self, process: str, threshold=10, stims_to_use: list = None):
         """
         calculations of dFF responses to photostimulation of SLM Targets. Includes calculating reliability of slm targets,
@@ -2388,9 +2396,8 @@ class alloptical(TwoPhotonImaging):
         # initializing pandas df for binary showing of success and fails (1= success, 0= fails)
         hits_slmtargets = {}  # to be converted in pandas df below - will contain 1 for every success stim, 0 for non success stims
         for stim in stims_idx:
-            hits_slmtargets[stim] = [None] * targets_traces.shape[0]  # start with 0 for all stims
-        hits_slmtargets_df = pd.DataFrame(hits_slmtargets,
-                                          index=range(targets_traces.shape[0]))  # population dataframe
+            hits_slmtargets[stim] = [None] * len(self.slmtargets_ids)  # start with 0 for all stims
+        hits_slmtargets_df = pd.DataFrame(hits_slmtargets, index=self.slmtargets_ids)  # population dataframe
 
         reliability_slmtargets = {}  # dict will be used to store the reliability results for each targeted cell
 
@@ -3313,6 +3320,7 @@ class Post4ap(alloptical):
         self.responses_SLMtargets_dfprestimf_insz = []  # dF/prestimF responses for all SLM targets for photostim trials inside sz - excluding targets inside the sz boundary
         self.responses_SLMtargets_tracedFF_outsz = []  # delta(trace_dFF) responses for all SLM targets for photostim trials outside sz
         self.responses_SLMtargets_tracedFF_insz = []  # delta(trace_dFF) responses for all SLM targets for photostim trials inside sz - excluding targets inside the sz boundary
+        self.responses_SLMtargets_tracedFF_avg_df = None  # delta(trace_dFF) responses in dataframe for all stims averaged over all targets (+ out sz or in sz variable assignment)
 
         self.StimSuccessRate_SLMtargets_outsz = []  # photostim sucess rate (not sure exactly if across all stims or not?)
         self.StimSuccessRate_SLMtargets_insz = []  # photostim sucess rate (not sure exactly if across all stims or not?)
@@ -3350,6 +3358,14 @@ class Post4ap(alloptical):
     @property
     def numSeizures(self):
         return len(self.seizure_lfp_onsets) - (len(self.seizure_lfp_onsets) - len(self.seizure_lfp_offsets))
+
+    @property
+    def stim_idx_outsz(self):
+        return [idx for idx, stim in enumerate(self.stim_start_frames) if stim in self.stims_out_sz]
+
+    @property
+    def stim_idx_insz(self):
+        return [idx for idx, stim in enumerate(self.stim_start_frames) if stim in self.stims_in_sz]
 
     def sz_border_path(expobj, stim):
         return "%s/boundary_csv/%s_%s_stim-%s.tif_border.csv" % (expobj.analysis_save_path[:-17], expobj.date, expobj.trial, stim)
@@ -3976,7 +3992,7 @@ class Post4ap(alloptical):
         """
 
         if hasattr(self, 'slmtargets_szboundary_stim'):
-
+            self.distance_to_sz = {}
             for cells in ['SLM Targets', 's2p nontargets']:
 
                 print(f'\t\- Calculating min distances to sz boundaries for {cells} ... ')
@@ -4039,6 +4055,18 @@ class Post4ap(alloptical):
             print('self doesnot have slmtargets_szboundary_stim completed')
             return f"{self.t_series_name}"
 
+    def avgResponseSzStims_SLMtargets(self, save=False):
+        df = pd.DataFrame(columns=['stim_group', 'avg targets response'], index=self.stims_idx)
+        for stim_idx in self.responses_SLMtargets_tracedFF_outsz.columns:
+            df.loc[stim_idx, 'stim_group'] = 'interictal'
+            df.loc[stim_idx, 'avg targets response'] = self.responses_SLMtargets_tracedFF_outsz.loc[:, stim_idx].mean()
+
+        for stim_idx in self.responses_SLMtargets_tracedFF_insz.columns:
+            df.loc[stim_idx, 'stim_group'] = 'ictal'
+            df.loc[stim_idx, 'avg targets response'] = self.responses_SLMtargets_tracedFF_insz.loc[:, stim_idx].mean()
+
+        self.responses_SLMtargets_tracedFF_avg_df = df
+        self.save() if save else None
 
 class OnePhotonStim(TwoPhotonImaging):
     def __init__(self, data_path_base, date, animal_prep, trial, metainfo, analysis_save_path_base: str = None):
@@ -5411,6 +5439,8 @@ def run_alloptical_processing_photostim(expobj, to_suite2p=None, baseline_trials
             else:
                 print('******* No slmtargets_szboundary_stim (sz boundary classification not done) for: %s %s' % (
                     expobj.metainfo['animal prep.'], expobj.metainfo['trial']), ' [*2.3] ')
+
+        expobj.avgResponseSzStims_SLMtargets()
 
     expobj.save()
 
