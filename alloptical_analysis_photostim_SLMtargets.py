@@ -74,36 +74,77 @@ def plot_responses_vs_distance_to_seizure_SLMTargets_2ddensity(positive_distance
 
 data = plot_responses_vs_distance_to_seizure_SLMTargets_2ddensity(positive_distances_only = False, plot=False)
 
-# plotting density plot for all exps, in percentile space (to normalize for excess of data at distances which are closer to zero) - TODO any smoothing?
-data_all = np.array([[], []]).T
-for data_ in data:
-    data_all = np.vstack((data_, data_all))
+def convert_responses_szdistances_percentile_space():
+    data_all = np.array([[], []]).T
+    for data_ in data:
+        data_all = np.vstack((data_, data_all))
 
-from scipy.stats import percentileofscore
+    from scipy.stats import percentileofscore
 
-distances_to_sz = data_all[:, 0]
-idx_sorted = np.argsort(distances_to_sz)
-distances_to_sz_sorted = distances_to_sz[idx_sorted]
-responses_sorted = data_all[:, 1][idx_sorted]
-s = pd.Series(distances_to_sz_sorted)
-percentiles = s.apply(lambda x: percentileofscore(distances_to_sz_sorted, x))
-data_all = np.array([percentiles, responses_sorted]).T
+    distances_to_sz = data_all[:, 0]
+    idx_sorted = np.argsort(distances_to_sz)
+    distances_to_sz_sorted = distances_to_sz[idx_sorted]
+    responses_sorted = data_all[:, 1][idx_sorted]
+    s = pd.Series(distances_to_sz_sorted)
+    percentiles = s.apply(lambda x: percentileofscore(distances_to_sz_sorted, x))
+    scale_percentile_distances = {}
+    for pct in range(0, 100):
+        scale_percentile_distances[int(pct+1)] = np.round(np.percentile(distances_to_sz_sorted, pct),0)
+    data_all = np.array([percentiles, responses_sorted]).T
 
-bin_size = 5  # um
-# bins_num = int((max(distances_to_sz) - min(distances_to_sz)) / bin_size)
-bins_num = 100
+    return data_all, percentiles, responses_sorted, distances_to_sz_sorted, scale_percentile_distances
 
-response_type = 'dFF (z scored)'
-fig, ax = plt.subplots(figsize = (6,3))
-pj.plot_hist2d(data=data_all, bins=bins_num, y_label=response_type, figsize=(6, 3), x_label='distance to seizure (%tile space)', title=f"2d density plot, all exps, 50%tile = {np.percentile(distances_to_sz_sorted, 50)}um",
-               y_lim=[-4, 4], fig=fig, ax=ax, show=False)
-ax.axhline(0, ls='--', c='white', lw=1)
-fig.show()
+data_all, percentiles, responses_sorted, distances_to_sz_sorted, scale_percentile_distances = convert_responses_szdistances_percentile_space()
+
+def plot_density_responses_szdistances(data_all=data_all, distances_to_sz_sorted=distances_to_sz_sorted):
+    # plotting density plot for all exps, in percentile space (to normalize for excess of data at distances which are closer to zero) - TODO any smoothing?
+
+    bin_size = 5  # um
+    # bins_num = int((max(distances_to_sz) - min(distances_to_sz)) / bin_size)
+    bins_num = 100
+
+    response_type = 'dFF (z scored)'
+    fig, ax = plt.subplots(figsize=(6,3))
+    pj.plot_hist2d(data=data_all, bins=bins_num, y_label=response_type, figsize=(6, 3), x_label='distance to seizure (%tile space)',
+                   title=f"2d density plot, all exps, 50%tile = {np.percentile(distances_to_sz_sorted, 50)}um",
+                   y_lim=[-4, 4], fig=fig, ax=ax, show=False)
+    ax.axhline(0, ls='--', c='white', lw=1)
+    fig.show()
+
+plot_density_responses_szdistances()
+
+
 
 # %% plotting line plot for all datapoints for responses vs. distance to seizure
 
+def plot_lineplot_responses_pctszdistances()
+    percentiles_binned = np.round(percentiles)
 
+    bin = 5
+    # change to pct% binning
+    percentiles_binned = (percentiles_binned // bin) * bin
 
+    d = {'distance to seizure (%tile space)': percentiles_binned,
+         'responses (z-scored dFF)': responses_sorted}
+
+    df = pd.DataFrame(d)
+
+    fig, ax = plt.subplots(figsize=(6,3))
+    sns.lineplot(data=df, x='distance to seizure (%tile space)', y='responses (z-scored dFF)', ax=ax)
+    ax.set_title(f'responses over distance to sz, all exps, normalized to percentile space ({bin}% bins)', wrap=True)
+    ax.margins(0.02)
+    ax.axhline(0, ls='--', c='orange', lw=1)
+
+    xticks = [1, 25, 50, 57, 75, 100]  # percentile space
+    ax.set_xticks(ticks=xticks)
+    labels = [scale_percentile_distances[x_] for x_ in xticks]
+    ax.set_xticklabels(labels)
+    ax.set_xlabel('distance to seizure (um)')
+
+    fig.tight_layout(pad=2)
+    plt.show()
+
+plot_lineplot_responses_pctszdistances
 
 # %%
 
