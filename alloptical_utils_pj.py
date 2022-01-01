@@ -160,6 +160,9 @@ def import_resultsobj(pkl_path: str):
         print(f"|-DONE IMPORT of {(type(resultsobj))} resultsobj \n\n")
     return resultsobj
 
+# random plot just to initialize plotting for PyCharm
+def random_plot():
+    pj.make_general_scatter(x_list=[np.random.rand(5)], y_data=[np.random.rand(5)], s=60, alpha=1)
 
 # dictionary of terms, phrases, etc. that are particular to this analysis
 idiom_dictionary = {
@@ -2352,7 +2355,7 @@ class alloptical(TwoPhotonImaging):
         :param stims_to_use: ls of stims to retrieve photostim trial dFF responses
         :return:
         """
-        print(f'\n---------- Calculating {process} stim evoked responses (of SLM targets) [1.] ---------- ')
+        print(f'\n---------- Calculating {process} stim evoked responses (of SLM targets) [.1] ---------- ')
         if stims_to_use is None:
             stims_to_use = range(len(self.stim_start_frames))
             stims_idx = [self.stim_start_frames.index(stim) for stim in stims_to_use]
