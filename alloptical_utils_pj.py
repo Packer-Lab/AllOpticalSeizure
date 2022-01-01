@@ -368,7 +368,6 @@ class TwoPhotonImaging:
     def trial(self):
         return self.metainfo['trial']
 
-
     @property
     def t_series_name(self):
         return f'{self.metainfo["animal prep."]} {self.metainfo["trial"]}'
@@ -574,7 +573,7 @@ class TwoPhotonImaging:
         xml_tree = ET.parse(self.xml_path)  # parse xml from a path
         root = xml_tree.getroot()  # make xml tree structure
 
-        return root.findall('Sequence/Frame')[-1].get('index')
+        return int(root.findall('Sequence/Frame')[-1].get('index'))
 
     @property
     def frame_avg(self):
@@ -636,6 +635,45 @@ class TwoPhotonImaging:
         for scanVolts, index in zip(scanVolts, index):
             if index == 'YAxis':
                 return float(scanVolts)
+
+    @property
+    def reg_tif_crop_path(self):
+        """path to the TIFF file derived from underlying suite2p batch registered TIFFs and cropped to frames for current
+        t-series of experiment analysis object"""
+        return self.analysis_save_path + 'reg_tiff_%s_r.tif' % self.metainfo['trial']
+
+    def subset_frames_current_trial(self, to_suite2p, trial, baseline_trials, force_redo: bool = False, save=True):
+
+        if force_redo:
+            continu = True
+            print('re-collecting subset frames of current trial')
+        elif hasattr(self, 'curr_trial_frames'):
+            print('skipped re-collecting subset frames of current trial')
+            continu = False
+        else:
+            continu = True
+            print('collecting subset frames of current trial')
+
+        if continu:
+            # determine which frames to retrieve from the overall total s2p output
+            total_frames_stitched = 0
+            curr_trial_frames = None
+            self.baseline_frames = [0, 0]
+            for t in to_suite2p:
+                pkl_path_2 = self.pkl_path[:-26] + t + '/' + self.metainfo['date'] + '_' + t + '.pkl'
+                with open(pkl_path_2, 'rb') as f:
+                    _expobj = pickle.load(f)
+                    # import suite2p data
+                total_frames_stitched += _expobj.n_frames
+                if t == trial:
+                    self.curr_trial_frames = [total_frames_stitched - _expobj.n_frames, total_frames_stitched]
+                if t in baseline_trials:
+                    self.baseline_frames[1] = total_frames_stitched
+
+            print('baseline frames: ', self.baseline_frames)
+            print('current trial frames: ', self.curr_trial_frames)
+
+            self.save() if save else None
 
     def s2pProcessing(self, s2p_path, subset_frames=None, subtract_neuropil=True, baseline_frames=[],
                       force_redo: bool = False, save=True):
@@ -936,7 +974,7 @@ class TwoPhotonImaging:
         end = self.curr_trial_frames[1] // 2000 + 1
 
         tif_path_save = self.analysis_save_path + 'reg_tiff_%s.tif' % self.metainfo['trial']
-        tif_path_save2 = self.analysis_save_path + 'reg_tiff_%s_r.tif' % self.metainfo['trial']
+        tif_path_save2 = self.reg_tif_crop_path
         reg_tif_folder = self.s2p_path + '/reg_tif/'
         reg_tif_list = os.listdir(reg_tif_folder)
         reg_tif_list.sort()
@@ -946,10 +984,7 @@ class TwoPhotonImaging:
         print(sorted_paths)
 
         if os.path.exists(tif_path_save):
-            if force_stack:
-                pj.make_tiff_stack(sorted_paths, save_as=tif_path_save)
-            else:
-                pass
+            if force_stack: pj.make_tiff_stack(sorted_paths, save_as=tif_path_save)
         else:
             pj.make_tiff_stack(sorted_paths, save_as=tif_path_save)
 
@@ -1097,39 +1132,6 @@ class alloptical(TwoPhotonImaging):
     @property
     def stims_idx(self):
         return list(range(len(self.stim_start_frames)))
-
-    def subset_frames_current_trial(self, to_suite2p, trial, baseline_trials, force_redo: bool = False, save=True):
-
-        if force_redo:
-            continu = True
-            print('re-collecting subset frames of current trial')
-        elif hasattr(self, 'curr_trial_frames'):
-            print('skipped re-collecting subset frames of current trial')
-            continu = False
-        else:
-            continu = True
-            print('collecting subset frames of current trial')
-
-        if continu:
-            # determine which frames to retrieve from the overall total s2p output
-            total_frames_stitched = 0
-            curr_trial_frames = None
-            self.baseline_frames = [0, 0]
-            for t in to_suite2p:
-                pkl_path_2 = self.pkl_path[:-26] + t + '/' + self.metainfo['date'] + '_' + t + '.pkl'
-                with open(pkl_path_2, 'rb') as f:
-                    _expobj = pickle.load(f)
-                    # import suite2p data
-                total_frames_stitched += _expobj.n_frames
-                if t == trial:
-                    self.curr_trial_frames = [total_frames_stitched - _expobj.n_frames, total_frames_stitched]
-                if t in baseline_trials:
-                    self.baseline_frames[1] = total_frames_stitched
-
-            print('baseline frames: ', self.baseline_frames)
-            print('current trial frames: ', self.curr_trial_frames)
-
-            self.save() if save else None
 
     def collect_traces_from_targets(self, force_redo: bool = False, save: bool = True):
 
