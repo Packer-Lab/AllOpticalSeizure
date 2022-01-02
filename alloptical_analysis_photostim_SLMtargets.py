@@ -22,7 +22,7 @@ results_object_path = '/home/pshah/mnt/qnap/Analysis/alloptical_results_superobj
 allopticalResults = aoutils.import_resultsobj(pkl_path=results_object_path)
 
 # expobj, experiment = aoutils.import_expobj(prep='RL109', trial='t-013', verbose=True)
-key = 'f'; exp = 'post'; expobj, experiment = aoutils.import_expobj(aoresults_map_id=f"{exp} {key}.0")
+key = 'f'; exp = 'pre'; expobj, experiment = aoutils.import_expobj(aoresults_map_id=f"{exp} {key}.0")
 
 
 """
@@ -41,7 +41,7 @@ key = 'f'; exp = 'post'; expobj, experiment = aoutils.import_expobj(aoresults_ma
 
 
 # read in frames of interest
-interictal_frames = expobj.stims_out_sz
+frames_of_interest = expobj.stims_out_sz if hasattr(expobj, 'stims_out_sz') else expobj.stim_start_frames
 expobj.stitch_reg_tiffs(force_crop=True, do_stack=False) if not os.path.exists(expobj.reg_tif_crop_path) else None
 tiff_arr = tf.imread(expobj.reg_tif_crop_path, key=range(expobj.n_frames))
 
@@ -62,8 +62,8 @@ for idx, coord in enumerate(expobj.target_coords_all):
     mean = np.mean(target_area_trace)
     target_area_trace_dff = (target_area_trace - mean) / mean  # dFF
 
-    frames_responses = np.empty(shape=(len(interictal_frames), target_area_trace_dff.shape[1], target_area_trace_dff.shape[2]))
-    for stim_idx, stim_frame in enumerate(interictal_frames):
+    frames_responses = np.empty(shape=(len(frames_of_interest), target_area_trace_dff.shape[1], target_area_trace_dff.shape[2]))
+    for stim_idx, stim_frame in enumerate(frames_of_interest):
         pre_slice = target_area_trace_dff[stim_frame - expobj.pre_stim_response_frames_window : stim_frame, :, :]
         post_slice = target_area_trace_dff[stim_frame + expobj.stim_duration_frames: stim_frame + expobj.stim_duration_frames + expobj.post_stim_response_frames_window, :, :]
         dF = np.mean(post_slice, axis=0) - np.mean(pre_slice, axis=0)

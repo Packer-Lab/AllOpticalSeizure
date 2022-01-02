@@ -988,16 +988,16 @@ class TwoPhotonImaging:
             print(f"stacked registered tif path save: {tif_path_save}")
             print(f"sorted paths to indiv. tiff: \n\t{sorted_paths}")
             tif_arr = pj.make_tiff_stack(sorted_paths, save_as=tif_path_save)
-            print(f"shape of stacked tiff: {tif_arr.shape}")
+            print(f"shape of stacked tiff (stitched registered TIFF): {tif_arr.shape}")
 
         if not os.path.exists(tif_path_save2) or force_crop:
             with tf.TiffWriter(tif_path_save2, bigtiff=True) as tif:
                 with tf.TiffFile(tif_path_save, multifile=False) as input_tif:
-                    print('... cropping registered tiff')
                     data = input_tif.asarray()
-                    print('|- shape of stitched reg tiff: ', data.shape)
+                    print(f'... cropping registered tiff of shape: {data.shape}')
                 reg_tif_crop = data[self.curr_trial_frames[0] - start * 2000: self.curr_trial_frames[1] - (start * 2000)]
                 print('|- saving cropped reg tiff of shape: ', reg_tif_crop.shape)
+                assert reg_tif_crop.shape[0] == self.n_frames, "n_frames of experiment object does not match the number of frames in cropped registered TIFF"
                 tif.save(reg_tif_crop)
 
     def s2pMeanImage(self, s2p_path):
