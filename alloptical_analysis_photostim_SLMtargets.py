@@ -9,6 +9,7 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
+import tifffile as tf
 
 import alloptical_utils_pj as aoutils
 import alloptical_plotting_utils as aoplot
@@ -22,6 +23,7 @@ allopticalResults = aoutils.import_resultsobj(pkl_path=results_object_path)
 
 # expobj, experiment = aoutils.import_expobj(prep='RL109', trial='t-013', verbose=True)
 key = 'f'; exp = 'post'; expobj, experiment = aoutils.import_expobj(aoresults_map_id=f"{exp} {key}.0")
+
 
 """
 ######### ZONE FOR CALLING THIS SCRIPT DIRECTLY FROM THE SSH SERVER ###########
@@ -39,11 +41,50 @@ key = 'f'; exp = 'post'; expobj, experiment = aoutils.import_expobj(aoresults_ma
 
 
 # read in frames of interest
-interictal_frames = expobj.stim_idx_outsz
+interictal_frames = expobj.stims_out_sz
+expobj.stitch_reg_tiffs(force_crop=True, do_stack=False) if not os.path.exists(expobj.reg_tif_crop_path) else None
+tiff_arr = tf.imread(expobj.reg_tif_crop_path, key=range(expobj.n_frames))
 
+data_ = {}
+dist_pix_half = int((50 / expobj.pix_sz_x) / 2)  # 20 microns
 
+# target_area_trace = np.zeros([twohun_pix_half, twohun_pix_half, tiff_arr.shape[0]], dtype='float32')
+empty_frame = np.zeros([expobj.frame_x, expobj.frame_y])
+for idx, coord in enumerate(expobj.target_coords_all):
+    ## make a slice object
+    s = np.s_[:, int(coord[0]) - dist_pix_half: int(coord[0]) + dist_pix_half,
+        int(coord[1]) - dist_pix_half: int(coord[1]) + dist_pix_half]
 
+    ## use the slice object to collect Flu trace
+    target_area_trace = tiff_arr[s]
 
+    # dFF normalize
+    mean = np.mean(target_area_trace)
+    target_area_trace_dff = (target_area_trace - mean) / mean  # dFF
+
+    frames_responses = np.empty(shape=(len(interictal_frames), target_area_trace_dff.shape[1], target_area_trace_dff.shape[2]))
+    for stim_idx, stim_frame in enumerate(interictal_frames):
+        pre_slice = target_area_trace_dff[stim_frame - expobj.pre_stim_response_frames_window : stim_frame, :, :]
+        post_slice = target_area_trace_dff[stim_frame + expobj.stim_duration_frames: stim_frame + expobj.stim_duration_frames + expobj.post_stim_response_frames_window, :, :]
+        dF = np.mean(post_slice, axis=0) - np.mean(pre_slice, axis=0)
+        frames_responses[stim_idx] = dF
+
+    data_[idx] = frames_responses
+
+expobj.SLMtarget_areas_responses = data_
+
+# plot heatmaps
+fig, axs = plt.subplots(nrows=10, ncols=5, figsize=(15, 30))
+counter = 0
+for key in expobj.SLMtarget_areas_responses.keys():
+    col = counter % 5
+    row = counter // 5
+    mean_ = np.mean(expobj.SLMtarget_areas_responses[key], axis=0)
+    axs[row, col].imshow(mean_)
+    counter += 1
+fig.show()
+
+print('')
 
 
 # %% 1) adding slm targets responses to alloptical results allopticalResults.slmtargets_stim_responses

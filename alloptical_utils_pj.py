@@ -657,7 +657,6 @@ class TwoPhotonImaging:
         if continu:
             # determine which frames to retrieve from the overall total s2p output
             total_frames_stitched = 0
-            curr_trial_frames = None
             self.baseline_frames = [0, 0]
             for t in to_suite2p:
                 pkl_path_2 = self.pkl_path[:-26] + t + '/' + self.metainfo['date'] + '_' + t + '.pkl'
@@ -969,34 +968,36 @@ class TwoPhotonImaging:
         plt.show()
         return stack
 
-    def stitch_reg_tiffs(self, force_crop: bool = False, force_stack: bool = False):
+    def stitch_reg_tiffs(self, force_crop: bool = False, do_stack: bool = False):
+
         start = self.curr_trial_frames[0] // 2000  # 2000 because that is the batch size for suite2p run
         end = self.curr_trial_frames[1] // 2000 + 1
 
         tif_path_save = self.analysis_save_path + 'reg_tiff_%s.tif' % self.metainfo['trial']
         tif_path_save2 = self.reg_tif_crop_path
+
+        if force_crop:
+            do_stack = True if not os.path.exists(tif_path_save) else do_stack
+
         reg_tif_folder = self.s2p_path + '/reg_tif/'
         reg_tif_list = os.listdir(reg_tif_folder)
         reg_tif_list.sort()
         sorted_paths = [reg_tif_folder + tif for tif in reg_tif_list][start:end + 1]
 
-        print(tif_path_save)
-        print(sorted_paths)
-
-        if os.path.exists(tif_path_save):
-            if force_stack: pj.make_tiff_stack(sorted_paths, save_as=tif_path_save)
-        else:
-            pj.make_tiff_stack(sorted_paths, save_as=tif_path_save)
+        if do_stack or not os.path.exists(tif_path_save):
+            print(f"stacked registered tif path save: {tif_path_save}")
+            print(f"sorted paths to indiv. tiff: \n\t{sorted_paths}")
+            tif_arr = pj.make_tiff_stack(sorted_paths, save_as=tif_path_save)
+            print(f"shape of stacked tiff: {tif_arr.shape}")
 
         if not os.path.exists(tif_path_save2) or force_crop:
             with tf.TiffWriter(tif_path_save2, bigtiff=True) as tif:
                 with tf.TiffFile(tif_path_save, multifile=False) as input_tif:
-                    print('cropping registered tiff')
+                    print('... cropping registered tiff')
                     data = input_tif.asarray()
-                    print('shape of stitched tiff: ', data.shape)
-                reg_tif_crop = data[self.curr_trial_frames[0] - start * 2000: self.curr_trial_frames[1] - (
-                        self.curr_trial_frames[0] - start * 2000)]
-                print('saving cropped tiff ', reg_tif_crop.shape)
+                    print('|- shape of stitched reg tiff: ', data.shape)
+                reg_tif_crop = data[self.curr_trial_frames[0] - start * 2000: self.curr_trial_frames[1] - (start * 2000)]
+                print('|- saving cropped reg tiff of shape: ', reg_tif_crop.shape)
                 tif.save(reg_tif_crop)
 
     def s2pMeanImage(self, s2p_path):
