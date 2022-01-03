@@ -7,7 +7,6 @@
 import functools
 import re
 import glob
-import time
 from datetime import datetime
 
 import itertools
@@ -16,9 +15,6 @@ import os
 import sys
 
 sys.path.append('/home/pshah/Documents/code/')
-# import warnings
-# from Vape.utils.paq2py import *
-# from Vape.utils.utils_funcs import *
 from Vape.utils.utils_funcs import s2p_loader
 from Vape.utils import STAMovieMaker_noGUI as STAMM
 import scipy.stats as stats
@@ -27,11 +23,11 @@ import statsmodels as sm
 from suite2p.run_s2p import run_s2p
 import matplotlib.pyplot as plt
 import seaborn as sns
+import time
 import numpy as np
 import pandas as pd
 import xml.etree.ElementTree as ET
 import tifffile as tf
-import csv
 import bisect
 from funcsforprajay import funcs as pj
 from funcsforprajay import pnt2line
@@ -216,6 +212,7 @@ def run_for_loop_across_exps(run_pre4ap_trials=False, run_post4ap_trials=False, 
     the trials to for loop through are defined in allopticalResults.pre_4ap_trials and allopticalResults.post_4ap_trials"""
     # if len(run_trials) > 0 or run_pre4ap_trials is True or run_post4ap_trials is True:
     print(f"\n {'..'*5} INITIATING FOR LOOP ACROSS EXPS {'..'*5}\n")
+    t_start = time.time()
     def main_for_loop(func):
         @functools.wraps(func)
         def inner(*args, **kwargs):
@@ -293,7 +290,8 @@ def run_for_loop_across_exps(run_pre4ap_trials=False, run_post4ap_trials=False, 
                     counter_i += 1
                 if res:
                     return res
-
+            t_end = time.time()
+            pj.timer(t_start, t_end)
             print(f" {'--' * 5} COMPLETED FOR LOOP ACROSS EXPS {'--' * 5}\n")
         return inner
     return main_for_loop

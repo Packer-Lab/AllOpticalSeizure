@@ -2,7 +2,6 @@
 # %% IMPORT MODULES AND TRIAL expobj OBJECT
 import sys
 import os
-
 sys.path.append('/home/pshah/Documents/code/PackerLab_pycharm/')
 sys.path.append('/home/pshah/Documents/code/')
 import numpy as np
@@ -10,12 +9,11 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
 import tifffile as tf
+from funcsforprajay import funcs as pj
 
 import alloptical_utils_pj as aoutils
 import alloptical_plotting_utils as aoplot
-from funcsforprajay import funcs as pj
 
-from skimage import draw
 
 # # import results superobject that will collect analyses from various individual experiments
 results_object_path = '/home/pshah/mnt/qnap/Analysis/alloptical_results_superobject.pkl'
@@ -25,12 +23,6 @@ aoutils.random_plot()
 # key = 'f'; exp = 'pre'; expobj, experiment = aoutils.import_expobj(aoresults_map_id=f"{exp} {key}.0")
 
 
-"""
-######### ZONE FOR CALLING THIS SCRIPT DIRECTLY FROM THE SSH SERVER ###########
-######### ZONE FOR CALLING THIS SCRIPT DIRECTLY FROM THE SSH SERVER ###########
-######### ZONE FOR CALLING THIS SCRIPT DIRECTLY FROM THE SSH SERVER ###########
-######### ZONE FOR CALLING THIS SCRIPT DIRECTLY FROM THE SSH SERVER ###########
-"""
 
 ##### -------------------- ALL OPTICAL PHOTOSTIM ANALYSIS ##############################################################
 
@@ -38,9 +30,9 @@ aoutils.random_plot()
 # %% 6.0-main) avg STA responses in 200um space around photostim targets - compare diff between pre vs. post4ap (interictal, and ictal)
 
 # for i in ['pre', 'post']:
-#     key = 'a'; exp = i; expobj, experiment = aoutils.import_expobj(aoresults_map_id=f"{exp} {key}.0")
+key = 'l'; exp = 'pre'; expobj, experiment = aoutils.import_expobj(aoresults_map_id=f"{exp} {key}.0")
 
-@aoutils.run_for_loop_across_exps(run_pre4ap_trials=False, run_post4ap_trials=False, run_trials=['PS07 t-007', 'PS06 t-011', 'PS11 t-010'])
+@aoutils.run_for_loop_across_exps(run_pre4ap_trials=False, run_post4ap_trials=False, run_trials=['PS11 t-010'])
 def collect_responses_around_slmtarget(do_plot=True, **kwargs):
     assert 'expobj' in kwargs.keys(), "need to provide `expobj` as key word arg for function to complete"
     expobj = kwargs['expobj']
@@ -49,10 +41,14 @@ def collect_responses_around_slmtarget(do_plot=True, **kwargs):
 
     # read in frames of interest
     frames_of_interest = expobj.stims_out_sz if hasattr(expobj, 'stims_out_sz') else expobj.stim_start_frames
-    expobj.stitch_reg_tiffs(force_crop=True, do_stack=True) if not os.path.exists(expobj.reg_tif_crop_path) else None
+    # expobj.stitch_reg_tiffs(force_crop=True, do_stack=True) if not os.path.exists(expobj.reg_tif_crop_path) else None
 
     print(f"|- reading in registered TIFF for expobj from: {expobj.reg_tif_crop_path}")
-    tiff_arr = tf.imread(expobj.reg_tif_crop_path, key=range(expobj.n_frames))
+    try:
+        tiff_arr = tf.imread(expobj.reg_tif_crop_path, key=range(expobj.n_frames))
+    except:
+        expobj.stitch_reg_tiffs(force_crop=True, do_stack=True)
+        tiff_arr = tf.imread(expobj.reg_tif_crop_path, key=range(expobj.n_frames))
 
     data_ = {}
     dist_um = 200
@@ -102,7 +98,7 @@ def collect_responses_around_slmtarget(do_plot=True, **kwargs):
         fig.show()
         print(f"|- making avg STA plots for {len(expobj.target_coords_all)} SLM target coords ... DONE", end='\r')
 
-collect_responses_around_slmtarget()
+collect_responses_around_slmtarget(do_plot=False)
 
 @aoutils.run_for_loop_across_exps(run_pre4ap_trials=False, run_post4ap_trials=True)
 def collect_responses_around_slmtarget(do_plot=True, **kwargs):
@@ -116,7 +112,11 @@ def collect_responses_around_slmtarget(do_plot=True, **kwargs):
     expobj.stitch_reg_tiffs(force_crop=True, do_stack=True) if not os.path.exists(expobj.reg_tif_crop_path) else None
 
     print(f"|- reading in registered TIFF for expobj from: {expobj.reg_tif_crop_path}")
-    tiff_arr = tf.imread(expobj.reg_tif_crop_path, key=range(expobj.n_frames))
+    try:
+        tiff_arr = tf.imread(expobj.reg_tif_crop_path, key=range(expobj.n_frames))
+    except:
+        expobj.stitch_reg_tiffs(force_crop=True, do_stack=True)
+        tiff_arr = tf.imread(expobj.reg_tif_crop_path, key=range(expobj.n_frames))
 
     data_ = {}
     dist_um = 200
@@ -166,7 +166,7 @@ def collect_responses_around_slmtarget(do_plot=True, **kwargs):
         fig.show()
         print(f"|- making avg STA plots for {len(expobj.target_coords_all)} SLM target coords ... DONE", end='\r')
 
-collect_responses_around_slmtarget()
+collect_responses_around_slmtarget(do_plot=False)
 
 sys.exit()
 
@@ -201,9 +201,9 @@ for ax in axs[1:]:
     new_xticks = [x_ // expobj.pix_sz_x for x_ in new_xticks_labels]
     ax.set_xticks(new_xticks)
     ax.set_xticklabels(new_xticks_labels_adjusted)
-    ax.set_xlabel('distance to seizure (um)')
 
     ax.set_yticks([])
+axs[1].set_xlabel('distance to SLM target coordinate (um)')
 
 fig.tight_layout(pad=2.5)
 fig.suptitle(f"{expobj.t_series_name} - {len(expobj.target_coords_all)} targets - {expobj.exptype}", y=0.995)
