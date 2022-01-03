@@ -162,7 +162,7 @@ def import_resultsobj(pkl_path: str):
 
 # random plot just to initialize plotting for PyCharm
 def random_plot():
-    pj.make_general_scatter(x_list=[np.random.rand(5)], y_data=[np.random.rand(5)], s=60, alpha=1)
+    pj.make_general_scatter(x_list=[np.random.rand(5)], y_data=[np.random.rand(5)], s=60, alpha=1, figsize=(3,3))
 
 # dictionary of terms, phrases, etc. that are particular to this analysis
 idiom_dictionary = {
@@ -367,6 +367,11 @@ class TwoPhotonImaging:
     @property
     def trial(self):
         return self.metainfo['trial']
+
+    @property
+    def exptype(self):
+        return self.metainfo['exptype']
+
 
     @property
     def t_series_name(self):

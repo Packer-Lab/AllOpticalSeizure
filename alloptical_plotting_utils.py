@@ -29,13 +29,11 @@ def plot_sz_boundary_location(expobj, fig=None, ax=None, **kwargs):
         inframe_coord2 = np.array(list(expobj.stimsSzLocations[expobj.stimsSzLocations['wavefront_in_frame'] == True]['coord2']))
 
 
-        # fig, ax = plt.subplots()
-        pj.plot_coordinates(coords=inframe_coord1,frame_x=expobj.frame_x, frame_y=expobj.frame_y, show=False, fig=fig, ax=ax,
-                            edgecolors='green')
-        pj.plot_coordinates(coords=inframe_coord2,frame_x=expobj.frame_x, frame_y=expobj.frame_y, show=False, fig=fig, ax=ax,
-                            edgecolors='green')
+        # pj.plot_coordinates(coords=inframe_coord1,frame_x=expobj.frame_x, frame_y=expobj.frame_y, show=False, fig=fig, ax=ax,
+        #                     edgecolors='green')
+        # pj.plot_coordinates(coords=inframe_coord2,frame_x=expobj.frame_x, frame_y=expobj.frame_y, show=False, fig=fig, ax=ax,
+        #                     edgecolors='green')
         ax.plot([inframe_coord1_x, inframe_coord2_x], [inframe_coord1_y, inframe_coord2_y], c='white', linestyle='dashed', alpha=0.3)
-        # fig.show()
 
     if len(expobj.stimsSzLocations[expobj.stimsSzLocations['wavefront_in_frame'] == False]) > 1:
         outframe_coord1_x = np.array(list(expobj.stimsSzLocations[expobj.stimsSzLocations['wavefront_in_frame'] == False]['coord1']))[:,0]
@@ -56,7 +54,8 @@ def plot_sz_boundary_location(expobj, fig=None, ax=None, **kwargs):
         # fig.show()
 
     plot_SLMtargets_Locs(expobj, fig=fig, ax=ax, show=False)
-    ax.set_title(f'{expobj.t_series_name} excluded stims (red coords)')
+    title = kwargs['title'] if 'title' in kwargs.keys() else f'{expobj.t_series_name} excluded stims (red coords)'
+    ax.set_title(title, wrap=True)
 
     #
     # for i, stim_frame in enumerate(expobj.stims_in_sz):

@@ -20,9 +20,9 @@ from skimage import draw
 # # import results superobject that will collect analyses from various individual experiments
 results_object_path = '/home/pshah/mnt/qnap/Analysis/alloptical_results_superobject.pkl'
 allopticalResults = aoutils.import_resultsobj(pkl_path=results_object_path)
-
+aoutils.random_plot()
 # expobj, experiment = aoutils.import_expobj(prep='RL109', trial='t-013', verbose=True)
-key = 'f'; exp = 'pre'; expobj, experiment = aoutils.import_expobj(aoresults_map_id=f"{exp} {key}.0")
+# key = 'f'; exp = 'pre'; expobj, experiment = aoutils.import_expobj(aoresults_map_id=f"{exp} {key}.0")
 
 
 """
@@ -32,59 +32,185 @@ key = 'f'; exp = 'pre'; expobj, experiment = aoutils.import_expobj(aoresults_map
 ######### ZONE FOR CALLING THIS SCRIPT DIRECTLY FROM THE SSH SERVER ###########
 """
 
-# %% 0) #### -------------------- ALL OPTICAL PHOTOSTIM ANALYSIS ################################################
+##### -------------------- ALL OPTICAL PHOTOSTIM ANALYSIS ##############################################################
 
 
-# 6.0-main) avg responses in 200um space around photostim targets - pre vs. post4ap (interictal, and ictal)
+# %% 6.0-main) avg STA responses in 200um space around photostim targets - compare diff between pre vs. post4ap (interictal, and ictal)
 
-# read in frames of interest from the reg_tiff, extract data around each SLM target as 2d x frames array, put into dictionary with SLM target as key
+# for i in ['pre', 'post']:
+#     key = 'a'; exp = i; expobj, experiment = aoutils.import_expobj(aoresults_map_id=f"{exp} {key}.0")
+
+@aoutils.run_for_loop_across_exps(run_pre4ap_trials=False, run_post4ap_trials=False, run_trials=['PS07 t-007', 'PS06 t-011', 'PS11 t-010'])
+def collect_responses_around_slmtarget(do_plot=True, **kwargs):
+    assert 'expobj' in kwargs.keys(), "need to provide `expobj` as key word arg for function to complete"
+    expobj = kwargs['expobj']
+    # read in frames of interest from the reg_tiff, extract data around each SLM target as 2d x frames array, put into dictionary with SLM target as key
 
 
-# read in frames of interest
-frames_of_interest = expobj.stims_out_sz if hasattr(expobj, 'stims_out_sz') else expobj.stim_start_frames
-expobj.stitch_reg_tiffs(force_crop=True, do_stack=False) if not os.path.exists(expobj.reg_tif_crop_path) else None
-tiff_arr = tf.imread(expobj.reg_tif_crop_path, key=range(expobj.n_frames))
+    # read in frames of interest
+    frames_of_interest = expobj.stims_out_sz if hasattr(expobj, 'stims_out_sz') else expobj.stim_start_frames
+    expobj.stitch_reg_tiffs(force_crop=True, do_stack=True) if not os.path.exists(expobj.reg_tif_crop_path) else None
 
-data_ = {}
-dist_pix_half = int((50 / expobj.pix_sz_x) / 2)  # 20 microns
+    print(f"|- reading in registered TIFF for expobj from: {expobj.reg_tif_crop_path}")
+    tiff_arr = tf.imread(expobj.reg_tif_crop_path, key=range(expobj.n_frames))
 
-# target_area_trace = np.zeros([twohun_pix_half, twohun_pix_half, tiff_arr.shape[0]], dtype='float32')
-empty_frame = np.zeros([expobj.frame_x, expobj.frame_y])
+    data_ = {}
+    dist_um = 200
+    dist_pix_half = int((dist_um / expobj.pix_sz_x) / 2)
+
+    empty_frame = np.zeros([expobj.frame_x, expobj.frame_y])
+    print(f"|- collecting traces at distance: {dist_um} um around target coordinate")
+    for idx, coord in enumerate(expobj.target_coords_all):
+        ## make a slice object
+        s = np.s_[:, int(coord[1]) - dist_pix_half: int(coord[1]) + dist_pix_half,
+            int(coord[0]) - dist_pix_half: int(coord[0]) + dist_pix_half]
+
+        ## use the slice object to collect Flu trace
+        target_area_trace = tiff_arr[s]
+
+        # dFF normalize
+        mean = np.mean(target_area_trace)
+        target_area_trace_dff = (target_area_trace - mean) / mean  # dFF
+
+        frames_responses = np.empty(shape=(len(frames_of_interest), target_area_trace_dff.shape[1], target_area_trace_dff.shape[2]))
+        for stim_idx, stim_frame in enumerate(frames_of_interest):
+            pre_slice = target_area_trace_dff[stim_frame - expobj.pre_stim_response_frames_window : stim_frame, :, :]
+            post_slice = target_area_trace_dff[stim_frame + expobj.stim_duration_frames: stim_frame + expobj.stim_duration_frames + expobj.post_stim_response_frames_window, :, :]
+            dF = np.mean(post_slice, axis=0) - np.mean(pre_slice, axis=0)
+            frames_responses[stim_idx] = dF
+
+        data_[idx] = frames_responses
+    print(f"|- collected data from {len(expobj.target_coords_all)} SLM target coords and {len(frames_of_interest)} stim frames")
+    data_['data_collected_at_distance_um'] = dist_um
+    expobj.SLMtarget_areas_responses = data_
+    expobj.save()
+
+    if do_plot:
+        # plot heatmaps
+        fig, axs = plt.subplots(nrows=11, ncols=5, figsize=(15, 33))
+        print(f"|- making avg STA plots for {len(expobj.target_coords_all)} SLM target coords ... ", end='\r')
+        counter = 0
+        for idx, coord in enumerate(expobj.target_coords_all):
+            col = counter % 5
+            row = counter // 5
+            mean_ = np.mean(expobj.SLMtarget_areas_responses[idx], axis=0)  # mean across all stim frames
+            hmap = axs[row, col].imshow(mean_, vmin=0, vmax=0.2)
+            counter += 1
+        colorbar = fig.colorbar(hmap, ax=axs[row, col], fraction=0.046, pad=0.04)
+        fig.tight_layout(pad=1.3)
+        fig.suptitle(f"{expobj.t_series_name} - {len(expobj.target_coords_all)} targets - {expobj.exptype}", y=0.995)
+        fig.show()
+        print(f"|- making avg STA plots for {len(expobj.target_coords_all)} SLM target coords ... DONE", end='\r')
+
+collect_responses_around_slmtarget()
+
+@aoutils.run_for_loop_across_exps(run_pre4ap_trials=False, run_post4ap_trials=True)
+def collect_responses_around_slmtarget(do_plot=True, **kwargs):
+    assert 'expobj' in kwargs.keys(), "need to provide `expobj` as key word arg for function to complete"
+    expobj = kwargs['expobj']
+    # read in frames of interest from the reg_tiff, extract data around each SLM target as 2d x frames array, put into dictionary with SLM target as key
+
+
+    # read in frames of interest
+    frames_of_interest = expobj.stims_out_sz if hasattr(expobj, 'stims_out_sz') else expobj.stim_start_frames
+    expobj.stitch_reg_tiffs(force_crop=True, do_stack=True) if not os.path.exists(expobj.reg_tif_crop_path) else None
+
+    print(f"|- reading in registered TIFF for expobj from: {expobj.reg_tif_crop_path}")
+    tiff_arr = tf.imread(expobj.reg_tif_crop_path, key=range(expobj.n_frames))
+
+    data_ = {}
+    dist_um = 200
+    dist_pix_half = int((dist_um / expobj.pix_sz_x) / 2)
+
+    empty_frame = np.zeros([expobj.frame_x, expobj.frame_y])
+    print(f"|- collecting traces at distance: {dist_um} um around target coordinate")
+    for idx, coord in enumerate(expobj.target_coords_all):
+        ## make a slice object
+        s = np.s_[:, int(coord[1]) - dist_pix_half: int(coord[1]) + dist_pix_half,
+            int(coord[0]) - dist_pix_half: int(coord[0]) + dist_pix_half]
+
+        ## use the slice object to collect Flu trace
+        target_area_trace = tiff_arr[s]
+
+        # dFF normalize
+        mean = np.mean(target_area_trace)
+        target_area_trace_dff = (target_area_trace - mean) / mean  # dFF
+
+        frames_responses = np.empty(shape=(len(frames_of_interest), target_area_trace_dff.shape[1], target_area_trace_dff.shape[2]))
+        for stim_idx, stim_frame in enumerate(frames_of_interest):
+            pre_slice = target_area_trace_dff[stim_frame - expobj.pre_stim_response_frames_window : stim_frame, :, :]
+            post_slice = target_area_trace_dff[stim_frame + expobj.stim_duration_frames: stim_frame + expobj.stim_duration_frames + expobj.post_stim_response_frames_window, :, :]
+            dF = np.mean(post_slice, axis=0) - np.mean(pre_slice, axis=0)
+            frames_responses[stim_idx] = dF
+
+        data_[idx] = frames_responses
+    print(f"|- collected data from {len(expobj.target_coords_all)} SLM target coords and {len(frames_of_interest)} stim frames")
+    data_['data_collected_at_distance_um'] = dist_um
+    expobj.SLMtarget_areas_responses = data_
+    expobj.save()
+
+    if do_plot:
+        # plot heatmaps
+        fig, axs = plt.subplots(nrows=11, ncols=5, figsize=(15, 33))
+        print(f"|- making avg STA plots for {len(expobj.target_coords_all)} SLM target coords ... ", end='\r')
+        counter = 0
+        for idx, coord in enumerate(expobj.target_coords_all):
+            col = counter % 5
+            row = counter // 5
+            mean_ = np.mean(expobj.SLMtarget_areas_responses[idx], axis=0)  # mean across all stim frames
+            hmap = axs[row, col].imshow(mean_, vmin=0, vmax=0.2)
+            counter += 1
+        colorbar = fig.colorbar(hmap, ax=axs[row, col], fraction=0.046, pad=0.04)
+        fig.tight_layout(pad=1.3)
+        fig.suptitle(f"{expobj.t_series_name} - {len(expobj.target_coords_all)} targets - {expobj.exptype}", y=0.995)
+        fig.show()
+        print(f"|- making avg STA plots for {len(expobj.target_coords_all)} SLM target coords ... DONE", end='\r')
+
+collect_responses_around_slmtarget()
+
+sys.exit()
+
+# %%
+
+key = 'a'; exp = 'pre'; expobj, experiment = aoutils.import_expobj(aoresults_map_id=f"{exp} {key}.0")
+__means = []
 for idx, coord in enumerate(expobj.target_coords_all):
-    ## make a slice object
-    s = np.s_[:, int(coord[0]) - dist_pix_half: int(coord[0]) + dist_pix_half,
-        int(coord[1]) - dist_pix_half: int(coord[1]) + dist_pix_half]
+    __means.append(np.mean(expobj.SLMtarget_areas_responses[idx], axis=0))  # mean across all stim frames
+pre4ap_mean = np.mean(np.asarray(__means), axis=0)
 
-    ## use the slice object to collect Flu trace
-    target_area_trace = tiff_arr[s]
+key = 'a'; exp = 'post'; expobj, experiment = aoutils.import_expobj(aoresults_map_id=f"{exp} {key}.0")
+__means = []
+for idx, coord in enumerate(expobj.target_coords_all):
+    __means.append(np.mean(expobj.SLMtarget_areas_responses[idx], axis=0))  # mean across all stim frames
+post4ap_mean = np.mean(np.asarray(__means), axis=0)
 
-    # dFF normalize
-    mean = np.mean(target_area_trace)
-    target_area_trace_dff = (target_area_trace - mean) / mean  # dFF
 
-    frames_responses = np.empty(shape=(len(frames_of_interest), target_area_trace_dff.shape[1], target_area_trace_dff.shape[2]))
-    for stim_idx, stim_frame in enumerate(frames_of_interest):
-        pre_slice = target_area_trace_dff[stim_frame - expobj.pre_stim_response_frames_window : stim_frame, :, :]
-        post_slice = target_area_trace_dff[stim_frame + expobj.stim_duration_frames: stim_frame + expobj.stim_duration_frames + expobj.post_stim_response_frames_window, :, :]
-        dF = np.mean(post_slice, axis=0) - np.mean(pre_slice, axis=0)
-        frames_responses[stim_idx] = dF
+# %% plot heatmaps
+fig, axs = plt.subplots(ncols=3, nrows=1, figsize=(8, 3.1))
+print(f"|- making pre and post4ap compare response plots", end='\r')
+aoplot.plot_sz_boundary_location(expobj, fig=fig, ax=axs[0], title='')
+axs[1].imshow(pre4ap_mean, vmin=0, vmax=0.1)
+axs[1].set_title('pre4ap')
+im = axs[2].imshow(post4ap_mean, vmin=0, vmax=0.1)
+axs[2].set_title('post4ap')
+for ax in axs[1:]:
+    xticks = ax.get_xticks()  # pixel space
+    # labels = [int(x_ * expobj.pix_sz_x - expobj.SLMtarget_areas_responses['data_collected_at_distance_um'] / 2) for x_ in xticks]
+    new_xticks_labels = np.arange(0, expobj.SLMtarget_areas_responses['data_collected_at_distance_um'], 50)[1:]
+    new_xticks_labels_adjusted = [int(x_ - expobj.SLMtarget_areas_responses['data_collected_at_distance_um'] / 2) for x_ in new_xticks_labels]
+    new_xticks = [x_ // expobj.pix_sz_x for x_ in new_xticks_labels]
+    ax.set_xticks(new_xticks)
+    ax.set_xticklabels(new_xticks_labels_adjusted)
+    ax.set_xlabel('distance to seizure (um)')
 
-    data_[idx] = frames_responses
+    ax.set_yticks([])
 
-expobj.SLMtarget_areas_responses = data_
-
-# plot heatmaps
-fig, axs = plt.subplots(nrows=10, ncols=5, figsize=(15, 30))
-counter = 0
-for key in expobj.SLMtarget_areas_responses.keys():
-    col = counter % 5
-    row = counter // 5
-    mean_ = np.mean(expobj.SLMtarget_areas_responses[key], axis=0)
-    axs[row, col].imshow(mean_)
-    counter += 1
+fig.tight_layout(pad=2.5)
+fig.suptitle(f"{expobj.t_series_name} - {len(expobj.target_coords_all)} targets - {expobj.exptype}", y=0.995)
 fig.show()
 
-print('')
+
+# TODO need to figure out how to exclude targets cells from within the plotting zone (atleast for quantification)
 
 
 # %% 1) adding slm targets responses to alloptical results allopticalResults.slmtargets_stim_responses
