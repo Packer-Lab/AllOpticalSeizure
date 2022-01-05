@@ -31,7 +31,7 @@ import tifffile as tf
 import bisect
 from funcsforprajay import funcs as pj
 from funcsforprajay import pnt2line
-from funcsforprajay.wrappers import print_start_end_plot, plot_piping_decorator
+from funcsforprajay.wrappers import plot_piping_decorator
 from utils.paq_utils import paq_read, frames_discard
 import alloptical_plotting_utils as aoplot
 import pickle
