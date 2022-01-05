@@ -26,7 +26,7 @@ allopticalResults.pre_4ap_trials = [
     # ['RL108 t-010'],
     # ['RL109 t-007'],
     ['RL109 t-008'],
-    ['RL109 t-013'],  # - pickle truncated .21/10/18 - analysis func jupyter run on .21/11/12
+    ['RL109 t-013'],
     # ['RL109 t-014'],
     # ['PS04 t-012', 'PS04 t-014',  # - not sure what's wrong with PS04, but the photostim and Flu are falling out of sync .21/10/09
     #  'PS04 t-017'],

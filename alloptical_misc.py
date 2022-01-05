@@ -1,12 +1,17 @@
+import pickle
+
 import alloptical_utils_pj as aoutils
 import alloptical_plotting_utils as aoplot
 import matplotlib.pyplot as plt
 import numpy as np
-
+from funcsforprajay import funcs as pj
 
 # import results superobject that will collect analyses from various individual experiments
 results_object_path = '/home/pshah/mnt/qnap/Analysis/alloptical_results_superobject.pkl'
 allopticalResults = aoutils.import_resultsobj(pkl_path=results_object_path)
+
+
+expobj, _ = aoutils.import_expobj(prep='PS06', trial='t-014', verbose=False)
 
 
 # i = 'pre'
@@ -20,6 +25,70 @@ allopticalResults = aoutils.import_resultsobj(pkl_path=results_object_path)
 #
 # expobj._findTargetsAreas()
 # expobj._findTargetedS2pROIs(force_redo=True, plot=False)
+
+# %% testing which pkl objects are corrupted (if any)
+
+pre_4ap_trials = [
+    ['RL108 t-009'],
+    ['RL108 t-010'],
+    ['RL109 t-007'],
+    ['RL109 t-008'],
+    ['RL109 t-013'],
+    ['RL109 t-014'],
+    ['PS04 t-012', 'PS04 t-014',
+     'PS04 t-017'],
+    ['PS05 t-010'],
+    ['PS07 t-007'],
+    ['PS07 t-009'],
+    ['PS06 t-008', 'PS06 t-009', 'PS06 t-010'],
+    ['PS06 t-011'],
+    ['PS06 t-012'],
+    ['PS11 t-007'],
+    ['PS11 t-010'],
+    ['PS17 t-005'],
+    ['PS17 t-006', 'PS17 t-007'],
+    ['PS18 t-006']
+]
+
+post_4ap_trials = [
+    ['RL108 t-013'],
+    ['RL108 t-011'],
+    ['RL109 t-020'],
+    ['RL109 t-021'],
+    ['RL109 t-018'],
+    ['RL109 t-016',  'RL109 t-017'],
+    ['PS04 t-018'],
+    ['PS05 t-012'],
+    ['PS07 t-011'],
+    ['PS07 t-017'],
+    ['PS06 t-014', 'PS06 t-015'],
+    ['PS06 t-013'],
+    ['PS06 t-016'],
+    ['PS11 t-016'],
+    ['PS11 t-011'],
+    ['PS17 t-011'],
+    ['PS17 t-009'],
+    ['PS18 t-008']
+]
+
+
+for key in pj.flattenOnce(post_4ap_trials):
+    prep = key[:-6]
+    trial = key[-5:]
+    try:
+        expobj, _ = aoutils.import_expobj(prep=prep, trial=trial, verbose=False)
+    except pickle.UnpicklingError:
+        print(f"\n** FAILED IMPORT OF * {prep} {trial}")
+
+
+for key in ['RL109 t-020']:
+    prep = key[:-6]
+    trial = key[-5:]
+    expobj, _ = aoutils.import_expobj(prep=prep, trial=trial, verbose=False)
+    expobj.metainfo['pre4ap_trials'] = ['t-007', 't-008', 't-011', 't-012', 't-013', 't-014']
+    expobj.metainfo['post4ap_trials'] = ['t-016', 't-017', 't-018', 't-019', 't-020', 't-021']
+    expobj.save()
+
 
 # %% updating the non-targets exclusion region to 15um from the center of the spiral coordinate
 

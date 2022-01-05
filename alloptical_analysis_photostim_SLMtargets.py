@@ -32,10 +32,10 @@ key = 'l'; exp = 'pre'; expobj, experiment = aoutils.import_expobj(aoresults_map
 @aoutils.run_for_loop_across_exps(run_pre4ap_trials=True, run_post4ap_trials=True)
 def collect_responses_around_slmtarget(do_plot=True, **kwargs):
     assert 'expobj' in kwargs.keys(), "need to provide `expobj` as key word arg for function to complete"
-    # expobj = kwargs['expobj']
-    key = 'l';
-    exp = 'pre';
-    expobj, experiment = aoutils.import_expobj(aoresults_map_id=f"{exp} {key}.0")
+    expobj = kwargs['expobj']
+    # key = 'l';
+    # exp = 'pre';
+    # expobj, experiment = aoutils.import_expobj(aoresults_map_id=f"{exp} {key}.0")
 
     # read in frames of interest from the reg_tiff, extract data around each SLM target as 2d x frames array, put into dictionary with SLM target as key
 
@@ -90,7 +90,7 @@ def collect_responses_around_slmtarget(do_plot=True, **kwargs):
         stim_idxes = locs[1][np.where(locs[0] == cell_idx)]
         stim_frames_list = [expobj.stim_start_frames[stim_idx] for stim_idx in stim_idxes]
         ## make a slice object
-        s = np.s_[stim_frames_list, int(coord[1]) - dist_pix_half: int(coord[1]) + dist_pix_half,
+        s = np.s_[:, int(coord[1]) - dist_pix_half: int(coord[1]) + dist_pix_half,
             int(coord[0]) - dist_pix_half: int(coord[0]) + dist_pix_half]
 
         ## use the slice object to collect Flu trace
@@ -108,7 +108,7 @@ def collect_responses_around_slmtarget(do_plot=True, **kwargs):
             frames_responses[idx] = dF
 
         data_[cell_idx] = frames_responses
-    print(f"|- collected data from {len(expobj.target_coords_all)} SLM target coords and {len(frames_of_interest)} stim frames")
+    print(f"|- collected data from {len(expobj.target_coords_all)} SLM target coords and ONLY HITS stim frames for each target")
     data_['data_collected_at_distance_um'] = dist_um
     expobj.SLMtarget_areas_responses_hitsonly = data_
     expobj.save()
@@ -138,12 +138,12 @@ collect_responses_around_slmtarget(do_plot=False)
 
 for key in list(allopticalResults.trial_maps['pre'].keys())[1:]:
 
-    print(f"|- Making plot for key: {key}")
+    print(f"\n|- Making plot for key: {key}")
 
     exp = 'pre'; expobj, experiment = aoutils.import_expobj(aoresults_map_id=f"{exp} {key}.0")
     __means = []
     for idx, coord in enumerate(expobj.target_coords_all):
-        arr = np.mean(expobj.SLMtarget_areas_responses[idx], axis=0)
+        arr = np.mean(expobj.SLMtarget_areas_responses_hitsonly[idx], axis=0)
         if arr.shape[0] == arr.shape[1]:
         # print(expobj.SLMtarget_areas_responses[idx].shape)
             __means.append(arr)  # mean across all stim frames
@@ -153,7 +153,7 @@ for key in list(allopticalResults.trial_maps['pre'].keys())[1:]:
     exp = 'post'; expobj, experiment = aoutils.import_expobj(aoresults_map_id=f"{exp} {key}.0")
     __means = []
     for idx, coord in enumerate(expobj.target_coords_all):
-        arr = np.mean(expobj.SLMtarget_areas_responses[idx], axis=0)
+        arr = np.mean(expobj.SLMtarget_areas_responses_hitsonly[idx], axis=0)
         if arr.shape[0] == arr.shape[1]:
         # print(expobj.SLMtarget_areas_responses[idx].shape)
             __means.append(arr)  # mean across all stim frames
@@ -185,8 +185,8 @@ for key in list(allopticalResults.trial_maps['pre'].keys())[1:]:
     fig.show()
 
 
-# TODO need to figure out how to exclude targets cells from within the plotting zone (atleast for quantification)
-# TODO collect only for success stims
+# TODO need to figure out how to exclude targets cells from within the plotting zone (atleast for quantification) -- go through the s2p ROIs followers responses
+# collect only for success stims - done
 
 
 

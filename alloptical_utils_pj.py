@@ -46,7 +46,7 @@ pd.set_option('max_rows', 10)
 # %% UTILITY FUNCTIONS and DECORATORS
 def import_expobj(aoresults_map_id: str = None, trial: str = None, prep: str = None, date: str = None,
                   pkl_path: str = None, exp_prep: str = None,
-                  verbose: bool = True, do_processing: bool = False):
+                  verbose: bool = False, do_processing: bool = False):
     """
     primary function for importing of saved expobj files saved pickel files.
 
@@ -82,30 +82,34 @@ def import_expobj(aoresults_map_id: str = None, trial: str = None, prep: str = N
                 date = allopticalResults.metainfo.loc[
                     allopticalResults.metainfo['prep_trial'] == f"{prep} {trial}", 'date'].values[0]
             except ValueError:
-                print('not able to find date in allopticalResults.metainfo')
+                raise ValueError('not able to find date in allopticalResults.metainfo')
         pkl_path = "/home/pshah/mnt/qnap/Analysis/%s/%s/%s_%s/%s_%s.pkl" % (date, prep, date, trial, date, trial)
 
     if not os.path.exists(pkl_path):
         raise Exception('pkl path NOT found: ' + pkl_path)
     with open(pkl_path, 'rb') as f:
-        expobj = pickle.load(f)
+        print(f'\- loading {pkl_path}', end='\r')
+        try:
+            expobj = pickle.load(f)
+        except pickle.UnpicklingError:
+            raise pickle.UnpicklingError(f"\n** FAILED IMPORT OF * {prep} {trial} * from {pkl_path}\n")
         experiment = '%s: %s, %s, %s' % (
             expobj.metainfo['animal prep.'], expobj.metainfo['trial'], expobj.metainfo['exptype'],
             expobj.metainfo['comments'])
-        print(f'\- loading {pkl_path}') if verbose else None
+        print(f'\- loading {pkl_path} .. DONE')
         print(f'|- DONE IMPORT of {experiment}') if verbose else None
-
-    # move expobj to the official pkl_path from the provided pkl_path that expobj was loaded from (if different)
-    if pkl_path is not None:
-        if expobj.pkl_path != pkl_path:
-            expobj.save_pkl(pkl_path=expobj.pkl_path)
-            print('saved expobj to pkl_path: ', expobj.pkl_path)
 
     ### roping in some extraneous processing steps if there's expobj's that haven't completed for them
     if expobj.analysis_save_path[-1] != '/':
         expobj.analysis_save_path = expobj.analysis_save_path + '/'
         print(f"updated expobj.analysis_save_path to: {expobj.analysis_save_path}")
         expobj.save()
+
+    # move expobj to the official pkl_path from the provided pkl_path that expobj was loaded from (if different)
+    if pkl_path is not None:
+        if expobj.pkl_path != pkl_path:
+            expobj.save_pkl(pkl_path=expobj.pkl_path)
+            print('saved expobj to pkl_path: ', expobj.pkl_path)
 
     if not hasattr(expobj, 'paq_rate') or not hasattr(expobj, 'frame_start_time_actual'):
         print('\n-running paqProcessing to update paq attr.s in expobj')
@@ -311,6 +315,11 @@ class TwoPhotonImaging:
 
         print('\n***** CREATING NEW TwoPhotonImaging with the following metainfo: ', metainfo)
 
+        assert os.path.exists(tiff_path)
+        assert os.path.exists(analysis_save_path)
+        assert os.path.exists(paq_path)
+        assert os.path.exists(suite2p_path) if suite2p_path else None
+
         self.tiff_path = tiff_path
         self.paq_path = paq_path
         self.metainfo = {'animal prep.': None, 'trial': None, 'date': None, 'exptype': None, 'data_path_base': None, 'comments': None,
@@ -382,11 +391,12 @@ class TwoPhotonImaging:
     @property
     def pkl_path(self):
         """specify path in Analysis folder to save pkl object"""
-        return f"{self.analysis_save_path}{self.metainfo['date']}_{self.metainfo['trial']}.pkl"
+        self.__pkl_path = f"{self.analysis_save_path}{self.metainfo['date']}_{self.metainfo['trial']}.pkl"
+        return self.__pkl_path
 
     @pkl_path.setter
     def pkl_path(self, path: str):
-        self.pkl_path = path
+        self.__pkl_path = path
 
     def s2pRun(self, ops, db, user_batch_size):
 
@@ -1016,9 +1026,7 @@ class TwoPhotonImaging:
 
     def save_pkl(self, pkl_path: str = None):
         if pkl_path is None:
-            if hasattr(self, 'pkl_path'):
-                pkl_path = self.pkl_path
-            else:
+            if not hasattr(self, 'pkl_path'):
                 raise ValueError(
                     'pkl path for saving was not found in object attributes, please provide path to save to')
         else:
@@ -1026,7 +1034,7 @@ class TwoPhotonImaging:
 
         with open(self.pkl_path, 'wb') as f:
             pickle.dump(self, f)
-        print(f"\n\t -- Saving expobj saved to {pkl_path} -- ")
+        print(f"\n\t -- Saving expobj saved to {self.pkl_path} -- ")
 
     def save(self):
         self.save_pkl()
@@ -1037,16 +1045,13 @@ class alloptical(TwoPhotonImaging):
     def __init__(self, paths, metainfo, stimtype, quick=False):
         # self.metainfo = metainfo
         self.stim_type = stimtype
-        self.naparm_path = paths[2]
-        self.paq_path = paths[3]
-
+        self.naparm_path = paths['naparms_loc']
         assert os.path.exists(self.naparm_path)
-        assert os.path.exists(self.paq_path)
 
         self.seizure_frames = []
 
-        TwoPhotonImaging.__init__(self, tiff_path=paths[1], paq_path=paths[3], metainfo=metainfo,
-                                  analysis_save_path=paths[4], suite2p_path=None, suite2p_run=False, quick=quick)
+        TwoPhotonImaging.__init__(self, tiff_path=paths['tiffs_loc'], paq_path=paths['paqs_loc'], metainfo=metainfo,
+                                  analysis_save_path=paths['analysis_save_path'], suite2p_path=None, suite2p_run=False, quick=quick)
 
         # self.tiff_path_dir = paths[0]
         # self.tiff_path = paths[1]
@@ -5114,28 +5119,41 @@ def calculate_StimSuccessRate(expobj, cell_ids: list, raw_traces_stims=None, dfs
 
 def run_photostim_preprocessing(trial, exp_type, tiffs_loc, naparms_loc, paqs_loc, metainfo,
                                 new_tiffs, matlab_pairedmeasurements_path=None, processed_tiffs=True, discard_all=False,
-                                quick=False,
-                                analysis_save_path=''):
+                                quick=False, analysis_save_path=''):
     print('----------------------------------------')
-    print('-----Processing trial # %s-----' % trial)
+    print('-----Processing trial # %s------' % trial)
     print('----------------------------------------\n')
 
-    paths = [[tiffs_loc, naparms_loc, paqs_loc, analysis_save_path, matlab_pairedmeasurements_path]]
-    print(
-        'tiffs_loc_dir, tiffs_loc, naparms_loc, paqs_loc, analysis_save_path paths, and matlab_pairedmeasurement_path:\n',
-        paths)
-    for path in paths[0]:  # check that all paths required for processing run are legit and active
-        if path is not None:
-            try:
-                assert os.path.exists(path)
+    os.makedirs(analysis_save_path, exist_ok=True)
 
-            except AssertionError:
-                print('we got an invalid path at: ', path)
+    paths = {'tiffs_loc': tiffs_loc,
+        'naparms_loc': naparms_loc,
+        'paqs_loc': paqs_loc,
+        'analysis_save_path': analysis_save_path,
+        'matlab_pairedmeasurement_path': matlab_pairedmeasurements_path
+             }
+
+    # print(paths)
+
+    # paths = [[tiffs_loc, naparms_loc, paqs_loc, analysis_save_path, matlab_pairedmeasurements_path]]
+    # print(
+    #     'tiffs_loc, '
+    #     'naparms_loc, '
+    #     'paqs_loc, '
+    #     'analysis_save_path paths, and '
+    #     'matlab_pairedmeasurement_path:\n',
+    #     paths)
+    # for path in paths[0]:  # check that all paths required for processing run are legit and active
+    #     if path is not None:
+    #         try:
+    #             assert os.path.exists(path)
+    #         except AssertionError:
+    #             print('we got an invalid path at: ', path)
 
     if 'post' in exp_type and '4ap' in exp_type:
-        expobj = Post4ap(paths[0], metainfo=metainfo, stimtype='2pstim', discard_all=discard_all)
+        expobj = Post4ap(paths, metainfo=metainfo, stimtype='2pstim', discard_all=discard_all)
     else:
-        expobj = alloptical(paths[0], metainfo=metainfo, stimtype='2pstim', quick=quick)
+        expobj = alloptical(paths, metainfo=metainfo, stimtype='2pstim', quick=quick)
 
     # for key, values in vars(expobj).items():
     #     print(key)

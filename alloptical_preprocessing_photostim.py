@@ -4,6 +4,7 @@ import alloptical_utils_pj as aoutils
 # Step #1) in all optical experiment analysis - preprocessing the data to prep for suite2p analysis and creating some starter experiment objects
 
 
+
 # 1) ### prepare trial and photostim experiment information below before running run_photostim_processing()
 data_path_base = '/home/pshah/mnt/qnap/Data/2020-12-19'
 animal_prep = 'RL109'
@@ -13,17 +14,16 @@ date = data_path_base[-10:]
 # paqs_loc = '%s/%s_RL109_%s.paq' % (data_path_base, date, trial[2:])  # path to the .paq files for the selected trials
 
 # need to update these 4 things for every trial
-trial = 't-013'  # note that %s magic command in the code below will be using these trials listed here
-comments = 'photostim: 9 cells x 4 groups; 5mW per cell; preset: 2020-11-25_PS_250ms-stim-50hz (approach #1); same targets and protocol as t011 but random vs ekmeans group assignment'
+trial = 't-018'  # note that %s magic command in the code below will be using these trials listed here
+comments = '2 sz within photostim, 2nd one possible with CSD + 1 sz at the end with CSD; 9 x 4 groups, same as t013. less number of clear responding cells on STA'
 naparms_loc = '/photostim/2020-12-19_RL109_ps_014/'  # make sure to include '/' at the end to indicate the child directory
-exp_type = 'pre 4ap 2p all optical'  # use 'post' and '4ap' in the description to create the appropriate run_post4ap_trials exp object
+exp_type = 'post 4ap 2p all optical'  # use 'post' and '4ap' in the description to create the appropriate run_post4ap_trials exp object
 analysis_save_path = f'/home/pshah/mnt/qnap/Analysis/{date}/{animal_prep}/{animal_prep}_{trial}'
 
-pre4ap_trials = ['']  # add all optical t-series from pre4ap_trials
-post4ap_trials = ['']  # add all optical t-series from post4ap_trials
+pre4ap_trials = ['t-007', 't-008', 't-011', 't-012', 't-013', 't-014']  # add all optical t-series from pre4ap_trials
+post4ap_trials = ['t-016', 't-017', 't-018', 't-019', 't-020', 't-021']  # add all optical t-series from post4ap_trials
 
 
-# paqs_loc = '%s/%s_RL111_%s.paq' % (data_path_base, date, '008')  # path to the .paq files for the selected trials
 ######
 
 ## everything below should autopopulate and run automatically
@@ -38,7 +38,7 @@ new_tiffs = tiffs_loc[:-19]  # where new tiffs from rm_artifacts_tiffs will be s
 # analysis_save_path = tiffs_loc[:21] + 'Analysis/' + tiffs_loc_dir[26:]
 
 if 'post' in exp_type and 'no seizure' not in comments:
-    matlab_pairedmeasurements_path = '%s/%s/paired_measurements/%s_%s_%s.mat' % (analysis_save_path[:-22], animal_prep, date, animal_prep, trial[2:])  # choose matlab path if need to use or use None for no additional bad frames
+    matlab_pairedmeasurements_path = '%s/%s/paired_measurements/%s_%s_%s.mat' % (analysis_save_path[:-12], animal_prep, date, animal_prep, trial[2:])  # choose matlab path if need to use or use None for no additional bad frames
 else:
     matlab_pairedmeasurements_path = None
 
@@ -61,6 +61,8 @@ expobj = aoutils.run_photostim_preprocessing(trial, exp_type=exp_type, tiffs_loc
                                              matlab_pairedmeasurements_path=matlab_pairedmeasurements_path,
                                              processed_tiffs=False, discard_all=True,
                                              analysis_save_path=analysis_save_path)
+
+
 
 # %% 2) ### the below is usually run from jupyter notebooks dedicated to each experiment prep.
 to_suite2p = ['t-002', 't-006', 't-007', 't-008', 't-009', 't-011', 't-016', 't-017'] # specify all trials that were used in the suite2p runtotal_frames_stitched = 0
