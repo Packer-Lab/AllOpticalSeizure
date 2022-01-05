@@ -164,9 +164,9 @@ for key in list(allopticalResults.trial_maps['pre'].keys())[1:]:
     fig, axs = plt.subplots(ncols=3, nrows=1, figsize=(8, 3.1))
     print(f"|- making pre and post4ap compare response plots", end='\r')
     aoplot.plot_sz_boundary_location(expobj, fig=fig, ax=axs[0], title='')
-    axs[1].imshow(pre4ap_mean, vmin=0, vmax=0.1)
+    axs[1].imshow(pre4ap_mean, vmin=0, vmax=0.3)
     axs[1].set_title('pre4ap')
-    im = axs[2].imshow(post4ap_mean, vmin=0, vmax=0.1)
+    im = axs[2].imshow(post4ap_mean, vmin=0, vmax=0.3)
     axs[2].set_title('post4ap')
     for ax in axs[1:]:
         xticks = ax.get_xticks()  # pixel space

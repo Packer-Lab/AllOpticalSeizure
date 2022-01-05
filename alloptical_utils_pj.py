@@ -45,8 +45,7 @@ pd.set_option('max_rows', 10)
 
 # %% UTILITY FUNCTIONS and DECORATORS
 def import_expobj(aoresults_map_id: str = None, trial: str = None, prep: str = None, date: str = None,
-                  pkl_path: str = None, exp_prep: str = None,
-                  verbose: bool = False, do_processing: bool = False):
+                  pkl_path: str = None, exp_prep: str = None, verbose: bool = False, do_processing: bool = False):
     """
     primary function for importing of saved expobj files saved pickel files.
 
@@ -96,7 +95,7 @@ def import_expobj(aoresults_map_id: str = None, trial: str = None, prep: str = N
         experiment = '%s: %s, %s, %s' % (
             expobj.metainfo['animal prep.'], expobj.metainfo['trial'], expobj.metainfo['exptype'],
             expobj.metainfo['comments'])
-        print(f'\- loading {pkl_path} .. DONE')
+        print(f'|- loading {pkl_path} .. DONE')
         print(f'|- DONE IMPORT of {experiment}') if verbose else None
 
     ### roping in some extraneous processing steps if there's expobj's that haven't completed for them
@@ -165,7 +164,7 @@ def random_plot():
     pj.make_general_scatter(x_list=[np.random.rand(5)], y_data=[np.random.rand(5)], s=60, alpha=1, figsize=(3,3))
 
 # dictionary of terms, phrases, etc. that are particular to this analysis
-idiom_dictionary = {
+phrase_dictionary = {
     'delta(trace_dFF)': "photostim measurement; measuring photostim responses with post-stim minus pre-stim, where the post-stim "
                         "and pre-stim values are dFF values obtained from normalization of the whole trace within the present t-series",
     'dfprestimf': "photostim meausurement; measuring photostim responses as (post-stim minus pre-stim)/(mean[pre-stim period], "
@@ -183,12 +182,12 @@ idiom_dictionary = {
 
 def define(x):
     try:
-        print(f"{x}:    {idiom_dictionary[x]}") if type(x) is str else print('ERROR: please provide a string object as the key')
+        print(f"{x}:    {phrase_dictionary[x]}") if type(x) is str else print('ERROR: please provide a string object as the key')
     except KeyError:
-        print('input not found in idiom_dictionary, you should CONSIDER ADDING IT RIGHT NOW!')
+        print('input not found in phrase_dictionary, you should CONSIDER ADDING IT RIGHT NOW!')
 
-def show_idioms():
-    print(f"entries in idiom_dictionary: \n {list(idiom_dictionary.keys())}")
+def show_phrases():
+    print(f"entries in phrase_dictionary: \n {list(phrase_dictionary.keys())}")
 
 def working_on(expobj):
     print(f"STARTING on: {expobj.metainfo['exptype']} {expobj.metainfo['animal prep.']} {expobj.metainfo['trial']} ... ")
@@ -318,13 +317,15 @@ class TwoPhotonImaging:
         assert os.path.exists(tiff_path)
         assert os.path.exists(analysis_save_path)
         assert os.path.exists(paq_path)
-        assert os.path.exists(suite2p_path) if suite2p_path else None
+        if suite2p_path: assert os.path.exists(suite2p_path)
 
         self.tiff_path = tiff_path
         self.paq_path = paq_path
         self.metainfo = {'animal prep.': None, 'trial': None, 'date': None, 'exptype': None, 'data_path_base': None, 'comments': None,
                          'pre4ap_trials': None, 'post4ap_trials': None}  # dict containing appropriate metainformation fields for the experimental trial
+        self.metainfo = metainfo
         self.analysis_save_path = analysis_save_path
+        if self.analysis_save_path[-1] != '/': self.analysis_save_path = self.analysis_save_path + '/'
 
         # create analysis save path location
         if not os.path.exists(analysis_save_path):
@@ -345,12 +346,12 @@ class TwoPhotonImaging:
             self.suite2p_path = suite2p_path
             self.s2pProcessing(s2p_path=self.suite2p_path)
 
-        self.save_pkl(pkl_path=self.pkl_path)
+        self.save()
 
-        ## setting plotting functions as bound method types
-        self.plot_cells_loc = aoplot.plot_cells_loc
-        self.s2pRoiImage = aoplot.s2pRoiImage
-        self.plotMeanRawFluTrace = aoplot.plotMeanRawFluTrace
+        # ## setting plotting functions as bound method types
+        # self.plot_cells_loc = aoplot.plot_cells_loc
+        # self.s2pRoiImage = aoplot.s2pRoiImage
+        # self.plotMeanRawFluTrace = aoplot.plotMeanRawFluTrace
 
 
     def __repr__(self):
@@ -597,7 +598,6 @@ class TwoPhotonImaging:
     @property
     def fps(self):
         frame_period = float(self._getPVStateShard(self.xml_path, 'framePeriod')[0])
-        print(f"{frame_period} fps")
         return (1 / frame_period)
 
     @property
@@ -1034,7 +1034,13 @@ class TwoPhotonImaging:
 
         with open(self.pkl_path, 'wb') as f:
             pickle.dump(self, f)
-        print(f"\n\t -- Saving expobj saved to {self.pkl_path} -- ")
+        print(f"\- Saving expobj saved to {self.pkl_path} -- ")
+
+        backup_path = self.analysis_save_path + f"backups/{self.metainfo['date']}_{self.metainfo['animal prep.']}_{self.metainfo['trial']}.pkl"
+        os.makedirs(self.analysis_save_path + f"backups/", exist_ok=True)
+        with open(backup_path, 'wb') as f:
+            pickle.dump(self, f)
+
 
     def save(self):
         self.save_pkl()
@@ -1063,6 +1069,7 @@ class alloptical(TwoPhotonImaging):
         print('\ninitialized alloptical expobj of exptype and trial: \n', self.metainfo)
 
         self.stimProcessing(stim_channel='markpoints2packio')
+        self.paqProcessing(lfp=True)
         self._findTargetsAreas()
         self.find_photostim_frames()
 
@@ -1113,13 +1120,6 @@ class alloptical(TwoPhotonImaging):
 
 
         ## NON PHOTOSTIM SLM TARGETS
-
-        ## PLOTTING FUNCS ATTACHED AS METHOD TYPES
-        self.plot_photostim_traces_overlap = aoplot.plot_photostim_traces_overlap
-        self.plot_SLMtargets_Locs = aoplot.plot_SLMtargets_Locs
-        self.plot_lfp_stims = aoplot.plot_lfp_stims
-        self.plot_traces_heatmap = aoplot.plot_traces_heatmap
-        self.plotLfpSignal = aoplot.plotLfpSignal
 
         self.save()
 
@@ -1553,7 +1553,6 @@ class alloptical(TwoPhotonImaging):
         print('Single stim. Duration (ms): ', self.single_stim_dur)
         print('Total stim. Duration per trial (ms): ', self.stim_dur)
 
-        self.paqProcessing(lfp=True)
 
     def stimProcessing(self, stim_channel):
 
@@ -3355,7 +3354,7 @@ class Post4ap(alloptical):
                                's2p nontargets': {}}  # calculating the distance between the sz wavefront and cells
 
         ## collect information about seizures
-        self.collect_seizures_info(seizures_lfp_timing_matarray=paths[5], discard_all=discard_all)
+        self.collect_seizures_info(seizures_lfp_timing_matarray=paths['matlab_pairedmeasurement_path'], discard_all=discard_all)
 
         self.save()
 
@@ -4127,10 +4126,6 @@ class OnePhotonStim(TwoPhotonImaging):
         self.save_pkl(pkl_path=self.pkl_path)
 
         print('\n-----DONE OnePhotonStim init of trial # %s-----' % trial)
-
-        ## plotting functions set as bound method types
-        self.plot_flu_1pstim_avg_trace = aoplot.plot_flu_1pstim_avg_trace
-        self.plot_lfp_1pstim_avg_trace = aoplot.plot_lfp_1pstim_avg_trace
 
     def __repr__(self):
         lastmod = time.ctime(os.path.getmtime(self.pkl_path))
@@ -5205,8 +5200,9 @@ def run_photostim_preprocessing(trial, exp_type, tiffs_loc, naparms_loc, paqs_lo
     if processed_tiffs:
         expobj.rm_artifacts_tiffs(expobj, tiffs_loc=tiffs_loc, new_tiffs=new_tiffs)
 
-    print('\n----- COMPLETED RUNNING run_photostim_processing() *******')
+    print('\n----- COMPLETED RUNNING run_photostim_preprocessing() *******')
     print(metainfo)
+    expobj.save()
 
     return expobj
 

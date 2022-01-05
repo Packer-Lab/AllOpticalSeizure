@@ -11,7 +11,7 @@ results_object_path = '/home/pshah/mnt/qnap/Analysis/alloptical_results_superobj
 allopticalResults = aoutils.import_resultsobj(pkl_path=results_object_path)
 
 
-expobj, _ = aoutils.import_expobj(prep='PS06', trial='t-014', verbose=False)
+expobj, _ = aoutils.import_expobj(prep='RL109', trial='t-018', verbose=False)
 
 
 # i = 'pre'
@@ -72,7 +72,7 @@ post_4ap_trials = [
 ]
 
 
-for key in pj.flattenOnce(post_4ap_trials):
+for key in pj.flattenOnce(post_4ap_trials) + pj.flattenOnce(pre_4ap_trials):
     prep = key[:-6]
     trial = key[-5:]
     try:
@@ -81,13 +81,13 @@ for key in pj.flattenOnce(post_4ap_trials):
         print(f"\n** FAILED IMPORT OF * {prep} {trial}")
 
 
-for key in ['RL109 t-020']:
-    prep = key[:-6]
-    trial = key[-5:]
-    expobj, _ = aoutils.import_expobj(prep=prep, trial=trial, verbose=False)
-    expobj.metainfo['pre4ap_trials'] = ['t-007', 't-008', 't-011', 't-012', 't-013', 't-014']
-    expobj.metainfo['post4ap_trials'] = ['t-016', 't-017', 't-018', 't-019', 't-020', 't-021']
-    expobj.save()
+# for key in ['RL109 t-020']:
+#     prep = key[:-6]
+#     trial = key[-5:]
+#     expobj, _ = aoutils.import_expobj(prep=prep, trial=trial, verbose=False)
+#     expobj.metainfo['pre4ap_trials'] = ['t-007', 't-008', 't-011', 't-012', 't-013', 't-014']
+#     expobj.metainfo['post4ap_trials'] = ['t-016', 't-017', 't-018', 't-019', 't-020', 't-021']
+#     expobj.save()
 
 
 # %% updating the non-targets exclusion region to 15um from the center of the spiral coordinate
