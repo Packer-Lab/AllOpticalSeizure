@@ -28,8 +28,8 @@ allopticalResults.pre_4ap_trials = [
     ['RL109 t-008'],
     ['RL109 t-013'],
     # ['RL109 t-014'],
-    # ['PS04 t-012', 'PS04 t-014',  # - not sure what's wrong with PS04, but the photostim and Flu are falling out of sync .21/10/09
-    #  'PS04 t-017'],
+    ['PS04 t-012',  #, 'PS04 t-014',  # - not sure what's wrong with PS04 t-014, but the photostim and Flu are falling out of sync .21/10/09
+    'PS04 t-017'],
     ['PS05 t-010'],
     ['PS07 t-007'],
     # ['PS07 t-009'],
@@ -45,19 +45,19 @@ allopticalResults.pre_4ap_trials = [
 
 allopticalResults.post_4ap_trials = [
     ['RL108 t-013'],
-    # ['RL108 t-011'],
-    # ['RL109 t-020'],
+    # ['RL108 t-011'],  -- need to do sz boundary classifying processing
+    # ['RL109 t-020'],  -- need to do sz boundary classifying processing
     ['RL109 t-021'],
     ['RL109 t-018'],
-    #['RL109 t-016'],  'RL109 t-017'], -- need to do sz boundary classifying processing
-    # ['PS04 t-018'],
+    #['RL109 t-016',  'RL109 t-017'], -- need to do sz boundary classifying processing
+    ['PS04 t-018'],
     ['PS05 t-012'],
     ['PS07 t-011'],
-    # ['PS07 t-017'],
-    # ['PS06 t-014', 'PS06 t-015'], - missing seizure_lfp_onsets (no paired measurements mat file for trial .21/10/09)
+    # ['PS07 t-017'],  -- unclear seizure behaviours
+    # ['PS06 t-014', 'PS06 t-015'], - t-014 might have one seizure, t-015 likely not any sz events .22/01/06
     ['PS06 t-013'],
-    # ['PS06 t-016'], - no seizures, missing seizure_lfp_onsets (no paired measurements mat file for trial .21/10/09)
-    # ['PS11 t-016'],
+    # ['PS06 t-016'], - no seizures
+    # ['PS11 t-016'], - very short seizure
     ['PS11 t-011'],
     # ['PS17 t-011'],
     # ['PS17 t-009'],

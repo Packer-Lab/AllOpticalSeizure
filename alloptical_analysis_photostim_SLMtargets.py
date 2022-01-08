@@ -23,172 +23,259 @@ aoutils.random_plot()
 # key = 'f'; exp = 'pre'; expobj, experiment = aoutils.import_expobj(aoresults_map_id=f"{exp} {key}.0")
 
 
-##### -------------------- ALL OPTICAL PHOTOSTIM ANALYSIS ##############################################################
-# %% 6.0-main) avg STA responses in 200um space around photostim targets - compare diff between pre vs. post4ap (interictal, and ictal)
+"##### -------------------- ALL OPTICAL PHOTOSTIM ANALYSIS ##############################################################"
+# %% 5.0) calculate/collect min distance to seizure and responses at each distance
 
-# for i in ['pre', 'post']:
-key = 'l'; exp = 'pre'; expobj, experiment = aoutils.import_expobj(aoresults_map_id=f"{exp} {key}.0")
+response_type = 'dFF (z scored) (interictal)'
 
-@aoutils.run_for_loop_across_exps(run_pre4ap_trials=True, run_post4ap_trials=True)
-def collect_responses_around_slmtarget(do_plot=True, **kwargs):
-    assert 'expobj' in kwargs.keys(), "need to provide `expobj` as key word arg for function to complete"
+no_slmtargets_szboundary_stim = []
+@aoutils.run_for_loop_across_exps(run_pre4ap_trials=False, run_post4ap_trials=True)
+def run_calculating_min_distance_to_seizure(**kwargs):
+    print(f"\t|- collecting responses vs. distance to seizure [5.0-1]")
+
     expobj = kwargs['expobj']
-    # key = 'l';
-    # exp = 'pre';
-    # expobj, experiment = aoutils.import_expobj(aoresults_map_id=f"{exp} {key}.0")
+    if not hasattr(expobj, 'stimsSzLocations'):
+        expobj.sz_locations_stims()
+    x_ = expobj.calcMinDistanceToSz()
+    no_slmtargets_szboundary_stim.append(x_)
 
-    # read in frames of interest from the reg_tiff, extract data around each SLM target as 2d x frames array, put into dictionary with SLM target as key
+
+@aoutils.run_for_loop_across_exps(run_pre4ap_trials=False, run_post4ap_trials=True)
+def plot_sz_boundary_location(**kwargs):
+    expobj = kwargs['expobj']
+    aoplot.plot_sz_boundary_location(expobj)
 
 
-    # read in frames of interest
-    frames_of_interest = expobj.stims_out_sz if hasattr(expobj, 'stims_out_sz') else expobj.stim_start_frames
-    # expobj.stitch_reg_tiffs(force_crop=True, do_stack=True) if not os.path.exists(expobj.reg_tif_crop_path) else None
+@aoutils.run_for_loop_across_exps(run_pre4ap_trials=False, run_post4ap_trials=True)#, run_trials=['RL108 t-013'])
+def collect_responses_vs_distance_to_seizure_SLMTargets(response_type: str, **kwargs):
+    print(f"\t|- collecting responses vs. distance to seizure [5.0-2]")
+    expobj = kwargs['expobj']
 
-    print(f"|- reading in registered TIFF for expobj from: {expobj.reg_tif_crop_path}")
-    try:
-        tiff_arr = tf.imread(expobj.reg_tif_crop_path, key=range(expobj.n_frames))
-    except:
-        expobj.stitch_reg_tiffs(force_crop=True, do_stack=True)
-        tiff_arr = tf.imread(expobj.reg_tif_crop_path, key=range(expobj.n_frames))
+    # uncomment if need to rerun for a particular expobj....but shouldn't really need to be doing so
+    # expobj.StimSuccessRate_SLMtargets_tracedFF, expobj.hits_SLMtargets_tracedFF, expobj.responses_SLMtargets_tracedFF, expobj.traces_SLMtargets_tracedFF_successes = \
+    #     expobj.get_SLMTarget_responses_dff(process='trace dFF', threshold=10, stims_to_use=expobj.stim_start_frames)
 
-    data_ = {}
-    dist_um = 200
-    dist_pix_half = int((dist_um / expobj.pix_sz_x) / 2)
+    # (re-)make pandas dataframe
+    df = pd.DataFrame(columns=['target_id', 'stim_id', 'inorout_sz', 'distance_to_sz', response_type])
 
-    # collecting responses for all targets at all stims for the experiment
-    print(f"|- collecting traces at distance: {dist_um} um around target coordinate")
-    for idx, coord in enumerate(expobj.target_coords_all):
-        ## make a slice object
-        s = np.s_[:, int(coord[1]) - dist_pix_half: int(coord[1]) + dist_pix_half,
-            int(coord[0]) - dist_pix_half: int(coord[0]) + dist_pix_half]
+    for target in expobj.responses_SLMtargets_tracedFF.index:
+        # idx_sz_boundary = [idx for idx, stim in enumerate(expobj.stim_start_frames) if stim in expobj.distance_to_sz['SLM Targets'].columns]
+        stim_ids = [(idx, stim) for idx, stim in enumerate(expobj.stim_start_frames) if stim in expobj.distance_to_sz['SLM Targets'].columns]
 
-        ## use the slice object to collect Flu trace
-        target_area_trace = tiff_arr[s]
+        ## z-scoring of SLM targets responses:
+        z_scored = expobj.responses_SLMtargets_tracedFF  # initializing z_scored df
+        if response_type == 'dFF (z scored)' or response_type == 'dFF (z scored) (interictal)':
+            # set a different slice of stims for different variation of z scoring
+            if response_type == 'dFF (z scored)': slice = expobj.responses_SLMtargets_tracedFF.columns  # (z scoring all stims all together from t-series)
+            elif response_type == 'dFF (z scored) (interictal)': slice = expobj.stim_idx_outsz  # (z scoring all stims relative TO the interictal stims from t-series)
+            __mean = expobj.responses_SLMtargets_tracedFF.loc[target, slice].mean()
+            __std = expobj.responses_SLMtargets_tracedFF.loc[target, slice].std(ddof=1)
+            # __mean = expobj.responses_SLMtargets_tracedFF.loc[target, :].mean()
+            # __std = expobj.responses_SLMtargets_tracedFF.loc[target, :].std(ddof=1)
 
-        # dFF normalize
-        mean = np.mean(target_area_trace)
-        target_area_trace_dff = (target_area_trace - mean) / mean  # dFF
+            __responses = expobj.responses_SLMtargets_tracedFF.loc[target, :]
+            z_scored.loc[target, :] = (__responses - __mean) / __std
 
-        frames_responses = np.empty(shape=(len(frames_of_interest), target_area_trace_dff.shape[1], target_area_trace_dff.shape[2]))
-        for idx, stim_frame in enumerate(frames_of_interest):
-            pre_slice = target_area_trace_dff[stim_frame - expobj.pre_stim_response_frames_window : stim_frame, :, :]
-            post_slice = target_area_trace_dff[stim_frame + expobj.stim_duration_frames: stim_frame + expobj.stim_duration_frames + expobj.post_stim_response_frames_window, :, :]
-            dF = np.mean(post_slice, axis=0) - np.mean(pre_slice, axis=0)
-            frames_responses[idx] = dF
+        for idx, stim in stim_ids:
+            if target in expobj.slmtargets_szboundary_stim[stim]: inorout_sz = 'in'
+            else: inorout_sz = 'out'
 
-        data_[idx] = frames_responses
-    print(f"|- collected data from {len(expobj.target_coords_all)} SLM target coords and {len(frames_of_interest)} stim frames")
-    data_['data_collected_at_distance_um'] = dist_um
-    expobj.SLMtarget_areas_responses = data_
+            distance_to_sz = expobj.distance_to_sz['SLM Targets'].loc[target, stim]
+
+            if response_type == 'dFF': response = expobj.responses_SLMtargets_tracedFF.loc[target, idx]
+            elif response_type == 'dFF (z scored)' or response_type == 'dFF (z scored) (interictal)': response = z_scored.loc[target, idx]  # z - scoring of SLM targets responses:
+            else: raise ValueError('response_type arg must be `dFF` or `dFF (z scored)` or `dFF (z scored) (interictal)`')
+
+            df = df.append({'target_id': target, 'stim_id': stim, 'inorout_sz': inorout_sz, 'distance_to_sz': distance_to_sz,
+                            response_type: response}, ignore_index=True)
+
+    expobj.responses_vs_distance_to_seizure_SLMTargets = df
+
+    # convert distances to microns
+    expobj.responses_vs_distance_to_seizure_SLMTargets['distance_to_sz_um'] = round(expobj.responses_vs_distance_to_seizure_SLMTargets['distance_to_sz'] / expobj.pix_sz_x, 2)
     expobj.save()
 
 
-    # second approach: collecting responses around targets using hits stim trials only from this expobj
-    locs = np.where(expobj.hits_SLMtargets == 1)
-    # for idx, stim_idx in zip(locs[0], locs[1]):
-    for cell_idx, coord in enumerate(expobj.target_coords_all):
-        stim_idxes = locs[1][np.where(locs[0] == cell_idx)]
-        stim_frames_list = [expobj.stim_start_frames[stim_idx] for stim_idx in stim_idxes]
-        ## make a slice object
-        s = np.s_[:, int(coord[1]) - dist_pix_half: int(coord[1]) + dist_pix_half,
-            int(coord[0]) - dist_pix_half: int(coord[0]) + dist_pix_half]
+# run_calculating_min_distance_to_seizure(no_slmtargets_szboundary_stim)
 
-        ## use the slice object to collect Flu trace
-        target_area_trace = tiff_arr[s]
-
-        # dFF normalize
-        mean = np.mean(target_area_trace)
-        target_area_trace_dff = (target_area_trace - mean) / mean  # dFF
-
-        frames_responses = np.empty(shape=(len(stim_frames_list), target_area_trace_dff.shape[1], target_area_trace_dff.shape[2]))
-        for idx, stim_frame in enumerate(stim_frames_list):
-            pre_slice = target_area_trace_dff[stim_frame - expobj.pre_stim_response_frames_window : stim_frame, :, :]
-            post_slice = target_area_trace_dff[stim_frame + expobj.stim_duration_frames: stim_frame + expobj.stim_duration_frames + expobj.post_stim_response_frames_window, :, :]
-            dF = np.mean(post_slice, axis=0) - np.mean(pre_slice, axis=0)
-            frames_responses[idx] = dF
-
-        data_[cell_idx] = frames_responses
-    print(f"|- collected data from {len(expobj.target_coords_all)} SLM target coords and ONLY HITS stim frames for each target")
-    data_['data_collected_at_distance_um'] = dist_um
-    expobj.SLMtarget_areas_responses_hitsonly = data_
-    expobj.save()
+collect_responses_vs_distance_to_seizure_SLMTargets(response_type=response_type)
+response_type = 'dFF (z scored) (interictal)'
 
 
-    if do_plot:
-        # plot heatmaps
-        fig, axs = plt.subplots(nrows=11, ncols=5, figsize=(15, 33))
-        print(f"|- making avg STA plots for {len(expobj.target_coords_all)} SLM target coords ... ", end='\r')
-        counter = 0
-        for idx, coord in enumerate(expobj.target_coords_all):
-            col = counter % 5
-            row = counter // 5
-            mean_ = np.mean(expobj.SLMtarget_areas_responses[idx], axis=0)  # mean across all stim frames
-            hmap = axs[row, col].imshow(mean_, vmin=0, vmax=0.2)
-            counter += 1
-        colorbar = fig.colorbar(hmap, ax=axs[row, col], fraction=0.046, pad=0.04)
-        fig.tight_layout(pad=1.3)
-        fig.suptitle(f"{expobj.t_series_name} - {len(expobj.target_coords_all)} targets - {expobj.exptype}", y=0.995)
-        fig.show()
-        print(f"|- making avg STA plots for {len(expobj.target_coords_all)} SLM target coords ... DONE", end='\r')
 
-collect_responses_around_slmtarget(do_plot=False)
+# %% 5.1) collect and plot targets responses for stims vs. distance
+@aoutils.run_for_loop_across_exps(run_pre4ap_trials=False, run_post4ap_trials=True, skip_trials=['PS05 t-012'])
+def plot_responses_vs_distance_to_seizure_SLMTargets(response_type=response_type, **kwargs):
+    # response_type = 'dFF (z scored)'
 
+    print(f"\t|- plotting responses vs. distance to seizure [5.1-1]")
+    expobj = kwargs['expobj']
+    fig, ax = plt.subplots(figsize=[8, 3])
+    for target in expobj.responses_SLMtargets_tracedFF.index:
+        idx_sz_boundary = [idx for idx, stim in enumerate(expobj.stim_start_frames) if stim in expobj.distance_to_sz['SLM Targets'].columns]
+        responses = np.array(expobj.responses_SLMtargets_tracedFF.loc[target, idx_sz_boundary])
+        distance_to_sz = np.array(expobj.distance_to_sz['SLM Targets'].loc[target, idx_sz_boundary])
 
-# %% 6.1-plot) Ca responses around SLM targets
+        positive_distances = np.where(distance_to_sz > 0)
+        negative_distances = np.where(distance_to_sz < 0)
 
-for key in list(allopticalResults.trial_maps['pre'].keys())[1:]:
+        pj.make_general_scatter(x_list=[distance_to_sz[positive_distances]], y_data=[responses[positive_distances]], fig=fig, ax=ax, colors=['cornflowerblue'], alpha=0.5, s=30, show=False,
+                                x_label='distance to sz', y_label=response_type)
+        pj.make_general_scatter(x_list=[distance_to_sz[negative_distances]], y_data=[responses[negative_distances]], fig=fig, ax=ax, colors=['tomato'], alpha=0.5, s=30, show=False,
+                                x_label='distance to sz', y_label=response_type)
 
-    print(f"\n|- Making plot for key: {key}")
-
-    exp = 'pre'; expobj, experiment = aoutils.import_expobj(aoresults_map_id=f"{exp} {key}.0")
-    __means = []
-    for idx, coord in enumerate(expobj.target_coords_all):
-        arr = np.mean(expobj.SLMtarget_areas_responses_hitsonly[idx], axis=0)
-        if arr.shape[0] == arr.shape[1]:
-        # print(expobj.SLMtarget_areas_responses[idx].shape)
-            __means.append(arr)  # mean across all stim frames
-    assert len(__means) > 1, f'no frames in __means for {expobj.t_series_name}'
-    pre4ap_mean = np.mean(np.asarray(__means), axis=0)
-
-    exp = 'post'; expobj, experiment = aoutils.import_expobj(aoresults_map_id=f"{exp} {key}.0")
-    __means = []
-    for idx, coord in enumerate(expobj.target_coords_all):
-        arr = np.mean(expobj.SLMtarget_areas_responses_hitsonly[idx], axis=0)
-        if arr.shape[0] == arr.shape[1]:
-        # print(expobj.SLMtarget_areas_responses[idx].shape)
-            __means.append(arr)  # mean across all stim frames
-    assert len(__means) > 1, f'no frames in __means for {expobj.t_series_name}'
-    post4ap_mean = np.mean(np.asarray(__means), axis=0)
-
-    # plot heatmaps
-    fig, axs = plt.subplots(ncols=3, nrows=1, figsize=(8, 3.1))
-    print(f"|- making pre and post4ap compare response plots", end='\r')
-    aoplot.plot_sz_boundary_location(expobj, fig=fig, ax=axs[0], title='')
-    axs[1].imshow(pre4ap_mean, vmin=0, vmax=0.3)
-    axs[1].set_title('pre4ap')
-    im = axs[2].imshow(post4ap_mean, vmin=0, vmax=0.3)
-    axs[2].set_title('post4ap')
-    for ax in axs[1:]:
-        xticks = ax.get_xticks()  # pixel space
-        # labels = [int(x_ * expobj.pix_sz_x - expobj.SLMtarget_areas_responses['data_collected_at_distance_um'] / 2) for x_ in xticks]
-        new_xticks_labels = np.arange(0, expobj.SLMtarget_areas_responses['data_collected_at_distance_um'], 50)[1:]
-        new_xticks_labels_adjusted = [int(x_ - expobj.SLMtarget_areas_responses['data_collected_at_distance_um'] / 2) for x_ in new_xticks_labels]
-        new_xticks = [x_ // expobj.pix_sz_x for x_ in new_xticks_labels]
-        ax.set_xticks(new_xticks)
-        ax.set_xticklabels(new_xticks_labels_adjusted)
-
-        ax.set_yticks([])
-    axs[1].set_xlabel('distance to SLM target coordinate (um)')
-
-    fig.tight_layout(pad=2.5)
-    fig.suptitle(f"{expobj.t_series_name} - {len(expobj.target_coords_all)} targets - {expobj.exptype}", y=0.995)
+    fig.suptitle(expobj.t_series_name)
     fig.show()
 
 
-# TODO need to figure out how to exclude targets cells from within the plotting zone (atleast for quantification) -- go through the s2p ROIs followers responses
-# collect only for success stims - done
+
+@aoutils.run_for_loop_across_exps(run_pre4ap_trials=False, run_post4ap_trials=True, skip_trials=['PS05 t-012'])
+def plot_collection_response_distance(response_type=response_type, **kwargs):
+    print(f"\t|- plotting a collection of plots measuring responses vs. distance to seizure [5.1-2]")
+    expobj = kwargs['expobj']
+    # response_type = 'dFF (z scored)'
+    if not hasattr(expobj, 'responses_SLMtargets_tracedFF_avg_df'):
+        expobj.avgResponseSzStims_SLMtargets(save=True)
+
+    data = expobj.responses_vs_distance_to_seizure_SLMTargets
+    fig, axs = plt.subplots(ncols=5, nrows=1, figsize=[18, 4])
+    axs[0] = sns.boxplot(data=expobj.responses_SLMtargets_tracedFF_avg_df, x='stim_group', y='avg targets response', order=['interictal', 'ictal'],
+                         width=0.5, ax=axs[0], palette=['tomato', 'mediumseagreen'])  # plotting mean across stims (len= # of targets)
+    axs[0] = sns.swarmplot(data=expobj.responses_SLMtargets_tracedFF_avg_df, x='stim_group', y='avg targets response', order=['interictal', 'ictal'],
+                           color=".25", ax=axs[0])
+    sns.stripplot(x="inorout_sz", y="distance_to_sz_um", data=data, ax=axs[1], alpha=0.2, order=['in', 'out'])
+    axs[2] = sns.violinplot(x="inorout_sz", y=response_type, data=data, legend=False, ax=axs[2], order=['in', 'out'])
+    axs[2].set_ylim([-3, 3])
+    axs[3] = sns.scatterplot(data=data, x='distance_to_sz_um', y=response_type, ax=axs[3], alpha=0.2, hue='distance_to_sz_um', hue_norm=(-1,1),
+                             palette=sns.diverging_palette(240, 10, as_cmap=True), legend=False)
+    axs[3].set_ylim([-3, 3])
+    aoplot.plot_sz_boundary_location(expobj, fig=fig, ax=axs[4], title=None)
+    fig.suptitle(f"{expobj.t_series_name} - {response_type}")
+    fig.tight_layout(pad=1.1)
+    fig.show()
+
+# plot_responses_vs_distance_to_seizure_SLMTargets()
+plot_collection_response_distance()
 
 
+
+# %% 5.1.1) binning and plotting density plot, and smoothing data across the distance to seizure axis, when comparing to responses - represent the distances in percentile space
+
+
+@aoutils.run_for_loop_across_exps(run_pre4ap_trials=False, run_post4ap_trials=True, skip_trials=['PS05 t-012'])
+def plot_responses_vs_distance_to_seizure_SLMTargets_2ddensity(positive_distances_only = False, plot=True, **kwargs):
+
+    print(f"\t|- plotting responses vs. distance to seizure")
+    expobj = kwargs['expobj']
+
+    data_expobj = np.array([[], []]).T
+    for target in expobj.responses_SLMtargets_tracedFF.index:
+        idx_sz_boundary = [idx for idx, stim in enumerate(expobj.stim_start_frames) if stim in expobj.distance_to_sz['SLM Targets'].columns]
+        responses = np.array(list(expobj.responses_SLMtargets_tracedFF.loc[target, idx_sz_boundary]))
+        distance_to_sz = np.array(list(expobj.distance_to_sz['SLM Targets'].loc[target, :]))
+
+        if positive_distances_only:
+            distance_to_sz_pos = np.where(distance_to_sz > 0)[0]
+            responses_posdistances = responses[distance_to_sz_pos]
+
+            _data = np.array([distance_to_sz_pos, responses_posdistances]).T
+        else:
+            _data = np.array([distance_to_sz, responses]).T
+
+        data_expobj = np.vstack((_data, data_expobj))
+
+
+
+    distances_to_sz = data_expobj[:, 0]
+    bin_size = 20  # um
+    # bins_num = int((max(distances_to_sz) - min(distances_to_sz)) / bin_size)
+    bins_num = 40
+    response_type = 'dFF (z scored)'
+
+    pj.plot_hist2d(data=data_expobj, bins=bins_num, y_label=response_type, title=expobj.t_series_name, figsize=(4, 2), x_label='distance to seizure (um)',
+                   y_lim=[-2,2]) if plot else None
+
+
+    return data_expobj
+
+data = plot_responses_vs_distance_to_seizure_SLMTargets_2ddensity(positive_distances_only = False, plot=False)
+
+def convert_responses_szdistances_percentile_space():
+    data_all = np.array([[], []]).T
+    for data_ in data:
+        data_all = np.vstack((data_, data_all))
+
+    from scipy.stats import percentileofscore
+
+    distances_to_sz = data_all[:, 0]
+    idx_sorted = np.argsort(distances_to_sz)
+    distances_to_sz_sorted = distances_to_sz[idx_sorted]
+    responses_sorted = data_all[:, 1][idx_sorted]
+    s = pd.Series(distances_to_sz_sorted)
+    percentiles = s.apply(lambda x: percentileofscore(distances_to_sz_sorted, x))
+    scale_percentile_distances = {}
+    for pct in range(0, 100):
+        scale_percentile_distances[int(pct+1)] = np.round(np.percentile(distances_to_sz_sorted, pct),0)
+    data_all = np.array([percentiles, responses_sorted]).T
+
+    return data_all, percentiles, responses_sorted, distances_to_sz_sorted, scale_percentile_distances
+
+data_all, percentiles, responses_sorted, distances_to_sz_sorted, scale_percentile_distances = convert_responses_szdistances_percentile_space()
+
+def plot_density_responses_szdistances(response_type=response_type, data_all=data_all, distances_to_sz_sorted=distances_to_sz_sorted):
+    # plotting density plot for all exps, in percentile space (to normalize for excess of data at distances which are closer to zero) - TODO any smoothing?
+
+    bin_size = 5  # um
+    # bins_num = int((max(distances_to_sz) - min(distances_to_sz)) / bin_size)
+    bins_num = [100, 500]
+
+    fig, ax = plt.subplots(figsize=(6,3))
+    pj.plot_hist2d(data=data_all, bins=bins_num, y_label=response_type, figsize=(6, 3), x_label='distance to seizure (%tile space)',
+                   title=f"2d density plot, all exps, 50%tile = {np.percentile(distances_to_sz_sorted, 50)}um",
+                   y_lim=[-3, 3], fig=fig, ax=ax, show=False)
+    ax.axhline(0, ls='--', c='white', lw=1)
+    xticks = [1, 25, 50, 57, 75, 100]  # percentile space
+    ax.set_xticks(ticks=xticks)
+    labels = [scale_percentile_distances[x_] for x_ in xticks]
+    ax.set_xticklabels(labels)
+    ax.set_xlabel('distance to seizure (um)')
+
+    fig.show()
+
+plot_density_responses_szdistances()
+
+
+
+# plotting line plot for all datapoints for responses vs. distance to seizure
+
+def plot_lineplot_responses_pctszdistances(percentiles, responses_sorted, response_type=response_type):
+    percentiles_binned = np.round(percentiles)
+
+    bin = 5
+    # change to pct% binning
+    percentiles_binned = (percentiles_binned // bin) * bin
+
+    d = {'distance to seizure (%tile space)': percentiles_binned,
+         response_type: responses_sorted}
+
+    df = pd.DataFrame(d)
+
+    fig, ax = plt.subplots(figsize=(6,3))
+    sns.lineplot(data=df, x='distance to seizure (%tile space)', y=response_type, ax=ax)
+    ax.set_title(f'responses over distance to sz, all exps, normalized to percentile space ({bin}% bins)', wrap=True)
+    ax.margins(0.02)
+    ax.axhline(0, ls='--', c='orange', lw=1)
+
+    xticks = [1, 25, 50, 57, 75, 100]  # percentile space
+    ax.set_xticks(ticks=xticks)
+    labels = [scale_percentile_distances[x_] for x_ in xticks]
+    ax.set_xticklabels(labels)
+    ax.set_xlabel('distance to seizure (um)')
+
+    fig.tight_layout(pad=2)
+    plt.show()
+
+plot_lineplot_responses_pctszdistances(percentiles, responses_sorted)
 
 
 
@@ -883,260 +970,172 @@ for prep in allopticalResults.stim_responses_tracedFF_comparisons.keys():
     allopticalResults.save()
 
 
-# %% 5.0) calculate/collect min distance to seizure and responses at each distance
 
-response_type = 'dFF (z scored) (interictal)'
 
-no_slmtargets_szboundary_stim = []
-@aoutils.run_for_loop_across_exps(run_pre4ap_trials=False, run_post4ap_trials=True)
-def run_calculating_min_distance_to_seizure(**kwargs):
-    print(f"\t|- collecting responses vs. distance to seizure [5.0-1]")
 
+# %% 6.0-main) avg STA responses in 200um space around photostim targets - compare diff between pre vs. post4ap (interictal, and ictal)
+
+# for i in ['pre', 'post']:
+key = 'l'; exp = 'pre'; expobj, experiment = aoutils.import_expobj(aoresults_map_id=f"{exp} {key}.0")
+
+@aoutils.run_for_loop_across_exps(run_pre4ap_trials=False, run_post4ap_trials=False, run_trials=['PS04 t-012', 'PS04 t-017', 'PS04 t-018'])
+def collect_responses_around_slmtarget(do_plot=True, **kwargs):
+    assert 'expobj' in kwargs.keys(), "need to provide `expobj` as key word arg for function to complete"
     expobj = kwargs['expobj']
-    if not hasattr(expobj, 'stimsSzLocations'):
-        expobj.sz_locations_stims()
-    x_ = expobj.calcMinDistanceToSz()
-    no_slmtargets_szboundary_stim.append(x_)
+    # key = 'l';
+    # exp = 'pre';
+    # expobj, experiment = aoutils.import_expobj(aoresults_map_id=f"{exp} {key}.0")
+
+    # read in frames of interest from the reg_tiff, extract data around each SLM target as 2d x frames array, put into dictionary with SLM target as key
 
 
-@aoutils.run_for_loop_across_exps(run_pre4ap_trials=False, run_post4ap_trials=True)
-def plot_sz_boundary_location(**kwargs):
-    expobj = kwargs['expobj']
-    aoplot.plot_sz_boundary_location(expobj)
+    # read in frames of interest
+    frames_of_interest = expobj.stims_out_sz if hasattr(expobj, 'stims_out_sz') else expobj.stim_start_frames
+    # expobj.stitch_reg_tiffs(force_crop=True, do_stack=True) if not os.path.exists(expobj.reg_tif_crop_path) else None
 
+    print(f"|- reading in registered TIFF for expobj from: {expobj.reg_tif_crop_path}")
+    try:
+        tiff_arr = tf.imread(expobj.reg_tif_crop_path, key=range(expobj.n_frames))
+    except:
+        expobj.stitch_reg_tiffs(force_crop=True, do_stack=True)
+        tiff_arr = tf.imread(expobj.reg_tif_crop_path, key=range(expobj.n_frames))
 
-@aoutils.run_for_loop_across_exps(run_pre4ap_trials=False, run_post4ap_trials=True)#, run_trials=['RL108 t-013'])
-def collect_responses_vs_distance_to_seizure_SLMTargets(response_type: str, **kwargs):
-    print(f"\t|- collecting responses vs. distance to seizure [5.0-2]")
-    expobj = kwargs['expobj']
+    data_ = {}
+    dist_um = 200
+    dist_pix_half = int((dist_um / expobj.pix_sz_x) / 2)
 
-    expobj.StimSuccessRate_SLMtargets_tracedFF, expobj.hits_SLMtargets_tracedFF, expobj.responses_SLMtargets_tracedFF, expobj.traces_SLMtargets_tracedFF_successes = \
-        expobj.get_SLMTarget_responses_dff(process='trace dFF', threshold=10, stims_to_use=expobj.stim_start_frames)
+    # collecting responses for all targets at all stims for the experiment
+    print(f"|- collecting traces at distance: {dist_um} um around target coordinate")
+    for idx, coord in enumerate(expobj.target_coords_all):
+        ## make a slice object
+        s = np.s_[:, int(coord[1]) - dist_pix_half: int(coord[1]) + dist_pix_half,
+            int(coord[0]) - dist_pix_half: int(coord[0]) + dist_pix_half]
 
-    # (re-)make pandas dataframe
-    df = pd.DataFrame(columns=['target_id', 'stim_id', 'inorout_sz', 'distance_to_sz', response_type])
+        ## use the slice object to collect Flu trace
+        target_area_trace = tiff_arr[s]
 
-    for target in expobj.responses_SLMtargets_tracedFF.index:
-        # idx_sz_boundary = [idx for idx, stim in enumerate(expobj.stim_start_frames) if stim in expobj.distance_to_sz['SLM Targets'].columns]
-        stim_ids = [(idx, stim) for idx, stim in enumerate(expobj.stim_start_frames) if stim in expobj.distance_to_sz['SLM Targets'].columns]
+        # dFF normalize
+        mean = np.mean(target_area_trace)
+        target_area_trace_dff = (target_area_trace - mean) / mean  # dFF
 
-        ## z - scoring of SLM targets responses:
-        z_scored = expobj.responses_SLMtargets_tracedFF  # initializing z_scored df
-        if response_type == 'dFF (z scored)' or response_type == 'dFF (z scored) (interictal)':
-            # set a different slice of stims for different variation of z scoring
-            if response_type == 'dFF (z scored)': slice = expobj.responses_SLMtargets_tracedFF.columns  # (z scoring all stims all together from t-series)
-            elif response_type == 'dFF (z scored) (interictal)': slice = expobj.stim_idx_outsz  # (z scoring all stims relative TO the interictal stims from t-series)
-            __mean = expobj.responses_SLMtargets_tracedFF.loc[target, slice].mean()
-            __std = expobj.responses_SLMtargets_tracedFF.loc[target, slice].std(ddof=1)
-            # __mean = expobj.responses_SLMtargets_tracedFF.loc[target, :].mean()
-            # __std = expobj.responses_SLMtargets_tracedFF.loc[target, :].std(ddof=1)
+        frames_responses = np.empty(shape=(len(frames_of_interest), target_area_trace_dff.shape[1], target_area_trace_dff.shape[2]))
+        for idx, stim_frame in enumerate(frames_of_interest):
+            pre_slice = target_area_trace_dff[stim_frame - expobj.pre_stim_response_frames_window : stim_frame, :, :]
+            post_slice = target_area_trace_dff[stim_frame + expobj.stim_duration_frames: stim_frame + expobj.stim_duration_frames + expobj.post_stim_response_frames_window, :, :]
+            dF = np.mean(post_slice, axis=0) - np.mean(pre_slice, axis=0)
+            frames_responses[idx] = dF
 
-            __responses = expobj.responses_SLMtargets_tracedFF.loc[target, :]
-            z_scored.loc[target, :] = (__responses - __mean) / __std
-
-        for idx, stim in stim_ids:
-            if target in expobj.slmtargets_szboundary_stim[stim]: inorout_sz = 'in'
-            else: inorout_sz = 'out'
-
-            distance_to_sz = expobj.distance_to_sz['SLM Targets'].loc[target, stim]
-
-            if response_type == 'dFF': response = expobj.responses_SLMtargets_tracedFF.loc[target, idx]
-            elif response_type == 'dFF (z scored)' or response_type == 'dFF (z scored) (interictal)': response = z_scored.loc[target, idx]  # z - scoring of SLM targets responses:
-            else: raise ValueError('response_type arg must be `dFF` or `dFF (z scored)` or `dFF (z scored) (interictal)`')
-
-            df = df.append({'target_id': target, 'stim_id': stim, 'inorout_sz': inorout_sz, 'distance_to_sz': distance_to_sz,
-                            response_type: response}, ignore_index=True)
-
-    expobj.responses_vs_distance_to_seizure_SLMTargets = df
-
-    # convert distances to microns
-    expobj.responses_vs_distance_to_seizure_SLMTargets['distance_to_sz_um'] = round(expobj.responses_vs_distance_to_seizure_SLMTargets['distance_to_sz'] / expobj.pix_sz_x, 2)
+        data_[idx] = frames_responses
+    print(f"|- collected data from {len(expobj.target_coords_all)} SLM target coords and {len(frames_of_interest)} stim frames")
+    data_['data_collected_at_distance_um'] = dist_um
+    expobj.SLMtarget_areas_responses = data_
     expobj.save()
 
 
-# run_calculating_min_distance_to_seizure(no_slmtargets_szboundary_stim)
+    # second approach: collecting responses around targets using hits stim trials only from this expobj
+    locs = np.where(expobj.hits_SLMtargets == 1)
+    # for idx, stim_idx in zip(locs[0], locs[1]):
+    for cell_idx, coord in enumerate(expobj.target_coords_all):
+        stim_idxes = locs[1][np.where(locs[0] == cell_idx)]
+        stim_frames_list = [expobj.stim_start_frames[stim_idx] for stim_idx in stim_idxes]
+        ## make a slice object
+        s = np.s_[:, int(coord[1]) - dist_pix_half: int(coord[1]) + dist_pix_half,
+            int(coord[0]) - dist_pix_half: int(coord[0]) + dist_pix_half]
 
-collect_responses_vs_distance_to_seizure_SLMTargets(response_type=response_type)
-response_type = 'dFF (z scored) (interictal)'
+        ## use the slice object to collect Flu trace
+        target_area_trace = tiff_arr[s]
+
+        # dFF normalize
+        mean = np.mean(target_area_trace)
+        target_area_trace_dff = (target_area_trace - mean) / mean  # dFF
+
+        frames_responses = np.empty(shape=(len(stim_frames_list), target_area_trace_dff.shape[1], target_area_trace_dff.shape[2]))
+        for idx, stim_frame in enumerate(stim_frames_list):
+            pre_slice = target_area_trace_dff[stim_frame - expobj.pre_stim_response_frames_window : stim_frame, :, :]
+            post_slice = target_area_trace_dff[stim_frame + expobj.stim_duration_frames: stim_frame + expobj.stim_duration_frames + expobj.post_stim_response_frames_window, :, :]
+            dF = np.mean(post_slice, axis=0) - np.mean(pre_slice, axis=0)
+            frames_responses[idx] = dF
+
+        data_[cell_idx] = frames_responses
+    print(f"|- collected data from {len(expobj.target_coords_all)} SLM target coords and ONLY HITS stim frames for each target")
+    data_['data_collected_at_distance_um'] = dist_um
+    expobj.SLMtarget_areas_responses_hitsonly = data_
+    expobj.save()
 
 
+    if do_plot:
+        # plot heatmaps
+        fig, axs = plt.subplots(nrows=11, ncols=5, figsize=(15, 33))
+        print(f"|- making avg STA plots for {len(expobj.target_coords_all)} SLM target coords ... ", end='\r')
+        counter = 0
+        for idx, coord in enumerate(expobj.target_coords_all):
+            col = counter % 5
+            row = counter // 5
+            mean_ = np.mean(expobj.SLMtarget_areas_responses[idx], axis=0)  # mean across all stim frames
+            hmap = axs[row, col].imshow(mean_, vmin=0, vmax=0.2)
+            counter += 1
+        colorbar = fig.colorbar(hmap, ax=axs[row, col], fraction=0.046, pad=0.04)
+        fig.tight_layout(pad=1.3)
+        fig.suptitle(f"{expobj.t_series_name} - {len(expobj.target_coords_all)} targets - {expobj.exptype}", y=0.995)
+        fig.show()
+        print(f"|- making avg STA plots for {len(expobj.target_coords_all)} SLM target coords ... DONE", end='\r')
 
-# %% 5.1) collect and plot targets responses for stims vs. distance
-@aoutils.run_for_loop_across_exps(run_pre4ap_trials=False, run_post4ap_trials=True, skip_trials=['PS05 t-012'])
-def plot_responses_vs_distance_to_seizure_SLMTargets(response_type=response_type, **kwargs):
-    # response_type = 'dFF (z scored)'
+collect_responses_around_slmtarget(do_plot=False)
 
-    print(f"\t|- plotting responses vs. distance to seizure [5.1-1]")
-    expobj = kwargs['expobj']
-    fig, ax = plt.subplots(figsize=[8, 3])
-    for target in expobj.responses_SLMtargets_tracedFF.index:
-        idx_sz_boundary = [idx for idx, stim in enumerate(expobj.stim_start_frames) if stim in expobj.distance_to_sz['SLM Targets'].columns]
-        responses = np.array(expobj.responses_SLMtargets_tracedFF.loc[target, idx_sz_boundary])
-        distance_to_sz = np.array(expobj.distance_to_sz['SLM Targets'].loc[target, idx_sz_boundary])
 
-        positive_distances = np.where(distance_to_sz > 0)
-        negative_distances = np.where(distance_to_sz < 0)
+# %% 6.1-plot) Ca responses around SLM targets
 
-        pj.make_general_scatter(x_list=[distance_to_sz[positive_distances]], y_data=[responses[positive_distances]], fig=fig, ax=ax, colors=['cornflowerblue'], alpha=0.5, s=30, show=False,
-                                x_label='distance to sz', y_label=response_type)
-        pj.make_general_scatter(x_list=[distance_to_sz[negative_distances]], y_data=[responses[negative_distances]], fig=fig, ax=ax, colors=['tomato'], alpha=0.5, s=30, show=False,
-                                x_label='distance to sz', y_label=response_type)
+for key in list(allopticalResults.trial_maps['pre'].keys())[1:]:
 
-    fig.suptitle(expobj.t_series_name)
+    print(f"\n|- Making plot for key: {key}")
+
+    exp = 'pre'; expobj, experiment = aoutils.import_expobj(aoresults_map_id=f"{exp} {key}.0")
+    __means = []
+    for idx, coord in enumerate(expobj.target_coords_all):
+        arr = np.mean(expobj.SLMtarget_areas_responses_hitsonly[idx], axis=0)
+        if arr.shape[0] == arr.shape[1]:
+        # print(expobj.SLMtarget_areas_responses[idx].shape)
+            __means.append(arr)  # mean across all stim frames
+    assert len(__means) > 1, f'no frames in __means for {expobj.t_series_name}'
+    pre4ap_mean = np.mean(np.asarray(__means), axis=0)
+
+    exp = 'post'; expobj, experiment = aoutils.import_expobj(aoresults_map_id=f"{exp} {key}.0")
+    __means = []
+    for idx, coord in enumerate(expobj.target_coords_all):
+        arr = np.mean(expobj.SLMtarget_areas_responses_hitsonly[idx], axis=0)
+        if arr.shape[0] == arr.shape[1]:
+        # print(expobj.SLMtarget_areas_responses[idx].shape)
+            __means.append(arr)  # mean across all stim frames
+    assert len(__means) > 1, f'no frames in __means for {expobj.t_series_name}'
+    post4ap_mean = np.mean(np.asarray(__means), axis=0)
+
+    # plot heatmaps
+    fig, axs = plt.subplots(ncols=3, nrows=1, figsize=(8, 3.1))
+    print(f"|- making pre and post4ap compare response plots", end='\r')
+    aoplot.plot_sz_boundary_location(expobj, fig=fig, ax=axs[0], title='')
+    axs[1].imshow(pre4ap_mean, vmin=0, vmax=0.3)
+    axs[1].set_title('pre4ap')
+    im = axs[2].imshow(post4ap_mean, vmin=0, vmax=0.3)
+    axs[2].set_title('post4ap')
+    for ax in axs[1:]:
+        xticks = ax.get_xticks()  # pixel space
+        # labels = [int(x_ * expobj.pix_sz_x - expobj.SLMtarget_areas_responses['data_collected_at_distance_um'] / 2) for x_ in xticks]
+        new_xticks_labels = np.arange(0, expobj.SLMtarget_areas_responses['data_collected_at_distance_um'], 50)[1:]
+        new_xticks_labels_adjusted = [int(x_ - expobj.SLMtarget_areas_responses['data_collected_at_distance_um'] / 2) for x_ in new_xticks_labels]
+        new_xticks = [x_ // expobj.pix_sz_x for x_ in new_xticks_labels]
+        ax.set_xticks(new_xticks)
+        ax.set_xticklabels(new_xticks_labels_adjusted)
+
+        ax.set_yticks([])
+    axs[1].set_xlabel('distance to SLM target coordinate (um)')
+
+    fig.tight_layout(pad=2.5)
+    fig.suptitle(f"{expobj.t_series_name} - {len(expobj.target_coords_all)} targets - {expobj.exptype}", y=0.995)
     fig.show()
 
 
-
-@aoutils.run_for_loop_across_exps(run_pre4ap_trials=False, run_post4ap_trials=True, skip_trials=['PS05 t-012'])
-def plot_collection_response_distance(response_type=response_type, **kwargs):
-    print(f"\t|- plotting a collection of plots measuring responses vs. distance to seizure [5.1-2]")
-    expobj = kwargs['expobj']
-    # response_type = 'dFF (z scored)'
-    if not hasattr(expobj, 'responses_SLMtargets_tracedFF_avg_df'):
-        expobj.avgResponseSzStims_SLMtargets(save=True)
-
-    data = expobj.responses_vs_distance_to_seizure_SLMTargets
-    fig, axs = plt.subplots(ncols=5, nrows=1, figsize=[18, 4])
-    axs[0] = sns.boxplot(data=expobj.responses_SLMtargets_tracedFF_avg_df, x='stim_group', y='avg targets response', order=['interictal', 'ictal'],
-                         width=0.5, ax=axs[0], palette=['tomato', 'mediumseagreen'])  # plotting mean across stims (len= # of targets)
-    axs[0] = sns.swarmplot(data=expobj.responses_SLMtargets_tracedFF_avg_df, x='stim_group', y='avg targets response', order=['interictal', 'ictal'],
-                           color=".25", ax=axs[0])
-    sns.stripplot(x="inorout_sz", y="distance_to_sz_um", data=data, ax=axs[1], alpha=0.2, order=['in', 'out'])
-    axs[2] = sns.violinplot(x="inorout_sz", y=response_type, data=data, legend=False, ax=axs[2], order=['in', 'out'])
-    axs[2].set_ylim([-3, 3])
-    axs[3] = sns.scatterplot(data=data, x='distance_to_sz_um', y=response_type, ax=axs[3], alpha=0.2, hue='distance_to_sz_um', hue_norm=(-1,1),
-                             palette=sns.diverging_palette(240, 10, as_cmap=True), legend=False)
-    axs[3].set_ylim([-3, 3])
-    aoplot.plot_sz_boundary_location(expobj, fig=fig, ax=axs[4], title=None)
-    fig.suptitle(f"{expobj.t_series_name} - {response_type}")
-    fig.tight_layout(pad=1.1)
-    fig.show()
-
-# plot_responses_vs_distance_to_seizure_SLMTargets()
-plot_collection_response_distance()
-
-
-
-# %% 5.1.1) binning and plotting density plot, and smoothing data across the distance to seizure axis, when comparing to responses - represent the distances in percentile space
-
-
-@aoutils.run_for_loop_across_exps(run_pre4ap_trials=False, run_post4ap_trials=True, skip_trials=['PS05 t-012'])
-def plot_responses_vs_distance_to_seizure_SLMTargets_2ddensity(positive_distances_only = False, plot=True, **kwargs):
-
-    print(f"\t|- plotting responses vs. distance to seizure")
-    expobj = kwargs['expobj']
-
-    data_expobj = np.array([[], []]).T
-    for target in expobj.responses_SLMtargets_tracedFF.index:
-        idx_sz_boundary = [idx for idx, stim in enumerate(expobj.stim_start_frames) if stim in expobj.distance_to_sz['SLM Targets'].columns]
-        responses = np.array(list(expobj.responses_SLMtargets_tracedFF.loc[target, idx_sz_boundary]))
-        distance_to_sz = np.array(list(expobj.distance_to_sz['SLM Targets'].loc[target, :]))
-
-        if positive_distances_only:
-            distance_to_sz_pos = np.where(distance_to_sz > 0)[0]
-            responses_posdistances = responses[distance_to_sz_pos]
-
-            _data = np.array([distance_to_sz_pos, responses_posdistances]).T
-        else:
-            _data = np.array([distance_to_sz, responses]).T
-
-        data_expobj = np.vstack((_data, data_expobj))
-
-
-
-    distances_to_sz = data_expobj[:, 0]
-    bin_size = 20  # um
-    # bins_num = int((max(distances_to_sz) - min(distances_to_sz)) / bin_size)
-    bins_num = 40
-    response_type = 'dFF (z scored)'
-
-    pj.plot_hist2d(data=data_expobj, bins=bins_num, y_label=response_type, title=expobj.t_series_name, figsize=(4, 2), x_label='distance to seizure (um)',
-                   y_lim=[-2,2]) if plot else None
-
-
-    return data_expobj
-
-data = plot_responses_vs_distance_to_seizure_SLMTargets_2ddensity(positive_distances_only = False, plot=False)
-
-def convert_responses_szdistances_percentile_space():
-    data_all = np.array([[], []]).T
-    for data_ in data:
-        data_all = np.vstack((data_, data_all))
-
-    from scipy.stats import percentileofscore
-
-    distances_to_sz = data_all[:, 0]
-    idx_sorted = np.argsort(distances_to_sz)
-    distances_to_sz_sorted = distances_to_sz[idx_sorted]
-    responses_sorted = data_all[:, 1][idx_sorted]
-    s = pd.Series(distances_to_sz_sorted)
-    percentiles = s.apply(lambda x: percentileofscore(distances_to_sz_sorted, x))
-    scale_percentile_distances = {}
-    for pct in range(0, 100):
-        scale_percentile_distances[int(pct+1)] = np.round(np.percentile(distances_to_sz_sorted, pct),0)
-    data_all = np.array([percentiles, responses_sorted]).T
-
-    return data_all, percentiles, responses_sorted, distances_to_sz_sorted, scale_percentile_distances
-
-data_all, percentiles, responses_sorted, distances_to_sz_sorted, scale_percentile_distances = convert_responses_szdistances_percentile_space()
-
-def plot_density_responses_szdistances(response_type=response_type, data_all=data_all, distances_to_sz_sorted=distances_to_sz_sorted):
-    # plotting density plot for all exps, in percentile space (to normalize for excess of data at distances which are closer to zero) - TODO any smoothing?
-
-    bin_size = 5  # um
-    # bins_num = int((max(distances_to_sz) - min(distances_to_sz)) / bin_size)
-    bins_num = [100, 500]
-
-    fig, ax = plt.subplots(figsize=(6,3))
-    pj.plot_hist2d(data=data_all, bins=bins_num, y_label=response_type, figsize=(6, 3), x_label='distance to seizure (%tile space)',
-                   title=f"2d density plot, all exps, 50%tile = {np.percentile(distances_to_sz_sorted, 50)}um",
-                   y_lim=[-3, 3], fig=fig, ax=ax, show=False)
-    ax.axhline(0, ls='--', c='white', lw=1)
-    xticks = [1, 25, 50, 57, 75, 100]  # percentile space
-    ax.set_xticks(ticks=xticks)
-    labels = [scale_percentile_distances[x_] for x_ in xticks]
-    ax.set_xticklabels(labels)
-    ax.set_xlabel('distance to seizure (um)')
-
-    fig.show()
-
-plot_density_responses_szdistances()
-
-
-
-# plotting line plot for all datapoints for responses vs. distance to seizure
-
-def plot_lineplot_responses_pctszdistances(percentiles, responses_sorted, response_type=response_type):
-    percentiles_binned = np.round(percentiles)
-
-    bin = 5
-    # change to pct% binning
-    percentiles_binned = (percentiles_binned // bin) * bin
-
-    d = {'distance to seizure (%tile space)': percentiles_binned,
-         response_type: responses_sorted}
-
-    df = pd.DataFrame(d)
-
-    fig, ax = plt.subplots(figsize=(6,3))
-    sns.lineplot(data=df, x='distance to seizure (%tile space)', y=response_type, ax=ax)
-    ax.set_title(f'responses over distance to sz, all exps, normalized to percentile space ({bin}% bins)', wrap=True)
-    ax.margins(0.02)
-    ax.axhline(0, ls='--', c='orange', lw=1)
-
-    xticks = [1, 25, 50, 57, 75, 100]  # percentile space
-    ax.set_xticks(ticks=xticks)
-    labels = [scale_percentile_distances[x_] for x_ in xticks]
-    ax.set_xticklabels(labels)
-    ax.set_xlabel('distance to seizure (um)')
-
-    fig.tight_layout(pad=2)
-    plt.show()
-
-plot_lineplot_responses_pctszdistances(percentiles, responses_sorted)
-
-
-
+# TODO need to figure out how to exclude targets cells from within the plotting zone (atleast for quantification) -- go through the s2p ROIs followers responses
+# collect only for success stims - done
 
 
 

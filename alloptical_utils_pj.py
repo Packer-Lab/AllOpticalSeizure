@@ -3405,8 +3405,8 @@ class Post4ap(alloptical):
             end = expobj.stims_af_sz + [expobj.stim_start_frames[-1]]
         else:
             end = expobj.stims_af_sz
-        print(f'\t\- seizure start frames: {on_} [{len(on_)}]')
-        print(f'\t\- seizure end frames: {end} [{len(end)}]')
+        print(f'\n\t\- seizure start frames: {on_} [{len(on_)}]')
+        print(f'\t\- seizure end frames: {end} [{len(end)}]\n')
 
         sz_num = 0
         for on, off in zip(on_, end):
@@ -3514,7 +3514,7 @@ class Post4ap(alloptical):
         in_sz = []
         out_sz = []
         for _, s in enumerate(self.stat):
-            in_seizure = self._InOutSz(cell_med=s['med'], stim_frame=stim, to_plot=to_plot)
+            in_seizure = self._InOutSz(cell_med=s['med'], stim_frame=stim)
 
             if in_seizure is True:
                 in_sz.append(s['original_index'])  # this is the s2p cell id
@@ -3613,9 +3613,12 @@ class Post4ap(alloptical):
 
         in_sz = []
         out_sz = []
-        for cell in range(len(self.target_coords_all)):
+        for cell, _ in enumerate(self.target_coords_all):
+            if cell % 10 == 0:
+                msg = f"\t|- cell #: {cell}"
+                print(msg)
             x = self._InOutSz(cell_med=[self.target_coords_all[cell][1], self.target_coords_all[cell][0]],
-                              stim_frame=stim, to_plot=to_plot)
+                              stim_frame=stim)
 
             if x is True:
                 in_sz.append(cell)
@@ -3650,6 +3653,9 @@ class Post4ap(alloptical):
 
             ax.scatter(x=xline[0], y=yline[0], facecolors='#1A8B9D')
             ax.scatter(x=xline[1], y=yline[1], facecolors='#B2D430')
+            ax.plot([xline[0], xline[1]], [yline[0], yline[1]], c='white',
+                    linestyle='dashed', alpha=0.3)
+
             # fig.show()
 
             # plot SLM targets in sz boundary
@@ -3663,10 +3669,11 @@ class Post4ap(alloptical):
             # aoplot.plot_SLMtargets_Locs(self, targets_coords=coords_to_plot_outsz, cells=out_sz, edgecolors='white', background=bg_img)
             fig, ax = aoplot.plot_SLMtargets_Locs(self, targets_coords=coords_to_plot_insz, fig=fig, ax=ax, cells=in_sz,
                                                   title=title, show=False, background=bg_img,
-                                                  edgecolors='yellowgreen')
-            fig, ax = aoplot.plot_SLMtargets_Locs(self, targets_coords=coords_to_plot_outsz, fig=fig, ax=ax,
-                                                  cells=out_sz, title=title, show=False, background=bg_img,
-                                                  edgecolors='white')
+                                                  edgecolors='red')
+            # fig, ax = aoplot.plot_SLMtargets_Locs(self, targets_coords=coords_to_plot_outsz, fig=fig, ax=ax,
+            #                                       cells=out_sz, title=title, show=False, background=bg_img,
+            #                                       edgecolors='yellowgreen')
+
             # plt.gca().invert_yaxis()
             # plt.show()  # the indiviual cells were plotted in ._InOutSz
 

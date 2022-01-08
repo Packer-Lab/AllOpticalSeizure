@@ -11,7 +11,6 @@ results_object_path = '/home/pshah/mnt/qnap/Analysis/alloptical_results_superobj
 allopticalResults = aoutils.import_resultsobj(pkl_path=results_object_path)
 
 
-expobj, _ = aoutils.import_expobj(prep='RL109', trial='t-018', verbose=False)
 
 
 # i = 'pre'
@@ -25,6 +24,17 @@ expobj, _ = aoutils.import_expobj(prep='RL109', trial='t-018', verbose=False)
 #
 # expobj._findTargetsAreas()
 # expobj._findTargetedS2pROIs(force_redo=True, plot=False)
+
+# %%
+
+for i in ['t-014']:
+    expobj, _ = aoutils.import_expobj(prep='PS06', trial=i, verbose=False)
+    aoplot.plot_lfp_stims(expobj)
+
+for i in ['t-017', 't-016']:
+    expobj, _ = aoutils.import_expobj(prep='RL109', trial=i, verbose=False)
+    aoplot.plot_lfp_stims(expobj)
+
 
 # %% testing which pkl objects are corrupted (if any)
 
@@ -72,14 +82,14 @@ post_4ap_trials = [
 ]
 
 
-for key in pj.flattenOnce(post_4ap_trials) + pj.flattenOnce(pre_4ap_trials):
+for key in pj.flattenOnce(post_4ap_trials)[-3:]:
     prep = key[:-6]
     trial = key[-5:]
     try:
         expobj, _ = aoutils.import_expobj(prep=prep, trial=trial, verbose=False)
     except pickle.UnpicklingError:
         print(f"\n** FAILED IMPORT OF * {prep} {trial}")
-
+    aoplot.plot_lfp_stims(expobj)
 
 # for key in ['RL109 t-020']:
 #     prep = key[:-6]
