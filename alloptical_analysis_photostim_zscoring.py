@@ -260,6 +260,10 @@ trials_skip = [
     'RL109 t-017'  # RL109 t-017 doesn't have sz boundaries yet..
 ]
 
+trials_run = [
+    ['PS04 t-012', 'PS04 t-017']
+]
+
 allopticalResults.outsz_missing = []
 allopticalResults.insz_missing = []
 allopticalResults.stim_responses_zscores['delta(trace_dFF)'] = {}
@@ -272,7 +276,7 @@ for i, _ in enumerate(allopticalResults.pre_4ap_trials):
 
 
     # skipping some trials that need fixing of the expobj
-    if f"{prep} {pre4aptrial}" not in trials_skip:
+    if f"{prep} {pre4aptrial}"  not in trials_skip:
 
 
         # load up pre-4ap trial
@@ -351,6 +355,11 @@ for i, _ in enumerate(allopticalResults.pre_4ap_trials):
         print(f'|-- importing {prep} {post4aptrial} - post4ap trial')
         expobj, experiment = aoutils.import_expobj(trial=post4aptrial, date=date, prep=prep, verbose=False)
         if hasattr(expobj, 'responses_SLMtargets_tracedFF_outsz'):
+            if type(expobj.responses_SLMtargets_tracedFF_outsz) is list:
+                expobj.StimSuccessRate_SLMtargets_tracedFF_outsz, expobj.hits_SLMtargets_tracedFF_outsz, expobj.responses_SLMtargets_tracedFF_outsz, expobj.traces_SLMtargets_tracedFF_successes_outsz = \
+                    expobj.get_SLMTarget_responses_dff(process='trace dFF', threshold=10,
+                                                       stims_to_use=expobj.stims_out_sz)
+
             response_df = expobj.responses_SLMtargets_tracedFF_outsz.T
 
             if len(allopticalResults.post_4ap_trials[i]) > 1:
@@ -469,20 +478,21 @@ for i, _ in enumerate(allopticalResults.pre_4ap_trials):
         else:
             print(f"**** 5 need to run collecting slmtargets_szboundary_stim for {prep} {post4aptrial}")
 
+
+        ## switch out this comparison_number to something more readable
+        new_key = f"{pre4aptrial} vs. {post4aptrial}"
+        allopticalResults.stim_responses_zscores['delta(trace_dFF)'][prep][new_key] = allopticalResults.stim_responses_zscores['delta(trace_dFF)'][prep].pop(f'{comparison_number}')
+        # allopticalResults.stim_responses_zscores['delta(trace_dFF)'][prep][new_key]= allopticalResults.stim_responses_zscores['delta(trace_dFF)'][prep][f'{comparison_number}']
+
     else:
         print(f"\-- ***** skipping: {prep} {post4aptrial}")
-        if not hasattr(expobj, 'responses_SLMtargets_tracedFF_outsz'):
-            print(f'\-- **** 1 need to run collecting outsz responses SLMtargets attr for {post4aptrial}, {prep} ****')
-
-        if not hasattr(expobj, 'slmtargets_szboundary_stim'):
-            print(f'**** 2 need to run collecting insz responses SLMtargets attr for {post4aptrial}, {prep} ****')
-        if hasattr(expobj, 'responses_SLMtargets_tracedFF_insz'):
-            print(f'**** 3 need to run collecting in sz responses SLMtargets attr for {post4aptrial}, {prep} ****')
-
-    ## switch out this comparison_number to something more readable
-    new_key = f"{pre4aptrial} vs. {post4aptrial}"
-    allopticalResults.stim_responses_zscores['delta(trace_dFF)'][prep][new_key] = allopticalResults.stim_responses_zscores['delta(trace_dFF)'][prep].pop(f'{comparison_number}')
-    # allopticalResults.stim_responses_zscores['delta(trace_dFF)'][prep][new_key]= allopticalResults.stim_responses_zscores['delta(trace_dFF)'][prep][f'{comparison_number}']
+        # if not hasattr(expobj, 'responses_SLMtargets_tracedFF_outsz'):
+        #     print(f'\-- **** 1 need to run collecting outsz responses SLMtargets attr for {post4aptrial}, {prep} ****')
+        #
+        # if not hasattr(expobj, 'slmtargets_szboundary_stim'):
+        #     print(f'**** 2 need to run collecting insz responses SLMtargets attr for {post4aptrial}, {prep} ****')
+        # if hasattr(expobj, 'responses_SLMtargets_tracedFF_insz'):
+        #     print(f'**** 3 need to run collecting in sz responses SLMtargets attr for {post4aptrial}, {prep} ****')
 
 
 allopticalResults.save()
@@ -573,72 +583,67 @@ allopticalResults.save()
 
 
 # %% 4.0-dc) DATA COLLECTION - zscore of stim responses vs. distance to seizure wavefront
+
+
 @aoutils.run_for_loop_across_exps(run_pre4ap_trials=False, run_post4ap_trials=True)
-def collect_responses_vs_distance_to_seizure_SLMTargets_pre4ap_zscored(**kwargs):
-    print(f"\t|- collecting responses vs. distance to seizure [4.0-1]")
+def tempfunc(**kwargs):
     expobj = kwargs['expobj']
 
-    # transform the rows of the stims responses dataframe to relative DISTANCE to seizure
-    stims = list(post_4ap_response_df.index)
-    stims_relative_sz = []
-    for stim_idx in stims:
-        stim_frame = expobj.stim_start_frames[stim_idx]
-        closest_sz_onset = pj.findClosest(arr=expobj.seizure_lfp_onsets, input=stim_frame)[0]
-        time_diff = (closest_sz_onset - stim_frame) / expobj.fps  # time difference in seconds
-        stims_relative_sz.append(round(time_diff, 3))
+    expobj.distance_to_sz = {'SLM Targets': {'uninitialized'},
+                           's2p nontargets': {'uninitialized'}}  # calculating the distance between the sz wavefront and cells
 
-    cols = [col for col in post_4ap_response_df.columns if 'z' in str(col)]
-    post_4ap_response_df_zscore_stim_relative_to_sz = post_4ap_response_df[cols]
-    post_4ap_response_df_zscore_stim_relative_to_sz.index = stims_relative_sz  # take the original zscored response_df and assign a new index where the col names are times relative to sz onset
+    if expobj.distance_to_sz['SLM Targets'] == 'uninitialized':
+        expobj.sz_locations_stims()
+        x_ = expobj.calcMinDistanceToSz()
+        print(f'WARNING: {expobj.t_series_name} had to rerun .calcMinDistanceToSz')
 
-    # take average of all targets at a specific time to seizure onset
-    post_4ap_response_df_zscore_stim_relative_to_sz['avg'] = post_4ap_response_df_zscore_stim_relative_to_sz.T.mean()
-
-    stim_relative_szonset_vs_avg_zscore_alltargets_atstim[f"{prep} {post4aptrial}"][0].append(stims_relative_sz)
-    stim_relative_szonset_vs_avg_zscore_alltargets_atstim[f"{prep} {post4aptrial}"][1].append(
-        post_4ap_response_df_zscore_stim_relative_to_sz['avg'].tolist())
-
-    # (re-)make pandas dataframe
-    df = pd.DataFrame(columns=['target_id', 'stim_id', 'inorout_sz', 'distance_to_sz'])
-
-    pass
+tempfunc()
 
 
-stim_relative_szonset_vs_avg_zscore_alltargets_atstim = {}
+# key = 'l'; exp = 'post'; expobj, experiment = aoutils.import_expobj(aoresults_map_id=f"{exp} {key}.0")
+expobj, experiment = aoutils.import_expobj(prep='RL109', trial='t-018')
 
-for prep in allopticalResults.stim_responses_zscores.keys():
-    # prep = 'PS07'
+@aoutils.run_for_loop_across_exps(run_pre4ap_trials=False, run_post4ap_trials=True)
+def collect_responses_vs_distance_to_seizure_SLMTargets_pre4ap_zscored(**kwargs):
+    print(f"\t\- collecting pre4ap zscored responses vs. distance to seizure [4.0-1]")
+    expobj = kwargs['expobj']
 
-    for key in list(allopticalResults.stim_responses_zscores[prep].keys()):
-        # key = list(allopticalResults.stim_responses_zscores[prep].keys())[0]
-        # comp = 2
-        if 'post-4ap' in allopticalResults.stim_responses_zscores[prep][key]:
-            post_4ap_response_df = allopticalResults.stim_responses_zscores[prep][key]['post-4ap']
-            if len(post_4ap_response_df) > 0:
-                post4aptrial = key[-5:]
-                print(f'working on.. {prep} {key}, post4ap trial: {post4aptrial}')
-                stim_relative_szonset_vs_avg_zscore_alltargets_atstim[f"{prep} {post4aptrial}"] = [[], []]
-                expobj, experiment = aoutils.import_expobj(trial=post4aptrial, prep=prep, verbose=False)
+    try:
 
-                # transform the rows of the stims responses dataframe to relative time to seizure
-                stims = list(post_4ap_response_df.index)
-                stims_relative_sz = []
-                for stim_idx in stims:
-                    stim_frame = expobj.stim_start_frames[stim_idx]
-                    closest_sz_onset = pj.findClosest(arr=expobj.seizure_lfp_onsets, input=stim_frame)[0]
-                    time_diff = (closest_sz_onset - stim_frame) / expobj.fps  # time difference in seconds
-                    stims_relative_sz.append(round(time_diff, 3))
+        # transform the rows of the stims responses dataframe to relative DISTANCE to seizure
+        for trials_comparison in [*allopticalResults.stim_responses_zscores[expobj.prep]]:
+            post_4ap_response_df = allopticalResults.stim_responses_zscores[expobj.prep][trials_comparison]['post-4ap']
 
-                cols = [col for col in post_4ap_response_df.columns if 'z' in str(col)]
-                post_4ap_response_df_zscore_stim_relative_to_sz = post_4ap_response_df[cols]
-                post_4ap_response_df_zscore_stim_relative_to_sz.index = stims_relative_sz  # take the original zscored response_df and assign a new index where the col names are times relative to sz onset
-
-                # take average of all targets at a specific time to seizure onset
-                post_4ap_response_df_zscore_stim_relative_to_sz['avg'] = post_4ap_response_df_zscore_stim_relative_to_sz.T.mean()
-
-                stim_relative_szonset_vs_avg_zscore_alltargets_atstim[f"{prep} {post4aptrial}"][0].append(stims_relative_sz)
-                stim_relative_szonset_vs_avg_zscore_alltargets_atstim[f"{prep} {post4aptrial}"][1].append(post_4ap_response_df_zscore_stim_relative_to_sz['avg'].tolist())
+            # (re-)make pandas dataframe
+            df = pd.DataFrame(columns=['target_id', 'stim_id', 'inorout_sz', 'distance_to_sz', 'response (z-scored to pre4ap)'])
+            cols = [col for col in post_4ap_response_df.columns if 'z' in str(col)]
+            post_4ap_response_df_zscore_stim_relative_to_sz = post_4ap_response_df[cols]
 
 
-allopticalResults.stim_relative_szonset_vs_avg_zscore_alltargets_atstim = stim_relative_szonset_vs_avg_zscore_alltargets_atstim
-allopticalResults.save()
+            stim_ids = [(idx, stim) for idx, stim in enumerate(expobj.stim_start_frames) if stim in expobj.distance_to_sz['SLM Targets'].columns]
+            for target in range(expobj.n_targets_total):
+                # idx_sz_boundary = [idx for idx, stim in enumerate(expobj.stim_start_frames) if stim in expobj.distance_to_sz['SLM Targets'].columns]
+                for stim_idx, stim in stim_ids:
+                    if target in expobj.slmtargets_szboundary_stim[stim]: inorout_sz = 'in'
+                    else: inorout_sz = 'out'
+
+                    target = 0
+                    stim_idx = 0
+                    distance_to_sz = expobj.distance_to_sz['SLM Targets'].loc[target, stim]
+                    response_zscored_pre4ap = post_4ap_response_df_zscore_stim_relative_to_sz.loc[stim_idx, f"{target}_z"]
+
+                    df = df.append({'target_id': target, 'stim_id': stim, 'inorout_sz': inorout_sz, 'distance_to_sz': distance_to_sz,
+                                    'response (z-scored to pre4ap)': response_zscored_pre4ap}, ignore_index=True)
+
+        expobj.responsesPre4apZscored_vs_distance_to_seizure_SLMTargets = df
+
+        # convert distances to microns
+        expobj.responsesPre4apZscored_vs_distance_to_seizure_SLMTargets['distance_to_sz_um'] = round(expobj.responsesPre4apZscored_vs_distance_to_seizure_SLMTargets['distance_to_sz'] / expobj.pix_sz_x, 2)
+        expobj.save()
+
+    except AttributeError :
+        print(f"SKIPPED {expobj.prep} {expobj.trial} [4.0-2]")
+
+collect_responses_vs_distance_to_seizure_SLMTargets_pre4ap_zscored()
+
+allopticalResults.stim_responses_zscores

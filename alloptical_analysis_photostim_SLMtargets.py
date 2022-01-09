@@ -31,7 +31,7 @@ response_type = 'dFF (z scored) (interictal)'
 no_slmtargets_szboundary_stim = []
 @aoutils.run_for_loop_across_exps(run_pre4ap_trials=False, run_post4ap_trials=True)
 def run_calculating_min_distance_to_seizure(**kwargs):
-    print(f"\t|- collecting responses vs. distance to seizure [5.0-1]")
+    print(f"\t\- collecting responses vs. distance to seizure [5.0-1]")
 
     expobj = kwargs['expobj']
     if not hasattr(expobj, 'stimsSzLocations'):
@@ -48,12 +48,14 @@ def plot_sz_boundary_location(**kwargs):
 
 @aoutils.run_for_loop_across_exps(run_pre4ap_trials=False, run_post4ap_trials=True)#, run_trials=['RL108 t-013'])
 def collect_responses_vs_distance_to_seizure_SLMTargets(response_type: str, **kwargs):
-    print(f"\t|- collecting responses vs. distance to seizure [5.0-2]")
+    print(f"\t\- collecting responses vs. distance to seizure [5.0-2]")
     expobj = kwargs['expobj']
 
     # uncomment if need to rerun for a particular expobj....but shouldn't really need to be doing so
-    # expobj.StimSuccessRate_SLMtargets_tracedFF, expobj.hits_SLMtargets_tracedFF, expobj.responses_SLMtargets_tracedFF, expobj.traces_SLMtargets_tracedFF_successes = \
-    #     expobj.get_SLMTarget_responses_dff(process='trace dFF', threshold=10, stims_to_use=expobj.stim_start_frames)
+    if not hasattr(expobj, 'responses_SLMtargets_tracedFF'):
+        expobj.StimSuccessRate_SLMtargets_tracedFF, expobj.hits_SLMtargets_tracedFF, expobj.responses_SLMtargets_tracedFF, expobj.traces_SLMtargets_tracedFF_successes = \
+            expobj.get_SLMTarget_responses_dff(process='trace dFF', threshold=10, stims_to_use=expobj.stim_start_frames)
+        print(f'WARNING: {expobj.t_series_name} had to rerun .get_SLMTarget_responses_dff')
 
     # (re-)make pandas dataframe
     df = pd.DataFrame(columns=['target_id', 'stim_id', 'inorout_sz', 'distance_to_sz', response_type])
@@ -976,7 +978,7 @@ for prep in allopticalResults.stim_responses_tracedFF_comparisons.keys():
 # %% 6.0-main) avg STA responses in 200um space around photostim targets - compare diff between pre vs. post4ap (interictal, and ictal)
 
 # for i in ['pre', 'post']:
-key = 'l'; exp = 'pre'; expobj, experiment = aoutils.import_expobj(aoresults_map_id=f"{exp} {key}.0")
+key = 'l'; exp = 'post'; expobj, experiment = aoutils.import_expobj(aoresults_map_id=f"{exp} {key}.0")
 
 @aoutils.run_for_loop_across_exps(run_pre4ap_trials=False, run_post4ap_trials=False, run_trials=['PS04 t-012', 'PS04 t-017', 'PS04 t-018'])
 def collect_responses_around_slmtarget(do_plot=True, **kwargs):
