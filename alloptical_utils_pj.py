@@ -208,7 +208,7 @@ def working_on(expobj):
 
 def end_working_on(expobj):
     print(
-        f"FINISHED on: {expobj.metainfo['exptype']} {expobj.metainfo['animal prep.']} {expobj.metainfo['trial']} \ \ \n")
+        f"FINISHED on: {expobj.metainfo['exptype']} {expobj.metainfo['animal prep.']} {expobj.metainfo['trial']} \** \n")
 
 def save_figure(fig, save_path_suffix: str = None, save_path_full: str = None):
     if not save_path_full and save_path_suffix:
@@ -3349,7 +3349,7 @@ class Post4ap(alloptical):
         self.seizure_lfp_offsets = None  # frame #s corresponding to OFFSET of seizure as manually inspected from the LFP signal
 
         ##
-        self.slmtargets_szboundary_stim = {}  # dictionary of cells classification either inside or outside of boundary
+        self.slmtargets_szboundary_stim = None  # dictionary of cells classification either inside or outside of boundary
 
         ## PHOTOSTIM SLM TARGETS
         self.responses_SLMtargets_dfstdf_outsz = None  # dFstdF responses for all SLM targets for photostim trials outside sz
@@ -4044,10 +4044,11 @@ class Post4ap(alloptical):
                     coordinates = self.target_coords_all
                     indexes = range(len(self.target_coords_all))
                 elif cells == 's2p nontargets':  ## TODO fix collecting min. distances for s2p nontargets
-                    indexes = self.s2p_nontargets
-                    coordinates = []
-                    for stat_ in self.stat:
-                        coordinates.append(stat_['med']) if stat_['original_index'] in indexes else None
+                    pass
+                    # indexes = self.s2p_nontargets
+                    # coordinates = []
+                    # for stat_ in self.stat:
+                    #     coordinates.append(stat_['med']) if stat_['original_index'] in indexes else None
                 else: raise Exception('cells argument not set properly')
 
                 df = pd.DataFrame(data=None, index=indexes, columns=self.stimsWithSzWavefront)
@@ -5574,10 +5575,10 @@ def slm_targets_responses(expobj, experiment, trial, y_spacing_factor=2, figsize
     ax0 = aoplot.plot_lfp_stims(expobj, fig=fig, ax=ax0, show=False, x_axis='Time (secs.)')
 
     ax1 = fig.add_subplot(gs[1:3, :])
-    aoplot.plot_photostim_traces_overlap(array=expobj.SLMTargets_stims_dffAvg, expobj=expobj, x_axis='Time (secs.)',
+    aoplot.plot_photostim_traces_overlap(array=expobj.dFF_SLMTargets, expobj=expobj, x_axis='Time (secs.)',
                                          y_spacing_factor=y_spacing_factor, fig=fig, ax=ax1, show=False,
                                          title='%s - dFF Flu photostims' % experiment, linewidth=linewidth_overlap_traces,
-                                         figsize=(2 * 20, 2 * len(expobj.SLMTargets_stims_dffAvg) * 0.15))
+                                         figsize=(2 * 20, 2 * len(expobj.dFF_SLMTargets) * 0.15))
 
     ax2 = fig.add_subplot(gs[-1, 0:2])
     y_label = 'dF/F'

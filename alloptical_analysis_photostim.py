@@ -50,14 +50,14 @@ expobj, experiment = aoutils.import_expobj(prep='RL109', trial='t-013')
 
 allopticalResults.pre_4ap_trials = [
     ['RL108 t-009'],
-    # ['RL108 t-010'],
-    # ['RL109 t-007'],
+    ['RL108 t-010'],
+    ['RL109 t-007'],
     ['RL109 t-008'],
-    # ['RL109 t-013'],
+    ['RL109 t-013'],
     ['RL109 t-014'],
-    # ['PS04 t-012',  # 'PS04 t-014',  - not sure what's wrong with PS04, but the photostim and Flu are falling out of sync .21/10/09
-    #  'PS04 t-017'],
-    ['PS05 t-010'],
+    ['PS04 t-012',  #, 'PS04 t-014',  # - not sure what's wrong with PS04 t-014, but the photostim and Flu are falling out of sync .21/10/09
+    'PS04 t-017'],     # just commented out until t-018 gets fully sorted out again.
+    # ['PS05 t-010'],
     ['PS07 t-007'],
     # ['PS07 t-009'],
     # ['PS06 t-008', 'PS06 t-009', 'PS06 t-010'],  # matching run_post4ap_trials trial cannot be analysed
@@ -72,40 +72,40 @@ allopticalResults.pre_4ap_trials = [
 
 allopticalResults.post_4ap_trials = [
     ['RL108 t-013'],
-    # ['RL108 t-011'],
-    # ['RL109 t-020'],
+    ['RL108 t-011'],  # -- need to do sz boundary classifying processing
+    ['RL109 t-020'],  # -- need to do sz boundary classifying processing
     ['RL109 t-021'],
-    # ['RL109 t-018'],  - pickle truncated
-    ['RL109 t-016'],#, 'RL109 t-017'],  - redoing seizure boundary classifications
-    # ['PS04 t-018'],
-    ['PS05 t-012'],
+    ['RL109 t-018'],
+    ['RL109 t-016',  'RL109 t-017'], # -- need to do sz boundary classifying processing
+    ['PS04 t-018'],  # - need to re run collecting slmtargets_szboundary_stim (sz processing)
+    # ['PS05 t-012'],
     ['PS07 t-011'],
-    # ['PS07 t-017'],
-    # ['PS06 t-014', 'PS06 t-015'], - missing seizure_lfp_onsets (no paired measurements mat file for trial .21/10/09)
+    # ['PS07 t-017'],  -- unclear seizure behaviours
+    # ['PS06 t-014', 'PS06 t-015'], - t-014 might have one seizure, t-015 likely not any sz events .22/01/06
     ['PS06 t-013'],
-    # ['PS06 t-016'], - no seizures, missing seizure_lfp_onsets (no paired measurements mat file for trial .21/10/09)
-    # ['PS11 t-016'],
+    # ['PS06 t-016'], - no seizures
+    # ['PS11 t-016'], - very short seizure
     ['PS11 t-011'],
     # ['PS17 t-011'],
     # ['PS17 t-009'],
     # ['PS18 t-008']
 ]
 
-assert len(allopticalResults.pre_4ap_trials) == len(allopticalResults.post_4ap_trials), print('pre trials %s ' % len(allopticalResults.pre_4ap_trials),
-                                                                                              'post trials %s ' % len(allopticalResults.post_4ap_trials))
-
+assert len(allopticalResults.pre_4ap_trials) == len(allopticalResults.post_4ap_trials), (
+f"# of pre trials: {len(allopticalResults.pre_4ap_trials)}",
+f"# of post trials: {len(allopticalResults.post_4ap_trials)}")
 
 allopticalResults.trial_maps = {'pre': {}, 'post': {}}
 allopticalResults.trial_maps['pre'] = {
     'a': ['RL108 t-009'],
-    # 'b': ['RL108 t-010'],
-    # 'c': ['RL109 t-007'],
+    'b': ['RL108 t-010'],
+    'c': ['RL109 t-007'],
     'd': ['RL109 t-008'],
-    # 'e': ['RL109 t-013'],
+    'e': ['RL109 t-013'],
     'f': ['RL109 t-014'],
-    # 'g': ['PS04 t-012',  # 'PS04 t-014',  # - temp just until PS04 gets reprocessed
-    #       'PS04 t-017'],
-    'h': ['PS05 t-010'],
+    'g': ['PS04 t-012',  # 'PS04 t-014',  # - temp just until PS04 gets reprocessed
+          'PS04 t-017'],
+    # 'h': ['PS05 t-010'],
     'i': ['PS07 t-007'],
     # 'j': ['PS07 t-009'],
     # 'k': ['PS06 t-008', 'PS06 t-009', 'PS06 t-010'],
@@ -120,15 +120,15 @@ allopticalResults.trial_maps['pre'] = {
 
 allopticalResults.trial_maps['post'] = {
     'a': ['RL108 t-013'],
-    # 'b': ['RL108 t-011'], -- need to redo sz boundary classifying processing
-    # 'c': ['RL109 t-020'], -- need to redo sz boundary classifying processing
+    'b': ['RL108 t-011'], # -- need to redo sz boundary classifying processing
+    'c': ['RL109 t-020'], # -- need to redo sz boundary classifying processing
     'd': ['RL109 t-021'],
-    # 'e': ['RL109 t-018'], -- need to regenerate - pickle truncated
-    'f': ['RL109 t-016'],#, 'RL109 t-017'],  - redoing seizure boundary classifications
-    # 'g': ['PS04 t-018'],  -- need to redo sz boundary classifying processing
-    'h': ['PS05 t-012'],
+    'e': ['RL109 t-018'],
+    'f': ['RL109 t-016',  'RL109 t-017'], # -- need to do sz boundary classifying processing
+    'g': ['PS04 t-018'],  # -- need to redo sz boundary classifying processing
+    # 'h': ['PS05 t-012'],
     'i': ['PS07 t-011'],
-    # 'j': ['PS07 t-017'],  -- missing slmtargets_szboundary_stim
+    # 'j': ['PS07 t-017'],  # - need to do sz boundary classifying processing
     # 'k': ['PS06 t-014', 'PS06 t-015'],  # - missing seizure_lfp_onsets
     'l': ['PS06 t-013'],
     # 'm': ['PS06 t-016'],  # - missing seizure_lfp_onsets - LFP signal not clear, but there is seizures on avg Flu trace
@@ -138,7 +138,6 @@ allopticalResults.trial_maps['post'] = {
     # 'q': ['PS17 t-009'],
     # 'r': ['PS18 t-008']
 }
-
 assert len(allopticalResults.trial_maps['pre'].keys()) == len(allopticalResults.trial_maps['post'].keys())
 
 allopticalResults.save()

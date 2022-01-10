@@ -26,7 +26,7 @@ aoutils.random_plot()
 "##### -------------------- ALL OPTICAL PHOTOSTIM ANALYSIS ##############################################################"
 # %% 5.0) calculate/collect min distance to seizure and responses at each distance
 
-response_type = 'dFF (z scored) (interictal)'
+response_type = 'dFF (z scored)'
 
 no_slmtargets_szboundary_stim = []
 @aoutils.run_for_loop_across_exps(run_pre4ap_trials=False, run_post4ap_trials=True)
@@ -46,8 +46,13 @@ def plot_sz_boundary_location(**kwargs):
     aoplot.plot_sz_boundary_location(expobj)
 
 
-@aoutils.run_for_loop_across_exps(run_pre4ap_trials=False, run_post4ap_trials=True)#, run_trials=['RL108 t-013'])
+@aoutils.run_for_loop_across_exps(run_pre4ap_trials=False, run_post4ap_trials=True)
 def collect_responses_vs_distance_to_seizure_SLMTargets(response_type: str, **kwargs):
+    """
+
+    :param response_type: either 'dFF (z scored)' or 'dFF (z scored) (interictal)'
+    :param kwargs: must contain expobj as arg key
+    """
     print(f"\t\- collecting responses vs. distance to seizure [5.0-2]")
     expobj = kwargs['expobj']
 
@@ -101,12 +106,11 @@ def collect_responses_vs_distance_to_seizure_SLMTargets(response_type: str, **kw
 # run_calculating_min_distance_to_seizure(no_slmtargets_szboundary_stim)
 
 collect_responses_vs_distance_to_seizure_SLMTargets(response_type=response_type)
-response_type = 'dFF (z scored) (interictal)'
 
 
 
-# %% 5.1) collect and plot targets responses for stims vs. distance
-@aoutils.run_for_loop_across_exps(run_pre4ap_trials=False, run_post4ap_trials=True, skip_trials=['PS05 t-012'])
+# %% 5.1) PLOT - collect and plot targets responses for stims vs. distance
+@aoutils.run_for_loop_across_exps(run_pre4ap_trials=False, run_post4ap_trials=True)
 def plot_responses_vs_distance_to_seizure_SLMTargets(response_type=response_type, **kwargs):
     # response_type = 'dFF (z scored)'
 
@@ -131,7 +135,7 @@ def plot_responses_vs_distance_to_seizure_SLMTargets(response_type=response_type
 
 
 
-@aoutils.run_for_loop_across_exps(run_pre4ap_trials=False, run_post4ap_trials=True, skip_trials=['PS05 t-012'])
+@aoutils.run_for_loop_across_exps(run_pre4ap_trials=False, run_post4ap_trials=True)
 def plot_collection_response_distance(response_type=response_type, **kwargs):
     print(f"\t|- plotting a collection of plots measuring responses vs. distance to seizure [5.1-2]")
     expobj = kwargs['expobj']
@@ -161,10 +165,10 @@ plot_collection_response_distance()
 
 
 
-# %% 5.1.1) binning and plotting density plot, and smoothing data across the distance to seizure axis, when comparing to responses - represent the distances in percentile space
+# %% 5.1.1) PLOT - binning and plotting density plot, and smoothing data across the distance to seizure axis, when comparing to responses - represent the distances in percentile space
 
 
-@aoutils.run_for_loop_across_exps(run_pre4ap_trials=False, run_post4ap_trials=True, skip_trials=['PS05 t-012'])
+@aoutils.run_for_loop_across_exps(run_pre4ap_trials=False, run_post4ap_trials=True)
 def plot_responses_vs_distance_to_seizure_SLMTargets_2ddensity(positive_distances_only = False, plot=True, **kwargs):
 
     print(f"\t|- plotting responses vs. distance to seizure")

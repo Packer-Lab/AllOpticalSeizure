@@ -60,9 +60,9 @@ ls = [
     # ['PS18 t-008']
 ]
 
-ls2 = [['RL108 t-011'],
-       ['RL109 t-016'],
-       ['RL109 t-017'],
+ls2 = [#['RL108 t-011'],
+       ['RL109 t-018'],
+       # ['PS04 t-018'],
        # ['RL109 t-020'],
        ]
 
@@ -129,8 +129,9 @@ for i in ls2:
         # break
 
         print(' \nworking on classifying cells for stims start frames...')
-        expobj.slmtargets_szboundary_stim = {}  ## move to __init__
-        expobj.s2prois_szboundary_stim = {}  ## move to __init__ TODO need to implement rest of code for s2prois_szboundary_stim
+        ## TODO need to implement rest of code for s2prois_szboundary_stim
+        expobj.slmtargets_szboundary_stim = {}
+        expobj.s2prois_szboundary_stim = {}
 
         ######## - all stims in sz are classified, with individual sz events labelled
 
@@ -194,7 +195,7 @@ sys.exit()
 # trial = 't-011'
 # expobj, experiment = aoutils.import_expobj(trial=trial, prep=prep, verbose=True)
 
-expobj, _ = aoutils.import_expobj(trial='t-013', prep='RL108')
+expobj, _ = aoutils.import_expobj(trial='t-018', prep='RL109')
 
 # expobj.not_flip_stims = [expobj.stims_in_sz[1:]]  # specify here the stims where the flip=False leads to incorrect assignment
 expobj.not_flip_stims = expobj.stims_in_sz[1:]  # specify here the stims where the flip=False leads to incorrect assignment
