@@ -56,18 +56,17 @@ def collect_responses_vs_distance_to_seizure_SLMTargets(response_type: str, **kw
     print(f"\t\- collecting responses vs. distance to seizure [5.0-2]")
     expobj = kwargs['expobj']
 
-    # uncomment if need to rerun for a particular expobj....but shouldn't really need to be doing so
-    if not hasattr(expobj, 'responses_SLMtargets_tracedFF'):
-        expobj.StimSuccessRate_SLMtargets_tracedFF, expobj.hits_SLMtargets_tracedFF, expobj.responses_SLMtargets_tracedFF, expobj.traces_SLMtargets_tracedFF_successes = \
-            expobj.get_SLMTarget_responses_dff(process='trace dFF', threshold=10, stims_to_use=expobj.stim_start_frames)
-        print(f'WARNING: {expobj.t_series_name} had to rerun .get_SLMTarget_responses_dff')
+    # # uncomment if need to rerun for a particular expobj....but shouldn't really need to be doing so
+    # if not hasattr(expobj, 'responses_SLMtargets_tracedFF'):
+    #     expobj.StimSuccessRate_SLMtargets_tracedFF, expobj.hits_SLMtargets_tracedFF, expobj.responses_SLMtargets_tracedFF, expobj.traces_SLMtargets_tracedFF_successes = \
+    #         expobj.get_SLMTarget_responses_dff(process='trace dFF', threshold=10, stims_to_use=expobj.stim_start_frames)
+    #     print(f'WARNING: {expobj.t_series_name} had to rerun .get_SLMTarget_responses_dff')
 
     # (re-)make pandas dataframe
     df = pd.DataFrame(columns=['target_id', 'stim_id', 'inorout_sz', 'distance_to_sz', response_type])
 
+    stim_ids = [(idx, stim) for idx, stim in enumerate(expobj.stim_start_frames) if stim in expobj.distance_to_sz['SLM Targets'].columns]
     for target in expobj.responses_SLMtargets_tracedFF.index:
-        # idx_sz_boundary = [idx for idx, stim in enumerate(expobj.stim_start_frames) if stim in expobj.distance_to_sz['SLM Targets'].columns]
-        stim_ids = [(idx, stim) for idx, stim in enumerate(expobj.stim_start_frames) if stim in expobj.distance_to_sz['SLM Targets'].columns]
 
         ## z-scoring of SLM targets responses:
         z_scored = expobj.responses_SLMtargets_tracedFF  # initializing z_scored df
@@ -174,11 +173,14 @@ def plot_responses_vs_distance_to_seizure_SLMTargets_2ddensity(positive_distance
     print(f"\t|- plotting responses vs. distance to seizure")
     expobj = kwargs['expobj']
 
+    response_type = 'dFF (z scored)'
+
     data_expobj = np.array([[], []]).T
     for target in expobj.responses_SLMtargets_tracedFF.index:
-        idx_sz_boundary = [idx for idx, stim in enumerate(expobj.stim_start_frames) if stim in expobj.distance_to_sz['SLM Targets'].columns]
-        responses = np.array(list(expobj.responses_SLMtargets_tracedFF.loc[target, idx_sz_boundary]))
-        distance_to_sz = np.array(list(expobj.distance_to_sz['SLM Targets'].loc[target, :]))
+        indexes = expobj.responses_vs_distance_to_seizure_SLMTargets[expobj.responses_vs_distance_to_seizure_SLMTargets['target_id'] == target].index
+        responses = np.array(expobj.responses_vs_distance_to_seizure_SLMTargets.loc[indexes, response_type])
+        distance_to_sz = np.asarray(expobj.responses_vs_distance_to_seizure_SLMTargets.loc[indexes, 'distance_to_sz_um'])
+        # distance_to_sz_ = np.array(list(expobj.distance_to_sz['SLM Targets'].loc[target, :]))
 
         if positive_distances_only:
             distance_to_sz_pos = np.where(distance_to_sz > 0)[0]
@@ -196,7 +198,6 @@ def plot_responses_vs_distance_to_seizure_SLMTargets_2ddensity(positive_distance
     bin_size = 20  # um
     # bins_num = int((max(distances_to_sz) - min(distances_to_sz)) / bin_size)
     bins_num = 40
-    response_type = 'dFF (z scored)'
 
     pj.plot_hist2d(data=data_expobj, bins=bins_num, y_label=response_type, title=expobj.t_series_name, figsize=(4, 2), x_label='distance to seizure (um)',
                    y_lim=[-2,2]) if plot else None

@@ -667,21 +667,21 @@ allopticalResults.save()
 expobj, experiment = aoutils.import_expobj(prep='RL108', trial='t-011')
 
 
-@aoutils.run_for_loop_across_exps(run_pre4ap_trials=False, run_post4ap_trials=True)
-def tempfunc(**kwargs):
-    expobj = kwargs['expobj']
-
-    if not hasattr(expobj, 'distance_to_sz'):
-        expobj.distance_to_sz = {'SLM Targets': ['uninitialized'],
-                               's2p nontargets': ['uninitialized']}  # calculating the distance between the sz wavefront and cells
-
-    if 'uninitialized' in expobj.distance_to_sz['SLM Targets']:
-        expobj.sz_locations_stims()
-        print(f'** WARNING: rerunning {expobj.t_series_name} .calcMinDistanceToSz [4.0-1]')
-        x_ = expobj.calcMinDistanceToSz()
-        expobj.save()
-
-tempfunc()
+# @aoutils.run_for_loop_across_exps(run_pre4ap_trials=False, run_post4ap_trials=True)
+# def tempfunc(**kwargs):
+#     expobj = kwargs['expobj']
+#
+#     if not hasattr(expobj, 'distance_to_sz'):
+#         expobj.distance_to_sz = {'SLM Targets': ['uninitialized'],
+#                                's2p nontargets': ['uninitialized']}  # calculating the distance between the sz wavefront and cells
+#
+#     if 'uninitialized' in expobj.distance_to_sz['SLM Targets']:
+#         expobj.sz_locations_stims()
+#         print(f'** WARNING: rerunning {expobj.t_series_name} .calcMinDistanceToSz [4.0-1]')
+#         x_ = expobj.calcMinDistanceToSz()
+#         expobj.save()
+#
+# tempfunc()
 
 
 # key = 'l'; exp = 'post'; expobj, experiment = aoutils.import_expobj(aoresults_map_id=f"{exp} {key}.0")
@@ -694,10 +694,9 @@ def collect_responses_vs_distance_to_seizure_SLMTargets_pre4ap_zscored(**kwargs)
     print(f"\t\- collecting pre4ap zscored responses vs. distance to seizure [4.0-2]")
     expobj = kwargs['expobj']
 
-    # transform the rows of the stims responses dataframe to relative DISTANCE to seizure
-    trials_comparison = [*allopticalResults.stim_responses_zscores['delta(trace_dFF)'][expobj.prep]][0]
+    ### transform the rows of the stims responses dataframe to relative DISTANCE to seizure
 
-    # trials_comparison = [*allopticalResults.stim_responses_zscores[expobj.prep]][0]
+    trials_comparison = [*allopticalResults.stim_responses_zscores['delta(trace_dFF)'][expobj.prep]][0]
     post_4ap_response_df = allopticalResults.stim_responses_zscores['delta(trace_dFF)'][expobj.prep][trials_comparison]['post-4ap']
 
     # (re-)make pandas dataframe
@@ -803,7 +802,6 @@ def plot_responsesPre4apZscored_vs_distance_to_seizure_SLMTargets_2ddensity(posi
 
     data_expobj = np.array([[], []]).T
     for target in expobj.responses_SLMtargets_tracedFF.index:
-        idx_sz_boundary = [idx for idx, stim in enumerate(expobj.stim_start_frames) if stim in expobj.distance_to_sz['SLM Targets'].columns]
         indexes = expobj.responsesPre4apZscored_vs_distance_to_seizure_SLMTargets[expobj.responsesPre4apZscored_vs_distance_to_seizure_SLMTargets['target_id'] == target].index
         responses = np.asarray(expobj.responsesPre4apZscored_vs_distance_to_seizure_SLMTargets.loc[indexes, response_type])
         distance_to_sz = np.asarray(expobj.responsesPre4apZscored_vs_distance_to_seizure_SLMTargets.loc[indexes, 'distance_to_sz_um'])
@@ -832,7 +830,7 @@ def plot_responsesPre4apZscored_vs_distance_to_seizure_SLMTargets_2ddensity(posi
 
     return data_expobj
 
-data = plot_responsesPre4apZscored_vs_distance_to_seizure_SLMTargets_2ddensity(positive_distances_only = False, plot=True)
+data = plot_responsesPre4apZscored_vs_distance_to_seizure_SLMTargets_2ddensity(positive_distances_only = False, plot=False)
 
 def convert_responsesPre4apZscored_szdistances_percentile_space():
     data_all = np.array([[], []]).T

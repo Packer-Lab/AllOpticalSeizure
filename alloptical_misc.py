@@ -1,5 +1,7 @@
 import pickle
 
+import pandas as pd
+
 import alloptical_utils_pj as aoutils
 import alloptical_plotting_utils as aoplot
 import matplotlib.pyplot as plt
@@ -9,8 +11,6 @@ from funcsforprajay import funcs as pj
 # import results superobject that will collect analyses from various individual experiments
 results_object_path = '/home/pshah/mnt/qnap/Analysis/alloptical_results_superobject.pkl'
 allopticalResults = aoutils.import_resultsobj(pkl_path=results_object_path)
-
-
 
 
 # i = 'pre'
@@ -24,6 +24,141 @@ allopticalResults = aoutils.import_resultsobj(pkl_path=results_object_path)
 #
 # expobj._findTargetsAreas()
 # expobj._findTargetedS2pROIs(force_redo=True, plot=False)
+
+# %%
+import functools
+import concurrent.futures
+
+
+def run_for_loop_across_exps(func):
+    t_start = time.time()
+    @functools.wraps(func)
+    def inner(*args, **kwargs):
+        def somefunc(exp_prep):
+            pass
+
+        for exp_prep in pj.flattenOnce(allopticalResults.post_4ap_trials):
+            prep = exp_prep[:-6]
+            pre4aptrial = exp_prep[-5:]
+            expobj, _ = aoutils.import_expobj(prep=prep, trial=pre4aptrial, verbose=False)
+            aoutils.working_on(expobj)
+            res_ = func(expobj=expobj, **kwargs)
+            aoutils.end_working_on(expobj)
+
+        # with concurrent.futures.ThreadPoolExecutor() as executor:
+        #     trials = pj.flattenOnce(allopticalResults.post_4ap_trials)
+        #     executor.map(somefunc, trials)
+        #     # _ = [executor.submit(somefunc, exp_prep) for exp_prep in trials]
+
+        t_end = time.time()
+        pj.timer(t_start, t_end)
+        print(f" {'--' * 5} COMPLETED FOR LOOP ACROSS EXPS {'--' * 5}\n")
+    return inner
+
+# @run_for_loop_across_exps
+# def another_func(**kwargs):
+#     expobj = kwargs['expobj']
+#     print(f"experiment loaded: {expobj.t_series_name}")
+#
+# another_func()
+
+@run_for_loop_across_exps
+def collect_responses_vs_distance_to_seizure_SLMTargets(response_type: str, **kwargs):
+    """
+
+    :param response_type: either 'dFF (z scored)' or 'dFF (z scored) (interictal)'
+    :param kwargs: must contain expobj as arg key
+    """
+    print(f"\t\- collecting responses vs. distance to seizure [5.0-2]")
+    expobj = kwargs['expobj']
+
+    # uncomment if need to rerun for a particular expobj....but shouldn't really need to be doing so
+    if not hasattr(expobj, 'responses_SLMtargets_tracedFF'):
+        expobj.StimSuccessRate_SLMtargets_tracedFF, expobj.hits_SLMtargets_tracedFF, expobj.responses_SLMtargets_tracedFF, expobj.traces_SLMtargets_tracedFF_successes = \
+            expobj.get_SLMTarget_responses_dff(process='trace dFF', threshold=10, stims_to_use=expobj.stim_start_frames)
+        print(f'WARNING: {expobj.t_series_name} had to rerun .get_SLMTarget_responses_dff')
+
+    # (re-)make pandas dataframe
+    df = pd.DataFrame(columns=['target_id', 'stim_id', 'inorout_sz', 'distance_to_sz', response_type])
+
+    for target in expobj.responses_SLMtargets_tracedFF.index:
+        # idx_sz_boundary = [idx for idx, stim in enumerate(expobj.stim_start_frames) if stim in expobj.distance_to_sz['SLM Targets'].columns]
+        stim_ids = [(idx, stim) for idx, stim in enumerate(expobj.stim_start_frames) if stim in expobj.distance_to_sz['SLM Targets'].columns]
+
+        ## z-scoring of SLM targets responses:
+        z_scored = expobj.responses_SLMtargets_tracedFF  # initializing z_scored df
+        if response_type == 'dFF (z scored)' or response_type == 'dFF (z scored) (interictal)':
+            # set a different slice of stims for different variation of z scoring
+            if response_type == 'dFF (z scored)': slice = expobj.responses_SLMtargets_tracedFF.columns  # (z scoring all stims all together from t-series)
+            elif response_type == 'dFF (z scored) (interictal)': slice = expobj.stim_idx_outsz  # (z scoring all stims relative TO the interictal stims from t-series)
+            __mean = expobj.responses_SLMtargets_tracedFF.loc[target, slice].mean()
+            __std = expobj.responses_SLMtargets_tracedFF.loc[target, slice].std(ddof=1)
+            # __mean = expobj.responses_SLMtargets_tracedFF.loc[target, :].mean()
+            # __std = expobj.responses_SLMtargets_tracedFF.loc[target, :].std(ddof=1)
+
+            __responses = expobj.responses_SLMtargets_tracedFF.loc[target, :]
+            z_scored.loc[target, :] = (__responses - __mean) / __std
+
+        for idx, stim in stim_ids:
+            if target in expobj.slmtargets_szboundary_stim[stim]: inorout_sz = 'in'
+            else: inorout_sz = 'out'
+
+            distance_to_sz = expobj.distance_to_sz['SLM Targets'].loc[target, stim]
+
+            if response_type == 'dFF': response = expobj.responses_SLMtargets_tracedFF.loc[target, idx]
+            elif response_type == 'dFF (z scored)' or response_type == 'dFF (z scored) (interictal)': response = z_scored.loc[target, idx]  # z - scoring of SLM targets responses:
+            else: raise ValueError('response_type arg must be `dFF` or `dFF (z scored)` or `dFF (z scored) (interictal)`')
+
+            df = df.append({'target_id': target, 'stim_id': stim, 'inorout_sz': inorout_sz, 'distance_to_sz': distance_to_sz,
+                            response_type: response}, ignore_index=True)
+
+    expobj.responses_vs_distance_to_seizure_SLMTargets = df
+
+    # convert distances to microns
+    expobj.responses_vs_distance_to_seizure_SLMTargets['distance_to_sz_um'] = round(expobj.responses_vs_distance_to_seizure_SLMTargets['distance_to_sz'] / expobj.pix_sz_x, 2)
+    expobj.save()
+
+
+# run_calculating_min_distance_to_seizure(no_slmtargets_szboundary_stim)
+response_type = 'dFF (z scored)'
+collect_responses_vs_distance_to_seizure_SLMTargets(response_type=response_type)
+
+key = 'f'; exp = 'post'; expobj, experiment = aoutils.import_expobj(aoresults_map_id=f"{exp} {key}.0")
+
+
+# %%
+
+import concurrent.futures
+import time
+
+def somefunc(exp_prep):
+    # print(f"\n{'-' * 5} RUNNING PRE4AP TRIALS {'-' * 5}")
+    prep = exp_prep[:-6]
+    pre4aptrial = exp_prep[-5:]
+    expobj, _ = aoutils.import_expobj(prep=prep, trial=pre4aptrial, verbose=False)
+    return expobj
+
+### parallel processing
+t_start = time.time()
+with concurrent.futures.ProcessPoolExecutor() as executor:
+    trials = pj.flattenOnce(allopticalResults.pre_4ap_trials)
+    results = [executor.submit(somefunc, exp_prep) for exp_prep in trials]
+    # results = executor.map(somefunc, trials)
+
+print('\n')
+
+t_end = time.time()
+pj.timer(t_start, t_end)
+
+
+# ### for loop
+# t_start = time.time()
+# trials = pj.flattenOnce(allopticalResults.pre_4ap_trials)
+# for exp_prep in trials:
+#     a = somefunc(exp_prep)
+#
+# t_end = time.time()
+# pj.timer(t_start, t_end)
 
 # %%
 to_suite2p = ['t-005', 't-006', 't-007', 't-008', 't-011', 't-012', 't-013', 't-014', 't-016',
