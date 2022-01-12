@@ -1541,14 +1541,16 @@ def plot_lfp_1pstim_avg_trace(expobj, title='Average LFP peri- stims', individua
     ax.set_ylabel('Voltage')
 
     # add title
-    plt.suptitle(
+    ax.set_title(
         '%s %s %s %s' % (title, expobj.metainfo['exptype'], expobj.metainfo['animal prep.'], expobj.metainfo['trial']),
-    fontsize=10*shrink_text)
+    fontsize=10*shrink_text, wrap=True)
 
     ax.text(0.98, 0.97, '%s %s' % (expobj.metainfo['animal prep.'], expobj.metainfo['trial']),
             verticalalignment='top', horizontalalignment='right',
             transform=ax.transAxes, fontweight='bold',
             color='black', fontsize=10 * shrink_text)
+
+    fig.tight_layout(pad=1.3)
 
     # # options for showing plot or returning plot
     # if 'show' in kwargs.keys():

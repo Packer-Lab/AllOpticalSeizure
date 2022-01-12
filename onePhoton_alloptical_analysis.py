@@ -36,20 +36,16 @@ aoplot.plot_flu_1pstim_avg_trace(expobj, x_axis='time', individual_traces=True, 
 
 if 'pre' in expobj.metainfo['exptype']:
     aoplot.plot_lfp_1pstim_avg_trace(expobj, x_axis='time', individual_traces=False, pre_stim=0.25, post_stim=0.75, write_full_text=True,
-                                     optoloopback=True, figsize=(3,3), shrink_text=0.8, stims_to_analyze=expobj.stim_start_frames,
+                                     optoloopback=True, figsize=(3.1, 3), shrink_text=0.8, stims_to_analyze=expobj.stim_start_frames,
                                      title='Avg. run_pre4ap_trials stims LFP')
 
+elif 'post' in expobj.metainfo['exptype']:
     aoplot.plot_lfp_1pstim_avg_trace(expobj, x_axis='time', individual_traces=False, pre_stim=0.25, post_stim=0.75, write_full_text=True,
-                                     optoloopback=True, figsize=(3,3), shrink_text=0.8,
-                                     title='Avg. run_pre4ap_trials stims LFP')
-
-if 'post' in expobj.metainfo['exptype']:
-    aoplot.plot_lfp_1pstim_avg_trace(expobj, x_axis='time', individual_traces=False, pre_stim=0.25, post_stim=0.75, write_full_text=True,
-                                     optoloopback=True, figsize=(3,3), shrink_text=0.8, stims_to_analyze=expobj.stims_out_sz,
+                                     optoloopback=True, figsize=(3.1, 3), shrink_text=0.8, stims_to_analyze=expobj.stims_out_sz,
                                      title='Avg. out sz stims LFP')
 
     aoplot.plot_lfp_1pstim_avg_trace(expobj, x_axis='time', individual_traces=False, pre_stim=0.25, post_stim=0.75, write_full_text=True,
-                                     optoloopback=True, figsize=(3,3), shrink_text=0.8, stims_to_analyze=expobj.stims_in_sz,
+                                     optoloopback=True, figsize=(3.1, 3), shrink_text=0.8, stims_to_analyze=expobj.stims_in_sz,
                                      title='Avg. in sz stims LFP')
 
 # %% classifying stims as in or out of seizures
