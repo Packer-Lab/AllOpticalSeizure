@@ -26,15 +26,35 @@ save_path_prefix = '/home/pshah/mnt/qnap/Analysis/Procesing_figs/sz_processing_b
 os.makedirs(save_path_prefix) if not os.path.exists(save_path_prefix) else None
 
 
-## TODO need to do paired measurements for seizures, and then run classifying sz boundaries for trials in ls2:
-ls2 = [
-    ['PS17 t-009'],
-    # ['RL108 t-011'],
-    # ['RL109 t-017'],
-    # ['PS06 t-014'],
-    # ['PS06 t-015'],
-    # ['PS06 t-016']
-]
+# %% 5.0-dc) ANALYSIS: cross-correlation between mean FOV 2p calcium trace and LFP seizure trace TODO
+import scipy.signal as signal
+
+expobj, experiment = aoutils.import_expobj(prep='RL109', trial='t-017')
+
+sznum = 1
+slice = np.s_[expobj.convert_frames_to_paqclock(expobj.seizure_lfp_onsets[sznum]): expobj.convert_frames_to_paqclock(expobj.seizure_lfp_offsets[sznum])]
+
+# detrend
+detrended_lfp = signal.detrend(expobj.lfp_signal[expobj.frame_start_time_actual: expobj.frame_end_time_actual])[slice]*-1
+
+# downsample LFP signal to the same # of datapoints as # of frames in 2p calcium trace
+CaUpsampled1 = signal.resample(expobj.meanRawFluTrace, len(detrended_lfp))[slice]
+
+pj.make_general_plot([CaUpsampled1], figsize=[20,3])
+pj.make_general_plot([detrended_lfp], figsize=[20,3])
+
+# use numpy or scipy.signal .correlate to correlate the two timeseries
+correlated = signal.correlate(CaUpsampled1, detrended_lfp)
+lags = signal.correlation_lags(len(CaUpsampled1), len(detrended_lfp))
+correlated /= np.max(correlated)
+
+f, axs = plt.subplots(nrows=3, ncols=1, figsize=[20,9])
+axs[0].plot(CaUpsampled1)
+axs[1].plot(detrended_lfp)
+# axs[2].plot(correlated)
+axs[2].plot(lags, correlated)
+f.show()
+
 
 #%% 1) defining trials to run for analysis
 
@@ -293,44 +313,52 @@ pj.plot_hist_density(data, x_label='response magnitude (dF/stdF)', title='stims_
 prep = 'RL108'
 trial = 't-013'
 expobj, experiment = aoutils.import_expobj(trial=trial, prep=prep, verbose=False)
-# aoplot.plot_lfp_stims(expobj, xlims=[0.2e7, 1.0e7], linewidth=1.0)
+aoplot.plot_lfp_stims(expobj, xlims=[0.2e7, 1.0e7], linewidth=1.0)
 # aoplot.plotLfpSignal(expobj, downsample=True, figsize=(6,2), x_axis='Time', xlims=[120 * expobj.paq_rate, 480 * expobj.paq_rate],
 #                      ylims=[-6, 2], color='slategray', stim_span_color='green', alpha=0.1)
 
 # %%
-sz_num = 2
+sz_num = -1
 stims_to_plot = [stim for stim in expobj.stim_start_frames if expobj.seizure_lfp_offsets[sz_num] > stim > expobj.seizure_lfp_onsets[sz_num]]
 
-fig, axs = plt.subplots(figsize=[5*len(stims_to_plot), 5], nrows=1, ncols=len(stims_to_plot))
-for i in range(len(stims_to_plot)):
+nrows = 2
+ncols  = int(len(stims_to_plot) / nrows)
 
-    ax = axs[i]
+fig, axs = plt.subplots(figsize=[5*ncols, 5*nrows], nrows=2, ncols=ncols)
+counter = 0
+for i in range(len(stims_to_plot)):
+    row = int(counter // (len(stims_to_plot) / nrows))
+    col = counter % len(stims_to_plot) - ncols
+    ax = axs[row, col]
     stim = stims_to_plot[i]
     # fig, ax = plt.subplots(figsize=[5, 5], nrows=1, ncols=1)
     # stim = stims_to_plot[0]
 
     # plot SLM targets in sz boundary
-    coords_to_plot = [expobj.target_coords_all[cell] for cell in expobj.slmtargets_szboundary_stim[stim]]
+    coords_to_plot = expobj.target_coords_all
+    coords_to_plot2 = [expobj.target_coords_all[cell] for cell in expobj.slmtargets_szboundary_stim[stim]]
     # read in avg stim image to use as the background
-    avg_stim_img_path = '%s/%s_%s_stim-%s.tif' % (expobj.analysis_save_path + 'avg_stim_images', expobj.metainfo['date'], expobj.metainfo['trial'], stim)
+
+    avg_stim_img_path = expobj.analysis_save_path + 'avg_stim_images' + f'/{expobj.t_series_name}_stim-{stim}.tif'
     bg_img = tf.imread(avg_stim_img_path)
     title=f"{prep} {trial} {stim} - SLM targets"
     for (x, y) in coords_to_plot:
-        ax.scatter(x=x, y=y, edgecolors='red', facecolors='none', linewidths=2.5, zorder=4)
-    cells_to_plot = expobj.s2prois_szboundary_stim[stim]
-    cells_to_plot2 = [cell for cell in expobj.cell_id if cell not in expobj.s2prois_szboundary_stim[stim]]
-    fig, ax = aoplot.plot_cells_loc(expobj, cells=cells_to_plot, show_s2p_targets=False, fig=fig, ax=ax, show=False, scatter_only=True)
-    fig, ax = aoplot.plot_cells_loc(expobj, cells=cells_to_plot2, show_s2p_targets=False, fig=fig, ax=ax, show=False, scatter_only=True,
-                                    edgecolor='gray')
+        ax.scatter(x=x, y=y, edgecolors='#db6120', facecolors='#db6120', linewidths=2.5, zorder=4)
+    for (x, y) in coords_to_plot2:
+        ax.scatter(x=x, y=y, edgecolors='#f8cc8f', facecolors='#f8cc8f', linewidths=2.5, zorder=4)
+    #
+    #
+    # fig, ax = aoplot.plot_cells_loc(expobj, cells=cells_to_plot, show_s2p_targets=False, fig=fig, ax=ax, show=False, scatter_only=True)
+    # fig, ax = aoplot.plot_cells_loc(expobj, cells=cells_to_plot2, show_s2p_targets=False, fig=fig, ax=ax, show=False, scatter_only=True)
     ax.imshow(bg_img, cmap='Greys_r', zorder=0)
-    ax.set_title(title)
+    # ax.set_title(title)
     ax.set_xticks(ticks=[])
     ax.set_xticklabels([])
     ax.set_yticks(ticks=[])
     ax.set_yticklabels([])
+    counter += 1
 fig.tight_layout(pad=2)
 fig.show()
-
 
 
 # %%
@@ -445,10 +473,6 @@ for key in list(allopticalResults.trial_maps['post'].keys()):
                       np.round(expobj.avg_sz_len, 2))
 
         else:
-            expobj.seizure_frames = []
-            expobj.seizure_lfp_onsets = []
-            expobj.seizure_lfp_offsets = []
-            expobj.save()
             n_seizures = 0
             print('no sz events for %s, %s, %s ' % (prep, trial, expobj.metainfo['exptype']))
 
@@ -477,10 +501,6 @@ for pkl_path in onePresults.mean_stim_responses['pkl_list']:
                       np.round(expobj.avg_sz_len, 2))
 
         else:
-            expobj.seizure_frames = []
-            expobj.seizure_lfp_onsets = []
-            expobj.seizure_lfp_offsets = []
-            expobj.save()
             n_seizures = 0
             print('Avg. seizure length (secs) for %s, %s, %s ' % (
                 expobj.metainfo['animal prep.'], expobj.metainfo['trial'], expobj.metainfo['exptype']))
@@ -493,6 +513,12 @@ pj.plot_bar_with_points(data=[twop_trials, onep_trials], x_tick_labels=['2p stim
                         colors=['purple', 'green'], y_label='seizure length (secs)',
                         title='Avg. length of sz', expand_size_x=0.4, expand_size_y=1, ylims=[0, 120], title_pad=15,
                         shrink_text=0.8)
+
+pj.plot_bar_with_points(data=[twop_trials + onep_trials], x_tick_labels=['Experiments'],
+                        colors=['green'], y_label='Seizure length (secs)', alpha=0.7, bar=False,
+                        title='Avg sz length', expand_size_x=0.7, expand_size_y=1, ylims=[0, 120],
+                        shrink_text=0.8)
+
 
 # %% 4.1) counting seizure incidence across all imaging trials
 
@@ -515,10 +541,6 @@ for key in list(allopticalResults.trial_maps['post'].keys()):
         if hasattr(expobj, 'seizure_lfp_onsets'):
             n_seizures = len(expobj.seizure_lfp_onsets)
         else:
-            expobj.seizure_frames = []
-            expobj.seizure_lfp_onsets = []
-            expobj.seizure_lfp_offsets = []
-            expobj.save()
             n_seizures = 0
 
         print('Seizure incidence for %s, %s, %s: ' % (prep, trial, expobj.metainfo['exptype']),
@@ -537,10 +559,6 @@ for pkl_path in onePresults.mean_stim_responses['pkl_list']:
         if hasattr(expobj, 'seizure_lfp_onsets'):
             n_seizures = len(expobj.seizure_lfp_onsets)
         else:
-            expobj.seizure_frames = []
-            expobj.seizure_lfp_onsets = []
-            expobj.seizure_lfp_offsets = []
-            expobj.save()
             n_seizures = 0
 
         print('Seizure incidence for %s, %s, %s: ' % (
@@ -557,4 +575,8 @@ pj.plot_bar_with_points(data=[twop_trials, onep_trials], x_tick_labels=['2p stim
                         shrink_text=0.8)
 
 
+pj.plot_bar_with_points(data=[twop_trials + onep_trials], x_tick_labels=['Experiments'],
+                        colors=['#2E3074'], y_label='Seizure incidence (events/min)', alpha=0.7, bar=False,
+                        title='rate of seizures during exp', expand_size_x=0.7, expand_size_y=1, ylims=[0, 1],
+                        shrink_text=0.8)
 

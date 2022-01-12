@@ -26,7 +26,7 @@ aoutils.random_plot()
 "##### -------------------- ALL OPTICAL PHOTOSTIM ANALYSIS ##############################################################"
 # %% 5.0) calculate/collect min distance to seizure and responses at each distance
 
-response_type = 'dFF (z scored)'
+response_type = 'dFF (z scored) (interictal)'
 
 no_slmtargets_szboundary_stim = []
 @aoutils.run_for_loop_across_exps(run_pre4ap_trials=False, run_post4ap_trials=True)
@@ -168,12 +168,10 @@ plot_collection_response_distance()
 
 
 @aoutils.run_for_loop_across_exps(run_pre4ap_trials=False, run_post4ap_trials=True)
-def plot_responses_vs_distance_to_seizure_SLMTargets_2ddensity(positive_distances_only = False, plot=True, **kwargs):
+def plot_responses_vs_distance_to_seizure_SLMTargets_2ddensity(response_type, positive_distances_only = False, plot=True, **kwargs):
 
     print(f"\t|- plotting responses vs. distance to seizure")
     expobj = kwargs['expobj']
-
-    response_type = 'dFF (z scored)'
 
     data_expobj = np.array([[], []]).T
     for target in expobj.responses_SLMtargets_tracedFF.index:
@@ -205,7 +203,7 @@ def plot_responses_vs_distance_to_seizure_SLMTargets_2ddensity(positive_distance
 
     return data_expobj
 
-data = plot_responses_vs_distance_to_seizure_SLMTargets_2ddensity(positive_distances_only = False, plot=False)
+data = plot_responses_vs_distance_to_seizure_SLMTargets_2ddensity(response_type=response_type, positive_distances_only = False, plot=False)
 
 def convert_responses_szdistances_percentile_space():
     data_all = np.array([[], []]).T

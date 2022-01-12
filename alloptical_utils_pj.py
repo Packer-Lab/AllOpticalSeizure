@@ -44,9 +44,8 @@ pd.set_option('max_rows', 10)
 
 
 # %% UTILITY FUNCTIONS and DECORATORS
-def import_expobj(aoresults_map_id: str = None, trial: str = None, prep: str = None, date: str = None,
-                  pkl_path: str = None, exp_prep: str = None, verbose: bool = False, do_processing: bool = False,
-                  load_backup_path: str = None):
+def import_expobj(aoresults_map_id: str = None, trial: str = None, prep: str = None, date: str = None, pkl_path: str = None,
+                  exp_prep: str = None, verbose: bool = False, do_processing: bool = False, load_backup_path: str = None):
     """
     primary function for importing of saved expobj files saved pickel files.
 
@@ -93,18 +92,17 @@ def import_expobj(aoresults_map_id: str = None, trial: str = None, prep: str = N
     if not os.path.exists(pkl_path):
         raise Exception('pkl path NOT found: ' + pkl_path)
     with open(pkl_path, 'rb') as f:
-        print(f'\- loading {pkl_path}', end='\r')
+        print(f'\- Loading {pkl_path}', end='\r')
         try:
             expobj = pickle.load(f)
         except pickle.UnpicklingError:
             raise pickle.UnpicklingError(f"\n** FAILED IMPORT OF * {prep} {trial} * from {pkl_path}\n")
-        experiment = '%s: %s, %s, %s' % (
-            expobj.metainfo['animal prep.'], expobj.metainfo['trial'], expobj.metainfo['exptype'],
-            expobj.metainfo['comments'])
-        print(f'|- loading {pkl_path} .. DONE')
-        print(f'|- DONE IMPORT of {experiment}') if verbose else None
+        experiment = f"{expobj.t_series_name} {expobj.metainfo['exptype']} {expobj.metainfo['comments']}"
+        print(f'|- Loaded {expobj.t_series_name} ({pkl_path}) .. DONE') if not verbose else None
+        print(f'|- Loaded {experiment}') if verbose else None
 
     ### roping in some extraneous processing steps if there's expobj's that haven't completed for them
+
     # check for existence of backup (if not then make one through the saving func).
     expobj.save() if not os.path.exists(expobj.backup_pkl) else None
 
@@ -120,45 +118,9 @@ def import_expobj(aoresults_map_id: str = None, trial: str = None, prep: str = N
     if pkl_path is not None:
         if expobj.pkl_path != pkl_path:
             expobj.save_pkl(pkl_path=expobj.pkl_path)
-            print('saved expobj to pkl_path: ', expobj.pkl_path)
-
-    if not hasattr(expobj, 'paq_rate') or not hasattr(expobj, 'frame_start_time_actual'):
-        print('\n-running paqProcessing to update paq attr.s in expobj')
-        expobj.paqProcessing()
-        expobj.save()
-
-    if not hasattr(expobj, 'post_stim_response_frames_window'):
-        expobj.post_stim_response_window_msec = 500  # msec
-        expobj.post_stim_response_frames_window = int(expobj.fps * expobj.post_stim_response_window_msec / 1000)
-        expobj.save()
+            print('saved new copy of expobj to pkl_path: ', expobj.pkl_path)
 
     # other misc. things you want to do when importing expobj -- should be temp code basically - not essential for actual importing of expobj
-    if do_processing:
-        ###### RUNNING EXTRA PROCESSING FOR dFF TRACES COLLECTION RESPONSES:
-
-        if expobj.metainfo['animal prep.'] not in expobj.analysis_save_path:
-            expobj.analysis_save_path = "/home/pshah/mnt/qnap/Analysis/%s/%s/%s_%s" % (
-            date, expobj.metainfo['animal prep.'], date, trial)
-            # expobj.analysis_save_path = expobj.analysis_save_path + '/' + expobj.metainfo['animal prep.'] + '/' + expobj.metainfo['date'] + '_' + expobj.metainfo['trial']
-
-        if not expobj.pre_stim == int(1.0 * expobj.fps):
-            print('updating expobj.pre_stim_sec to 1 sec')
-            expobj.pre_stim = int(1.0 * expobj.fps)
-
-        if not hasattr(expobj, 'pre_stim_response_frames_window'):
-            expobj.pre_stim_response_window_msec = 500  # msec
-            expobj.pre_stim_response_frames_window = int(
-                expobj.fps * expobj.pre_stim_response_window_msec / 1000)  # length of the pre stim response test window (in frames)
-
-        if not hasattr(expobj, 'subset_frames') and hasattr(expobj, 'curr_trial_frames'):
-            expobj.subset_frames = expobj.curr_trial_frames
-            expobj.save()
-
-        if not hasattr(expobj, 'neuropil'):
-            # running s2p Processing
-            expobj.s2pProcessing(s2p_path=expobj.s2p_path, subset_frames=expobj.curr_trial_frames,
-                                 subtract_neuropil=True,
-                                 baseline_frames=expobj.baseline_frames, force_redo=True)
 
     return expobj, experiment
 
@@ -671,6 +633,10 @@ class TwoPhotonImaging:
                 return float(scanVolts)
 
     @property
+    def fov_size(self):
+        return (self.pix_sz_x * self.frame_x, self.pix_sz_y * self.frame_y)
+
+    @property
     def reg_tif_crop_path(self):
         """path to the TIFF file derived from underlying suite2p batch registered TIFFs and cropped to frames for current
         t-series of experiment analysis object"""
@@ -961,6 +927,14 @@ class TwoPhotonImaging:
             # find voltage (LFP recording signal) channel and save as lfp_signal attribute
             voltage_idx = paq['chan_names'].index('voltage')
             self.lfp_signal = paq['data'][voltage_idx]
+
+    def convert_frames_to_paqclock(self, frame_num):
+        """convert a frame number into the corresponding clock timestamp from the paq file"""
+        try:
+            return self.frame_clock_actual[frame_num]
+        except AttributeError:
+            raise AttributeError('need to run .paqProcessing to perform conversion of frames to paq clock.')
+
 
     def mean_raw_flu_trace(self, plot: bool = False, save_pkl: bool = True):
         print('\n-----collecting mean raw flu trace from tiff file...')
@@ -2169,8 +2143,7 @@ class alloptical(TwoPhotonImaging):
         print('len of seizures_frames:', len(self.seizure_frames))
         print('len of photostim_frames:', len(self.photostim_frames))
 
-    def avg_stim_images(self, peri_frames: int = 100, stim_timings: list = [], save_img=False, to_plot=False, verbose=False,
-                        force_redo=False):
+    def avg_stim_images(self, peri_frames: int = 100, stim_timings: list = None, save_img=False, to_plot=False, verbose=False):
         """
         Outputs (either by saving or plotting, or both) images from raw t-series TIFF for a trial around each individual
         stim timings.
@@ -2184,75 +2157,55 @@ class alloptical(TwoPhotonImaging):
         :return:
         """
 
-        if force_redo:
-            continu = True
-        elif hasattr(self, 'avgstimimages_r'):
-            if self.avgstimimages_r is True:
-                continu = False
-            else:
-                continu = True
+        print('making stim images...')
+        stim_timings = stim_timings if stim_timings else self.stim_start_frames
+        if hasattr(self, 'stim_images'):
+            x = [0 for stim in stim_timings if stim not in self.stim_images.keys()]
         else:
-            continu = True
+            self.stim_images = {}
+            x = [0] * len(stim_timings)
+        if 0 in x:
+            tiffs_loc = '%s/*Ch3.tif' % self.tiff_path_dir
+            tiff_path = glob.glob(tiffs_loc)[0]
+            print('working on loading up %s tiff from: ' % self.metainfo['trial'], tiff_path)
+            im_stack = tf.imread(tiff_path, key=range(self.n_frames))
+            print('Processing seizures from experiment tiff (wait for all seizure comparisons to be processed), \n '
+                  'total tiff shape: ', im_stack.shape)
 
-        if continu:
-            print('making stim images...')
-            if hasattr(self, 'stim_images'):
-                x = [0 for stim in stim_timings if stim not in self.stim_images.keys()]
+        for stim in stim_timings:
+            message = '|- stim # %s out of %s' % (stim_timings.index(stim), len(stim_timings))
+            print(message, end='\r')
+            if stim in self.stim_images.keys():
+                avg_sub = self.stim_images[stim]
             else:
-                self.stim_images = {}
-                x = [0] * len(stim_timings)
-            if 0 in x:
-                tiffs_loc = '%s/*Ch3.tif' % self.tiff_path_dir
-                tiff_path = glob.glob(tiffs_loc)[0]
-                print('working on loading up %s tiff from: ' % self.metainfo['trial'], tiff_path)
-                im_stack = tf.imread(tiff_path, key=range(self.n_frames))
-                print('Processing seizures from experiment tiff (wait for all seizure comparisons to be processed), \n '
-                      'total tiff shape: ', im_stack.shape)
+                if stim < peri_frames:
+                    peri_frames = stim
+                im_sub = im_stack[stim - peri_frames: stim + peri_frames]
+                avg_sub = np.mean(im_sub, axis=0)
+                self.stim_images[stim] = avg_sub
 
-            for stim in stim_timings:
-                message = '|- stim # %s out of %s' % (stim_timings.index(stim), len(stim_timings))
-                print(message, end='\r')
-                if stim in self.stim_images.keys():
-                    avg_sub = self.stim_images[stim]
+            if save_img:
+                # save in a subdirectory under the ANALYSIS folder path from whence t-series TIFF came from
+                save_path = self.analysis_save_path + 'avg_stim_images'
+                save_path_stim = save_path + f'/{self.t_series_name}_stim-{stim}.tif'
+                if os.path.exists(save_path):
+                    print("saving stim_img tiff to... %s" % save_path_stim) if verbose else None
+                    avg_sub8 = pj.convert_to_8bit(avg_sub, 0, 255)
+                    tf.imwrite(save_path_stim,
+                               avg_sub8, photometric='minisblack')
                 else:
-                    if stim < peri_frames:
-                        peri_frames = stim
-                    im_sub = im_stack[stim - peri_frames: stim + peri_frames]
-                    avg_sub = np.mean(im_sub, axis=0)
-                    self.stim_images[stim] = avg_sub
+                    print('making new directory for saving images at:', save_path)
+                    os.mkdir(save_path)
+                    print("saving as... %s" % save_path_stim)
+                    avg_sub8 = pj.convert_to_8bit(avg_sub, 0, 255)
+                    tf.imwrite(save_path_stim,
+                               avg_sub, photometric='minisblack')
 
-                if save_img:
-                    # save in a subdirectory under the ANALYSIS folder path from whence t-series TIFF came from
-                    save_path = self.analysis_save_path + 'avg_stim_images'
-                    save_path_stim = save_path + '/%s_%s_stim-%s.tif' % (
-                        self.metainfo['date'], self.metainfo['trial'], stim)
-                    if os.path.exists(save_path):
-                        print("saving stim_img tiff to... %s" % save_path_stim) if verbose else None
-                        avg_sub8 = pj.convert_to_8bit(avg_sub, 0, 255)
-                        tf.imwrite(save_path_stim,
-                                   avg_sub8, photometric='minisblack')
-                    else:
-                        print('making new directory for saving images at:', save_path)
-                        os.mkdir(save_path)
-                        print("saving as... %s" % save_path_stim)
-                        avg_sub8 = pj.convert_to_8bit(avg_sub, 0, 255)
-                        tf.imwrite(save_path_stim,
-                                   avg_sub, photometric='minisblack')
+            if to_plot:
+                plt.imshow(avg_sub, cmap='gray')
+                plt.suptitle('avg image from %s frames around stim_start_frame %s' % (peri_frames, stim))
+                plt.show()  # just plot for now to make sure that you are doing things correctly so far
 
-                if to_plot:
-                    plt.imshow(avg_sub, cmap='gray')
-                    plt.suptitle('avg image from %s frames around stim_start_frame %s' % (peri_frames, stim))
-                    plt.show()  # just plot for now to make sure that you are doing things correctly so far
-
-            if hasattr(self, 'pkl_path'):
-                self.save_pkl()
-            else:
-                print('note: pkl not saved yet...')
-
-            self.avgstimimages_r = True
-
-        else:
-            print('skipping remaking of avg stim images')
 
     def run_stamm_nogui(self, numDiffStims, startOnStim, everyXStims, preSeconds=0.75, postSeconds=1.25):
         """run STAmoviemaker for the expobj's trial"""
@@ -3743,7 +3696,6 @@ class Post4ap(alloptical):
             raise Exception(
                 'cannot check for cell inside sz boundary because cell sz classification hasnot been performed yet')
 
-
     def subselect_tiffs_sz(self, onsets, offsets, on_off_type: str):
         """subselect raw tiff movie over all seizures as marked by onset and offsets. save under analysis path for object.
         Note that the onsets and offsets definitions may vary, so check exactly what was used in those args."""
@@ -3788,21 +3740,6 @@ class Post4ap(alloptical):
                 discard_all=discard_all)
             print(
                 f"|- sz frame # onsets: {self.seizure_lfp_onsets}, \n|- sz frame # offsets {self.seizure_lfp_offsets}")
-        else:
-            print('-- no matlab array given to use for finding seizures.')
-            bad_frames = frames_discard(paq=paq[0], input_array=seizures_lfp_timing_matarray,
-                                        total_frames=self.n_frames,
-                                        discard_all=discard_all)
-            self.seizure_frames = []
-            self.seizure_lfp_onsets = []
-            self.seizure_lfp_offsets = []
-
-        print('\nTotal extra seizure/CSD or other frames to discard: ', len(bad_frames))
-        print('|- first and last 10 indexes of these frames', bad_frames[:10], bad_frames[-10:])
-        self.append_bad_frames(
-            bad_frames=bad_frames)  # here only need to append the bad frames to the expobj.bad_frames property
-
-        if hasattr(self, 'seizures_lfp_timing_matarray'):
             print('\n|-now creating raw movies for each sz as well (saved to the /Analysis folder) ... ')
             self.subselect_tiffs_sz(onsets=self.seizure_lfp_onsets, offsets=self.seizure_lfp_offsets,
                                     on_off_type='lfp_onsets_offsets')
@@ -3824,6 +3761,16 @@ class Post4ap(alloptical):
             print(' \n|- stims_in_sz:', self.stims_in_sz, ' \n|- stims_out_sz:', self.stims_out_sz,
                   ' \n|- stims_bf_sz:', self.stims_bf_sz, ' \n|- stims_af_sz:', self.stims_af_sz)
             aoplot.plot_lfp_stims(expobj=self)
+        else:
+            print('-- no matlab array given to use for finding seizures.')
+            bad_frames = frames_discard(paq=paq[0], input_array=seizures_lfp_timing_matarray,
+                                        total_frames=self.n_frames,
+                                        discard_all=discard_all)
+
+        print('\nTotal extra seizure/CSD or other frames to discard: ', len(bad_frames))
+        print('|- first and last 10 indexes of these frames', bad_frames[:10], bad_frames[-10:])
+        self.append_bad_frames(bad_frames=bad_frames)  # here only need to append the bad frames to the expobj.bad_frames property
+
         self.save_pkl()
 
     def find_closest_sz_frames(self):
@@ -4225,12 +4172,15 @@ class OnePhotonStim(TwoPhotonImaging):
             self.frame_end_time_actual = self.frame_end_times[0]
             self.frame_clock_actual = self.frame_clock
 
-        plt.figure(figsize=(50, 2))
-        plt.plot(clock_voltage)
-        plt.plot(frame_clock, np.ones(len(frame_clock)), '.', color='orange')
-        plt.plot(self.frame_clock_actual, np.ones(len(self.frame_clock_actual)), '.', color='red')
-        plt.suptitle('frame clock from paq, with detected frame clock instances as scatter')
-        plt.show()
+        f, ax = plt.subplots(figsize=(20, 2))
+        # plt.figure(figsize=(50, 2))
+        ax.plot(clock_voltage)
+        ax.plot(frame_clock, np.ones(len(frame_clock)), '.', color='orange')
+        ax.plot(self.frame_clock_actual, np.ones(len(self.frame_clock_actual)), '.', color='red')
+        ax.set_title('frame clock from paq, with detected frame clock instances as scatter')
+        ax.set_xlim([1e6, 1.2e6])
+        f.tight_layout(pad=2)
+        f.show()
 
         # find 1p stim times
         opto_loopback_chan = paq['chan_names'].index('opto_loopback')
