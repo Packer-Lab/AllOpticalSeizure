@@ -199,8 +199,35 @@ def plot_postage_stamps_photostim_traces(to_plot='delta dF',**kwargs):
 plot_postage_stamps_photostim_traces()
 
 
-# %% 2) BAR PLOT FOR PHOTOSTIM RESPONSE MAGNITUDE B/W PRE AND POST 4AP TRIALS - TODO plot delta (trace dFF) responses
+# %% 2) BAR PLOT FOR PHOTOSTIM RESPONSE MAGNITUDE B/W PRE AND POST 4AP TRIALS
 
+pre4ap_responses = {}
+interictal_responses = {}
+ictal_responses = {}
+@aoutils.run_for_loop_across_exps(run_pre4ap_trials=True, run_post4ap_trials=True)
+def collect_photostim_responses_SLMtargets(**kwargs):
+    expobj = kwargs['expobj']
+
+    if 'pre' in expobj.exptype:
+        delta_trace_dFF_response_pre = np.mean([[np.mean(expobj.responses_SLMtargets_tracedFF.loc[i, :]) for i in range(expobj.n_targets_total)]])
+        pre4ap_responses[expobj.t_series_name] = delta_trace_dFF_response_pre
+    elif 'post' in expobj.exptype:
+        delta_trace_dFF_response_interictal = np.mean([[np.mean(expobj.responses_SLMtargets_tracedFF_outsz.loc[i, :]) for i in range(expobj.n_targets_total)]])
+        interictal_responses[expobj.t_series_name] = delta_trace_dFF_response_interictal
+
+        delta_trace_dFF_response_ictal = np.mean([[np.mean(expobj.responses_SLMtargets_tracedFF_insz.loc[i, :]) for i in range(expobj.n_targets_total)]])
+        ictal_responses[expobj.t_series_name] = delta_trace_dFF_response_ictal
+
+collect_photostim_responses_SLMtargets()
+
+## TODO make paired plot
+pj.plot_bar_with_points(data=[list(pre4ap_responses.values()), list(interictal_responses.values()), list(ictal_responses.values())],
+                        paired=False, shrink_text=0.9, colors=['gray', 'green', 'purple'], bar=False, expand_size_y=1.1,
+                        expand_size_x=0.35, ylims=[-50, 100], alpha=0.4, x_tick_labels=['Baseline', 'Interictal', 'Ictal'],
+                        title=f"Mean photostim responses", y_label='dFF response (%)', title_pad=10)
+
+
+## old method using allopticalResults.slmtargets_stim_responses dataframe (not sure about quality of data, above is more recently refined)
 y_label = 'delta(trace_dFF)'
 to_process = f"mean response ({y_label} all targets)"
 
@@ -217,9 +244,11 @@ for i in allopticalResults.post_4ap_trials:
     post4ap_response_magnitude.append(np.mean(x))
 
 pj.plot_bar_with_points(data=[pre4ap_response_magnitude, post4ap_response_magnitude], paired=True, shrink_text=0.9,
-                        colors=['gray', 'purple'], bar=False, expand_size_y=1.1, expand_size_x=0.5, #ylims=[-50, 100],
+                        colors=['gray', 'purple'], bar=False, expand_size_y=1.1, expand_size_x=0.5, ylims=[-50, 100],
                         x_tick_labels=['pre-4ap', 'post-4ap'], title=f"Mean {y_label}", y_label=y_label, title_pad=10)
 
+pj.plot_bar_with_points(data=[np.random.random(10), np.random.random(10)], paired=True, colors=['black', 'gray'], bar=False)
+pj.plot_bar_with_points(data=[pre4ap_response_magnitude, post4ap_response_magnitude], paired=True, colors=['black', 'gray'], bar=False)
 
 # %% 3) BAR PLOT FOR PHOTOSTIM RESPONSE RELIABILITY B/W PRE AND POST 4AP TRIALS
 

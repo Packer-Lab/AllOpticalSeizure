@@ -27,22 +27,43 @@ if os.path.exists(pkl_path):
 #     [expobj.stim_end_frames[idx] - expobj.stim_start_frames[idx] for idx in range(len(expobj.stim_start_frames))]))
 
 aoplot.plotMeanRawFluTrace(expobj, stim_span_color='white', x_axis='frames')
-aoplot.plotLfpSignal(expobj, x_axis='time', figsize=(10,2), linewidth=1.2, downsample=True, sz_markings=False, color='slategray')
+aoplot.plotLfpSignal(expobj, x_axis='time', figsize=(5,3), linewidth=0.5, downsample=True, sz_markings=False, color='black', ylims=[0,5])
 # aoplot.plotLfpSignal(expobj, x_axis='time', figsize=(10,2), linewidth=1.2, downsample=True, sz_markings=False, ylims=[-1,5], color='slategray')
 
 aoplot.plot_lfp_stims(expobj, x_axis='Time', figsize=(10,2), ylims=[-1,5])
 
-aoplot.plot_flu_1pstim_avg_trace(expobj, x_axis='time', individual_traces=True, stim_span_color=None, y_axis='dff', quantify=True)
+
+
+
+# %%
+date = '2021-01-24'
+
+expobj, experiment = aoutils.import_expobj(prep='PS11', trial='t-009', date=date)  # pre4ap trial
+aoplot.plotLfpSignal(expobj, x_axis='time', figsize=(5,3), linewidth=0.5, downsample=True, sz_markings=False, color='black',
+                     ylims=[-4,1], xlims=[110*expobj.paq_rate, 210*expobj.paq_rate])
 
 if 'pre' in expobj.metainfo['exptype']:
+    aoplot.plot_flu_1pstim_avg_trace(expobj, x_axis='time', individual_traces=True, stim_span_color='skyblue',
+                                     y_axis='dff', quantify=False, figsize=[3, 3])
+
     aoplot.plot_lfp_1pstim_avg_trace(expobj, x_axis='time', individual_traces=False, pre_stim=0.25, post_stim=0.75, write_full_text=True,
                                      optoloopback=True, figsize=(3.1, 3), shrink_text=0.8, stims_to_analyze=expobj.stim_start_frames,
                                      title='Avg. run_pre4ap_trials stims LFP')
 
-elif 'post' in expobj.metainfo['exptype']:
+expobj, experiment = aoutils.import_expobj(prep='PS11', trial='t-012', date=date)  # post4ap trial
+aoplot.plotLfpSignal(expobj, x_axis='time', figsize=(5/100*150,3), linewidth=0.5, downsample=True, sz_markings=False, color='black',
+                     ylims=[0,5], xlims=[10*expobj.paq_rate, 160*expobj.paq_rate])
+
+if 'post' in expobj.metainfo['exptype']:
+    aoplot.plot_flu_1pstim_avg_trace(expobj, x_axis='time', individual_traces=True, stim_span_color='skyblue', stims_to_analyze=expobj.stims_out_sz,
+                                     y_axis='dff', quantify=False, figsize=[3, 3], title='Avg. interictal stims LFP')
+
     aoplot.plot_lfp_1pstim_avg_trace(expobj, x_axis='time', individual_traces=False, pre_stim=0.25, post_stim=0.75, write_full_text=True,
                                      optoloopback=True, figsize=(3.1, 3), shrink_text=0.8, stims_to_analyze=expobj.stims_out_sz,
                                      title='Avg. out sz stims LFP')
+
+    aoplot.plot_flu_1pstim_avg_trace(expobj, x_axis='time', individual_traces=True, stim_span_color='skyblue', stims_to_analyze=expobj.stims_in_sz,
+                                     y_axis='dff', quantify=False, figsize=[3, 3], title='Avg. ictal stims LFP')
 
     aoplot.plot_lfp_1pstim_avg_trace(expobj, x_axis='time', individual_traces=False, pre_stim=0.25, post_stim=0.75, write_full_text=True,
                                      optoloopback=True, figsize=(3.1, 3), shrink_text=0.8, stims_to_analyze=expobj.stims_in_sz,

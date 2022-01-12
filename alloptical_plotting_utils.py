@@ -1210,6 +1210,10 @@ def plotLfpSignal(expobj, stim_span_color='powderblue', downsample: bool = True,
 
     ax.plot(x, signal, c=color, zorder=1, linewidth=lw)  ## NOTE: ONLY PLOTTING LFP SIGNAL RELATED TO
     ax.margins(0)
+    ax.spines['top'].set_visible(False)
+    ax.spines['right'].set_visible(False)
+    ax.spines['left'].set_visible(False)
+
 
     # plot stims
     if stim_span_color != '':
@@ -1287,16 +1291,6 @@ def plotLfpSignal(expobj, stim_span_color='powderblue', downsample: bool = True,
 def plot_flu_1pstim_avg_trace(expobj, title='Average trace of stims', individual_traces=False, x_axis='time', stim_span_color='white',
                               y_axis: str = 'raw', quantify: bool = False, stims_to_analyze: list = None, write_full_text: bool = True,
                               fig=None, ax=None, **kwargs):
-    # fig, ax = plt.subplots()
-    # if there is a fig and ax provided in the function call then use those, otherwise start anew
-    # if 'fig' in kwargs.keys():
-    #     fig = kwargs['fig']
-    #     ax = kwargs['ax']
-    # else:
-    #     if 'figsize' in kwargs.keys():
-    #         fig, ax = plt.subplots(figsize=kwargs['figsize'])
-    #     else:
-    #         fig, ax = plt.subplots()
 
     if 'shrink_text' in kwargs.keys():
         shrink_text = 1 / kwargs['shrink_text']
@@ -1338,19 +1332,23 @@ def plot_flu_1pstim_avg_trace(expobj, title='Average trace of stims', individual
 
     if x_axis == 'time':
         # change x axis ticks to seconds
-        label_format = '{:,.2f}'
-        labels = [item for item in ax.get_xticks()]
-        for item in labels:
-            labels[labels.index(item)] = round(item / expobj.fps, 2)
-        ticks_loc = ax.get_xticks().tolist()
-        ax.xaxis.set_major_locator(mticker.FixedLocator(ticks_loc))
-        ax.set_xticklabels([label_format.format(x) for x in labels])
+        x_ticks_time = [0, 1, 2, 3, 4]
+        ax.set_xticks(ticks=[(label * expobj.fps) for label in x_ticks_time])
+        ax.set_xticklabels(x_ticks_time)
         ax.set_xlabel('Time (secs)')
+
+        # label_format = '{:,.2f}'
+        # labels = [item for item in ax.get_xticks()]
+        # for item in labels:
+        #     labels[labels.index(item)] = round(item / expobj.fps, 2)
+        # ticks_loc = ax.get_xticks().tolist()
+        # ax.xaxis.set_major_locator(mticker.FixedLocator(ticks_loc))
+        # ax.set_xticklabels([label_format.format(x) for x in labels])
+        # ax.set_xlabel('Time (secs)')
     else:
         ax.set_xlabel('frame clock')
     ax.set_ylabel(y_axis)
-    ax.set_title(
-        '%s %s %s %s' % (title, expobj.metainfo['exptype'], expobj.metainfo['animal prep.'], expobj.metainfo['trial']), fontsize = 10 * shrink_text)
+    ax.set_title(f"{title} {expobj.metainfo['exptype']} {expobj.t_series_name}", fontsize = 7 * shrink_text, wrap=True)
     # fig.suptitle(
     #     '%s %s %s %s' % (title, expobj.metainfo['exptype'], expobj.metainfo['animal prep.'], expobj.metainfo['trial']))
 
@@ -1400,6 +1398,8 @@ def plot_flu_1pstim_avg_trace(expobj, title='Average trace of stims', individual
         ax.set_ylim([kwargs['ylims'][0], kwargs['ylims'][1]])
     else:
         ax.set_ylim([-0.5, 1.0])
+
+    fig.tight_layout(pad=1.3)
 
     if quantify:
         return flu_list, round(response, 4), decay_constant

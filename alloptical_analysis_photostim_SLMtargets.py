@@ -23,7 +23,7 @@ aoutils.random_plot()
 # key = 'f'; exp = 'pre'; expobj, experiment = aoutils.import_expobj(aoresults_map_id=f"{exp} {key}.0")
 
 
-"##### -------------------- ALL OPTICAL PHOTOSTIM ANALYSIS ##############################################################"
+"##### -------------------- ALL OPTICAL PHOTOSTIM ANALYSIS #############################################################"
 # %% 5.0) calculate/collect min distance to seizure and responses at each distance
 
 response_type = 'dFF (z scored) (interictal)'
