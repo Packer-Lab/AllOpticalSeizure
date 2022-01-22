@@ -38,7 +38,7 @@ import pickle
 
 ## SET OPTIONS
 pd.set_option('max_columns', None)
-pd.set_option('max_rows', 10)
+pd.set_option('max_rows', 100)
 
 
 
@@ -114,11 +114,11 @@ def import_expobj(aoresults_map_id: str = None, trial: str = None, prep: str = N
         print(f"updated expobj.analysis_save_path to: {expobj.analysis_save_path}")
         expobj.save()
 
-    # move expobj to the official pkl_path from the provided pkl_path that expobj was loaded from (if different)
+    # move expobj to the official save_path from the provided save_path that expobj was loaded from (if different)
     if pkl_path is not None:
         if expobj.pkl_path != pkl_path:
-            expobj.save_pkl(pkl_path=expobj.pkl_path)
-            print('saved new copy of expobj to pkl_path: ', expobj.pkl_path)
+            expobj.save_pkl(save_path=expobj.pkl_path)
+            print('saved new copy of expobj to save_path: ', expobj.pkl_path)
 
     # other misc. things you want to do when importing expobj -- should be temp code basically - not essential for actual importing of expobj
 
@@ -287,7 +287,7 @@ class TwoPhotonImaging:
     def __init__(self, tiff_path, paq_path, metainfo, analysis_save_path, suite2p_path=None,
                  suite2p_run=False, save_downsampled_tiff: bool = False, quick=False):
         """
-        :param suite2p_path: path to the suite2p outputs (plane0 file? or ops file? not sure yet)
+        :param suite2p_path: path to the suite2p outputs (plane0 file)
         :param suite2p_run: set to true if suite2p is already run for this trial
         """
 
@@ -950,10 +950,10 @@ class TwoPhotonImaging:
         self.meanRawFluTrace = np.mean(np.mean(im_stack, axis=1), axis=1)
 
         if save_pkl:
-            if hasattr(self, 'pkl_path'):
+            if hasattr(self, 'save_path'):
                 self.save_pkl(pkl_path=self.pkl_path)
             else:
-                print('pkl file not saved yet because .pkl_path attr not found')
+                print('pkl file not saved yet because .save_path attr not found')
 
         if plot:
             aoplot.plotMeanRawFluTrace(expobj=self, stim_span_color=None, x_axis='frames', figsize=[20, 3],
@@ -1021,7 +1021,7 @@ class TwoPhotonImaging:
 
     def save_pkl(self, pkl_path: str = None):
         if pkl_path is None:
-            if not hasattr(self, 'pkl_path'):
+            if not hasattr(self, 'save_path'):
                 raise ValueError(
                     'pkl path for saving was not found in object attributes, please provide path to save to')
         else:
@@ -1040,7 +1040,6 @@ class TwoPhotonImaging:
     def save(self):
         self.save_pkl()
 
-
 class alloptical(TwoPhotonImaging):
 
     def __init__(self, paths, metainfo, stimtype, quick=False):
@@ -1051,18 +1050,7 @@ class alloptical(TwoPhotonImaging):
 
         self.seizure_frames = []
 
-        TwoPhotonImaging.__init__(self, tiff_path=paths['tiffs_loc'], paq_path=paths['paqs_loc'], metainfo=metainfo, analysis_save_path=paths['analysis_save_path'],
-                                  suite2p_path=None, suite2p_run=False, quick=quick)
-
-        # self.tiff_path_dir = paths[0]
-        # self.tiff_path = paths[1]
-
-        # self._parsePVMetadata()
-
-        ## CREATE THE APPROPRIATE ANALYSIS SUBFOLDER TO USE FOR SAVING ANALYSIS RESULTS TO
-
-        print('\ninitialized alloptical expobj of exptype and trial: \n', self.metainfo)
-
+        # set initial attr's
         self.stimProcessing(stim_channel='markpoints2packio')
         self.paqProcessing(lfp=True)
         self._findTargetsAreas()
@@ -1118,6 +1106,23 @@ class alloptical(TwoPhotonImaging):
 
 
         ## NON PHOTOSTIM SLM TARGETS
+        # TODO add attr's related to non targets cells
+
+
+        # put object through 2p imaging processing workflow
+        TwoPhotonImaging.__init__(self, tiff_path=paths['tiffs_loc'], paq_path=paths['paqs_loc'], metainfo=metainfo, analysis_save_path=paths['analysis_save_path'],
+                                  suite2p_path=None, suite2p_run=False, quick=quick)
+
+        # self.tiff_path_dir = paths[0]
+        # self.tiff_path = paths[1]
+
+        # self._parsePVMetadata()
+
+        ## CREATE THE APPROPRIATE ANALYSIS SUBFOLDER TO USE FOR SAVING ANALYSIS RESULTS TO
+
+        print('\ninitialized alloptical expobj of exptype and trial: \n', self.metainfo)
+
+
 
         self.save()
 
@@ -3285,7 +3290,6 @@ class alloptical(TwoPhotonImaging):
         plt.show()
         save_figure(fig, save_path_suffix=f"{save_fig}") if save_fig else None
 
-
 class Post4ap(alloptical):
 
     def __init__(self, paths, metainfo, stimtype, discard_all):
@@ -4319,7 +4323,6 @@ class OnePhotonStim(TwoPhotonImaging):
         aoplot.plot_lfp_stims(self, x_axis='time')
         self.save_pkl()
 
-
 class onePstim(TwoPhotonImaging):
     def __init__(self, data_path_base, date, animal_prep, trial, metainfo, analysis_save_path_base: str = None):
         paqs_loc = '%s%s_%s_%s.paq' % (
@@ -4629,7 +4632,7 @@ class AllOpticalResults:  ## initiated in allOptical-results.ipynb
 
     def save_pkl(self, pkl_path: str = None):
         if pkl_path is None:
-            if hasattr(self, 'pkl_path'):
+            if hasattr(self, 'save_path'):
                 pkl_path = self.pkl_path
             else:
                 raise ValueError(
@@ -4647,7 +4650,7 @@ class AllOpticalResults:  ## initiated in allOptical-results.ipynb
 
 #
 
-# # # import results superobject that will collect analyses from various individual experiments
+# import results superobject that will collect analyses from various individual experiments
 results_object_path = '/home/pshah/mnt/qnap/Analysis/alloptical_results_superobject.pkl'
 try:
     allopticalResults = import_resultsobj(
@@ -5172,9 +5175,9 @@ def run_photostim_preprocessing(trial, exp_type, tiffs_loc, naparms_loc, paqs_lo
 
     # Pickle the expobject output to save it for analysis
 
-    # with open(pkl_path, 'wb') as f:
+    # with open(save_path, 'wb') as f:
     #     pickle.dump(expobj, f)
-    # print("\nPkl saved to %s" % pkl_path)
+    # print("\nPkl saved to %s" % save_path)
 
     # make processed tiffs
     if processed_tiffs:

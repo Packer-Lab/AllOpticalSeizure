@@ -16,7 +16,7 @@ import tifffile as tf
 trial = 't-016'
 date = '2020-12-19'
 pkl_path = "/home/pshah/mnt/qnap/Analysis/%s/%s_%s/%s_%s.pkl" % (date, date, trial, date, trial)
-# pkl_path = "/home/pshah/mnt/qnap/Data/%s/%s_%s/%s_%s.pkl" % (date, date, trial, date, trial)
+# save_path = "/home/pshah/mnt/qnap/Data/%s/%s_%s/%s_%s.pkl" % (date, date, trial, date, trial)
 
 expobj, experiment = aoutils.import_expobj(trial=trial, date=date, pkl_path=pkl_path)
 
@@ -140,7 +140,7 @@ allOpticalresults.save()
 
 # %% SAVE THE UPDATED expobj OBJECT IN THE ORIGINAL PKL PATH TO USE NEXT
 
-expobj.save_pkl(pkl_path=pkl_path)
+expobj.save_pkl(save_path=pkl_path)
 
 
 print("\n COMPLETED RUNNING ALL OPTICAL PROCESSING PHOTOSTIM.")

@@ -32,9 +32,9 @@ trial = 't-017'
 experiment = 'J063: find_resp-4ap-t017'
 # trials = ['t-019', 't-020']
 
-# pkl_path = "/home/pshah/mnt/qnap/Data/2020-03-18/J063/2020-03-18_J063_%s/2020-03-18_%s.pkl" % (trial, trial)
-# pkl_path = '/Users/prajayshah/Documents/data-to-process/2020-03-18/2020-03-18_t-019_t-020.pkl'
-# pkl_path = "/Volumes/Extreme SSD/oxford-data/2020-03-19/2020-03-19_%s.pkl" % trial
+# save_path = "/home/pshah/mnt/qnap/Data/2020-03-18/J063/2020-03-18_J063_%s/2020-03-18_%s.pkl" % (trial, trial)
+# save_path = '/Users/prajayshah/Documents/data-to-process/2020-03-18/2020-03-18_t-019_t-020.pkl'
+# save_path = "/Volumes/Extreme SSD/oxford-data/2020-03-19/2020-03-19_%s.pkl" % trial
 pkl_path = "/Volumes/Extreme SSD/oxford-data/2020-03-18/2020-03-18_%s.pkl" % trial
 
 #%% IMPORT pkl file containing exp_obj
@@ -631,7 +631,7 @@ plt.show()
 
 #%% SAVE exp_obj as PKL
 # Pickle the expobject output to save it for analysis
-# pkl_path = "/home/pshah/mnt/qnap/Data/2020-03-18/J063/2020-03-18_J063_%s/2020-03-18_%s.pkl" % (trial, trial)
+# save_path = "/home/pshah/mnt/qnap/Data/2020-03-18/J063/2020-03-18_J063_%s/2020-03-18_%s.pkl" % (trial, trial)
 with open(pkl_path, 'wb') as f:
         pickle.dump(exp_obj, f)
 print("pkl saved to %s" % pkl_path)

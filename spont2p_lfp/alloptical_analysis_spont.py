@@ -9,8 +9,8 @@ sys.path.append('/Users/prajayshah/OneDrive - University of Toronto/PycharmProje
 import utils.utils_funcs as uf #from Vape
 from numba import njit
 
-# pkl_path = '/Users/prajayshah/Documents/data-to-process/2020-03-18/2020-03-18_t-019_t-020.pkl'
-# pkl_path = "/Volumes/Extreme SSD/oxford-data/2020-03-03/2020-03-03_spont-baseline.pkl"
+# save_path = '/Users/prajayshah/Documents/data-to-process/2020-03-18/2020-03-18_t-019_t-020.pkl'
+# save_path = "/Volumes/Extreme SSD/oxford-data/2020-03-03/2020-03-03_spont-baseline.pkl"
 # s2p_path = '/Volumes/Extreme SSD/oxford-data/2020-03-03/suite2p/spont-baseline/plane0'
 # experiment = 'RL066 _ spont-baseline'
 

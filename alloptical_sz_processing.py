@@ -335,8 +335,8 @@ for i in range(len(stims_to_plot)):
     # stim = stims_to_plot[0]
 
     # plot SLM targets in sz boundary
-    coords_to_plot = expobj.target_coords_all
-    coords_to_plot2 = [expobj.target_coords_all[cell] for cell in expobj.slmtargets_szboundary_stim[stim]]
+    coords_to_plot = expobj.target_coords_all  # all targets
+    coords_to_plot2 = [expobj.target_coords_all[cell] for cell in expobj.slmtargets_szboundary_stim[stim]]  # targets in sz bound
     # read in avg stim image to use as the background
 
     avg_stim_img_path = expobj.analysis_save_path + 'avg_stim_images' + f'/{expobj.t_series_name}_stim-{stim}.tif'

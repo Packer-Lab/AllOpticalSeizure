@@ -1158,10 +1158,10 @@ date = '2021-01-19'
 pre4ap_trials = ['t-007', 't-008', 't-009']
 post4ap_trials = ['t-011', 't-016', 't-017']
 
-# pkl_path = "/home/pshah/mnt/qnap/Analysis/%s/%s/%s_%s/%s_%s.pkl" % (
+# save_path = "/home/pshah/mnt/qnap/Analysis/%s/%s/%s_%s/%s_%s.pkl" % (
 #     date, animal_prep, date, trial, date, trial)  # specify path in Analysis folder to save pkl object
 #
-# expobj, _ = aoutils.import_expobj(pkl_path=pkl_path)
+# expobj, _ = aoutils.import_expobj(save_path=save_path)
 
 counter = allopticalResults.slmtargets_stim_responses.shape[0] + 1
 # counter = 6

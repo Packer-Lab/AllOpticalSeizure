@@ -348,9 +348,9 @@ print('yes')
 #
 # for trial in trials:
 #     ###### IMPORT pkl file containing data in form of expobj
-#     pkl_path = "/home/pshah/mnt/qnap/Analysis/%s/%s/%s_%s/%s_%s.pkl" % (date, prep, date, trial, date, trial)
+#     save_path = "/home/pshah/mnt/qnap/Analysis/%s/%s/%s_%s/%s_%s.pkl" % (date, prep, date, trial, date, trial)
 #
-#     expobj, experiment = aoutils.import_expobj(trial=trial, date=date, pkl_path=pkl_path, verbose=False)
+#     expobj, experiment = aoutils.import_expobj(trial=trial, date=date, save_path=save_path, verbose=False)
 #
 #     # pj.plot_single_tiff(expobj.tiff_path, frame_num=201, title='%s - frame# 201' % trial)
 #     # cropped_tiff = aoutils.subselect_tiff(expobj.tiff_path, select_frames=(2668, 4471))#, save_as='/home/pshah/mnt/qnap/Analysis/%s/%s/%s_%s/%s_%s_2668-4471fr.tif' % (date, prep, date, trial, date, trial))
@@ -415,8 +415,8 @@ print('yes')
 # trial = 't-006'
 #
 # ###### IMPORT pkl file containing data in form of expobj
-# pkl_path = "/home/pshah/mnt/qnap/Analysis/%s/%s/%s_%s/%s_%s.pkl" % (date, prep, date, trial, date, trial)
-# expobj, experiment = aoutils.import_expobj(trial=trial, date=date, pkl_path=pkl_path, verbose=False)
+# save_path = "/home/pshah/mnt/qnap/Analysis/%s/%s/%s_%s/%s_%s.pkl" % (date, prep, date, trial, date, trial)
+# expobj, experiment = aoutils.import_expobj(trial=trial, date=date, save_path=save_path, verbose=False)
 # fr = pj.plot_single_tiff(expobj.tiff_path, frame_num=238, title='%s - frame 238' % trial)
 #
 # # unsquash the bottom 2/3rd of the frame
@@ -435,8 +435,8 @@ print('yes')
 # trial = 't-002'
 #
 # ###### IMPORT pkl file containing data in form of expobj
-# pkl_path = "/home/pshah/mnt/qnap/Analysis/%s/%s/%s_%s/%s_%s.pkl" % (date, prep, date, trial, date, trial)
-# expobj, experiment = aoutils.import_expobj(trial=trial, date=date, pkl_path=pkl_path, verbose=False)
+# save_path = "/home/pshah/mnt/qnap/Analysis/%s/%s/%s_%s/%s_%s.pkl" % (date, prep, date, trial, date, trial)
+# expobj, experiment = aoutils.import_expobj(trial=trial, date=date, save_path=save_path, verbose=False)
 # fr = pj.plot_single_tiff(expobj.tiff_path, frame_num=238, title='%s - frame 238' % trial)
 #
 # # plot image
@@ -461,9 +461,9 @@ print('yes')
 #
 # for trial in trials:
 #     ###### IMPORT pkl file containing data in form of expobj
-#     pkl_path = "/home/pshah/mnt/qnap/Analysis/%s/%s/%s_%s/%s_%s.pkl" % (date, prep, date, trial, date, trial)
+#     save_path = "/home/pshah/mnt/qnap/Analysis/%s/%s/%s_%s/%s_%s.pkl" % (date, prep, date, trial, date, trial)
 #
-#     expobj, experiment = aoutils.import_expobj(trial=trial, date=date, pkl_path=pkl_path, verbose=False)
+#     expobj, experiment = aoutils.import_expobj(trial=trial, date=date, save_path=save_path, verbose=False)
 #     pj.plot_single_tiff(expobj.tiff_path, frame_num=238, title='%s - frame 238' % trial)
 #     # open tiff file
 #     print('\nWorking on... %s' % expobj.tiff_path)
@@ -485,9 +485,9 @@ print('yes')
 #
 # for trial in trials:
 #     ###### IMPORT pkl file containing data in form of expobj
-#     pkl_path = "/home/pshah/mnt/qnap/Analysis/%s/%s/%s_%s/%s_%s.pkl" % (date, prep, date, trial, date, trial)
+#     save_path = "/home/pshah/mnt/qnap/Analysis/%s/%s/%s_%s/%s_%s.pkl" % (date, prep, date, trial, date, trial)
 #
-#     expobj, experiment = aoutils.import_expobj(trial=trial, date=date, pkl_path=pkl_path, verbose=False)
+#     expobj, experiment = aoutils.import_expobj(trial=trial, date=date, save_path=save_path, verbose=False)
 #
 #     print('\n%s' % trial)
 #     print('frame clock count: ', len(expobj.frame_clock_actual))
@@ -508,8 +508,8 @@ print('yes')
 # for trial in trials:
 #     ###### IMPORT pkl file containing data in form of expobj
 #     # trial = 't-009'  # note that %s magic command in the code below will be using these trials listed here
-#     pkl_path = "/home/pshah/mnt/qnap/Analysis/%s/RL109/%s_%s/%s_%s.pkl" % (date, date, trial, date, trial)
-#     expobj, experiment = aoutils.import_expobj(trial=trial, date=date, pkl_path=pkl_path, verbose=False)
+#     save_path = "/home/pshah/mnt/qnap/Analysis/%s/RL109/%s_%s/%s_%s.pkl" % (date, date, trial, date, trial)
+#     expobj, experiment = aoutils.import_expobj(trial=trial, date=date, save_path=save_path, verbose=False)
 #
 #     # expobj._findTargets()
 #     # expobj.save()
@@ -529,8 +529,8 @@ print('yes')
 # animal_prep = 'PS17'
 # date = data_path_base[-10:]
 # for trial in ['t-009', 't-011']:
-#     pkl_path = "/home/pshah/mnt/qnap/Analysis/%s/%s/%s_%s/%s_%s.pkl" % (date, animal_prep, date, trial, date, trial)  # specify path in Analysis folder to save pkl object
-#     expobj, experiment = aoutils.import_expobj(pkl_path=pkl_path)
+#     save_path = "/home/pshah/mnt/qnap/Analysis/%s/%s/%s_%s/%s_%s.pkl" % (date, animal_prep, date, trial, date, trial)  # specify path in Analysis folder to save pkl object
+#     expobj, experiment = aoutils.import_expobj(save_path=save_path)
 #     comments = expobj.metainfo['comments']
 #     naparms_loc = expobj.naparm_path[-41:]
 #     exp_type = expobj.metainfo['exptype']
@@ -541,14 +541,14 @@ print('yes')
 #     tiffs_loc_dir = '%s/%s_%s' % (data_path_base, date, trial)
 #     analysis_save_path = analysis_save_path + tiffs_loc_dir[-16:]
 #     tiffs_loc = '%s/%s_%s_Cycle00001_Ch3.tif' % (tiffs_loc_dir, date, trial)
-#     pkl_path = "%s/%s_%s.pkl" % (analysis_save_path, date, trial)  # specify path in Analysis folder to save pkl object
+#     save_path = "%s/%s_%s.pkl" % (analysis_save_path, date, trial)  # specify path in Analysis folder to save pkl object
 #     # paqs_loc = '%s/%s_RL109_010.paq' % (data_path_base, date)  # path to the .paq files for the selected trials
 #     new_tiffs = tiffs_loc[:-19]  # where new tiffs from rm_artifacts_tiffs will be saved
 #     matlab_badframes_path = '%s/paired_measurements/%s_%s_%s.mat' % (analysis_save_path[:-17], date, animal_prep, trial[
 #                                                                                                                   2:])  # choose matlab path if need to use or use None for no additional bad frames
 #     metainfo = expobj.metainfo
 #
-#     expobj = aoutils.run_photostim_preprocessing(trial, exp_type=exp_type, pkl_path=pkl_path, new_tiffs=new_tiffs,
+#     expobj = aoutils.run_photostim_preprocessing(trial, exp_type=exp_type, save_path=save_path, new_tiffs=new_tiffs,
 #                                                  metainfo=metainfo,
 #                                                  tiffs_loc_dir=tiffs_loc_dir, tiffs_loc=tiffs_loc,
 #                                                  naparms_loc=(data_path_base + naparms_loc),
@@ -558,8 +558,8 @@ print('yes')
 #
 #
 # # %%
-# pkl_path = '/home/pshah/mnt/qnap/Analysis/2021-01-08/PS05/2021-01-08_t-011/2021-01-08_t-011.pkl'
-# expobj, experiment = aoutils.import_expobj(pkl_path=pkl_path)
+# save_path = '/home/pshah/mnt/qnap/Analysis/2021-01-08/PS05/2021-01-08_t-011/2021-01-08_t-011.pkl'
+# expobj, experiment = aoutils.import_expobj(save_path=save_path)
 #
 #
 # # x = np.asarray([i for i in expobj.SLMTargets_stims_dfstdF_avg])
@@ -597,9 +597,9 @@ print('yes')
 #
 # for trial in trials:
 #     ###### IMPORT pkl file containing data in form of expobj
-#     pkl_path = "/home/pshah/mnt/qnap/Analysis/%s/%s/%s_%s/%s_%s.pkl" % (date, prep, date, trial, date, trial)
+#     save_path = "/home/pshah/mnt/qnap/Analysis/%s/%s/%s_%s/%s_%s.pkl" % (date, prep, date, trial, date, trial)
 #
-#     expobj, experiment = aoutils.import_expobj(trial=trial, date=date, pkl_path=pkl_path, verbose=False)
+#     expobj, experiment = aoutils.import_expobj(trial=trial, date=date, save_path=save_path, verbose=False)
 #     stack = pj.subselect_tiff(
 #         tiff_path=expobj.tiff_path, select_frames=(-500, -1))
 #     # stack = pj.subselect_tiff(tiff_path="/home/pshah/mnt/qnap/Data/%s/%s_%s/%s_%s_Cycle00001_Ch3.tif" % (date, date, trial, date, trial),

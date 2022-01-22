@@ -20,7 +20,7 @@ results_object_path = '/home/pshah/mnt/qnap/Analysis/alloptical_results_superobj
 allopticalResults = aoutils.import_resultsobj(pkl_path=results_object_path)
 
 # PLACEHOLDER IMPORT OF EXPOBJ TO during code development
-expobj, experiment = aoutils.import_expobj(prep='RL109', trial='t-013')
+expobj, experiment = aoutils.import_expobj(prep='RL108', trial='t-013')
 # expobj, experiment = aoutils.import_expobj(aoresults_map_id='pre e.1')
 
 
@@ -249,6 +249,40 @@ pj.plot_bar_with_points(data=[pre4ap_response_magnitude, post4ap_response_magnit
 
 pj.plot_bar_with_points(data=[np.random.random(10), np.random.random(10)], paired=True, colors=['black', 'gray'], bar=False)
 pj.plot_bar_with_points(data=[pre4ap_response_magnitude, post4ap_response_magnitude], paired=True, colors=['black', 'gray'], bar=False)
+
+# %% 2.1-dc) photostim responses - SLM targets in and out of seizure boundary (during seizures) - Ictal stims
+
+insz_responses = {}
+outsz_responses = {}
+@aoutils.run_for_loop_across_exps(run_pre4ap_trials=False, run_post4ap_trials=True)
+def collect_photostim_responses_insz_SLMtargets(**kwargs):
+    expobj = kwargs['expobj']
+
+    responses_insz = []
+    responses_outsz = []
+
+    for stim in [*expobj.slmtargets_szboundary_stim]:
+        stim_idx = expobj.stim_start_frames.index(stim)
+        targets = expobj.slmtargets_szboundary_stim[stim]
+        response_ = [np.mean(expobj.responses_SLMtargets_tracedFF_insz.loc[i, stim_idx]) for i in targets]
+        responses_insz.append(response_)
+
+        targets = [i for i in range(expobj.n_targets_total) if i not in expobj.slmtargets_szboundary_stim[stim]]
+        response_ = [np.mean(expobj.responses_SLMtargets_tracedFF_insz.loc[i, stim_idx]) for i in targets]
+        responses_outsz.append(response_)
+
+    insz_responses[expobj.t_series_name] = np.mean(responses_insz)
+    outsz_responses[expobj.t_series_name] = np.mean(responses_outsz)
+
+
+collect_photostim_responses_insz_SLMtargets()
+
+## TODO make paired plot
+pj.plot_bar_with_points(data=[list(outsz_responses.values()), list(insz_responses.values())],
+                        paired=False, shrink_text=0.9, colors=['#db6120', '#f8cc8f'], bar=False, expand_size_y=1.1,
+                        expand_size_x=0.35, ylims=[-50, 100], alpha=0.4, x_tick_labels=['Baseline', 'Interictal', 'Ictal'],
+                        title=f"Mean photostim responses", y_label='dFF response (%)', title_pad=10)
+
 
 # %% 3) BAR PLOT FOR PHOTOSTIM RESPONSE RELIABILITY B/W PRE AND POST 4AP TRIALS
 

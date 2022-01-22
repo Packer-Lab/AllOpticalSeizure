@@ -2,9 +2,94 @@
 import os
 import sys
 
-sys.path.append('/home/pshah/Documents/code/PackerLab_pycharm/')
+sys.path.append('/home/pshah/Documents/code/')
+import time
+import numpy as np
+import pandas as pd
+import pickle
 
-import alloptical_utils_pj as aoutils
+## SET OPTIONS
+pd.set_option('max_columns', None)
+pd.set_option('max_rows', 100)
+
+from TwoPhotonImagingMain import TwoPhotonImaging
+import _alloptical_utils as aoutils
+
+# RESULTS OBJECTS
+class OnePhotonResults:
+    def __init__(self, save_path: str):
+        # just create an empty class object that you will throw results and analyses into
+        self.pkl_path = save_path
+
+        self.save(pkl_path=self.pkl_path)
+
+    def __repr__(self):
+        lastmod = time.ctime(os.path.getmtime(self.pkl_path))
+        return repr(f"OnePhotonResults experimental results object, last saved: {lastmod}")
+
+
+    def save(self, pkl_path: str = None):
+        TwoPhotonImaging.save_pkl(self, pkl_path=pkl_path)
+
+
+class AllOpticalResults:  ## initiated in allOptical-results.ipynb
+    def __init__(self, save_path: str):
+        print(f"\n {'--'*5} CREATING NEW ALLOPTICAL RESULTS {'--'*5} \n")
+        # just create an empty class object that you will throw results and analyses into
+        self.pkl_path = save_path
+
+        self.metainfo = pd.DataFrame(columns=['prep_trial', 'date', 'exptype'])  # gets filled in alloptical_results_init.py
+
+        ## DATA CONTAINING ATTRS
+        self.slmtargets_stim_responses = pd.DataFrame({'prep_trial': [], 'date': [], 'exptype': [],
+                                                       'stim_setup': [],
+                                                       'mean response (dF/stdF all targets)': [],
+                                                       'mean response delta(trace_dFF) all targets)': [],  # TODO this is the field to fill with mean photostim responses .21/11/25
+                                                       'mean reliability (>0.3 dF/stdF)': []})  # gets filled in allOptical-results.ipynb
+
+        # large dictionary containing direct run_pre4ap_trials and run_post4ap_trials trial comparisons for each experiments, and stim responses
+        # for run_pre4ap_trials data and stim responses for run_post4ap_trials data (also broken down by outsz and insz) - responses are dF/prestimF
+        self.stim_responses = {}  # get defined in alloptical_analysis_photostim
+
+        self.avgTraces = {}  # dictionary containing avg traces for each experiment type (pre4ap, outsz, insz) --> processing type (dfstdf or delta(trace_dFF)) _ response type (success or failures)
+
+        # for run_pre4ap_trials data and stim responses for run_post4ap_trials data (also broken down by outsz and insz) - responses are taken using whole trace dFF
+        self.stim_responses_tracedFF = {}  # get defined in alloptical_analysis_photostim
+
+        # responses of targets at each stim (timed relative to the closest sz onset location) - responses are dF/prestimF
+        self.stim_relative_szonset_vs_avg_response_alltargets_atstim = {}
+
+        # responses of targets at each stim (timed relative to the closest sz onset location) - using whole trace dFF
+        self.stim_relative_szonset_vs_deltatracedFFresponse_alltargets_atstim = {}
+
+
+        self.stim_responses_zscores = {}  # zscores of photostim responses - zscored to pre4ap trials
+
+
+
+        self.save_pkl(pkl_path=self.pkl_path)
+
+    def __repr__(self):
+        lastmod = time.ctime(os.path.getmtime(self.pkl_path))
+        return repr(f"AllOpticalResults experimental results object, last saved: {lastmod}")
+
+    def save_pkl(self, pkl_path: str = None):
+        if pkl_path is None:
+            if hasattr(self, 'save_path'):
+                pkl_path = self.pkl_path
+            else:
+                raise ValueError(
+                    'pkl path for saving was not found in object attributes, please provide path to save to')
+        else:
+            self.pkl_path = pkl_path
+
+        with open(self.pkl_path, 'wb') as f:
+            pickle.dump(self, f)
+        print("\n\t -- alloptical results obj saved to %s -- " % pkl_path)
+
+    def save(self):
+        self.save_pkl()
+
 
 # import results superobject that will collect analyses from various individual experiments
 results_object_path = '/home/pshah/mnt/qnap/Analysis/alloptical_results_superobject.pkl'
@@ -17,6 +102,8 @@ if not os.path.exists(results_object_path) or force_remake:
     allopticalResults.metainfo = allopticalResults.slmtargets_stim_responses.loc[:, ['prep_trial', 'date', 'exptype']]
 
 allopticalResults = aoutils.import_resultsobj(results_object_path)
+
+
 
 # %% 1) lists of trials to analyse for run_pre4ap_trials and run_post4ap_trials trials within experiments,
 # note that the commented out trials are used to skip running processing code temporarily

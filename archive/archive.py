@@ -685,11 +685,11 @@ plt.show()
 
 #%%
 # # use the code below for when you've stitched multiple trials together in suite2p
-# pkl_path = '/Users/prajayshah/Documents/data-to-process/2020-03-18/2020-03-18_t-019.pkl'
-# with open(pkl_path, 'rb') as f:
+# save_path = '/Users/prajayshah/Documents/data-to-process/2020-03-18/2020-03-18_t-019.pkl'
+# with open(save_path, 'rb') as f:
 #     expobj_1 = pickle.load(f)
-# pkl_path = '/Users/prajayshah/Documents/data-to-process/2020-03-18/2020-03-18_t-020.pkl'
-# with open(pkl_path, 'rb') as f:
+# save_path = '/Users/prajayshah/Documents/data-to-process/2020-03-18/2020-03-18_t-020.pkl'
+# with open(save_path, 'rb') as f:
 #     expobj_2 = pickle.load(f)
 #
 # # add photostim frames from expobj 2 to expobj 1 using extend
