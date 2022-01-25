@@ -1,10 +1,6 @@
 # retrieving and processing on LFP recordings from the .paq file
 import os.path
-
-import numpy as np
-import seaborn as sns
 import _alloptical_utils as Utils
-import matplotlib.pyplot as plt
 
 class LFP:
     def __init__(self, **kwargs):
@@ -23,3 +19,4 @@ class LFP:
         # find voltage (LFP recording signal) channel and save as lfp_signal attribute
         voltage_idx = paq['chan_names'].index('voltage')
         self.lfp_signal = paq['data'][voltage_idx]
+

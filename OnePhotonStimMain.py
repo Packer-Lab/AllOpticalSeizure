@@ -1,6 +1,10 @@
-
+import functools
 import os
+import pickle
 import sys
+
+from alloptical_utils_pj import import_expobj, working_on, end_working_on, import_resultsobj
+import _alloptical_utils as Utils
 
 sys.path.append('/home/pshah/Documents/code/')
 import matplotlib.pyplot as plt
@@ -14,6 +18,133 @@ import alloptical_plotting_utils as aoplot
 from TwoPhotonImagingMain import TwoPhotonImaging
 
 class OnePhotonStim(TwoPhotonImaging):
+
+    compatible_responses_process = ['pre-stim dFF', 'post - pre']
+
+    oneP_pre4ap_exp_list = [
+        'PS17 t-008',
+        'PS07 t-003',
+        'PS07 t-010',
+        'PS11 t-004',
+        'PS11 t-009',
+        'PS18 t-007',
+        'PS09 t-008',
+        'PS16 t-005',
+        'PS16 t-006',
+        'PS16 t-008'
+    ]
+
+    oneP_post4ap_exp_list = [
+        'PS07 t-012',
+        'PS07 t-015',
+        'PS11 t-012',
+        'PS11 t-017',
+        # 'PS11 t-019',
+        'PS18 t-009',
+        'PS09 t-011',
+        'PS09 t-013',
+        'PS09 t-015',
+        'PS16 t-009',
+        'PS16 t-010'
+    ]
+
+    # wrapper for use in AnalysisFuncs
+    @staticmethod
+    def runOverExperiments(run_pre4ap_trials=False, run_post4ap_trials=False, skip_trials=[], run_trials=[],
+                           ignore_cache=False):
+        """decorator to use for for-looping through experiment trials across run_pre4ap_trials and run_post4ap_trials.
+        the trials to for loop through are defined in allopticalResults.pre_4ap_trials and allopticalResults.post_4ap_trials"""
+        # if len(run_trials) > 0 or run_pre4ap_trials is True or run_post4ap_trials is True:
+        t_start = time.time()
+
+        def main_for_loop(func):
+            @functools.wraps(func)
+            def inner(*args, **kwargs):
+                print(f"\n {'..' * 5} INITIATING FOR LOOP ACROSS EXPS {'..' * 5}\n")
+                if run_trials:
+                    print(f"\n{'-' * 5} RUNNING SPECIFIED TRIALS from `trials_run` {'-' * 5}")
+                    counter1 = 0
+                    for i, exp_prep in enumerate(run_trials):
+                        # print(i, exp_prep)
+                        try:  # dont continue if exp_prep already run before (as determined by location in func_cache
+                            if Utils.get_from_cache(func.__name__, item=exp_prep):
+                                run = False
+                                print(f"{exp_prep} found in cache for func {func.__name__} ... skipping repeat run.")
+                            else:
+                                run = True
+                        except KeyError:
+                            run = True
+                        if run is True or ignore_cache is True:
+                            prep = exp_prep[:-6]
+                            trial = exp_prep[-5:]
+                            expobj, _ = OnePhotonStim.import_1pexobj(prep=prep, trial=trial, verbose=False)
+
+                            working_on(expobj)
+                            func(expobj=expobj, **kwargs)
+                            end_working_on(expobj)
+                            Utils.set_to_cache(func_name=func.__name__, item=exp_prep)
+
+                    counter1 += 1
+
+                if run_pre4ap_trials:
+                    print(f"\n{'-' * 5} RUNNING PRE4AP TRIALS {'-' * 5}")
+                    counter_i = 0
+                    res = []
+                    for i, x in enumerate(OnePhotonStim.oneP_pre4ap_exp_list):
+                        counter_j = 0
+                        for j, exp_prep in enumerate([x]):
+                            if exp_prep in skip_trials:
+                                pass
+                            else:
+                                # print(i, j, exp_prep)
+                                prep = exp_prep[:-6]
+                                pre4aptrial = exp_prep[-5:]
+                                expobj, _ = OnePhotonStim.import_1pexobj(prep=prep, trial=pre4aptrial, verbose=False)
+
+                                working_on(expobj)
+                                res_ = func(expobj=expobj, **kwargs)
+                                end_working_on(expobj)
+                                res.append(res_) if res_ is not None else None
+                            counter_j += 1
+                        counter_i += 1
+                    if res:
+                        return res
+
+                if run_post4ap_trials:
+                    print(f"\n{'-' * 5} RUNNING POST4AP TRIALS {'-' * 5}")
+                    counter_i = 0
+                    res = []
+                    for i, x in enumerate(OnePhotonStim.oneP_post4ap_exp_list):
+                        counter_j = 0
+                        for j, exp_prep in enumerate([x]):
+                            if exp_prep in skip_trials:
+                                pass
+                            else:
+                                # print(i, j, exp_prep)
+                                prep = exp_prep[:-6]
+                                post4aptrial = exp_prep[-5:]
+                                try:
+                                    expobj, _ = OnePhotonStim.import_1pexobj(prep=prep, trial=post4aptrial,
+                                                                             verbose=False)
+                                except:
+                                    raise ImportError(f"IMPORT ERROR IN {prep} {post4aptrial}")
+
+                                working_on(expobj)
+                                res_ = func(expobj=expobj, **kwargs)
+                                end_working_on(expobj)
+                                res.append(res_) if res_ is not None else None
+                            counter_j += 1
+                        counter_i += 1
+                    if res:
+                        return res
+                t_end = time.time()
+                pj.timer(t_start, t_end)
+                print(f" {'--' * 5} COMPLETED FOR LOOP ACROSS EXPS {'--' * 5}\n")
+
+            return inner
+
+        return main_for_loop
+
     def __init__(self, data_path_base, date, animal_prep, trial, metainfo, analysis_save_path_base: str = None):
         paqs_loc = '%s%s_%s_%s.paq' % (
             data_path_base, date, animal_prep, trial[2:])  # path to the .paq files for the selected trials
@@ -29,14 +160,6 @@ class OnePhotonStim(TwoPhotonImaging):
             analysis_save_path = tiffs_loc[:21] + 'Analysis/' + tiffs_loc_dir[26:]
         else:
             analysis_save_path = analysis_save_path_base + tiffs_loc_dir[-16:]
-
-        # if os.path.exists(self.analysis_save_path):
-        #     pass
-        # elif os.path.exists(self.analysis_save_path[:-17]):
-        #     os.mkdir(self.analysis_save_path)
-        # elif os.path.exists(self.analysis_save_path[:-27]):
-        #     os.mkdir(self.analysis_save_path[:-17])
-        #     os.mkdir(self.analysis_save_path)
 
         print('----------------------------------------')
         print('-----Processing trial # %s-----' % trial)
@@ -60,15 +183,57 @@ class OnePhotonStim(TwoPhotonImaging):
         print('\n-----DONE OnePhotonStim init of trial # %s-----' % trial)
 
     def __repr__(self):
-        lastmod = time.ctime(os.path.getmtime(self.pkl_path))
-        if not hasattr(self, 'metainfo'):
-            information = f"uninitialized"
-        else:
+        if os.path.exists(self.pkl_path) and hasattr(self, 'metainfo'):
+            lastmod = time.ctime(os.path.getmtime(self.pkl_path))
             prep = self.metainfo['animal prep.']
             trial = self.metainfo['trial']
-            information = f"{prep} {trial}"
-
+            information = f"{prep} {trial}, {self.exptype}"
+        else:
+            information = f"uninitialized"
         return repr(f"({information}) TwoPhotonImaging.OnePhotonStim experimental data object, last saved: {lastmod}")
+
+    @staticmethod
+    def import_1pexobj(prep=None, trial=None, date=None, pkl_path=None, verbose=False, load_backup_path=None):
+        # if need to load from backup path!
+        if load_backup_path:
+            pkl_path = load_backup_path
+            print(f"**** loading from backup path! ****")
+
+        if pkl_path is None:
+            if date is None:
+                try:
+                    date = onePresults.mean_stim_responses.loc[(onePresults.mean_stim_responses.Prep == f"{prep}") & (
+                                onePresults.mean_stim_responses.Trial == f'{trial}'), 'pkl_list'].values[0][30:40]
+                except ValueError:
+                    raise ValueError('not able to find date in allopticalResults.metainfo')
+            pkl_path = "/home/pshah/mnt/qnap/Analysis/%s/%s/%s_%s/%s_%s.pkl" % (date, prep, date, trial, date, trial)
+
+        if not os.path.exists(pkl_path):
+            raise Exception('pkl path NOT found: ' + pkl_path)
+        with open(pkl_path, 'rb') as f:
+            print(f'\- Loading {pkl_path}', end='\r')
+            try:
+                expobj = pickle.load(f)
+                if pkl_path != expobj.pkl_path:
+                    expobj.save_pkl(pkl_path=expobj.pkl_path)
+            except pickle.UnpicklingError:
+                raise pickle.UnpicklingError(f"\n** FAILED IMPORT OF * {prep} {trial} * from {pkl_path}\n")
+            experiment = f"{expobj.t_series_name} {expobj.metainfo['exptype']} {expobj.metainfo['comments']}"
+            print(f'|- Loaded {experiment}') if verbose else None
+
+            return expobj, experiment
+
+    @property
+    def pre_stim(self):
+        return 1  # seconds
+
+    @property
+    def post_stim(self):
+        return 4  # seconds
+
+    @property
+    def response_len(self):
+        return 0.5  # post-stim response period in sec
 
     def paqProcessing(self, **kwargs):
 
@@ -80,13 +245,6 @@ class OnePhotonStim(TwoPhotonImaging):
         self.paq_rate = paq['rate']
 
         frame_rate = self.fps / self.n_planes
-
-        # if 'shutter_loopback' in paq['chan_names']:
-        #     ans = input('shutter_loopback in this paq found, should we continue')
-        #     if ans is True or 'Yes':
-        #         pass
-        #     else:
-        #         raise Exception('need to write code for using the shutter loopback')
 
         # find frame_clock times
         clock_idx = paq['chan_names'].index('frame_clock')
@@ -105,13 +263,6 @@ class OnePhotonStim(TwoPhotonImaging):
                 self.frame_end_times.append(self.frame_clock[idx])
                 self.frame_start_times.append(self.frame_clock[idx + 1])
         self.frame_end_times.append(self.frame_clock[-1])
-
-        # for frame in self.frame_clock[1:]:
-        #     if (frame - self.frame_start_times[i - 1]) > 2e3:
-        #         i += 1
-        #         self.frame_start_times.append(frame)
-        #         self.frame_end_times.append(self.frame_clock[np.where(self.frame_clock == frame)[0] - 1][0])
-        # self.frame_end_times.append(self.frame_clock[-1])
 
         # handling cases where 2p imaging clock has been started/stopped >1 in the paq trial
         if len(self.frame_start_times) > 1:
@@ -181,12 +332,6 @@ class OnePhotonStim(TwoPhotonImaging):
         print("\nStim duration of 1photon stim: %s frames (%s ms)" % (
         self.stim_duration_frames, round(self.stim_duration_frames / self.fps * 1000)))
 
-        # i = len(self.stim_start_frames)
-        # for stim in self.stim_frames[1:]:
-        #     if (stim - self.stim_start_frames[i-1]) > 100:
-        #         i += 1
-        #         self.stim_start_frames.append(stim)
-
         # find shutter loopback frames
         if 'shutter_loopback' in paq['chan_names']:
             shutter_idx = paq['chan_names'].index('shutter_loopback')
@@ -214,9 +359,6 @@ class OnePhotonStim(TwoPhotonImaging):
                 self.shutter_start_frames.append(shutter_start_frames)
                 self.shutter_end_frames.append(shutter_end_frames)
 
-        # # sanity check
-        # assert max(self.stim_start_frames[0]) < self.raw[plane].shape[1] * self.n_planes
-
         # find voltage channel and save as lfp_signal attribute
         voltage_idx = paq['chan_names'].index('voltage')
         self.lfp_signal = paq['data'][voltage_idx]
@@ -228,7 +370,6 @@ class OnePhotonStim(TwoPhotonImaging):
         # retrieve seizure onset and offset times from the seizures info array input
         paq = paq_read(file_path=self.paq_path, plot=False)
 
-        # print(paq[0]['data'][0])  # print the frame clock signal from the .paq file to make sure its being read properly
         # NOTE: the output of all of the following function is in dimensions of the FRAME CLOCK (not official paq clock time)
         if seizures_lfp_timing_matarray is not None:
             print('-- using matlab array to collect seizures %s: ' % seizures_lfp_timing_matarray)
@@ -273,3 +414,104 @@ class OnePhotonStim(TwoPhotonImaging):
 
         aoplot.plot_lfp_stims(self, x_axis='time')
         self.save()
+
+
+results_object_path = '/home/pshah/mnt/qnap/Analysis/onePstim_results_superobject.pkl'
+
+onePresults = import_resultsobj(pkl_path=results_object_path)
+
+
+# %% ANALYSIS FUNCTIONS
+class OnePhotonStimAnalysisFuncs:
+    @staticmethod
+    @OnePhotonStim.runOverExperiments(run_pre4ap_trials=True, run_post4ap_trials=True)
+    def _collectPhotostimResponses(self=None, pre_stim=1, post_stim=4, response_len=0.5, response_type: str = 'pre-stim dFF', stims_to_analyze='all',
+                                   **kwargs):
+        """calculates and returns photostim reponse magnitudes and time decay constants."""
+
+        self = self if not 'expobj' in [*kwargs] else kwargs['expobj']
+        pre_stim = pre_stim if not 'expobj' in [*kwargs] else self.pre_stim
+        post_stim = post_stim if not 'expobj' in [*kwargs] else self.post_stim
+        response_len = response_len if not 'expobj' in [*kwargs] else self.response_len
+
+
+        if not response_type in OnePhotonStim.compatible_responses_process:
+            raise ValueError(f"{response_type} is not a compatible response_type")
+
+        if stims_to_analyze == 'all':
+            stims_to_analyze = self.stim_start_frames
+        flu_list = [self.meanRawFluTrace[stim - int(pre_stim * self.fps): stim + int(post_stim * self.fps)] for
+                    stim in stims_to_analyze]
+
+        # convert to dFF normalized to pre-stim F
+        if response_type == 'pre-stim dFF':  # otherwise default param is raw Flu
+            flu_list = [pj.dff(trace, baseline=np.mean(trace[:int(pre_stim * self.fps) - 2])) for trace in flu_list]
+        else:
+            raise ValueError(f"{response_type} is not a compatible response_type")
+
+        self.photostim_flu_snippets = np.asarray(flu_list)
+        avg_flu_trace = np.mean(self.photostim_flu_snippets, axis=0)
+
+
+
+        # measure magnitude of response
+        if response_type == 'pre-stim dFF':  # otherwise default param is raw Flu
+            poststim_1 = int(pre_stim * self.fps) + self.stim_duration_frames + 2  # starting just after the end of the shutter opening
+            poststim_2 = poststim_1 + int(response_len * self.fps)
+            baseline = int(pre_stim * self.fps) - 2
+
+            response_list = []
+            for flu_snippet in self.photostim_flu_snippets:
+                response = np.mean(flu_snippet[poststim_1:poststim_2]) - np.mean(avg_flu_trace[:baseline])
+                response_list.append(response)
+            self.photostim_flu_responses = response_list
+
+        if response_type == 'pre-stim dFF':  # otherwise default param is raw Flu
+            if len(self.photostim_flu_responses) > 0:
+                poststim_1 = int(pre_stim * self.fps) + self.stim_duration_frames + 2  # starting just after the end of the shutter opening
+
+                # measure the timescale of the decay
+                decay_constant_list = []
+                for i, flu_snippet in enumerate(self.photostim_flu_snippets):
+                    max_value = max(flu_snippet[poststim_1:])  # peak Flu value after stim
+                    threshold = np.exp(-1) * max_value  # set threshod to be at 1/e x peak
+                    x_ = np.where(flu_snippet[poststim_1:] < threshold)[0][0]  # find frame # where, after the stim period, avg_flu_trace reaches the threshold
+                    #         print(x_)
+                    decay_constant = x_ / self.fps  # convert frame # to time
+                    decay_constant_list.append(decay_constant)
+
+                self.decay_constants = decay_constant_list
+            else:
+                self.decay_constants = [None]
+
+        self.save()
+
+    @staticmethod
+    @OnePhotonStim.runOverExperiments(run_pre4ap_trials=True, run_post4ap_trials=True)
+    def _collectPreStimFluAvgs(self, stims_to_analyze='all', **kwargs):
+        pre_stim = 1  # seconds
+        self = self if 'expobj' in [*kwargs] else kwargs['expobj']
+
+        if stims_to_analyze == 'all':
+            stims_to_analyze = self.stim_start_frames
+        pre_stim_flu_list = [self.meanRawFluTrace[stim - int(pre_stim * self.fps): stim] for stim in stims_to_analyze]
+
+        self.pre_stim_flu_list = np.mean(np.asarray(pre_stim_flu_list), axis=1)
+
+        self.save()
+
+
+class OnePhotonStimPlots:
+    @OnePhotonStim.runOverExperiments(run_pre4ap_trials=True, run_post4ap_trials=True)
+    def plotPrestimF_photostimFlu(**kwargs):
+        expobj = kwargs['expobj']
+        pj.make_general_scatter([expobj.pre_stim_flu_list], [expobj.photostim_flu_responses], s=50, colors=['red'],
+                                alpha=0.8, x_label='photostim_flu_responses', y_label='pre_stim_flu_list',
+                                ax_titles=['Photostim. responses vs. Pre-stim Flu'])
+
+
+OnePhotonStimAnalysisFuncs._collectPhotostimResponses()
+
+
+
+

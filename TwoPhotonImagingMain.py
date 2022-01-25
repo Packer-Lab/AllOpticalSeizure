@@ -16,7 +16,7 @@ from funcsforprajay import funcs as pj
 from utils.paq_utils import paq_read
 import alloptical_plotting_utils as aoplot
 import pickle
-from _alloptical_utils import Utils
+import _alloptical_utils as Utils
 
 
 
@@ -109,12 +109,12 @@ class TwoPhotonImaging:
     @property
     def pkl_path(self):
         """specify path in Analysis folder to save pkl object"""
-        self.__pkl_path = f"{self.analysis_save_path}{self.metainfo['date']}_{self.metainfo['trial']}.pkl"
-        return self.__pkl_path
+        self._pkl_path = f"{self.analysis_save_path}{self.metainfo['date']}_{self.metainfo['trial']}.pkl"
+        return self._pkl_path
 
     @pkl_path.setter
     def pkl_path(self, path: str):
-        self.__pkl_path = path
+        self._pkl_path = path
 
     @property
     def backup_pkl(self):

@@ -13,6 +13,7 @@ import itertools
 
 import os
 import sys
+from typing import Union
 
 sys.path.append('/home/pshah/Documents/code/')
 from Vape.utils.utils_funcs import s2p_loader
@@ -371,12 +372,12 @@ class TwoPhotonImaging:
     @property
     def pkl_path(self):
         """specify path in Analysis folder to save pkl object"""
-        self.__pkl_path = f"{self.analysis_save_path}{self.metainfo['date']}_{self.metainfo['trial']}.pkl"
-        return self.__pkl_path
+        self._pkl_path = f"{self.analysis_save_path}{self.metainfo['date']}_{self.metainfo['trial']}.pkl"
+        return self._pkl_path
 
     @pkl_path.setter
     def pkl_path(self, path: str):
-        self.__pkl_path = path
+        self._pkl_path = path
 
     @property
     def backup_pkl(self):
@@ -1021,11 +1022,13 @@ class TwoPhotonImaging:
 
     def save_pkl(self, pkl_path: str = None):
         if pkl_path is None:
-            if not hasattr(self, 'save_path'):
+            if not hasattr(self, 'pkl_path'):
                 raise ValueError(
                     'pkl path for saving was not found in object attributes, please provide path to save to')
         else:
             self.pkl_path = pkl_path
+
+        os.makedirs(self.analysis_save_path, exist_ok=True) if not os.path.exists(self.analysis_save_path) else None
 
         with open(self.pkl_path, 'wb') as f:
             pickle.dump(self, f)
@@ -2211,7 +2214,6 @@ class alloptical(TwoPhotonImaging):
                 plt.suptitle('avg image from %s frames around stim_start_frame %s' % (peri_frames, stim))
                 plt.show()  # just plot for now to make sure that you are doing things correctly so far
 
-
     def run_stamm_nogui(self, numDiffStims, startOnStim, everyXStims, preSeconds=0.75, postSeconds=1.25):
         """run STAmoviemaker for the expobj's trial"""
         qnap_path = os.path.expanduser('/home/pshah/mnt/qnap')
@@ -2338,7 +2340,7 @@ class alloptical(TwoPhotonImaging):
         return x
 
     # calculate reliability of photostim responsiveness of all of the targeted cells
-    def get_SLMTarget_responses_dff(self, process: str, threshold=10, stims_to_use: list = None):
+    def get_SLMTarget_responses_dff(self, process: str, threshold=10, stims_to_use: Union[list, str] = 'all'):
         """
         calculations of dFF responses to photostimulation of SLM Targets. Includes calculating reliability of slm targets,
         saving success stim locations, and saving stim response magnitudes as pandas dataframe.
@@ -2348,10 +2350,10 @@ class alloptical(TwoPhotonImaging):
         :return:
         """
         print(f'\n---------- Calculating {process} stim evoked responses (of SLM targets) [.1] ---------- ')
-        if stims_to_use is None:
+        if stims_to_use == 'all':
             stims_to_use = range(len(self.stim_start_frames))
             stims_idx = [self.stim_start_frames.index(stim) for stim in stims_to_use]
-        elif stims_to_use:
+        elif type(stims_to_use) == list:
             stims_idx = [self.stim_start_frames.index(stim) for stim in stims_to_use]
         else:
             AttributeError('no stims set to analyse [1.1]')
@@ -4063,6 +4065,8 @@ class Post4ap(alloptical):
         self.save() if save else None
 
 class OnePhotonStim(TwoPhotonImaging):
+    compatible_responses_process = ['pre-stim dFF', 'post - pre']
+
     def __init__(self, data_path_base, date, animal_prep, trial, metainfo, analysis_save_path_base: str = None):
         paqs_loc = '%s%s_%s_%s.paq' % (
             data_path_base, date, animal_prep, trial[2:])  # path to the .paq files for the selected trials
@@ -4118,6 +4122,18 @@ class OnePhotonStim(TwoPhotonImaging):
             information = f"{prep} {trial}"
 
         return repr(f"({information}) TwoPhotonImaging.OnePhotonStim experimental data object, last saved: {lastmod}")
+
+    @property
+    def pre_stim(self):
+        return 1  # seconds
+
+    @property
+    def post_stim(self):
+        return 4  # seconds
+
+    @property
+    def response_len(self):
+        return 0.5  # post-stim response period in sec
 
     def paqProcessing(self, **kwargs):
 

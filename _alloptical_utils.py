@@ -131,6 +131,37 @@ def import_resultsobj(pkl_path: str):
         print(f"|-DONE IMPORT of {(type(resultsobj))} resultsobj \n\n")
     return resultsobj
 
+# caching func
+def set_to_cache(func_name=None, item=None, reset_cache=False):
+    cache_folder = '/home/pshah/mnt/Analysis/temp/cache/'
+    cache_path = f"{cache_folder}func_run_cache.p"
+
+    if reset_cache:
+        func_dict = {}
+        print(f"resetting cache pkl located at: {cache_path}")
+    else:
+        if not os.path.exists(f"{cache_path}"):
+            func_dict = {}
+        else:
+            func_dict = pickle.load(open(f"{cache_path}", 'rb'))
+            if func_name not in [*func_dict]:
+                func_dict[func_name] = []
+            func_dict[func_name].append(item)
+
+    pickle.dump(func_dict, open(f"{cache_path}", "wb"))
+
+def get_from_cache(func_name, item):
+    cache_folder = '/home/pshah/mnt/Analysis/temp/cache/'
+    cache_path = f"{cache_folder}func_run_cache.p"
+    if os.path.exists(cache_path):
+        func_dict = pickle.load(open(f"{cache_path}", 'rb'))
+        return True if item in func_dict[func_name] else False
+    else:
+        return False
+
+
+
+
 # random plot just to initialize plotting for PyCharm
 def random_plot():
     pj.make_general_scatter(x_list=[np.random.rand(5)], y_data=[np.random.rand(5)], s=60, alpha=1, figsize=(3,3))
@@ -280,7 +311,7 @@ def threshold_detect(signal, threshold):
 # import results superobject that will collect analyses from various individual experiments
 results_object_path = '/home/pshah/mnt/qnap/Analysis/alloptical_results_superobject.pkl'
 try:
-    allopticalResults = Utils.import_resultsobj(
+    allopticalResults = import_resultsobj(
         pkl_path=results_object_path)  # this needs to be run AFTER defining the AllOpticalResults class
 except FileNotFoundError:
     print(f'not able to get allopticalResults object from {results_object_path}')
