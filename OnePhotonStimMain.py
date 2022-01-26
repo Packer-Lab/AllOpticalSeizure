@@ -3,13 +3,15 @@ import os
 import pickle
 import sys
 
+
 from alloptical_utils_pj import import_expobj, working_on, end_working_on, import_resultsobj
 import _alloptical_utils as Utils
 
 sys.path.append('/home/pshah/Documents/code/')
-import matplotlib.pyplot as plt
 import time
+import matplotlib.pyplot as plt
 import numpy as np
+import pandas as pd
 from funcsforprajay import funcs as pj
 
 from utils.paq_utils import paq_read, frames_discard
@@ -17,6 +19,7 @@ import alloptical_plotting_utils as aoplot
 
 from TwoPhotonImagingMain import TwoPhotonImaging
 
+# %% main code
 class OnePhotonStim(TwoPhotonImaging):
 
     compatible_responses_process = ['pre-stim dFF', 'post - pre']
@@ -50,8 +53,8 @@ class OnePhotonStim(TwoPhotonImaging):
 
     # wrapper for use in AnalysisFuncs
     @staticmethod
-    def runOverExperiments(run_pre4ap_trials=False, run_post4ap_trials=False, skip_trials=[], run_trials=[],
-                           ignore_cache=False):
+    def runOverExperiments(run_pre4ap_trials=True, run_post4ap_trials=True, skip_trials=[], run_trials=[],
+                           ignore_cache=False, supress_print=False):
         """decorator to use for for-looping through experiment trials across run_pre4ap_trials and run_post4ap_trials.
         the trials to for loop through are defined in allopticalResults.pre_4ap_trials and allopticalResults.post_4ap_trials"""
         # if len(run_trials) > 0 or run_pre4ap_trials is True or run_post4ap_trials is True:
@@ -60,34 +63,36 @@ class OnePhotonStim(TwoPhotonImaging):
         def main_for_loop(func):
             @functools.wraps(func)
             def inner(*args, **kwargs):
-                print(f"\n {'..' * 5} INITIATING FOR LOOP ACROSS EXPS {'..' * 5}\n")
+                if not supress_print: print(f"\n {'..' * 5} INITIATING FOR LOOP ACROSS EXPS {'..' * 5}\n")
                 if run_trials:
-                    print(f"\n{'-' * 5} RUNNING SPECIFIED TRIALS from `trials_run` {'-' * 5}")
+                    if not supress_print: print(f"\n{'-' * 5} RUNNING SPECIFIED TRIALS from `trials_run` {'-' * 5}")
                     counter1 = 0
+                    res = []
                     for i, exp_prep in enumerate(run_trials):
                         # print(i, exp_prep)
                         try:  # dont continue if exp_prep already run before (as determined by location in func_cache
-                            if Utils.get_from_cache(func.__name__, item=exp_prep):
+                            if Utils.get_from_cache(func.__name__, item=exp_prep) and ignore_cache is False:
                                 run = False
-                                print(f"{exp_prep} found in cache for func {func.__name__} ... skipping repeat run.")
+                                if not supress_print: print(f"{exp_prep} found in cache for func {func.__name__} ... skipping repeat run.")
                             else:
                                 run = True
                         except KeyError:
                             run = True
-                        if run is True or ignore_cache is True:
+                        if run is True:
                             prep = exp_prep[:-6]
                             trial = exp_prep[-5:]
                             expobj, _ = OnePhotonStim.import_1pexobj(prep=prep, trial=trial, verbose=False)
 
-                            working_on(expobj)
-                            func(expobj=expobj, **kwargs)
-                            end_working_on(expobj)
-                            Utils.set_to_cache(func_name=func.__name__, item=exp_prep)
+                            if not supress_print: Utils.working_on(expobj)
+                            res_ = func(expobj=expobj, **kwargs)
+                            if not supress_print: Utils.end_working_on(expobj)
+                            if res_ is not None and type(res_) is not bool: res.append(res_)
+                            Utils.set_to_cache(func_name=func.__name__, item=exp_prep) if res_ is True else None
 
                     counter1 += 1
 
                 if run_pre4ap_trials:
-                    print(f"\n{'-' * 5} RUNNING PRE4AP TRIALS {'-' * 5}")
+                    if not supress_print: print(f"\n{'-' * 5} RUNNING PRE4AP TRIALS {'-' * 5}")
                     counter_i = 0
                     res = []
                     for i, x in enumerate(OnePhotonStim.oneP_pre4ap_exp_list):
@@ -96,22 +101,33 @@ class OnePhotonStim(TwoPhotonImaging):
                             if exp_prep in skip_trials:
                                 pass
                             else:
-                                # print(i, j, exp_prep)
-                                prep = exp_prep[:-6]
-                                pre4aptrial = exp_prep[-5:]
-                                expobj, _ = OnePhotonStim.import_1pexobj(prep=prep, trial=pre4aptrial, verbose=False)
+                                # print(i, exp_prep)
+                                try:  # dont continue if exp_prep already run before (as determined by location in func_cache
+                                    if Utils.get_from_cache(func.__name__, item=exp_prep) and ignore_cache is False:
+                                        run = False
+                                        if not supress_print: print(
+                                            f"{exp_prep} found in cache for func {func.__name__} ... skipping repeat run.")
+                                    else:
+                                        run = True
+                                except KeyError:
+                                    run = True
+                                if run is True:
+                                    prep = exp_prep[:-6]
+                                    trial = exp_prep[-5:]
+                                    expobj, _ = OnePhotonStim.import_1pexobj(prep=prep, trial=trial, verbose=False)
 
-                                working_on(expobj)
-                                res_ = func(expobj=expobj, **kwargs)
-                                end_working_on(expobj)
-                                res.append(res_) if res_ is not None else None
+                                    if not supress_print: Utils.working_on(expobj)
+                                    res_ = func(expobj=expobj, **kwargs)
+                                    if not supress_print: Utils.end_working_on(expobj)
+                                    if res_ is not None and type(res_) is not bool: res.append(res_)
+                                    Utils.set_to_cache(func_name=func.__name__, item=exp_prep) if res_ is True else None
                             counter_j += 1
                         counter_i += 1
                     if res:
                         return res
 
                 if run_post4ap_trials:
-                    print(f"\n{'-' * 5} RUNNING POST4AP TRIALS {'-' * 5}")
+                    if not supress_print: print(f"\n{'-' * 5} RUNNING POST4AP TRIALS {'-' * 5}")
                     counter_i = 0
                     res = []
                     for i, x in enumerate(OnePhotonStim.oneP_post4ap_exp_list):
@@ -120,26 +136,33 @@ class OnePhotonStim(TwoPhotonImaging):
                             if exp_prep in skip_trials:
                                 pass
                             else:
-                                # print(i, j, exp_prep)
-                                prep = exp_prep[:-6]
-                                post4aptrial = exp_prep[-5:]
-                                try:
-                                    expobj, _ = OnePhotonStim.import_1pexobj(prep=prep, trial=post4aptrial,
-                                                                             verbose=False)
-                                except:
-                                    raise ImportError(f"IMPORT ERROR IN {prep} {post4aptrial}")
+                                # print(i, exp_prep)
+                                try:  # dont continue if exp_prep already run before (as determined by location in func_cache
+                                    if Utils.get_from_cache(func.__name__, item=exp_prep) and ignore_cache is False:
+                                        run = False
+                                        if not supress_print: print(
+                                            f"{exp_prep} found in cache for func {func.__name__} ... skipping repeat run.")
+                                    else:
+                                        run = True
+                                except KeyError:
+                                    run = True
+                                if run is True:
+                                    prep = exp_prep[:-6]
+                                    trial = exp_prep[-5:]
+                                    expobj, _ = OnePhotonStim.import_1pexobj(prep=prep, trial=trial, verbose=False)
 
-                                working_on(expobj)
-                                res_ = func(expobj=expobj, **kwargs)
-                                end_working_on(expobj)
-                                res.append(res_) if res_ is not None else None
+                                    if not supress_print: Utils.working_on(expobj)
+                                    res_ = func(expobj=expobj, **kwargs)
+                                    if not supress_print: Utils.end_working_on(expobj)
+                                    if res_ is not None and type(res_) is not bool: res.append(res_)
+                                    Utils.set_to_cache(func_name=func.__name__, item=exp_prep) if res_ is True else None
                             counter_j += 1
                         counter_i += 1
                     if res:
                         return res
                 t_end = time.time()
                 pj.timer(t_start, t_end)
-                print(f" {'--' * 5} COMPLETED FOR LOOP ACROSS EXPS {'--' * 5}\n")
+                if not supress_print: print(f" {'--' * 5} COMPLETED FOR LOOP ACROSS EXPS {'--' * 5}\n")
 
             return inner
 
@@ -206,7 +229,7 @@ class OnePhotonStim(TwoPhotonImaging):
                                 onePresults.mean_stim_responses.Trial == f'{trial}'), 'pkl_list'].values[0][30:40]
                 except ValueError:
                     raise ValueError('not able to find date in allopticalResults.metainfo')
-            pkl_path = "/home/pshah/mnt/qnap/Analysis/%s/%s/%s_%s/%s_%s.pkl" % (date, prep, date, trial, date, trial)
+            pkl_path = f"/home/pshah/mnt/qnap/Analysis/{date}/{prep}/{date}_{trial}/{date}_{trial}.pkl"
 
         if not os.path.exists(pkl_path):
             raise Exception('pkl path NOT found: ' + pkl_path)
@@ -214,11 +237,13 @@ class OnePhotonStim(TwoPhotonImaging):
             print(f'\- Loading {pkl_path}', end='\r')
             try:
                 expobj = pickle.load(f)
-                if pkl_path != expobj.pkl_path:
+                if expobj.analysis_save_path != f"/home/pshah/mnt/qnap/Analysis/{date}/{prep}/{date}_{trial}/":
+                    expobj.analysis_save_path = f"/home/pshah/mnt/qnap/Analysis/{date}/{prep}/{date}_{trial}/"
                     expobj.save_pkl(pkl_path=expobj.pkl_path)
             except pickle.UnpicklingError:
                 raise pickle.UnpicklingError(f"\n** FAILED IMPORT OF * {prep} {trial} * from {pkl_path}\n")
             experiment = f"{expobj.t_series_name} {expobj.metainfo['exptype']} {expobj.metainfo['comments']}"
+            print(f'|- Loaded {expobj.t_series_name} {expobj.metainfo["exptype"]}')
             print(f'|- Loaded {experiment}') if verbose else None
 
             return expobj, experiment
@@ -421,97 +446,133 @@ results_object_path = '/home/pshah/mnt/qnap/Analysis/onePstim_results_superobjec
 onePresults = import_resultsobj(pkl_path=results_object_path)
 
 
-# %% ANALYSIS FUNCTIONS
-class OnePhotonStimAnalysisFuncs:
-    @staticmethod
-    @OnePhotonStim.runOverExperiments(run_pre4ap_trials=True, run_post4ap_trials=True)
-    def _collectPhotostimResponses(self=None, pre_stim=1, post_stim=4, response_len=0.5, response_type: str = 'pre-stim dFF', stims_to_analyze='all',
-                                   **kwargs):
-        """calculates and returns photostim reponse magnitudes and time decay constants."""
-
-        self = self if not 'expobj' in [*kwargs] else kwargs['expobj']
-        pre_stim = pre_stim if not 'expobj' in [*kwargs] else self.pre_stim
-        post_stim = post_stim if not 'expobj' in [*kwargs] else self.post_stim
-        response_len = response_len if not 'expobj' in [*kwargs] else self.response_len
 
 
-        if not response_type in OnePhotonStim.compatible_responses_process:
-            raise ValueError(f"{response_type} is not a compatible response_type")
-
-        if stims_to_analyze == 'all':
-            stims_to_analyze = self.stim_start_frames
-        flu_list = [self.meanRawFluTrace[stim - int(pre_stim * self.fps): stim + int(post_stim * self.fps)] for
-                    stim in stims_to_analyze]
-
-        # convert to dFF normalized to pre-stim F
-        if response_type == 'pre-stim dFF':  # otherwise default param is raw Flu
-            flu_list = [pj.dff(trace, baseline=np.mean(trace[:int(pre_stim * self.fps) - 2])) for trace in flu_list]
-        else:
-            raise ValueError(f"{response_type} is not a compatible response_type")
-
-        self.photostim_flu_snippets = np.asarray(flu_list)
-        avg_flu_trace = np.mean(self.photostim_flu_snippets, axis=0)
-
-
-
-        # measure magnitude of response
-        if response_type == 'pre-stim dFF':  # otherwise default param is raw Flu
-            poststim_1 = int(pre_stim * self.fps) + self.stim_duration_frames + 2  # starting just after the end of the shutter opening
-            poststim_2 = poststim_1 + int(response_len * self.fps)
-            baseline = int(pre_stim * self.fps) - 2
-
-            response_list = []
-            for flu_snippet in self.photostim_flu_snippets:
-                response = np.mean(flu_snippet[poststim_1:poststim_2]) - np.mean(avg_flu_trace[:baseline])
-                response_list.append(response)
-            self.photostim_flu_responses = response_list
-
-        if response_type == 'pre-stim dFF':  # otherwise default param is raw Flu
-            if len(self.photostim_flu_responses) > 0:
-                poststim_1 = int(pre_stim * self.fps) + self.stim_duration_frames + 2  # starting just after the end of the shutter opening
-
-                # measure the timescale of the decay
-                decay_constant_list = []
-                for i, flu_snippet in enumerate(self.photostim_flu_snippets):
-                    max_value = max(flu_snippet[poststim_1:])  # peak Flu value after stim
-                    threshold = np.exp(-1) * max_value  # set threshod to be at 1/e x peak
-                    x_ = np.where(flu_snippet[poststim_1:] < threshold)[0][0]  # find frame # where, after the stim period, avg_flu_trace reaches the threshold
-                    #         print(x_)
-                    decay_constant = x_ / self.fps  # convert frame # to time
-                    decay_constant_list.append(decay_constant)
-
-                self.decay_constants = decay_constant_list
-            else:
-                self.decay_constants = [None]
-
-        self.save()
-
-    @staticmethod
-    @OnePhotonStim.runOverExperiments(run_pre4ap_trials=True, run_post4ap_trials=True)
-    def _collectPreStimFluAvgs(self, stims_to_analyze='all', **kwargs):
-        pre_stim = 1  # seconds
-        self = self if 'expobj' in [*kwargs] else kwargs['expobj']
-
-        if stims_to_analyze == 'all':
-            stims_to_analyze = self.stim_start_frames
-        pre_stim_flu_list = [self.meanRawFluTrace[stim - int(pre_stim * self.fps): stim] for stim in stims_to_analyze]
-
-        self.pre_stim_flu_list = np.mean(np.asarray(pre_stim_flu_list), axis=1)
-
-        self.save()
-
-
+# %%
 class OnePhotonStimPlots:
-    @OnePhotonStim.runOverExperiments(run_pre4ap_trials=True, run_post4ap_trials=True)
-    def plotPrestimF_photostimFlu(**kwargs):
+    @staticmethod
+    def plotPrestimF_photostimFlu(run_pre4ap_trials=True, run_post4ap_trials=True, ignore_cache=False, run_trials=[], skip_trials=[],
+                                  fig=None, ax=None, x_lim=[0,2000]):
+        @OnePhotonStim.runOverExperiments(run_pre4ap_trials=run_pre4ap_trials, run_post4ap_trials=run_post4ap_trials, ignore_cache=ignore_cache,
+                                          run_trials=run_trials, skip_trials=skip_trials, supress_print=True)
+        def _plotPrestimF_photostimFlu(fig=fig, ax=ax, **kwargs):
+            expobj = kwargs['expobj']
+            fig = fig if fig else None
+            show = False if fig else True
+            ax = ax if ax else None
+
+            if 'pre' in expobj.exptype:
+                pj.make_general_scatter([expobj.pre_stim_flu_list], [expobj.photostim_flu_responses], s=50, supress_print=True,
+                                        alpha=0.5, x_label='pre_stim_flu', y_label='photostim_responses', fig=fig, ax=ax, show=show,
+                                        ax_titles=['Pre-stim Flu vs. photostim responses'], x_lim=x_lim, colors=['grey'])
+                return True
+
+            elif 'post' in expobj.exptype:
+                pj.make_general_scatter([expobj.pre_stim_flu_list_ic], [expobj.photostim_flu_responses_ic], s=50, supress_print=True,
+                                        alpha=0.5, x_label='pre_stim_flu', y_label='photostim_responses', fig=fig, ax=ax, show=show,
+                                        ax_titles=['Pre-stim Flu vs. photostim responses (ictal)'], x_lim=x_lim, colors=['purple'])
+
+                pj.make_general_scatter([expobj.pre_stim_flu_list_interic], [expobj.photostim_flu_responses_interic], s=50, supress_print=True,
+                                        alpha=0.5, x_label='pre_stim_flu', y_label='photostim_responses', fig=fig, ax=ax, show=show,
+                                        ax_titles=['Pre-stim Flu vs. photostim responses (inter-ictal)'], x_lim=x_lim, colors=['green'])
+                return True
+            else:
+                return False
+
+        return _plotPrestimF_photostimFlu()
+
+
+    @staticmethod
+    def plotPrestimF_decayconstant(run_pre4ap_trials=True, run_post4ap_trials=True, ignore_cache=False, run_trials=[], skip_trials=[],
+                                  fig=None, ax=None, x_lim=[0,2000]):
+        @OnePhotonStim.runOverExperiments(run_pre4ap_trials=run_pre4ap_trials, run_post4ap_trials=run_post4ap_trials, ignore_cache=ignore_cache,
+                                          run_trials=run_trials, skip_trials=skip_trials, supress_print=True)
+        def _plotPrestimF_decayconstant(fig=fig, ax=ax, **kwargs):
+            expobj = kwargs['expobj']
+            fig = fig if fig else None
+            show = False if fig else True
+            ax = ax if ax else None
+
+            if 'pre' in expobj.exptype:
+                pj.make_general_scatter([expobj.pre_stim_flu_list], [expobj.decay_constants], s=50, supress_print=True,
+                                        alpha=0.5, x_label='pre_stim_flu', y_label='decay constants', fig=fig, ax=ax, show=show,
+                                        ax_titles=['Pre-stim Flu vs. decay constants'], x_lim=x_lim, colors=['grey'])
+                return True
+
+            elif 'post' in expobj.exptype:
+                pj.make_general_scatter([expobj.pre_stim_flu_list_ic], [expobj.decay_constants_ic], s=50, supress_print=True,
+                                        alpha=0.5, x_label='pre_stim_flu', y_label='decay constants', fig=fig, ax=ax, show=show,
+                                        x_lim=x_lim, colors=['purple'])
+
+                pj.make_general_scatter([expobj.pre_stim_flu_list_interic], [expobj.decay_constants_interic], s=50, supress_print=True,
+                                        alpha=0.5, x_label='pre_stim_flu', y_label='decay constants', fig=fig, ax=ax, show=show,
+                                        ax_titles=['Pre-stim Flu vs. decay constants (inter-ictal green, ictal purple)'], x_lim=x_lim, colors=['green'])
+                return True
+            else:
+                return False
+
+
+        return _plotPrestimF_decayconstant()
+
+    @staticmethod
+    def plotTimeToOnset_photostimResponse(run_pre4ap_trials=True, run_post4ap_trials=True, ignore_cache=False, run_trials=[],
+                                   skip_trials=[], fig=None, ax=None, x_lim=[0, 2000]):
+        @OnePhotonStim.runOverExperiments(run_pre4ap_trials=run_pre4ap_trials, run_post4ap_trials=run_post4ap_trials,
+                                          ignore_cache=ignore_cache,
+                                          run_trials=run_trials, skip_trials=skip_trials, supress_print=True)
+        def _plotTimeToOnset_photostimResponse(fig=fig, ax=ax, **kwargs):
+            expobj = kwargs['expobj']
+            fig = fig if fig else None
+            show = False if fig else True
+            ax = ax if ax else None
+
+            if 'pre' in expobj.exptype:
+                pj.make_general_scatter([expobj.pre_stim_flu_list], [expobj.decay_constants], s=50, supress_print=True,
+                                        alpha=0.5, x_label='pre_stim_flu', y_label='decay constants', fig=fig, ax=ax,
+                                        show=show,
+                                        ax_titles=['Pre-stim Flu vs. decay constants'], x_lim=x_lim, colors=['grey'])
+                return True
+
+            elif 'post' in expobj.exptype:
+                pj.make_general_scatter([expobj.pre_stim_flu_list_ic], [expobj.decay_constants_ic], s=50,
+                                        supress_print=True,
+                                        alpha=0.5, x_label='pre_stim_flu', y_label='decay constants', fig=fig, ax=ax,
+                                        show=show,
+                                        x_lim=x_lim, colors=['purple'])
+
+                pj.make_general_scatter([expobj.pre_stim_flu_list_interic], [expobj.decay_constants_interic], s=50,
+                                        supress_print=True,
+                                        alpha=0.5, x_label='pre_stim_flu', y_label='decay constants', fig=fig, ax=ax,
+                                        show=show,
+                                        ax_titles=[
+                                            'Pre-stim Flu vs. decay constants (inter-ictal green, ictal purple)'],
+                                        x_lim=x_lim, colors=['green'])
+                return True
+            else:
+                return False
+
+        return _plotTimeToOnset_photostimResponse()
+
+
+# %%
+
+
+def checkAttr(attr: str):
+    @OnePhotonStim.runOverExperiments(ignore_cache=True)
+    def _checkAttr(attr=attr, **kwargs):
         expobj = kwargs['expobj']
-        pj.make_general_scatter([expobj.pre_stim_flu_list], [expobj.photostim_flu_responses], s=50, colors=['red'],
-                                alpha=0.8, x_label='photostim_flu_responses', y_label='pre_stim_flu_list',
-                                ax_titles=['Photostim. responses vs. Pre-stim Flu'])
+        try:
+            assert hasattr(expobj, attr)
+            return 'Passed'
+        except AssertionError:
+            print(f"\n\n\t***** {expobj.t_series_name} no attr: {attr}\n\n")
+            return 'Failed'
+
+    if 'Failed' not in _checkAttr():
+        print('ALL CHECKS PASSED')
 
 
-OnePhotonStimAnalysisFuncs._collectPhotostimResponses()
-
+# checkAttr(attr='pre_stim_flu_list')
 
 
 

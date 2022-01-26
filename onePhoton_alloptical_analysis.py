@@ -1,7 +1,8 @@
-#%% DATA ANALYSIS FOR ONE-P PHOTOSTIM EXPERIMENTS
+#%% DATA ANALYSIS FOR ONE-P PHOTOSTIM EXPERIMENTS - trying to mirror this code with the jupyter notebook for one P stim analysis
 import os
 
 import numpy as np
+from matplotlib import pyplot as plt
 
 import alloptical_utils_pj as aoutils
 import alloptical_plotting_utils as aoplot
@@ -78,27 +79,36 @@ seizures_lfp_timing_matarray = '/home/pshah/mnt/qnap/Analysis/%s/%s/paired_measu
 expobj.collect_seizures_info(seizures_lfp_timing_matarray=seizures_lfp_timing_matarray,
                              discard_all=False)
 
-# %% MEASURING DFF RESPONSE MAGNITUDE VS. PRE-STIM CA2+ FLU OF THE FOV
+# %% ## measuring PRE-STIM CA2+ AVG FLU vs. DFF RESPONSE MAGNITUDE, DECAY CONSTANT of the fov
 
-from OnePhotonStimMain import OnePhotonStimFuncs as onepfuncs
+from OnePhotonStimAnalysis_main import OnePhotonStimAnalysisFuncs as onepfuncs
 from OnePhotonStimMain import OnePhotonStimPlots as onepplots
 
+onepfuncs.collectPhotostimResponses(run_pre4ap_trials=True, run_post4ap_trials=True, ignore_cache=False)
+onepfuncs.collectPreStimFluAvgs(run_pre4ap_trials=True, run_post4ap_trials=True, ignore_cache=False)
 
-onepfuncs._collectPhotostimResponses()
-onepfuncs._collectPreStimFluAvgs()
-
-onepplots.plotPrestimF_photostimFlu()
-
-# for trial in ['t-006', 't-008', 't-009', 't-010']:
-#     expobj, _ = OnePhotonStimFuncs.import_1pexobj(pkl_path=f'/home/pshah/mnt/qnap/Analysis/2021-02-01/2021-02-01_{trial}/2021-02-01_{trial}.pkl')
-#     expobj.analysis_save_path = f'/home/pshah/mnt/qnap/Analysis/2021-02-01/PS16/2021-02-01_{trial}/'
-#     expobj.save()
+fig, ax = plt.subplots(figsize=[4.5,4])
+onepplots.plotPrestimF_photostimFlu(fig=fig, ax=ax, run_pre4ap_trials=True, run_post4ap_trials=False, ignore_cache=True)
+ax.set_title('(baseline: gray)', wrap=True)
+fig.show()
 
 
-# expobj, _ = OnePhotonStimFuncs.import_1pexobj(prep='PS11', trial='t-017')
+fig, ax = plt.subplots(figsize=[4.5,4])
+onepplots.plotPrestimF_photostimFlu(fig=fig, ax=ax, run_pre4ap_trials=False, run_post4ap_trials=True, ignore_cache=True)
+ax.set_title('(ictal: purple, inter-ictal: green)', wrap=True)
+fig.show()
 
-# pj.make_general_scatter([expobj.pre_stim_flu_list], [expobj.decay_constants], s=50, colors=['red'], alpha=0.8,
-#                         x_label='photostim_flu_responses', y_label='decay_constants',
-#                         ax_titles=['Decay constants vs. Pre-stim Flu'])
 
 
+fig, ax = plt.subplots(figsize=[4.5,4])
+onepplots.plotPrestimF_decayconstant(fig=fig, ax=ax, run_pre4ap_trials=True, run_post4ap_trials=False, ignore_cache=True, run_trials=[], skip_trials=[])
+ax.set_title('(baseline: gray)', wrap=True)
+fig.show()
+
+fig, ax = plt.subplots(figsize=[4.5,4])
+onepplots.plotPrestimF_decayconstant(fig=fig, ax=ax, run_pre4ap_trials=False, run_post4ap_trials=True, ignore_cache=True, run_trials=[], skip_trials=[])
+ax.set_title('(ictal: purple, inter-ictal: green)', wrap=True)
+fig.show()
+
+
+# %%

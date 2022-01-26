@@ -176,11 +176,10 @@ def show_phrases():
     print(f"entries in phrase_dictionary: \n {list(phrase_dictionary.keys())}")
 
 def working_on(expobj):
-    print(f"STARTING on: {expobj.metainfo['exptype']} {expobj.metainfo['animal prep.']} {expobj.metainfo['trial']} ... ")
+    print(f"STARTING on: {expobj.metainfo['exptype']} {expobj.metainfo['animal prep.']} {expobj.metainfo['trial']} {'.'*15}")
 
 def end_working_on(expobj):
-    print(
-        f"FINISHED on: {expobj.metainfo['exptype']} {expobj.metainfo['animal prep.']} {expobj.metainfo['trial']} \** \n")
+    print(f"{'.'*19} {expobj.metainfo['exptype']} {expobj.metainfo['animal prep.']} {expobj.metainfo['trial']} FINISHED \n")
 
 def save_figure(fig, save_path_suffix: str = None, save_path_full: str = None):
     if not save_path_full and save_path_suffix:
