@@ -17,7 +17,7 @@ from funcsforprajay import funcs as pj
 from utils.paq_utils import paq_read, frames_discard
 import alloptical_plotting_utils as aoplot
 
-from TwoPhotonImagingMain import TwoPhotonImaging
+from _main_.TwoPhotonImagingMain import TwoPhotonImaging
 
 # %% main code
 class OnePhotonStim(TwoPhotonImaging):
@@ -54,7 +54,7 @@ class OnePhotonStim(TwoPhotonImaging):
     # wrapper for use in AnalysisFuncs
     @staticmethod
     def runOverExperiments(run_pre4ap_trials=True, run_post4ap_trials=True, skip_trials=[], run_trials=[],
-                           ignore_cache=False, supress_print=False):
+                           ignore_cache=False, supress_print=False, **kwargs):
         """decorator to use for for-looping through experiment trials across run_pre4ap_trials and run_post4ap_trials.
         the trials to for loop through are defined in allopticalResults.pre_4ap_trials and allopticalResults.post_4ap_trials"""
         # if len(run_trials) > 0 or run_pre4ap_trials is True or run_post4ap_trials is True:
@@ -62,7 +62,7 @@ class OnePhotonStim(TwoPhotonImaging):
 
         def main_for_loop(func):
             @functools.wraps(func)
-            def inner(*args, **kwargs):
+            def inner():
                 if not supress_print: print(f"\n {'..' * 5} INITIATING FOR LOOP ACROSS EXPS {'..' * 5}\n")
                 if run_trials:
                     if not supress_print: print(f"\n{'-' * 5} RUNNING SPECIFIED TRIALS from `trials_run` {'-' * 5}")
@@ -87,7 +87,7 @@ class OnePhotonStim(TwoPhotonImaging):
                             res_ = func(expobj=expobj, **kwargs)
                             if not supress_print: Utils.end_working_on(expobj)
                             if res_ is not None and type(res_) is not bool: res.append(res_)
-                            Utils.set_to_cache(func_name=func.__name__, item=exp_prep) if res_ is True else None
+                            Utils.set_to_cache(func_name=func.__name__, item=exp_prep) if res_ is True and not ignore_cache else None
 
                     counter1 += 1
 
@@ -120,7 +120,7 @@ class OnePhotonStim(TwoPhotonImaging):
                                     res_ = func(expobj=expobj, **kwargs)
                                     if not supress_print: Utils.end_working_on(expobj)
                                     if res_ is not None and type(res_) is not bool: res.append(res_)
-                                    Utils.set_to_cache(func_name=func.__name__, item=exp_prep) if res_ is True else None
+                                    Utils.set_to_cache(func_name=func.__name__, item=exp_prep) if res_ is True and not ignore_cache else None
                             counter_j += 1
                         counter_i += 1
                     if res:
@@ -155,7 +155,7 @@ class OnePhotonStim(TwoPhotonImaging):
                                     res_ = func(expobj=expobj, **kwargs)
                                     if not supress_print: Utils.end_working_on(expobj)
                                     if res_ is not None and type(res_) is not bool: res.append(res_)
-                                    Utils.set_to_cache(func_name=func.__name__, item=exp_prep) if res_ is True else None
+                                    Utils.set_to_cache(func_name=func.__name__, item=exp_prep) if res_ is True and not ignore_cache else None
                             counter_j += 1
                         counter_i += 1
                     if res:
@@ -451,33 +451,34 @@ onePresults = import_resultsobj(pkl_path=results_object_path)
 # %%
 class OnePhotonStimPlots:
     @staticmethod
-    def plotPrestimF_photostimFlu(run_pre4ap_trials=True, run_post4ap_trials=True, ignore_cache=False, run_trials=[], skip_trials=[],
-                                  fig=None, ax=None, x_lim=[0,2000]):
-        @OnePhotonStim.runOverExperiments(run_pre4ap_trials=run_pre4ap_trials, run_post4ap_trials=run_post4ap_trials, ignore_cache=ignore_cache,
-                                          run_trials=run_trials, skip_trials=skip_trials, supress_print=True)
+    def plotPrestimF_photostimFlu(run_pre4ap_trials=True, run_post4ap_trials=True, interictal=False, ictal=False, run_trials=[], skip_trials=[],
+                                  fig=None, ax=None, **kwargs):
+        @OnePhotonStim.runOverExperiments(run_pre4ap_trials=run_pre4ap_trials, run_post4ap_trials=run_post4ap_trials,
+                                          run_trials=run_trials, skip_trials=skip_trials, ignore_cache=True, supress_print=True, kwargs=kwargs)
         def _plotPrestimF_photostimFlu(fig=fig, ax=ax, **kwargs):
             expobj = kwargs['expobj']
             fig = fig if fig else None
             show = False if fig else True
             ax = ax if ax else None
 
+            kwargs2 = kwargs['kwargs']
+
+
             if 'pre' in expobj.exptype:
-                pj.make_general_scatter([expobj.pre_stim_flu_list], [expobj.photostim_flu_responses], s=50, supress_print=True,
-                                        alpha=0.5, x_label='pre_stim_flu', y_label='photostim_responses', fig=fig, ax=ax, show=show,
-                                        ax_titles=['Pre-stim Flu vs. photostim responses'], x_lim=x_lim, colors=['grey'])
+                pj.make_general_scatter([expobj.pre_stim_flu_list], [expobj.photostim_flu_responses], supress_print=True,
+                                        x_label='pre_stim_flu', y_label='photostim_responses', ax_titles=['Pre-stim Flu vs. photostim responses'],
+                                        fig=fig, ax=ax, show=show, colors=['grey'], **kwargs2)
                 return True
 
             elif 'post' in expobj.exptype:
-                pj.make_general_scatter([expobj.pre_stim_flu_list_ic], [expobj.photostim_flu_responses_ic], s=50, supress_print=True,
-                                        alpha=0.5, x_label='pre_stim_flu', y_label='photostim_responses', fig=fig, ax=ax, show=show,
-                                        ax_titles=['Pre-stim Flu vs. photostim responses (ictal)'], x_lim=x_lim, colors=['purple'])
-
-                pj.make_general_scatter([expobj.pre_stim_flu_list_interic], [expobj.photostim_flu_responses_interic], s=50, supress_print=True,
-                                        alpha=0.5, x_label='pre_stim_flu', y_label='photostim_responses', fig=fig, ax=ax, show=show,
-                                        ax_titles=['Pre-stim Flu vs. photostim responses (inter-ictal)'], x_lim=x_lim, colors=['green'])
-                return True
-            else:
-                return False
+                if ictal:
+                    pj.make_general_scatter([expobj.pre_stim_flu_list_ic], [expobj.photostim_flu_responses_ic], supress_print=True,
+                                            x_label='pre_stim_flu', y_label='photostim_responses', fig=fig, ax=ax, show=show,
+                                            ax_titles=['Pre-stim Flu vs. photostim responses (ictal)'], colors=['purple'], **kwargs2)
+                if interictal:
+                    pj.make_general_scatter([expobj.pre_stim_flu_list_interic], [expobj.photostim_flu_responses_interic], supress_print=True,
+                                            x_label='pre_stim_flu', y_label='photostim_responses', fig=fig, ax=ax, show=show,
+                                            ax_titles=['Pre-stim Flu vs. photostim responses (inter-ictal)'], colors=['green'], **kwargs2)
 
         return _plotPrestimF_photostimFlu()
 
@@ -485,7 +486,7 @@ class OnePhotonStimPlots:
     @staticmethod
     def plotPrestimF_decayconstant(run_pre4ap_trials=True, run_post4ap_trials=True, ignore_cache=False, run_trials=[], skip_trials=[],
                                   fig=None, ax=None, x_lim=[0,2000]):
-        @OnePhotonStim.runOverExperiments(run_pre4ap_trials=run_pre4ap_trials, run_post4ap_trials=run_post4ap_trials, ignore_cache=ignore_cache,
+        @OnePhotonStim.runOverExperiments(run_pre4ap_trials=run_pre4ap_trials, run_post4ap_trials=run_post4ap_trials, ignore_cache=True,
                                           run_trials=run_trials, skip_trials=skip_trials, supress_print=True)
         def _plotPrestimF_decayconstant(fig=fig, ax=ax, **kwargs):
             expobj = kwargs['expobj']
@@ -497,7 +498,6 @@ class OnePhotonStimPlots:
                 pj.make_general_scatter([expobj.pre_stim_flu_list], [expobj.decay_constants], s=50, supress_print=True,
                                         alpha=0.5, x_label='pre_stim_flu', y_label='decay constants', fig=fig, ax=ax, show=show,
                                         ax_titles=['Pre-stim Flu vs. decay constants'], x_lim=x_lim, colors=['grey'])
-                return True
 
             elif 'post' in expobj.exptype:
                 pj.make_general_scatter([expobj.pre_stim_flu_list_ic], [expobj.decay_constants_ic], s=50, supress_print=True,
@@ -507,49 +507,90 @@ class OnePhotonStimPlots:
                 pj.make_general_scatter([expobj.pre_stim_flu_list_interic], [expobj.decay_constants_interic], s=50, supress_print=True,
                                         alpha=0.5, x_label='pre_stim_flu', y_label='decay constants', fig=fig, ax=ax, show=show,
                                         ax_titles=['Pre-stim Flu vs. decay constants (inter-ictal green, ictal purple)'], x_lim=x_lim, colors=['green'])
-                return True
-            else:
-                return False
 
 
         return _plotPrestimF_decayconstant()
 
     @staticmethod
-    def plotTimeToOnset_photostimResponse(run_pre4ap_trials=True, run_post4ap_trials=True, ignore_cache=False, run_trials=[],
-                                   skip_trials=[], fig=None, ax=None, x_lim=[0, 2000]):
-        @OnePhotonStim.runOverExperiments(run_pre4ap_trials=run_pre4ap_trials, run_post4ap_trials=run_post4ap_trials,
-                                          ignore_cache=ignore_cache,
-                                          run_trials=run_trials, skip_trials=skip_trials, supress_print=True)
-        def _plotTimeToOnset_photostimResponse(fig=fig, ax=ax, **kwargs):
+    def plotTimeToOnset_preStimFlu(run_pre4ap_trials=True, run_post4ap_trials=True, run_trials=[], skip_trials=[], fig=None, ax=None,
+                                   **kwargs):
+        @OnePhotonStim.runOverExperiments(run_pre4ap_trials=run_pre4ap_trials, run_post4ap_trials=run_post4ap_trials, ignore_cache=True,
+                                          run_trials=run_trials, skip_trials=skip_trials, supress_print=False, kwargs=kwargs)
+        def _plotTimeToOnset_preStimFlu(fig=fig, ax=ax, **kwargs):
+            print('start')
             expobj = kwargs['expobj']
             fig = fig if fig else None
             show = False if fig else True
             ax = ax if ax else None
 
+            kwargs2 = kwargs['kwargs']
+
             if 'pre' in expobj.exptype:
-                pj.make_general_scatter([expobj.pre_stim_flu_list], [expobj.decay_constants], s=50, supress_print=True,
-                                        alpha=0.5, x_label='pre_stim_flu', y_label='decay constants', fig=fig, ax=ax,
-                                        show=show,
-                                        ax_titles=['Pre-stim Flu vs. decay constants'], x_lim=x_lim, colors=['grey'])
-                return True
+                stims = expobj.stim_start_frames
+                pj.make_general_scatter(x_list=[np.random.random(len(stims)) * 1.5],
+                                        y_data=[expobj.photostim_results.loc['pre stim flu avg', stims]],
+                                        supress_print=True, x_label='time to onset (secs)', y_label='pre stim F (a.u.)', fig=fig,
+                                        ax=ax, show=show, colors=['grey'], **kwargs2)
+                ax.set_title(f'time to onset vs. pre stim F', wrap=True)
+                ax.spines['top'].set_visible(False)
+                ax.spines['right'].set_visible(False)
+                # ax.spines['left'].set_visible(False)
+
 
             elif 'post' in expobj.exptype:
-                pj.make_general_scatter([expobj.pre_stim_flu_list_ic], [expobj.decay_constants_ic], s=50,
-                                        supress_print=True,
-                                        alpha=0.5, x_label='pre_stim_flu', y_label='decay constants', fig=fig, ax=ax,
-                                        show=show,
-                                        x_lim=x_lim, colors=['purple'])
+                stims = expobj.stims_out_sz
+                pj.make_general_scatter(x_list=[expobj.photostim_results.loc['time to seizure onset (secs)', stims]],
+                                        y_data=[expobj.photostim_results.loc['pre stim flu avg', stims]],
+                                        supress_print=True, x_label='time to onset (secs)', y_label='pre stim F (a.u.)', fig=fig,
+                                        ax=ax, show=show, colors=['green'], **kwargs2)
 
-                pj.make_general_scatter([expobj.pre_stim_flu_list_interic], [expobj.decay_constants_interic], s=50,
-                                        supress_print=True,
-                                        alpha=0.5, x_label='pre_stim_flu', y_label='decay constants', fig=fig, ax=ax,
-                                        show=show,
-                                        ax_titles=[
-                                            'Pre-stim Flu vs. decay constants (inter-ictal green, ictal purple)'],
-                                        x_lim=x_lim, colors=['green'])
-                return True
-            else:
-                return False
+                stims = expobj.stims_in_sz
+                pj.make_general_scatter(x_list=[expobj.photostim_results.loc['time to seizure onset (secs)', stims]],
+                                        y_data=[expobj.photostim_results.loc['pre stim flu avg', stims]],
+                                        supress_print=True, x_label='time to onset (secs)', y_label='pre stim F (a.u.)', fig=fig,
+                                        ax=ax, show=show, ax_titles=['time to onset vs. pre stim F (inter-ictal green, ictal purple)'],
+                                        colors=['purple'], **kwargs2)
+                ax.set_title(f'time to onset vs. pre stim F (inter-ictal green, ictal purple)',wrap=True)
+        return _plotTimeToOnset_preStimFlu()
+
+
+    @staticmethod
+    def plotTimeToOnset_photostimResponse(run_pre4ap_trials=True, run_post4ap_trials=True,
+                                          run_trials=[], skip_trials=[], fig=None, ax=None, **kwargs):
+        @OnePhotonStim.runOverExperiments(run_pre4ap_trials=run_pre4ap_trials,
+                                               run_post4ap_trials=run_post4ap_trials, ignore_cache=True,
+                                               run_trials=run_trials, skip_trials=skip_trials, supress_print=False, kwargs=kwargs)
+        def _plotTimeToOnset_photostimResponse(fig=fig, ax=ax, **kwargs):
+            print('start')
+            expobj = kwargs['expobj']
+            fig = fig if fig else None
+            show = False if fig else True
+            ax = ax if ax else None
+
+            kwargs2 = kwargs['kwargs']
+
+            if 'pre' in expobj.exptype:
+                stims = expobj.stim_start_frames
+                pj.make_general_scatter(x_list=[np.random.random(len(stims)) * 1.5],
+                                        y_data=[expobj.photostim_results.loc['photostim responses', stims]],
+                                        supress_print=True, x_label='time to onset (secs)', y_label='photostim responses (dFF)', fig=fig,
+                                        ax=ax, show=show, colors=['grey'], **kwargs2)
+                ax.set_title(f'time to onset vs. photostim responses', wrap=True)
+                ax.spines['top'].set_visible(False)
+                ax.spines['right'].set_visible(False)
+            elif 'post' in expobj.exptype:
+                stims = expobj.stims_out_sz
+                pj.make_general_scatter(x_list=[expobj.photostim_results.loc['time to seizure onset (secs)', stims]],
+                                        y_data=[expobj.photostim_results.loc['photostim responses', stims]],
+                                        supress_print=True, x_label='time to onset (secs)', y_label='photostim responses (dFF)', fig=fig,
+                                        ax=ax, show=show, colors=['green'], **kwargs2)
+
+                stims = expobj.stims_in_sz
+                pj.make_general_scatter(x_list=[expobj.photostim_results.loc['time to seizure onset (secs)', stims]],
+                                        y_data=[expobj.photostim_results.loc['photostim responses', stims]],
+                                        supress_print=True, x_label='time to onset (secs)', y_label='photostim responses (dFF)', fig=fig,
+                                        ax=ax, show=show, colors=['purple'], **kwargs2)
+                ax.set_title(f'time to onset vs. photostim responses (inter-ictal green, ictal purple)', wrap=True)
 
         return _plotTimeToOnset_photostimResponse()
 

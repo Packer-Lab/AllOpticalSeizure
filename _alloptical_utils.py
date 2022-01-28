@@ -121,7 +121,7 @@ def import_expobj(aoresults_map_id: str = None, trial: str = None, prep: str = N
 
     # other misc. things you want to do when importing expobj -- should be temp code basically - not essential for actual importing of expobj
 
-    return expobj, experiment
+    return expobj
 
 def import_resultsobj(pkl_path: str):
     assert os.path.exists(pkl_path)
@@ -132,10 +132,18 @@ def import_resultsobj(pkl_path: str):
     return resultsobj
 
 # caching func
-def set_to_cache(func_name=None, item=None, reset_cache=False):
-    cache_folder = '/home/pshah/mnt/Analysis/temp/cache/'
-    cache_path = f"{cache_folder}func_run_cache.p"
+cache_folder = '/home/pshah/mnt/Analysis/temp/cache/'
+cache_path = f"{cache_folder}func_run_cache.p"
 
+def __load_cache():
+    if os.path.exists(cache_path):
+        func_dict = pickle.load(open(f"{cache_path}", 'rb'))
+        return func_dict
+    else:
+        raise FileNotFoundError(f"{cache_path}")
+
+
+def set_to_cache(func_name=None, item=None, reset_cache=False):
     if reset_cache:
         func_dict = {}
         print(f"resetting cache pkl located at: {cache_path}")
@@ -143,7 +151,7 @@ def set_to_cache(func_name=None, item=None, reset_cache=False):
         if not os.path.exists(f"{cache_path}"):
             func_dict = {}
         else:
-            func_dict = pickle.load(open(f"{cache_path}", 'rb'))
+            func_dict = __load_cache()
             if func_name not in [*func_dict]:
                 func_dict[func_name] = []
             func_dict[func_name].append(item)
@@ -151,15 +159,20 @@ def set_to_cache(func_name=None, item=None, reset_cache=False):
     pickle.dump(func_dict, open(f"{cache_path}", "wb"))
 
 def get_from_cache(func_name, item):
-    cache_folder = '/home/pshah/mnt/Analysis/temp/cache/'
-    cache_path = f"{cache_folder}func_run_cache.p"
-    if os.path.exists(cache_path):
-        func_dict = pickle.load(open(f"{cache_path}", 'rb'))
-        return True if item in func_dict[func_name] else False
+    func_dict = __load_cache()
+    return True if item in func_dict[func_name] else False
+
+def delete_from_cache(func_name: str):
+    func_dict = __load_cache()
+    if func_name in [*func_dict]:
+        func_dict.pop(func_name, None)
+        if func_name not in [*func_dict]:
+            pickle.dump(func_dict, open(f"{cache_path}", "wb"))
+            print(f"Deleted {func_name} from cache.")
+        else:
+            print(f"Delete failed: {func_name} found in cache, but was not able to delete. unexpected error.")
     else:
-        return False
-
-
+        print(f'{func_name} was not found in cache. nothing deleted.')
 
 
 # random plot just to initialize plotting for PyCharm

@@ -4,7 +4,6 @@ import sys
 
 sys.path.append('/home/pshah/Documents/code/')
 import time
-import numpy as np
 import pandas as pd
 import pickle
 
@@ -12,7 +11,7 @@ import pickle
 pd.set_option('max_columns', None)
 pd.set_option('max_rows', 100)
 
-from TwoPhotonImagingMain import TwoPhotonImaging
+from _main_.TwoPhotonImagingMain import TwoPhotonImaging
 import _alloptical_utils as aoutils
 
 # RESULTS OBJECTS

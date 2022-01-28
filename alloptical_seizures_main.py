@@ -2,7 +2,7 @@ import functools
 import time
 from funcsforprajay import funcs as pj
 
-from _alloptical_utils import Utils
+import _alloptical_utils as Utils
 from _alloptical_utils import allopticalResults
 
 ## DECORATORS

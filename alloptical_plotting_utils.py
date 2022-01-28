@@ -4,11 +4,11 @@
 # imports
 import os
 import numpy as np
+import matplotlib as mpl
 import matplotlib.pyplot as plt
 import matplotlib.ticker as mticker
 from utils.paq_utils import paq_read, frames_discard
 from funcsforprajay import funcs as pj
-from matplotlib import pyplot as plt
 import alloptical_utils_pj as aoutils
 import tifffile as tf
 
@@ -939,6 +939,9 @@ def plot_lfp_stims(expobj, title='LFP signal with photostim. shown (in different
 
 
 # plot the whole pre stim to post stim period as a cool heatmap
+jet = mpl.cm.get_cmap('jet')
+jet.set_bad(color='k')
+
 @print_start_end_plot
 @plot_piping_decorator(figsize=(4,10))
 def plot_traces_heatmap(expobj, arr, vmin=None, vmax=None, stim_on = None, stim_off= None, figsize=None, title=None, xlims=None, x_label='Frames',
@@ -993,17 +996,23 @@ def plot_traces_heatmap(expobj, arr, vmin=None, vmax=None, stim_on = None, stim_
         ax.set_ylim(0, len(arr)-0.5)
 
     if 'lfp_signal' in kwargs.keys():
+        ax2 = ax.twinx()
         x_c = np.linspace(0, arr.shape[1] - 1, len(kwargs['lfp_signal']))
-        ax.plot(x_c, kwargs['lfp_signal'] * 50 + arr.shape[0] - 100, c='black')
+        # ax2.plot(x_c, kwargs['lfp_signal'] * 50 + arr.shape[0] - 100, c='black')
+        ax2.plot(x_c, kwargs['lfp_signal'], c='black')
+        ax2.set_ylabel('LFP (mV)')
 
     if 'Time' in x_label or 'time' in x_label:
         # labels = ls(np.linspace(0, int(arr.shape[1] / expobj.fps), int(arr.shape[1] / expobj.fps * 2 / 2)))
-        labels = list(range(0, int(arr.shape[1] / expobj.fps), 1))  # tick label every one second
+        labels = list(range(0, int(arr.shape[1] / expobj.fps), 5))  # tick label every 5 second
         ax.set_xticks(ticks=[(label * expobj.fps) for label in labels])
         ax.set_xticklabels(labels)
         ax.set_xlabel('Time (secs)')
     else:
         ax.set_xlabel(x_label)
+
+    if title:
+        ax.set_title(title, wrap=True)
 
     if 'y_label' in kwargs.keys():
         ax.set_ylabel(kwargs['y_label'])

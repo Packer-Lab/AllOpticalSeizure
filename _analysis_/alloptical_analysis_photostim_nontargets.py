@@ -132,7 +132,7 @@ run_allopticalNontargets()
 # ######### decorated ################################
 
 missing_slmtargets_sz_stim = []
-@aoutils.run_for_loop_across_exps(run_pre4ap_trials=False, run_post4ap_trials=True)
+@aoutils.run_for_loop_across_exps(run_pre4ap_trials=False, run_post4ap_trials=False, run_trials=['RL109 t-018'])
 def run_allopticalNontargets(missing_slmtargets_sz_stim, **kwargs):
     expobj = kwargs['expobj']
     force_redo = True if not hasattr(expobj, 's2p_nontargets') else False

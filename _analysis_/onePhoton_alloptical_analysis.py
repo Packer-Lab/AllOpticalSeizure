@@ -1,13 +1,13 @@
 #%% DATA ANALYSIS FOR ONE-P PHOTOSTIM EXPERIMENTS - trying to mirror this code with the jupyter notebook for one P stim analysis
 import os
 
-import numpy as np
 from matplotlib import pyplot as plt
 
 import alloptical_utils_pj as aoutils
 import alloptical_plotting_utils as aoplot
 
-
+from OnePhotonStimAnalysis_main import OnePhotonStimAnalysisFuncs
+from _main_.OnePhotonStimMain import OnePhotonStimPlots as onepplots
 
 #  ###### IMPORT pkl file containing data in form of expobj
 trial = 't-012'
@@ -16,6 +16,29 @@ date = '2021-01-24'
 pkl_path = "/home/pshah/mnt/qnap/Analysis/%s/%s/%s_%s/%s_%s.pkl" % (date, prep, date, trial, date, trial)
 if os.path.exists(pkl_path):
     expobj, experiment = aoutils.import_expobj(pkl_path=pkl_path)
+
+
+# %% 2.1) PLOT - time to seizure onset vs. pre-stim Flu
+
+fig, ax = plt.subplots(figsize=(2.5,4))
+onepplots.plotTimeToOnset_preStimFlu(fig=fig, ax=ax, run_pre4ap_trials=True, run_post4ap_trials=False, x_lim=[-4, 5])
+fig.show()
+
+fig, ax = plt.subplots(figsize=(4,4))
+onepplots.plotTimeToOnset_preStimFlu(fig=fig, ax=ax, run_pre4ap_trials=False, run_post4ap_trials=True)
+fig.show()
+
+# %% 2.2) PLOT - time to seizure onset vs. photostim response Flu
+
+fig, ax = plt.subplots(figsize=(2.5,4))
+onepplots.plotTimeToOnset_photostimResponse(fig=fig, ax=ax, run_pre4ap_trials=True, run_post4ap_trials=False, x_lim=[-4, 5])
+fig.show()
+
+fig, ax = plt.subplots(figsize=(4,4))
+onepplots.plotTimeToOnset_photostimResponse(fig=fig, ax=ax, run_pre4ap_trials=False, run_post4ap_trials=True, x_lim=[-80, 80])
+fig.show()
+
+
 
 
 # %% # look at the average Ca Flu trace pre and post stim, just calculate the average of the whole frame and plot as continuous timeseries
@@ -79,14 +102,20 @@ seizures_lfp_timing_matarray = '/home/pshah/mnt/qnap/Analysis/%s/%s/paired_measu
 expobj.collect_seizures_info(seizures_lfp_timing_matarray=seizures_lfp_timing_matarray,
                              discard_all=False)
 
-# %% ## measuring PRE-STIM CA2+ AVG FLU vs. DFF RESPONSE MAGNITUDE, DECAY CONSTANT of the fov
+# %% 0)
 
-from OnePhotonStimAnalysis_main import OnePhotonStimAnalysisFuncs as onepfuncs
-from OnePhotonStimMain import OnePhotonStimPlots as onepplots
+"""
+photostim results are being collected in the .photostim_results dataframe.
 
-onepfuncs.collectPhotostimResponses(run_pre4ap_trials=True, run_post4ap_trials=True, ignore_cache=False)
-onepfuncs.collectPreStimFluAvgs(run_pre4ap_trials=True, run_post4ap_trials=True, ignore_cache=False)
+"""
 
+# %% 1.0) ## measuring PRE-STIM CA2+ AVG FLU vs. DFF RESPONSE MAGNITUDE, DECAY CONSTANT of the fov
+
+OnePhotonStimAnalysisFuncs.collectPhotostimResponses(run_pre4ap_trials=True, run_post4ap_trials=True, ignore_cache=False)
+OnePhotonStimAnalysisFuncs.collectPreStimFluAvgs(run_pre4ap_trials=True, run_post4ap_trials=True, ignore_cache=False)
+
+
+# %% 1.1) ## plotting PRE-STIM CA2+ AVG FLU VS. DFF RESPOSNSE MAGNITUDE, DECAY CONSTANT of the fov
 fig, ax = plt.subplots(figsize=[4.5,4])
 onepplots.plotPrestimF_photostimFlu(fig=fig, ax=ax, run_pre4ap_trials=True, run_post4ap_trials=False, ignore_cache=True)
 ax.set_title('(baseline: gray)', wrap=True)
@@ -101,14 +130,21 @@ fig.show()
 
 
 fig, ax = plt.subplots(figsize=[4.5,4])
-onepplots.plotPrestimF_decayconstant(fig=fig, ax=ax, run_pre4ap_trials=True, run_post4ap_trials=False, ignore_cache=True, run_trials=[], skip_trials=[])
+onepplots.plotPrestimF_decayconstant(fig=fig, ax=ax, run_pre4ap_trials=True, run_post4ap_trials=False, ignore_cache=True,
+                                     run_trials=[], skip_trials=[])
 ax.set_title('(baseline: gray)', wrap=True)
 fig.show()
 
 fig, ax = plt.subplots(figsize=[4.5,4])
-onepplots.plotPrestimF_decayconstant(fig=fig, ax=ax, run_pre4ap_trials=False, run_post4ap_trials=True, ignore_cache=True, run_trials=[], skip_trials=[])
+onepplots.plotPrestimF_decayconstant(fig=fig, ax=ax, run_pre4ap_trials=False, run_post4ap_trials=True, ignore_cache=True,
+                                     run_trials=[], skip_trials=[])
 ax.set_title('(ictal: purple, inter-ictal: green)', wrap=True)
 fig.show()
 
 
-# %%
+# %% 2.0) collect time to seizure onset - add to .photostim_results dataframe
+
+OnePhotonStimAnalysisFuncs.collectTimeToSzOnset(ignore_cache=False)
+
+
+

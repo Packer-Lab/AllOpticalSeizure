@@ -5,10 +5,72 @@ import alloptical_utils_pj as aoutils
 import alloptical_plotting_utils as aoplot
 from funcsforprajay import funcs as pj
 
+import _main_.OnePhotonStimMain as oneP
+from _main_.OnePhotonStimMain import OnePhotonStimPlots as onepplots
 
 # import onePstim superobject that will collect analyses from various individual experiments
 results_object_path = '/home/pshah/mnt/qnap/Analysis/onePstim_results_superobject.pkl'
 onePresults = aoutils.import_resultsobj(pkl_path=results_object_path)
+
+
+# %% 2.0) TIME TO SZ ONSET VS.: PRE-STIM FLU, AND PHOTOSTIM RESPONSES - PLOT - time to seizure onset vs. pre-stim Flu
+
+fig, ax = plt.subplots(figsize=(2.5,4))
+onepplots.plotTimeToOnset_preStimFlu(fig=fig, ax=ax, run_pre4ap_trials=True, run_post4ap_trials=False, x_lim=[-4, 5], alpha=0.1, lw=5, s=50)
+fig.show()
+
+fig, ax = plt.subplots(figsize=(4,4))
+onepplots.plotTimeToOnset_preStimFlu(fig=fig, ax=ax, run_pre4ap_trials=False, run_post4ap_trials=True, alpha=0.1, lw=5, s=50, y_lim=[0, 2000])
+fig.show()
+
+# %% 2.1) PLOT - time to seizure onset vs. photostim response Flu
+
+fig, ax = plt.subplots(figsize=(2.5,4))
+onepplots.plotTimeToOnset_photostimResponse(fig=fig, ax=ax, run_pre4ap_trials=True, run_post4ap_trials=False, x_lim=[-4, 5], alpha=0.1, lw=5, s=50)
+fig.show()
+
+fig, ax = plt.subplots(figsize=(4,4))
+onepplots.plotTimeToOnset_photostimResponse(fig=fig, ax=ax, run_pre4ap_trials=False, run_post4ap_trials=True, alpha=0.1, lw=5, s=50, y_lim=[-0.4,2.5])
+fig.show()
+
+
+# %% 1.0) pre-stim Flu vs. Photostim Responses
+
+fig, ax = plt.subplots(figsize=[3.5,3])
+oneP.OnePhotonStimPlots.plotPrestimF_photostimFlu(fig=fig, ax=ax, run_pre4ap_trials=True, run_post4ap_trials=False, alpha=0.25,
+                                                  x_lim=[0, 2000], y_lim=[-0.5, 3.0], s=50)
+ax.set_title('(baseline: gray)', wrap=True)
+fig.show()
+
+fig, ax = plt.subplots(figsize=[3.5,3])
+oneP.OnePhotonStimPlots.plotPrestimF_photostimFlu(fig=fig, ax=ax, run_pre4ap_trials=False, run_post4ap_trials=True, alpha=0.25,
+                                                  x_lim=[0, 2000], y_lim=[-0.5, 3.0], interictal=True, ictal=False, s=50)
+ax.set_title('(inter-ictal: green)', wrap=True)
+fig.show()
+
+fig, ax = plt.subplots(figsize=[3.5,3])
+oneP.OnePhotonStimPlots.plotPrestimF_photostimFlu(fig=fig, ax=ax, run_pre4ap_trials=False, run_post4ap_trials=True, alpha=0.25,
+                                                  x_lim=[0, 2000],  y_lim=[-0.5, 3.0], ictal=True, interictal=False, s=50)
+ax.set_title('(ictal: purple)', wrap=True)
+fig.show()
+
+
+# %% 1.1) pre-stim Flu  vs. decay constant
+
+fig, ax = plt.subplots(figsize=[3.5,3])
+oneP.OnePhotonStimPlots.plotPrestimF_decayconstant(fig=fig, ax=ax, run_pre4ap_trials=True, run_post4ap_trials=False, x_lim=[-150, 150], y_lim=[0, 1500],
+                                                   alpha=0.25)
+# ax.set_title('(baseline: gray)', wrap=True)
+fig.show()
+
+fig, ax = plt.subplots(figsize=[3.5,3])
+oneP.OnePhotonStimPlots.plotPrestimF_decayconstant(fig=fig, ax=ax, run_pre4ap_trials=False, run_post4ap_trials=True, ignore_cache=True, run_trials=[], skip_trials=[])
+# ax.set_title('(ictal: purple, inter-ictal: green)', wrap=True)
+fig.show()
+
+
+
+
 
 
 # %% ## collection plots of many trials sub divided as specified - avg flu trace 1p stim plots
