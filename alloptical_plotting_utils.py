@@ -7,7 +7,7 @@ import numpy as np
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 import matplotlib.ticker as mticker
-from utils.paq_utils import paq_read, frames_discard
+from _utils_.paq_utils import paq_read, frames_discard
 from funcsforprajay import funcs as pj
 import alloptical_utils_pj as aoutils
 import tifffile as tf
@@ -895,6 +895,14 @@ def plot_lfp_stims(expobj, title='LFP signal with photostim. shown (in different
         x = [(expobj.stim_start_times[expobj.stim_start_frames.index(stim)] - expobj.frame_start_time_actual) for stim in expobj.stim_start_frames]
         ax2.scatter(x=x, y=[y_loc] * len(x), edgecolors='white', facecolors='black', marker="^", zorder=3, s=100, linewidths=1.0, label='stims')
 
+    # # change x-axis to frame #s if asked for:
+    # if 'frame' or "frames" or "Frames" or "Frame" in x_axis:
+    #     x_ticks = range(0, expobj.n_frames, 2000)
+    #     x_clocks = [x_fr*expobj.paq_rate/10 for x_fr in x_ticks]  ## convert to paq clock dimension
+    #     ax.set_xticks(x_clocks)
+    #     ax.set_xticklabels(x_ticks)
+    #     ax.set_xlabel(x_axis)
+
     ax2.set_ylim([-0.004, 0.1])
     ax2.yaxis.set_tick_params(right=False,
                               labelright=False)
@@ -1260,6 +1268,13 @@ def plotLfpSignal(expobj, stim_span_color='powderblue', downsample: bool = True,
         ax.tick_params(axis='both', which='both', length=3)
         if not hide_xlabel:
             ax.set_xlabel('Time (secs)')
+    # elif 'frame' or "frames" or "Frames" or "Frame" in x_axis:
+    #     x_ticks = range(0, expobj.n_frames, 2000)
+    #     x_clocks = [x_fr*expobj.paq_rate for x_fr in x_ticks]  ## convert to paq clock dimension
+    #     ax.set_xticks(x_clocks)
+    #     ax.set_xticklabels(x_ticks)
+    #     if not hide_xlabel:
+    #         ax.set_xlabel('Frames')
     else:
         ax.set_xlabel('paq clock')
     ax.set_ylabel('Voltage')

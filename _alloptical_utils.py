@@ -132,7 +132,7 @@ def import_resultsobj(pkl_path: str):
     return resultsobj
 
 # caching func
-cache_folder = '/home/pshah/mnt/Analysis/temp/cache/'
+cache_folder = '/home/pshah/mnt/qnap/Analysis/temp/cache/'
 cache_path = f"{cache_folder}func_run_cache.p"
 
 def __load_cache():
@@ -317,6 +317,37 @@ def threshold_detect(signal, threshold):
     frames = np.where(thresh_signal)
     return frames[0]
 
+def normalize_dff(arr, threshold_pct=20, threshold_val=None):
+    """normalize given array (cells x time) to the mean of the fluorescence values below given threshold. Threshold
+    will refer to the that lower percentile of the given trace."""
+
+    if arr.ndim == 1:
+        if threshold_val is None:
+            a = np.percentile(arr, threshold_pct)
+            mean_ = arr[arr < a].mean()
+        else:
+            mean_ = threshold_val
+        # mean_ = abs(arr[arr < a].mean())
+        new_array = ((arr - mean_) / mean_) * 100
+        if np.isnan(new_array).any() == True:
+            Warning('Cell (unknown) contains nan, normalization factor: %s ' % mean_)
+
+    else:
+        new_array = np.empty_like(arr)
+        for i in range(len(arr)):
+            if threshold_val is None:
+                a = np.percentile(arr[i], threshold_pct)
+            else:
+                a = threshold_val
+            mean_ = np.mean(arr[i][arr[i] < a])
+            new_array[i] = ((arr[i] - mean_) / abs(mean_)) * 100
+
+            if np.isnan(new_array[i]).any() == True:
+                print('Warning:')
+                print('Cell %d: contains nan' % (i + 1))
+                print('      Mean of the sub-threshold for this cell: %s' % mean_)
+
+    return new_array
 
 ##
 

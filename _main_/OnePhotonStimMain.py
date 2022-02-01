@@ -14,7 +14,7 @@ import numpy as np
 import pandas as pd
 from funcsforprajay import funcs as pj
 
-from utils.paq_utils import paq_read, frames_discard
+from _utils_.paq_utils import paq_read, frames_discard
 import alloptical_plotting_utils as aoplot
 
 from _main_.TwoPhotonImagingMain import TwoPhotonImaging

@@ -1,9 +1,9 @@
 import os
-import sys; sys.path.append('/home/pshah/Documents/code/Vape/utils/')
+import sys; sys.path.append('/home/pshah/Documents/code/Vape/_utils_/')
 import alloptical_utils_pj as aoutils
 import numpy as np
 import pickle
-from utils.paq_utils import frames_discard, paq_read
+from _utils_.paq_utils import frames_discard, paq_read
 
 
 #%% functions for processing SPONT. IMAGING experiments, used only for making a bad_frames output to use during suite2p

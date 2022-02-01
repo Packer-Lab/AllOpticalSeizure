@@ -8,6 +8,7 @@ import itertools
 import os
 import sys
 
+
 sys.path.append('/home/pshah/Documents/code/')
 import matplotlib.pyplot as plt
 import seaborn as sns
@@ -20,7 +21,7 @@ import bisect
 from funcsforprajay import funcs as pj
 from funcsforprajay import pnt2line
 from funcsforprajay.wrappers import plot_piping_decorator
-from utils.paq_utils import paq_read, frames_discard
+from _utils_.paq_utils import paq_read, frames_discard
 import alloptical_plotting_utils as aoplot
 import pickle
 
@@ -798,3 +799,8 @@ class Post4ap(alloptical):
 
         self.responses_SLMtargets_tracedFF_avg_df = df
         self.save() if save else None
+
+    # TODO measuring delay between LFP onset of seizures and imaging FOV invasion for each seizure for each experiment
+    def szInvasionTime(self):
+        for i in range(self.numSeizures):
+            pass

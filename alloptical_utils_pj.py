@@ -8,12 +8,17 @@ import functools
 import re
 import glob
 from datetime import datetime
+from typing import Union
 
 import itertools
 
 import os
 import sys
 from typing import Union
+
+from matplotlib.colors import ColorConverter
+
+from _utils_._anndata import AnnotatedData
 
 sys.path.append('/home/pshah/Documents/code/')
 from Vape.utils.utils_funcs import s2p_loader
@@ -33,7 +38,7 @@ import bisect
 from funcsforprajay import funcs as pj
 from funcsforprajay import pnt2line
 from funcsforprajay.wrappers import plot_piping_decorator
-from utils.paq_utils import paq_read, frames_discard
+from _utils_.paq_utils import paq_read, frames_discard
 import alloptical_plotting_utils as aoplot
 import pickle
 
@@ -194,8 +199,11 @@ def run_for_loop_across_exps(run_pre4ap_trials=False, run_post4ap_trials=False, 
     print(f"\n {'..'*5} INITIATING FOR LOOP ACROSS EXPS {'..'*5}\n")
     t_start = time.time()
     def main_for_loop(func):
+        print(f"\n {'..' * 5} [2] INITIATING FOR LOOP ACROSS EXPS {'..' * 5}\n")
         @functools.wraps(func)
         def inner(*args, **kwargs):
+            print(f"\n {'..' * 5} [3] INITIATING FOR LOOP ACROSS EXPS {'..' * 5}\n")
+
             if run_trials:
                 print(f"\n{'-' * 5} RUNNING SPECIFIED TRIALS from `trials_run` {'-' * 5}")
                 counter1 = 0
@@ -203,8 +211,10 @@ def run_for_loop_across_exps(run_pre4ap_trials=False, run_post4ap_trials=False, 
                     # print(i, exp_prep)
                     prep = exp_prep[:-6]
                     trial = exp_prep[-5:]
-                    expobj, _ = import_expobj(prep=prep, trial=trial, verbose=False)
-
+                    try:
+                        expobj = import_expobj(prep=prep, trial=trial, verbose=False)
+                    except:
+                        raise ImportError(f"IMPORT ERROR IN {prep} {trial}")
                     working_on(expobj)
                     func(expobj=expobj, **kwargs)
                     # try:
@@ -228,7 +238,10 @@ def run_for_loop_across_exps(run_pre4ap_trials=False, run_post4ap_trials=False, 
                             # print(i, j, exp_prep)
                             prep = exp_prep[:-6]
                             pre4aptrial = exp_prep[-5:]
-                            expobj, _ = import_expobj(prep=prep, trial=pre4aptrial, verbose=False)
+                            try:
+                                expobj = import_expobj(prep=prep, trial=pre4aptrial, verbose=False)
+                            except:
+                                raise ImportError(f"IMPORT ERROR IN {prep} {pre4aptrial}")
 
                             working_on(expobj)
                             res_ = func(expobj=expobj, **kwargs)
@@ -257,7 +270,7 @@ def run_for_loop_across_exps(run_pre4ap_trials=False, run_post4ap_trials=False, 
                             prep = allopticalResults.post_4ap_trials[i][j][:-6]
                             post4aptrial = allopticalResults.post_4ap_trials[i][j][-5:]
                             try:
-                                expobj, _ = import_expobj(prep=prep, trial=post4aptrial, verbose=False)
+                                expobj = import_expobj(prep=prep, trial=post4aptrial, verbose=False)
                             except:
                                 raise ImportError(f"IMPORT ERROR IN {prep} {post4aptrial}")
 
@@ -1077,6 +1090,8 @@ class alloptical(TwoPhotonImaging):
         self.dFF_SLMTargets = None  # dFF normalized whole traces from SLM targets
         self.raw_SLMTargets = None  # raw whole traces from SLM targets from registered tiffs
 
+        self.slmtargets_data = None  # anndata object
+
         self.responses_SLMtargets_dfprestimf = None  # dF/prestimF responses for all SLM targets for each photostim trial
         self.responses_SLMtargets_tracedFF = None  # delta(poststim dFF and prestim dFF) responses for all SLM targets for each photostim trial - from trace dFF processed trials
         self.StimSuccessRate_SLMtargets_dfprestimf = None
@@ -1109,6 +1124,8 @@ class alloptical(TwoPhotonImaging):
         self.traces_SLMtargets_failures_avg_dfstdf = None  # trace snippets for only failure stims - normalized by dfstdf
         self.traces_SLMtargets_failures_avg_dfprestimf = None  # trace snippets for only failure stims - normalized by dfstdf
         self.traces_SLMtargets_tracedFF_failures_avg = None  # trace snippets for only successful stims - delta(trace_dff)
+
+
 
 
         ## NON PHOTOSTIM SLM TARGETS
@@ -2343,7 +2360,7 @@ class alloptical(TwoPhotonImaging):
         return x
 
     # calculate reliability of photostim responsiveness of all of the targeted cells
-    def get_SLMTarget_responses_dff(self, process: str, threshold=10, stims_to_use: Union[list, str] = 'all'):
+    def get_SLMTarget_responses_dff(self, process: str, threshold=10.0, stims_to_use: Union[list, str] = 'all'):
         """
         calculations of dFF responses to photostimulation of SLM Targets. Includes calculating reliability of slm targets,
         saving success stim locations, and saving stim response magnitudes as pandas dataframe.
@@ -2604,7 +2621,7 @@ class alloptical(TwoPhotonImaging):
     #
     #     return targets_dff, targets_dff_avg, targets_dfstdF, targets_dfstdF_avg, targets_raw, targets_raw_avg
 
-    def _makeNontargetsStimTracesArray(self, stim_timings, normalize_to='pre-stim', save=True):
+    def _makeNontargetsStimTracesArray(self, stim_timings=[], normalize_to='pre-stim', save=True):
         """
         primary function to retrieve photostimulation trial timed Fluorescence traces for non-targets (ROIs taken from suite2p).
         :param self: alloptical experiment object
@@ -3295,6 +3312,70 @@ class alloptical(TwoPhotonImaging):
         plt.show()
         save_figure(fig, save_path_suffix=f"{save_fig}") if save_fig else None
 
+    # create anndata object for SLMtargets data
+    def create_anndata_SLMtargets(expobj):
+        """
+        Creates annotated data (see anndata library for more information on AnnotatedData) object based around the Ca2+ matrix of the imaging trial.
+
+        """
+
+        if hasattr(expobj, 'dFF_SLMTargets') or hasattr(expobj, 'raw_SLMTargets'):
+            # SETUP THE OBSERVATIONS (CELLS) ANNOTATIONS TO USE IN anndata
+            # build dataframe for obs_meta from SLM targets information
+            obs_meta = pd.DataFrame(
+                columns=['SLM group #', 'SLM target coord'], index=range(expobj.n_targets_total))
+            for groupnum, targets in enumerate(expobj.target_coords):
+                for target, coord in enumerate(targets):
+                    obs_meta.loc[target, 'SLM group #'] = groupnum
+                    obs_meta.loc[target, 'SLM target coord'] = coord
+
+            # build numpy array for multidimensional obs metadata
+            obs_m = {'SLM targets areas': []}
+            for target, areas in enumerate(expobj.target_areas):
+                obs_m['SLM targets areas'].append(np.asarray(areas))
+            obs_m['SLM targets areas'] = np.asarray(obs_m['SLM targets areas'])
+
+            # SETUP THE VARIABLES ANNOTATIONS TO USE IN anndata
+            # build dataframe for var annot's - based on stim_start_frames
+            var_meta = pd.DataFrame(index=['stim_start_frame','wvfront in sz', 'seizure location'], columns=range(len(expobj.stim_start_frames)))
+            for fr_idx, stim_frame in enumerate(expobj.stim_start_frames):
+                if 'pre' in expobj.exptype:
+                    var_meta.loc['wvfront in sz', fr_idx] = False
+                    var_meta.loc['seizure location', fr_idx] = None
+                elif 'post' in expobj.exptype:
+                    if stim_frame in expobj.stimsWithSzWavefront:
+                        var_meta.loc['wvfront in sz', fr_idx] = True
+                        # var_meta.loc['seizure location', fr_idx] = '..not-set-yet..'
+                        var_meta.loc['seizure location', fr_idx] = (expobj.stimsSzLocations.coord1[stim_frame], expobj.stimsSzLocations.coord2[stim_frame])
+                    else:
+                        var_meta.loc['wvfront in sz', fr_idx] = False
+                        var_meta.loc['seizure location', fr_idx] = None
+                var_meta.loc['stim_start_frame', fr_idx] = stim_frame
+
+
+            # BUILD LAYERS TO ADD TO anndata OBJECT
+            layers = {'SLM Targets photostim responses (dFstdF)': expobj.responses_SLMtargets_dfprestimf
+                      }
+
+            print(f"\n\----- CREATING annotated data object using AnnData:")
+
+            # set primary data
+            _data_type = 'SLM Targets photostim responses (tracedFF)'
+            # expobj.responses_SLMtargets_tracedFF.columns = expobj.stim_start_frames
+            expobj.responses_SLMtargets_tracedFF.columns = range(len(expobj.stim_start_frames))
+            photostim_responses = expobj.responses_SLMtargets_tracedFF
+
+
+            # create anndata object
+            adata = AnnotatedData(X=photostim_responses, obs=obs_meta, var=var_meta.T, obsm=obs_m, layers=layers, data_label=_data_type)
+
+            print(f"\n{adata}")
+            expobj.slmtargets_data = adata
+        else:
+            Warning(
+                'did not create anndata. anndata creation only available if experiments were processed with suite2p and .paq file(s) provided for temporal synchronization')
+
+
 class Post4ap(alloptical):
 
     def __init__(self, paths, metainfo, stimtype, discard_all):
@@ -3387,6 +3468,11 @@ class Post4ap(alloptical):
 
         # specify stims for classifying cells
         on_ = []
+        for start, stop in zip(expobj.seizure_lfp_onsets, expobj.seizure_lfp_offsets):
+            if 0 in expobj.seizure_lfp_onsets:
+                pass
+            on_.append(start)
+
         if 0 in expobj.seizure_lfp_onsets:  # this is used to check if 2p imaging is starting mid-seizure (which should be signified by the first lfp onset being set at frame # 0)
             on_ = on_ + [expobj.stim_start_frames[0]]
         on_.extend(expobj.stims_bf_sz)
@@ -5209,11 +5295,12 @@ def run_photostim_preprocessing(trial, exp_type, tiffs_loc, naparms_loc, paqs_lo
 
 ###### SLM TARGETS analysis + plottings
 # after running suite2p
-def run_alloptical_processing_photostim(expobj, to_suite2p=None, baseline_trials=None, plots: bool = True,
+def run_alloptical_processing_photostim(expobj: Union[alloptical, Post4ap], to_suite2p=None, baseline_trials=None, plots: bool = True,
                                         force_redo: bool = False):
     """
     main function for running processing photostim trace data collecting (e.g. dFF photostim trials pre- post stim).
 
+    :type expobj: object
     :param expobj: experimental object (usually from pkl file)
     :param to_suite2p: trials that were used in the suite2p run for this expobj
     :param baseline_trials: trials that were baseline (spontaneous pre-4ap) for this expobj
@@ -5224,7 +5311,7 @@ def run_alloptical_processing_photostim(expobj, to_suite2p=None, baseline_trials
     :return: n/a
     """
 
-    print(f"\nRunning alloptical_processing_photostim for {expobj.metainfo['animal prep.']}, {expobj.metainfo['trial']} ------------------------------")
+    print(f"\nRunning alloptical_processing_photostim for {expobj.t_series_name} ------------------------------")
 
     if force_redo:
         expobj._findTargetsAreas()
@@ -5343,13 +5430,13 @@ def run_alloptical_processing_photostim(expobj, to_suite2p=None, baseline_trials
             expobj.get_SLMTarget_responses_dff(process='dF/prestimF', threshold=10,
                                                stims_to_use=expobj.stim_start_frames)
         # dF/stdF
-        expobj.stims_idx = [expobj.stim_start_frames.index(stim) for stim in expobj.stim_start_frames]
+        # expobj.stims_idx = [expobj.stim_start_frames.index(stim) for stim in expobj.stim_start_frames]
         expobj.StimSuccessRate_SLMtargets_dfstdf, expobj.traces_SLMtargets_successes_avg_dfstdf, expobj.traces_SLMtargets_failures_avg_dfstdf = \
-            expobj.calculate_SLMTarget_SuccessStims(process='dF/stdF', hits_slmtargets_df=expobj.hits_SLMtargets,
+            expobj.calculate_SLMTarget_SuccessStims(process='dF/stdF', hits_slmtargets_df=expobj.hits_SLMtargets_dfstdf,
                                                     stims_idx_l=expobj.stims_idx)
         # dF/prestimF
         expobj.StimSuccessRate_SLMtargets_dfprestimf, expobj.traces_SLMtargets_successes_avg_dfprestimf, expobj.traces_SLMtargets_failures_avg_dfprestimf = \
-            expobj.calculate_SLMTarget_SuccessStims(process='dF/prestimF', hits_slmtargets_df=expobj.hits_SLMtargets,
+            expobj.calculate_SLMTarget_SuccessStims(process='dF/prestimF', hits_slmtargets_df=expobj.hits_SLMtargets_dfprestimf,
                                                     stims_idx_l=expobj.stims_idx)
         # trace dFF
         expobj.StimSuccessRate_SLMtargets_tracedFF, expobj.hits_SLMtargets_tracedFF, expobj.responses_SLMtargets_tracedFF, expobj.traces_SLMtargets_tracedFF_successes = \
@@ -5366,8 +5453,7 @@ def run_alloptical_processing_photostim(expobj, to_suite2p=None, baseline_trials
         #     get_nontargets_stim_traces_norm(expobj=expobj, normalize_to='pre-stim', pre_stim=expobj.pre_stim,
         #                                     post_stim=expobj.post_stim)
 
-        expobj._makeNontargetsStimTracesArray(normalize_to='pre-stim', pre_stim=expobj.pre_stim,
-                                            post_stim=expobj.post_stim)
+        expobj._makeNontargetsStimTracesArray(normalize_to='pre-stim')
 
     elif 'post' in expobj.metainfo['exptype']:
         seizure_filter = True
@@ -6080,7 +6166,7 @@ def plot_photostim_(dff_array, stim_duration, pre_stim=10, post_stim=200, title=
     plt.show()
 
 
-## moved to utils.funcs_pj .21/10/16
+## moved to _utils_.funcs_pj .21/10/16
 def points_in_circle_np(radius, x0=0, y0=0, ):
     x_ = np.arange(x0 - radius - 1, x0 + radius + 1, dtype=int)
     y_ = np.arange(y0 - radius - 1, y0 + radius + 1, dtype=int)

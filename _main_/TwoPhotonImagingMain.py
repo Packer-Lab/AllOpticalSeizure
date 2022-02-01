@@ -13,7 +13,7 @@ import numpy as np
 import xml.etree.ElementTree as ET
 import tifffile as tf
 from funcsforprajay import funcs as pj
-from utils.paq_utils import paq_read
+from _utils_.paq_utils import paq_read
 import alloptical_plotting_utils as aoplot
 import pickle
 import _alloptical_utils as Utils

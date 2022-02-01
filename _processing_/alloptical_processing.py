@@ -354,6 +354,8 @@ def run_alloptical_processing_photostim(expobj, to_suite2p=None, baseline_trials
 
         expobj.avgResponseSzStims_SLMtargets()
 
+    expobj.create_anndata_SLMtargets()
+
     expobj.save()
 
     print(f"\nFINISHED alloptical_processing_photostim for {expobj.metainfo['animal prep.']}, {expobj.metainfo['trial']} ------------------------------\n\n\n\n")

@@ -2,8 +2,10 @@
 
 import sys;
 
+from Vape.utils import sta
+
 sys.path.append('/home/pshah/Documents/code/Vape/')
-from utils import sta
+from _utils_.funcs_pj import threshold_detect
 
 import numpy as np
 import pandas as pd
@@ -12,15 +14,6 @@ import matplotlib.ticker as mticker
 import scipy.signal as signal
 from scipy import io
 
-# from scipy.stats import pearsonr
-# from scipy.signal import savgol_filter
-#
-# import tifffile as tf
-# import pickle as pkl
-
-import matplotlib as mpl
-# import matplotlib.pyplot as plt
-# mpl.use('TkAgg')  # or can use 'TkAgg', whatever you have/prefer
 import plotly.graph_objects as go
 import plotly.express as px
 

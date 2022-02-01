@@ -8,6 +8,8 @@ import itertools
 import os
 import sys
 
+from _utils_._anndata import create_anndata_SLMtargets, AnnotatedData
+
 sys.path.append('/home/pshah/Documents/code/')
 from Vape.utils.utils_funcs import s2p_loader
 from Vape.utils import STAMovieMaker_noGUI as STAMM
@@ -26,11 +28,11 @@ import bisect
 from funcsforprajay import funcs as pj
 from funcsforprajay import pnt2line
 from funcsforprajay.wrappers import plot_piping_decorator
-from utils.paq_utils import paq_read, frames_discard
+from _utils_.paq_utils import paq_read, frames_discard
 import alloptical_plotting_utils as aoplot
 
-from _alloptical_utils import Utils
-from TwoPhotonImagingMain import TwoPhotonImaging
+import _alloptical_utils as Utils
+from _main_.TwoPhotonImagingMain import TwoPhotonImaging
 
 class alloptical(TwoPhotonImaging):
 
@@ -99,7 +101,12 @@ class alloptical(TwoPhotonImaging):
 
         ## NON PHOTOSTIM SLM TARGETS
         # TODO add attr's related to non targets cells
-
+        self.dff_traces: np.ndarray
+        self.dff_traces_avg: np.ndarray
+        self.dfstdF_traces: np.ndarray
+        self.dfstdF_traces_avg: np.ndarray
+        self.raw_traces: np.ndarray
+        self.raw_traces_avg: np.ndarray
 
         # put object through 2p imaging processing workflow
         TwoPhotonImaging.__init__(self, tiff_path=paths['tiffs_loc'], paq_path=paths['paqs_loc'], metainfo=metainfo, analysis_save_path=paths['analysis_save_path'],
@@ -183,7 +190,7 @@ class alloptical(TwoPhotonImaging):
             self.raw_SLMTargets = targets_trace_full[:,
                                   self.curr_trial_frames[0] - start * 2000: self.curr_trial_frames[1] - (start * 2000)]
 
-            self.dFF_SLMTargets = normalize_dff(self.raw_SLMTargets, threshold_pct=10)
+            self.dFF_SLMTargets = Utils.normalize_dff(self.raw_SLMTargets, threshold_pct=10)
 
             # targets_trace_dFF_full = normalize_dff(targets_trace_full, threshold_pct=10)
             # self.dFF_SLMTargets = targets_trace_dFF_full[:, self.curr_trial_frames[0] - start * 2000: self.curr_trial_frames[1] - (start * 2000)]
@@ -1616,7 +1623,7 @@ class alloptical(TwoPhotonImaging):
             flu_trials = [self.raw[cell_idx][stim - self.pre_stim: stim + self.stim_duration_frames + self.post_stim]
                           for stim in stim_timings]
 
-            dff_trace = normalize_dff(self.raw[cell_idx],
+            dff_trace = Utils.normalize_dff(self.raw[cell_idx],
                                       threshold_pct=50)  # normalize trace (dFF) to mean of whole trace
 
             if normalize_to == 'baseline':  # probably gonna ax this anyways
@@ -1672,7 +1679,7 @@ class alloptical(TwoPhotonImaging):
                             trace)  # - commented out to test if we need to exclude cells for this correction with low mean_pre since you're not dividing by a bad mean_pre value
                     else:
                         # trace_dff = ((trace - mean_pre) / mean_pre) * 100
-                        trace_dff = normalize_dff(trace, threshold_val=mean_pre)
+                        trace_dff = Utils.normalize_dff(trace, threshold_val=mean_pre)
                         # std_pre = np.std(trace[0:self.pre_stim], ddof=1)
                         # # dFstdF = (((trace - mean_pre) / mean_pre) * 100) / std_pre  # make dF divided by std of pre-stim F trace
                         # dFstdF = (trace - mean_pre) / std_pre  # make dF divided by std of pre-stim F trace
@@ -2281,3 +2288,55 @@ class alloptical(TwoPhotonImaging):
             y=0.97, fontsize=7)
         plt.show()
         Utils.save_figure(fig, save_path_suffix=f"{save_fig}") if save_fig else None
+
+    def create_anndata_SLMtargets(expobj):
+        """
+        Creates annotated data (see anndata library for more information on AnnotatedData) object based around the Ca2+ matrix of the imaging trial.
+
+        """
+
+        if expobj.dFF_SLMTargets or expobj.raw_SLMTargets:
+            # SETUP THE OBSERVATIONS (CELLS) ANNOTATIONS TO USE IN anndata
+            # build dataframe for obs_meta from SLM targets information
+            obs_meta = pd.DataFrame(
+                columns=['SLM group #', 'SLM target coord'], index=range(expobj.n_targets_total))
+            for groupnum, targets in enumerate(expobj.target_coords):
+                for target, coord in enumerate(targets):
+                    obs_meta.loc[target, 'SLM group #'] = groupnum
+                    obs_meta.loc[target, 'SLM target coord'] = coord
+
+            # build numpy array for multidimensional obs metadata
+            obs_m = {'SLM targets areas': []}
+            for groupnum, targets in enumerate(expobj.target_areas):
+                for target, coord in enumerate(targets):
+                    obs_m['SLM targets areas'] = groupnum
+
+            # SETUP THE VARIABLES ANNOTATIONS TO USE IN anndata
+            # build dataframe for var annot's - based on stim_start_frames
+            var_meta = pd.DataFrame(index=['wvfront in sz', 'seizure location'], columns=expobj.stim_start_frames)
+            for fr_idx, stim_frame in enumerate(expobj.stim_start_frames):
+                if 'pre' in expobj.exptype:
+                    var_meta.loc['wvfront in sz', stim_frame] = False
+                    var_meta.loc['seizure location', stim_frame] = None
+                elif 'post' in expobj.exptype:
+                    if stim_frame in expobj.stimsWithSzWavefront:
+                        var_meta.loc['wvfront in sz', stim_frame] = True
+                        var_meta.loc['seizure location', stim_frame] = '..not-set-yet..'
+                    else:
+                        var_meta.loc['wvfront in sz', stim_frame] = False
+                        var_meta.loc['seizure location', stim_frame] = None
+
+            # BUILD LAYERS TO ADD TO anndata OBJECT
+            layers = {'SLM Targets photostim responses (dFF)': expobj.dFF_SLMTargets
+                      }
+
+            print(f"\n\----- CREATING annotated data object using AnnData:")
+            __data_type = 'Registered Imaging Raw from SLM targets areas'
+            adata = AnnotatedData(X=expobj.raw_SLMTargets, obs=obs_meta, var=var_meta.T, obsm=obs_m,
+                                  layers=layers, data_label=__data_type)
+
+            print(f"\n{adata}")
+            expobj.slmtargets_data = adata
+        else:
+            Warning(
+                'did not create anndata. anndata creation only available if experiments were processed with suite2p and .paq file(s) provided for temporal synchronization')

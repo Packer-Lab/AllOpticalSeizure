@@ -1,19 +1,19 @@
 # %% 0) IMPORT MODULES AND TRIAL expobj OBJECT
 import sys
 import os
+
+from _main_ import Post4apMain
+
 sys.path.append('/home/pshah/Documents/code/PackerLab_pycharm/')
 sys.path.append('/home/pshah/Documents/code/')
 import alloptical_utils_pj as aoutils
 import alloptical_plotting_utils as aoplot
 from funcsforprajay import funcs as pj
 import numpy as np
-import pandas as pd
 import matplotlib.pyplot as plt
-from matplotlib.colors import ColorConverter
-import seaborn as sns
-import tifffile as tf
+import _alloptical_utils as Utils
 
-from skimage import draw
+
 
 # import results superobject that will collect analyses from various individual experiments
 results_object_path = '/home/pshah/mnt/qnap/Analysis/alloptical_results_superobject.pkl'
@@ -25,11 +25,72 @@ onePresults = aoutils.import_resultsobj(pkl_path=results_object_path)
 save_path_prefix = '/home/pshah/mnt/qnap/Analysis/Procesing_figs/sz_processing_boundaries_2022-01-06/'
 os.makedirs(save_path_prefix) if not os.path.exists(save_path_prefix) else None
 
+# 6.0-dc) ANALYSIS: calculate time delay between LFP onset of seizures and imaging FOV invasion for each seizure for each experiment
+expobj = Utils.import_expobj(prep='RL108', trial='t-013')
 
-# %% 5.0-dc) ANALYSIS: cross-correlation between mean FOV 2p calcium trace and LFP seizure trace TODO
+
+
+# %% 6.0-dc) ANALYSIS: calculate time delay between LFP onset of seizures and imaging FOV invasion for each seizure for each experiment
+
+## create anndata object if not created yet
+@aoutils.run_for_loop_across_exps(run_pre4ap_trials=True, run_post4ap_trials=True)
+def tempcreateanndata(**kwargs):
+    print(f"\t\- collecting responses vs. distance to seizure [5.0-1]")
+
+
+    expobj = kwargs['expobj']
+
+    if not hasattr(expobj, 'responses_SLMtargets_dfprestimf'):
+        aoutils.run_alloptical_processing_photostim(expobj)
+        expobj.save()
+
+    if not hasattr(expobj, 'slmtargets_data'):
+        expobj.create_anndata_SLMtargets()
+        expobj.save()
+
+tempcreateanndata()
+
+# adata object
+# expobj.slmtargets_data
+
+# %%
+@aoutils.run_for_loop_across_exps(run_pre4ap_trials=False, run_post4ap_trials=True)
+def szInvasionTime(**kwargs):
+    expobj = kwargs['expobj']
+    time_delay_sec = ['.']*len(expobj.stim_start_frames)
+    for i in range(expobj.numSeizures):
+        # i = 1
+        lfp_onset_fr = expobj.seizure_lfp_onsets[i]
+        if lfp_onset_fr != 0:
+            start = expobj.seizure_lfp_onsets[i]
+            stop = expobj.seizure_lfp_offsets[i]
+            _stim_insz = [stim_fr for stim_fr in expobj.stim_start_frames if start < stim_fr < stop]
+            stims_wv = [stim_fr for stim_fr in _stim_insz if stim_fr in expobj.stimsWithSzWavefront]
+            stims_nowv = [stim_fr for stim_fr in _stim_insz if stim_fr not in expobj.stimsWithSzWavefront]
+            for stim in stims_wv:
+                if stim in expobj.stimsWithSzWavefront:
+                    sz_start_sec = start / expobj.fps
+                    _time_delay_sec = (stim / expobj.fps) - sz_start_sec
+                    idx = np.where(expobj.slmtargets_data.var.stim_start_frame == stim)[0][0]
+                    time_delay_sec[idx] = round(_time_delay_sec, 3)
+            for stim in stims_nowv:
+                if stim < stims_wv[0]:  # first seizure stim frame with the seizure wavefront
+                    idx = np.where(expobj.slmtargets_data.var.stim_start_frame == stim)[0][0]
+                    time_delay_sec[idx] = "bf invasion"  # before seizure invasion to the FOV
+                elif stim > stims_wv[-1]:  # last seizure stim frame with the seizure wavefront
+                    idx = np.where(expobj.slmtargets_data.var.stim_start_frame == stim)[0][0]
+                    time_delay_sec[idx] = "af invasion"  # after seizure wavefront has passed the FOV
+
+    expobj.slmtargets_data.add_variables(var_name='delay_from_sz_onset_sec', values=time_delay_sec)
+
+
+szInvasionTime()
+
+
+# %% 5.0-dc) ANALYSIS: cross-correlation between mean FOV 2p calcium trace and LFP seizure trace - incomplete not working yet
 import scipy.signal as signal
 
-expobj, experiment = aoutils.import_expobj(prep='RL109', trial='t-017')
+expobj = aoutils.import_expobj(prep='RL109', trial='t-017')
 
 sznum = 1
 slice = np.s_[expobj.convert_frames_to_paqclock(expobj.seizure_lfp_onsets[sznum]): expobj.convert_frames_to_paqclock(expobj.seizure_lfp_offsets[sznum])]
@@ -580,3 +641,69 @@ pj.plot_bar_with_points(data=[twop_trials + onep_trials], x_tick_labels=['Experi
                         title='rate of seizures during exp', expand_size_x=0.7, expand_size_y=1, ylims=[0, 1],
                         shrink_text=0.8)
 
+
+
+# %% ARCHIVE
+
+# %% temp fixing getting sz locations per stim
+
+expobj.stimsSzLocations = pd.DataFrame(data=None, index=expobj.stims_in_sz, columns=['sz_num', 'coord1', 'coord2', 'wavefront_in_frame'])
+
+# specify stims for classifying cells
+on_ = []
+_end = []
+for start, stop in zip(expobj.seizure_lfp_onsets, expobj.seizure_lfp_offsets):
+
+    stims_frames = [stim for stim in expobj.stim_start_frames if start < stim < stop]
+    if len(stims_frames) > 0:
+        on_.append(stims_frames[0])
+        _end.append(stims_frames[-1])
+        print(f"start: {start}, on_: {stims_frames[0]}")
+        print(f"stop: {stop}, on_: {stims_frames[-1]}\n")
+    #
+    # if 0 in expobj.seizure_lfp_onsets and expobj.seizure_lfp_offsets[0] > expobj.stim_start_frames[0]:
+    #     frame = expobj.stim_start_frames[0]
+    #     # print(f"{frame} [1]")
+    #     on_.append(frame)
+    # else:
+    #     frame = [stim_frame for stim_frame in expobj.stim_start_frames if start < stim_frame < stop]
+    #     # print(f"{frame} [2]")
+    #     on_.append(frame[0]) if len(frame) > 0 else None
+    #
+    # _end.extend(stop)
+    # if expobj.stim_start_frames[-1] > expobj.seizure_lfp_offsets[-1]:
+    #     pass
+
+
+# on_ = []
+# if 0 in expobj.seizure_lfp_onsets:  # this is used to check if 2p imaging is starting mid-seizure (which should be signified by the first lfp onset being set at frame # 0)
+#     on_ = on_ + [expobj.stim_start_frames[0]]
+# on_.extend(expobj.stims_bf_sz)
+# if len(expobj.stims_af_sz) != len(on_):
+#     end = expobj.stims_af_sz + [expobj.stim_start_frames[-1]]
+# else:
+#     end = expobj.stims_af_sz
+# print(f'\n\t\- seizure start frames: {on_} [{len(on_)}]')
+# print(f'\t\- seizure end frames: {end} [{len(end)}]\n')
+
+sz_num = 0
+for on, off in zip(on_, _end):
+    stims_of_interest = [stim for stim in expobj.stim_start_frames if on < stim < off if
+                         stim != expobj.stims_in_sz[0]]
+    # stims_of_interest_ = [stim for stim in stims_of_interest if expobj._sz_wavefront_stim(stim=stim)]
+    # expobj.stims_sz_wavefront.append(stims_of_interest_)
+
+    print(f"{stims_of_interest} [1]")
+
+    for _, stim in enumerate(stims_of_interest):
+        print(f"\t{stim} [2]")
+        if os.path.exists(expobj.sz_border_path(stim=stim)):
+            xline, yline = pj.xycsv(csvpath=expobj.sz_border_path(stim=stim))
+            expobj.stimsSzLocations.loc[stim, :] = [sz_num, [xline[0], yline[0]], [xline[1], yline[1]], None]
+
+            j = expobj._close_to_edge(tuple(yline))
+            expobj.stimsSzLocations.loc[stim, 'wavefront_in_frame'] = j
+        else:
+            print(f'\t\tno csv coords for stim: {stim}')
+
+    sz_num += 1

@@ -9,7 +9,7 @@ import alloptical_plotting_utils as aoplot
 import matplotlib.pyplot as plt
 import pandas as pd
 import numpy as np
-import utils.funcs_pj as pj
+import _utils_.funcs_pj as pj
 import tifffile as tf
 
 ###### IMPORT pkl file containing expobj

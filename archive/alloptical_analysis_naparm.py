@@ -3,7 +3,7 @@
 # # imports general modules, runs ipython magic commands
 # # change path in this notebook to point to repo locally
 # # n.b. sometimes need to run this cell twice to init the plotting paramters
-# import sys; sys.path.append('/home/pshah/Documents/code/Vape/utils/')
+# import sys; sys.path.append('/home/pshah/Documents/code/Vape/_utils_/')
 # import alloptical_utils_pj as ao
 # import numpy as np
 # import utils_funcs as uf
@@ -21,7 +21,7 @@
 import alloptical_utils_pj as ao
 import numpy as np
 import pandas as pd
-import utils.utils_funcs as uf #from Vape
+import _utils_.utils_funcs as uf #from Vape
 import matplotlib.pyplot as plt
 import pickle
 import sys; sys.path.append('/Users/prajayshah/OneDrive - University of Toronto/PycharmProjects/Vape')
