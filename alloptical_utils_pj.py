@@ -5552,6 +5552,7 @@ def run_alloptical_processing_photostim(expobj: Union[alloptical, Post4ap], to_s
                     expobj.metainfo['animal prep.'], expobj.metainfo['trial']), ' [*2.3] ')
 
         expobj.avgResponseSzStims_SLMtargets()
+    expobj.create_anndata_SLMtargets()
 
     expobj.save()
 

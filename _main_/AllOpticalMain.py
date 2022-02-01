@@ -8,7 +8,7 @@ import itertools
 import os
 import sys
 
-from _utils_._anndata import create_anndata_SLMtargets, AnnotatedData
+from _utils_._anndata import AnnotatedData
 
 sys.path.append('/home/pshah/Documents/code/')
 from Vape.utils.utils_funcs import s2p_loader

@@ -23,7 +23,149 @@ pd.set_option('max_rows', 10)
 
 
 
-# %% UTILITY FUNCTIONS and DECORATORS
+
+# %% DECORATORS
+## DECORATORS
+
+# ALL OPTICAL EXPERIMENTS RUN
+def run_for_loop_across_exps(run_pre4ap_trials=False, run_post4ap_trials=False, skip_trials=[], run_trials=[],
+                             ignore_cache=False, supress_print=False):
+    """decorator to use for for-looping through experiment trials across run_pre4ap_trials and run_post4ap_trials.
+    the trials to for loop through are defined in allopticalResults.pre_4ap_trials and allopticalResults.post_4ap_trials"""
+    # if len(run_trials) > 0 or run_pre4ap_trials is True or run_post4ap_trials is True:
+    print(f"\n {'..'*5} INITIATING FOR LOOP ACROSS EXPS {'..'*5}\n")
+    t_start = time.time()
+    def main_for_loop(func):
+        print(f"\n {'..' * 5} [2] INITIATING FOR LOOP ACROSS EXPS {'..' * 5}\n")
+        @functools.wraps(func)
+        def inner(*args, **kwargs):
+            print(f"\n {'..' * 5} [3] INITIATING FOR LOOP ACROSS EXPS {'..' * 5}\n")
+
+            if run_trials:
+                print(f"\n{'-' * 5} RUNNING SPECIFIED TRIALS from `trials_run` {'-' * 5}")
+                counter1 = 0
+                for i, exp_prep in enumerate(run_trials):
+                    # print(i, exp_prep)
+                    try:  # dont continue if exp_prep already run before (as determined by location in func_cache
+                        if get_from_cache(func.__name__, item=exp_prep) and ignore_cache is False:
+                            run = False
+                            if not supress_print: print(
+                                f"{exp_prep} found in cache for func {func.__name__} ... skipping repeat run.")
+                        else:
+                            run = True
+                    except KeyError:
+                        run = True
+                    if run:
+                        prep = exp_prep[:-6]
+                        trial = exp_prep[-5:]
+                        try:
+                            expobj = import_expobj(prep=prep, trial=trial, verbose=False)
+                        except:
+                            raise ImportError(f"IMPORT ERROR IN {prep} {trial}")
+                        working_on(expobj)
+                        func(expobj=expobj, **kwargs)
+                        # try:
+                        #     func(expobj=expobj, **kwargs)
+                        # except:
+                        #     print('Exception on the wrapped function call')
+                        end_working_on(expobj)
+                counter1 += 1
+
+
+            if run_pre4ap_trials:
+                print(f"\n{'-' * 5} RUNNING PRE4AP TRIALS {'-' * 5}")
+                counter_i = 0
+                res = []
+                for i, x in enumerate(allopticalResults.pre_4ap_trials):
+                    counter_j = 0
+                    for j, exp_prep in enumerate(x):
+                        if exp_prep in skip_trials:
+                            pass
+                        else:
+                            # print(i, exp_prep)
+                            try:  # dont continue if exp_prep already run before (as determined by location in func_cache
+                                if get_from_cache(func.__name__, item=exp_prep) and ignore_cache is False:
+                                    run = False
+                                    if not supress_print: print(
+                                        f"{exp_prep} found in cache for func {func.__name__} ... skipping repeat run.")
+                                else:
+                                    run = True
+                            except KeyError:
+                                run = True
+                            if run is True:
+                                prep = exp_prep[:-6]
+                                pre4aptrial = exp_prep[-5:]
+                                try:
+                                    expobj = import_expobj(prep=prep, trial=pre4aptrial, verbose=False)
+                                except:
+                                    raise ImportError(f"IMPORT ERROR IN {prep} {pre4aptrial}")
+
+                                working_on(expobj)
+                                res_ = func(expobj=expobj, **kwargs)
+                                # try:
+                                #     func(expobj=expobj, **kwargs)
+                                # except:
+                                #     print('Exception on the wrapped function call')
+                                end_working_on(expobj)
+                                res.append(res_) if res_ is not None else None
+                                set_to_cache(func_name=func.__name__, item=exp_prep) if res_ is True and not ignore_cache else None
+
+                        counter_j += 1
+                    counter_i += 1
+                if res:
+                    return res
+
+            if run_post4ap_trials:
+                print(f"\n{'-' * 5} RUNNING POST4AP TRIALS {'-' * 5}")
+                counter_i = 0
+                res = []
+                for i, x in enumerate(allopticalResults.post_4ap_trials):
+                    counter_j = 0
+                    for j, exp_prep in enumerate(x):
+                        if exp_prep in skip_trials:
+                            pass
+                        else:
+                            # print(i, exp_prep)
+                            try:  # dont continue if exp_prep already run before (as determined by location in func_cache
+                                if get_from_cache(func.__name__, item=exp_prep) and ignore_cache is False:
+                                    run = False
+                                    if not supress_print: print(
+                                        f"{exp_prep} found in cache for func {func.__name__} ... skipping repeat run.")
+                                else:
+                                    run = True
+                            except KeyError:
+                                run = True
+                            if run:
+                                prep = exp_prep[:-6]
+                                post4aptrial = exp_prep[-5:]
+                                try:
+                                    expobj = import_expobj(prep=prep, trial=post4aptrial, verbose=False)
+                                except:
+                                    raise ImportError(f"IMPORT ERROR IN {prep} {post4aptrial}")
+
+                                working_on(expobj)
+                                res_ = func(expobj=expobj, **kwargs)
+                                # try:
+                                #     func(expobj=expobj, **kwargs)
+                                # except:
+                                #     print('Exception on the wrapped function call')
+                                end_working_on(expobj)
+                                res.append(res_) if res_ is not None else None
+                                set_to_cache(func_name=func.__name__,
+                                                   item=exp_prep) if res_ is True and not ignore_cache else None
+
+                        counter_j += 1
+                    counter_i += 1
+                if res:
+                    return res
+            t_end = time.time()
+            pj.timer(t_start, t_end)
+            print(f" {'--' * 5} COMPLETED FOR LOOP ACROSS EXPS {'--' * 5}\n")
+        return inner
+    return main_for_loop
+
+
+# %% UTILITY FUNCTIONS
 
 def save_pkl(obj, save_path: str = None):
     if save_path is None:

@@ -7,12 +7,13 @@ from _main_ import Post4apMain
 sys.path.append('/home/pshah/Documents/code/PackerLab_pycharm/')
 sys.path.append('/home/pshah/Documents/code/')
 import alloptical_utils_pj as aoutils
+import _alloptical_utils as Utils
+import _processing_.alloptical_processing as aoprocess
 import alloptical_plotting_utils as aoplot
 from funcsforprajay import funcs as pj
 import numpy as np
 import matplotlib.pyplot as plt
 import _alloptical_utils as Utils
-
 
 
 # import results superobject that will collect analyses from various individual experiments
@@ -33,7 +34,7 @@ expobj = Utils.import_expobj(prep='RL108', trial='t-013')
 # %% 6.0-dc) ANALYSIS: calculate time delay between LFP onset of seizures and imaging FOV invasion for each seizure for each experiment
 
 ## create anndata object if not created yet
-@aoutils.run_for_loop_across_exps(run_pre4ap_trials=True, run_post4ap_trials=True)
+@Utils.run_for_loop_across_exps(run_pre4ap_trials=True, run_post4ap_trials=True)
 def tempcreateanndata(**kwargs):
     print(f"\t\- collecting responses vs. distance to seizure [5.0-1]")
 
@@ -41,7 +42,7 @@ def tempcreateanndata(**kwargs):
     expobj = kwargs['expobj']
 
     if not hasattr(expobj, 'responses_SLMtargets_dfprestimf'):
-        aoutils.run_alloptical_processing_photostim(expobj)
+        aoprocess.run_alloptical_processing_photostim(expobj)
         expobj.save()
 
     if not hasattr(expobj, 'slmtargets_data'):
@@ -54,7 +55,7 @@ tempcreateanndata()
 # expobj.slmtargets_data
 
 # %%
-@aoutils.run_for_loop_across_exps(run_pre4ap_trials=False, run_post4ap_trials=True)
+@Utils.run_for_loop_across_exps(run_pre4ap_trials=False, run_post4ap_trials=True)
 def szInvasionTime(**kwargs):
     expobj = kwargs['expobj']
     time_delay_sec = ['.']*len(expobj.stim_start_frames)
@@ -67,19 +68,20 @@ def szInvasionTime(**kwargs):
             _stim_insz = [stim_fr for stim_fr in expobj.stim_start_frames if start < stim_fr < stop]
             stims_wv = [stim_fr for stim_fr in _stim_insz if stim_fr in expobj.stimsWithSzWavefront]
             stims_nowv = [stim_fr for stim_fr in _stim_insz if stim_fr not in expobj.stimsWithSzWavefront]
-            for stim in stims_wv:
-                if stim in expobj.stimsWithSzWavefront:
-                    sz_start_sec = start / expobj.fps
-                    _time_delay_sec = (stim / expobj.fps) - sz_start_sec
-                    idx = np.where(expobj.slmtargets_data.var.stim_start_frame == stim)[0][0]
-                    time_delay_sec[idx] = round(_time_delay_sec, 3)
-            for stim in stims_nowv:
-                if stim < stims_wv[0]:  # first seizure stim frame with the seizure wavefront
-                    idx = np.where(expobj.slmtargets_data.var.stim_start_frame == stim)[0][0]
-                    time_delay_sec[idx] = "bf invasion"  # before seizure invasion to the FOV
-                elif stim > stims_wv[-1]:  # last seizure stim frame with the seizure wavefront
-                    idx = np.where(expobj.slmtargets_data.var.stim_start_frame == stim)[0][0]
-                    time_delay_sec[idx] = "af invasion"  # after seizure wavefront has passed the FOV
+            if len(stims_wv) > 0:
+                for stim in stims_wv:
+                    if stim in expobj.stimsWithSzWavefront:
+                        sz_start_sec = start / expobj.fps
+                        _time_delay_sec = (stim / expobj.fps) - sz_start_sec
+                        idx = np.where(expobj.slmtargets_data.var.stim_start_frame == stim)[0][0]
+                        time_delay_sec[idx] = round(_time_delay_sec, 3)
+                for stim in stims_nowv:
+                    if stim < stims_wv[0]:  # first seizure stim frame with the seizure wavefront
+                        idx = np.where(expobj.slmtargets_data.var.stim_start_frame == stim)[0][0]
+                        time_delay_sec[idx] = "bf invasion"  # before seizure invasion to the FOV
+                    elif stim > stims_wv[-1]:  # last seizure stim frame with the seizure wavefront
+                        idx = np.where(expobj.slmtargets_data.var.stim_start_frame == stim)[0][0]
+                        time_delay_sec[idx] = "af invasion"  # after seizure wavefront has passed the FOV
 
     expobj.slmtargets_data.add_variables(var_name='delay_from_sz_onset_sec', values=time_delay_sec)
 

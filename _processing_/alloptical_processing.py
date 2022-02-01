@@ -1,4 +1,5 @@
 import os
+from typing import Union
 
 from _main_.AllOpticalMain import alloptical
 from _main_.Post4apMain import Post4ap
@@ -99,11 +100,12 @@ def run_photostim_preprocessing(trial, exp_type, tiffs_loc, naparms_loc, paqs_lo
     return expobj
 
 
-def run_alloptical_processing_photostim(expobj, to_suite2p=None, baseline_trials=None, plots: bool = True,
+def run_alloptical_processing_photostim(expobj: Union[alloptical, Post4ap], to_suite2p=None, baseline_trials=None, plots: bool = True,
                                         force_redo: bool = False):
     """
     main function for running processing photostim trace data collecting (e.g. dFF photostim trials pre- post stim).
 
+    :type expobj: Union[alloptical, Post4ap] object
     :param expobj: experimental object (usually from pkl file)
     :param to_suite2p: trials that were used in the suite2p run for this expobj
     :param baseline_trials: trials that were baseline (spontaneous pre-4ap) for this expobj
@@ -114,7 +116,7 @@ def run_alloptical_processing_photostim(expobj, to_suite2p=None, baseline_trials
     :return: n/a
     """
 
-    print(f"\nRunning alloptical_processing_photostim for {expobj.metainfo['animal prep.']}, {expobj.metainfo['trial']} ------------------------------")
+    print(f"\nRunning alloptical_processing_photostim for {expobj.t_series_name} ------------------------------")
 
     if force_redo:
         expobj._findTargetsAreas()
@@ -233,13 +235,13 @@ def run_alloptical_processing_photostim(expobj, to_suite2p=None, baseline_trials
             expobj.get_SLMTarget_responses_dff(process='dF/prestimF', threshold=10,
                                                stims_to_use=expobj.stim_start_frames)
         # dF/stdF
-        expobj.stims_idx = [expobj.stim_start_frames.index(stim) for stim in expobj.stim_start_frames]
+        # expobj.stims_idx = [expobj.stim_start_frames.index(stim) for stim in expobj.stim_start_frames]
         expobj.StimSuccessRate_SLMtargets_dfstdf, expobj.traces_SLMtargets_successes_avg_dfstdf, expobj.traces_SLMtargets_failures_avg_dfstdf = \
-            expobj.calculate_SLMTarget_SuccessStims(process='dF/stdF', hits_slmtargets_df=expobj.hits_SLMtargets,
+            expobj.calculate_SLMTarget_SuccessStims(process='dF/stdF', hits_slmtargets_df=expobj.hits_SLMtargets_dfstdf,
                                                     stims_idx_l=expobj.stims_idx)
         # dF/prestimF
         expobj.StimSuccessRate_SLMtargets_dfprestimf, expobj.traces_SLMtargets_successes_avg_dfprestimf, expobj.traces_SLMtargets_failures_avg_dfprestimf = \
-            expobj.calculate_SLMTarget_SuccessStims(process='dF/prestimF', hits_slmtargets_df=expobj.hits_SLMtargets,
+            expobj.calculate_SLMTarget_SuccessStims(process='dF/prestimF', hits_slmtargets_df=expobj.hits_SLMtargets_dfprestimf,
                                                     stims_idx_l=expobj.stims_idx)
         # trace dFF
         expobj.StimSuccessRate_SLMtargets_tracedFF, expobj.hits_SLMtargets_tracedFF, expobj.responses_SLMtargets_tracedFF, expobj.traces_SLMtargets_tracedFF_successes = \
@@ -252,9 +254,11 @@ def run_alloptical_processing_photostim(expobj, to_suite2p=None, baseline_trials
 
 
         ## GET NONTARGETS TRACES - not changed yet to handle the trace dFF processing
-        expobj._makeNontargetsStimTracesArray(normalize_to='pre-stim', pre_stim=expobj.pre_stim,
-                                            post_stim=expobj.post_stim)
+        # expobj.dff_traces, expobj.dff_traces_avg, expobj.dfstdF_traces, expobj.dfstdF_traces_avg, expobj.raw_traces, expobj.raw_traces_avg = \
+        #     get_nontargets_stim_traces_norm(expobj=expobj, normalize_to='pre-stim', pre_stim=expobj.pre_stim,
+        #                                     post_stim=expobj.post_stim)
 
+        expobj._makeNontargetsStimTracesArray(normalize_to='pre-stim')
 
     elif 'post' in expobj.metainfo['exptype']:
         seizure_filter = True
@@ -353,11 +357,9 @@ def run_alloptical_processing_photostim(expobj, to_suite2p=None, baseline_trials
                     expobj.metainfo['animal prep.'], expobj.metainfo['trial']), ' [*2.3] ')
 
         expobj.avgResponseSzStims_SLMtargets()
-
     expobj.create_anndata_SLMtargets()
 
     expobj.save()
 
     print(f"\nFINISHED alloptical_processing_photostim for {expobj.metainfo['animal prep.']}, {expobj.metainfo['trial']} ------------------------------\n\n\n\n")
-
 
