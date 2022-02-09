@@ -1,9 +1,5 @@
-import functools
 import re
 import glob
-from datetime import datetime
-
-import itertools
 
 import os
 import sys
@@ -11,12 +7,9 @@ import sys
 from _utils_._anndata import AnnotatedData
 
 sys.path.append('/home/pshah/Documents/code/')
-from Vape.utils.utils_funcs import s2p_loader
 from Vape.utils import STAMovieMaker_noGUI as STAMM
 import scipy.stats as stats
-import statsmodels.api
 import statsmodels as sm
-from suite2p.run_s2p import run_s2p
 import matplotlib.pyplot as plt
 import seaborn as sns
 import time
@@ -24,12 +17,9 @@ import numpy as np
 import pandas as pd
 import xml.etree.ElementTree as ET
 import tifffile as tf
-import bisect
 from funcsforprajay import funcs as pj
-from funcsforprajay import pnt2line
 from funcsforprajay.wrappers import plot_piping_decorator
-from _utils_.paq_utils import paq_read, frames_discard
-import alloptical_plotting_utils as aoplot
+from _utils_.paq_utils import paq_read
 
 import _alloptical_utils as Utils
 from _main_.TwoPhotonImagingMain import TwoPhotonImaging
@@ -987,6 +977,7 @@ class alloptical(TwoPhotonImaging):
             self.save()
 
             if plot:
+                from _utils_ import alloptical_plotting_utils as aoplot
                 fig, ax = plt.subplots(figsize=[6, 6])
                 fig, ax = aoplot.plot_cells_loc(expobj=self, cells=self.s2p_cell_targets, show=False, fig=fig, ax=ax,
                                                 show_s2p_targets=True,

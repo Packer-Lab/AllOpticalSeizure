@@ -1,7 +1,7 @@
 ## script dedicated to code that focuses on analysis re: SLM targets data
 # %% IMPORT MODULES AND TRIAL expobj OBJECT
 import sys
-import os
+
 sys.path.append('/home/pshah/Documents/code/PackerLab_pycharm/')
 sys.path.append('/home/pshah/Documents/code/')
 import numpy as np
@@ -12,8 +12,7 @@ import tifffile as tf
 from funcsforprajay import funcs as pj
 
 import alloptical_utils_pj as aoutils
-import alloptical_plotting_utils as aoplot
-
+from _utils_ import alloptical_plotting_utils as aoplot
 
 # # import results superobject that will collect analyses from various individual experiments
 results_object_path = '/home/pshah/mnt/qnap/Analysis/alloptical_results_superobject.pkl'

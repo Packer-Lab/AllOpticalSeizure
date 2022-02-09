@@ -1,24 +1,19 @@
 # %% IMPORT MODULES AND TRIAL expobj OBJECT
-import sys; import os
+import sys;
+
 sys.path.append('/home/pshah/Documents/code/PackerLab_pycharm/')
 sys.path.append('/home/pshah/Documents/code/')
 import numpy as np
-import pandas as pd
 import matplotlib.pyplot as plt
-import seaborn as sns
 
 import alloptical_utils_pj as aoutils
-import alloptical_plotting_utils as aoplot
-from funcsforprajay import funcs as pj
-
-from skimage import draw
 
 # # import results superobject that will collect analyses from various individual experiments
 results_object_path = '/home/pshah/mnt/qnap/Analysis/alloptical_results_superobject.pkl'
 allopticalResults = aoutils.import_resultsobj(pkl_path=results_object_path)
 
 
-expobj, experiment = aoutils.import_expobj(prep='RL109', trial='t-013')
+expobj = aoutils.import_expobj(prep='RL109', trial='t-013')
 
 """######### ZONE FOR CALLING THIS SCRIPT DIRECTLY FROM THE SSH SERVER ###########
 ######### ZONE FOR CALLING THIS SCRIPT DIRECTLY FROM THE SSH SERVER ###########
@@ -76,7 +71,7 @@ allopticalResults.post_4ap_trials = [
     ['RL109 t-020'],  # -- need to do sz boundary classifying processing
     ['RL109 t-021'],
     ['RL109 t-018'],
-    ['RL109 t-016',  'RL109 t-017'], # -- need to do sz boundary classifying processing
+    ['RL109 t-016'],  #'RL109 t-017'], # -- missing seizure locations for first seizure (need to mark seizure stims)
     ['PS04 t-018'],  # - need to re run collecting slmtargets_szboundary_stim (sz processing)
     # ['PS05 t-012'],
     ['PS07 t-011'],

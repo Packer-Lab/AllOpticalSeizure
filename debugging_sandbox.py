@@ -8,24 +8,13 @@
 # print(sys.path)
 
 # IMPORT MODULES AND TRIAL expobj OBJECT
-import sys
-import os
 
 # sys.path.append('/home/pshah/Documents/code/PackerLab_pycharm/')
 # sys.path.append('/home/pshah/Documents/code/')
 import alloptical_utils_pj as aoutils
-import alloptical_plotting_utils as aoplot
-from funcsforprajay import funcs as pj
 
-import pickle
 import numpy as np
-import pandas as pd
 import matplotlib.pyplot as plt
-import seaborn as sns
-
-from numba import njit
-from skimage import draw
-import tifffile as tf
 
 # import results superobject that will collect analyses from various individual experiments
 results_object_path = '/home/pshah/mnt/qnap/Analysis/alloptical_results_superobject.pkl'

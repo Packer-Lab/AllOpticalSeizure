@@ -1,11 +1,7 @@
 ### code for preprocessing (initiating expobj classes) of interneuron experiments
 
 from funcsforprajay import funcs as pj
-import matplotlib.pyplot as plt
-import numpy as np
-import os
 import alloptical_utils_pj as aoutils
-import alloptical_plotting_utils as aoplot
 
 # %%
 prep = 'PS15'

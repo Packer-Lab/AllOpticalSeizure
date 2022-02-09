@@ -8,6 +8,8 @@ from datetime import datetime
 import os
 import sys
 
+from _utils_.io import import_expobj, allopticalResults
+
 sys.path.append('/home/pshah/Documents/code/')
 
 import time
@@ -16,12 +18,10 @@ import pandas as pd
 from funcsforprajay import funcs as pj
 import pickle
 
-## SET OPTIONS
-pd.set_option('max_columns', None)
-pd.set_option('max_rows', 10)
-
-
-
+# %% SET OPTIONS
+pd.set_option("display.max_rows", 100)
+pd.set_option("display.max_columns", 100)
+pd.set_option("expand_frame_repr", True)
 
 
 # %% DECORATORS
@@ -62,13 +62,13 @@ def run_for_loop_across_exps(run_pre4ap_trials=False, run_post4ap_trials=False, 
                             expobj = import_expobj(prep=prep, trial=trial, verbose=False)
                         except:
                             raise ImportError(f"IMPORT ERROR IN {prep} {trial}")
-                        working_on(expobj)
+                        working_on(expobj) if not supress_print else None
                         func(expobj=expobj, **kwargs)
                         # try:
                         #     func(expobj=expobj, **kwargs)
                         # except:
                         #     print('Exception on the wrapped function call')
-                        end_working_on(expobj)
+                        end_working_on(expobj) if not supress_print else None
                 counter1 += 1
 
 
@@ -100,15 +100,15 @@ def run_for_loop_across_exps(run_pre4ap_trials=False, run_post4ap_trials=False, 
                                 except:
                                     raise ImportError(f"IMPORT ERROR IN {prep} {pre4aptrial}")
 
-                                working_on(expobj)
+                                working_on(expobj) if not supress_print else None
                                 res_ = func(expobj=expobj, **kwargs)
                                 # try:
                                 #     func(expobj=expobj, **kwargs)
                                 # except:
                                 #     print('Exception on the wrapped function call')
-                                end_working_on(expobj)
+                                end_working_on(expobj) if not supress_print else None
                                 res.append(res_) if res_ is not None else None
-                                set_to_cache(func_name=func.__name__, item=exp_prep) if res_ is True and not ignore_cache else None
+                                set_to_cache(func_name=func.__name__, item=exp_prep) if not ignore_cache else None
 
                         counter_j += 1
                     counter_i += 1
@@ -143,16 +143,15 @@ def run_for_loop_across_exps(run_pre4ap_trials=False, run_post4ap_trials=False, 
                                 except:
                                     raise ImportError(f"IMPORT ERROR IN {prep} {post4aptrial}")
 
-                                working_on(expobj)
+                                working_on(expobj) if not supress_print else None
                                 res_ = func(expobj=expobj, **kwargs)
                                 # try:
                                 #     func(expobj=expobj, **kwargs)
                                 # except:
                                 #     print('Exception on the wrapped function call')
-                                end_working_on(expobj)
+                                end_working_on(expobj) if not supress_print else None
                                 res.append(res_) if res_ is not None else None
-                                set_to_cache(func_name=func.__name__,
-                                                   item=exp_prep) if res_ is True and not ignore_cache else None
+                                set_to_cache(func_name=func.__name__, item=exp_prep) if not ignore_cache else None
 
                         counter_j += 1
                     counter_i += 1
@@ -164,114 +163,33 @@ def run_for_loop_across_exps(run_pre4ap_trials=False, run_post4ap_trials=False, 
         return inner
     return main_for_loop
 
+# %% UTILITY CLASSES
+class ExpobjStrippedTimeDelaySzInvasion:
+    def __init__(self, expobj):
+        self.t_series_name = expobj.t_series_name
+        self.seizure_lfp_onsets = expobj.seizure_lfp_onsets
+        self.seziure_lfp_offsets = expobj.seizure_lfp_offsets
+        self.raw_SLMTargets = expobj.raw_SLMTargets
+        self.mean_raw_flu_trace = expobj.meanRawFluTrace
+        from _utils_._lfp import LFP
+        self.lfp_downsampled = LFP.downsampled_LFP(expobj=expobj)
+        self.save(expobj=expobj)
+
+    def __repr__(self):
+        return f"ExpobjStrippedTimeDelaySzInvasion - {self.t_series_name}"
+
+    def save(self, expobj):
+        path = expobj.analysis_save_path + '/export/'
+        os.makedirs(path, exist_ok=True)
+        path += f"{expobj.prep}_{expobj.trial}_stripped.pkl"
+        with open(f'{path}', 'wb') as outp:
+            pickle.dump(self, outp, pickle.HIGHEST_PROTOCOL)
+            print(f"|- Successfully saved stripped expobj: {expobj.prep}_{expobj.trial} to {path}")
+
+
+
 
 # %% UTILITY FUNCTIONS
-
-def save_pkl(obj, save_path: str = None):
-    if save_path is None:
-        if not hasattr(obj, 'save_path'):
-            raise ValueError(
-                'pkl path for saving was not found in object attributes, please provide path to save to')
-    else:
-        obj.pkl_path = save_path
-
-    with open(obj.pkl_path, 'wb') as f:
-        pickle.dump(obj, f)
-    print(f"\- Saving expobj saved to {obj.pkl_path} -- ")
-
-    backup_dir = pj.return_parent_dir(obj.backup_pkl)
-    os.makedirs(backup_dir, exist_ok=True) if not os.path.exists(backup_dir) else None
-    with open(obj.backup_pkl, 'wb') as f:
-        pickle.dump(obj, f)
-
-
-def import_expobj(aoresults_map_id: str = None, trial: str = None, prep: str = None, date: str = None, pkl_path: str = None,
-                  exp_prep: str = None, verbose: bool = False, do_processing: bool = False, load_backup_path: str = None):
-    """
-    primary function for importing of saved expobj files saved pickel files.
-
-    :param aoresults_map_id:
-    :param trial:
-    :param prep:
-    :param date:
-    :param pkl_path:
-    :param verbose:
-    :param do_processing: whether to do extra misc. processing steps that are the end of the importing code here.
-    :return:
-    """
-
-    if aoresults_map_id is not None:
-        if 'pre' in aoresults_map_id:
-            exp_type = 'pre'
-        elif 'post' in aoresults_map_id:
-            exp_type = 'post'
-        id = aoresults_map_id.split(' ')[1][0]
-        if len(allopticalResults.trial_maps[exp_type][id]) > 1:
-            num_ = int(re.search(r"\d", aoresults_map_id)[0])
-        else:
-            num_ = 0
-        prep, trial = allopticalResults.trial_maps[exp_type][id][num_].split(' ')
-
-    if exp_prep is not None:
-        prep = exp_prep[:-6]
-        trial = exp_prep[-5:]
-
-    # if need to load from backup path!
-    if load_backup_path:
-        pkl_path = load_backup_path
-        print(f"**** loading from backup path! ****")
-
-    if pkl_path is None:
-        if date is None:
-            try:
-                date = allopticalResults.metainfo.loc[
-                    allopticalResults.metainfo['prep_trial'] == f"{prep} {trial}", 'date'].values[0]
-            except ValueError:
-                raise ValueError('not able to find date in allopticalResults.metainfo')
-        pkl_path = "/home/pshah/mnt/qnap/Analysis/%s/%s/%s_%s/%s_%s.pkl" % (date, prep, date, trial, date, trial)
-
-    if not os.path.exists(pkl_path):
-        raise Exception('pkl path NOT found: ' + pkl_path)
-    with open(pkl_path, 'rb') as f:
-        print(f'\- Loading {pkl_path}', end='\r')
-        try:
-            expobj = pickle.load(f)
-        except pickle.UnpicklingError:
-            raise pickle.UnpicklingError(f"\n** FAILED IMPORT OF * {prep} {trial} * from {pkl_path}\n")
-        experiment = f"{expobj.t_series_name} {expobj.metainfo['exptype']} {expobj.metainfo['comments']}"
-        print(f'|- Loaded {expobj.t_series_name} ({pkl_path}) .. DONE') if not verbose else None
-        print(f'|- Loaded {experiment}') if verbose else None
-
-    ### roping in some extraneous processing steps if there's expobj's that haven't completed for them
-
-    # check for existence of backup (if not then make one through the saving func).
-    expobj.save() if not os.path.exists(expobj.backup_pkl) else None
-
-    # save the pkl if loaded from backup path
-    expobj.save() if load_backup_path else None
-
-    if expobj.analysis_save_path[-1] != '/':
-        expobj.analysis_save_path = expobj.analysis_save_path + '/'
-        print(f"updated expobj.analysis_save_path to: {expobj.analysis_save_path}")
-        expobj.save()
-
-    # move expobj to the official save_path from the provided save_path that expobj was loaded from (if different)
-    if pkl_path is not None:
-        if expobj.pkl_path != pkl_path:
-            expobj.save_pkl(save_path=expobj.pkl_path)
-            print('saved new copy of expobj to save_path: ', expobj.pkl_path)
-
-    # other misc. things you want to do when importing expobj -- should be temp code basically - not essential for actual importing of expobj
-
-    return expobj
-
-def import_resultsobj(pkl_path: str):
-    assert os.path.exists(pkl_path)
-    with open(pkl_path, 'rb') as f:
-        print(f"\nimporting resultsobj from: {pkl_path} ... ")
-        resultsobj = pickle.load(f)
-        print(f"|-DONE IMPORT of {(type(resultsobj))} resultsobj \n\n")
-    return resultsobj
 
 # caching func
 cache_folder = '/home/pshah/mnt/qnap/Analysis/temp/cache/'
@@ -493,13 +411,6 @@ def normalize_dff(arr, threshold_pct=20, threshold_val=None):
 
 ##
 
-# import results superobject that will collect analyses from various individual experiments
-results_object_path = '/home/pshah/mnt/qnap/Analysis/alloptical_results_superobject.pkl'
-try:
-    allopticalResults = import_resultsobj(
-        pkl_path=results_object_path)  # this needs to be run AFTER defining the AllOpticalResults class
-except FileNotFoundError:
-    print(f'not able to get allopticalResults object from {results_object_path}')
 
 # dictionary of terms, phrases, etc. that are particular to this analysis
 phrase_dictionary = {
@@ -515,5 +426,6 @@ phrase_dictionary = {
     's2p nontargets': "suite2p ROIs excluding those which are filtered out for being in the target exclusion zone",
     'good cells': "good cells are suite2p ROIs which have some sort of a Flu transient based on a sliding window and std filtering process",
     'stim_id': "the imaging frame number on which the photostimulation is calculated to have first started",
-    'photostim response': 'synonymous with `delta(trace_dFF)`'
+    'photostim response': 'synonymous with `delta(trace_dFF)`',
+    'im_time_sec': 'anndata storage var key that shows the time (in secs) of the photostim frame from the start of the imaging collection'
 }

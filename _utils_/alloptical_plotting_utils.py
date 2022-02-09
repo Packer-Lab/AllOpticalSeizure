@@ -7,16 +7,89 @@ import numpy as np
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 import matplotlib.ticker as mticker
+from mpl_point_clicker import clicker
 from _utils_.paq_utils import paq_read, frames_discard
 from funcsforprajay import funcs as pj
 import alloptical_utils_pj as aoutils
 import tifffile as tf
+from _main_.TwoPhotonImagingMain import TwoPhotonImaging
+
+from typing import List
 
 from funcsforprajay.wrappers import print_start_end_plot, plot_piping_decorator
 
+
+# %% plotting utils
+
+def add_scalebar(expobj: TwoPhotonImaging, ax: mpl.axes.Axes, scale_bar_um: float = 100, **kwargs):
+    """add scalebar to the image being plotted on the a single matplotlib.axes.Axes object using the TwoPhotonImaging object information.
+    Option to specify scale bar um length to add to plot.
+
+    """
+    numpx = scale_bar_um/expobj.pix_sz_x
+
+    lw = 5 if 'lw' not in [*kwargs] else kwargs['lw']
+    color = 'white' if 'color' not in [*kwargs] else kwargs['color']
+    right_offset = 50 if 'right_offset' not in [*kwargs] else kwargs['right_offset']
+    bottom_offset = 50 if 'bottom_offset' not in [*kwargs] else kwargs['bottom_offset']
+
+    ax.plot(np.linspace(expobj.frame_x - right_offset - numpx, expobj.frame_x - right_offset, 40), [expobj.frame_y - bottom_offset]*40,
+            color=color, lw=lw)
+    return ax
+
+# Figure Style settings for notebook.
+def image_frame_options():
+    mpl.rcParams.update({
+        'axes.spines.left': False,
+        'axes.spines.bottom': False,
+        'axes.spines.top': False,
+        'axes.spines.right': False,
+        'legend.frameon': False,
+        'figure.subplot.wspace': .01,
+        'figure.subplot.hspace': .01,
+        'ytick.major.left': False,
+        'xtick.major.bottom': False
+    })
+
+def heatmap_options():
+    jet = mpl.cm.get_cmap('jet')
+    jet.set_bad(color='k')
+
+
+class Klickers:
+    "a simple class for attaching multiple mpl_point_clicker.clicker to matplotlib axes"
+    def __init__(self, axs: mpl.axes.Axes, classes: List[str]=['class1', 'class2', 'class3'], colors: List[str] = ['blue', 'green', 'purple'],
+                 markers=['o', 'x', '*']):
+
+        for i, ax in enumerate(axs):
+            setattr(self, f"klicker{i}", clicker(ax=ax, classes=classes, colors=colors, markers=markers))
+
+    def get_all_klickers(self):
+        all_attrs = self.__dict__()
+        return [all_attrs[attr] for attr in [*all_attrs] if 'klicker' in attr]
+
+    @property
+    def total_num(self):
+        return len(self.get_all_klickers())
+
+
+# helper for multiplotting of frames on axes through a for loop
+def multi_plot_subplots(num_total_plots: int, ncols: int=3):
+    image_frame_options()
+    nrows = int(np.ceil(num_total_plots / ncols)) if int(np.ceil(num_total_plots / ncols)) > 1 else 2
+    fig, axs = plt.subplots(nrows=nrows, ncols=ncols, figsize=(ncols * 4, nrows * 4))
+    counter = 0
+    return fig, axs, counter, ncols, nrows
+
+def _get_ax_for_multi_plot(axs, counter, ncols):
+    counter += 1 if counter != 0 else 0
+    ax = axs[counter // ncols, counter % ncols]
+    return ax
+
+
 # %%
 @plot_piping_decorator(figsize=(8,4), nrows=1, ncols=1, verbose=False)
-def plot_sz_boundary_location(expobj, fig=None, ax=None, **kwargs):
+def plot_sz_boundary_location(expobj, fig: mpl.figure.Figure = None, ax: mpl.axes.Axes = None, **kwargs):
     """use for plotting sz boundary location for all stims from a given trial"""
 
     if len(expobj.stimsSzLocations[expobj.stimsSzLocations['wavefront_in_frame'] == True]) > 1:
@@ -91,6 +164,8 @@ def plot_SLMtargets_Locs(expobj, targets_coords: list = None, background: np.nda
     :return:
     """
 
+    image_frame_options()
+
     if background is None:
         background = np.zeros((expobj.frame_x, expobj.frame_y), dtype='uint16')
         ax.imshow(background, cmap='gray')
@@ -119,6 +194,9 @@ def plot_SLMtargets_Locs(expobj, targets_coords: list = None, background: np.nda
                             background=background, fig=fig, ax=ax)
 
     ax.margins(0)
+
+    ax = add_scalebar(expobj=expobj, ax=ax)
+
     fig.tight_layout()
 
     if 'title' in kwargs.keys():
@@ -152,12 +230,8 @@ def plot_cells_loc(expobj, cells: list, title=None, background: np.array = None,
             ax: a ax plt.subplots() instance, if provided use this ax for plotting
     """
 
-    # # if there is a fig and ax provided in the function call then use those, otherwise start anew
-    # if 'fig' in kwargs.keys():
-    #     fig = kwargs['fig']
-    #     ax = kwargs['ax']
-    # else:
-    #     fig, ax = plt.subplots()
+    image_frame_options()
+
 
     x_list = []
     y_list = []
@@ -218,19 +292,12 @@ def plot_cells_loc(expobj, cells: list, title=None, background: np.array = None,
         ax.set_yticklabels([])
 
 
+
     if 'invert_y' in kwargs.keys():
         if kwargs['invert_y']:
             ax.invert_yaxis()
 
-    # if 'show' in kwargs.keys():
-    #     if kwargs['show'] is True:
-    #         fig.show()
-    #     else:
-    #         pass
-    # else:
-    #     fig.show()
-    #
-    # return fig, ax if 'fig' in kwargs.keys() else None
+    ax = add_scalebar(expobj=expobj, ax=ax) if 'scalebar' in [*kwargs] and kwargs['scalebar'] is True else None
 
 
 # plot to show s2p ROIs location, colored as specified
@@ -245,11 +312,17 @@ def s2pRoiImage(expobj, fig_save_name: str = None):
     :param fig_save_name: where to save the save figure (optional)
     :return:
     """
+
+    image_frame_options()
+
+
     fig, ax = plt.subplots(figsize=(5, 5))
     if expobj.frame_x == 512:
         s = 0.003 * (1024/expobj.frame_x * 4)
     else:
         s = 0.003
+
+
     ##### targets areas image
     targ_img = np.zeros([expobj.frame_x, expobj.frame_y], dtype='float')
     target_areas_exclude = np.array(expobj.target_areas_exclude)
@@ -283,6 +356,9 @@ def s2pRoiImage(expobj, fig_save_name: str = None):
 
     ax.set_xlim([0, expobj.frame_x])
     ax.set_ylim([0, expobj.frame_y])
+
+    ax = add_scalebar(expobj=expobj, ax=ax)
+
     plt.margins(x=0, y=0)
     plt.gca().invert_yaxis()
     # plt.gca().invert_xaxis()
@@ -368,10 +444,10 @@ def plot_photostim_traces(array, expobj, title='', y_min=None, y_max=None, x_lab
     if save_fig is not None:
         plt.savefig(save_fig)
 
+    fig.tight_layout(pad=0.2)
     fig.show()
 
 
-@print_start_end_plot
 @plot_piping_decorator(figsize=(10,6))
 def plot_photostim_traces_overlap(array, expobj, exclude_id=[], y_spacing_factor=1, title='',
                                   x_axis='Time (seconds)', save_fig=None, fig=None, ax=None, **kwargs):
@@ -465,7 +541,6 @@ def plot_photostim_traces_overlap(array, expobj, exclude_id=[], y_spacing_factor
 
 
 ### photostim analysis - PLOT avg over photostim. trials traces for the provided traces
-@print_start_end_plot
 @plot_piping_decorator(figsize=(5,5.5))
 def plot_periphotostim_avg2(dataset, fps=None, legend_labels=None, colors=None, avg_with_std=False,
                             title='high quality plot', pre_stim_sec=None, ylim=None, fig=None, ax=None, **kwargs):
@@ -574,7 +649,6 @@ def plot_periphotostim_avg2(dataset, fps=None, legend_labels=None, colors=None, 
 
 
 ### photostim analysis - PLOT avg over all photstim. trials traces from PHOTOSTIM TARGETTED cells
-@print_start_end_plot
 @plot_piping_decorator(figsize=(5,5.5))
 def plot_periphotostim_avg(arr=None, pre_stim_sec=1.0, post_stim_sec=3.0, title='', expobj=None,
                            avg_only: bool = False, x_label=None, y_label=None, fig=None, ax=None, pad=20, **kwargs):
@@ -946,10 +1020,6 @@ def plot_lfp_stims(expobj, title='LFP signal with photostim. shown (in different
     return ax2
 
 
-# plot the whole pre stim to post stim period as a cool heatmap
-jet = mpl.cm.get_cmap('jet')
-jet.set_bad(color='k')
-
 @print_start_end_plot
 @plot_piping_decorator(figsize=(4,10))
 def plot_traces_heatmap(expobj, arr, vmin=None, vmax=None, stim_on = None, stim_off= None, figsize=None, title=None, xlims=None, x_label='Frames',
@@ -978,6 +1048,8 @@ def plot_traces_heatmap(expobj, arr, vmin=None, vmax=None, stim_on = None, stim_
     # ax = ax.imshow(arr, aspect='auto', cmap=cmap)
     # # plt.set_cmap(cmap)
     # ax.set_clim(vmin, vmax)
+
+    heatmap_options()
 
     mesh1 = ax.pcolormesh(arr, cmap=cmap)
     mesh1.set_clim(vmin, vmax)
@@ -1538,19 +1610,5 @@ def plot_lfp_1pstim_avg_trace(expobj, title='Average LFP peri- stims', individua
 
     fig.tight_layout(pad=1.3)
 
-    # # options for showing plot or returning plot
-    # if 'show' in kwargs.keys():
-    #     plt.show() if kwargs['show'] else None
-    # else:
-    #     plt.show()
-    #
-    # if 'fig' in kwargs.keys():
-    #     ax.text(0.98, 0.97, '%s %s' % (expobj.metainfo['animal prep.'], expobj.metainfo['trial']),
-    #             verticalalignment='top', horizontalalignment='right',
-    #             transform=ax.transAxes, fontweight='bold',
-    #             color='black', fontsize=10 * shrink_text)
-    #     return fig, ax
 
-
-### below are plotting functions that I am still working on coding:
 

@@ -2,20 +2,14 @@
 
 # %% DATA ANALYSIS + PLOTTING FOR ALL-OPTICAL TWO-P PHOTOSTIM EXPERIMENTS
 import os
-import sys
 import numpy as np
 import pandas as pd
-from scipy import stats, signal
-import statsmodels.api
-import statsmodels as sm
-import seaborn as sns
 import matplotlib.pyplot as plt
 import alloptical_utils_pj as aoutils
-import alloptical_plotting_utils as aoplot
+from _utils_ import alloptical_plotting_utils as aoplot
 import _utils_.funcs_pj as pj
 import tifffile as tf
 from skimage.transform import resize
-from mpl_toolkits import mplot3d
 
 # import results superobject that will collect analyses from various individual experiments
 results_object_path = '/home/pshah/mnt/qnap/Analysis/alloptical_results_superobject.pkl'

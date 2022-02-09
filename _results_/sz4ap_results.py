@@ -1,16 +1,12 @@
 # %% DATA ANALYSIS + PLOTTING FOR ALL-OPTICAL TWO-P PHOTOSTIM EXPERIMENTS - FOCUS ON THE SEIZURES!
 import os
-import sys
 import numpy as np
-import pandas as pd
-import seaborn as sns
 import matplotlib.pyplot as plt
 import alloptical_utils_pj as aoutils
-import alloptical_plotting_utils as aoplot
+from _utils_ import alloptical_plotting_utils as aoplot
 from funcsforprajay import funcs as pj
 import tifffile as tf
 from skimage.transform import resize
-from mpl_toolkits import mplot3d
 from _main_.Post4apMain import Post4ap
 
 # import results superobject that will collect analyses from various individual experiments

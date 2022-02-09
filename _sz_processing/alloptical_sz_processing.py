@@ -2,18 +2,16 @@
 import sys
 import os
 
-from _main_ import Post4apMain
-
 sys.path.append('/home/pshah/Documents/code/PackerLab_pycharm/')
 sys.path.append('/home/pshah/Documents/code/')
 import alloptical_utils_pj as aoutils
-import _alloptical_utils as Utils
-import _processing_.alloptical_processing as aoprocess
-import alloptical_plotting_utils as aoplot
+from _utils_ import alloptical_plotting_utils as aoplot
 from funcsforprajay import funcs as pj
 import numpy as np
 import matplotlib.pyplot as plt
 import _alloptical_utils as Utils
+import tifffile as tf
+
 
 
 # import results superobject that will collect analyses from various individual experiments
@@ -28,37 +26,66 @@ os.makedirs(save_path_prefix) if not os.path.exists(save_path_prefix) else None
 
 # 6.0-dc) ANALYSIS: calculate time delay between LFP onset of seizures and imaging FOV invasion for each seizure for each experiment
 expobj = Utils.import_expobj(prep='RL108', trial='t-013')
+# expobj = Utils.import_expobj(prep='RL109', trial='t-017')
 
+# %% plot the first sz frame for each seizure from each expprep, label with the time delay to sz invasion
+
+
+@Utils.run_for_loop_across_exps(run_pre4ap_trials=False, run_post4ap_trials=True, ignore_cache=True)
+def plot_sz_invasion(**kwargs):
+    expobj: aoutils.Post4ap = kwargs['expobj']
+
+    sz_nums = np.unique([i for i in list(expobj.slmtargets_data.var.seizure_num) if type(i) is int and i > 0])
+    fig, axs, counter, ncols, nrows = aoplot.multi_plot_subplots(num_total_plots=len(sz_nums))
+    for sz in sz_nums:
+        idx = np.where(expobj.slmtargets_data.var.seizure_num == sz)[0][0]  # first seizure invasion frame
+        stim_frm = expobj.slmtargets_data.var.stim_start_frame[idx]
+        time_del = expobj.slmtargets_data.var.delay_from_sz_onset_sec[idx]
+
+        # plotting
+        avg_stim_img_path = f'{expobj.analysis_save_path[:-1]}avg_stim_images/{expobj.metainfo["date"]}_{expobj.metainfo["trial"]}_stim-{stim_frm}.tif'
+        bg_img = tf.imread(avg_stim_img_path)
+        # aoplot.plot_SLMtargets_Locs(self, targets_coords=coords_to_plot_insz, cells=in_sz, edgecolors='yellowgreen', background=bg_img)
+        # aoplot.plot_SLMtargets_Locs(self, targets_coords=coords_to_plot_outsz, cells=out_sz, edgecolors='white', background=bg_img)
+        ax = aoplot._get_ax_for_multi_plot(axs, counter, ncols)
+        fig, ax = aoplot.plot_SLMtargets_Locs(expobj, fig=fig, ax=ax,
+                                              title=f"sz #: {sz}, stim_fr: {stim_frm}, time inv.: {time_del}s", show=False,
+                                              background=bg_img)
+
+        try:
+            inframe_coord1_x = expobj.slmtargets_data.var["seizure location"][idx][0][0]
+            inframe_coord1_y = expobj.slmtargets_data.var["seizure location"][idx][0][1]
+            inframe_coord2_x = expobj.slmtargets_data.var["seizure location"][idx][1][0]
+            inframe_coord2_y = expobj.slmtargets_data.var["seizure location"][idx][1][1]
+            ax.plot([inframe_coord1_x, inframe_coord2_x], [inframe_coord1_y, inframe_coord2_y], c='darkorange', linestyle='dashed', alpha=1, lw=2)
+        except TypeError:
+            print('hitting nonetype error')
+
+
+    fig.suptitle(f"{expobj.t_series_name} {expobj.date}")
+    fig.show()
+
+plot_sz_invasion()
 
 
 # %% 6.0-dc) ANALYSIS: calculate time delay between LFP onset of seizures and imaging FOV invasion for each seizure for each experiment
 
-## create anndata object if not created yet
-@Utils.run_for_loop_across_exps(run_pre4ap_trials=True, run_post4ap_trials=True)
-def tempcreateanndata(**kwargs):
-    print(f"\t\- collecting responses vs. distance to seizure [5.0-1]")
-
-
-    expobj = kwargs['expobj']
-
-    if not hasattr(expobj, 'responses_SLMtargets_dfprestimf'):
-        aoprocess.run_alloptical_processing_photostim(expobj)
-        expobj.save()
-
-    if not hasattr(expobj, 'slmtargets_data'):
-        expobj.create_anndata_SLMtargets()
-        expobj.save()
-
-tempcreateanndata()
-
-# adata object
-# expobj.slmtargets_data
 
 # %%
-@Utils.run_for_loop_across_exps(run_pre4ap_trials=False, run_post4ap_trials=True)
+@Utils.run_for_loop_across_exps(run_pre4ap_trials=False, run_post4ap_trials=True, ignore_cache=True)
 def szInvasionTime(**kwargs):
+    """
+    The general approach to calculate seizure invasion time delay is to calculate the first stim (which are usually every 10 secs)
+    which has the seizure wavefront in the FOV relative to the LFP onset of the seizure (which is at the 4ap inj site).
+
+
+
+    :param kwargs: no args taken. used only to pipe in experiments from for loop.
+    """
+
     expobj = kwargs['expobj']
-    time_delay_sec = ['.']*len(expobj.stim_start_frames)
+    time_delay_sec = [-1]*len(expobj.stim_start_frames)
+    sz_num = [-1]*len(expobj.stim_start_frames)
     for i in range(expobj.numSeizures):
         # i = 1
         lfp_onset_fr = expobj.seizure_lfp_onsets[i]
@@ -75,18 +102,25 @@ def szInvasionTime(**kwargs):
                         _time_delay_sec = (stim / expobj.fps) - sz_start_sec
                         idx = np.where(expobj.slmtargets_data.var.stim_start_frame == stim)[0][0]
                         time_delay_sec[idx] = round(_time_delay_sec, 3)
+                        sz_num[idx] = i
                 for stim in stims_nowv:
-                    if stim < stims_wv[0]:  # first seizure stim frame with the seizure wavefront
+                    if stim < stims_wv[0]:  # first in seizure stim frame with the seizure wavefront
                         idx = np.where(expobj.slmtargets_data.var.stim_start_frame == stim)[0][0]
                         time_delay_sec[idx] = "bf invasion"  # before seizure invasion to the FOV
-                    elif stim > stims_wv[-1]:  # last seizure stim frame with the seizure wavefront
+                        sz_num[idx] = i
+                    elif stim > stims_wv[-1]:  # last in seizure stim frame with the seizure wavefront
                         idx = np.where(expobj.slmtargets_data.var.stim_start_frame == stim)[0][0]
                         time_delay_sec[idx] = "af invasion"  # after seizure wavefront has passed the FOV
+                        sz_num[idx] = i
 
     expobj.slmtargets_data.add_variables(var_name='delay_from_sz_onset_sec', values=time_delay_sec)
+    expobj.slmtargets_data.add_variables(var_name='seizure_num', values=sz_num)
+    expobj.save()
 
 
 szInvasionTime()
+
+
 
 
 # %% 5.0-dc) ANALYSIS: cross-correlation between mean FOV 2p calcium trace and LFP seizure trace - incomplete not working yet

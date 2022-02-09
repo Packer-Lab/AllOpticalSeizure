@@ -1,6 +1,12 @@
 # retrieving and processing on LFP recordings from the .paq file
 import os.path
+from typing import Union
+
 import _alloptical_utils as Utils
+from _main_.AllOpticalMain import alloptical
+from _main_.Post4apMain import Post4ap
+from _main_.TwoPhotonImagingMain import TwoPhotonImaging
+
 
 class LFP:
     def __init__(self, **kwargs):
@@ -20,3 +26,15 @@ class LFP:
         voltage_idx = paq['chan_names'].index('voltage')
         self.lfp_signal = paq['data'][voltage_idx]
 
+
+    @staticmethod
+    def downsampled_LFP(expobj: Union[TwoPhotonImaging, alloptical, Post4ap]):
+        # option for downsampling of data plot trace
+        x = range(len(expobj.lfp_signal[expobj.frame_start_time_actual: expobj.frame_end_time_actual]))
+        signal_cropped = expobj.lfp_signal[expobj.frame_start_time_actual: expobj.frame_end_time_actual]
+        down = 1000
+        signal_down = signal_cropped[::down]
+        x = x[::down]
+        assert len(x) == len(signal_down), print('something went wrong with the downsampling')
+
+        return signal_cropped, signal_down

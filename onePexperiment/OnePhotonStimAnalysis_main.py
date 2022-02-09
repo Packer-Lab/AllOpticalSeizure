@@ -2,7 +2,7 @@ import numpy as np
 import pandas as pd
 from funcsforprajay import funcs as pj
 
-from _main_.OnePhotonStimMain import OnePhotonStim
+from onePexperiment.OnePhotonStimMain import OnePhotonStim
 
 # %% ANALYSIS FUNCTIONS
 class OnePhotonStimAnalysisFuncs(OnePhotonStim):

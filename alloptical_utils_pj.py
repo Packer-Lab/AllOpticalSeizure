@@ -8,7 +8,6 @@ import functools
 import re
 import glob
 from datetime import datetime
-from typing import Union
 
 import itertools
 
@@ -18,13 +17,10 @@ from typing import Union
 
 from matplotlib.colors import ColorConverter
 
-from _utils_._anndata import AnnotatedData
-
 sys.path.append('/home/pshah/Documents/code/')
 from Vape.utils.utils_funcs import s2p_loader
 from Vape.utils import STAMovieMaker_noGUI as STAMM
 import scipy.stats as stats
-import statsmodels.api
 import statsmodels as sm
 from suite2p.run_s2p import run_s2p
 import matplotlib.pyplot as plt
@@ -39,12 +35,7 @@ from funcsforprajay import funcs as pj
 from funcsforprajay import pnt2line
 from funcsforprajay.wrappers import plot_piping_decorator
 from _utils_.paq_utils import paq_read, frames_discard
-import alloptical_plotting_utils as aoplot
 import pickle
-
-## SET OPTIONS
-pd.set_option('max_columns', None)
-pd.set_option('max_rows', 100)
 
 
 
@@ -342,14 +333,12 @@ class TwoPhotonImaging:
 
         self.save()
 
-        # ## setting plotting functions as bound method types
-        # self.plot_cells_loc = aoplot.plot_cells_loc
-        # self.s2pRoiImage = aoplot.s2pRoiImage
-        # self.plotMeanRawFluTrace = aoplot.plotMeanRawFluTrace
-
 
     def __repr__(self):
-        lastmod = time.ctime(os.path.getmtime(self.pkl_path))
+        try:
+            lastmod = time.ctime(os.path.getmtime(self.pkl_path))
+        except FileNotFoundError:
+            lastmod = '-- cannot get --'
         if not hasattr(self, 'metainfo'):
             information = f"uninitialized"
         else:
@@ -621,6 +610,7 @@ class TwoPhotonImaging:
 
     @property
     def pix_sz_x(self):
+        "um per x-axis pixel"
         pixelSize, _, index = self._getPVStateShard(self.xml_path, 'micronsPerPixel')
         for pixelSize, index in zip(pixelSize, index):
             if index == 'XAxis':
@@ -628,6 +618,7 @@ class TwoPhotonImaging:
 
     @property
     def pix_sz_y(self):
+        "um per y-axis pixel"
         pixelSize, _, index = self._getPVStateShard(self.xml_path, 'micronsPerPixel')
         for pixelSize, index in zip(pixelSize, index):
             if index == 'YAxis':
@@ -973,6 +964,7 @@ class TwoPhotonImaging:
                 print('pkl file not saved yet because .save_path attr not found')
 
         if plot:
+            from _utils_ import alloptical_plotting_utils as aoplot
             aoplot.plotMeanRawFluTrace(expobj=self, stim_span_color=None, x_axis='frames', figsize=[20, 3],
                                        title='Mean raw Flu trace -')
         return im_stack
@@ -1150,7 +1142,10 @@ class alloptical(TwoPhotonImaging):
         self.save()
 
     def __repr__(self):
-        lastmod = time.ctime(os.path.getmtime(self.pkl_path))
+        try:
+            lastmod = time.ctime(os.path.getmtime(self.pkl_path))
+        except FileNotFoundError:
+            lastmod = '-- cannot get --'
         if not hasattr(self, 'metainfo'):
             information = f"uninitialized"
         else:
@@ -2011,6 +2006,7 @@ class alloptical(TwoPhotonImaging):
             self.save()
 
             if plot:
+                from _utils_ import alloptical_plotting_utils as aoplot
                 fig, ax = plt.subplots(figsize=[6, 6])
                 fig, ax = aoplot.plot_cells_loc(expobj=self, cells=self.s2p_cell_targets, show=False, fig=fig, ax=ax,
                                                 show_s2p_targets=True,
@@ -3312,69 +3308,6 @@ class alloptical(TwoPhotonImaging):
         plt.show()
         save_figure(fig, save_path_suffix=f"{save_fig}") if save_fig else None
 
-    # create anndata object for SLMtargets data
-    def create_anndata_SLMtargets(expobj):
-        """
-        Creates annotated data (see anndata library for more information on AnnotatedData) object based around the Ca2+ matrix of the imaging trial.
-
-        """
-
-        if hasattr(expobj, 'dFF_SLMTargets') or hasattr(expobj, 'raw_SLMTargets'):
-            # SETUP THE OBSERVATIONS (CELLS) ANNOTATIONS TO USE IN anndata
-            # build dataframe for obs_meta from SLM targets information
-            obs_meta = pd.DataFrame(
-                columns=['SLM group #', 'SLM target coord'], index=range(expobj.n_targets_total))
-            for groupnum, targets in enumerate(expobj.target_coords):
-                for target, coord in enumerate(targets):
-                    obs_meta.loc[target, 'SLM group #'] = groupnum
-                    obs_meta.loc[target, 'SLM target coord'] = coord
-
-            # build numpy array for multidimensional obs metadata
-            obs_m = {'SLM targets areas': []}
-            for target, areas in enumerate(expobj.target_areas):
-                obs_m['SLM targets areas'].append(np.asarray(areas))
-            obs_m['SLM targets areas'] = np.asarray(obs_m['SLM targets areas'])
-
-            # SETUP THE VARIABLES ANNOTATIONS TO USE IN anndata
-            # build dataframe for var annot's - based on stim_start_frames
-            var_meta = pd.DataFrame(index=['stim_start_frame','wvfront in sz', 'seizure location'], columns=range(len(expobj.stim_start_frames)))
-            for fr_idx, stim_frame in enumerate(expobj.stim_start_frames):
-                if 'pre' in expobj.exptype:
-                    var_meta.loc['wvfront in sz', fr_idx] = False
-                    var_meta.loc['seizure location', fr_idx] = None
-                elif 'post' in expobj.exptype:
-                    if stim_frame in expobj.stimsWithSzWavefront:
-                        var_meta.loc['wvfront in sz', fr_idx] = True
-                        # var_meta.loc['seizure location', fr_idx] = '..not-set-yet..'
-                        var_meta.loc['seizure location', fr_idx] = (expobj.stimsSzLocations.coord1[stim_frame], expobj.stimsSzLocations.coord2[stim_frame])
-                    else:
-                        var_meta.loc['wvfront in sz', fr_idx] = False
-                        var_meta.loc['seizure location', fr_idx] = None
-                var_meta.loc['stim_start_frame', fr_idx] = stim_frame
-
-
-            # BUILD LAYERS TO ADD TO anndata OBJECT
-            layers = {'SLM Targets photostim responses (dFstdF)': expobj.responses_SLMtargets_dfprestimf
-                      }
-
-            print(f"\n\----- CREATING annotated data object using AnnData:")
-
-            # set primary data
-            _data_type = 'SLM Targets photostim responses (tracedFF)'
-            # expobj.responses_SLMtargets_tracedFF.columns = expobj.stim_start_frames
-            expobj.responses_SLMtargets_tracedFF.columns = range(len(expobj.stim_start_frames))
-            photostim_responses = expobj.responses_SLMtargets_tracedFF
-
-
-            # create anndata object
-            adata = AnnotatedData(X=photostim_responses, obs=obs_meta, var=var_meta.T, obsm=obs_m, layers=layers, data_label=_data_type)
-
-            print(f"\n{adata}")
-            expobj.slmtargets_data = adata
-        else:
-            Warning(
-                'did not create anndata. anndata creation only available if experiments were processed with suite2p and .paq file(s) provided for temporal synchronization')
-
 
 class Post4ap(alloptical):
 
@@ -3429,7 +3362,10 @@ class Post4ap(alloptical):
         self.save()
 
     def __repr__(self):
-        lastmod = time.ctime(os.path.getmtime(self.pkl_path))
+        try:
+            lastmod = time.ctime(os.path.getmtime(self.pkl_path))
+        except FileNotFoundError:
+            lastmod = '-- cannot get --'
         if not hasattr(self, 'metainfo'):
             information = f"uninitialized"
         else:
@@ -3634,6 +3570,8 @@ class Post4ap(alloptical):
             avg_stim_img_path = '%s/%s_%s_stim-%s.tif' % (
             self.analysis_save_path[:-1] + 'avg_stim_images', self.metainfo['date'], self.metainfo['trial'], stim)
             bg_img = tf.imread(avg_stim_img_path)
+
+            from _utils_ import alloptical_plotting_utils as aoplot
             fig, ax = aoplot.plot_cells_loc(self, cells=in_sz_final, fig=fig, ax=ax, title=title, show=False,
                                             background=bg_img, cmap='gray', text=text,
                                             edgecolors='yellowgreen')
@@ -3739,6 +3677,8 @@ class Post4ap(alloptical):
             bg_img = tf.imread(avg_stim_img_path)
             # aoplot.plot_SLMtargets_Locs(self, targets_coords=coords_to_plot_insz, cells=in_sz, edgecolors='yellowgreen', background=bg_img)
             # aoplot.plot_SLMtargets_Locs(self, targets_coords=coords_to_plot_outsz, cells=out_sz, edgecolors='white', background=bg_img)
+            from _utils_ import alloptical_plotting_utils as aoplot
+
             fig, ax = aoplot.plot_SLMtargets_Locs(self, targets_coords=coords_to_plot_insz, fig=fig, ax=ax, cells=in_sz,
                                                   title=title, show=False, background=bg_img,
                                                   edgecolors='red')
@@ -3855,6 +3795,8 @@ class Post4ap(alloptical):
                                         sz_start - stim) < 10 * self.fps]  # select stims that occur within 5 seconds afterof the sz offset
             print(' \n|- stims_in_sz:', self.stims_in_sz, ' \n|- stims_out_sz:', self.stims_out_sz,
                   ' \n|- stims_bf_sz:', self.stims_bf_sz, ' \n|- stims_af_sz:', self.stims_af_sz)
+            from _utils_ import alloptical_plotting_utils as aoplot
+
             aoplot.plot_lfp_stims(expobj=self)
         else:
             print('-- no matlab array given to use for finding seizures.')
@@ -4424,6 +4366,7 @@ class OnePhotonStim(TwoPhotonImaging):
             self.stims_out_sz = [stim for stim in self.stim_start_frames if stim not in self.seizure_frames]
             self.stims_bf_sz = []
             self.stims_af_sz = []
+        from _utils_ import alloptical_plotting_utils as aoplot
 
         aoplot.plot_lfp_stims(self, x_axis='time')
         self.save_pkl()
@@ -4673,6 +4616,8 @@ class onePstim(TwoPhotonImaging):
             self.stims_bf_sz = []
             self.stims_af_sz = []
 
+        from _utils_ import alloptical_plotting_utils as aoplot
+
         aoplot.plot_lfp_stims(self, x_axis='time')
         self.save_pkl()
 
@@ -4737,9 +4682,7 @@ class AllOpticalResults:  ## initiated in allOptical-results.ipynb
 
     def save_pkl(self, pkl_path: str = None):
         if pkl_path is None:
-            if hasattr(self, 'save_path'):
-                pkl_path = self.pkl_path
-            else:
+            if not hasattr(self, 'pkl_path'):
                 raise ValueError(
                     'pkl path for saving was not found in object attributes, please provide path to save to')
         else:
@@ -4747,7 +4690,7 @@ class AllOpticalResults:  ## initiated in allOptical-results.ipynb
 
         with open(self.pkl_path, 'wb') as f:
             pickle.dump(self, f)
-        print("\n\t -- alloptical results obj saved to %s -- " % pkl_path)
+        print("\n\t -- alloptical results obj saved to %s -- " % self.pkl_path)
 
     def save(self):
         self.save_pkl()
@@ -4756,12 +4699,28 @@ class AllOpticalResults:  ## initiated in allOptical-results.ipynb
 #
 
 # import results superobject that will collect analyses from various individual experiments
+# results_object_path = '/home/pshah/mnt/qnap/Analysis/alloptical_results_superobject.pkl'
+# try:
+#     allopticalResults = import_resultsobj(
+#         pkl_path=results_object_path)  # this needs to be run AFTER defining the AllOpticalResults class
+# except FileNotFoundError:
+#     print(f'not able to get allopticalResults object from {results_object_path}')
+
+
+# import results superobject that will collect analyses from various individual experiments
 results_object_path = '/home/pshah/mnt/qnap/Analysis/alloptical_results_superobject.pkl'
-try:
-    allopticalResults = import_resultsobj(
-        pkl_path=results_object_path)  # this needs to be run AFTER defining the AllOpticalResults class
-except FileNotFoundError:
-    print(f'not able to get allopticalResults object from {results_object_path}')
+local_results_object_path = '/Users/prajayshah/OneDrive/UTPhD/2022/OXFORD/expobj/alloptical_results_superobject.pkl'
+
+for path in [results_object_path, local_results_object_path]:
+    if os.path.exists(path):
+        results_path = path
+        try:
+            allopticalResults = import_resultsobj(
+                pkl_path=results_path)  # this needs to be run AFTER defining the AllOpticalResults class
+        except FileNotFoundError:
+            print(f'not able to get allopticalResults object from {results_object_path}')
+
+        break
 
 
 ########
@@ -5320,6 +5279,8 @@ def run_alloptical_processing_photostim(expobj: Union[alloptical, Post4ap], to_s
             expobj.mean_raw_flu_trace(plot=True)
 
         if plots:
+            from _utils_ import alloptical_plotting_utils as aoplot
+
             aoplot.plotMeanRawFluTrace(expobj=expobj, stim_span_color=None, x_axis='frames', figsize=[20, 3])
             # aoplot.plotLfpSignal(expobj, stim_span_color=None, x_axis='frames', figsize=[20, 3])
             aoplot.plot_SLMtargets_Locs(expobj)
@@ -5624,6 +5585,8 @@ def slm_targets_responses(expobj, experiment, trial, y_spacing_factor=2, figsize
 
 
     # initialize figure
+    from _utils_ import alloptical_plotting_utils as aoplot
+
     fig = plt.figure(constrained_layout=True, figsize=figsize)
     gs = fig.add_gridspec(4, 8)
 
@@ -5777,6 +5740,8 @@ def fig_non_targets_responses(expobj, plot_subset: bool = True, save_fig_suffix=
         gs = f.add_gridspec(1, 9)
 
     # PLOT AVG PHOTOSTIM PRE- POST- TRACE AVGed OVER ALL PHOTOSTIM. TRIALS
+    from _utils_ import alloptical_plotting_utils as aoplot
+
     a1 = f.add_subplot(gs[0, 0:2])
     x = expobj.dff_traces_avg[selection]
     y_label = 'pct. dFF (normalized to prestim period)'
@@ -5913,6 +5878,8 @@ def run_allopticalAnalysisNontargetsPost4ap(expobj, normalize_to='pre_stim', to_
 
             # expobj.target_coords_all = expobj.target_coords
             expobj._findTargetedS2pROIs(force_redo=True)
+            from _utils_ import alloptical_plotting_utils as aoplot
+
             aoplot.s2pRoiImage(expobj)
             expobj.s2pMaskStack(pkl_list=[expobj.pkl_path], s2p_path=expobj.s2p_path,
                                 parent_folder=expobj.analysis_save_path, force_redo=True)

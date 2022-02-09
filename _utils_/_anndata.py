@@ -1,8 +1,79 @@
 ## utilities for creating anndata formatted data storage for each expobj
 
 import anndata as ad
-from typing import Optional
+from typing import Optional, Union
 
+# create anndata object for SLMtargets data
+import numpy as np
+import pandas as pd
+
+import alloptical_utils_pj
+
+
+def create_anndata_SLMtargets(expobj: Union[alloptical_utils_pj.alloptical, alloptical_utils_pj.Post4ap]):
+    """
+    Creates annotated data (see anndata library for more information on AnnotatedData) object based around the Ca2+ matrix of the imaging trial.
+
+    """
+
+    if hasattr(expobj, 'dFF_SLMTargets') or hasattr(expobj, 'raw_SLMTargets'):
+        # SETUP THE OBSERVATIONS (CELLS) ANNOTATIONS TO USE IN anndata
+        # build dataframe for obs_meta from SLM targets information
+        obs_meta = pd.DataFrame(
+            columns=['SLM group #', 'SLM target coord'], index=range(expobj.n_targets_total))
+        for groupnum, targets in enumerate(expobj.target_coords):
+            for target, coord in enumerate(targets):
+                obs_meta.loc[target, 'SLM group #'] = groupnum
+                obs_meta.loc[target, 'SLM target coord'] = coord
+
+        # build numpy array for multidimensional obs metadata
+        obs_m = {'SLM targets areas': []}
+        for target, areas in enumerate(expobj.target_areas):
+            obs_m['SLM targets areas'].append(np.asarray(areas))
+        obs_m['SLM targets areas'] = np.asarray(obs_m['SLM targets areas'])
+
+        # SETUP THE VARIABLES ANNOTATIONS TO USE IN anndata
+        # build dataframe for var annot's - based on stim_start_frames
+        var_meta = pd.DataFrame(index=['im_time_secs', 'stim_start_frame', 'wvfront in sz', 'seizure location'],
+                                columns=range(len(expobj.stim_start_frames)))
+        for fr_idx, stim_frame in enumerate(expobj.stim_start_frames):
+            if 'pre' in expobj.exptype:
+                var_meta.loc['wvfront in sz', fr_idx] = None
+                var_meta.loc['seizure location', fr_idx] = None
+            elif 'post' in expobj.exptype:
+                if stim_frame in expobj.stimsWithSzWavefront:
+                    var_meta.loc['wvfront in sz', fr_idx] = True
+                    # var_meta.loc['seizure location', fr_idx] = '..not-set-yet..'
+                    var_meta.loc['seizure location', fr_idx] = (
+                    expobj.stimsSzLocations.coord1[stim_frame], expobj.stimsSzLocations.coord2[stim_frame])
+                else:
+                    var_meta.loc['wvfront in sz', fr_idx] = False
+                    var_meta.loc['seizure location', fr_idx] = None
+            var_meta.loc['stim_start_frame', fr_idx] = stim_frame
+            var_meta.loc['im_time_secs', fr_idx] = stim_frame * expobj.fps
+
+        # BUILD LAYERS TO ADD TO anndata OBJECT
+        layers = {'SLM Targets photostim responses (dFstdF)': expobj.responses_SLMtargets_dfprestimf
+                  }
+
+        print(f"\n\----- CREATING annotated data object using AnnData:")
+
+        # set primary data
+        _data_type = 'SLM Targets photostim responses (tracedFF)'
+        # expobj.responses_SLMtargets_tracedFF.columns = expobj.stim_start_frames
+        expobj.responses_SLMtargets_tracedFF.columns = range(len(expobj.stim_start_frames))
+        photostim_responses = expobj.responses_SLMtargets_tracedFF
+
+        # create anndata object
+        adata = AnnotatedData(X=photostim_responses, obs=obs_meta, var=var_meta.T, obsm=obs_m, layers=layers,
+                              data_label=_data_type)
+
+        print(f"\n{adata}")
+        expobj.slmtargets_data = adata
+        expobj.save()
+    else:
+        Warning(
+            'did not create anndata. anndata creation only available if experiments were processed with suite2p and .paq file(s) provided for temporal synchronization')
 
 
 class AnnotatedData(ad.AnnData):
@@ -17,7 +88,7 @@ class AnnotatedData(ad.AnnData):
         self.data_label = data_label if data_label else None
 
     def __str__(self):
-        "extensive information about the AnnotatedData data structure"
+        "return more extensive information about the AnnotatedData data structure"
         if self.filename:
             backed_at = f" backed at {str(self.filename)!r}"
         else:
@@ -26,9 +97,9 @@ class AnnotatedData(ad.AnnData):
         descr = f"Annotated Data of n_obs (# ROIs) × n_vars (# Frames) = {self.n_obs} × {self.n_vars} {backed_at}"
         descr += f"\navailable attributes: "
 
-        descr += f"\n\t.X (primary datamatrix, with .data_label): \n\t\t|-- {str(self.data_label)}" if self.data_label else f"\n\t.X (primary datamatrix)"
-        descr += f"\n\t.obs (ROIs metadata) keys: \n\t\t|-- {str(list(self.obs.keys()))[1:-1]}"
-        descr += f"\n\t.var (frames metadata) keys: \n\t\t|-- {str(list(self.var.keys()))[1:-1]}"
+        descr += f"\n\t.X (primary datamatrix) of .data_label: \n\t\t|- {str(self.data_label)}" if self.data_label else f"\n\t.X (primary datamatrix)"
+        descr += f"\n\t.obs (ROIs metadata): \n\t\t|- {str(list(self.obs.keys()))[1:-1]}"
+        descr += f"\n\t.var (frames metadata): \n\t\t|- {str(list(self.var.keys()))[1:-1]}"
         for attr in [
             # "obs",
             # "var",
@@ -41,7 +112,7 @@ class AnnotatedData(ad.AnnData):
         ]:
             keys = getattr(self, attr[1:]).keys()
             if len(keys) > 0:
-                descr += f"\n\t{attr} keys: \n\t\t|-- {str(list(keys))[1:-1]}"
+                descr += f"\n\t{attr}: \n\t\t|- {str(list(keys))[1:-1]}"
         return descr
 
 
@@ -50,31 +121,6 @@ class AnnotatedData(ad.AnnData):
 
         return f"Annotated Data of n_obs (# ROIs) × n_vars (# Frames) = {n_obs} × {n_vars}"
 
-        # if self.filename:
-        #     backed_at = f" backed at {str(self.filename)!r}"
-        # else:
-        #     backed_at = ""
-        #
-        # descr = f"Annotated Data of n_obs (# ROIs) × n_vars (# Frames) = {n_obs} × {n_vars} {backed_at}"
-        # descr += f"\navailable attributes: "
-        #
-        # descr += f"\n\t.X (primary datamatrix, with .data_label): \n\t\t|-- {str(self.data_label)}" if self.data_label else f"\n\t.X (primary datamatrix)"
-        # descr += f"\n\t.obs (ROIs metadata) keys: \n\t\t|-- {str(list(self.obs.keys()))[1:-1]}"
-        # descr += f"\n\t.var (frames metadata) keys: \n\t\t|-- {str(list(self.var.keys()))[1:-1]}"
-        # for attr in [
-        #     # "obs",
-        #     # "var",
-        #     ".uns",
-        #     ".obsm",
-        #     ".varm",
-        #     ".layers",
-        #     ".obsp",
-        #     ".varp",
-        # ]:
-        #     keys = getattr(self, attr[1:]).keys()
-        #     if len(keys) > 0:
-        #         descr += f"\n\t{attr} keys: \n\t\t|-- {str(list(keys))[1:-1]}"
-        # return descr
 
 
     def add_observation(self, obs_name: str, values: list):

@@ -4,10 +4,10 @@ import os
 from matplotlib import pyplot as plt
 
 import alloptical_utils_pj as aoutils
-import alloptical_plotting_utils as aoplot
+from _utils_ import alloptical_plotting_utils as aoplot
 
 from OnePhotonStimAnalysis_main import OnePhotonStimAnalysisFuncs
-from _main_.OnePhotonStimMain import OnePhotonStimPlots as onepplots
+from onePexperiment.OnePhotonStimMain import OnePhotonStimPlots as onepplots
 
 #  ###### IMPORT pkl file containing data in form of expobj
 trial = 't-012'

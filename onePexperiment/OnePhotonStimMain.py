@@ -4,18 +4,17 @@ import pickle
 import sys
 
 
-from alloptical_utils_pj import import_expobj, working_on, end_working_on, import_resultsobj
+from alloptical_utils_pj import import_resultsobj
 import _alloptical_utils as Utils
 
 sys.path.append('/home/pshah/Documents/code/')
 import time
 import matplotlib.pyplot as plt
 import numpy as np
-import pandas as pd
 from funcsforprajay import funcs as pj
 
 from _utils_.paq_utils import paq_read, frames_discard
-import alloptical_plotting_utils as aoplot
+from _utils_ import alloptical_plotting_utils as aoplot
 
 from _main_.TwoPhotonImagingMain import TwoPhotonImaging
 

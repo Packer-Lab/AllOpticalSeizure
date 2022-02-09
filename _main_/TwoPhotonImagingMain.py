@@ -14,7 +14,6 @@ import xml.etree.ElementTree as ET
 import tifffile as tf
 from funcsforprajay import funcs as pj
 from _utils_.paq_utils import paq_read
-import alloptical_plotting_utils as aoplot
 import pickle
 import _alloptical_utils as Utils
 
@@ -52,7 +51,6 @@ class TwoPhotonImaging:
         # save expobj to pkl object
         self.save(pkl_path=self.pkl_path)
 
-        self._parsePVMetadata()
         if not quick and save_downsampled_tiff:
             stack = self.mean_raw_flu_trace(save_pkl=True)
             if save_downsampled_tiff:
@@ -64,11 +62,6 @@ class TwoPhotonImaging:
             self.s2pProcessing(s2p_path=self.suite2p_path)
 
         self.save()
-
-        # ## setting plotting functions as bound method types
-        # self.plot_cells_loc = aoplot.plot_cells_loc
-        # self.s2pRoiImage = aoplot.s2pRoiImage
-        # self.plotMeanRawFluTrace = aoplot.plotMeanRawFluTrace
 
 
     def __repr__(self):
@@ -188,73 +181,7 @@ class TwoPhotonImaging:
 
         return value, description, index
 
-    def _parsePVMetadata(self):
 
-        print('\n-----parsing PV Metadata (Nothing in this function right now though... it has been refactored in properties)')
-
-        # xml_tree = ET.parse(self.xml_path)  # parse xml from a path
-        # root = xml_tree.getroot()  # make xml tree structure
-        #
-        # sequence = root.find('Sequence')
-        # acq_type = sequence.get('type')
-        #
-        # if 'ZSeries' in acq_type:
-        #     n_planes = len(sequence.findall('Frame'))
-        # else:
-        #     n_planes = 1
-
-        # frame_period = float(self._getPVStateShard(self.xml_path, 'framePeriod')[0])
-        # fps = 1 / frame_period
-
-        # frame_x = int(self._getPVStateShard(self.xml_path, 'pixelsPerLine')[0])
-
-        # frame_y = int(self._getPVStateShard(self.xml_path, 'linesPerFrame')[0])
-
-        # zoom = float(self._getPVStateShard(self.xml_path, 'opticalZoom')[0])
-
-        # scanVolts, _, index = self._getPVStateShard(self.xml_path, 'currentScanCenter')
-        # for scanVolts, index in zip(scanVolts, index):
-        #     if index == 'XAxis':
-        #         scan_x = float(scanVolts)
-        #     if index == 'YAxis':
-        #         scan_y = float(scanVolts)
-
-        # pixelSize, _, index = self._getPVStateShard(self.xml_path, 'micronsPerPixel')
-        # for pixelSize, index in zip(pixelSize, index):
-        #     if index == 'XAxis':
-        #         pix_sz_x = float(pixelSize)
-        #     if index == 'YAxis':
-        #         pix_sz_y = float(pixelSize)
-
-        # env_tree = ET.parse(self.env_path)
-        # env_root = env_tree.getroot()
-        #
-        # elem_list = env_root.find('TSeries')
-
-        # n_frames = elem_list[0].get('repetitions') # Rob would get the n_frames from env file
-        # change this to getting the last actual index from the xml file
-
-        # n_frames = root.findall('Sequence/Frame')[-1].get('index')
-
-        # self.fps = fps
-        # self.frame_x = frame_x
-        # self.frame_y = frame_y
-        # self.n_planes = n_planes
-        # self.pix_sz_x = pix_sz_x
-        # self.pix_sz_y = pix_sz_y
-        # self.scan_x = scan_x
-        # self.scan_y = scan_y
-        # self.zoom = zoom
-        # self.n_frames = int(n_frames)
-
-        # print('n planes:', n_planes,
-        #       '\nn frames:', int(n_frames),
-        #       '\nfps:', fps,
-        #       '\nframe size (px):', frame_x, 'x', frame_y,
-        #       '\nzoom:', zoom,
-        #       '\npixel size (um):', pix_sz_x, pix_sz_y,
-        #       '\nscan centre (V):', scan_x, scan_y
-        #       )
 
     @property
     def xml_path(self):
@@ -674,7 +601,7 @@ class TwoPhotonImaging:
             raise AttributeError('need to run .paqProcessing to perform conversion of frames to paq clock.')
 
 
-    def mean_raw_flu_trace(self, plot: bool = False, save_pkl: bool = True):
+    def mean_raw_flu_trace(self, save_pkl: bool = True):
         print('\n-----collecting mean raw flu trace from tiff file...')
         print(self.tiff_path)
         if len(self.tiff_path) == 2:  # this is to account for times when two channel imaging might be used for one t-series
@@ -693,9 +620,6 @@ class TwoPhotonImaging:
             else:
                 print('pkl file not saved yet because .save_path attr not found')
 
-        if plot:
-            aoplot.plotMeanRawFluTrace(expobj=self, stim_span_color=None, x_axis='frames', figsize=[20, 3],
-                                       title='Mean raw Flu trace -')
         return im_stack
 
     def plot_single_frame_tiff(self, frame_num: int = 0, title: str = None):

@@ -3,7 +3,9 @@ from typing import Union
 
 from _main_.AllOpticalMain import alloptical
 from _main_.Post4apMain import Post4ap
-import alloptical_plotting_utils as aoplot
+from _utils_ import alloptical_plotting_utils as aoplot
+from _utils_._anndata import create_anndata_SLMtargets
+
 
 def run_photostim_preprocessing(trial, exp_type, tiffs_loc, naparms_loc, paqs_loc, metainfo,
                                 new_tiffs, matlab_pairedmeasurements_path=None, processed_tiffs=True, discard_all=False,
@@ -357,7 +359,7 @@ def run_alloptical_processing_photostim(expobj: Union[alloptical, Post4ap], to_s
                     expobj.metainfo['animal prep.'], expobj.metainfo['trial']), ' [*2.3] ')
 
         expobj.avgResponseSzStims_SLMtargets()
-    expobj.create_anndata_SLMtargets()
+    create_anndata_SLMtargets(expobj)
 
     expobj.save()
 

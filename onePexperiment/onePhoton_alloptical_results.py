@@ -1,12 +1,11 @@
 #%% DATA ANALYSIS + PLOTTING FOR ONE-P PHOTOSTIM EXPERIMENTS
-import numpy as np
 import matplotlib.pyplot as plt
 import alloptical_utils_pj as aoutils
-import alloptical_plotting_utils as aoplot
+from _utils_ import alloptical_plotting_utils as aoplot
 from funcsforprajay import funcs as pj
 
-import _main_.OnePhotonStimMain as oneP
-from _main_.OnePhotonStimMain import OnePhotonStimPlots as onepplots
+import onePexperiment.OnePhotonStimMain as oneP
+from onePexperiment.OnePhotonStimMain import OnePhotonStimPlots as onepplots
 
 # import onePstim superobject that will collect analyses from various individual experiments
 results_object_path = '/home/pshah/mnt/qnap/Analysis/onePstim_results_superobject.pkl'
@@ -58,8 +57,8 @@ fig.show()
 # %% 1.1) pre-stim Flu  vs. decay constant
 
 fig, ax = plt.subplots(figsize=[3.5,3])
-oneP.OnePhotonStimPlots.plotPrestimF_decayconstant(fig=fig, ax=ax, run_pre4ap_trials=True, run_post4ap_trials=False, x_lim=[-150, 150], y_lim=[0, 1500],
-                                                   alpha=0.25)
+oneP.OnePhotonStimPlots.plotPrestimF_decayconstant(fig=fig, ax=ax, run_pre4ap_trials=True, run_post4ap_trials=False, x_lim=[-150, 150],
+                                                   y_lim=[0, 1500], alpha=0.25)
 # ax.set_title('(baseline: gray)', wrap=True)
 fig.show()
 

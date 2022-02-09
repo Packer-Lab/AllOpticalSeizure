@@ -2,15 +2,12 @@
 ## the end of the script will update the expobj that was in the original pkl path
 
 import sys; sys.path.append('/home/pshah/Documents/code/PackerLab_pycharm/')
-import os
-import pickle
 import alloptical_utils_pj as aoutils
-import alloptical_plotting_utils as aoplot
+from _utils_ import alloptical_plotting_utils as aoplot
 import matplotlib.pyplot as plt
 import pandas as pd
 import numpy as np
 import _utils_.funcs_pj as pj
-import tifffile as tf
 
 ###### IMPORT pkl file containing expobj
 trial = 't-016'
