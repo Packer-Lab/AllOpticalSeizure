@@ -16,6 +16,7 @@ import sys
 from typing import Union
 
 from matplotlib.colors import ColorConverter
+from packerlabimaging.processing.anndata import AnnotatedData
 
 sys.path.append('/home/pshah/Documents/code/')
 from Vape.utils.utils_funcs import s2p_loader
@@ -648,13 +649,13 @@ class TwoPhotonImaging:
         t-series of experiment analysis object"""
         return self.analysis_save_path + 'reg_tiff_%s_r.tif' % self.metainfo['trial']
 
-    def subset_frames_current_trial(self, to_suite2p, trial, baseline_trials, force_redo: bool = False, save=True):
+    def subset_frames_current_trial(self, to_suite2p, baseline_trials, force_redo: bool = False, save=True):
 
         if force_redo:
             continu = True
-            print('re-collecting subset frames of current trial')
+            print('\- collecting subset frames of current trial ...')
         elif hasattr(self, 'curr_trial_frames'):
-            print('skipped re-collecting subset frames of current trial')
+            print('\n|- skipped re-collecting subset frames of current trial.')
             continu = False
         else:
             continu = True
@@ -670,7 +671,7 @@ class TwoPhotonImaging:
                     _expobj = pickle.load(f)
                     # import suite2p data
                 total_frames_stitched += _expobj.n_frames
-                if t == trial:
+                if t == self.trial:
                     self.curr_trial_frames = [total_frames_stitched - _expobj.n_frames, total_frames_stitched]
                 if t in baseline_trials:
                     self.baseline_frames[1] = total_frames_stitched
@@ -1082,7 +1083,8 @@ class alloptical(TwoPhotonImaging):
         self.dFF_SLMTargets = None  # dFF normalized whole traces from SLM targets
         self.raw_SLMTargets = None  # raw whole traces from SLM targets from registered tiffs
 
-        self.slmtargets_data = None  # anndata object
+        from _utils_._anndata import AnnotatedData2
+        self.slmtargets_data: AnnotatedData2 = None  # anndata object
 
         self.responses_SLMtargets_dfprestimf = None  # dF/prestimF responses for all SLM targets for each photostim trial
         self.responses_SLMtargets_tracedFF = None  # delta(poststim dFF and prestim dFF) responses for all SLM targets for each photostim trial - from trace dFF processed trials

@@ -21,10 +21,12 @@ def create_anndata_SLMtargets(expobj: Union[alloptical_utils_pj.alloptical, allo
         # build dataframe for obs_meta from SLM targets information
         obs_meta = pd.DataFrame(
             columns=['SLM group #', 'SLM target coord'], index=range(expobj.n_targets_total))
-        for groupnum, targets in enumerate(expobj.target_coords):
-            for target, coord in enumerate(targets):
-                obs_meta.loc[target, 'SLM group #'] = groupnum
-                obs_meta.loc[target, 'SLM target coord'] = coord
+        for target_idx, coord in enumerate(expobj.target_coords_all):
+            for groupnum, coords in enumerate(expobj.target_coords):
+                if coord in coords:
+                    obs_meta.loc[target_idx, 'SLM group #'] = groupnum
+                    obs_meta.loc[target_idx, 'SLM target coord'] = coord
+                    break
 
         # build numpy array for multidimensional obs metadata
         obs_m = {'SLM targets areas': []}
@@ -65,7 +67,7 @@ def create_anndata_SLMtargets(expobj: Union[alloptical_utils_pj.alloptical, allo
         photostim_responses = expobj.responses_SLMtargets_tracedFF
 
         # create anndata object
-        adata = AnnotatedData(X=photostim_responses, obs=obs_meta, var=var_meta.T, obsm=obs_m, layers=layers,
+        adata = AnnotatedData2(X=photostim_responses, obs=obs_meta, var=var_meta.T, obsm=obs_m, layers=layers,
                               data_label=_data_type)
 
         print(f"\n{adata}")
@@ -76,7 +78,7 @@ def create_anndata_SLMtargets(expobj: Union[alloptical_utils_pj.alloptical, allo
             'did not create anndata. anndata creation only available if experiments were processed with suite2p and .paq file(s) provided for temporal synchronization')
 
 
-class AnnotatedData(ad.AnnData):
+class AnnotatedData2(ad.AnnData):
     """Creates annotated data (see anndata library for more information on AnnotatedData) object based around the Ca2+ matrix of the imaging trial."""
 
     def __init__(self, X, obs, var: Optional=None, data_label=None, **kwargs):
@@ -94,7 +96,7 @@ class AnnotatedData(ad.AnnData):
         else:
             backed_at = ""
 
-        descr = f"Annotated Data of n_obs (# ROIs) × n_vars (# Frames) = {self.n_obs} × {self.n_vars} {backed_at}"
+        descr = f"Annotated Data of n_obs × n_vars = {self.n_obs} × {self.n_vars} {backed_at}"
         descr += f"\navailable attributes: "
 
         descr += f"\n\t.X (primary datamatrix) of .data_label: \n\t\t|- {str(self.data_label)}" if self.data_label else f"\n\t.X (primary datamatrix)"
@@ -119,13 +121,18 @@ class AnnotatedData(ad.AnnData):
     def _gen_repr(self, n_obs, n_vars) -> str:  # overriding base method from AnnData
         """overrides the default anndata _gen_repr_() method for imaging data usage."""
 
-        return f"Annotated Data of n_obs (# ROIs) × n_vars (# Frames) = {n_obs} × {n_vars}"
+        return f"Annotated Data of n_obs × n_vars = {n_obs} × {n_vars}"
 
 
 
     def add_observation(self, obs_name: str, values: list):
         """adds values to the observations of an anndata object, under the key obs_name"""
         assert len(values) == self.obs.shape[0], f"# of values to add doesn't match # of observations in anndata"
+        if type(values) != list:
+            try:
+                values = list(values)
+            except:
+                raise ValueError('`values` needs to be a list.')
         self.obs[obs_name] = values
 
     def del_observation(self, obs_name: str): # TODO
@@ -134,6 +141,12 @@ class AnnotatedData(ad.AnnData):
     def add_variables(self, var_name: str, values: list):
         """adds values to the variables of an anndata object, under the key var_name"""
         assert len(values) == self.var.shape[0], f"# of values to add doesn't match # of observations in anndata"
+        if type(values) != list:
+            try:
+                values = list(values)
+            except:
+                raise ValueError('`values` needs to be a list.')
+
         self.var[var_name] = values
 
     def del_variables(self, obs_name: str): # TODO

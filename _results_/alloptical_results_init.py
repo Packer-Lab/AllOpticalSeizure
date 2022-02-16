@@ -2,19 +2,17 @@
 import os
 import sys
 
+from _utils_.io import import_resultsobj
+
 sys.path.append('/home/pshah/Documents/code/')
 import time
 import pandas as pd
 import pickle
 
-## SET OPTIONS
-pd.set_option('max_columns', None)
-pd.set_option('max_rows', 100)
-
 from _main_.TwoPhotonImagingMain import TwoPhotonImaging
 import _alloptical_utils as aoutils
 
-# RESULTS OBJECTS
+# %% RESULTS OBJECTS
 class OnePhotonResults:
     def __init__(self, save_path: str):
         # just create an empty class object that you will throw results and analyses into
@@ -90,6 +88,7 @@ class AllOpticalResults:  ## initiated in allOptical-results.ipynb
         self.save_pkl()
 
 
+# %%
 # import results superobject that will collect analyses from various individual experiments
 results_object_path = '/home/pshah/mnt/qnap/Analysis/alloptical_results_superobject.pkl'
 
@@ -100,18 +99,19 @@ if not os.path.exists(results_object_path) or force_remake:
     # make a metainfo attribute to store all metainfo types of info for all experiments/trials
     allopticalResults.metainfo = allopticalResults.slmtargets_stim_responses.loc[:, ['prep_trial', 'date', 'exptype']]
 
-allopticalResults = aoutils.import_resultsobj(results_object_path)
+allopticalResults = import_resultsobj(results_object_path)
 
 
 
 # %% 1) lists of trials to analyse for run_pre4ap_trials and run_post4ap_trials trials within experiments,
 # note that the commented out trials are used to skip running processing code temporarily
 
+
 allopticalResults.pre_4ap_trials = [
     ['RL108 t-009'],
-    ['RL108 t-010'],
+    # ['RL108 t-010'],
     ['RL109 t-007'],
-    ['RL109 t-008'],
+    # ['RL109 t-008'],
     ['RL109 t-013'],
     ['RL109 t-014'],
     ['PS04 t-012',  #, 'PS04 t-014',  # - not sure what's wrong with PS04 t-014, but the photostim and Flu are falling out of sync .21/10/09
@@ -131,11 +131,11 @@ allopticalResults.pre_4ap_trials = [
 
 allopticalResults.post_4ap_trials = [
     ['RL108 t-013'],
-    ['RL108 t-011'],  # -- need to do sz boundary classifying processing
+    # ['RL108 t-011'],  # -- need to do sz boundary classifying processing
     ['RL109 t-020'],  # -- need to do sz boundary classifying processing
-    ['RL109 t-021'],
+    # ['RL109 t-021'],
     ['RL109 t-018'],
-    ['RL109 t-016',  'RL109 t-017'], # -- need to do sz boundary classifying processing
+    ['RL109 t-016'],  #'RL109 t-017'], # -- need to do sz boundary classifying processing
     ['PS04 t-018'],  # - need to re run collecting slmtargets_szboundary_stim (sz processing)
     # ['PS05 t-012'],
     ['PS07 t-011'],
@@ -157,9 +157,9 @@ f"# of post trials: {len(allopticalResults.post_4ap_trials)}")
 allopticalResults.trial_maps = {'pre': {}, 'post': {}}
 allopticalResults.trial_maps['pre'] = {
     'a': ['RL108 t-009'],
-    'b': ['RL108 t-010'],
+    # 'b': ['RL108 t-010'],
     'c': ['RL109 t-007'],
-    'd': ['RL109 t-008'],
+    # 'd': ['RL109 t-008'],
     'e': ['RL109 t-013'],
     'f': ['RL109 t-014'],
     'g': ['PS04 t-012',  # 'PS04 t-014',  # - temp just until PS04 gets reprocessed
@@ -179,11 +179,11 @@ allopticalResults.trial_maps['pre'] = {
 
 allopticalResults.trial_maps['post'] = {
     'a': ['RL108 t-013'],
-    'b': ['RL108 t-011'], # -- need to redo sz boundary classifying processing - should be done
+    # 'b': ['RL108 t-011'], # -- need to redo sz boundary classifying processing - should be done
     'c': ['RL109 t-020'], # -- need to redo sz boundary classifying processing - should be done
-    'd': ['RL109 t-021'],
+    # 'd': ['RL109 t-021'],
     'e': ['RL109 t-018'], # -- need to redo sz boundary classifying processing - should be done
-    'f': ['RL109 t-016', 'RL109 t-017'], #-- need to do sz boundary classifying processing - should be done
+    'f': ['RL109 t-016'], #'RL109 t-017'], #-- need to do sz boundary classifying processing - should be done
     'g': ['PS04 t-018'],  # -- need to redo sz boundary classifying processing - should be done
     # 'h': ['PS05 t-012'],
     'i': ['PS07 t-011'],

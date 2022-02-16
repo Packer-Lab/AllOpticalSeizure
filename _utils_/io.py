@@ -145,14 +145,13 @@ for path in [results_object_path, local_results_object_path]:
                 pkl_path=results_path)  # this needs to be run AFTER defining the AllOpticalResults class
         except FileNotFoundError:
             print(f'not able to get allopticalResults object from {results_object_path}')
-
         break
 
-
-# %%
-import pickle
-
-pkl_path = '/Users/prajayshah/OneDrive/UTPhD/2022/OXFORD/expobj/2020-12-18_t-013.pkl'
-with open(pkl_path, 'rb') as f:
-    print(f"\nimporting resultsobj from: {pkl_path} ... ")
-    resultsobj = pickle.load(f)
+#
+# # %%
+# import pickle
+#
+# pkl_path = '/Users/prajayshah/OneDrive/UTPhD/2022/OXFORD/expobj/2020-12-18_t-013.pkl'
+# with open(pkl_path, 'rb') as f:
+#     print(f"\nimporting resultsobj from: {pkl_path} ... ")
+#     resultsobj = pickle.load(f)

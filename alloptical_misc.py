@@ -3,6 +3,8 @@ import pickle
 import pandas as pd
 
 import alloptical_utils_pj as aoutils
+from _main_.Post4apMain import Post4ap
+from _main_.TwoPhotonImagingMain import TwoPhotonImaging
 from _utils_ import alloptical_plotting_utils as aoplot
 import matplotlib.pyplot as plt
 import numpy as np
@@ -15,9 +17,19 @@ allopticalResults = aoutils.import_resultsobj(pkl_path=results_object_path)
 import tifffile as tf
 
 import _alloptical_utils as Utils
-expobj = Utils.import_expobj(prep='PS04', trial='t-018')
+
+
+# %% spont imaging running subset trial frames
+expobj: TwoPhotonImaging = Utils.import_expobj(pkl_path='/home/pshah/mnt/qnap/Analysis/2020-12-19/RL109/2020-12-19_t-006/2020-12-19_t-006.pkl')
+
+to_s2p = ['t-005', 't-006', 't-007', 't-008', 't-011', 't-012', 't-013', 't-014', 't-016', 't-017', 't-018', 't-019', 't-020', 't-021']
+baseline_trial = ['t-005', 't-006']
+expobj.subset_frames_current_trial(to_suite2p=to_s2p, baseline_trials=baseline_trial, force_redo=True)
+
 
 # %%
+expobj: Post4ap = Utils.import_expobj(prep='PS04', trial='t-018')
+
 sz_nums = np.unique([i for i in list(expobj.slmtargets_data.var.seizure_num) if type(i) is int and i > 0])
 ncols = 3
 nrows = int(np.ceil(len(sz_nums) / ncols)) if int(np.ceil(len(sz_nums) / ncols)) > 1 else 2

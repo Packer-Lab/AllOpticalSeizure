@@ -1,7 +1,7 @@
 #### NOTE: THIS IS NOT CURRENTLY SETUP TO BE ABLE TO HANDLE MULTIPLE GROUPS/STIMS (IT'S REALLY ONLY FOR A SINGLE STIM TRIGGER PHOTOSTIM RESPONSES)
 
 import functools
-import re
+from pathlib import Path
 from datetime import datetime
 
 
@@ -265,6 +265,16 @@ def save_figure(fig, save_path_suffix: str = None, save_path_full: str = None):
         ValueError('not able to determine where to save figure to!')
     print(f'\nsaving figure to: {save_path_full}')
     fig.savefig(save_path_full)
+
+
+def save_to_csv(df: pd.DataFrame, exp_name: str = None, savepath: Path = None):
+    if not savepath:
+        if exp_name: savepath = Path('/Users/prajayshah/OneDrive/UTPhD/2022/OXFORD/export/' + exp_name + '.csv')
+        else: KeyError('trying to make savepath, need to provide `exp_name`')
+    savepath.parent.mkdir(parents=True, exist_ok=True)
+
+    df.to_csv(savepath)
+    print(f"saved dataframe to {savepath}")
 
 # paq2py by Llyod Russel
 def paq_read(file_path=None, plot=False):
