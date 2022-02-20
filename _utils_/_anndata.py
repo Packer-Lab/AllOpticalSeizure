@@ -7,10 +7,11 @@ from typing import Optional, Union
 import numpy as np
 import pandas as pd
 
-import alloptical_utils_pj
+from _main_.AllOpticalMain import alloptical
+from _main_.Post4apMain import Post4ap
 
 
-def create_anndata_SLMtargets(expobj: Union[alloptical_utils_pj.alloptical, alloptical_utils_pj.Post4ap]):
+def create_anndata_SLMtargets(expobj: Union[alloptical, Post4ap]):
     """
     Creates annotated data (see anndata library for more information on AnnotatedData) object based around the Ca2+ matrix of the imaging trial.
 
@@ -62,7 +63,6 @@ def create_anndata_SLMtargets(expobj: Union[alloptical_utils_pj.alloptical, allo
 
         # set primary data
         _data_type = 'SLM Targets photostim responses (tracedFF)'
-        # expobj.responses_SLMtargets_tracedFF.columns = expobj.stim_start_frames
         expobj.responses_SLMtargets_tracedFF.columns = range(len(expobj.stim_start_frames))
         photostim_responses = expobj.responses_SLMtargets_tracedFF
 
@@ -120,7 +120,7 @@ class AnnotatedData2(ad.AnnData):
 
     def _gen_repr(self, n_obs, n_vars) -> str:  # overriding base method from AnnData
         """overrides the default anndata _gen_repr_() method for imaging data usage."""
-
+        print(self.__str__)
         return f"Annotated Data of n_obs × n_vars = {n_obs} × {n_vars}"
 
 

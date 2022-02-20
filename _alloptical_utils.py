@@ -31,7 +31,12 @@ pd.set_option("expand_frame_repr", True)
 def run_for_loop_across_exps(run_pre4ap_trials=False, run_post4ap_trials=False, skip_trials=[], run_trials=[],
                              ignore_cache=False, supress_print=False):
     """decorator to use for for-looping through experiment trials across run_pre4ap_trials and run_post4ap_trials.
-    the trials to for loop through are defined in allopticalResults.pre_4ap_trials and allopticalResults.post_4ap_trials"""
+    the trials to for loop through are defined in allopticalResults.pre_4ap_trials and allopticalResults.post_4ap_trials.
+
+    NOTE: WHEN RETURNING ITEMS IN FUNCTIONS THAT ARE DECORATED USING THIS DECORATOR, THE ITEMS FROM ALL ITERATIONS ARE
+    RETURNED AS A LIST. EACH FOR LOOP'S RETURN ITEM IS APPENDED INTO A LIST BY THIS DECORATOR.
+
+    """
     # if len(run_trials) > 0 or run_pre4ap_trials is True or run_post4ap_trials is True:
     print(f"\n {'..'*5} INITIATING FOR LOOP ACROSS EXPS {'..'*5}\n")
     t_start = time.time()
@@ -239,15 +244,6 @@ def delete_from_cache(func_name: str):
 def random_plot():
     pj.make_general_scatter(x_list=[np.random.rand(5)], y_data=[np.random.rand(5)], s=60, alpha=1, figsize=(3,3))
 
-def define(x):
-    try:
-        print(f"{x}:    {phrase_dictionary[x]}") if type(x) is str else print('ERROR: please provide a string object as the key')
-    except KeyError:
-        print('input not found in phrase_dictionary, you should CONSIDER ADDING IT RIGHT NOW!')
-
-def show_phrases():
-    print(f"entries in phrase_dictionary: \n {list(phrase_dictionary.keys())}")
-
 def working_on(expobj):
     print(f"STARTING on: {expobj.metainfo['exptype']} {expobj.metainfo['animal prep.']} {expobj.metainfo['trial']} {'.'*15}")
 
@@ -276,6 +272,38 @@ def save_to_csv(df: pd.DataFrame, exp_name: str = None, savepath: Path = None):
     df.to_csv(savepath)
     print(f"saved dataframe to {savepath}")
 
+# %% terms dictionary
+# dictionary of terms, phrases, etc. that are particular to this analysis
+phrase_dictionary = {
+    'delta(trace_dFF)': "photostim measurement; measuring photostim responses with post-stim minus pre-stim, where the post-stim "
+                        "and pre-stim values are dFF values obtained from normalization of the whole trace within the present t-series",
+    'dfprestimf': "photostim meausurement; measuring photostim responses as (post-stim minus pre-stim)/(mean[pre-stim period], "
+                  "where the original trace is the raw (neuropil subtracted) trace",
+    'dfstdf': "photostim measurement; measuring photostim responses as (post-stim minus pre-stim)/(std[pre-stim period], "
+              "where the original trace is the raw (neuropil subtracted) trace",
+    'hits': "successful photostim responses, as defined based on a certain threshold level for dfstdf (>0.3 above prestim) and delta(trace_dFF) (>10 above prestim)",
+    'SLM Targets': "ROI placed on the motion registered TIFF based on the primary target coordinate and expanding a circle of 10um? diameter centered on the coordinate",
+    's2p ROIs': "all ROIs derived directly from the suite2p output",
+    's2p nontargets': "suite2p ROIs excluding those which are filtered out for being in the target exclusion zone",
+    'good cells': "good cells are suite2p ROIs which have some sort of a Flu transient based on a sliding window and std filtering process",
+    'stim_id': "the imaging frame number on which the photostimulation is calculated to have first started",
+    'photostim response': 'synonymous with `delta(trace_dFF)`',
+    'im_time_sec': 'anndata storage var key that shows the time (in secs) of the photostim frame from the start of the imaging collection'
+}
+
+def define(x):
+    try:
+        print(f"{x}:    {phrase_dictionary[x]}") if type(x) is str else print('ERROR: please provide a string object as the key')
+    except KeyError:
+        print('input not found in phrase_dictionary, you should CONSIDER ADDING IT RIGHT NOW!')
+
+def get_phrases():
+    print(f"entries in phrase_dictionary: \n {[*phrase_dictionary]}")
+
+
+
+
+# %% data processing utils
 # paq2py by Llyod Russel
 def paq_read(file_path=None, plot=False):
     """
@@ -422,20 +450,3 @@ def normalize_dff(arr, threshold_pct=20, threshold_val=None):
 ##
 
 
-# dictionary of terms, phrases, etc. that are particular to this analysis
-phrase_dictionary = {
-    'delta(trace_dFF)': "photostim measurement; measuring photostim responses with post-stim minus pre-stim, where the post-stim "
-                        "and pre-stim values are dFF values obtained from normalization of the whole trace within the present t-series",
-    'dfprestimf': "photostim meausurement; measuring photostim responses as (post-stim minus pre-stim)/(mean[pre-stim period], "
-                  "where the original trace is the raw (neuropil subtracted) trace",
-    'dfstdf': "photostim measurement; measuring photostim responses as (post-stim minus pre-stim)/(std[pre-stim period], "
-              "where the original trace is the raw (neuropil subtracted) trace",
-    'hits': "successful photostim responses, as defined based on a certain threshold level for dfstdf (>0.3 above prestim) and delta(trace_dFF) (>10 above prestim)",
-    'SLM Targets': "ROI placed on the motion registered TIFF based on the primary target coordinate and expanding a circle of 10um? diameter centered on the coordinate",
-    's2p ROIs': "all ROIs derived directly from the suite2p output",
-    's2p nontargets': "suite2p ROIs excluding those which are filtered out for being in the target exclusion zone",
-    'good cells': "good cells are suite2p ROIs which have some sort of a Flu transient based on a sliding window and std filtering process",
-    'stim_id': "the imaging frame number on which the photostimulation is calculated to have first started",
-    'photostim response': 'synonymous with `delta(trace_dFF)`',
-    'im_time_sec': 'anndata storage var key that shows the time (in secs) of the photostim frame from the start of the imaging collection'
-}

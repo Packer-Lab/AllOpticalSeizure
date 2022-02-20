@@ -3,6 +3,22 @@ import re
 import pickle
 from funcsforprajay import funcs as pj
 
+# %% TEMP TEMP TEMP
+class TargetsSzInvasionTemporal:
+    def __init__(self):
+        pass
+
+
+# this is used when the unpickler has a problem with finding a class attribute for the file being loaded - note that it is setup manually for each one..
+class CustomUnpickler(pickle.Unpickler):
+    def find_class(self, module, name):
+        if name == '_TargetsSzInvasionTemporal':
+            from _sz_processing.ClassTargetsSzInvasionTemporal import _TargetsSzInvasionTemporal
+            return _TargetsSzInvasionTemporal
+        return super().find_class(module, name)
+
+# TEMP TEMP TEMP
+
 # %%
 
 def import_stripped_expobj(pkl_path: str):
@@ -37,7 +53,7 @@ def save_pkl(obj, save_path: str = None):
 
 
 def import_expobj(aoresults_map_id: str = None, trial: str = None, prep: str = None, date: str = None, pkl_path: str = None,
-                  exp_prep: str = None, verbose: bool = False, do_processing: bool = False, load_backup_path: str = None):
+                  exp_prep: str = None, verbose: bool = False, load_backup_path: str = None):
     """
     primary function for importing of saved expobj files saved pickel files.
 
@@ -77,9 +93,9 @@ def import_expobj(aoresults_map_id: str = None, trial: str = None, prep: str = N
             try:
                 date = allopticalResults.metainfo.loc[
                     allopticalResults.metainfo['prep_trial'] == f"{prep} {trial}", 'date'].values[0]
-            except ValueError:
-                raise ValueError('not able to find date in allopticalResults.metainfo')
-        pkl_path = "/home/pshah/mnt/qnap/Analysis/%s/%s/%s_%s/%s_%s.pkl" % (date, prep, date, trial, date, trial)
+            except KeyError:
+                raise KeyError('not able to find date in allopticalResults.metainfo')
+        pkl_path = f"/home/pshah/mnt/qnap/Analysis/{date}/{prep}/{date}_{trial}/{date}_{trial}.pkl"
         pkl_path_local = f"/Users/prajayshah/OneDrive/UTPhD/2022/OXFORD/expobj/{date}_{trial}.pkl"
 
         for path in [pkl_path, pkl_path_local]:
@@ -89,15 +105,30 @@ def import_expobj(aoresults_map_id: str = None, trial: str = None, prep: str = N
 
     if not os.path.exists(pkl_path):
         raise Exception('pkl path NOT found: ' + pkl_path)
-    with open(pkl_path, 'rb') as f:
-        print(f'\- Loading {pkl_path}', end='\r')
-        try:
+    try:
+        with open(pkl_path, 'rb') as f:
+            print(f'\- Loading {pkl_path}', end='\r')
             expobj = pickle.load(f)
-        except pickle.UnpicklingError:
-            raise pickle.UnpicklingError(f"\n** FAILED IMPORT OF * {prep} {trial} * from {pkl_path}\n")
+    except EOFError or pickle.UnpicklingError:
+        ImportWarning(f"\n** FAILED IMPORT OF * {prep} {trial} * from {pkl_path}\n")
+        print(f"\t trying to recover from backup! ****")
+        load_backup_path = f'/home/pshah/mnt/qnap/Analysis/{date}/{prep}/{date}_{trial}' + f"backups/{date}_{prep}_{trial}.pkl"
+        if not os.path.exists(load_backup_path):
+            load_backup_path = f'/home/pshah/mnt/qnap/Analysis/{date}/{prep}/{date}_{trial}' + f"/backups/{date}_{prep}_{trial}.pkl"
+
+        try:
+            with open(load_backup_path, 'rb') as f:
+                print(f'\- Loading backup from: {load_backup_path}', end='\r')
+                expobj = pickle.load(f)
+        except:
+            raise ImportError(f"\n** FAILED IMPORT OF * {prep} {trial} * from {pkl_path}\n")
         experiment = f"{expobj.t_series_name} {expobj.metainfo['exptype']} {expobj.metainfo['comments']}"
-        print(f'|- Loaded {expobj.t_series_name} ({pkl_path}) .. DONE') if not verbose else None
-        print(f'|- Loaded {experiment}') if verbose else None
+        print(f'|- Loaded {experiment}') if verbose else print(f'|- Loaded {expobj.t_series_name} ({pkl_path}) .. DONE')
+    except AttributeError:
+        load_backup_path = f'/home/pshah/mnt/qnap/Analysis/{date}/{prep}/{date}_{trial}' + f"backups/{date}_{prep}_{trial}.pkl"
+        if not os.path.exists(load_backup_path):
+            load_backup_path = f'/home/pshah/mnt/qnap/Analysis/{date}/{prep}/{date}_{trial}' + f"/backups/{date}_{prep}_{trial}.pkl"
+        expobj = CustomUnpickler(open(load_backup_path, 'rb')).load()
 
     ### roping in some extraneous processing steps if there's expobj's that haven't completed for them
 

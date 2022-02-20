@@ -16,7 +16,6 @@ import sys
 from typing import Union
 
 from matplotlib.colors import ColorConverter
-from packerlabimaging.processing.anndata import AnnotatedData
 
 sys.path.append('/home/pshah/Documents/code/')
 from Vape.utils.utils_funcs import s2p_loader
@@ -37,8 +36,6 @@ from funcsforprajay import pnt2line
 from funcsforprajay.wrappers import plot_piping_decorator
 from _utils_.paq_utils import paq_read, frames_discard
 import pickle
-
-
 
 
 # %% UTILITY FUNCTIONS and DECORATORS
@@ -3314,6 +3311,9 @@ class alloptical(TwoPhotonImaging):
 class Post4ap(alloptical):
 
     def __init__(self, paths, metainfo, stimtype, discard_all):
+        from _sz_processing.run__targets_sztemporal_stim_responses import _TargetsSzInvasionTemporal
+        self.TargetsSzInvasionTemporal = _TargetsSzInvasionTemporal()
+
         alloptical.__init__(self, paths, metainfo, stimtype)
         print('\ninitialized Post4ap expobj of exptype and trial: %s, %s, %s' % (self.metainfo['exptype'],
                                                                                  self.metainfo['trial'],

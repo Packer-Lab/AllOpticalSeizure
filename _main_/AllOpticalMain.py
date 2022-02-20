@@ -4,7 +4,6 @@ import glob
 import os
 import sys
 
-from _utils_._anndata import AnnotatedData
 
 sys.path.append('/home/pshah/Documents/code/')
 from Vape.utils import STAMovieMaker_noGUI as STAMM
@@ -23,6 +22,8 @@ from _utils_.paq_utils import paq_read
 
 import _alloptical_utils as Utils
 from _main_.TwoPhotonImagingMain import TwoPhotonImaging
+
+
 
 class alloptical(TwoPhotonImaging):
 
@@ -63,6 +64,10 @@ class alloptical(TwoPhotonImaging):
         self.hits_SLMtargets_tracedFF = None
         self.hits_SLMtargets_dfprestimf = None
         self.hits_SLMtargets_dfstdf = None
+
+        from _utils_._anndata import AnnotatedData2
+        self.slmtargets_data: AnnotatedData2 = None   # anndata object of # targets vs. # stims - photostim responses - layers are used to store different processing of data
+
 
         # .get_alltargets_stim_traces_norm(pre_stim=expobj.pre_stim, post_stim=expobj.post_stim, stims=expobj.stim_start_frames)
         # - various attrs. for collecting photostim timed trace snippets from raw Flu values
@@ -1360,7 +1365,7 @@ class alloptical(TwoPhotonImaging):
             else:
                 AttributeError('no SLMTargets_stims_dff attr. [1.2]')
 
-        elif process == 'trace dFF':
+        elif process == 'delta(trace_dFF)':
             if hasattr(self, 'SLMTargets_tracedFF_stims_dff'):
                 if type(self.SLMTargets_tracedFF_stims_dff) == list:
                     self.SLMTargets_tracedFF_stims_dff, self.SLMTargets_tracedFF_stims_dffAvg, self.SLMTargets_tracedFF_stims_dfstdF, \
@@ -1447,7 +1452,7 @@ class alloptical(TwoPhotonImaging):
             else:
                 AttributeError('no SLMTargets_stims_dff attr. [1.2]')
 
-        elif process == 'trace dFF':
+        elif process == 'delta(trace_dFF)':
             if hasattr(self, 'SLMTargets_stims_dff'):
                 targets_traces = self.SLMTargets_tracedFF_stims_dff
             else:
@@ -2280,54 +2285,54 @@ class alloptical(TwoPhotonImaging):
         plt.show()
         Utils.save_figure(fig, save_path_suffix=f"{save_fig}") if save_fig else None
 
-    def create_anndata_SLMtargets(expobj):
-        """
-        Creates annotated data (see anndata library for more information on AnnotatedData) object based around the Ca2+ matrix of the imaging trial.
-
-        """
-
-        if expobj.dFF_SLMTargets or expobj.raw_SLMTargets:
-            # SETUP THE OBSERVATIONS (CELLS) ANNOTATIONS TO USE IN anndata
-            # build dataframe for obs_meta from SLM targets information
-            obs_meta = pd.DataFrame(
-                columns=['SLM group #', 'SLM target coord'], index=range(expobj.n_targets_total))
-            for groupnum, targets in enumerate(expobj.target_coords):
-                for target, coord in enumerate(targets):
-                    obs_meta.loc[target, 'SLM group #'] = groupnum
-                    obs_meta.loc[target, 'SLM target coord'] = coord
-
-            # build numpy array for multidimensional obs metadata
-            obs_m = {'SLM targets areas': []}
-            for groupnum, targets in enumerate(expobj.target_areas):
-                for target, coord in enumerate(targets):
-                    obs_m['SLM targets areas'] = groupnum
-
-            # SETUP THE VARIABLES ANNOTATIONS TO USE IN anndata
-            # build dataframe for var annot's - based on stim_start_frames
-            var_meta = pd.DataFrame(index=['wvfront in sz', 'seizure location'], columns=expobj.stim_start_frames)
-            for fr_idx, stim_frame in enumerate(expobj.stim_start_frames):
-                if 'pre' in expobj.exptype:
-                    var_meta.loc['wvfront in sz', stim_frame] = False
-                    var_meta.loc['seizure location', stim_frame] = None
-                elif 'post' in expobj.exptype:
-                    if stim_frame in expobj.stimsWithSzWavefront:
-                        var_meta.loc['wvfront in sz', stim_frame] = True
-                        var_meta.loc['seizure location', stim_frame] = '..not-set-yet..'
-                    else:
-                        var_meta.loc['wvfront in sz', stim_frame] = False
-                        var_meta.loc['seizure location', stim_frame] = None
-
-            # BUILD LAYERS TO ADD TO anndata OBJECT
-            layers = {'SLM Targets photostim responses (dFF)': expobj.dFF_SLMTargets
-                      }
-
-            print(f"\n\----- CREATING annotated data object using AnnData:")
-            __data_type = 'Registered Imaging Raw from SLM targets areas'
-            adata = AnnotatedData(X=expobj.raw_SLMTargets, obs=obs_meta, var=var_meta.T, obsm=obs_m,
-                                  layers=layers, data_label=__data_type)
-
-            print(f"\n{adata}")
-            expobj.slmtargets_data = adata
-        else:
-            Warning(
-                'did not create anndata. anndata creation only available if experiments were processed with suite2p and .paq file(s) provided for temporal synchronization')
+    # def create_anndata_SLMtargets(expobj):
+    #     """
+    #     Creates annotated data (see anndata library for more information on AnnotatedData) object based around the Ca2+ matrix of the imaging trial.
+    #
+    #     """
+    #
+    #     if expobj.dFF_SLMTargets or expobj.raw_SLMTargets:
+    #         # SETUP THE OBSERVATIONS (CELLS) ANNOTATIONS TO USE IN anndata
+    #         # build dataframe for obs_meta from SLM targets information
+    #         obs_meta = pd.DataFrame(
+    #             columns=['SLM group #', 'SLM target coord'], index=range(expobj.n_targets_total))
+    #         for groupnum, targets in enumerate(expobj.target_coords):
+    #             for target, coord in enumerate(targets):
+    #                 obs_meta.loc[target, 'SLM group #'] = groupnum
+    #                 obs_meta.loc[target, 'SLM target coord'] = coord
+    #
+    #         # build numpy array for multidimensional obs metadata
+    #         obs_m = {'SLM targets areas': []}
+    #         for groupnum, targets in enumerate(expobj.target_areas):
+    #             for target, coord in enumerate(targets):
+    #                 obs_m['SLM targets areas'] = groupnum
+    #
+    #         # SETUP THE VARIABLES ANNOTATIONS TO USE IN anndata
+    #         # build dataframe for var annot's - based on stim_start_frames
+    #         var_meta = pd.DataFrame(index=['wvfront in sz', 'seizure location'], columns=expobj.stim_start_frames)
+    #         for fr_idx, stim_frame in enumerate(expobj.stim_start_frames):
+    #             if 'pre' in expobj.exptype:
+    #                 var_meta.loc['wvfront in sz', stim_frame] = False
+    #                 var_meta.loc['seizure location', stim_frame] = None
+    #             elif 'post' in expobj.exptype:
+    #                 if stim_frame in expobj.stimsWithSzWavefront:
+    #                     var_meta.loc['wvfront in sz', stim_frame] = True
+    #                     var_meta.loc['seizure location', stim_frame] = '..not-set-yet..'
+    #                 else:
+    #                     var_meta.loc['wvfront in sz', stim_frame] = False
+    #                     var_meta.loc['seizure location', stim_frame] = None
+    #
+    #         # BUILD LAYERS TO ADD TO anndata OBJECT
+    #         layers = {'SLM Targets photostim responses (dFF)': expobj.dFF_SLMTargets
+    #                   }
+    #
+    #         print(f"\n\----- CREATING annotated data object using AnnData:")
+    #         __data_type = 'Registered Imaging Raw from SLM targets areas'
+    #         adata = AnnotatedData2(X=expobj.raw_SLMTargets, obs=obs_meta, var=var_meta.T, obsm=obs_m,
+    #                               layers=layers, data_label=__data_type)
+    #
+    #         print(f"\n{adata}")
+    #         expobj.slmtargets_data = adata
+    #     else:
+    #         Warning(
+    #             'did not create anndata. anndata creation only available if experiments were processed with suite2p and .paq file(s) provided for temporal synchronization')

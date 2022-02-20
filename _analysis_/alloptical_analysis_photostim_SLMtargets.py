@@ -1,6 +1,11 @@
 ## script dedicated to code that focuses on analysis re: SLM targets data
 # %% IMPORT MODULES AND TRIAL expobj OBJECT
 import sys
+from typing import Union
+
+from _analysis_.ClassPhotostimResponseQuantificationSLMtargets import PhotostimResponsesQuantificationSLMtargets
+from _main_.AllOpticalMain import alloptical
+from _main_.Post4apMain import Post4ap
 
 sys.path.append('/home/pshah/Documents/code/PackerLab_pycharm/')
 sys.path.append('/home/pshah/Documents/code/')
@@ -10,6 +15,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import tifffile as tf
 from funcsforprajay import funcs as pj
+import _alloptical_utils as Utils
 
 import alloptical_utils_pj as aoutils
 from _utils_ import alloptical_plotting_utils as aoplot
@@ -17,13 +23,48 @@ from _utils_ import alloptical_plotting_utils as aoplot
 # # import results superobject that will collect analyses from various individual experiments
 results_object_path = '/home/pshah/mnt/qnap/Analysis/alloptical_results_superobject.pkl'
 allopticalResults = aoutils.import_resultsobj(pkl_path=results_object_path)
-aoutils.random_plot()
+# aoutils.random_plot()
 # expobj, experiment = aoutils.import_expobj(prep='RL109', trial='t-013', verbose=True)
 # key = 'f'; exp = 'pre'; expobj, experiment = aoutils.import_expobj(aoresults_map_id=f"{exp} {key}.0")
 
 
 "##### -------------------- ALL OPTICAL PHOTOSTIM ANALYSIS #############################################################"
+
+# %% c.0) feb 19 2022: TRYING NEW CLASS DRIVEN APPROACH FOR EACH ANALYSIS
+
+@Utils.run_for_loop_across_exps(run_pre4ap_trials=True, run_post4ap_trials=True, ignore_cache=True)
+def run__initPhotostimResponseQuant(**kwargs):
+    expobj: Union[alloptical, Post4ap] = kwargs['expobj']
+    expobj.PhotostimResponsesQuantificationSLMtargets = PhotostimResponsesQuantificationSLMtargets()
+    expobj.save()
+run__initPhotostimResponseQuant()
+
+
+
+@Utils.run_for_loop_across_exps(run_pre4ap_trials=False, run_post4ap_trials=True, ignore_cache=True)
+def run__collect_photostim_responses_exp(**kwargs):
+    expobj: Union[alloptical, Post4ap] = kwargs['expobj']
+    PhotostimResponsesQuantificationSLMtargets.collect_photostim_responses_exp(expobj)
+    expobj.save()
+run__collect_photostim_responses_exp()
+
+
+@Utils.run_for_loop_across_exps(run_pre4ap_trials=False, run_post4ap_trials=True, ignore_cache=True, run_trials=['RL108 t-013'])
+def run__create_anndata_SLMtargets(**kwargs):
+    expobj: alloptical = kwargs['expobj']
+    PhotostimResponsesQuantificationSLMtargets.create_anndata_SLMtargets(expobj)
+    expobj.save()
+run__create_anndata_SLMtargets()
+
+
+
+# %% c.1) plotting mean photostim response magnitude
+# PhotostimResponsesQuantificationSLMtargets.full_plot_mean_responses_magnitudes()
+
+
+
 # %% 5.0) calculate/collect min distance to seizure and responses at each distance
+import sys; sys.exit()
 
 response_type = 'dFF (z scored) (interictal)'
 

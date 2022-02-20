@@ -12,7 +12,7 @@ from _main_.Post4apMain import Post4ap
 
 SAVE_LOC = "/Users/prajayshah/OneDrive/UTPhD/2022/OXFORD/export/"
 
-expobj: Post4ap = Utils.import_expobj(prep='RL108', trial='t-013')
+# expobj: Post4ap = Utils.import_expobj(prep='RL108', trial='t-013')
 
 # expobj.slmtargets_data.var[['stim_start_frame', 'wvfront in sz', 'seizure_num']]
 
@@ -68,6 +68,7 @@ def print_pkl(result, **kwargs):
     print(expobj.pkl_path)
     # result.append(expobj.pkl_path)
     return result
+
 
 
 def plot_slmtargets_flu_lfp(expobj: Post4ap, rg: Tuple[int] = None, title='', **kwargs):
@@ -165,9 +166,9 @@ def export_to_csv(slmtargets_time_delay_sz: pd.DataFrame, exp_name: str):
 
 # ADD SLM TARGETS TIME DELAY TO SZ DATA TO expobj
 
-# @Utils.run_for_loop_across_exps(run_pre4ap_trials=False, run_post4ap_trials=True, ignore_cache=True)
-def add_slmtargets_time_delay_sz_data(expobj: Post4ap, **kwargs):
-    # expobj = kwargs['expobj']
+@Utils.run_for_loop_across_exps(run_pre4ap_trials=False, run_post4ap_trials=True, ignore_cache=True)
+def add_slmtargets_time_delay_sz_data(**kwargs):
+    expobj = kwargs['expobj']
     csv_path = f'/home/pshah/mnt/qnap/Analysis/analysis_export/slmtargets_time_delay_sz__{expobj.prep}_{expobj.trial}.csv'
     slmtargets_time_delay_sz = pd.read_csv(csv_path)
     expobj.slmtargets_time_delay_sz = slmtargets_time_delay_sz
@@ -175,6 +176,7 @@ def add_slmtargets_time_delay_sz_data(expobj: Post4ap, **kwargs):
     for column in slmtargets_time_delay_sz.columns[1:]:
         expobj.slmtargets_data.add_observation(obs_name=column, values=slmtargets_time_delay_sz[column])
     expobj.save()
+
 
 def convert_timedel2frames(expobj: Post4ap, sz_num: int, timestamp: float):
 

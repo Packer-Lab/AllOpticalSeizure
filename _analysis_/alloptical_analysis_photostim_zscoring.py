@@ -1,5 +1,11 @@
 # %% IMPORT MODULES AND TRIAL expobj OBJECT
 import os; import sys
+from typing import Union
+
+from _analysis_.ClassPhotostimResponseQuantificationSLMtargets import PhotostimResponsesQuantificationSLMtargets
+from _main_.AllOpticalMain import alloptical
+from _main_.Post4apMain import Post4ap
+
 sys.path.append('/home/pshah/Documents/code/PackerLab_pycharm/')
 sys.path.append('/home/pshah/Documents/code/')
 import alloptical_utils_pj as aoutils
@@ -20,7 +26,11 @@ allopticalResults = aoutils.import_resultsobj(pkl_path=results_object_path)
 
 
 
+
+
+
 # %% 1.1) DATA COLLECTION: dfprestimf; organize and convert SLMTargets stim responses to Z-SCORES - relative to pre-4ap scores - make sure to compare the appropriate pre and post 4ap trial comparisons
+
 
 trials_skip = [
     'RL108 t-011',

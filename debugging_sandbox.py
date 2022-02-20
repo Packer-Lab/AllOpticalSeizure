@@ -17,6 +17,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 # import results superobject that will collect analyses from various individual experiments
+from _utils_.io import import_expobj
+
 results_object_path = '/home/pshah/mnt/qnap/Analysis/alloptical_results_superobject.pkl'
 allopticalResults = aoutils.import_resultsobj(pkl_path=results_object_path)
 
@@ -31,6 +33,19 @@ save_path_prefix = '/home/pshah/mnt/qnap/Analysis/Results_figs/'
 
 # aoplot.plot_lfp_stims(expobj, xlims=[0.2e7, 1.0e7], linewidth=1.0)
 
+
+# %% pickle cannot find attribute error
+for i, x in enumerate(allopticalResults.post_4ap_trials):
+    counter_j = 0
+    for j, exp_prep in enumerate(x):
+        prep = exp_prep[:-6]
+        post4aptrial = exp_prep[-5:]
+        try:
+            expobj = import_expobj(prep=prep, trial=post4aptrial, verbose=False)
+            print(f"loaded {expobj}")
+        except:
+            print(f'couldnt import expobj {exp_prep}')
+        counter_j += 1
 
 
 # %%

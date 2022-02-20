@@ -4,6 +4,7 @@ import os
 import pickle
 import sys
 
+from _main_.AllOpticalMain import alloptical
 
 sys.path.append('/home/pshah/Documents/code/')
 import matplotlib.pyplot as plt
@@ -17,12 +18,17 @@ from funcsforprajay import pnt2line
 from _utils_.paq_utils import paq_read, frames_discard
 from _utils_ import alloptical_plotting_utils as aoplot
 
-from alloptical_utils_pj import alloptical
 
 class Post4ap(alloptical):
 
     def __init__(self, paths, metainfo, stimtype, discard_all):
+
+        from _sz_processing.ClassTargetsSzInvasionTemporal import _TargetsSzInvasionTemporal
+        self.TargetsSzInvasionTemporal = _TargetsSzInvasionTemporal()
+
         alloptical.__init__(self, paths, metainfo, stimtype)
+        self.time_del_szinv_stims: pd.DataFrame = pd.DataFrame()  # df containing delay to sz invasion for each target for each stim frame (dim: n_targets x n_stims)
+        self.mean_targets_szinvasion_trace: dict = {}  # dictionary containing mean Raw Flu trace around sz invasion time of each target (as well as other info as keyed into dict)
         print('\ninitialized Post4ap expobj of exptype and trial: %s, %s, %s' % (self.metainfo['exptype'],
                                                                                  self.metainfo['trial'],
                                                                                  self.metainfo['date']))
