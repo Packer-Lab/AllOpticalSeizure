@@ -89,7 +89,11 @@ class AnnotatedData2(ad.AnnData):
         super().__init__(**_adata_dict)
         self.data_label = data_label if data_label else None
 
-    def __str__(self):
+    # def __str__(self):
+
+
+    def _gen_repr(self, n_obs, n_vars) -> str:  # overriding base method from AnnData
+        """overrides the default anndata _gen_repr_() method for imaging data usage."""
         "return more extensive information about the AnnotatedData data structure"
         if self.filename:
             backed_at = f" backed at {str(self.filename)!r}"
@@ -116,12 +120,6 @@ class AnnotatedData2(ad.AnnData):
             if len(keys) > 0:
                 descr += f"\n\t{attr}: \n\t\t|- {str(list(keys))[1:-1]}"
         return descr
-
-
-    def _gen_repr(self, n_obs, n_vars) -> str:  # overriding base method from AnnData
-        """overrides the default anndata _gen_repr_() method for imaging data usage."""
-        print(self.__str__)
-        return f"Annotated Data of n_obs × n_vars = {n_obs} × {n_vars}"
 
 
 

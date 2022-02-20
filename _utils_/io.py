@@ -12,14 +12,44 @@ class TargetsSzInvasionTemporal:
 # this is used when the unpickler has a problem with finding a class attribute for the file being loaded - note that it is setup manually for each one..
 class CustomUnpickler(pickle.Unpickler):
     def find_class(self, module, name):
-        if name == '_TargetsSzInvasionTemporal':
-            from _sz_processing.ClassTargetsSzInvasionTemporal import _TargetsSzInvasionTemporal
-            return _TargetsSzInvasionTemporal
-        return super().find_class(module, name)
+        if name == 'PhotostimResponsesQuantificationSLMtargets':
+            from _analysis_.ClassPhotostimResponseQuantificationSLMtargets import \
+                PhotostimResponsesQuantificationSLMtargets
+            return PhotostimResponsesQuantificationSLMtargets
+        # return super().find_class(module, name)
 
 # TEMP TEMP TEMP
 
-# %%
+
+# %% CLASS IO
+
+def save_cls_pkl(cls, save_path: str):
+    if save_path is None:
+        if not hasattr(cls, 'save_path'):
+            raise ValueError(
+                'pkl path for saving was not found in clsect attributes, please provide path to save to')
+    else:
+        cls.pkl_path = save_path
+
+    os.makedirs(pj.return_parent_dir(save_path), exist_ok=True)
+    with open(cls.pkl_path, 'wb') as f:
+        pickle.dump(cls, f)
+    print(f"\- cls saved to {cls.pkl_path} -- ")
+
+def import_cls(pkl_path: str):
+    if not os.path.exists(pkl_path):
+        raise Exception('pkl path NOT found: ' + pkl_path)
+    with open(pkl_path, 'rb') as f:
+        print(f'\- Loading {pkl_path}', end='\r')
+        try:
+            cls = pickle.load(f)
+        except pickle.UnpicklingError:
+            raise pickle.UnpicklingError(f"\n** FAILED IMPORT from {pkl_path}\n")
+        print(f'|- Loaded {cls} ... DONE')
+    return cls
+
+
+# %% EXPOBJ IO
 
 def import_stripped_expobj(pkl_path: str):
     if not os.path.exists(pkl_path):
@@ -31,6 +61,9 @@ def import_stripped_expobj(pkl_path: str):
         except pickle.UnpicklingError:
             raise pickle.UnpicklingError(f"\n** FAILED IMPORT from {pkl_path}\n")
         print(f'|- Loaded {expobj.t_series_name} ({pkl_path}) .. DONE')
+    return expobj
+
+
 
 
 def save_pkl(obj, save_path: str = None):
@@ -41,12 +74,12 @@ def save_pkl(obj, save_path: str = None):
     else:
         obj.pkl_path = save_path
 
+    os.makedirs(pj.return_parent_dir(save_path), exist_ok=True)
     with open(obj.pkl_path, 'wb') as f:
         pickle.dump(obj, f)
-    print(f"\- Saving expobj saved to {obj.pkl_path} -- ")
-
-    backup_dir = pj.return_parent_dir(obj.backup_pkl)
-    os.makedirs(backup_dir, exist_ok=True) if not os.path.exists(backup_dir) else None
+    print(f"\- expobj saved to {obj.pkl_path} -- ")
+    
+    os.makedirs(pj.return_parent_dir(obj.backup_pkl), exist_ok=True) if not os.path.exists(backup_dir) else None
     with open(obj.backup_pkl, 'wb') as f:
         pickle.dump(obj, f)
 
@@ -155,6 +188,8 @@ def import_expobj(aoresults_map_id: str = None, trial: str = None, prep: str = N
 
     return expobj
 
+
+# %% RESULT OBJECT IO
 def import_resultsobj(pkl_path: str):
     assert os.path.exists(pkl_path)
     with open(pkl_path, 'rb') as f:

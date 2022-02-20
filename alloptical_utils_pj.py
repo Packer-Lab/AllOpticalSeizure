@@ -2354,8 +2354,7 @@ class alloptical(TwoPhotonImaging):
                 # y.append(avg)
         return x
 
-    # calculate reliability of photostim responsiveness of all of the targeted cells
-    def get_SLMTarget_responses_dff(self, process: str, threshold=10.0, stims_to_use: Union[list, str] = 'all'):
+    def get_SLMTarget_responses_dff(self, process: str, threshold=10, stims_to_use: list = None):
         """
         calculations of dFF responses to photostimulation of SLM Targets. Includes calculating reliability of slm targets,
         saving success stim locations, and saving stim response magnitudes as pandas dataframe.
@@ -2365,10 +2364,10 @@ class alloptical(TwoPhotonImaging):
         :return:
         """
         print(f'\n---------- Calculating {process} stim evoked responses (of SLM targets) [.1] ---------- ')
-        if stims_to_use == 'all':
+        if stims_to_use is None:
             stims_to_use = range(len(self.stim_start_frames))
             stims_idx = [self.stim_start_frames.index(stim) for stim in stims_to_use]
-        elif type(stims_to_use) == list:
+        elif stims_to_use:
             stims_idx = [self.stim_start_frames.index(stim) for stim in stims_to_use]
         else:
             AttributeError('no stims set to analyse [1.1]')
@@ -2387,7 +2386,7 @@ class alloptical(TwoPhotonImaging):
             else:
                 AttributeError('no SLMTargets_stims_dff attr. [1.2]')
 
-        elif process == 'trace dFF':
+        elif process == 'delta(trace_dFF)':
             if hasattr(self, 'SLMTargets_tracedFF_stims_dff'):
                 if type(self.SLMTargets_tracedFF_stims_dff) == list:
                     self.SLMTargets_tracedFF_stims_dff, self.SLMTargets_tracedFF_stims_dffAvg, self.SLMTargets_tracedFF_stims_dfstdF, \

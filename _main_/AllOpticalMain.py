@@ -65,6 +65,9 @@ class alloptical(TwoPhotonImaging):
         self.hits_SLMtargets_dfprestimf = None
         self.hits_SLMtargets_dfstdf = None
 
+        from _analysis_.ClassPhotostimResponseQuantificationSLMtargets import PhotostimResponsesQuantificationSLMtargets
+        self.PhotostimResponsesSLMTargets: PhotostimResponsesQuantificationSLMtargets = None  # module that holds analysis and results for Photostim Responses of SLM Targets
+
         from _utils_._anndata import AnnotatedData2
         self.slmtargets_data: AnnotatedData2 = None   # anndata object of # targets vs. # stims - photostim responses - layers are used to store different processing of data
 
@@ -1332,7 +1335,6 @@ class alloptical(TwoPhotonImaging):
                 # y.append(avg)
         return x
 
-    # calculate reliability of photostim responsiveness of all of the targeted cells
     def get_SLMTarget_responses_dff(self, process: str, threshold=10, stims_to_use: list = None):
         """
         calculations of dFF responses to photostimulation of SLM Targets. Includes calculating reliability of slm targets,

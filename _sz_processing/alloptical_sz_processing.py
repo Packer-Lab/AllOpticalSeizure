@@ -31,7 +31,7 @@ expobj = Utils.import_expobj(prep='RL108', trial='t-013')
 # %% plot the first sz frame for each seizure from each expprep, label with the time delay to sz invasion
 
 
-@Utils.run_for_loop_across_exps(run_pre4ap_trials=False, run_post4ap_trials=True, ignore_cache=True)
+@Utils.run_for_loop_across_exps(run_pre4ap_trials=False, run_post4ap_trials=True, allow_rerun=True)
 def plot_sz_invasion(**kwargs):
     expobj: aoutils.Post4ap = kwargs['expobj']
 
@@ -72,7 +72,7 @@ plot_sz_invasion()
 
 
 # %%
-@Utils.run_for_loop_across_exps(run_pre4ap_trials=False, run_post4ap_trials=True, ignore_cache=True)
+@Utils.run_for_loop_across_exps(run_pre4ap_trials=False, run_post4ap_trials=True, allow_rerun=True)
 def szInvasionTime(**kwargs):
     """
     The general approach to calculate seizure invasion time delay is to calculate the first stim (which are usually every 10 secs)

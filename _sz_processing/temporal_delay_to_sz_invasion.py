@@ -18,7 +18,7 @@ SAVE_LOC = "/Users/prajayshah/OneDrive/UTPhD/2022/OXFORD/export/"
 
 # %%
 
-@Utils.run_for_loop_across_exps(run_pre4ap_trials=False, run_post4ap_trials=True, supress_print=True, ignore_cache=True)
+@Utils.run_for_loop_across_exps(run_pre4ap_trials=False, run_post4ap_trials=True, supress_print=True, allow_rerun=True)
 def _export_data_(**kwargs):
     expobj: Post4ap = kwargs['expobj']
 
@@ -62,7 +62,7 @@ def _export_data_(**kwargs):
     #     np.save(f, lfp)
 
 
-@Utils.run_for_loop_across_exps(run_pre4ap_trials=False, run_post4ap_trials=True, supress_print=True, ignore_cache=True)
+@Utils.run_for_loop_across_exps(run_pre4ap_trials=False, run_post4ap_trials=True, supress_print=True, allow_rerun=True)
 def print_pkl(result, **kwargs):
     expobj: Post4ap = kwargs['expobj']
     print(expobj.pkl_path)
@@ -166,7 +166,7 @@ def export_to_csv(slmtargets_time_delay_sz: pd.DataFrame, exp_name: str):
 
 # ADD SLM TARGETS TIME DELAY TO SZ DATA TO expobj
 
-@Utils.run_for_loop_across_exps(run_pre4ap_trials=False, run_post4ap_trials=True, ignore_cache=True)
+@Utils.run_for_loop_across_exps(run_pre4ap_trials=False, run_post4ap_trials=True, allow_rerun=True)
 def add_slmtargets_time_delay_sz_data(**kwargs):
     expobj = kwargs['expobj']
     csv_path = f'/home/pshah/mnt/qnap/Analysis/analysis_export/slmtargets_time_delay_sz__{expobj.prep}_{expobj.trial}.csv'

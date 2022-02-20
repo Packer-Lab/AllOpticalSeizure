@@ -682,4 +682,5 @@ class TwoPhotonImaging:
         return mean_img
 
     def save(self, pkl_path: str = None):
-        Utils.save_pkl(obj=self, save_path=pkl_path)
+        from _utils_.io import save_pkl
+        save_pkl(obj=self, save_path=pkl_path)

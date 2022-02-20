@@ -31,7 +31,7 @@ expobj.TargetsSzInvasionTemporal.plot_szinvasiontime_vs_photostimresponses(fig=N
 
 # %% code deployment zone
 
-@Utils.run_for_loop_across_exps(run_pre4ap_trials=False, run_post4ap_trials=True, ignore_cache=True)
+@Utils.run_for_loop_across_exps(run_pre4ap_trials=False, run_post4ap_trials=True, allow_rerun=True)
 def init__TargetsSzInvasionTemporal(**kwargs):
     expobj: Post4ap = kwargs['expobj']
     from _sz_processing.ClassTargetsSzInvasionTemporal import _TargetsSzInvasionTemporal
@@ -39,14 +39,14 @@ def init__TargetsSzInvasionTemporal(**kwargs):
     expobj.save()
 # init__TargetsSzInvasionTemporal()
 
-@Utils.run_for_loop_across_exps(run_pre4ap_trials=False, run_post4ap_trials=True, ignore_cache=True)
+@Utils.run_for_loop_across_exps(run_pre4ap_trials=False, run_post4ap_trials=True, allow_rerun=True)
 def run_collect_time_delay_sz_stims(**kwargs):
     expobj: Post4ap = kwargs['expobj']
     expobj.TargetsSzInvasionTemporal.collect_time_delay_sz_stims(expobj=expobj)
     expobj.save()
 # run_collect_time_delay_sz_stims()
 
-@Utils.run_for_loop_across_exps(run_pre4ap_trials=False, run_post4ap_trials=True, ignore_cache=True)
+@Utils.run_for_loop_across_exps(run_pre4ap_trials=False, run_post4ap_trials=True, allow_rerun=True)
 def run_check_collect_time_delay_sz_stims(**kwargs):
     expobj: Post4ap = kwargs['expobj']
     expobj.TargetsSzInvasionTemporal.collect_num_pos_neg_szinvasion_stims(expobj=expobj)
@@ -55,14 +55,14 @@ def run_check_collect_time_delay_sz_stims(**kwargs):
 
 
 fig, ax = plt.subplots(figsize=[3,3])
-@Utils.run_for_loop_across_exps(run_pre4ap_trials=False, run_post4ap_trials=True, ignore_cache=True)
+@Utils.run_for_loop_across_exps(run_pre4ap_trials=False, run_post4ap_trials=True, allow_rerun=True)
 def run_plot_time_delay_sz_stims(**kwargs):
     expobj = kwargs['expobj']
     expobj.TargetsSzInvasionTemporal.plot_num_pos_neg_szinvasion_stims(**kwargs)
 # run_plot_time_delay_sz_stims(fig=fig, ax=ax)
 
 
-@Utils.run_for_loop_across_exps(run_pre4ap_trials=False, run_post4ap_trials=True, ignore_cache=True)
+@Utils.run_for_loop_across_exps(run_pre4ap_trials=False, run_post4ap_trials=True, allow_rerun=True)
 def run__collect_szinvasiontime_vs_photostimresponses(**kwargs):
     """run collecting dictionary of sz invasion time and photostim responses across all targets for each stim for an expobj"""
     expobj: Post4ap = kwargs['expobj']
@@ -75,7 +75,7 @@ def plot__szinvasiontime_vs_photostimresponses():
     """collects and plots all exps datapoints for szinvasion time vs. photostim responses on one plot"""
     x = []
     y = []
-    @Utils.run_for_loop_across_exps(run_pre4ap_trials=False, run_post4ap_trials=True, ignore_cache=True)
+    @Utils.run_for_loop_across_exps(run_pre4ap_trials=False, run_post4ap_trials=True, allow_rerun=True)
     def _return_szinvasiontime_vs_photostimresponses(x=x, y=y, **kwargs):
         expobj: Post4ap = kwargs['expobj']
         _x, _y = expobj.TargetsSzInvasionTemporal.return_szinvasiontime_vs_photostimresponses()
@@ -101,7 +101,7 @@ plot__szinvasiontime_vs_photostimresponses()
 
 # TODO NEED TO CONFIRM THE QUALITY OF THE PHOTOSTIM RESPONSES OF delta(trace_dFF)
 
-@Utils.run_for_loop_across_exps(run_pre4ap_trials=False, run_post4ap_trials=True, ignore_cache=True)
+@Utils.run_for_loop_across_exps(run_pre4ap_trials=False, run_post4ap_trials=True, allow_rerun=True)
 def plot__szinvasiontime_vs_photostimresponses_indivexp(**kwargs):
     """plot all exps datapoints for szinvasion time vs. photostim responses on one plot"""
     expobj: Post4ap = kwargs['expobj']
@@ -126,7 +126,7 @@ plot__szinvasiontime_vs_photostimresponses_indivexp()
 # %% 3) COLLECT TIME DELAY TO SZ INVASION FOR EACH TARGET AT EACH PHOTOSTIM TIME
 
 # create a df containing delay to sz invasion for each target for each stim frame (dim: n_targets x n_stims)
-@Utils.run_for_loop_across_exps(run_pre4ap_trials=False, run_post4ap_trials=True, ignore_cache=True)
+@Utils.run_for_loop_across_exps(run_pre4ap_trials=False, run_post4ap_trials=True, allow_rerun=True)
 def collect_time_delay_sz_stims(self, **kwargs):
     expobj: Post4ap = kwargs['expobj']
     df = pd.DataFrame(columns=expobj.slmtargets_data.var['stim_start_frame'], index=expobj.slmtargets_data.obs.index)
@@ -150,7 +150,7 @@ def collect_time_delay_sz_stims(self, **kwargs):
     expobj.save()
 # collect_time_delay_sz_stims()
 
-@Utils.run_for_loop_across_exps(run_pre4ap_trials=False, run_post4ap_trials=True, ignore_cache=True)
+@Utils.run_for_loop_across_exps(run_pre4ap_trials=False, run_post4ap_trials=True, allow_rerun=True)
 def check_collect_time_delay_sz_stims(**kwargs):
     expobj: Post4ap = kwargs['expobj']
 
