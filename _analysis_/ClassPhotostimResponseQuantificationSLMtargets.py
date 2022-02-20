@@ -37,8 +37,8 @@ class PhotostimResponsesQuantificationSLMtargets(Quantification):
     @classmethod
     def saveclass(cls):
         analysis_save_path = '/home/pshah/mnt/qnap/Analysis/allopticalseizures/PhotostimResponsesQuantificationSLMtargets.pkl'
-        from _utils_.io import save_pkl
-        save_pkl(cls, analysis_save_path)
+        from _utils_.io import save_cls_pkl
+        save_cls_pkl(cls, analysis_save_path)
 
 
     @property

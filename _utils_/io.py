@@ -43,10 +43,10 @@ def import_cls(pkl_path: str):
         print(f'\- Loading {pkl_path}', end='\r')
         try:
             cls = pickle.load(f)
+            print(f'|- Loaded {cls} ... DONE')
+            return cls
         except pickle.UnpicklingError:
             raise pickle.UnpicklingError(f"\n** FAILED IMPORT from {pkl_path}\n")
-        print(f'|- Loaded {cls} ... DONE')
-    return cls
 
 
 # %% EXPOBJ IO

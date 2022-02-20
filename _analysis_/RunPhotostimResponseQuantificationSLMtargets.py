@@ -3,7 +3,14 @@ from typing import Union
 import numpy as np
 
 import _alloptical_utils as Utils
-from _analysis_.ClassPhotostimResponseQuantificationSLMtargets import PhotostimResponsesQuantificationSLMtargets as main
+from _utils_.io import import_cls
+
+try:
+    main = import_cls(pkl_path='/home/pshah/mnt/qnap/Analysis/allopticalseizures/PhotostimResponsesQuantificationSLMtargets.pkl')
+except:
+    from _analysis_.ClassPhotostimResponseQuantificationSLMtargets import \
+        PhotostimResponsesQuantificationSLMtargets as main
+
 from _main_.AllOpticalMain import alloptical
 from _main_.Post4apMain import Post4ap
 from funcsforprajay import plotting as pplot
@@ -61,7 +68,7 @@ def run__create_anndata_SLMtargets(**kwargs):
 def full_plot_mean_responses_magnitudes():
     """create plot of mean photostim responses magnitudes for all three exp groups"""
 
-    @Utils.run_for_loop_across_exps(run_pre4ap_trials=True, run_post4ap_trials=False, allow_rerun=True)
+    @Utils.run_for_loop_across_exps(run_pre4ap_trials=True, run_post4ap_trials=False, allow_rerun=0)
     def pre4apexps_collect_photostim_responses(**kwargs):
         expobj: alloptical = kwargs['expobj']
         if 'pre' in expobj.exptype:
@@ -72,7 +79,7 @@ def full_plot_mean_responses_magnitudes():
 
     mean_photostim_responses_baseline = pre4apexps_collect_photostim_responses()
 
-    @Utils.run_for_loop_across_exps(run_pre4ap_trials=False, run_post4ap_trials=True, allow_rerun=True)
+    @Utils.run_for_loop_across_exps(run_pre4ap_trials=False, run_post4ap_trials=True, allow_rerun=0)
     def post4apexps_collect_photostim_responses(**kwargs):
         expobj: Post4ap = kwargs['expobj']
         if 'post' in expobj.exptype:
@@ -87,31 +94,26 @@ def full_plot_mean_responses_magnitudes():
             return np.mean(mean_photostim_responses_interictal), np.mean(mean_photostim_responses_ictal)
 
     func_collector = post4apexps_collect_photostim_responses()
-    mean_photostim_responses_interictal, mean_photostim_responses_ictal = np.asarray(func_collector)[:, 0], np.asarray(
-        func_collector)[:, 1]
 
-    # plot_photostim_response_of_groups
-    pplot.plot_bar_with_points(data=[mean_photostim_responses_baseline, mean_photostim_responses_interictal, mean_photostim_responses_ictal],
-                               x_tick_labels=['baseline', 'interictal', 'ictal'], bar=False, colors=['blue', 'green', 'purple'],
-                               expand_size_x=0.5)
+    if len(func_collector) > 0:
+        mean_photostim_responses_interictal, mean_photostim_responses_ictal = np.asarray(func_collector)[:, 0], np.asarray(
+            func_collector)[:, 1]
 
-    return mean_photostim_responses_baseline, mean_photostim_responses_interictal, mean_photostim_responses_ictal
-
-
-main.mean_photostim_responses_baseline, main.mean_photostim_responses_interictal, main.mean_photostim_responses_ictal = full_plot_mean_responses_magnitudes()
-
-pplot.plot_bar_with_points(
-    data=[main.mean_photostim_responses_baseline, main.mean_photostim_responses_interictal, main.mean_photostim_responses_ictal],
-    x_tick_labels=['baseline', 'interictal', 'ictal'], bar=False, colors=['blue', 'green', 'purple'],
-    expand_size_x=0.4, title='Average Photostim resopnses', y_label='% dFF (delta(trace(dFF))')
-
-main.saveclass()
-
+        return mean_photostim_responses_baseline, mean_photostim_responses_interictal, mean_photostim_responses_ictal
 
 # %% RUN SCRIPT
 if __name__ == '__main__':
-    # run__initPhotostimResponseQuant()
-    # run__collect_photostim_responses_exp()
-    # run__create_anndata_SLMtargets()
-    # main.allexps_plot_photostim_responses_magnitude()
-    pass
+    run__initPhotostimResponseQuant()
+    run__collect_photostim_responses_exp()
+    run__create_anndata_SLMtargets()
+    main.allexps_plot_photostim_responses_magnitude()
+
+    main.mean_photostim_responses_baseline, main.mean_photostim_responses_interictal, main.mean_photostim_responses_ictal = full_plot_mean_responses_magnitudes()
+    main.saveclass()
+
+    pplot.plot_bar_with_points(
+        data=[main.mean_photostim_responses_baseline, main.mean_photostim_responses_interictal,
+              main.mean_photostim_responses_ictal],
+        x_tick_labels=['baseline', 'interictal', 'ictal'], bar=False, colors=['blue', 'green', 'purple'],
+        expand_size_x=0.4, title='Average Photostim resopnses', y_label='% dFF (delta(trace(dFF))')
+
