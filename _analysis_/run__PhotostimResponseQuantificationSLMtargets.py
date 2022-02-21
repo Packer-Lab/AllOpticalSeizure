@@ -60,8 +60,13 @@ def run__create_anndata_SLMtargets(**kwargs):
     expobj.PhotostimResponsesSLMTargets.create_anndata_SLMtargets(expobj=expobj)
     expobj.save()
 
+@Utils.run_for_loop_across_exps(run_pre4ap_trials=1, run_post4ap_trials=1, allow_rerun=0)
+def run__add_stim_group_anndata(**kwargs):
+    expobj: alloptical = kwargs['expobj']
+    expobj.PhotostimResponsesSLMTargets.add_stim_group_anndata(expobj=expobj)
+    expobj.save()
 
-
+run__add_stim_group_anndata()
 
 
 # %% c.1) plotting mean photostim response magnitude
@@ -108,6 +113,7 @@ if __name__ == '__main__':
     run__initPhotostimResponseQuant()
     run__collect_photostim_responses_exp()
     run__create_anndata_SLMtargets()
+    run__add_stim_group_anndata()
     main.allexps_plot_photostim_responses_magnitude()
 
     main.mean_photostim_responses_baseline, main.mean_photostim_responses_interictal, main.mean_photostim_responses_ictal = full_plot_mean_responses_magnitudes()

@@ -14,7 +14,7 @@ from _sz_processing.temporal_delay_to_sz_invasion import convert_timedel2frames
 
 
 class TargetsSzInvasionTemporal(Quantification):
-    range_of_sz_invasion_time: List[float] = None  # represents the 25th, 50th, and 75th percentile range of the sz invasion time stats calculated across all targets and all exps
+    range_of_sz_invasion_time: List[float] = None  # TODO need to collect - represents the 25th, 50th, and 75th percentile range of the sz invasion time stats calculated across all targets and all exps
 
     def __init__(self, expobj: Post4ap):
         super().__init__(expobj)
@@ -23,12 +23,15 @@ class TargetsSzInvasionTemporal(Quantification):
     def __repr__(self):
         return f"TargetsSzInvasionTemporal <-- Quantification Analysis submodule for expobj <{self.expobj_id}>"
 
+
+
+
     # %% 1.1) collecting mean of seizure invasion Flu traces from all targets for each experiment
     @staticmethod
     @Utils.run_for_loop_across_exps(run_pre4ap_trials=False, run_post4ap_trials=True)
     def check_targets_sz_invasion_time(**kwargs):
         expobj: Post4ap = kwargs['expobj']
-        print(expobj.slmtargets_data.obs)
+        print(expobj.PhotostimResponsesSLMTargets.adata.obs)
 
 
     def collect_targets_sz_invasion_traces(self, expobj: Post4ap):
@@ -38,11 +41,11 @@ class TargetsSzInvasionTemporal(Quantification):
         traces_ = []
         pre = 5
         post = 10
-        for target, coord in enumerate(expobj.slmtargets_data.obs['SLM target coord']):
-            # target, coord = 0, expobj.slmtargets_data.obs['SLM target coord'][0]
+        for target, coord in enumerate(expobj.PhotostimResponsesSLMTargets.adata.obs['SLM target coord']):
+            # target, coord = 0, expobj.PhotostimResponsesSLMTargets.adata.obs['SLM target coord'][0]
             print(f'\- collecting from target #{target} ... ') if (target % 10) == 0 else None
-            cols_ = [idx for idx, col in enumerate([*expobj.slmtargets_data.obs]) if 'time_del' in col]
-            sz_times = expobj.slmtargets_data.obs.iloc[target, cols_]
+            cols_ = [idx for idx, col in enumerate([*expobj.PhotostimResponsesSLMTargets.adata.obs]) if 'time_del' in col]
+            sz_times = expobj.PhotostimResponsesSLMTargets.adata.obs.iloc[target, cols_]
             fr_times = [convert_timedel2frames(expobj, sznum, time) for sznum, time in enumerate(sz_times) if
                         not pd.isnull(time)]
 
@@ -115,13 +118,13 @@ class TargetsSzInvasionTemporal(Quantification):
         :param expobj: Post4ap object
         :return: dataframe containing relative time (secs) to sz invasion for each stim and each target
         """
-        df = pd.DataFrame(columns=expobj.slmtargets_data.var['stim_start_frame'],
-                          index=expobj.slmtargets_data.obs.index)
-        for target in expobj.slmtargets_data.obs.index:
+        df = pd.DataFrame(columns=expobj.PhotostimResponsesSLMTargets.adata.var['stim_start_frame'],
+                          index=expobj.PhotostimResponsesSLMTargets.adata.obs.index)
+        for target in expobj.PhotostimResponsesSLMTargets.adata.obs.index:
             # target = 0
             print(f'\- collecting from target #{target} ... ') if (int(target) % 10) == 0 else None
-            cols_ = [idx for idx, col in enumerate([*expobj.slmtargets_data.obs]) if 'time_del' in col]
-            sz_times = expobj.slmtargets_data.obs.iloc[int(target), cols_]
+            cols_ = [idx for idx, col in enumerate([*expobj.PhotostimResponsesSLMTargets.adata.obs]) if 'time_del' in col]
+            sz_times = expobj.PhotostimResponsesSLMTargets.adata.obs.iloc[int(target), cols_]
             from _sz_processing.temporal_delay_to_sz_invasion import convert_timedel2frames
             fr_times = [convert_timedel2frames(expobj, sznum, time) for sznum, time in enumerate(sz_times) if
                         not pd.isnull(time)]
@@ -158,6 +161,11 @@ class TargetsSzInvasionTemporal(Quantification):
         ax.hist(self.time_delay_sz_stims_pos_values_collect, fc='blue', ec='red', histtype="stepfilled", alpha=0.5)
         ax.hist(self.time_delay_sz_stims_neg_values_collect, fc='purple', ec='red', histtype="stepfilled", alpha=0.5)
 
+        ax.set_xlabel('Time to sz invasion (secs)')
+        ax.set_ylabel('num photostims')
+        ax.set_title('num stims, all targets, indiv exps', wrap=1)
+        fig.tight_layout(pad=0.8)
+
         return fig, ax
 
     # %% 3) COLLECT PHOTOSTIM RESPONSES MAGNITUDE PRE AND POST SEIZURE INVASION FOR EACH TARGET ACROSS ALL EXPERIMENTS  ########################################################
@@ -169,7 +177,7 @@ class TargetsSzInvasionTemporal(Quantification):
         else:
             stim_timesz_df = self.time_del_szinv_stims
 
-        stims_list = list(expobj.slmtargets_data.var.stim_start_frame)
+        stims_list = list(expobj.PhotostimResponsesSLMTargets.adata.var.stim_start_frame)
         for idx, stim in enumerate(stims_list):
             sztime_v_photostimresponses[stim] = {'time_to_szinvasion': [],
                                                  'photostim_responses': []}
@@ -177,9 +185,9 @@ class TargetsSzInvasionTemporal(Quantification):
             sztime_v_photostimresponses[stim]['photostim_responses'] += list(expobj.PhotostimResponsesSLMTargets.adata.X[:, idx][stim_timesz_df[stim].notnull()])
 
             # for targetidx, row in stim_timesz_df.iterrows():
-            #     # expobj.slmtargets_data.X[int(targetidx)][row.notnull()]
+            #     # expobj.PhotostimResponsesSLMTargets.adata.X[int(targetidx)][row.notnull()]
             #     sztime_v_photostimresponses[stim]['time_to_szinvasion'] += list(row[row.notnull()])
-            #     sztime_v_photostimresponses[stim]['photostim_responses'] += list(expobj.slmtargets_data.X[int(targetidx)][row.notnull()])
+            #     sztime_v_photostimresponses[stim]['photostim_responses'] += list(expobj.PhotostimResponsesSLMTargets.adata.X[int(targetidx)][row.notnull()])
             #
             # print(len(np.unique(sztime_v_photostimresponses[stim]['time_to_szinvasion'])))
             # print(len(np.unique(sztime_v_photostimresponses[stim]['photostim_responses'])))

@@ -11,7 +11,7 @@ class Quantification:
 
     def __init__(self, expobj: alloptical):
         self._metainfo = expobj.metainfo
-        print(f'\- ADDING NEW PhotostimResponsesSLMTargets MODULE to expobj: {expobj.t_series_name}')
+        print(f'\- ADDING NEW Quantification MODULE to expobj: {expobj.t_series_name}')
 
     def __repr__(self):
         return f"Quantification Analysis submodule for expobj <{self.expobj_id}>"
@@ -25,3 +25,7 @@ class Quantification:
     @property
     def expobj_id(self):
         return f"{self._metainfo['animal prep.']} {self._metainfo['trial']}"
+
+    @property
+    def expobj_exptype(self):
+        return self._metainfo['exptype']

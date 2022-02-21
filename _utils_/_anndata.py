@@ -147,6 +147,11 @@ class AnnotatedData2(ad.AnnData):
 
         self.var[var_name] = values
 
+    def add_layer(self, layer_name, data: Union[np.ndarray, pd.DataFrame]):
+        """adds values to the observations of an anndata object, under the key obs_name"""
+        assert data.shape == self.X.shape, f"shape of new data doesn't match shape of stored data in anndata object"
+        self.layers[layer_name] = data
+
     def del_variables(self, obs_name: str): # TODO
         "removes a key from variables from an anndata object, of the key var_name"
 

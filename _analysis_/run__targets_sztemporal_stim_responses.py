@@ -22,7 +22,7 @@ SAVE_LOC = "/home/pshah/mnt/qnap/Analysis/analysis_export/"
 expobj: Post4ap = Utils.import_expobj(prep='RL108', trial='t-013')
 # expobj = Utils.import_expobj(load_backup_path='/home/pshah/mnt/qnap/Analysis/2020-12-18/RL108/2020-12-18_t-013/backups/2020-12-18_RL108_t-013.pkl')
 
-expobj.slmtargets_data.var[['stim_start_frame', 'wvfront in sz', 'seizure_num']]
+# expobj.PhotostimResponsesSLMTargets.adata.var[['stim_start_frame', 'wvfront in sz', 'seizure_num']]
 
 
 # %% code development zone
@@ -33,14 +33,21 @@ expobj.slmtargets_data.var[['stim_start_frame', 'wvfront in sz', 'seizure_num']]
 
 # %% code deployment zone
 
-@Utils.run_for_loop_across_exps(run_pre4ap_trials=0, run_post4ap_trials=1, allow_rerun=1)
+@Utils.run_for_loop_across_exps(run_pre4ap_trials=0, run_post4ap_trials=1, allow_rerun=0)
 def run__initTargetsSzInvasionTemporal(**kwargs):
     expobj: Post4ap = kwargs['expobj']
     expobj.TargetsSzInvasionTemporal = main(expobj=expobj)
     expobj.save()
 # run__initTargetsSzInvasionTemporal()
 
-@Utils.run_for_loop_across_exps(run_pre4ap_trials=False, run_post4ap_trials=True, allow_rerun=True)
+@Utils.run_for_loop_across_exps(run_pre4ap_trials=False, run_post4ap_trials=1)#, run_trials=['RL109 t-016', 'PS07 t-011', 'PS11 t-011'])
+def run__collect_targets_sz_invasion_traces(**kwargs):
+    expobj: Post4ap = kwargs['expobj']
+    expobj.TargetsSzInvasionTemporal.collect_targets_sz_invasion_traces(expobj=expobj)
+    expobj.save()
+
+
+@Utils.run_for_loop_across_exps(run_pre4ap_trials=False, run_post4ap_trials=True, allow_rerun=0)
 def run_collect_time_delay_sz_stims(**kwargs):
     expobj: Post4ap = kwargs['expobj']
     expobj.TargetsSzInvasionTemporal.collect_time_delay_sz_stims(expobj=expobj)
@@ -94,7 +101,7 @@ def plot__szinvasiontime_vs_photostimresponses():
     ax.set_title(f"All exps targets time to sz invasion vs. photostim response", wrap=True)
     ax.set_xlabel(f"Time to sz invasion for target (secs)")
     ax.set_ylabel(f"Photostim response for target (dFF)", wrap=True)
-    ax.set_ylim([-7.5, 7.5])
+    ax.set_ylim([-100, 100])
     fig.tight_layout(pad=2.5)
     fig.show()
 
@@ -115,17 +122,20 @@ def plot__szinvasiontime_vs_photostimresponses_indivexp(**kwargs):
     fig.show()
 # plot__szinvasiontime_vs_photostimresponses_indivexp()
 
+# %%
 
 if __name__ == '__main__':
-    run__initTargetsSzInvasionTemporal()
-    run_collect_time_delay_sz_stims()
-    run_check_collect_time_delay_sz_stims()
-    run_plot_time_delay_sz_stims(fig=fig, ax=ax)
-    run__collect_szinvasiontime_vs_photostimresponses()
+    # run__initTargetsSzInvasionTemporal()
+    # run_collect_time_delay_sz_stims()
+    # run_check_collect_time_delay_sz_stims()
+    # run_plot_time_delay_sz_stims(fig=fig, ax=ax)
+
+    # - should be done: before running the following below, need to update the expobj slmtargets adata to the new PhotostimResponses Class adata !!!
+    # run__collect_szinvasiontime_vs_photostimresponses()
     plot__szinvasiontime_vs_photostimresponses()
     plot__szinvasiontime_vs_photostimresponses_indivexp()
 
-
+    run__collect_targets_sz_invasion_traces()
     main.plot_targets_sz_invasion_meantraces_full()
     main.saveclass()
 
@@ -152,7 +162,7 @@ if __name__ == '__main__':
 @Utils.run_for_loop_across_exps(run_pre4ap_trials=False, run_post4ap_trials=True, allow_rerun=True)
 def collect_time_delay_sz_stims(self, **kwargs):
     expobj: Post4ap = kwargs['expobj']
-    df = pd.DataFrame(columns=expobj.slmtargets_data.var['stim_start_frame'], index=expobj.slmtargets_data.obs.index)
+    df = pd.DataFrame(columns=expobj.PhotostimResponsesSLMTargets.adata.var['stim_start_frame'], index=expobj.slmtargets_data.obs.index)
     for target in expobj.slmtargets_data.obs.index:
         # target = 0
         print(f'\- collecting from target #{target} ... ') if (int(target) % 10) == 0 else None

@@ -14,6 +14,8 @@ from _utils_._anndata import AnnotatedData2
 
 SAVE_LOC = "/home/pshah/mnt/qnap/Analysis/analysis_export/analysis_quantification_classes/"
 
+expobj: Post4ap = Utils.import_expobj(prep='RL108', trial='t-013')
+
 # %%
 # expobj: Post4ap = Utils.import_expobj(prep='RL108', trial='t-013')
 
@@ -33,7 +35,61 @@ class PhotostimResponsesQuantificationSLMtargets(Quantification):
     def __repr__(self):
         return f"PhotostimResponsesSLMTargets <-- Quantification Analysis submodule for expobj <{self.expobj_id}>"
 
+    # %% 5) Zscoring of photostimulation responses
+    def z_score_photostim_responses(self):
+        """
+        z scoring of photostimulation response across all stims.
 
+        """
+        print(f"\t\- collecting responses vs. distance to seizure [5.0-2]")
+
+        df = pd.DataFrame(index=self.adata.obs.index, columns=self.adata.var.index)
+
+        _slice_ = self.adata.var.index  # (slice using all interictal stims)
+
+        for target in self.adata.obs.index:
+            # z-scoring of SLM targets responses:
+            _mean_ = self.adata.X.loc[target, _slice_].mean()
+            _std_ = self.adata.X.loc[target, _slice_].std(ddof=1)
+
+            __responses = self.adata.X.loc[target, :]
+            z_scored_stim_response = (__responses - _mean_) / _std_
+            df.loc[target, :] = z_scored_stim_response
+
+        # add zscored data to anndata storage
+        self.adata.add_layer(layer_name='dFF (zscored)', data=np.asarray(df))  # TODO! in progress
+
+
+    def z_score_photostim_responses_interictal(self, expobj: Post4ap):
+        """
+        z scoring of photostimulation response across all interictal stims.
+
+        :param expobj:
+        :param response_type: either 'dFF (z scored)' or 'dFF (z scored) (interictal)'
+        """
+        print(f"\t\- collecting responses vs. distance to seizure [5.0-2]")
+
+        df = pd.DataFrame(index=self.adata.obs.index, columns=self.adata.var.index)
+
+        _slice_ = expobj.stim_idx_outsz  # (slice using all interictal stims)
+
+        if 'post' not in expobj.exptype:
+            print(f'\t ** not running interictal zscoring on non-Post4ap expobj **')
+        else:
+            for target in self.adata.obs.index:
+                # z-scoring of SLM targets responses:
+                _mean_ = self.adata.X.loc[target, _slice_].mean()
+                _std_ = self.adata.X.loc[target, _slice_].std(ddof=1)
+
+                __responses = expobj.responses_SLMtargets_tracedFF.loc[target, :]
+                z_scored_stim_response = (__responses - _mean_) / _std_
+                df.loc[target, :] = z_scored_stim_response
+
+        # add zscored data to anndata storage
+        self.adata.add_layer(layer_name='dFF (zscored) (interictal)', data=np.asarray(df)) # TODO! in progress
+
+
+    # %% 1)
     def collect_photostim_responses_exp(self, expobj: Union[alloptical, Post4ap]):
         """
         runs calculations of photostim responses, calculating reliability of photostim of slm targets,
@@ -115,16 +171,16 @@ class PhotostimResponsesQuantificationSLMtargets(Quantification):
                 else:
                     print(f'******* No slmtargets_szboundary_stim (sz boundary classification not done) for: {expobj.t_series_name}', ' [*2.3] ')
 
-
-
-
+    # %% 2) create anndata SLM targets
     def create_anndata_SLMtargets(self, expobj: Union[alloptical, Post4ap]):
         """
         Creates annotated data (see anndata library for more information on AnnotatedData) object based around the Ca2+ matrix of the imaging trial.
 
         """
 
-        if hasattr(expobj, 'dFF_SLMTargets') or hasattr(expobj, 'raw_SLMTargets'):
+        if not hasattr(expobj, 'dFF_SLMTargets') or hasattr(expobj, 'raw_SLMTargets'):
+            Warning('did not create anndata. anndata creation only available if experiments were processed with suite2p and .paq file(s) provided for temporal synchronization')
+        else:
             # SETUP THE OBSERVATIONS (CELLS) ANNOTATIONS TO USE IN anndata
             # build dataframe for obs_meta from SLM targets information
             obs_meta = pd.DataFrame(
@@ -181,9 +237,20 @@ class PhotostimResponsesQuantificationSLMtargets(Quantification):
 
             print(f"Created: {photostim_responses_adata}")
             self.adata = photostim_responses_adata
-        else:
-            Warning('did not create anndata. anndata creation only available if experiments were processed with suite2p and .paq file(s) provided for temporal synchronization')
 
+    # 2.1) modify anndata
+    def add_stim_group_anndata(self, expobj: Union[alloptical, Post4ap]):
+        # TODO! in progress
+        new_var = pd.Series(name='stim_group', index=self.adata.var.index)
+
+        for fr_idx in self.adata.var.index:
+            if 'pre' in self.expobj_exptype:
+                new_var[fr_idx] = 'baseline'
+            elif 'post' in self.expobj_exptype:
+                new_var[fr_idx] = 'interictal' if expobj.stim_start_frames[fr_idx] in expobj.stims_out_sz else 'ictal'
+
+
+    # %% 3)
 
     def collect_photostim_responses_magnitude(self, stims: Union[slice, str, list] = None):
         assert self.adata, print('cannot find .adata')

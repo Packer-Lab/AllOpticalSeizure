@@ -69,9 +69,8 @@ plot_sz_invasion()
 
 
 # %% 6.0-dc) ANALYSIS: calculate time delay between LFP onset of seizures and imaging FOV invasion for each seizure for each experiment
+# -- this section has been moved to _ClassExpSeizureAnalysis .22/02/20 -- this copy here is now archived
 
-
-# %%
 @Utils.run_for_loop_across_exps(run_pre4ap_trials=False, run_post4ap_trials=True, allow_rerun=True)
 def szInvasionTime(**kwargs):
     """
