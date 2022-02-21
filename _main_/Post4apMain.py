@@ -1,7 +1,6 @@
 import glob
 
 import os
-import pickle
 import sys
 
 from _main_.AllOpticalMain import alloptical
@@ -23,8 +22,8 @@ class Post4ap(alloptical):
 
     def __init__(self, paths, metainfo, stimtype, discard_all):
 
-        from _sz_processing.ClassTargetsSzInvasionTemporal import _TargetsSzInvasionTemporal
-        self.TargetsSzInvasionTemporal = _TargetsSzInvasionTemporal()
+        from _analysis_._ClassTargetsSzInvasionTemporal import TargetsSzInvasionTemporal
+        self.TargetsSzInvasionTemporal = TargetsSzInvasionTemporal()
 
         alloptical.__init__(self, paths, metainfo, stimtype)
         self.time_del_szinv_stims: pd.DataFrame = pd.DataFrame()  # df containing delay to sz invasion for each target for each stim frame (dim: n_targets x n_stims)

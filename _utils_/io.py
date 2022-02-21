@@ -4,19 +4,38 @@ import pickle
 from funcsforprajay import funcs as pj
 
 # %% TEMP TEMP TEMP
-class TargetsSzInvasionTemporal:
-    def __init__(self):
-        pass
 
 
 # this is used when the unpickler has a problem with finding a class attribute for the file being loaded - note that it is setup manually for each one..
-class CustomUnpickler(pickle.Unpickler):
+# these are needed when a module or class or attribute gets moved after pickling an object, the new location needs to be provided explicitly
+# the solution is to override the find_class method of pickle.Unpickler to provide the new location for the moved attributes/classes/modules
+
+class CustomUnpicklerAttributeError(pickle.Unpickler):
     def find_class(self, module, name):
         if name == 'PhotostimResponsesQuantificationSLMtargets':
-            from _analysis_.ClassPhotostimResponseQuantificationSLMtargets import \
-                PhotostimResponsesQuantificationSLMtargets
+            from _analysis_._ClassPhotostimResponseQuantificationSLMtargets import PhotostimResponsesQuantificationSLMtargets
             return PhotostimResponsesQuantificationSLMtargets
-        # return super().find_class(module, name)
+        elif name == '_TargetsSzInvasionTemporal':
+            from _analysis_._ClassTargetsSzInvasionTemporal import TargetsSzInvasionTemporal
+            return TargetsSzInvasionTemporal
+
+
+        return super().find_class(module, name)
+
+
+class CustomUnpicklerModuleNotFoundError(pickle.Unpickler):
+    def find_class(self, module, name):
+        if module == '_analysis_.ClassPhotostimResponseQuantificationSLMtargets':
+            renamed_module = "_analysis_._ClassPhotostimResponseQuantificationSLMtargets"
+
+        elif module == '_sz_processing.ClassTargetsSzInvasionTemporal':
+            renamed_module = "_analysis_._ClassTargetsSzInvasionTemporal"
+
+        else:
+            renamed_module = module
+
+        return super().find_class(renamed_module, name)
+
 
 # TEMP TEMP TEMP
 
@@ -158,10 +177,11 @@ def import_expobj(aoresults_map_id: str = None, trial: str = None, prep: str = N
         experiment = f"{expobj.t_series_name} {expobj.metainfo['exptype']} {expobj.metainfo['comments']}"
         print(f'|- Loaded {experiment}') if verbose else print(f'|- Loaded {expobj.t_series_name} ({pkl_path}) .. DONE')
     except AttributeError:
-        load_backup_path = f'/home/pshah/mnt/qnap/Analysis/{date}/{prep}/{date}_{trial}' + f"backups/{date}_{prep}_{trial}.pkl"
-        if not os.path.exists(load_backup_path):
-            load_backup_path = f'/home/pshah/mnt/qnap/Analysis/{date}/{prep}/{date}_{trial}' + f"/backups/{date}_{prep}_{trial}.pkl"
-        expobj = CustomUnpickler(open(load_backup_path, 'rb')).load()
+        print(f"WARNING: needing to try using CustomUnpickler!")
+        expobj = CustomUnpicklerAttributeError(open(pkl_path, 'rb')).load()
+    except ModuleNotFoundError:
+        print(f"WARNING: needing to try using CustomUnpickler!")
+        expobj = CustomUnpicklerModuleNotFoundError(open(pkl_path, 'rb')).load()
 
     ### roping in some extraneous processing steps if there's expobj's that haven't completed for them
 

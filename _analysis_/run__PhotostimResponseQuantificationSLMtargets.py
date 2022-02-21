@@ -8,7 +8,7 @@ from _utils_.io import import_cls
 try:
     main = import_cls(pkl_path='/home/pshah/mnt/qnap/Analysis/allopticalseizures/PhotostimResponsesQuantificationSLMtargets.pkl')
 except:
-    from _analysis_.ClassPhotostimResponseQuantificationSLMtargets import \
+    from _analysis_._ClassPhotostimResponseQuantificationSLMtargets import \
         PhotostimResponsesQuantificationSLMtargets as main
 
 from _main_.AllOpticalMain import alloptical
@@ -100,6 +100,8 @@ def full_plot_mean_responses_magnitudes():
             func_collector)[:, 1]
 
         return mean_photostim_responses_baseline, mean_photostim_responses_interictal, mean_photostim_responses_ictal
+
+
 
 # %% RUN SCRIPT
 if __name__ == '__main__':

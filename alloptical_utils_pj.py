@@ -3310,7 +3310,7 @@ class alloptical(TwoPhotonImaging):
 class Post4ap(alloptical):
 
     def __init__(self, paths, metainfo, stimtype, discard_all):
-        from _sz_processing.run__targets_sztemporal_stim_responses import _TargetsSzInvasionTemporal
+        from _analysis_.run__targets_sztemporal_stim_responses import _TargetsSzInvasionTemporal
         self.TargetsSzInvasionTemporal = _TargetsSzInvasionTemporal()
 
         alloptical.__init__(self, paths, metainfo, stimtype)

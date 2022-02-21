@@ -1,7 +1,8 @@
 """TODO/GOALS:
-2) plotting average traces around time of seizure invasion for all targets across all exps
+x) plotting average traces around time of seizure invasion for all targets across all exps
     - plot also the mean FOV Flu at the bottom
 3) plot average stim response before and after time of seizure invasion for all targets across all exps
+4) plot average stim response vs. time to sz invasion for all targets across all exps
 
 """
 import funcsforprajay.funcs as pj
@@ -9,6 +10,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 from funcsforprajay.wrappers import plot_piping_decorator
+from _analysis_._ClassTargetsSzInvasionTemporal import TargetsSzInvasionTemporal as main
 
 import _alloptical_utils as Utils
 from _main_.Post4apMain import Post4ap
@@ -20,24 +22,23 @@ SAVE_LOC = "/home/pshah/mnt/qnap/Analysis/analysis_export/"
 expobj: Post4ap = Utils.import_expobj(prep='RL108', trial='t-013')
 # expobj = Utils.import_expobj(load_backup_path='/home/pshah/mnt/qnap/Analysis/2020-12-18/RL108/2020-12-18_t-013/backups/2020-12-18_RL108_t-013.pkl')
 
-# expobj.slmtargets_data.var[['stim_start_frame', 'wvfront in sz', 'seizure_num']]
+expobj.slmtargets_data.var[['stim_start_frame', 'wvfront in sz', 'seizure_num']]
 
 
 # %% code development zone
-expobj.TargetsSzInvasionTemporal.collect_szinvasiontime_vs_photostimresponses(expobj=expobj)
-expobj.TargetsSzInvasionTemporal.plot_szinvasiontime_vs_photostimresponses(fig=None, ax=None)
+# expobj.TargetsSzInvasionTemporal.collect_szinvasiontime_vs_photostimresponses(expobj=expobj)
+# expobj.TargetsSzInvasionTemporal.plot_szinvasiontime_vs_photostimresponses(fig=None, ax=None)
 
 
 
 # %% code deployment zone
 
-@Utils.run_for_loop_across_exps(run_pre4ap_trials=False, run_post4ap_trials=True, allow_rerun=True)
-def init__TargetsSzInvasionTemporal(**kwargs):
+@Utils.run_for_loop_across_exps(run_pre4ap_trials=0, run_post4ap_trials=1, allow_rerun=1)
+def run__initTargetsSzInvasionTemporal(**kwargs):
     expobj: Post4ap = kwargs['expobj']
-    from _sz_processing.ClassTargetsSzInvasionTemporal import _TargetsSzInvasionTemporal
-    expobj.TargetsSzInvasionTemporal = _TargetsSzInvasionTemporal()
+    expobj.TargetsSzInvasionTemporal = main(expobj=expobj)
     expobj.save()
-# init__TargetsSzInvasionTemporal()
+# run__initTargetsSzInvasionTemporal()
 
 @Utils.run_for_loop_across_exps(run_pre4ap_trials=False, run_post4ap_trials=True, allow_rerun=True)
 def run_collect_time_delay_sz_stims(**kwargs):
@@ -68,7 +69,7 @@ def run__collect_szinvasiontime_vs_photostimresponses(**kwargs):
     expobj: Post4ap = kwargs['expobj']
     expobj.TargetsSzInvasionTemporal.collect_szinvasiontime_vs_photostimresponses(expobj=expobj)
     expobj.save()
-run__collect_szinvasiontime_vs_photostimresponses()
+# run__collect_szinvasiontime_vs_photostimresponses()
 
 
 def plot__szinvasiontime_vs_photostimresponses():
@@ -99,7 +100,6 @@ def plot__szinvasiontime_vs_photostimresponses():
 
 plot__szinvasiontime_vs_photostimresponses()
 
-# TODO NEED TO CONFIRM THE QUALITY OF THE PHOTOSTIM RESPONSES OF delta(trace_dFF)
 
 @Utils.run_for_loop_across_exps(run_pre4ap_trials=False, run_post4ap_trials=True, allow_rerun=True)
 def plot__szinvasiontime_vs_photostimresponses_indivexp(**kwargs):
@@ -113,13 +113,36 @@ def plot__szinvasiontime_vs_photostimresponses_indivexp(**kwargs):
     ax.set_xlabel(f"Time to sz invasion for target")
     ax.set_ylabel(f"Photostim response for target")
     fig.show()
-plot__szinvasiontime_vs_photostimresponses_indivexp()
+# plot__szinvasiontime_vs_photostimresponses_indivexp()
+
+
+if __name__ == '__main__':
+    run__initTargetsSzInvasionTemporal()
+    run_collect_time_delay_sz_stims()
+    run_check_collect_time_delay_sz_stims()
+    run_plot_time_delay_sz_stims(fig=fig, ax=ax)
+    run__collect_szinvasiontime_vs_photostimresponses()
+    plot__szinvasiontime_vs_photostimresponses()
+    plot__szinvasiontime_vs_photostimresponses_indivexp()
+
+
+    main.plot_targets_sz_invasion_meantraces_full()
+    main.saveclass()
 
 
 
 
 
-### below should be almost all refactored to _TargetsSzInvasionTemporal class
+
+
+
+
+
+
+
+### below should be almost all refactored to TargetsSzInvasionTemporal class
+
+
 
 
 
@@ -178,7 +201,6 @@ def plot_time_delay_sz_stims(**kwargs):
     ax.hist(expobj.time_delay_sz_stims_neg_values_collect, fc='purple')
 
 
-# %% 4) PLOT PHOTOSTIM RESPONSES MAGNITUDE PRE AND POST SEIZURE INVASION FOR EACH TARGET ACROSS ALL EXPERIMENTS
 
 
 # %% 1) collecting mean of seizure invasion Flu traces from all targets for each experiment
@@ -268,12 +290,16 @@ def plot_targets_sz_invasion_meantraces_full():
     fig.suptitle('avg Flu at sz invasion', wrap=True, y=0.96)
     fig.tight_layout(pad=2)
     fig.show()
-
-plot_targets_sz_invasion_meantraces_full()
-
+# plot_targets_sz_invasion_meantraces_full()
 
 
-
-
+if __name__ == '__main__':
+    # collect_time_delay_sz_stims()
+    # check_collect_time_delay_sz_stims()
+    # plot_time_delay_sz_stims()
+    #
+    # check_targets_sz_invasion_time()
+    # collect_targets_sz_invasion_traces()
+    pass
 
 

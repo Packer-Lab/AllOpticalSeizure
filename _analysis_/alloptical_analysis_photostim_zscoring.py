@@ -2,7 +2,7 @@
 import os; import sys
 from typing import Union
 
-from _analysis_.ClassPhotostimResponseQuantificationSLMtargets import PhotostimResponsesQuantificationSLMtargets
+from _analysis_._ClassPhotostimResponseQuantificationSLMtargets import PhotostimResponsesQuantificationSLMtargets
 from _main_.AllOpticalMain import alloptical
 from _main_.Post4apMain import Post4ap
 

@@ -1,5 +1,3 @@
-## misc analysis steps
-from dataclasses import dataclass
 from typing import Union, List
 
 import numpy as np
@@ -14,7 +12,7 @@ from funcsforprajay import plotting as pplot
 # SAVE_LOC = "/Users/prajayshah/OneDrive/UTPhD/2022/OXFORD/export/"
 from _utils_._anndata import AnnotatedData2
 
-SAVE_LOC = "/home/pshah/mnt/qnap/Analysis/analysis_export/"
+SAVE_LOC = "/home/pshah/mnt/qnap/Analysis/analysis_export/analysis_quantification_classes/"
 
 # %%
 # expobj: Post4ap = Utils.import_expobj(prep='RL108', trial='t-013')
@@ -23,27 +21,18 @@ SAVE_LOC = "/home/pshah/mnt/qnap/Analysis/analysis_export/"
 # %% COLLECT AND PLOT PHOTOSTIM RESPONSES MAGNITUDES
 
 class PhotostimResponsesQuantificationSLMtargets(Quantification):
-    mean_photostim_responses_baseline: List[float] = [-1]
-    mean_photostim_responses_interictal: List[float] = [-1]
-    mean_photostim_responses_ictal: List[float] = [-1]
+    save_path = SAVE_LOC + 'PhotostimResponsesQuantificationSLMtargets.pkl'
+    mean_photostim_responses_baseline: List[float] = None
+    mean_photostim_responses_interictal: List[float] = None
+    mean_photostim_responses_ictal: List[float] = None
 
     def __init__(self, expobj: alloptical):
-        self._metainfo = expobj.metainfo
+        super().__init__(expobj)
         print(f'\- ADDING NEW PhotostimResponsesSLMTargets MODULE to expobj: {expobj.t_series_name}')
 
     def __repr__(self):
-        return f"PhotostimResponsesSLMTargets <-- Analysis submodule for expobj <{self.expobj_id}>"
+        return f"PhotostimResponsesSLMTargets <-- Quantification Analysis submodule for expobj <{self.expobj_id}>"
 
-    @classmethod
-    def saveclass(cls):
-        analysis_save_path = '/home/pshah/mnt/qnap/Analysis/allopticalseizures/PhotostimResponsesQuantificationSLMtargets.pkl'
-        from _utils_.io import save_cls_pkl
-        save_cls_pkl(cls, analysis_save_path)
-
-
-    @property
-    def expobj_id(self):
-        return f"{self._metainfo['animal prep.']} {self._metainfo['trial']}"
 
     def collect_photostim_responses_exp(self, expobj: Union[alloptical, Post4ap]):
         """

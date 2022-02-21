@@ -65,7 +65,7 @@ class alloptical(TwoPhotonImaging):
         self.hits_SLMtargets_dfprestimf = None
         self.hits_SLMtargets_dfstdf = None
 
-        from _analysis_.ClassPhotostimResponseQuantificationSLMtargets import PhotostimResponsesQuantificationSLMtargets
+        from _analysis_._ClassPhotostimResponseQuantificationSLMtargets import PhotostimResponsesQuantificationSLMtargets
         self.PhotostimResponsesSLMTargets: PhotostimResponsesQuantificationSLMtargets = None  # module that holds analysis and results for Photostim Responses of SLM Targets
 
         from _utils_._anndata import AnnotatedData2

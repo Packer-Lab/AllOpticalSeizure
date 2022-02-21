@@ -38,10 +38,10 @@ def run_for_loop_across_exps(run_pre4ap_trials=False, run_post4ap_trials=False, 
 
     """
     # if len(run_trials) > 0 or run_pre4ap_trials is True or run_post4ap_trials is True:
-    print(f"\n {'..'*5} INITIATING FOR LOOP ACROSS EXPS {'..'*5}\n")
+    print(f"\n {'..'*5} [1] INITIATING FOR LOOP DECORATOR {'..'*5}\n")
     t_start = time.time()
     def main_for_loop(func):
-        print(f"\n {'..' * 5} [2] INITIATING FOR LOOP ACROSS EXPS {'..' * 5}\n")
+        print(f"\n {'..' * 5} [2] RETURNING FOR LOOP DECORATOR FOR func: {func} {'..' * 5}\n")
         @functools.wraps(func)
         def inner(*args, **kwargs):
             print(f"\n {'..' * 5} [3] INITIATING FOR LOOP ACROSS EXPS {'..' * 5}\n")

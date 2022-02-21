@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from typing import List
 
 import numpy as np
 import pandas as pd
@@ -8,13 +8,20 @@ from matplotlib import pyplot as plt
 import _alloptical_utils as Utils
 import funcsforprajay.funcs as pj
 
+from _analysis_._utils import Quantification
 from _main_.Post4apMain import Post4ap
 from _sz_processing.temporal_delay_to_sz_invasion import convert_timedel2frames
 
-@dataclass
-class _TargetsSzInvasionTemporal:
-    def __init__(self):
-        print('|- adding module TargetsSzInvasionTemporal')
+
+class TargetsSzInvasionTemporal(Quantification):
+    range_of_sz_invasion_time: List[float] = None  # represents the 25th, 50th, and 75th percentile range of the sz invasion time stats calculated across all targets and all exps
+
+    def __init__(self, expobj: Post4ap):
+        super().__init__(expobj)
+        print(f'\- ADDING NEW TargetsSzInvasionTemporal MODULE to expobj: {expobj.t_series_name}')
+
+    def __repr__(self):
+        return f"TargetsSzInvasionTemporal <-- Quantification Analysis submodule for expobj <{self.expobj_id}>"
 
     # %% 1.1) collecting mean of seizure invasion Flu traces from all targets for each experiment
     @staticmethod
@@ -100,7 +107,7 @@ class _TargetsSzInvasionTemporal:
         fig.tight_layout(pad=2)
         fig.show()
 
-    # %% 2) COLLECT TIME DELAY TO SZ INVASION FOR EACH TARGET AT EACH PHOTOSTIM TIME
+    # %% 2) COLLECT TIME DELAY TO SZ INVASION FOR EACH TARGET AT EACH PHOTOSTIM TIME  ##################################################################################################
 
     def collect_time_delay_sz_stims(self, expobj: Post4ap):
         """
@@ -143,6 +150,7 @@ class _TargetsSzInvasionTemporal:
         print(f"avg num stim before sz invasion: {len(pos_values_collect) / expobj.n_targets_total}")
         print(f"avg num stim after sz invasion: {len(neg_values_collect) / expobj.n_targets_total}")
 
+    # 2.1) PLOT NUM STIMS PRE AND POST SZ INVASION TOTAL ACROSS ALL TARGETS FOR EACH EXPERIMENT
     @plot_piping_decorator(figsize=(8, 4), nrows=1, ncols=1, verbose=False)
     def plot_num_pos_neg_szinvasion_stims(self, **kwargs):
         fig, ax = kwargs['fig'], kwargs['ax']
@@ -152,7 +160,7 @@ class _TargetsSzInvasionTemporal:
 
         return fig, ax
 
-    # %% 3) COLLECT PHOTOSTIM RESPONSES MAGNITUDE PRE AND POST SEIZURE INVASION FOR EACH TARGET ACROSS ALL EXPERIMENTS
+    # %% 3) COLLECT PHOTOSTIM RESPONSES MAGNITUDE PRE AND POST SEIZURE INVASION FOR EACH TARGET ACROSS ALL EXPERIMENTS  ########################################################
     def collect_szinvasiontime_vs_photostimresponses(self, expobj: Post4ap):
         """collects dictionary of sz invasion time and photostim responses across all targets for each stim for an expobj"""
         sztime_v_photostimresponses = {}
@@ -166,7 +174,7 @@ class _TargetsSzInvasionTemporal:
             sztime_v_photostimresponses[stim] = {'time_to_szinvasion': [],
                                                  'photostim_responses': []}
             sztime_v_photostimresponses[stim]['time_to_szinvasion'] += list(stim_timesz_df[stim][stim_timesz_df[stim].notnull()])
-            sztime_v_photostimresponses[stim]['photostim_responses'] += list(expobj.slmtargets_data.X[:, idx][stim_timesz_df[stim].notnull()])
+            sztime_v_photostimresponses[stim]['photostim_responses'] += list(expobj.PhotostimResponsesSLMTargets.adata.X[:, idx][stim_timesz_df[stim].notnull()])
 
             # for targetidx, row in stim_timesz_df.iterrows():
             #     # expobj.slmtargets_data.X[int(targetidx)][row.notnull()]
@@ -188,7 +196,7 @@ class _TargetsSzInvasionTemporal:
             y += items['photostim_responses']
         return x, y
 
-
+    # 3.1) PLOT PHOTOSTIM RESPONSES MAGNITUDE PRE AND POST SEIZURE INVASION FOR EACH TARGET ACROSS ALL EXPERIMENTS  ########################################################
     @plot_piping_decorator(figsize=(4, 4), nrows=1, ncols=1, verbose=False)
     def plot_szinvasiontime_vs_photostimresponses(self, fig=None, ax=None, **kwargs):
         fig, ax = (kwargs['fig'], kwargs['ax']) if fig is None and ax is None else (fig, ax)
@@ -197,3 +205,10 @@ class _TargetsSzInvasionTemporal:
 
         ax.scatter(x, y, s=50, zorder=3, c='red', alpha=0.3, ec='white')
         ax.plot(np.unique(x), np.poly1d(np.polyfit(x, y, 1))(np.unique(x)), color='purple', zorder=5, lw=4)
+
+
+
+    # %% 4) COLLECT PHOTOSTIM RESPONSES MAGNITUDE PRE AND POST SEIZURE INVASION FOR EACH TARGET ACROSS ALL EXPERIMENTS
+
+
+    # 4.1) PLOT PHOTOSTIM RESPONSES MAGNITUDE PRE AND POST SEIZURE INVASION FOR EACH TARGET ACROSS ALL EXPERIMENTS
