@@ -112,8 +112,8 @@ def szInvasionTime(**kwargs):
                         time_delay_sec[idx] = "af invasion"  # after seizure wavefront has passed the FOV
                         sz_num[idx] = i
 
-    expobj.slmtargets_data.add_variables(var_name='delay_from_sz_onset_sec', values=time_delay_sec)
-    expobj.slmtargets_data.add_variables(var_name='seizure_num', values=sz_num)
+    expobj.slmtargets_data.add_variable(var_name='delay_from_sz_onset_sec', values=time_delay_sec)
+    expobj.slmtargets_data.add_variable(var_name='seizure_num', values=sz_num)
     expobj.save()
 
 

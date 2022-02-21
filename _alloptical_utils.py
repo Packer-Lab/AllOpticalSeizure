@@ -29,7 +29,7 @@ pd.set_option("expand_frame_repr", True)
 
 # ALL OPTICAL EXPERIMENTS RUN
 def run_for_loop_across_exps(run_pre4ap_trials=False, run_post4ap_trials=False, skip_trials=[], run_trials=[],
-                             allow_rerun=False, supress_print=False):
+                             set_cache=True, allow_rerun=False, supress_print=False):
     """decorator to use for for-looping through experiment trials across run_pre4ap_trials and run_post4ap_trials.
     the trials to for loop through are defined in allopticalResults.pre_4ap_trials and allopticalResults.post_4ap_trials.
 
@@ -49,10 +49,11 @@ def run_for_loop_across_exps(run_pre4ap_trials=False, run_post4ap_trials=False, 
             if run_trials:
                 print(f"\n{'-' * 5} RUNNING SPECIFIED TRIALS from `trials_run` {'-' * 5}")
                 counter1 = 0
+                res = []
                 for i, exp_prep in enumerate(run_trials):
                     # print(i, exp_prep)
                     try:  # dont continue if exp_prep already run before (as determined by location in func_cache
-                        if get_from_cache(func.__name__, item=exp_prep) and allow_rerun is False:
+                        if get_from_cache(func.__name__, item=exp_prep) and not allow_rerun:
                             run = False
                             if not supress_print: print(
                                 f"{exp_prep} found in previously completed record for func {func.__name__} ... skipping repeat run.")
@@ -68,12 +69,14 @@ def run_for_loop_across_exps(run_pre4ap_trials=False, run_post4ap_trials=False, 
                         except:
                             raise ImportError(f"IMPORT ERROR IN {prep} {trial}")
                         working_on(expobj) if not supress_print else None
-                        func(expobj=expobj, **kwargs)
+                        res_ = func(expobj=expobj, **kwargs)
                         # try:
                         #     func(expobj=expobj, **kwargs)
                         # except:
                         #     print('Exception on the wrapped function call')
                         end_working_on(expobj) if not supress_print else None
+                        res.append(res_) if res_ is not None else None
+                        set_to_cache(func_name=func.__name__, item=exp_prep) if set_cache else None
                 counter1 += 1
 
 
@@ -89,7 +92,7 @@ def run_for_loop_across_exps(run_pre4ap_trials=False, run_post4ap_trials=False, 
                         else:
                             # print(i, exp_prep)
                             try:  # dont continue if exp_prep already run before (as determined by location in func_cache
-                                if get_from_cache(func.__name__, item=exp_prep) and allow_rerun is False:
+                                if get_from_cache(func.__name__, item=exp_prep) and not allow_rerun:
                                     run = False
                                     if not supress_print: print(
                                         f"{exp_prep} found in cache for func {func.__name__} ... skipping repeat run.")
@@ -113,7 +116,7 @@ def run_for_loop_across_exps(run_pre4ap_trials=False, run_post4ap_trials=False, 
                                 #     print('Exception on the wrapped function call')
                                 end_working_on(expobj) if not supress_print else None
                                 res.append(res_) if res_ is not None else None
-                                set_to_cache(func_name=func.__name__, item=exp_prep) if not allow_rerun else None
+                                set_to_cache(func_name=func.__name__, item=exp_prep) if set_cache else None
 
                         counter_j += 1
                     counter_i += 1
@@ -132,7 +135,7 @@ def run_for_loop_across_exps(run_pre4ap_trials=False, run_post4ap_trials=False, 
                         else:
                             # print(i, exp_prep)
                             try:  # dont continue if exp_prep already run before (as determined by location in func_cache
-                                if get_from_cache(func.__name__, item=exp_prep) and allow_rerun is False:
+                                if get_from_cache(func.__name__, item=exp_prep) and not allow_rerun:
                                     run = False
                                     if not supress_print: print(
                                         f"{exp_prep} found in cache for func {func.__name__} ... skipping repeat run.")
@@ -156,7 +159,7 @@ def run_for_loop_across_exps(run_pre4ap_trials=False, run_post4ap_trials=False, 
                                 #     print('Exception on the wrapped function call')
                                 end_working_on(expobj) if not supress_print else None
                                 res.append(res_) if res_ is not None else None
-                                set_to_cache(func_name=func.__name__, item=exp_prep) if not allow_rerun else None
+                                set_to_cache(func_name=func.__name__, item=exp_prep) if set_cache else None
 
                         counter_j += 1
                     counter_i += 1

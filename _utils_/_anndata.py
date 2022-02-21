@@ -135,17 +135,26 @@ class AnnotatedData2(ad.AnnData):
 
     def del_observation(self, obs_name: str): # TODO
         "removes a key from observations from an anndata object, of the key obs_name"
+        pass
 
-    def add_variables(self, var_name: str, values: list):
+    def add_variable(self, var_name: str = None, values: Union[list, pd.Series] = None):
         """adds values to the variables of an anndata object, under the key var_name"""
         assert len(values) == self.var.shape[0], f"# of values to add doesn't match # of observations in anndata"
-        if type(values) != list:
+
+        if type(values) == list:
+            assert var_name, print(f"please provide var_name to use to add to anndata.")
+            values_ = list(values)
+        elif type(values) == pd.Series:
+            var_name = values.name
+            values_ = list(values)
+        else:
             try:
-                values = list(values)
+                values_ = list(values)
+                assert var_name, print(f"please provide var_name to use to add to anndata.")
             except:
                 raise ValueError('`values` needs to be a list.')
 
-        self.var[var_name] = values
+        self.var[var_name] = values_
 
     def add_layer(self, layer_name, data: Union[np.ndarray, pd.DataFrame]):
         """adds values to the observations of an anndata object, under the key obs_name"""
@@ -154,6 +163,7 @@ class AnnotatedData2(ad.AnnData):
 
     def del_variables(self, obs_name: str): # TODO
         "removes a key from variables from an anndata object, of the key var_name"
+        pass
 
     def extend_anndata(self, additional_adata: ad.AnnData, axis: int = 0):
         """

@@ -3,17 +3,34 @@ import re
 import pickle
 from funcsforprajay import funcs as pj
 
-# %% TEMP TEMP TEMP
+# %% HANDLING PICKLING ERRORS
 
 
 # this is used when the unpickler has a problem with finding a class attribute for the file being loaded - note that it is setup manually for each one..
 # these are needed when a module or class or attribute gets moved after pickling an object, the new location needs to be provided explicitly
 # the solution is to override the find_class method of pickle.Unpickler to provide the new location for the moved attributes/classes/modules
 
+
+def load_from_backup(prep, trial, date, original_path, backup_path=None):
+    ImportWarning(f"\n** FAILED IMPORT OF * {prep} {trial} * from {original_path}\n")
+    print(f"\t trying to recover from backup! ****")
+    load_backup_path = f'/home/pshah/mnt/qnap/Analysis/{date}/{prep}/{date}_{trial}' + f"backups/{date}_{prep}_{trial}.pkl" if backup_path is None else backup_path
+    if not os.path.exists(load_backup_path):
+        load_backup_path = f'/home/pshah/mnt/qnap/Analysis/{date}/{prep}/{date}_{trial}' + f"/backups/{date}_{prep}_{trial}.pkl"
+    try:
+        with open(load_backup_path, 'rb') as f:
+            print(f'\- Loading backup from: {load_backup_path}', end='\r')
+            expobj = pickle.load(f)
+    except:
+        raise ImportError(f"\n** FAILED IMPORT OF * {prep} {trial} * from {original_path}\n")
+    print(f'|- Loaded backup of: {expobj.t_series_name} ({load_backup_path}) ... DONE')
+
+
 class CustomUnpicklerAttributeError(pickle.Unpickler):
     def find_class(self, module, name):
         if name == 'PhotostimResponsesQuantificationSLMtargets':
-            from _analysis_._ClassPhotostimResponseQuantificationSLMtargets import PhotostimResponsesQuantificationSLMtargets
+            from _analysis_._ClassPhotostimResponseQuantificationSLMtargets import \
+                PhotostimResponsesQuantificationSLMtargets
             return PhotostimResponsesQuantificationSLMtargets
         elif name == '_TargetsSzInvasionTemporal':
             from _analysis_._ClassTargetsSzInvasionTemporal import TargetsSzInvasionTemporal
@@ -35,9 +52,6 @@ class CustomUnpicklerModuleNotFoundError(pickle.Unpickler):
             renamed_module = module
 
         return super().find_class(renamed_module, name)
-
-
-# TEMP TEMP TEMP
 
 
 # %% CLASS IO
@@ -66,6 +80,9 @@ def import_cls(pkl_path: str):
             return cls
         except pickle.UnpicklingError:
             raise pickle.UnpicklingError(f"\n** FAILED IMPORT from {pkl_path}\n")
+        except ModuleNotFoundError:
+            print(f"WARNING: needing to try using CustomUnpickler!")
+            return CustomUnpicklerModuleNotFoundError(open(pkl_path, 'rb')).load()
 
 
 # %% EXPOBJ IO
@@ -161,21 +178,26 @@ def import_expobj(aoresults_map_id: str = None, trial: str = None, prep: str = N
         with open(pkl_path, 'rb') as f:
             print(f'\- Loading {pkl_path}', end='\r')
             expobj = pickle.load(f)
-    except EOFError or pickle.UnpicklingError:
-        ImportWarning(f"\n** FAILED IMPORT OF * {prep} {trial} * from {pkl_path}\n")
-        print(f"\t trying to recover from backup! ****")
-        load_backup_path = f'/home/pshah/mnt/qnap/Analysis/{date}/{prep}/{date}_{trial}' + f"backups/{date}_{prep}_{trial}.pkl"
-        if not os.path.exists(load_backup_path):
-            load_backup_path = f'/home/pshah/mnt/qnap/Analysis/{date}/{prep}/{date}_{trial}' + f"/backups/{date}_{prep}_{trial}.pkl"
+            print(f'|- Loaded {expobj.t_series_name} (from {pkl_path}) ... DONE')
+    except EOFError:
+        load_from_backup(prep, trial, date, original_path=pkl_path)
+    except pickle.UnpicklingError:
+        load_from_backup(prep, trial, date, original_path=pkl_path)
 
-        try:
-            with open(load_backup_path, 'rb') as f:
-                print(f'\- Loading backup from: {load_backup_path}', end='\r')
-                expobj = pickle.load(f)
-        except:
-            raise ImportError(f"\n** FAILED IMPORT OF * {prep} {trial} * from {pkl_path}\n")
-        experiment = f"{expobj.t_series_name} {expobj.metainfo['exptype']} {expobj.metainfo['comments']}"
-        print(f'|- Loaded {experiment}') if verbose else print(f'|- Loaded {expobj.t_series_name} ({pkl_path}) .. DONE')
+        # ImportWarning(f"\n** FAILED IMPORT OF * {prep} {trial} * from {pkl_path}\n")
+        # print(f"\t trying to recover from backup! ****")
+        # load_backup_path = f'/home/pshah/mnt/qnap/Analysis/{date}/{prep}/{date}_{trial}' + f"backups/{date}_{prep}_{trial}.pkl"
+        # if not os.path.exists(load_backup_path):
+        #     load_backup_path = f'/home/pshah/mnt/qnap/Analysis/{date}/{prep}/{date}_{trial}' + f"/backups/{date}_{prep}_{trial}.pkl"
+        #
+        # try:
+        #     with open(load_backup_path, 'rb') as f:
+        #         print(f'\- Loading backup from: {load_backup_path}', end='\r')
+        #         expobj = pickle.load(f)
+        # except:
+        #     raise ImportError(f"\n** FAILED IMPORT OF * {prep} {trial} * from {pkl_path}\n")
+        # experiment = f"{expobj.t_series_name} {expobj.metainfo['exptype']} {expobj.metainfo['comments']}"
+        # print(f'|- Loaded {experiment}') if verbose else print(f'|- Loaded {expobj.t_series_name} ({pkl_path}) .. DONE')
     except AttributeError:
         print(f"WARNING: needing to try using CustomUnpickler!")
         expobj = CustomUnpicklerAttributeError(open(pkl_path, 'rb')).load()
