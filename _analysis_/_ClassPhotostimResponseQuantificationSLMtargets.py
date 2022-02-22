@@ -312,3 +312,4 @@ class PhotostimResponsesQuantificationSLMtargets(Quantification):
     def allexps_plot_photostim_responses_magnitude_zscored(**kwargs):
         expobj: alloptical = kwargs['expobj']
         expobj.PhotostimResponsesSLMTargets.plot_photostim_responses_magnitude_zscored(zscore_type='dFF (zscored)', stims='all')
+

@@ -14,6 +14,7 @@ except:
 from _main_.AllOpticalMain import alloptical
 from _main_.Post4apMain import Post4ap
 from funcsforprajay import plotting as pplot
+from funcsforprajay import funcs as pfuncs
 
 expobj: Post4ap = import_expobj(prep='RL109', trial='t-018')
 
@@ -158,17 +159,29 @@ def full_plot_mean_responses_magnitudes_zscored():
         mean_photostim_responses_interictal_zscored, mean_photostim_responses_ictal_zscored = np.asarray(func_collector)[:, 0], np.asarray(
             func_collector)[:, 1]
 
-        pplot.plot_bar_with_points(
-            data=[mean_photostim_responses_baseline_zscored, mean_photostim_responses_interictal_zscored, mean_photostim_responses_ictal_zscored],
-            x_tick_labels=['baseline', 'interictal', 'ictal'], bar=False, colors=['blue', 'green', 'purple'],
-            expand_size_x=0.4, title='Average Photostim responses (zscored to baseline?)', y_label='dFF (zscored)')
-
-        return mean_photostim_responses_baseline_zscored, mean_photostim_responses_interictal_zscored, mean_photostim_responses_ictal_zscored
-
-# collect and plot histogram of zscored responses across all exp groups
+        # process data to make them flat arrays
+        data = []
+        for array in [mean_photostim_responses_baseline_zscored, mean_photostim_responses_interictal_zscored, mean_photostim_responses_ictal_zscored]:
+            data.append(pfuncs.flattenOnce(array))
 
 
+        # return mean_photostim_responses_baseline_zscored, mean_photostim_responses_interictal_zscored, mean_photostim_responses_ictal_zscored
 
+        return data
+
+
+data = full_plot_mean_responses_magnitudes_zscored()
+
+# %% plot zscored responses
+pplot.plot_bar_with_points(
+    data=data,
+    x_tick_labels=['baseline', 'interictal', 'ictal'], bar=False, colors=['navy', 'green', 'purple'],
+    expand_size_x=0.4, title='Average Photostim responses (zscored to baseline?)', y_label='dFF (zscored)')
+
+pplot.plot_hist_density(data=data, mean_line=False, figsize=[4, 5], title='photostim responses (zscored)',
+                        show_legend=True, num_bins=35, line_colors=['navy', 'green', 'purple'],
+                        fill_color=['lightgray', 'lightgray', 'lightgray'], alpha=0.2, show_bins=True,
+                        legend_labels=['baseline', 'interictal', 'ictal'])
 
 
 # %% RUN SCRIPT
@@ -183,6 +196,22 @@ if __name__ == '__main__':
 
     # run__z_score_photostim_responses_and_interictalzscores()
     # main.allexps_plot_photostim_responses_magnitude_zscored()
-    main.mean_photostim_responses_baseline_zscored, main.mean_photostim_responses_interictal_zscored, main.mean_photostim_responses_ictal_zscored = full_plot_mean_responses_magnitudes_zscored()
+
+    # main.mean_photostim_responses_baseline_zscored, main.mean_photostim_responses_interictal_zscored, main.mean_photostim_responses_ictal_zscored = full_plot_mean_responses_magnitudes_zscored()
+
+    # make plot
+    # plot zscored responses
+    # data = full_plot_mean_responses_magnitudes_zscored()
+    pplot.plot_bar_with_points(
+        data=data,
+        x_tick_labels=['baseline', 'interictal', 'ictal'], bar=False, colors=['navy', 'green', 'purple'],
+        expand_size_x=0.4, title='Average Photostim responses (zscored to baseline?)', y_label='dFF (zscored)')
+
+    pplot.plot_hist_density(data=data, mean_line=False, figsize=[4, 5], title='photostim responses (zscored)',
+                            show_legend=True, num_bins=35, line_colors=['navy', 'green', 'purple'],
+                            fill_color=['lightgray', 'lightgray', 'lightgray'], alpha=0.2, show_bins=True,
+                            legend_labels=['baseline', 'interictal', 'ictal'])
 
     # main.saveclass()
+    pass
+
