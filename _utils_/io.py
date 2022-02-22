@@ -24,7 +24,7 @@ def load_from_backup(prep, trial, date, original_path, backup_path=None):
     except:
         raise ImportError(f"\n** FAILED IMPORT OF * {prep} {trial} * from {original_path}\n")
     print(f'|- Loaded backup of: {expobj.t_series_name} ({load_backup_path}) ... DONE')
-
+    return expobj
 
 class CustomUnpicklerAttributeError(pickle.Unpickler):
     def find_class(self, module, name):
@@ -35,7 +35,9 @@ class CustomUnpicklerAttributeError(pickle.Unpickler):
         elif name == '_TargetsSzInvasionTemporal':
             from _analysis_._ClassTargetsSzInvasionTemporal import TargetsSzInvasionTemporal
             return TargetsSzInvasionTemporal
-
+        elif name == 'TargetsSzInvasionSpatial':
+            from _analysis_._ClassTargetsSzInvasionSpatial import TargetsSzInvasionSpatial
+            return TargetsSzInvasionSpatial
 
         return super().find_class(module, name)
 
@@ -180,9 +182,9 @@ def import_expobj(aoresults_map_id: str = None, trial: str = None, prep: str = N
             expobj = pickle.load(f)
             print(f'|- Loaded {expobj.t_series_name} (from {pkl_path}) ... DONE')
     except EOFError:
-        load_from_backup(prep, trial, date, original_path=pkl_path)
+        expobj = load_from_backup(prep, trial, date, original_path=pkl_path)
     except pickle.UnpicklingError:
-        load_from_backup(prep, trial, date, original_path=pkl_path)
+        expobj = load_from_backup(prep, trial, date, original_path=pkl_path)
 
         # ImportWarning(f"\n** FAILED IMPORT OF * {prep} {trial} * from {pkl_path}\n")
         # print(f"\t trying to recover from backup! ****")

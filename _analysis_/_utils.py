@@ -29,3 +29,4 @@ class Quantification:
     @property
     def expobj_exptype(self):
         return self._metainfo['exptype']
+

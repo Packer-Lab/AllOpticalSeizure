@@ -3310,7 +3310,7 @@ class alloptical(TwoPhotonImaging):
 class Post4ap(alloptical):
 
     def __init__(self, paths, metainfo, stimtype, discard_all):
-        from _analysis_.run__targets_sztemporal_stim_responses import _TargetsSzInvasionTemporal
+        from _analysis_.run__TargetsSzInvasionTemporal import _TargetsSzInvasionTemporal
         self.TargetsSzInvasionTemporal = _TargetsSzInvasionTemporal()
 
         alloptical.__init__(self, paths, metainfo, stimtype)
@@ -4012,7 +4012,7 @@ class Post4ap(alloptical):
 
         expobj.save() if save else None
 
-    def calcMinDistanceToSz(self, plot_counter=0):
+    def calcMinDistanceToSz(self):
         """
         Make a dataframe of stim frames x cells, with values being the minimum distance to the sz boundary at the stim.
 
@@ -4029,7 +4029,7 @@ class Post4ap(alloptical):
                     coordinates = self.target_coords_all
                     indexes = range(len(self.target_coords_all))
                 elif cells == 's2p nontargets':  ## TODO fix collecting min. distances for s2p nontargets
-                    pass
+                    print('WARNING: s2p nontargets analysis not done yet')
                     # indexes = self.s2p_nontargets
                     # coordinates = []
                     # for stat_ in self.stat:
@@ -4039,41 +4039,43 @@ class Post4ap(alloptical):
                 df = pd.DataFrame(data=None, index=indexes, columns=self.stimsWithSzWavefront)
                 # fig2, ax2 = plt.subplots()  ## figure for debuggging
 
-                for _, stim_frame in enumerate(self.stimsWithSzWavefront):
-                    targetsInSz = self.slmtargets_szboundary_stim[stim_frame]
+                try:
+                    for _, stim_frame in enumerate(self.stimsWithSzWavefront):
+                        targetsInSz = self.slmtargets_szboundary_stim[stim_frame]
 
-                    if cells == 'SLM Targets':  # debugging set back to zero afterwards
+                        if cells == 'SLM Targets':  # debugging set back to zero afterwards
+                            coord1, coord2 = self.stimsSzLocations.loc[stim_frame, ['coord1', 'coord2']]
+                            # xline, yline = pj.xycsv(csvpath=self.sz_border_path(stim=stim_frame))
+                            if stim_frame not in self.stimsWithSzWavefront:
+                                # exclude sz stims (set to nan) with unknown absolute locations of sz boundary
+                                df.loc[:, stim_frame] = np.nan
+                            else:
+                                for target_idx, target_coord in enumerate(coordinates):
+                                    target_coord_ = [target_coord[0], target_coord[1], 0]
+                                    dist, nearest = pnt2line.pnt2line(pnt=target_coord_, start=[coord1[0], coord1[1], 0], end=[coord2[0], coord2[1], 0])
+                                    dist = round(dist, 2)
+                                    if target_idx in targetsInSz:
+                                        dist = -dist
+                                        # print(dist, "target coord inside sz")
+                                    # title = f"distance: {dist}, {self.t_series_name}, stim: {stim_frame}"
 
-                        coord1, coord2 = self.stimsSzLocations.loc[stim_frame, ['coord1', 'coord2']]
-                        # xline, yline = pj.xycsv(csvpath=self.sz_border_path(stim=stim_frame))
-                        if stim_frame not in self.stimsWithSzWavefront:
-                            # exclude sz stims (set to nan) with unknown absolute locations of sz boundary
-                            df.loc[:, stim_frame] = np.nan
-                        else:
-                            for target_idx, target_coord in enumerate(coordinates):
-                                target_coord_ = [target_coord[0], target_coord[1], 0]
-                                dist, nearest = pnt2line.pnt2line(pnt=target_coord_, start=[coord1[0], coord1[1], 0], end=[coord2[0], coord2[1], 0])
-                                dist = round(dist, 2)
-                                if target_idx in targetsInSz:
-                                    dist = -dist
-                                    # print(dist, "target coord inside sz")
-                                # title = f"distance: {dist}, {self.t_series_name}, stim: {stim_frame}"
+                                    # if 10 < plot_counter < 15:
+                                    #     fig, ax = plt.subplots()  ## figure for debuggging
+                                    #     pj.plot_coordinates(coords=[(target_coord_[0], target_coord_[1])], frame_x=self.frame_x, frame_y=self.frame_y,
+                                    #                             edgecolors='red', show=False, fig=fig, ax=ax, title=title)
+                                    #
+                                    #     pj.plot_coordinates(coords=[(xline[0], yline[0]), (xline[1], yline[1])], frame_x=self.frame_x, frame_y=self.frame_y,
+                                    #                             edgecolors='green', show=False, fig=fig, ax=ax, title=title)
+                                    #
+                                    #     pj.plot_coordinates(coords=[(nearest[0], nearest[1])], frame_x=self.frame_x, frame_y=self.frame_y,
+                                    #                             edgecolors='yellow', show=False, fig=fig, ax=ax, title=title)
+                                    #     fig.show()
+                                    #
+                                    # plot_counter += 1
 
-                                # if 10 < plot_counter < 15:
-                                #     fig, ax = plt.subplots()  ## figure for debuggging
-                                #     pj.plot_coordinates(coords=[(target_coord_[0], target_coord_[1])], frame_x=self.frame_x, frame_y=self.frame_y,
-                                #                             edgecolors='red', show=False, fig=fig, ax=ax, title=title)
-                                #
-                                #     pj.plot_coordinates(coords=[(xline[0], yline[0]), (xline[1], yline[1])], frame_x=self.frame_x, frame_y=self.frame_y,
-                                #                             edgecolors='green', show=False, fig=fig, ax=ax, title=title)
-                                #
-                                #     pj.plot_coordinates(coords=[(nearest[0], nearest[1])], frame_x=self.frame_x, frame_y=self.frame_y,
-                                #                             edgecolors='yellow', show=False, fig=fig, ax=ax, title=title)
-                                #     fig.show()
-                                #
-                                # plot_counter += 1
-
-                                df.loc[target_idx, stim_frame] = dist
+                                    df.loc[target_idx, stim_frame] = dist
+                except KeyError:
+                    print('this is the Key error')
 
                         # aoplot.plot_sz_boundary_location(self)
                 self.distance_to_sz[cells] = df  ## set the dataframe for each of SLM Targets and s2p nontargets

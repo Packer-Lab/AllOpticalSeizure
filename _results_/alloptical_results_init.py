@@ -136,7 +136,7 @@ allopticalResults.post_4ap_trials = [
     # ['RL109 t-021'],
     ['RL109 t-018'],
     ['RL109 t-016'],  #'RL109 t-017'], # -- need to do sz boundary classifying processing
-    ['PS04 t-018'],  # - need to re run collecting slmtargets_szboundary_stim (sz processing)
+    ['PS04 t-018'],  # -- need to redo sz boundary classifying processing - TODO need to redo once again? some stims seems to be missing .22/02/22
     # ['PS05 t-012'],
     ['PS07 t-011'],
     # ['PS07 t-017'],  -- unclear seizure behaviours
@@ -184,7 +184,7 @@ allopticalResults.trial_maps['post'] = {
     # 'd': ['RL109 t-021'],
     'e': ['RL109 t-018'], # -- need to redo sz boundary classifying processing - should be done
     'f': ['RL109 t-016'], #'RL109 t-017'], #-- need to do sz boundary classifying processing - should be done
-    'g': ['PS04 t-018'],  # -- need to redo sz boundary classifying processing - should be done
+    'g': ['PS04 t-018'],  # -- need to redo sz boundary classifying processing - TODO need to redo once again? some stims seems to be missing .22/02/22
     # 'h': ['PS05 t-012'],
     'i': ['PS07 t-011'],
     # 'j': ['PS07 t-017'],  # - need to do sz boundary classifying processing

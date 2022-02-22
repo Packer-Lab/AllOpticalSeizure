@@ -5,18 +5,17 @@ import numpy as np
 import _alloptical_utils as Utils
 from _utils_.io import import_cls, import_expobj
 
-try:
-    main = import_cls(pkl_path='/home/pshah/mnt/qnap/Analysis/allopticalseizures/PhotostimResponsesQuantificationSLMtargets.pkl')
-except:
-    from _analysis_._ClassPhotostimResponseQuantificationSLMtargets import \
-        PhotostimResponsesQuantificationSLMtargets as main
+# try:
+#     main = import_cls(pkl_path='/home/pshah/mnt/qnap/Analysis/allopticalseizures/PhotostimResponsesQuantificationSLMtargets.pkl')
+# except:
+#     from _analysis_._ClassPhotostimResponseQuantificationSLMtargets import PhotostimResponsesQuantificationSLMtargets as main
 
 from _main_.AllOpticalMain import alloptical
 from _main_.Post4apMain import Post4ap
 from funcsforprajay import plotting as pplot
 from funcsforprajay import funcs as pfuncs
 
-expobj: Post4ap = import_expobj(prep='RL109', trial='t-018')
+# expobj: Post4ap = import_expobj(prep='RL109', trial='t-018')
 
 "##### -------------------- ALL OPTICAL PHOTOSTIM ANALYSIS #############################################################"
 
@@ -39,16 +38,16 @@ expobj: Post4ap = import_expobj(prep='RL109', trial='t-018')
 
 
 
-# %%
+# %% r.0) init and collect photostim responses, create anndata structure
 
-@Utils.run_for_loop_across_exps(run_pre4ap_trials=1, run_post4ap_trials=1, allow_rerun=False)
+@Utils.run_for_loop_across_exps(run_pre4ap_trials=1, run_post4ap_trials=1, allow_rerun=0)
 def run__initPhotostimResponseQuant(**kwargs):
     expobj: Union[alloptical, Post4ap] = kwargs['expobj']
     expobj.PhotostimResponsesSLMTargets = main(expobj)
     expobj.save()
 
 
-@Utils.run_for_loop_across_exps(run_pre4ap_trials=1, run_post4ap_trials=1, allow_rerun=False)
+@Utils.run_for_loop_across_exps(run_pre4ap_trials=1, run_post4ap_trials=1, allow_rerun=0)
 def run__collect_photostim_responses_exp(**kwargs):
     expobj: Union[alloptical, Post4ap] = kwargs['expobj']
     expobj.PhotostimResponsesSLMTargets.collect_photostim_responses_exp(expobj=expobj)
@@ -56,7 +55,7 @@ def run__collect_photostim_responses_exp(**kwargs):
 
 
 
-@Utils.run_for_loop_across_exps(run_pre4ap_trials=1, run_post4ap_trials=1, allow_rerun=False)
+@Utils.run_for_loop_across_exps(run_pre4ap_trials=1, run_post4ap_trials=1, allow_rerun=1)
 def run__create_anndata_SLMtargets(**kwargs):
     expobj: alloptical = kwargs['expobj']
     expobj.PhotostimResponsesSLMTargets.create_anndata_SLMtargets(expobj=expobj)
@@ -72,7 +71,7 @@ def run__add_stim_group_anndata(**kwargs):
 
 
 
-# %% c.1) plotting mean photostim response magnitude across experiments and experimental groups
+# %% r.1) plotting mean photostim response magnitude across experiments and experimental groups
 def full_plot_mean_responses_magnitudes():
     """create plot of mean photostim responses magnitudes for all three exp groups"""
 
@@ -116,9 +115,9 @@ def full_plot_mean_responses_magnitudes():
 
 
 
-# %% c.2) z scoring
+# %% r.2) z scoring
 
-@Utils.run_for_loop_across_exps(run_pre4ap_trials=1, run_post4ap_trials=1, allow_rerun=0)
+@Utils.run_for_loop_across_exps(run_pre4ap_trials=1, run_post4ap_trials=1, allow_rerun=1)
 def run__z_score_photostim_responses_and_interictalzscores(**kwargs):
     expobj: alloptical = kwargs['expobj']
     expobj.PhotostimResponsesSLMTargets.z_score_photostim_responses()
@@ -170,38 +169,28 @@ def full_plot_mean_responses_magnitudes_zscored():
         return data
 
 
-data = full_plot_mean_responses_magnitudes_zscored()
-
-# %% plot zscored responses
-pplot.plot_bar_with_points(
-    data=data,
-    x_tick_labels=['baseline', 'interictal', 'ictal'], bar=False, colors=['navy', 'green', 'purple'],
-    expand_size_x=0.4, title='Average Photostim responses (zscored to baseline?)', y_label='dFF (zscored)')
-
-pplot.plot_hist_density(data=data, mean_line=False, figsize=[4, 5], title='photostim responses (zscored)',
-                        show_legend=True, num_bins=35, line_colors=['navy', 'green', 'purple'],
-                        fill_color=['lightgray', 'lightgray', 'lightgray'], alpha=0.2, show_bins=True,
-                        legend_labels=['baseline', 'interictal', 'ictal'])
-
 
 # %% RUN SCRIPT
 if __name__ == '__main__':
-    # run__initPhotostimResponseQuant()
-    # run__collect_photostim_responses_exp()
-    # run__create_anndata_SLMtargets()
-    # run__add_stim_group_anndata()
+    from _analysis_._ClassPhotostimResponseQuantificationSLMtargets import \
+        PhotostimResponsesQuantificationSLMtargets as main
 
-    # main.allexps_plot_photostim_responses_magnitude()
-    # main.mean_photostim_responses_baseline, main.mean_photostim_responses_interictal, main.mean_photostim_responses_ictal = full_plot_mean_responses_magnitudes()
+    run__initPhotostimResponseQuant()
+    run__collect_photostim_responses_exp()
+    run__create_anndata_SLMtargets()
+    run__add_stim_group_anndata()
 
-    # run__z_score_photostim_responses_and_interictalzscores()
-    # main.allexps_plot_photostim_responses_magnitude_zscored()
+    main.allexps_plot_photostim_responses_magnitude()
+    main.mean_photostim_responses_baseline, main.mean_photostim_responses_interictal, main.mean_photostim_responses_ictal = full_plot_mean_responses_magnitudes()
 
-    # main.mean_photostim_responses_baseline_zscored, main.mean_photostim_responses_interictal_zscored, main.mean_photostim_responses_ictal_zscored = full_plot_mean_responses_magnitudes_zscored()
+    run__z_score_photostim_responses_and_interictalzscores()
+    main.allexps_plot_photostim_responses_magnitude_zscored()
+
+    main.mean_photostim_responses_baseline_zscored, main.mean_photostim_responses_interictal_zscored, main.mean_photostim_responses_ictal_zscored = full_plot_mean_responses_magnitudes_zscored()
 
     # make plot
     # plot zscored responses
-    # data = full_plot_mean_responses_magnitudes_zscored()
+    data = full_plot_mean_responses_magnitudes_zscored()
     pplot.plot_bar_with_points(
         data=data,
         x_tick_labels=['baseline', 'interictal', 'ictal'], bar=False, colors=['navy', 'green', 'purple'],
@@ -212,6 +201,6 @@ if __name__ == '__main__':
                             fill_color=['lightgray', 'lightgray', 'lightgray'], alpha=0.2, show_bins=True,
                             legend_labels=['baseline', 'interictal', 'ictal'])
 
-    # main.saveclass()
+    main.saveclass()
     pass
 

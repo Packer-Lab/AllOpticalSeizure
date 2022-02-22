@@ -128,8 +128,8 @@ class PhotostimResponsesQuantificationSLMtargets(Quantification):
 
         """
 
-        if not hasattr(expobj, 'dFF_SLMTargets') or hasattr(expobj, 'raw_SLMTargets'):
-            Warning(
+        if not (hasattr(self, 'responses_SLMtargets_tracedFF') or hasattr(self, 'responses_SLMtargets_dfprestimf') or hasattr(self, 'responses_SLMtargets_dfstdf')):
+            raise Warning(
                 'did not create anndata. anndata creation only available if experiments were processed with suite2p and .paq file(s) provided for temporal synchronization')
         else:
             # SETUP THE OBSERVATIONS (CELLS) ANNOTATIONS TO USE IN anndata
@@ -283,7 +283,7 @@ class PhotostimResponsesQuantificationSLMtargets(Quantification):
         # add zscored data to anndata storage
         self.adata.add_layer(layer_name='dFF (zscored) (interictal)', data=np.asarray(df))
 
-    # %% 4.1) plot z scored photostim responses
+    # 4.1) plot z scored photostim responses
     def collect_photostim_responses_magnitude_zscored(self, zscore_type: str = 'dFF (zscored)',
                                                       stims: Union[slice, str, list] = None):
         assert self.adata, print('cannot find .adata')
