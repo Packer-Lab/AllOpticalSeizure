@@ -2,8 +2,10 @@
 
 
 # # import results superobject that will collect analyses from various individual experiments
+import pickle
 from dataclasses import dataclass
 
+import os
 import pandas as pd
 
 
@@ -12,7 +14,15 @@ CSV_PATH = '/home/pshah/mnt/qnap/Analysis/allopticalexpmeta.csv'
 
 # %%
 def __resultsmeta_to_csv():
-    from _utils_.io import import_resultsobj
+    # %% RESULT OBJECT - soon to be phased out
+    def import_resultsobj(pkl_path: str):
+        assert os.path.exists(pkl_path)
+        with open(pkl_path, 'rb') as f:
+            print(f"\nimporting resultsobj from: {pkl_path} ... ")
+            resultsobj = pickle.load(f)
+            print(f"|-DONE IMPORT of {(type(resultsobj))} resultsobj \n\n")
+        return resultsobj
+
     from _results_.alloptical_results_init import AllOpticalResults
 
     results_object_path = '/home/pshah/mnt/qnap/Analysis/alloptical_results_superobject.pkl'
@@ -143,7 +153,7 @@ assert len(AllOpticalExpsToAnalyze.trial_maps['pre'].keys()) == len(
 
 class ExpMetainfo:
     csv_path: str = CSV_PATH
-    alloptical: AllOpticalExpsToAnalyze = AllOpticalExpsToAnalyze
+    alloptical: AllOpticalExpsToAnalyze = AllOpticalExpsToAnalyze()
 
 
 

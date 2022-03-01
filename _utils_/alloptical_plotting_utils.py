@@ -10,7 +10,7 @@ import matplotlib.ticker as mticker
 from mpl_point_clicker import clicker
 from _utils_.paq_utils import paq_read, frames_discard
 from funcsforprajay import funcs as pj
-import alloptical_utils_pj as aoutils
+import _alloptical_utils as Utils
 import tifffile as tf
 from _main_.TwoPhotonImagingMain import TwoPhotonImaging
 
@@ -367,7 +367,7 @@ def s2pRoiImage(expobj, fig_save_name: str = None):
     plt.suptitle(f"{expobj.metainfo['animal prep.']} {expobj.metainfo['trial']} - s2p nontargets (blue), exclude (yellow), targets (red); target_areas (white)",
                  y=0.97, fontsize=7)
     plt.show()
-    aoutils.save_figure(fig, save_path_suffix=f"{fig_save_name}") if fig_save_name else None
+    Utils.save_figure(fig, save_path_suffix=f"{fig_save_name}") if fig_save_name else None
 
 
 ### plotting the distribution of radius and aspect ratios - should this be running before the filtering step which is right below????????
@@ -858,7 +858,7 @@ def plot_flu_trace(expobj, cell, x_lims=None, slm_group=None, to_plot='raw', fig
     idx = expobj.cell_id.index(cell)
     raw = expobj.raw[idx]
     raw_ = np.delete(raw, expobj.photostim_frames)  # this is very problematic for the dFF plotting with stim frames if you're deleting ALL of the photostim frames!?!!!
-    raw_dff = aoutils.normalize_dff(raw_)
+    raw_dff = Utils.normalize_dff(raw_)
     std_dff = np.std(raw_dff, axis=0)
     std = np.std(raw_, axis=0)
 

@@ -4,19 +4,20 @@ import functools
 from pathlib import Path
 from datetime import datetime
 
-
 import os
 import sys
 
-from _utils_.io import import_expobj, allopticalResults
-
-sys.path.append('/home/pshah/Documents/code/')
 
 import time
 import numpy as np
 import pandas as pd
 from funcsforprajay import funcs as pj
 import pickle
+
+from _utils_.io import import_expobj
+from _exp_metainfo_.exp_metainfo import AllOpticalExpsToAnalyze
+
+sys.path.append('/home/pshah/Documents/code/')
 
 # %% SET OPTIONS
 pd.set_option("display.max_rows", 100)
@@ -35,6 +36,14 @@ def run_for_loop_across_exps(run_pre4ap_trials=False, run_post4ap_trials=False, 
 
     NOTE: WHEN RETURNING ITEMS IN FUNCTIONS THAT ARE DECORATED USING THIS DECORATOR, THE ITEMS FROM ALL ITERATIONS ARE
     RETURNED AS a LIST. EACH FOR LOOP'S RETURN ITEM IS APPENDED INTO a LIST BY THIS DECORATOR.
+    :param run_pre4ap_trials: bool, will collect list of pre4ap trials to run from expmeta class
+    :param run_post4ap_trials: bool, will collect list of post4ap trials to run from expmeta class
+    :param skip_trials: skip these trials
+    :param run_trials: run these trials
+    :param set_cache: if 0 (or False), then don't include function call in caching dictionary
+    :param allow_rerun: allow function to rerun despite being previously ran and stored in caching dictionary
+    :param supress_print: minimal print statements
+    :return:
 
     """
     # if len(run_trials) > 0 or run_pre4ap_trials is True or run_post4ap_trials is True:
@@ -84,7 +93,8 @@ def run_for_loop_across_exps(run_pre4ap_trials=False, run_post4ap_trials=False, 
                 print(f"\n{'-' * 5} RUNNING PRE4AP TRIALS {'-' * 5}")
                 counter_i = 0
                 res = []
-                for i, x in enumerate(allopticalResults.pre_4ap_trials):
+                # for i, x in enumerate(allopticalResults.pre_4ap_trials):
+                for i, x in enumerate(AllOpticalExpsToAnalyze.pre_4ap_trials):
                     counter_j = 0
                     for j, exp_prep in enumerate(x):
                         if exp_prep in skip_trials:
@@ -127,7 +137,8 @@ def run_for_loop_across_exps(run_pre4ap_trials=False, run_post4ap_trials=False, 
                 print(f"\n{'-' * 5} RUNNING POST4AP TRIALS {'-' * 5}")
                 counter_i = 0
                 res = []
-                for i, x in enumerate(allopticalResults.post_4ap_trials):
+                # for i, x in enumerate(allopticalResults.post_4ap_trials):
+                for i, x in enumerate(AllOpticalExpsToAnalyze.post_4ap_trials):
                     counter_j = 0
                     for j, exp_prep in enumerate(x):
                         if exp_prep in skip_trials:

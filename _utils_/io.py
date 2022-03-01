@@ -51,6 +51,9 @@ class CustomUnpicklerModuleNotFoundError(pickle.Unpickler):
         elif module == '_sz_processing.ClassTargetsSzInvasionTemporal':
             renamed_module = "_analysis_._ClassTargetsSzInvasionTemporal"
 
+        elif module == '_ClassTargetsSzInvasionSpatial':
+            renamed_module = "_analysis_._ClassTargetsSzInvasionSpatial"
+
         else:
             renamed_module = module
 
@@ -117,8 +120,8 @@ def save_pkl(obj, save_path: str = None):
     with open(obj.pkl_path, 'wb') as f:
         pickle.dump(obj, f)
     print(f"\- expobj saved to {obj.pkl_path} -- ")
-    
-    os.makedirs(pj.return_parent_dir(obj.backup_pkl), exist_ok=True) if not os.path.exists(backup_dir) else None
+
+    os.makedirs(pj.return_parent_dir(obj.backup_pkl), exist_ok=True)
     with open(obj.backup_pkl, 'wb') as f:
         pickle.dump(obj, f)
 
@@ -140,16 +143,15 @@ def import_expobj(aoresults_map_id: str = None, trial: str = None, prep: str = N
     """
 
     if aoresults_map_id is not None:
+        exp_type = 'post'
         if 'pre' in aoresults_map_id:
             exp_type = 'pre'
-        elif 'post' in aoresults_map_id:
-            exp_type = 'post'
         id = aoresults_map_id.split(' ')[1][0]
-        if len(allopticalResults.trial_maps[exp_type][id]) > 1:
+        if len(ExpMetainfo.alloptical.trial_maps[exp_type][id]) > 1:
             num_ = int(re.search(r"\d", aoresults_map_id)[0])
         else:
             num_ = 0
-        prep, trial = allopticalResults.trial_maps[exp_type][id][num_].split(' ')
+        prep, trial = ExpMetainfo.alloptical.trial_maps[exp_type][id][num_].split(' ')
 
     if exp_prep is not None:
         prep = exp_prep[:-6]
@@ -180,7 +182,7 @@ def import_expobj(aoresults_map_id: str = None, trial: str = None, prep: str = N
                 break
 
     if not os.path.exists(pkl_path):
-        raise Exception('pkl path NOT found: ' + pkl_path)
+        raise FileNotFoundError('pkl path NOT found: ' + pkl_path)
     try:
         with open(pkl_path, 'rb') as f:
             print(f'\- Loading {pkl_path}', end='\r')
@@ -238,29 +240,21 @@ def import_expobj(aoresults_map_id: str = None, trial: str = None, prep: str = N
     return expobj
 
 
-# %% RESULT OBJECT IO
-def import_resultsobj(pkl_path: str):
-    assert os.path.exists(pkl_path)
-    with open(pkl_path, 'rb') as f:
-        print(f"\nimporting resultsobj from: {pkl_path} ... ")
-        resultsobj = pickle.load(f)
-        print(f"|-DONE IMPORT of {(type(resultsobj))} resultsobj \n\n")
-    return resultsobj
 
 
-# import results superobject that will collect analyses from various individual experiments
-results_object_path = '/home/pshah/mnt/qnap/Analysis/alloptical_results_superobject.pkl'
-local_results_object_path = '/Users/prajayshah/OneDrive/UTPhD/2022/OXFORD/expobj/alloptical_results_superobject.pkl'
-
-for path in [results_object_path, local_results_object_path]:
-    if os.path.exists(path):
-        results_path = path
-        try:
-            allopticalResults = import_resultsobj(
-                pkl_path=results_path)  # this needs to be run AFTER defining the AllOpticalResults class
-        except FileNotFoundError:
-            print(f'not able to get allopticalResults object from {results_object_path}')
-        break
+# # import results superobject that will collect analyses from various individual experiments
+# results_object_path = '/home/pshah/mnt/qnap/Analysis/alloptical_results_superobject.pkl'
+# local_results_object_path = '/Users/prajayshah/OneDrive/UTPhD/2022/OXFORD/expobj/alloptical_results_superobject.pkl'
+#
+# for path in [results_object_path, local_results_object_path]:
+#     if os.path.exists(path):
+#         results_path = path
+#         try:
+#             allopticalResults = import_resultsobj(
+#                 pkl_path=results_path)  # this needs to be run AFTER defining the AllOpticalResults class
+#         except FileNotFoundError:
+#             print(f'not able to get allopticalResults object from {results_object_path}')
+#         break
 
 #
 # # %%

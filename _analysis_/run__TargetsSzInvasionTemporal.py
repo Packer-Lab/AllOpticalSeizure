@@ -14,17 +14,14 @@ import seaborn as sns
 
 import _alloptical_utils as Utils
 from _main_.Post4apMain import Post4ap
-from _sz_processing.temporal_delay_to_sz_invasion import convert_timedel2frames
 
 # SAVE_LOC = "/Users/prajayshah/OneDrive/UTPhD/2022/OXFORD/export/"
 # SAVE_LOC = "/home/pshah/mnt/qnap/Analysis/analysis_export/"
-from _utils_.io import import_cls
 
 SAVE_LOC = "/home/pshah/mnt/qnap/Analysis/analysis_export/analysis_quantification_classes/"
-main = import_cls(SAVE_LOC + 'PhotostimResponsesQuantificationSLMtargets.pkl')
 
 
-# expobj: Post4ap = Utils.import_expobj(prep='RL108', trial='t-013')
+expobj: Post4ap = Utils.import_expobj(prep='RL108', trial='t-013')
 # expobj = Utils.import_expobj(load_backup_path='/home/pshah/mnt/qnap/Analysis/2020-12-18/RL108/2020-12-18_t-013/backups/2020-12-18_RL108_t-013.pkl')
 
 # expobj.PhotostimResponsesSLMTargets.adata.var[['stim_start_frame', 'wvfront in sz', 'seizure_num']]
