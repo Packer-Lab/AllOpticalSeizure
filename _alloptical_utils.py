@@ -1,4 +1,4 @@
-#### NOTE: THIS IS NOT CURRENTLY SETUP TO BE ABLE TO HANDLE MULTIPLE GROUPS/STIMS (IT'S REALLY ONLY FOR A SINGLE STIM TRIGGER PHOTOSTIM RESPONSES)
+#### NOTE: THIS IS NOT CURRENTLY SETUP TO BE ABLE TO HANDLE MULTIPLE GROUPS/STIMS (IT'S REALLY ONLY FOR a SINGLE STIM TRIGGER PHOTOSTIM RESPONSES)
 
 import functools
 from pathlib import Path
@@ -34,7 +34,7 @@ def run_for_loop_across_exps(run_pre4ap_trials=False, run_post4ap_trials=False, 
     the trials to for loop through are defined in allopticalResults.pre_4ap_trials and allopticalResults.post_4ap_trials.
 
     NOTE: WHEN RETURNING ITEMS IN FUNCTIONS THAT ARE DECORATED USING THIS DECORATOR, THE ITEMS FROM ALL ITERATIONS ARE
-    RETURNED AS A LIST. EACH FOR LOOP'S RETURN ITEM IS APPENDED INTO A LIST BY THIS DECORATOR.
+    RETURNED AS a LIST. EACH FOR LOOP'S RETURN ITEM IS APPENDED INTO a LIST BY THIS DECORATOR.
 
     """
     # if len(run_trials) > 0 or run_pre4ap_trials is True or run_post4ap_trials is True:

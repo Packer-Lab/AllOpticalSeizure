@@ -111,7 +111,7 @@ def make_plot(title='', **kwargs):
     kwargs['ax'].plot(np.arange(10))
     kwargs['ax'].set_title(title)
 
-make_plot(title='A plot')
+make_plot(title='a plot')
 
 
 # %% works
@@ -155,7 +155,7 @@ def make_plot(title='', fig=None, ax=None, **kwargs):
     ax.plot(np.random.rand(10))
     ax.set_title(title)
 
-fig, ax = make_plot(title='A plot', show=False)
+fig, ax = make_plot(title='a plot', show=False)
 
 
 # %% works
@@ -209,5 +209,5 @@ def example_decorated_plot(title='', **kwargs):
 
 
 fig, ax = plt.subplots(figsize=(3,3))
-fig, ax = example_decorated_plot(fig=fig, ax=ax, title='A plot', show=True)  # these are the original kwargs
-# example_decorated_plot(title='A plot', show=True)  # these are the original kwargs
+fig, ax = example_decorated_plot(fig=fig, ax=ax, title='a plot', show=True)  # these are the original kwargs
+# example_decorated_plot(title='a plot', show=True)  # these are the original kwargs

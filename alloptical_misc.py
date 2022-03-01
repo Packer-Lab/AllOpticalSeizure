@@ -651,7 +651,7 @@ for trial in trials:
 
 
 
-#%% PLOT THE ZPROFILE OF A TIFF STACK
+#%% PLOT THE ZPROFILE OF a TIFF STACK
 trial = 't-015'
 date = '2021-01-19'
 

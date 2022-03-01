@@ -32,7 +32,7 @@ voltage = paq['data'][2]
 plt.figure(figsize=[10,2])
 plt.plot(voltage[-18045640:], linewidth=0.2); plt.suptitle('LFP voltage'); plt.show()
 
-#%% DOWNSAMPLING or CROPPING OF A TIFF FILE (USEFULL IF YOU WANT TO DOWNLOAD TO LOCAL COMPUTER AND WATCH THE TIFF)
+#%% DOWNSAMPLING or CROPPING OF a TIFF FILE (USEFULL IF YOU WANT TO DOWNLOAD TO LOCAL COMPUTER AND WATCH THE TIFF)
 
 # import first tiff and make a downsampled tiff for sample: HF98 - run_pre4ap_trials baseline widefield Ca imaging
 

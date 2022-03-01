@@ -15,7 +15,6 @@ import tifffile as tf
 from funcsforprajay import funcs as pj
 from _utils_.paq_utils import paq_read
 import pickle
-import _alloptical_utils as Utils
 
 
 

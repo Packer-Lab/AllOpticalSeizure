@@ -5,7 +5,14 @@
       <paths name="pshah@packerserver1:22 key-pair (1)">
         <serverdata>
           <mappings>
-            <mapping deploy="/Documents/code/PackerLab_pycharm" local="$PROJECT_DIR$" web="/" />
+            <mapping deploy="/Documents/code/AllOpticalSeizure" local="$PROJECT_DIR$" web="/" />
+          </mappings>
+        </serverdata>
+      </paths>
+      <paths name="pshah@packerserver1:22 key-pair (2)">
+        <serverdata>
+          <mappings>
+            <mapping deploy="/home/pshah/Documents/code" local="$PROJECT_DIR$/../" web="/" />
           </mappings>
         </serverdata>
       </paths>

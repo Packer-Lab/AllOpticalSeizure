@@ -9,18 +9,22 @@ import funcsforprajay.funcs as pj
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-from funcsforprajay.wrappers import plot_piping_decorator
-from _analysis_._ClassTargetsSzInvasionTemporal import TargetsSzInvasionTemporal as main
+import seaborn as sns
+# from _analysis_._ClassTargetsSzInvasionTemporal import TargetsSzInvasionTemporal as main
 
 import _alloptical_utils as Utils
 from _main_.Post4apMain import Post4ap
 from _sz_processing.temporal_delay_to_sz_invasion import convert_timedel2frames
 
-
 # SAVE_LOC = "/Users/prajayshah/OneDrive/UTPhD/2022/OXFORD/export/"
 # SAVE_LOC = "/home/pshah/mnt/qnap/Analysis/analysis_export/"
+from _utils_.io import import_cls
 
-expobj: Post4ap = Utils.import_expobj(prep='RL108', trial='t-013')
+SAVE_LOC = "/home/pshah/mnt/qnap/Analysis/analysis_export/analysis_quantification_classes/"
+main = import_cls(SAVE_LOC + 'PhotostimResponsesQuantificationSLMtargets.pkl')
+
+
+# expobj: Post4ap = Utils.import_expobj(prep='RL108', trial='t-013')
 # expobj = Utils.import_expobj(load_backup_path='/home/pshah/mnt/qnap/Analysis/2020-12-18/RL108/2020-12-18_t-013/backups/2020-12-18_RL108_t-013.pkl')
 
 # expobj.PhotostimResponsesSLMTargets.adata.var[['stim_start_frame', 'wvfront in sz', 'seizure_num']]
@@ -29,6 +33,8 @@ expobj: Post4ap = Utils.import_expobj(prep='RL108', trial='t-013')
 # %% code development zone
 # expobj.TargetsSzInvasionTemporal.collect_szinvasiontime_vs_photostimresponses(expobj=expobj)
 # expobj.TargetsSzInvasionTemporal.plot_szinvasiontime_vs_photostimresponses(fig=None, ax=None)
+## binning and plotting zscored photostim responses vs. time ###########################################################
+# TODO - MAIN WORK RIGHT NOW:
 
 
 # %% code deployment zone
@@ -183,20 +189,131 @@ def plot__szinvasiontime_vs_photostimresponseszscored():
 # plot__szinvasiontime_vs_photostimresponseszscored()
 
 
-## binning and plotting zscored photostim responses vs. time ###########################################################
-# TODO - MAIN WORK RIGHT NOW:
-@Utils.run_for_loop_across_exps(run_pre4ap_trials=False, run_post4ap_trials=True)
+# %% binning and plotting zscored photostim responses vs. time ###########################################################
+
+@Utils.run_for_loop_across_exps(run_pre4ap_trials=False, run_post4ap_trials=True, allow_rerun=0)
+def run__collect_szinvasiontime_vs_photostimresponses_zscored_new(**kwargs):
+    """run collecting dictionary of sz invasion time and photostim responses across all targets for each stim for an expobj"""
+    expobj: Post4ap = kwargs['expobj']
+    expobj.TargetsSzInvasionTemporal.collect_szinvasiontime_vs_photostimresponses_zscored_new(expobj=expobj)
+    expobj.save()
+
+
+run__collect_szinvasiontime_vs_photostimresponses_zscored_new()
+
+
+@Utils.run_for_loop_across_exps(run_pre4ap_trials=False, run_post4ap_trials=True, set_cache=0)
 def run__plot_responses_vs_time_to_seizure_SLMTargets_2ddensity(**kwargs):
     """run plotting of responses vs. time as 2d density plot (which will bin the data automatically)"""
     expobj: Post4ap = kwargs['expobj']
-    data = expobj.TargetsSzInvasionTemporal.plot_responses_vs_time_to_seizure_SLMTargets_2ddensity(
-        positive_times_only=False,
-        plot=True, expobj=expobj)
+    data = expobj.TargetsSzInvasionTemporal.plot_responses_vs_time_to_seizure_SLMTargets_2ddensity(plot=False,
+                                                                                                   expobj=expobj)
     expobj.save()
     return data
 
-main._data_for_photostim_response_vs_time = run__plot_responses_vs_time_to_seizure_SLMTargets_2ddensity()
-# main.saveclass()
+
+# main.save_data('_data_for_photostim_response_vs_time', run__plot_responses_vs_time_to_seizure_SLMTargets_2ddensity())
+
+data = run__plot_responses_vs_time_to_seizure_SLMTargets_2ddensity()
+
+
+# %% TODO running and testing below
+
+
+def convert_responses_sztimes_percentile_space(data):
+    """converts sz invasion times to percentile space"""
+    data_all = np.array([[], []]).T
+    for data_ in data:
+        data_all = np.vstack((data_, data_all))
+
+    from scipy.stats import percentileofscore
+
+    times_to_sz = data_all[:, 0]
+    idx_sorted = np.argsort(times_to_sz)
+    times_to_sz_sorted = times_to_sz[idx_sorted]
+    responses_sorted = data_all[:, 1][idx_sorted]
+    s = pd.Series(times_to_sz_sorted)
+    percentiles = s.apply(lambda x: percentileofscore(times_to_sz_sorted, x))
+    scale_percentile_times = {}
+    for pct in range(0, 100):
+        scale_percentile_times[int(pct + 1)] = np.round(np.percentile(times_to_sz_sorted, pct), 0)
+    data_all = np.array([percentiles, responses_sorted]).T
+
+    return data_all, percentiles, responses_sorted, times_to_sz_sorted, scale_percentile_times
+
+
+def run__convert_responses_sztimes_percentile_space(data):
+    """run converting responses """
+    data_all, percentiles, responses_sorted, times_to_sz_sorted, scale_percentile_times = convert_responses_sztimes_percentile_space(
+        data=data)
+    return data_all, percentiles, responses_sorted, times_to_sz_sorted, scale_percentile_times
+
+
+data_all, percentiles, responses_sorted, times_to_sz_sorted, scale_percentile_times = run__convert_responses_sztimes_percentile_space(
+    data=data)
+
+
+def plot_density_responses_sztimes(data_all, times_to_sz_sorted, scale_percentile_times):
+    # plotting density plot for all exps, in percentile space (to normalize for excess of data at times which are closer to zero) - TODO any smoothing?
+
+    bin_size = 2  # secs
+    # bins_num = int((max(times_to_sz) - min(times_to_sz)) / bin_size)
+    bins_num = [100, 500]
+
+    fig, ax = plt.subplots(figsize=(6, 3))
+    pj.plot_hist2d(data=data_all, bins=bins_num, y_label='dFF (zscored)', figsize=(6, 3),
+                   x_label='time to seizure (%tile space)',
+                   title=f"2d density plot, all exps, 50%tile = {np.percentile(times_to_sz_sorted, 50)}um",
+                   y_lim=[-3, 3], fig=fig, ax=ax, show=False)
+    ax.axhline(0, ls='--', c='white', lw=1)
+    xticks = [1, 25, 50, 57, 75, 100]  # percentile space
+    ax.set_xticks(ticks=xticks)
+    labels = [scale_percentile_times[x_] for x_ in xticks]
+    ax.set_xticklabels(labels)
+    ax.set_ylim([-1, 1])
+    ax.set_xlabel('time to seizure (secs)')
+
+    fig.show()
+
+
+plot_density_responses_sztimes(data_all, times_to_sz_sorted, scale_percentile_times)
+
+
+# plotting line plot for all datapoints for responses vs. time to seizure
+def plot_lineplot_responses_pctsztimes(percentiles, responses_sorted, response_type,
+                                       scale_percentile_times):
+    percentiles_binned = np.round(percentiles)
+
+    bin = 5
+    # change to pct% binning
+    percentiles_binned = (percentiles_binned // bin) * bin
+
+    d = {'time to seizure (%tile space)': percentiles_binned,
+         response_type: responses_sorted}
+
+    df = pd.DataFrame(d)
+
+    fig, ax = plt.subplots(figsize=(6, 3))
+    sns.lineplot(data=df, x='time to seizure (%tile space)', y='dFF (zscored)', ax=ax)
+    ax.set_title(f'responses over time to sz, all exps, normalized to percentile space ({bin}% bins)',
+                 wrap=True)
+    ax.margins(0.02)
+    ax.axhline(0, ls='--', c='orange', lw=1)
+
+    xticks = [1, 25, 50, 57, 75, 100]  # percentile space
+    ax.set_xticks(ticks=xticks)
+    labels = [scale_percentile_times[x_] for x_ in xticks]
+    ax.set_xticklabels(labels)
+    ax.set_xlabel('time to seizure (secs)')
+
+    fig.tight_layout(pad=2)
+    plt.show()
+
+
+plot_lineplot_responses_pctsztimes(percentiles=percentiles, responses_sorted=responses_sorted,
+                                   response_type='dFF (zscored)',
+                                   scale_percentile_times=scale_percentile_times)
+
 
 # %%
 
@@ -218,4 +335,5 @@ if __name__ == '__main__':
     # run__collect_szinvasiontime_vs_photostimresponses_zscored()
     # plot__szinvasiontime_vs_photostimresponseszscored()
     # main.range_of_sz_invasion_time = [-1, -1, -1]
-    main.saveclass()
+    # main.saveclass()
+    pass

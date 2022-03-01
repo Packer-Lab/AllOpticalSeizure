@@ -1,3 +1,4 @@
+import os
 from typing import List
 
 import numpy as np
@@ -13,13 +14,24 @@ from _main_.Post4apMain import Post4ap
 from _sz_processing.temporal_delay_to_sz_invasion import convert_timedel2frames
 
 SAVE_LOC = "/home/pshah/mnt/qnap/Analysis/analysis_export/analysis_quantification_classes/"
+save_path = SAVE_LOC + 'TargetsSzInvasionTemporal.pkl'
+
+if os.path.exists(save_path):
+    save_TargetsSzInvasionTemporal = pj.load_pkl(pkl_path=save_path)
+else:
+    save_TargetsSzInvasionTemporal = {}
+
 
 
 class TargetsSzInvasionTemporal(Quantification):
-    _data_for_photostim_response_vs_time = None
-    save_path = SAVE_LOC + 'PhotostimResponsesQuantificationSLMtargets.pkl'
     range_of_sz_invasion_time: List[
         float] = None  # TODO need to collect - represents the 25th, 50th, and 75th percentile range of the sz invasion time stats calculated across all targets and all exps
+
+
+    @staticmethod
+    def save_data(dataname: str, data):
+        save_TargetsSzInvasionTemporal[dataname] = data
+        pj.save_pkl(obj=save_TargetsSzInvasionTemporal, pkl_path=save_path)
 
     def __init__(self, expobj: Post4ap):
         super().__init__(expobj)
@@ -257,6 +269,25 @@ class TargetsSzInvasionTemporal(Quantification):
 
         self.sztime_v_photostimresponses_zscored = sztime_v_photostimresponses_zscored
 
+    def collect_szinvasiontime_vs_photostimresponses_zscored_new(self, expobj: Post4ap, zscore_type: str = 'dFF (zscored)'):
+        # (re-)make pandas dataframe
+        df = pd.DataFrame(columns=['target_id', 'stim_id', 'time_to_szinvasion', 'photostim_responses'])
+
+        stim_ids = [stim for stim in self.time_del_szinv_stims if sum(self.time_del_szinv_stims[stim].notnull()) > 0]
+
+        index_ = 0
+        for idx, target in enumerate(expobj.PhotostimResponsesSLMTargets.adata.obs.index):
+            for idxstim, stim in enumerate(stim_ids):
+                sztime = self.time_del_szinv_stims.loc[target, stim]
+                response = expobj.PhotostimResponsesSLMTargets.adata.layers[zscore_type][idx, idxstim]
+                if not np.isnan(sztime):
+                    df = pd.concat([df, pd.DataFrame({'target_id': target, 'stim_id': stim, 'time_to_szinvasion': sztime,
+                                                      'photostim_responses': response}, index=[index_])])  # TODO need to update the idx to use a proper index range
+                    index_ += 1
+
+        self.sztime_v_photostimresponses_zscored_df = df
+
+
     def return_szinvasiontime_vs_photostimresponses_zscored(self):
         x = []
         y = []
@@ -275,30 +306,22 @@ class TargetsSzInvasionTemporal(Quantification):
         ax.scatter(x, y, s=50, zorder=3, c='red', alpha=0.3, ec='white')
         ax.plot(np.unique(x), np.poly1d(np.polyfit(x, y, 1))(np.unique(x)), color='purple', zorder=5, lw=4)
 
-    ## 6) TODO BINNING AND SMOOTHING TIME TO SZ INVASION DATA FOR PLOTTING #############################################
 
-    ## 2.0) PLOT - binning and plotting 2d density plot, and smoothing data across the time to seizure axis, when comparing to responses
-    def plot_responses_vs_time_to_seizure_SLMTargets_2ddensity(self, expobj: Post4ap, positive_times_only=False,
-                                                               plot=True):
+    ## 6.1) PLOT - binning and plotting 2d density plot, and smoothing data across the time to seizure axis, when comparing to responses
+    def plot_responses_vs_time_to_seizure_SLMTargets_2ddensity(self, expobj: Post4ap, plot=True):
 
         print(f"\t|- plotting responses vs. time to seizure")
 
-        sztime_v_photostimresponses_df = pd.DataFrame(self.sztime_v_photostimresponses_zscored)
+        sztime_v_photostimresponses_df = self.sztime_v_photostimresponses_zscored_df
 
         data_expobj = np.array([[], []]).T
         for target in expobj.PhotostimResponsesSLMTargets.adata.obs.index:
             indexes = sztime_v_photostimresponses_df[sztime_v_photostimresponses_df['target_id'] == target].index
-            responses = np.array(sztime_v_photostimresponses_df.loc[indexes])
+            responses = np.array(sztime_v_photostimresponses_df.loc[indexes, 'photostim_responses'])
             time_to_sz = np.asarray(
-                sztime_v_photostimresponses_df.loc[indexes, 'time_to_sz_um'])
+                sztime_v_photostimresponses_df.loc[indexes, 'time_to_szinvasion'])
 
-            if positive_times_only:
-                time_to_sz_pos = np.where(time_to_sz > 0)[0]
-                responses_postimes = responses[time_to_sz_pos]
-
-                _data = np.array([time_to_sz_pos, responses_postimes]).T
-            else:
-                _data = np.array([time_to_sz, responses]).T
+            _data = np.array([time_to_sz, responses]).T
 
             data_expobj = np.vstack((_data, data_expobj))
 
@@ -307,17 +330,20 @@ class TargetsSzInvasionTemporal(Quantification):
         # bins_num = int((max(times_to_sz) - min(times_to_sz)) / bin_size)
         bins_num = 40
 
-        pj.plot_hist2d(data=data_expobj, bins=bins_num, y_label='dFF (zscored)', title=expobj.t_series_name,
-                       figsize=(4, 2), x_label='time to seizure (um)',
+        pj.plot_hist2d(data=data_expobj, bins=[bins_num,bins_num], y_label='dFF (zscored)', title=expobj.t_series_name,
+                       figsize=(4, 2), x_label='time to seizure (sec)',
                        y_lim=[-2, 2]) if plot else None
 
         return data_expobj
 
-    ###### 2.1) PLOT - binning and plotting density plot, and smoothing data across the time to seizure axis, when comparing to responses - represent the times in percentile space
-    @classmethod
-    def convert_responses_sztimes_percentile_space(cls):
+    ## TODO BINNING AND SMOOTHING TIME TO SZ INVASION DATA FOR PLOTTING #############################################
+
+    ## 6.2) COLLECT (times represented in percentile space) binning and plotting density plot, and smoothing data across the time to seizure axis, when comparing to responses
+    @staticmethod
+    def convert_responses_sztimes_percentile_space(data):
+        """converts sz invasion times to percentile space"""
         data_all = np.array([[], []]).T
-        for data_ in cls.data:
+        for data_ in data:
             data_all = np.vstack((data_, data_all))
 
         from scipy.stats import percentileofscore
@@ -336,15 +362,15 @@ class TargetsSzInvasionTemporal(Quantification):
         return data_all, percentiles, responses_sorted, times_to_sz_sorted, scale_percentile_times
 
     @staticmethod
-    def plot_density_responses_sztimes(response_type, data_all, times_to_sz_sorted, scale_percentile_times):
+    def plot_density_responses_sztimes(data_all, times_to_sz_sorted, scale_percentile_times):
         # plotting density plot for all exps, in percentile space (to normalize for excess of data at times which are closer to zero) - TODO any smoothing?
 
-        bin_size = 5  # um
+        bin_size = 2  # secs
         # bins_num = int((max(times_to_sz) - min(times_to_sz)) / bin_size)
         bins_num = [100, 500]
 
         fig, ax = plt.subplots(figsize=(6, 3))
-        pj.plot_hist2d(data=data_all, bins=bins_num, y_label=response_type, figsize=(6, 3),
+        pj.plot_hist2d(data=data_all, bins=bins_num, y_label='dFF (zscored)', figsize=(6, 3),
                        x_label='time to seizure (%tile space)',
                        title=f"2d density plot, all exps, 50%tile = {np.percentile(times_to_sz_sorted, 50)}um",
                        y_lim=[-3, 3], fig=fig, ax=ax, show=False)

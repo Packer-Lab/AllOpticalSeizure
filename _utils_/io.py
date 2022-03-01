@@ -2,6 +2,7 @@ import os
 import re
 import pickle
 from funcsforprajay import funcs as pj
+from _exp_metainfo_.exp_metainfo import ExpMetainfo
 
 # %% HANDLING PICKLING ERRORS
 
@@ -62,7 +63,7 @@ def save_cls_pkl(cls, save_path: str):
     if save_path is None:
         if not hasattr(cls, 'save_path'):
             raise ValueError(
-                'pkl path for saving was not found in clsect attributes, please provide path to save to')
+                'pkl path for saving was not found in cls variables, please provide path to save to')
     else:
         cls.pkl_path = save_path
 
@@ -162,10 +163,14 @@ def import_expobj(aoresults_map_id: str = None, trial: str = None, prep: str = N
     if pkl_path is None:
         if date is None:
             try:
-                date = allopticalResults.metainfo.loc[
-                    allopticalResults.metainfo['prep_trial'] == f"{prep} {trial}", 'date'].values[0]
+                date = ExpMetainfo.alloptical.metainfo.loc[ExpMetainfo.alloptical.metainfo['prep_trial'] == f"{prep} {trial}", "date"].values[0]
             except KeyError:
-                raise KeyError('not able to find date in allopticalResults.metainfo')
+                raise KeyError('not able to find date in ExpMetainfo.alloptical.metainfo')
+            # try:
+            #     date = allopticalResults.metainfo.loc[
+            #         allopticalResults.metainfo['prep_trial'] == f"{prep} {trial}", 'date'].values[0]
+            # except KeyError:
+            #     raise KeyError('not able to find date in allopticalResults.metainfo')
         pkl_path = f"/home/pshah/mnt/qnap/Analysis/{date}/{prep}/{date}_{trial}/{date}_{trial}.pkl"
         pkl_path_local = f"/Users/prajayshah/OneDrive/UTPhD/2022/OXFORD/expobj/{date}_{trial}.pkl"
 

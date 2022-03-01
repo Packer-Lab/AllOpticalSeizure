@@ -30,3 +30,31 @@ class Quantification:
     def expobj_exptype(self):
         return self._metainfo['exptype']
 
+
+class Results:
+    """placeholder for now. some ideas for items to add to this class:
+
+    """
+
+    save_path: str = None
+
+    def __init__(self, expobj: alloptical):
+        self._metainfo = expobj.metainfo
+        print(f'\- ADDING NEW Results MODULE to expobj: {expobj.t_series_name}')
+
+    def __repr__(self):
+        return f"Results Analysis submodule for expobj <{self.expobj_id}>"
+
+    def save_results(self):
+        assert self.save_path, print(f"save path not defined for: {self}")
+        from funcsforprajay.funcs import save_pkl
+        save_pkl(self, self.save_path)
+
+    @property
+    def expobj_id(self):
+        return f"{self._metainfo['animal prep.']} {self._metainfo['trial']}"
+
+    @property
+    def expobj_exptype(self):
+        return self._metainfo['exptype']
+

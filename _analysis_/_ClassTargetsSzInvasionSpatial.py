@@ -1,3 +1,4 @@
+from dataclasses import dataclass
 from typing import List
 
 import numpy as np
@@ -7,22 +8,14 @@ import seaborn as sns
 import _alloptical_utils as Utils
 import funcsforprajay.funcs as pj
 
-from _analysis_._utils import Quantification
+from _analysis_._utils import Quantification, Results
 from _main_.Post4apMain import Post4ap
 import _utils_.alloptical_plotting_utils as aoplot
+SAVE_LOC = "/home/pshah/mnt/qnap/Analysis/analysis_export/analysis_quantification_classes/"
 
 
 class TargetsSzInvasionSpatial(Quantification):
     response_type = 'dFF (z scored) (interictal)'
-    range_of_sz_spatial_distance: List[
-        float] = None  #  need to collect - represents the 25th, 50th, and 75th percentile range of the sz invasion distance stats calculated across all targets and all exps - maybe each seizure across all exps should be the 'n'?
-
-    no_slmtargets_szboundary_stim = []
-    data_all = None
-    percentiles = None
-    responses_sorted = None
-    distances_to_sz_sorted = None
-    scale_percentile_distances = None
 
     def __init__(self, expobj: Post4ap):
         super().__init__(expobj)
@@ -51,16 +44,16 @@ class TargetsSzInvasionSpatial(Quantification):
         expobj = kwargs['expobj']
         aoplot.plot_sz_boundary_location(expobj)
 
-    @staticmethod
-    @Utils.run_for_loop_across_exps(run_pre4ap_trials=False, run_post4ap_trials=True, allow_rerun=1, skip_trials=['PS04 t-018'])
-    def collect_responses_vs_distance_to_seizure_SLMTargets(response_type: str, **kwargs):
+    # @Utils.run_for_loop_across_exps(run_pre4ap_trials=False, run_post4ap_trials=True, allow_rerun=1, skip_trials=['PS04 t-018'])
+    def collect_responses_vs_distance_to_seizure_SLMTargets(self, response_type: str, expobj: Post4ap):
         """
     
+        :param expobj:
         :param response_type: either 'dFF (z scored)' or 'dFF (z scored) (interictal)'
         :param kwargs: must contain expobj as arg key
         """
         print(f"\t\- collecting responses vs. distance to seizure [5.0-2]")
-        expobj = kwargs['expobj']
+        # expobj = kwargs['expobj']
 
         # # uncomment if need to rerun for a particular expobj....but shouldn't really need to be doing so
         # if not hasattr(expobj, 'responses_SLMtargets_tracedFF'):
@@ -114,13 +107,12 @@ class TargetsSzInvasionSpatial(Quantification):
                 #     {'target_id': target, 'stim_id': stim, 'inorout_sz': inorout_sz, 'distance_to_sz': distance_to_sz,
                 #      response_type: response}, ignore_index=True)
 
-        expobj.responses_vs_distance_to_seizure_SLMTargets = df
+        self.responses_vs_distance_to_seizure_SLMTargets = df
 
         # convert distances to microns
-        expobj.responses_vs_distance_to_seizure_SLMTargets['distance_to_sz_um'] = [
+        self.responses_vs_distance_to_seizure_SLMTargets['distance_to_sz_um'] = [
             round(i / expobj.pix_sz_x, 2) for i in expobj.responses_vs_distance_to_seizure_SLMTargets['distance_to_sz']]
 
-        expobj.save()
 
     # TODO need to review below (everything above shouuuuld be working)
     ###### 1.1) PLOT - collect and plot targets responses for stims vs. distance #######################################
@@ -188,7 +180,7 @@ class TargetsSzInvasionSpatial(Quantification):
     def plot_responses_vs_distance_to_seizure_SLMTargets_2ddensity(response_type, positive_distances_only=False,
                                                                    plot=True, **kwargs):
 
-        print(f"\t|- plotting responses vs. distance to seizure")
+        print(f"\t|- binning responses vs. distance to seizure")
         expobj = kwargs['expobj']
 
         data_expobj = np.array([[], []]).T
@@ -297,34 +289,63 @@ class TargetsSzInvasionSpatial(Quantification):
         plt.show()
 
 
-@Utils.run_for_loop_across_exps(run_pre4ap_trials=0, run_post4ap_trials=1, allow_rerun=1, skip_trials=['PS04 t-018'])
+@dataclass
+class TargetsSzInvasionSpatialResults(Results):
+    save_path = SAVE_LOC + 'Results__TargetsSzInvasionSpatial.pkl'
+    response_type = TargetsSzInvasionSpatial.response_type
+
+    range_of_sz_spatial_distance: List[
+        float] = None  # need to collect - represents the 25th, 50th, and 75th percentile range of the sz invasion distance stats calculated across all targets and all exps - maybe each seizure across all exps should be the 'n'?
+
+    no_slmtargets_szboundary_stim = []
+    data_all = None
+    percentiles = None
+    responses_sorted = None
+    distances_to_sz_sorted = None
+    scale_percentile_distances = None
+
+
+# %% running processing and analysis pipeline
+
+@Utils.run_for_loop_across_exps(run_pre4ap_trials=0, run_post4ap_trials=1, allow_rerun=0, skip_trials=['PS04 t-018'])
 def run__initTargetsSzInvasionSpatial(**kwargs):
     expobj: Post4ap = kwargs['expobj']
     expobj.TargetsSzInvasionSpatial = TargetsSzInvasionSpatial(expobj=expobj)
     expobj.save()
 
+@Utils.run_for_loop_across_exps(run_pre4ap_trials=0, run_post4ap_trials=1, allow_rerun=1, skip_trials=['PS04 t-018'])
+def run__collect_responses_vs_distance_to_seizure_SLMTargets(**kwargs):
+    expobj = kwargs['expobj']
+    expobj.TargetsSzInvasionSpatial.collect_responses_vs_distance_to_seizure_SLMTargets(expobj=expobj, response_type=TargetsSzInvasionSpatial.response_type)
+    expobj.save()
 
-# %%
 
 if __name__ == '__main__':
     run__initTargetsSzInvasionSpatial()
-    TargetsSzInvasionSpatial.no_slmtargets_szboundary_stim = TargetsSzInvasionSpatial.run_calculating_min_distance_to_seizure()
-    TargetsSzInvasionSpatial.collect_responses_vs_distance_to_seizure_SLMTargets(
-        response_type=TargetsSzInvasionSpatial.response_type)
+    TargetsSzInvasionSpatialResults.no_slmtargets_szboundary_stim = TargetsSzInvasionSpatial.run_calculating_min_distance_to_seizure()
 
+    run__collect_responses_vs_distance_to_seizure_SLMTargets()
+
+    TargetsSzInvasionSpatialResults.save_results()
 
     # TODO need to review below (the code runs above shouuuuld be working)
+
     # TargetsSzInvasionSpatial.plot_responses_vs_distance_to_seizure_SLMTargets()
-    TargetsSzInvasionSpatial.plot_collection_response_distance()
-    data = TargetsSzInvasionSpatial.plot_responses_vs_distance_to_seizure_SLMTargets_2ddensity(
-        response_type=TargetsSzInvasionSpatial.response_type,
-        positive_distances_only=False, plot=False)
-    TargetsSzInvasionSpatial.data_all, TargetsSzInvasionSpatial.percentiles, TargetsSzInvasionSpatial.responses_sorted, TargetsSzInvasionSpatial.distances_to_sz_sorted, TargetsSzInvasionSpatial.scale_percentile_distances = TargetsSzInvasionSpatial.convert_responses_szdistances_percentile_space()
-    TargetsSzInvasionSpatial.plot_density_responses_szdistances(response_type=TargetsSzInvasionSpatial.response_type,
-                                                                data_all=TargetsSzInvasionSpatial.data_all,
-                                                                distances_to_sz_sorted=TargetsSzInvasionSpatial.distances_to_sz_sorted,
-                                                                scale_percentile_distances=TargetsSzInvasionSpatial.scale_percentile_distances)
-    TargetsSzInvasionSpatial.plot_lineplot_responses_pctszdistances(TargetsSzInvasionSpatial.percentiles,
-                                                                    TargetsSzInvasionSpatial.responses_sorted,
-                                                                    response_type=TargetsSzInvasionSpatial.response_type,
-                                                                    scale_percentile_distances=TargetsSzInvasionSpatial.scale_percentile_distances)
+
+    # TargetsSzInvasionSpatial.plot_collection_response_distance()
+
+    TargetsSzInvasionSpatialResults.data = TargetsSzInvasionSpatial.plot_responses_vs_distance_to_seizure_SLMTargets_2ddensity(response_type=TargetsSzInvasionSpatial.response_type, positive_distances_only=False, plot=False)
+
+    TargetsSzInvasionSpatialResults.data_all, TargetsSzInvasionSpatialResults.percentiles, TargetsSzInvasionSpatialResults.responses_sorted, \
+        TargetsSzInvasionSpatialResults.distances_to_sz_sorted, TargetsSzInvasionSpatialResults.scale_percentile_distances = TargetsSzInvasionSpatial.convert_responses_szdistances_percentile_space()
+
+    TargetsSzInvasionSpatial.plot_density_responses_szdistances(response_type=TargetsSzInvasionSpatialResults.response_type,
+                                                                data_all=TargetsSzInvasionSpatialResults.data_all,
+                                                                distances_to_sz_sorted=TargetsSzInvasionSpatialResults.distances_to_sz_sorted,
+                                                                scale_percentile_distances=TargetsSzInvasionSpatialResults.scale_percentile_distances)
+    TargetsSzInvasionSpatial.plot_lineplot_responses_pctszdistances(TargetsSzInvasionSpatialResults.percentiles,
+                                                                    TargetsSzInvasionSpatialResults.responses_sorted,
+                                                                    response_type=TargetsSzInvasionSpatialResults.response_type,
+                                                                    scale_percentile_distances=TargetsSzInvasionSpatialResults.scale_percentile_distances)
+
+    TargetsSzInvasionSpatialResults.save_results()

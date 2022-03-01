@@ -970,7 +970,7 @@ fig.show()
 
 """
 dynamic changes in responses across multiple stim trials - this is very similar to the deltaActivity measurements
-- NOT REALLY APPROPRIATE HERE, THIS IS A WHOLE NEW SET OF ANALYSIS
+- NOT REALLY APPROPRIATE HERE, THIS IS a WHOLE NEW SET OF ANALYSIS
 """
 
 # %% 5.6-dc) PLOTting- responses of non targets to photostim - xyloc 2D plot using s2p ROI colors

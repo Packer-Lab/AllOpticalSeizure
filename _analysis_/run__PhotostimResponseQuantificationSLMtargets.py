@@ -55,19 +55,21 @@ def run__collect_photostim_responses_exp(**kwargs):
 
 
 
-@Utils.run_for_loop_across_exps(run_pre4ap_trials=1, run_post4ap_trials=1, allow_rerun=1)
+@Utils.run_for_loop_across_exps(run_pre4ap_trials=0, run_post4ap_trials=0, allow_rerun=1, run_trials=['PS11 t-011'])
 def run__create_anndata_SLMtargets(**kwargs):
     expobj: alloptical = kwargs['expobj']
     expobj.PhotostimResponsesSLMTargets.create_anndata_SLMtargets(expobj=expobj)
     expobj.save()
 
-@Utils.run_for_loop_across_exps(run_pre4ap_trials=1, run_post4ap_trials=1, allow_rerun=1)
+run__create_anndata_SLMtargets()
+
+@Utils.run_for_loop_across_exps(run_pre4ap_trials=0, run_post4ap_trials=0, allow_rerun=1, run_trials=['PS11 t-011'])
 def run__add_stim_group_anndata(**kwargs):
     expobj: alloptical = kwargs['expobj']
     expobj.PhotostimResponsesSLMTargets.add_stim_group_anndata(expobj=expobj)
     expobj.save()
 
-# run__add_stim_group_anndata()
+run__add_stim_group_anndata()
 
 
 
@@ -117,13 +119,13 @@ def full_plot_mean_responses_magnitudes():
 
 # %% r.2) z scoring
 
-@Utils.run_for_loop_across_exps(run_pre4ap_trials=1, run_post4ap_trials=1, allow_rerun=1)
+@Utils.run_for_loop_across_exps(run_pre4ap_trials=0, run_post4ap_trials=0, allow_rerun=1, run_trials=['PS11 t-011'])
 def run__z_score_photostim_responses_and_interictalzscores(**kwargs):
     expobj: alloptical = kwargs['expobj']
     expobj.PhotostimResponsesSLMTargets.z_score_photostim_responses()
     expobj.PhotostimResponsesSLMTargets.z_score_photostim_responses_interictal()
     expobj.save()
-# run__z_score_photostim_responses()
+run__z_score_photostim_responses_and_interictalzscores()
 
 
 # plotting mean photostim response magnitude Z SCORED across experiments and experimental groups

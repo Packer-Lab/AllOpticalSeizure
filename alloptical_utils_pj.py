@@ -1,4 +1,4 @@
-#### NOTE: THIS IS NOT CURRENTLY SETUP TO BE ABLE TO HANDLE MULTIPLE GROUPS/STIMS (IT'S REALLY ONLY FOR A SINGLE STIM TRIGGER PHOTOSTIM RESPONSES)
+#### NOTE: THIS IS NOT CURRENTLY SETUP TO BE ABLE TO HANDLE MULTIPLE GROUPS/STIMS (IT'S REALLY ONLY FOR a SINGLE STIM TRIGGER PHOTOSTIM RESPONSES)
 
 """# TODO need to condense functions that are currently all calculating photostim responses
 #      essentially you should only have to calculate the poststim respones for all cells (including targets) once to avoid redundancy, and
@@ -4855,7 +4855,7 @@ def _good_photostim_cells(expobj, std_thresh=1, dff_threshold=None, pre_stim=10,
         axes = fig.subplots(5, 1)
 
     for cell in targeted_cells:
-        if use_raw:  ## CHANGING A LOT OF THINGS HERE BE CAREFUL!!!!!!
+        if use_raw:  ## CHANGING a LOT OF THINGS HERE BE CAREFUL!!!!!!
             trace = expobj.targets_raw_avg[
                 targeted_cells.index(cell)]  # trace = averaged raw trace across all photostims. for this cell
             x_ = 'raw'
