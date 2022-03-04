@@ -172,6 +172,8 @@ def plot_SLMtargets_Locs(expobj, targets_coords: list = None, background: np.nda
     else:
         ax.imshow(background, cmap='gray')
 
+    title = kwargs['title'] if 'title' in [*kwargs] else ''
+
     colors = pj.make_random_color_array(len(expobj.target_coords))
     if targets_coords is None:
         if len(expobj.target_coords) > 1:
@@ -191,21 +193,21 @@ def plot_SLMtargets_Locs(expobj, targets_coords: list = None, background: np.nda
         else:
             edgecolors = 'yellowgreen'
         pj.plot_coordinates(coords=targets_coords, frame_x=expobj.frame_x, frame_y=expobj.frame_y, edgecolors=edgecolors, facecolors=edgecolors,
-                            background=background, fig=fig, ax=ax)
+                            background=background, ax=ax, title=title)
 
     ax.margins(0)
 
     ax = add_scalebar(expobj=expobj, ax=ax)
 
-    fig.tight_layout()
-
-    if 'title' in kwargs.keys():
-        if kwargs['title'] is not None:
-            ax.set_title(kwargs['title'])
-        else:
-            pass
-    else:
-        ax.set_title(f'{expobj.t_series_name} SLM targets location')
+    # fig.tight_layout()
+    #
+    # if 'title' in kwargs.keys():
+    #     if kwargs['title'] is not None:
+    #         ax.set_title(kwargs['title'])
+    #     else:
+    #         pass
+    # else:
+    #     ax.set_title(f'{expobj.t_series_name} SLM targets location')
 
 
 # simple plot of the location of the given cell(s) against a black FOV

@@ -3,8 +3,7 @@
 from typing import List
 
 import numpy as np
-import pandas as pd
-from funcsforprajay.wrappers import plot_piping_decorator
+import os
 from matplotlib import pyplot as plt
 
 import _alloptical_utils as Utils
@@ -18,6 +17,8 @@ from _utils_.alloptical_plotting import multi_plot_subplots, _get_ax_for_multi_p
 
 SAVE_LOC = "/home/pshah/mnt/qnap/Analysis/analysis_export/analysis_quantification_classes/"
 
+SAVE_PATH_PREFIX = '/home/pshah/mnt/qnap/Analysis/Procesing_figs/sz_processing_boundaries_2022-03-04/'
+
 # %%
 from _utils_.io import import_expobj
 
@@ -28,6 +29,7 @@ class ExpSeizureAnalysis(Quantification):
     def __init__(self, expobj: Post4ap):
         super().__init__(expobj)
         print(f'\t\- ADDING NEW ExpSeizureAnalysis MODULE to expobj: {expobj.t_series_name}')
+        self.not_flip_stims = []  #: this is the main attr that stores information about whether a stim needs its sz boundary classification flipped or not
 
     def __repr__(self):
         return f"ExpSeizureAnalysis <-- Quantification Analysis submodule for expobj <{self.expobj_id}>"
@@ -115,7 +117,193 @@ class ExpSeizureAnalysis(Quantification):
         fig.suptitle(f"{expobj.t_series_name} {expobj.date}")
         fig.show()
 
-    plot_sz_invasion()
+    # %% 2.1) procedure for classification of cells in/out of sz boundary
+
+    # 2.1.2) plot seizure boundary classification for all stims that occur during all seizures in an experiment
+    def plot__sz_boundaries(self, expobj: Post4ap):
+
+        self.slmtargets_szboundary_stim = {}
+        self.s2prois_szboundary_stim = {}
+        sz_nums = range(expobj.numSeizures)
+        sz_stim_frames = []
+        for i in sz_nums:
+            sz_stim_frames.append(list(expobj.stimsSzLocations[expobj.stimsSzLocations['sz_num'] == i].index))
+
+        for sz_num, stims_of_interest in enumerate(sz_stim_frames):
+            print('|-', stims_of_interest)
+
+            nrows = len(stims_of_interest) // 4 + 1
+            if nrows == 1:
+                nrows += 1
+            ncols = 4
+            fig, axs = plt.subplots(nrows=nrows, ncols=ncols, figsize=(ncols * 5, nrows * 5))
+            counter = 0
+
+            for stim in stims_of_interest:
+                ax = axs[counter // ncols, counter % ncols]
+
+                # sz_border_path = "%s/boundary_csv/%s_%s_stim-%s.tif_border.csv" % (expobj.analysis_save_path[:-17], expobj.metainfo['date'], trial, stim)
+                if not os.path.exists(expobj.sz_border_path(stim=stim)):
+                    print(expobj.sz_border_path(stim=stim))
+                if stim not in self.not_flip_stims:
+                    flip = False
+                else:
+                    flip = True
+
+                try:
+                    in_sz, out_sz = expobj.classify_slmtargets_sz_bound(stim=stim, to_plot=True, title=str(stim),
+                                                                        flip=flip, fig=fig, ax=ax)
+                    expobj.slmtargets_szboundary_stim[
+                        stim] = in_sz  # for each stim, there will be a ls of cells that will be classified as in seizure or out of seizure
+                    # axs[counter // ncols, counter % ncols] = ax
+                except KeyError:
+                    print(f"WARNING: stim frame # {stim} missing from boundary csv and/or stim sz locations")
+
+                counter += 1
+
+            fig.suptitle(f'{expobj.t_series_name} - Avg img around stims during sz - seizure # {sz_num + 1}', y=0.995)
+            fig.show()
+
+    @staticmethod
+    @Utils.run_for_loop_across_exps(run_pre4ap_trials=False, run_post4ap_trials=False, allow_rerun=True,
+                                    run_trials=['PS04 t-018'])  # , 'RL109 t-017'])
+    def run__plot__sz_boundaries(**kwargs):
+        expobj: Post4ap = kwargs['expobj']
+        expobj.ExpSeizure.plot__sz_boundaries(expobj=expobj)
+
+    @staticmethod
+    @Utils.run_for_loop_across_exps(run_pre4ap_trials=False, run_post4ap_trials=False, allow_rerun=True,
+                                    run_trials=['PS04 t-018', 'RL109 t-017'])
+    def classifying_sz_boundary(**kwargs):
+        """
+        classifies targets (and eventually non-targets) as in or out of sz boundary for each stim.
+
+        Sz boundary is based on manual placement of two coordinates on the
+        avg image of each stim frame. the purpose of this function is to review the classification for each stim during each seizure
+        to see if the cells are classified correctly on either side of the boundary.
+
+        :param kwargs:
+        :return:
+        """
+
+        expobj = kwargs['expobj']
+
+        # aoplot.plot_lfp_stims(expobj)
+
+        # matlab_pairedmeasurements_path = '%s/paired_measurements/%s_%s_%s.mat' % (expobj.analysis_save_path[:-23], expobj.metainfo['date'], expobj.metainfo['animal prep.'], trial[2:])  # choose matlab path if need to use or use None for no additional bad frames
+        # expobj.paqProcessing()
+        # expobj.collect_seizures_info(seizures_lfp_timing_matarray=matlab_pairedmeasurements_path)
+        # expobj.save()
+
+        # aoplot.plotSLMtargetsLocs(expobj, background=None)
+
+        # ######## CLASSIFY SLM PHOTOSTIM TARGETS AS IN OR OUT OF current SZ location in the FOV
+        # -- FIRST manually draw boundary on the image in ImageJ and save results as CSV to analysis folder under boundary_csv
+
+        if not hasattr(expobj, 'sz_boundary_csv_done'):
+            expobj.sz_boundary_csv_done = True
+        else:
+            AssertionError('confirm that sz boundary csv creation has been completed')
+            # sys.exit()
+
+        expobj.sz_locations_stims() if not hasattr(expobj, 'stimsSzLocations') else None
+
+        # specify stims for classifying cells
+        on_ = []
+        if 0 in expobj.seizure_lfp_onsets:  # this is used to check if 2p imaging is starting mid-seizure (which should be signified by the first lfp onset being set at frame # 0)
+            on_ = on_ + [expobj.stim_start_frames[0]]
+        on_.extend(expobj.stims_bf_sz)
+        if len(expobj.stims_af_sz) != len(on_):
+            end = expobj.stims_af_sz + [expobj.stim_start_frames[-1]]
+        else:
+            end = expobj.stims_af_sz
+        print('\-seizure start frames: ', on_)
+        print('\-seizure end frames: ', end)
+
+        ##### import the CSV file in and classify cells by their location in or out of seizure
+
+        if not hasattr(expobj, 'not_flip_stims'):
+            print(
+                f"|-- {expobj.t_series_name} DOES NOT have previous not_flip_stims attr, so making a new empty list attr")
+            expobj.not_flip_stims = []  # specify here the stims where the flip=False leads to incorrect assignment
+        else:
+            print(f"\-expobj.not_flip_stims: {expobj.not_flip_stims}")
+
+        # break
+
+        print(' \nworking on classifying cells for stims start frames...')
+        # TODO need to implement rest of code for s2prois_szboundary_stim for nontargets
+        expobj.slmtargets_szboundary_stim = {}
+        expobj.s2prois_szboundary_stim = {}
+
+        ######## - all stims in sz are classified, with individual sz events labelled
+
+        stims_of_interest = expobj.stimsWithSzWavefront
+        print(' \-all stims in seizures: \n \-', stims_of_interest)
+        nrows = len(stims_of_interest) // 4 + 1
+        if nrows == 1:
+            nrows += 1
+        ncols = 4
+        fig, axs = plt.subplots(nrows=nrows, ncols=ncols, figsize=(ncols * 3, nrows * 3))
+        counter = 0
+
+        for stim in expobj.stimsWithSzWavefront:
+            sz_num = expobj.stimsSzLocations.loc[stim, 'sz_num']
+
+            print(f"considering stim # {stim}")
+
+            ax = axs[counter // ncols, counter % ncols]
+
+            if os.path.exists(expobj.sz_border_path(stim=stim)):
+                # first round of classifying (dont flip any cells over) - do this in the second round
+                if stim not in expobj.not_flip_stims:
+                    flip = False
+                else:
+                    flip = True
+
+                # # classification of suite2p ROIs relative to sz boundary
+                # in_sz, out_sz, fig, ax = expobj.classify_cells_sz_bound(stim=stim, to_plot=True,
+                #                                                         flip=flip, fig=fig, ax=ax, text='sz %s stim %s' % (sz_num, stim))
+                # expobj.s2prois_szboundary_stim[stim] = in_sz
+
+                # # classification of SLM targets relative to sz boundary
+                in_sz, out_sz, fig, ax = expobj.classify_slmtargets_sz_bound(stim=stim, to_plot=True,
+                                                                             title=stim, flip=flip, fig=fig, ax=ax)
+                expobj.slmtargets_szboundary_stim[
+                    stim] = in_sz  # for each stim, there will be a ls of cells that will be classified as in seizure or out of seizure
+
+                axs[counter // ncols, counter % ncols] = ax
+                counter += 1
+            else:
+                print(f"sz border path doesn't exist for stim {stim}: {expobj.sz_border_path(stim=stim)}")
+
+        fig.suptitle('%s %s - Avg img around stims during- all stims' % (
+            expobj.metainfo['animal prep.'], expobj.metainfo['trial']), y=0.995)
+        save_path_full = f"{SAVE_PATH_PREFIX}/{expobj.metainfo['animal prep.']} {expobj.metainfo['trial']} {len(expobj.stimsWithSzWavefront)} events.png"
+        print(f"saving fig to: {save_path_full}")
+        fig.savefig(save_path_full)
+
+        expobj.save()
+        print('end end end.')
+
+    # 2.2) flip of stim boundaries manually
+    @staticmethod
+    def enter_stims_to_flip(expobj):
+        """when placing sz wavefront boundary, there are stim instances when the classification code places the wrong side of the
+        image as inside the sz boundary. this code asks for which stims are being placed incorrectly and collects these into a list
+        that is further accessed to assign the sz boundary.
+
+        Note; remember that the sz boundary is placed manually as two points.
+        """
+
+        input_string = input("Enter list of stims to flip (separated by space)")
+        not_flip_stims = input_string.split()
+
+        expobj.not_flip_stims = not_flip_stims
+        # expobj.not_flip_stims = expobj.stims_in_sz[
+        #                         1:]  # specify here the stims where the flip=False leads to incorrect assignment
+
+        expobj.save()
 
     # %% 4.1) counting seizure incidence across all imaging trials
     @staticmethod
@@ -245,14 +433,138 @@ class ExpSeizureAnalysis(Quantification):
 
     @classmethod
     def plot__sz_lengths(cls):
-        pj.plot_bar_with_points(data=[cls.twop_trials_sz_lengths, cls.onep_trials_sz_lengths], x_tick_labels=['2p stim', '1p stim'],
+        pj.plot_bar_with_points(data=[cls.twop_trials_sz_lengths, cls.onep_trials_sz_lengths],
+                                x_tick_labels=['2p stim', '1p stim'],
                                 colors=['purple', 'green'], y_label='seizure length (secs)',
-                                title='Avg. length of sz', expand_size_x=0.4, expand_size_y=1, ylims=[0, 120], title_pad=15,
+                                title='Avg. length of sz', expand_size_x=0.4, expand_size_y=1, ylims=[0, 120],
+                                title_pad=15,
                                 shrink_text=0.8)
 
-        pj.plot_bar_with_points(data=[cls.twop_trials_sz_lengths + cls.onep_trials_sz_lengths], x_tick_labels=['Experiments'],
+        pj.plot_bar_with_points(data=[cls.twop_trials_sz_lengths + cls.onep_trials_sz_lengths],
+                                x_tick_labels=['Experiments'],
                                 colors=['green'], y_label='Seizure length (secs)', alpha=0.7, bar=False,
                                 title='Avg sz length', expand_size_x=0.7, expand_size_y=1, ylims=[0, 120],
                                 shrink_text=0.8)
 
+    # %% 6.0-dc) ANALYSIS: calculate time delay between LFP onset of seizures and imaging FOV invasion for each seizure for each experiment
+    # -- this section has been moved to _ClassExpSeizureAnalysis .22/02/20 -- this copy here is now archived
 
+    @staticmethod
+    @Utils.run_for_loop_across_exps(run_pre4ap_trials=False, run_post4ap_trials=True, allow_rerun=True)
+    def calc__szInvasionTime(**kwargs):
+        """
+        The general approach to calculate seizure invasion time delay is to calculate the first stim (which are usually every 10 secs)
+        which has the seizure wavefront in the FOV relative to the LFP onset of the seizure (which is at the 4ap inj site).
+
+
+        :param kwargs: no args taken. used only to pipe in experiments from for loop.
+        """
+
+        expobj = kwargs['expobj']
+        time_delay_sec = [-1] * len(expobj.stim_start_frames)
+        sz_num = [-1] * len(expobj.stim_start_frames)
+        for i in range(expobj.numSeizures):
+            # i = 1
+            lfp_onset_fr = expobj.seizure_lfp_onsets[i]
+            if lfp_onset_fr != 0:
+                start = expobj.seizure_lfp_onsets[i]
+                stop = expobj.seizure_lfp_offsets[i]
+                _stim_insz = [stim_fr for stim_fr in expobj.stim_start_frames if start < stim_fr < stop]
+                stims_wv = [stim_fr for stim_fr in _stim_insz if stim_fr in expobj.stimsWithSzWavefront]
+                stims_nowv = [stim_fr for stim_fr in _stim_insz if stim_fr not in expobj.stimsWithSzWavefront]
+                if len(stims_wv) > 0:
+                    for stim in stims_wv:
+                        if stim in expobj.stimsWithSzWavefront:
+                            sz_start_sec = start / expobj.fps
+                            _time_delay_sec = (stim / expobj.fps) - sz_start_sec
+                            idx = np.where(expobj.slmtargets_data.var.stim_start_frame == stim)[0][0]
+                            time_delay_sec[idx] = round(_time_delay_sec, 3)
+                            sz_num[idx] = i
+                    for stim in stims_nowv:
+                        if stim < stims_wv[0]:  # first in seizure stim frame with the seizure wavefront
+                            idx = np.where(expobj.slmtargets_data.var.stim_start_frame == stim)[0][0]
+                            time_delay_sec[idx] = "bf invasion"  # before seizure invasion to the FOV
+                            sz_num[idx] = i
+                        elif stim > stims_wv[-1]:  # last in seizure stim frame with the seizure wavefront
+                            idx = np.where(expobj.slmtargets_data.var.stim_start_frame == stim)[0][0]
+                            time_delay_sec[idx] = "af invasion"  # after seizure wavefront has passed the FOV
+                            sz_num[idx] = i
+
+        expobj.slmtargets_data.add_variable(var_name='delay_from_sz_onset_sec', values=time_delay_sec)
+        expobj.slmtargets_data.add_variable(var_name='seizure_num', values=sz_num)
+        expobj.save()
+
+    # 6.1) plot the first sz frame for each seizure from each expprep, label with the time delay to sz invasion
+    @staticmethod
+    @Utils.run_for_loop_across_exps(run_pre4ap_trials=False, run_post4ap_trials=True, allow_rerun=True)
+    def plot__sz_invasion(**kwargs):
+        expobj: Post4ap = kwargs['expobj']
+
+        sz_nums = np.unique([i for i in list(expobj.slmtargets_data.var.seizure_num) if type(i) is int and i > 0])
+        fig, axs, counter, ncols, nrows = multi_plot_subplots(num_total_plots=len(sz_nums))
+        for sz in sz_nums:
+            idx = np.where(expobj.slmtargets_data.var.seizure_num == sz)[0][0]  # first seizure invasion frame
+            stim_frm = expobj.slmtargets_data.var.stim_start_frame[idx]
+            time_del = expobj.slmtargets_data.var.delay_from_sz_onset_sec[idx]
+
+            # plotting
+            avg_stim_img_path = f'{expobj.analysis_save_path[:-1]}avg_stim_images/{expobj.metainfo["date"]}_{expobj.metainfo["trial"]}_stim-{stim_frm}.tif'
+            bg_img = tf.imread(avg_stim_img_path)
+            # aoplot.plot_SLMtargets_Locs(self, targets_coords=coords_to_plot_insz, cells=in_sz, edgecolors='yellowgreen', background=bg_img)
+            # aoplot.plot_SLMtargets_Locs(self, targets_coords=coords_to_plot_outsz, cells=out_sz, edgecolors='white', background=bg_img)
+            ax = _get_ax_for_multi_plot(axs, counter, ncols)
+            fig, ax = plot_SLMtargets_Locs(expobj, fig=fig, ax=ax,
+                                           title=f"sz #: {sz}, stim_fr: {stim_frm}, time inv.: {time_del}s",
+                                           show=False, background=bg_img)
+
+            try:
+                inframe_coord1_x = expobj.slmtargets_data.var["seizure location"][idx][0][0]
+                inframe_coord1_y = expobj.slmtargets_data.var["seizure location"][idx][0][1]
+                inframe_coord2_x = expobj.slmtargets_data.var["seizure location"][idx][1][0]
+                inframe_coord2_y = expobj.slmtargets_data.var["seizure location"][idx][1][1]
+                ax.plot([inframe_coord1_x, inframe_coord2_x], [inframe_coord1_y, inframe_coord2_y], c='darkorange',
+                        linestyle='dashed', alpha=1, lw=2)
+            except TypeError:
+                print('hitting nonetype error')
+
+        fig.suptitle(f"{expobj.t_series_name} {expobj.date}")
+        fig.show()
+
+    # %% 7.0-dc) ANALYSIS: cross-correlation between mean FOV 2p calcium trace and LFP seizure trace - incomplete not working yet
+    @staticmethod
+    def cross_corr_2pFOV_LFP():
+        """attempting to calculate a cross-correlogram between the mean FOV 2p calcium imaging trace and the LFP trace.
+        thought was that the large signals in the overall mean FOV of the 2p imaging would be closely correlated to the LFP trace.
+
+        progress: isn't working so well so far. might need to window-smooth the LFP trace down to the same sampling rate as the FOV 2p (or even further down since Ca2+ signal is not that fast).
+        """
+        import scipy.signal as signal
+
+        expobj = import_expobj(prep='RL109', trial='t-017')
+
+        sznum = 1
+        slice = np.s_[
+                expobj.convert_frames_to_paqclock(expobj.seizure_lfp_onsets[sznum]): expobj.convert_frames_to_paqclock(
+                    expobj.seizure_lfp_offsets[sznum])]
+
+        # detrend
+        detrended_lfp = signal.detrend(expobj.lfp_signal[expobj.frame_start_time_actual: expobj.frame_end_time_actual])[
+                            slice] * -1
+
+        # downsample LFP signal to the same # of datapoints as # of frames in 2p calcium trace
+        CaUpsampled1 = signal.resample(expobj.meanRawFluTrace, len(detrended_lfp))[slice]
+
+        pj.make_general_plot([CaUpsampled1], figsize=[20, 3])
+        pj.make_general_plot([detrended_lfp], figsize=[20, 3])
+
+        # use numpy or scipy.signal .correlate to correlate the two timeseries
+        correlated = signal.correlate(CaUpsampled1, detrended_lfp)
+        lags = signal.correlation_lags(len(CaUpsampled1), len(detrended_lfp))
+        correlated /= np.max(correlated)
+
+        f, axs = plt.subplots(nrows=3, ncols=1, figsize=[20, 9])
+        axs[0].plot(CaUpsampled1)
+        axs[1].plot(detrended_lfp)
+        # axs[2].plot(correlated)
+        axs[2].plot(lags, correlated)
+        f.show()

@@ -39,6 +39,9 @@ class CustomUnpicklerAttributeError(pickle.Unpickler):
         elif name == 'TargetsSzInvasionSpatial':
             from _analysis_._ClassTargetsSzInvasionSpatial import TargetsSzInvasionSpatial
             return TargetsSzInvasionSpatial
+        elif name == 'ExpSeizureAnalysis':
+            from _analysis_._ClassExpSeizureAnalysis import ExpSeizureAnalysis
+            return ExpSeizureAnalysis
 
         return super().find_class(module, name)
 
@@ -208,10 +211,10 @@ def import_expobj(aoresults_map_id: str = None, trial: str = None, prep: str = N
         # experiment = f"{expobj.t_series_name} {expobj.metainfo['exptype']} {expobj.metainfo['comments']}"
         # print(f'|- Loaded {experiment}') if verbose else print(f'|- Loaded {expobj.t_series_name} ({pkl_path}) .. DONE')
     except AttributeError:
-        print(f"WARNING: needing to try using CustomUnpickler!")
+        print(f"WARNING: needing to try using CustomUnpicklerAttributeError!")
         expobj = CustomUnpicklerAttributeError(open(pkl_path, 'rb')).load()
     except ModuleNotFoundError:
-        print(f"WARNING: needing to try using CustomUnpickler!")
+        print(f"WARNING: needing to try using CustomUnpicklerModuleNotFoundError!")
         expobj = CustomUnpicklerModuleNotFoundError(open(pkl_path, 'rb')).load()
 
     ### roping in some extraneous processing steps if there's expobj's that haven't completed for them

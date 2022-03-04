@@ -4,6 +4,7 @@ import os
 import sys
 
 from _main_.AllOpticalMain import alloptical
+from _utils_.io import import_expobj
 
 sys.path.append('/home/pshah/Documents/code/')
 import matplotlib.pyplot as plt
@@ -23,7 +24,10 @@ class Post4ap(alloptical):
     def __init__(self, paths, metainfo, stimtype, discard_all):
 
         from _analysis_._ClassTargetsSzInvasionTemporal import TargetsSzInvasionTemporal
-        self.TargetsSzInvasionTemporal = TargetsSzInvasionTemporal()
+        self.TargetsSzInvasionTemporal = TargetsSzInvasionTemporal(expobj=self)
+        from _analysis_._ClassExpSeizureAnalysis import ExpSeizureAnalysis
+        self.ExpSeizure = ExpSeizureAnalysis(expobj=self)
+        self.not_flip_stims = []  # specify here the stims where the flip=False leads to incorrect assignment, just here as a placeholder though until i fully transfer this attr down to the ExpSeizure submodule.
 
         alloptical.__init__(self, paths, metainfo, stimtype)
         self.time_del_szinv_stims: pd.DataFrame = pd.DataFrame()  # df containing delay to sz invasion for each target for each stim frame (dim: n_targets x n_stims)
@@ -158,9 +162,10 @@ class Post4ap(alloptical):
         :return: bool
 
         # examples
-        cell_med = expobj.stat[0]['med']
-        sz_border_path = "/home/pshah/mnt/qnap/Analysis/2020-12-18/2020-12-18_t-013/boundary_csv/2020-12-18_t-013_post 4ap all optical trial_stim-9222.tif_border.csv"
-        InOutSz(cell_med, sz_border_path)
+        >>> self = import_expobj(prep='RL108', trial='t-013')  # import expobj trial
+        >>> cell_med = self.stat[0]['med']  # pick cell from suite2p list
+        >>> stim_frame = self.stim_start_frames[1]
+        >>> self._InOutSz(cell_med, stim_frame)
         """
 
         y = cell_med[0]
