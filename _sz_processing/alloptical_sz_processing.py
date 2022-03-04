@@ -443,7 +443,138 @@ def _trialProcessing_nontargets(expobj, normalize_to='pre-stim', save=True):
 
     expobj.save() if save else None
 
-# %% 4.2) measure seizure legnths across all imaging trials (including any spont imaging you might have)
+
+
+
+
+
+# %% ARCHIVE
+
+# %% temp fixing getting sz locations per stim
+
+expobj.stimsSzLocations = pd.DataFrame(data=None, index=expobj.stims_in_sz, columns=['sz_num', 'coord1', 'coord2', 'wavefront_in_frame'])
+
+# specify stims for classifying cells
+on_ = []
+_end = []
+for start, stop in zip(expobj.seizure_lfp_onsets, expobj.seizure_lfp_offsets):
+
+    stims_frames = [stim for stim in expobj.stim_start_frames if start < stim < stop]
+    if len(stims_frames) > 0:
+        on_.append(stims_frames[0])
+        _end.append(stims_frames[-1])
+        print(f"start: {start}, on_: {stims_frames[0]}")
+        print(f"stop: {stop}, on_: {stims_frames[-1]}\n")
+    #
+    # if 0 in expobj.seizure_lfp_onsets and expobj.seizure_lfp_offsets[0] > expobj.stim_start_frames[0]:
+    #     frame = expobj.stim_start_frames[0]
+    #     # print(f"{frame} [1]")
+    #     on_.append(frame)
+    # else:
+    #     frame = [stim_frame for stim_frame in expobj.stim_start_frames if start < stim_frame < stop]
+    #     # print(f"{frame} [2]")
+    #     on_.append(frame[0]) if len(frame) > 0 else None
+    #
+    # _end.extend(stop)
+    # if expobj.stim_start_frames[-1] > expobj.seizure_lfp_offsets[-1]:
+    #     pass
+
+
+# on_ = []
+# if 0 in expobj.seizure_lfp_onsets:  # this is used to check if 2p imaging is starting mid-seizure (which should be signified by the first lfp onset being set at frame # 0)
+#     on_ = on_ + [expobj.stim_start_frames[0]]
+# on_.extend(expobj.stims_bf_sz)
+# if len(expobj.stims_af_sz) != len(on_):
+#     end = expobj.stims_af_sz + [expobj.stim_start_frames[-1]]
+# else:
+#     end = expobj.stims_af_sz
+# print(f'\n\t\- seizure start frames: {on_} [{len(on_)}]')
+# print(f'\t\- seizure end frames: {end} [{len(end)}]\n')
+
+sz_num = 0
+for on, off in zip(on_, _end):
+    stims_of_interest = [stim for stim in expobj.stim_start_frames if on < stim < off if
+                         stim != expobj.stims_in_sz[0]]
+    # stims_of_interest_ = [stim for stim in stims_of_interest if expobj._sz_wavefront_stim(stim=stim)]
+    # expobj.stims_sz_wavefront.append(stims_of_interest_)
+
+    print(f"{stims_of_interest} [1]")
+
+    for _, stim in enumerate(stims_of_interest):
+        print(f"\t{stim} [2]")
+        if os.path.exists(expobj.sz_border_path(stim=stim)):
+            xline, yline = pj.xycsv(csvpath=expobj.sz_border_path(stim=stim))
+            expobj.stimsSzLocations.loc[stim, :] = [sz_num, [xline[0], yline[0]], [xline[1], yline[1]], None]
+
+            j = expobj._close_to_edge(tuple(yline))
+            expobj.stimsSzLocations.loc[stim, 'wavefront_in_frame'] = j
+        else:
+            print(f'\t\tno csv coords for stim: {stim}')
+
+    sz_num += 1
+
+
+# %% 4.1) counting seizure INCIDENCE across all imaging trials
+
+for key in list(allopticalResults.trial_maps['post'].keys()):
+    # import initial expobj
+    expobj, experiment = aoutils.import_expobj(aoresults_map_id='pre %s.0' % key, verbose=False)
+    prep = expobj.metainfo['animal prep.']
+    # look at all run_post4ap_trials trials in expobj
+    if 'post-4ap trials' in expobj.metainfo.keys():
+        a = 'post-4ap trials'
+    elif 'post4ap_trials' in expobj.metainfo.keys():
+        a = 'post4ap_trials'
+    # for loop over all of those run_post4ap_trials trials
+    for trial in expobj.metainfo['%s' % a]:
+        # import expobj
+        expobj, experiment = aoutils.import_expobj(prep=prep, trial=trial, verbose=False)
+        total_time_recording = np.round((expobj.n_frames / expobj.fps) / 60., 2)  # return time in mins
+
+        # count seizure incidence (avg. over mins) for each experiment (animal)
+        if hasattr(expobj, 'seizure_lfp_onsets'):
+            n_seizures = len(expobj.seizure_lfp_onsets)
+        else:
+            n_seizures = 0
+
+        print('Seizure incidence for %s, %s, %s: ' % (prep, trial, expobj.metainfo['exptype']),
+              np.round(n_seizures / total_time_recording, 2))
+
+# 4.1.1) measure seizure incidence across onePstim trials
+for pkl_path in onePresults.mean_stim_responses['pkl_list']:
+    if list(onePresults.mean_stim_responses.loc[
+                onePresults.mean_stim_responses['pkl_list'] == pkl_path, 'post-4ap response (during sz)'])[
+        0] != '-':
+
+        expobj, experiment = aoutils.import_expobj(pkl_path=pkl_path, verbose=False)
+        total_time_recording = np.round((expobj.n_frames / expobj.fps) / 60., 2)  # return time in mins
+
+        # count seizure incidence (avg. over mins) for each experiment (animal)
+        if hasattr(expobj, 'seizure_lfp_onsets'):
+            n_seizures = len(expobj.seizure_lfp_onsets)
+        else:
+            n_seizures = 0
+
+        print('Seizure incidence for %s, %s, %s: ' % (
+        expobj.metainfo['animal prep.'], expobj.metainfo['trial'], expobj.metainfo['exptype']),
+              np.round(n_seizures / total_time_recording, 2))
+
+# 4.1.2) plot seizure incidence across onePstim and twoPstim trials
+twop_trials = [0.35, 0.251666667, 0.91, 0.33, 0.553333333, 0.0875, 0.47, 0.33, 0.52]
+onep_trials = [0.38, 0.26, 0.19, 0.436666667, 0.685]
+
+pj.plot_bar_with_points(data=[twop_trials, onep_trials], x_tick_labels=['2p stim', '1p stim'],
+                        colors=['purple', 'green'], y_label='sz incidence (events/min)',
+                        title='rate of seizures during exp', expand_size_x=0.4, expand_size_y=1, ylims=[0, 1],
+                        shrink_text=0.8)
+
+
+pj.plot_bar_with_points(data=[twop_trials + onep_trials], x_tick_labels=['Experiments'],
+                        colors=['#2E3074'], y_label='Seizure incidence (events/min)', alpha=0.7, bar=False,
+                        title='rate of seizures during exp', expand_size_x=0.7, expand_size_y=1, ylims=[0, 1],
+                        shrink_text=0.8)
+
+# %% 4.2) measure seizure LENGTHS across all imaging trials (including any spont imaging you might have)
 
 for key in list(allopticalResults.trial_maps['post'].keys()):
     # import initial expobj
@@ -521,136 +652,6 @@ pj.plot_bar_with_points(data=[twop_trials + onep_trials], x_tick_labels=['Experi
                         colors=['green'], y_label='Seizure length (secs)', alpha=0.7, bar=False,
                         title='Avg sz length', expand_size_x=0.7, expand_size_y=1, ylims=[0, 120],
                         shrink_text=0.8)
-
-
-# %% 4.1) counting seizure incidence across all imaging trials
-
-for key in list(allopticalResults.trial_maps['post'].keys()):
-    # import initial expobj
-    expobj, experiment = aoutils.import_expobj(aoresults_map_id='pre %s.0' % key, verbose=False)
-    prep = expobj.metainfo['animal prep.']
-    # look at all run_post4ap_trials trials in expobj
-    if 'post-4ap trials' in expobj.metainfo.keys():
-        a = 'post-4ap trials'
-    elif 'post4ap_trials' in expobj.metainfo.keys():
-        a = 'post4ap_trials'
-    # for loop over all of those run_post4ap_trials trials
-    for trial in expobj.metainfo['%s' % a]:
-        # import expobj
-        expobj, experiment = aoutils.import_expobj(prep=prep, trial=trial, verbose=False)
-        total_time_recording = np.round((expobj.n_frames / expobj.fps) / 60., 2)  # return time in mins
-
-        # count seizure incidence (avg. over mins) for each experiment (animal)
-        if hasattr(expobj, 'seizure_lfp_onsets'):
-            n_seizures = len(expobj.seizure_lfp_onsets)
-        else:
-            n_seizures = 0
-
-        print('Seizure incidence for %s, %s, %s: ' % (prep, trial, expobj.metainfo['exptype']),
-              np.round(n_seizures / total_time_recording, 2))
-
-# 4.1.1) measure seizure incidence across onePstim trials
-for pkl_path in onePresults.mean_stim_responses['pkl_list']:
-    if list(onePresults.mean_stim_responses.loc[
-                onePresults.mean_stim_responses['pkl_list'] == pkl_path, 'post-4ap response (during sz)'])[
-        0] != '-':
-
-        expobj, experiment = aoutils.import_expobj(pkl_path=pkl_path, verbose=False)
-        total_time_recording = np.round((expobj.n_frames / expobj.fps) / 60., 2)  # return time in mins
-
-        # count seizure incidence (avg. over mins) for each experiment (animal)
-        if hasattr(expobj, 'seizure_lfp_onsets'):
-            n_seizures = len(expobj.seizure_lfp_onsets)
-        else:
-            n_seizures = 0
-
-        print('Seizure incidence for %s, %s, %s: ' % (
-        expobj.metainfo['animal prep.'], expobj.metainfo['trial'], expobj.metainfo['exptype']),
-              np.round(n_seizures / total_time_recording, 2))
-
-# 4.1.2) plot seizure incidence across onePstim and twoPstim trials
-twop_trials = [0.35, 0.251666667, 0.91, 0.33, 0.553333333, 0.0875, 0.47, 0.33, 0.52]
-onep_trials = [0.38, 0.26, 0.19, 0.436666667, 0.685]
-
-pj.plot_bar_with_points(data=[twop_trials, onep_trials], x_tick_labels=['2p stim', '1p stim'],
-                        colors=['purple', 'green'], y_label='sz incidence (events/min)',
-                        title='rate of seizures during exp', expand_size_x=0.4, expand_size_y=1, ylims=[0, 1],
-                        shrink_text=0.8)
-
-
-pj.plot_bar_with_points(data=[twop_trials + onep_trials], x_tick_labels=['Experiments'],
-                        colors=['#2E3074'], y_label='Seizure incidence (events/min)', alpha=0.7, bar=False,
-                        title='rate of seizures during exp', expand_size_x=0.7, expand_size_y=1, ylims=[0, 1],
-                        shrink_text=0.8)
-
-
-
-# %% ARCHIVE
-
-# %% temp fixing getting sz locations per stim
-
-expobj.stimsSzLocations = pd.DataFrame(data=None, index=expobj.stims_in_sz, columns=['sz_num', 'coord1', 'coord2', 'wavefront_in_frame'])
-
-# specify stims for classifying cells
-on_ = []
-_end = []
-for start, stop in zip(expobj.seizure_lfp_onsets, expobj.seizure_lfp_offsets):
-
-    stims_frames = [stim for stim in expobj.stim_start_frames if start < stim < stop]
-    if len(stims_frames) > 0:
-        on_.append(stims_frames[0])
-        _end.append(stims_frames[-1])
-        print(f"start: {start}, on_: {stims_frames[0]}")
-        print(f"stop: {stop}, on_: {stims_frames[-1]}\n")
-    #
-    # if 0 in expobj.seizure_lfp_onsets and expobj.seizure_lfp_offsets[0] > expobj.stim_start_frames[0]:
-    #     frame = expobj.stim_start_frames[0]
-    #     # print(f"{frame} [1]")
-    #     on_.append(frame)
-    # else:
-    #     frame = [stim_frame for stim_frame in expobj.stim_start_frames if start < stim_frame < stop]
-    #     # print(f"{frame} [2]")
-    #     on_.append(frame[0]) if len(frame) > 0 else None
-    #
-    # _end.extend(stop)
-    # if expobj.stim_start_frames[-1] > expobj.seizure_lfp_offsets[-1]:
-    #     pass
-
-
-# on_ = []
-# if 0 in expobj.seizure_lfp_onsets:  # this is used to check if 2p imaging is starting mid-seizure (which should be signified by the first lfp onset being set at frame # 0)
-#     on_ = on_ + [expobj.stim_start_frames[0]]
-# on_.extend(expobj.stims_bf_sz)
-# if len(expobj.stims_af_sz) != len(on_):
-#     end = expobj.stims_af_sz + [expobj.stim_start_frames[-1]]
-# else:
-#     end = expobj.stims_af_sz
-# print(f'\n\t\- seizure start frames: {on_} [{len(on_)}]')
-# print(f'\t\- seizure end frames: {end} [{len(end)}]\n')
-
-sz_num = 0
-for on, off in zip(on_, _end):
-    stims_of_interest = [stim for stim in expobj.stim_start_frames if on < stim < off if
-                         stim != expobj.stims_in_sz[0]]
-    # stims_of_interest_ = [stim for stim in stims_of_interest if expobj._sz_wavefront_stim(stim=stim)]
-    # expobj.stims_sz_wavefront.append(stims_of_interest_)
-
-    print(f"{stims_of_interest} [1]")
-
-    for _, stim in enumerate(stims_of_interest):
-        print(f"\t{stim} [2]")
-        if os.path.exists(expobj.sz_border_path(stim=stim)):
-            xline, yline = pj.xycsv(csvpath=expobj.sz_border_path(stim=stim))
-            expobj.stimsSzLocations.loc[stim, :] = [sz_num, [xline[0], yline[0]], [xline[1], yline[1]], None]
-
-            j = expobj._close_to_edge(tuple(yline))
-            expobj.stimsSzLocations.loc[stim, 'wavefront_in_frame'] = j
-        else:
-            print(f'\t\tno csv coords for stim: {stim}')
-
-    sz_num += 1
-
-
 
 # %% 6.0-dc) ANALYSIS: calculate time delay between LFP onset of seizures and imaging FOV invasion for each seizure for each experiment
 # -- this section has been moved to _ClassExpSeizureAnalysis .22/02/20 -- this copy here is now archived
