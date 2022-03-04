@@ -9,7 +9,7 @@ from _main_.Post4apMain import Post4ap
 sys.path.append('/home/pshah/Documents/code/PackerLab_pycharm/')
 sys.path.append('/home/pshah/Documents/code/')
 import alloptical_utils_pj as aoutils
-from _utils_ import alloptical_plotting_utils as aoplot
+from _utils_ import alloptical_plotting as aoplot
 from funcsforprajay import funcs as pj
 
 import numpy as np

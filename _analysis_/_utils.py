@@ -58,3 +58,4 @@ class Results:
     def expobj_exptype(self):
         return self._metainfo['exptype']
 
+

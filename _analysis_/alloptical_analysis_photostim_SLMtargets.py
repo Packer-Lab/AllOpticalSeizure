@@ -17,7 +17,7 @@ import tifffile as tf
 from funcsforprajay import funcs as pj
 
 import alloptical_utils_pj as aoutils
-from _utils_ import alloptical_plotting_utils as aoplot
+from _utils_ import alloptical_plotting as aoplot
 
 # # import results superobject that will collect analyses from various individual experiments
 results_object_path = '/home/pshah/mnt/qnap/Analysis/alloptical_results_superobject.pkl'

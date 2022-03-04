@@ -3,7 +3,7 @@ import os
 import numpy as np
 import matplotlib.pyplot as plt
 import alloptical_utils_pj as aoutils
-from _utils_ import alloptical_plotting_utils as aoplot
+from _utils_ import alloptical_plotting as aoplot
 from funcsforprajay import funcs as pj
 import tifffile as tf
 from skimage.transform import resize

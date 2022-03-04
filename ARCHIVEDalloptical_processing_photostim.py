@@ -3,7 +3,7 @@
 
 import sys; sys.path.append('/home/pshah/Documents/code/PackerLab_pycharm/')
 import alloptical_utils_pj as aoutils
-from _utils_ import alloptical_plotting_utils as aoplot
+from _utils_ import alloptical_plotting as aoplot
 import matplotlib.pyplot as plt
 import pandas as pd
 import numpy as np

@@ -985,7 +985,7 @@ class alloptical(TwoPhotonImaging):
             self.save()
 
             if plot:
-                from _utils_ import alloptical_plotting_utils as aoplot
+                from _utils_ import alloptical_plotting as aoplot
                 fig, ax = plt.subplots(figsize=[6, 6])
                 fig, ax = aoplot.plot_cells_loc(expobj=self, cells=self.s2p_cell_targets, show=False, fig=fig, ax=ax,
                                                 show_s2p_targets=True,

@@ -5,7 +5,7 @@ import pandas as pd
 import alloptical_utils_pj as aoutils
 from _main_.Post4apMain import Post4ap
 from _main_.TwoPhotonImagingMain import TwoPhotonImaging
-from _utils_ import alloptical_plotting_utils as aoplot
+from _utils_ import alloptical_plotting as aoplot
 import matplotlib.pyplot as plt
 import numpy as np
 from funcsforprajay import funcs as pj

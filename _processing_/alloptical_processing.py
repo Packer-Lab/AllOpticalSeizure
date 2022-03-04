@@ -3,7 +3,7 @@ from typing import Union
 
 from _main_.AllOpticalMain import alloptical
 from _main_.Post4apMain import Post4ap
-from _utils_ import alloptical_plotting_utils as aoplot
+from _utils_ import alloptical_plotting as aoplot
 from _utils_._anndata import create_anndata_SLMtargets
 
 

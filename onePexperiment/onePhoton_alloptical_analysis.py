@@ -4,13 +4,13 @@ import os
 from matplotlib import pyplot as plt
 
 import alloptical_utils_pj as aoutils
-from _utils_ import alloptical_plotting_utils as aoplot
+from _utils_ import alloptical_plotting as aoplot
+from onePexperiment.OnePhotonStimAnalysis_main import OnePhotonStimAnalysisFuncs
 
-from OnePhotonStimAnalysis_main import OnePhotonStimAnalysisFuncs
 from onePexperiment.OnePhotonStimMain import OnePhotonStimPlots as onepplots
 
 #  ###### IMPORT pkl file containing data in form of expobj
-trial = 't-012'
+trial = 't-019'
 prep = 'PS11'
 date = '2021-01-24'
 pkl_path = "/home/pshah/mnt/qnap/Analysis/%s/%s/%s_%s/%s_%s.pkl" % (date, prep, date, trial, date, trial)

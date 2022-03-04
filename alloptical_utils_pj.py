@@ -962,7 +962,7 @@ class TwoPhotonImaging:
                 print('pkl file not saved yet because .save_path attr not found')
 
         if plot:
-            from _utils_ import alloptical_plotting_utils as aoplot
+            from _utils_ import alloptical_plotting as aoplot
             aoplot.plotMeanRawFluTrace(expobj=self, stim_span_color=None, x_axis='frames', figsize=[20, 3],
                                        title='Mean raw Flu trace -')
         return im_stack
@@ -2005,7 +2005,7 @@ class alloptical(TwoPhotonImaging):
             self.save()
 
             if plot:
-                from _utils_ import alloptical_plotting_utils as aoplot
+                from _utils_ import alloptical_plotting as aoplot
                 fig, ax = plt.subplots(figsize=[6, 6])
                 fig, ax = aoplot.plot_cells_loc(expobj=self, cells=self.s2p_cell_targets, show=False, fig=fig, ax=ax,
                                                 show_s2p_targets=True,
@@ -3572,7 +3572,7 @@ class Post4ap(alloptical):
             self.analysis_save_path[:-1] + 'avg_stim_images', self.metainfo['date'], self.metainfo['trial'], stim)
             bg_img = tf.imread(avg_stim_img_path)
 
-            from _utils_ import alloptical_plotting_utils as aoplot
+            from _utils_ import alloptical_plotting as aoplot
             fig, ax = aoplot.plot_cells_loc(self, cells=in_sz_final, fig=fig, ax=ax, title=title, show=False,
                                             background=bg_img, cmap='gray', text=text,
                                             edgecolors='yellowgreen')
@@ -3678,7 +3678,7 @@ class Post4ap(alloptical):
             bg_img = tf.imread(avg_stim_img_path)
             # aoplot.plot_SLMtargets_Locs(self, targets_coords=coords_to_plot_insz, cells=in_sz, edgecolors='yellowgreen', background=bg_img)
             # aoplot.plot_SLMtargets_Locs(self, targets_coords=coords_to_plot_outsz, cells=out_sz, edgecolors='white', background=bg_img)
-            from _utils_ import alloptical_plotting_utils as aoplot
+            from _utils_ import alloptical_plotting as aoplot
 
             fig, ax = aoplot.plot_SLMtargets_Locs(self, targets_coords=coords_to_plot_insz, fig=fig, ax=ax, cells=in_sz,
                                                   title=title, show=False, background=bg_img,
@@ -3796,7 +3796,7 @@ class Post4ap(alloptical):
                                         sz_start - stim) < 10 * self.fps]  # select stims that occur within 5 seconds afterof the sz offset
             print(' \n|- stims_in_sz:', self.stims_in_sz, ' \n|- stims_out_sz:', self.stims_out_sz,
                   ' \n|- stims_bf_sz:', self.stims_bf_sz, ' \n|- stims_af_sz:', self.stims_af_sz)
-            from _utils_ import alloptical_plotting_utils as aoplot
+            from _utils_ import alloptical_plotting as aoplot
 
             aoplot.plot_lfp_stims(expobj=self)
         else:
@@ -4369,7 +4369,7 @@ class OnePhotonStim(TwoPhotonImaging):
             self.stims_out_sz = [stim for stim in self.stim_start_frames if stim not in self.seizure_frames]
             self.stims_bf_sz = []
             self.stims_af_sz = []
-        from _utils_ import alloptical_plotting_utils as aoplot
+        from _utils_ import alloptical_plotting as aoplot
 
         aoplot.plot_lfp_stims(self, x_axis='time')
         self.save_pkl()
@@ -4619,7 +4619,7 @@ class onePstim(TwoPhotonImaging):
             self.stims_bf_sz = []
             self.stims_af_sz = []
 
-        from _utils_ import alloptical_plotting_utils as aoplot
+        from _utils_ import alloptical_plotting as aoplot
 
         aoplot.plot_lfp_stims(self, x_axis='time')
         self.save_pkl()
@@ -5282,7 +5282,7 @@ def run_alloptical_processing_photostim(expobj: Union[alloptical, Post4ap], to_s
             expobj.mean_raw_flu_trace(plot=True)
 
         if plots:
-            from _utils_ import alloptical_plotting_utils as aoplot
+            from _utils_ import alloptical_plotting as aoplot
 
             aoplot.plotMeanRawFluTrace(expobj=expobj, stim_span_color=None, x_axis='frames', figsize=[20, 3])
             # aoplot.plotLfpSignal(expobj, stim_span_color=None, x_axis='frames', figsize=[20, 3])
@@ -5588,7 +5588,7 @@ def slm_targets_responses(expobj, experiment, trial, y_spacing_factor=2, figsize
 
 
     # initialize figure
-    from _utils_ import alloptical_plotting_utils as aoplot
+    from _utils_ import alloptical_plotting as aoplot
 
     fig = plt.figure(constrained_layout=True, figsize=figsize)
     gs = fig.add_gridspec(4, 8)
@@ -5743,7 +5743,7 @@ def fig_non_targets_responses(expobj, plot_subset: bool = True, save_fig_suffix=
         gs = f.add_gridspec(1, 9)
 
     # PLOT AVG PHOTOSTIM PRE- POST- TRACE AVGed OVER ALL PHOTOSTIM. TRIALS
-    from _utils_ import alloptical_plotting_utils as aoplot
+    from _utils_ import alloptical_plotting as aoplot
 
     a1 = f.add_subplot(gs[0, 0:2])
     x = expobj.dff_traces_avg[selection]
@@ -5881,7 +5881,7 @@ def run_allopticalAnalysisNontargetsPost4ap(expobj, normalize_to='pre_stim', to_
 
             # expobj.target_coords_all = expobj.target_coords
             expobj._findTargetedS2pROIs(force_redo=True)
-            from _utils_ import alloptical_plotting_utils as aoplot
+            from _utils_ import alloptical_plotting as aoplot
 
             aoplot.s2pRoiImage(expobj)
             expobj.s2pMaskStack(pkl_list=[expobj.pkl_path], s2p_path=expobj.s2p_path,
