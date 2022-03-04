@@ -16,11 +16,15 @@ from _exp_metainfo_.exp_metainfo import AllOpticalExpsToAnalyze, ExpMetainfo, On
 from _main_.Post4apMain import Post4ap
 from _utils_.alloptical_plotting import multi_plot_subplots, _get_ax_for_multi_plot, plot_SLMtargets_Locs
 
+SAVE_LOC = "/home/pshah/mnt/qnap/Analysis/analysis_export/analysis_quantification_classes/"
+
 # %%
 from _utils_.io import import_expobj
 
 
 class ExpSeizureAnalysis(Quantification):
+    save_path = SAVE_LOC + 'Quant__ExpSeizureAnalysis.pkl'
+
     def __init__(self, expobj: Post4ap):
         super().__init__(expobj)
         print(f'\t\- ADDING NEW ExpSeizureAnalysis MODULE to expobj: {expobj.t_series_name}')

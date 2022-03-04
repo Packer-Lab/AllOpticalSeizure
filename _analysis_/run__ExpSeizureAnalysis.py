@@ -17,5 +17,10 @@ def run__initExpSeizureAnalysis(**kwargs):
 # %%
 
 if __name__ == '__main__':
-    run__initExpSeizureAnalysis()
-    main.szInvasionTime()
+
+    # run__initExpSeizureAnalysis()
+
+    main.FOVszInvasionTime()
+    main.plot__sz_incidence()
+    main.plot__sz_lengths()
+
