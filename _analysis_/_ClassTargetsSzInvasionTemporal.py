@@ -1,46 +1,70 @@
 import os
+import pickle
+from dataclasses import dataclass, field
 from typing import List
 
 import numpy as np
 import pandas as pd
 from funcsforprajay.wrappers import plot_piping_decorator
 from matplotlib import pyplot as plt
+import seaborn as sns
 
 import _alloptical_utils as Utils
 import funcsforprajay.funcs as pj
 
-from _analysis_._utils import Quantification
+from _analysis_._utils import Quantification, Results
 from _main_.Post4apMain import Post4ap
 from _sz_processing.temporal_delay_to_sz_invasion import convert_timedel2frames
 
 SAVE_LOC = "/home/pshah/mnt/qnap/Analysis/analysis_export/analysis_quantification_classes/"
-save_path = SAVE_LOC + 'TargetsSzInvasionTemporal.pkl'
+SAVE_PATH = SAVE_LOC + 'TargetsSzInvasionTemporal.pkl'
 
-if os.path.exists(save_path):
-    save_TargetsSzInvasionTemporal = pj.load_pkl(pkl_path=save_path)
-else:
-    save_TargetsSzInvasionTemporal = {}
 
+# archived in favor of a dedicated results class .22/03/07
+# if os.path.exists(SAVE_PATH):
+#     save_TargetsSzInvasionTemporal = pj.load_pkl(pkl_path=SAVE_PATH)
+# else:
+#     save_TargetsSzInvasionTemporal = {}
 
 
 class TargetsSzInvasionTemporal(Quantification):
-    range_of_sz_invasion_time: List[
-        float] = None  # TODO need to collect - represents the 25th, 50th, and 75th percentile range of the sz invasion time stats calculated across all targets and all exps
 
-
-    @staticmethod
-    def save_data(dataname: str, data):
-        save_TargetsSzInvasionTemporal[dataname] = data
-        pj.save_pkl(obj=save_TargetsSzInvasionTemporal, pkl_path=save_path)
+    # archived in favor of a dedicated results class .22/03/07
+    # @staticmethod
+    # def save_data(dataname: str, data):
+    #     save_TargetsSzInvasionTemporal[dataname] = data
+    #     pj.save_pkl(obj=save_TargetsSzInvasionTemporal, pkl_path=SAVE_PATH)
 
     def __init__(self, expobj: Post4ap):
         super().__init__(expobj)
         print(f'\- ADDING NEW TargetsSzInvasionTemporal MODULE to expobj: {expobj.t_series_name}')
+        self.add_slmtargets_time_delay_sz_data(expobj=expobj)
 
     def __repr__(self):
         return f"TargetsSzInvasionTemporal <-- Quantification Analysis submodule for expobj <{self.expobj_id}>"
 
-    ## 1.1) collecting mean of seizure invasion Flu traces from all targets for each experiment ########################
+    # %% 0)
+    # ADD SLM TARGETS TIME DELAY TO SZ DATA TO expobj
+    def add_slmtargets_time_delay_sz_data(self, expobj: Post4ap):
+        csv_path = f'/home/pshah/mnt/qnap/Analysis/analysis_export/slmtargets_time_delay_sz__{expobj.prep}_{expobj.trial}.csv'
+        slmtargets_time_delay_sz = pd.read_csv(csv_path)
+        expobj.slmtargets_time_delay_sz = slmtargets_time_delay_sz
+        print(f"adding slmtargets time delay to {expobj.t_series_name}")
+        for column in slmtargets_time_delay_sz.columns[1:]:
+            expobj.PhotostimResponsesSLMTargets.adata.add_observation(obs_name=column, values=slmtargets_time_delay_sz[column])
+            print('\tPhotostimResponsesSLMTargets.adata.obs: ', expobj.PhotostimResponsesSLMTargets.adata.obs)
+        expobj.save()
+
+    @staticmethod
+    def convert_timedel2frames(expobj: Post4ap, sz_num: int, timestamp: float):
+
+        start, stop = expobj.seizure_lfp_onsets[sz_num], expobj.seizure_lfp_offsets[sz_num]
+        numFrames = timestamp * expobj.fps
+        frameNumber = numFrames + start
+
+        return int(round(frameNumber))
+
+    # %% 1.1) collecting mean of seizure invasion Flu traces from all targets for each experiment ########################
     @staticmethod
     @Utils.run_for_loop_across_exps(run_pre4ap_trials=False, run_post4ap_trials=True)
     def check_targets_sz_invasion_time(**kwargs):
@@ -50,13 +74,15 @@ class TargetsSzInvasionTemporal(Quantification):
     def collect_targets_sz_invasion_traces(self, expobj: Post4ap):
         """create dictionary containing mean Raw Flu trace around sz invasion time of each target (as well as other info as keyed into dict)
         """
+
+        print(f"|- collecting indiv. sz invasion traces for each target ... ")
         fov_traces_ = []
         traces_ = []
         pre = 5
         post = 10
         for target, coord in enumerate(expobj.PhotostimResponsesSLMTargets.adata.obs['SLM target coord']):
             # target, coord = 0, expobj.PhotostimResponsesSLMTargets.adata.obs['SLM target coord'][0]
-            print(f'\- collecting from target #{target} ... ') if (target % 10) == 0 else None
+            print(f'\t\- collecting from target # {target}/{expobj.PhotostimResponsesSLMTargets.adata.n_obs} ... ') if (target % 10) == 0 else None
             cols_ = [idx for idx, col in enumerate([*expobj.PhotostimResponsesSLMTargets.adata.obs]) if
                      'time_del' in col]
             sz_times = expobj.PhotostimResponsesSLMTargets.adata.obs.iloc[target, cols_]
@@ -74,29 +100,30 @@ class TargetsSzInvasionTemporal(Quantification):
                 # ax.plot(pj.moving_average(to_plot, n=4), alpha=0.2)
             traces_.append(np.mean(target_traces, axis=0)) if len(target_traces) > 1 else None
             fov_traces_.append(np.mean(fov_traces, axis=0)) if len(target_traces) > 1 else None
-
         traces_ = np.array(traces_)
         fov_traces_ = np.array(fov_traces_)
-        MEAN_TRACE = np.mean(traces_, axis=0)
-        FOV_MEAN_TRACE = np.mean(fov_traces_, axis=0)
-        self.mean_targets_szinvasion_trace = {'fov_mean_trace': FOV_MEAN_TRACE,
-                                              'mean_trace': MEAN_TRACE,
+        _mean_trace = np.mean(traces_, axis=0)
+        _fov_mean_trace = np.mean(fov_traces_, axis=0)
+        self.mean_targets_szinvasion_trace = {'fov_mean_trace': _fov_mean_trace,
+                                              'mean_trace': _mean_trace,
                                               'pre_sec': pre,
                                               'post_sec': post}
 
+        print(f"|- collected {traces_.shape} traces.")
+
     ## 1.2) plot mean of seizure invasion Flu traces from all targets for each experiment ##############################
     @staticmethod
-    def plot_targets_sz_invasion_meantraces_full():
+    def plot__targets_sz_invasion_meantraces():
         fig, ax = plt.subplots(figsize=[3, 6])
 
         @Utils.run_for_loop_across_exps(run_pre4ap_trials=False, run_post4ap_trials=True)
         def plot_targets_sz_invasion_meantraces(**kwargs):
             expobj: Post4ap = kwargs['expobj']
 
-            fov_mean_trace, to_plot, pre, post = expobj.mean_targets_szinvasion_trace['fov_mean_trace'], \
-                                                 expobj.mean_targets_szinvasion_trace['mean_trace'], \
-                                                 expobj.mean_targets_szinvasion_trace['pre_sec'], \
-                                                 expobj.mean_targets_szinvasion_trace['post_sec']
+            fov_mean_trace, to_plot, pre, post = expobj.TargetsSzInvasionTemporal.mean_targets_szinvasion_trace['fov_mean_trace'], \
+                                                 expobj.TargetsSzInvasionTemporal.mean_targets_szinvasion_trace['mean_trace'], \
+                                                 expobj.TargetsSzInvasionTemporal.mean_targets_szinvasion_trace['pre_sec'], \
+                                                 expobj.TargetsSzInvasionTemporal.mean_targets_szinvasion_trace['post_sec']
             invasion_spot = int(pre * expobj.fps)
             to_plot = pj.moving_average(to_plot, n=6)
             fov_mean_trace = pj.moving_average(fov_mean_trace, n=6)
@@ -269,7 +296,8 @@ class TargetsSzInvasionTemporal(Quantification):
 
         self.sztime_v_photostimresponses_zscored = sztime_v_photostimresponses_zscored
 
-    def collect_szinvasiontime_vs_photostimresponses_zscored_new(self, expobj: Post4ap, zscore_type: str = 'dFF (zscored)'):
+    def collect_szinvasiontime_vs_photostimresponses_zscored_new(self, expobj: Post4ap,
+                                                                 zscore_type: str = 'dFF (zscored)'):
         # (re-)make pandas dataframe
         df = pd.DataFrame(columns=['target_id', 'stim_id', 'time_to_szinvasion', 'photostim_responses'])
 
@@ -281,12 +309,13 @@ class TargetsSzInvasionTemporal(Quantification):
                 sztime = self.time_del_szinv_stims.loc[target, stim]
                 response = expobj.PhotostimResponsesSLMTargets.adata.layers[zscore_type][idx, idxstim]
                 if not np.isnan(sztime):
-                    df = pd.concat([df, pd.DataFrame({'target_id': target, 'stim_id': stim, 'time_to_szinvasion': sztime,
-                                                      'photostim_responses': response}, index=[index_])])  # TODO need to update the idx to use a proper index range
+                    df = pd.concat(
+                        [df, pd.DataFrame({'target_id': target, 'stim_id': stim, 'time_to_szinvasion': sztime,
+                                           'photostim_responses': response},
+                                          index=[index_])])  # TODO need to update the idx to use a proper index range
                     index_ += 1
 
         self.sztime_v_photostimresponses_zscored_df = df
-
 
     def return_szinvasiontime_vs_photostimresponses_zscored(self):
         x = []
@@ -306,10 +335,8 @@ class TargetsSzInvasionTemporal(Quantification):
         ax.scatter(x, y, s=50, zorder=3, c='red', alpha=0.3, ec='white')
         ax.plot(np.unique(x), np.poly1d(np.polyfit(x, y, 1))(np.unique(x)), color='purple', zorder=5, lw=4)
 
-
     ## 6.1) PLOT - binning and plotting 2d density plot, and smoothing data across the time to seizure axis, when comparing to responses
     def plot_responses_vs_time_to_seizure_SLMTargets_2ddensity(self, expobj: Post4ap, plot=True):
-
         print(f"\t|- plotting responses vs. time to seizure")
 
         sztime_v_photostimresponses_df = self.sztime_v_photostimresponses_zscored_df
@@ -330,7 +357,7 @@ class TargetsSzInvasionTemporal(Quantification):
         # bins_num = int((max(times_to_sz) - min(times_to_sz)) / bin_size)
         bins_num = 40
 
-        pj.plot_hist2d(data=data_expobj, bins=[bins_num,bins_num], y_label='dFF (zscored)', title=expobj.t_series_name,
+        pj.plot_hist2d(data=data_expobj, bins=[bins_num, bins_num], y_label='dFF (zscored)', title=expobj.t_series_name,
                        figsize=(4, 2), x_label='time to seizure (sec)',
                        y_lim=[-2, 2]) if plot else None
 
@@ -415,9 +442,51 @@ class TargetsSzInvasionTemporal(Quantification):
         plt.show()
 
 
+@dataclass
+class TargetsSzInvasionTemporalResults(Results):
+    SAVE_PATH = SAVE_LOC + 'Results__TargetsSzInvasionTemporal.pkl'
+    data = None  # output of plot_responses_vs_time_to_seizure_SLMTargets_2ddensity
+    range_of_sz_invasion_time: list = field(default_factory=lambda: [-1.0, -1.0, -1.0])  # TODO need to collect - represents the 25th, 50th, and 75th percentile range of the sz invasion time stats calculated across all targets and all exps
+
+    @classmethod
+    def load(cls):
+        return pj.load_pkl(cls.SAVE_PATH)
+
+
+if not os.path.exists(TargetsSzInvasionTemporalResults.SAVE_PATH):
+    RESULTS = TargetsSzInvasionTemporalResults()
+    RESULTS.save_results()
+
+
+
+# %% UTILITY CLASSES
+class ExpobjStrippedTimeDelaySzInvasion:
+    def __init__(self, expobj):
+        self.t_series_name = expobj.t_series_name
+        self.seizure_lfp_onsets = expobj.seizure_lfp_onsets
+        self.seziure_lfp_offsets = expobj.seizure_lfp_offsets
+        self.raw_SLMTargets = expobj.raw_SLMTargets
+        self.mean_raw_flu_trace = expobj.meanRawFluTrace
+        from _utils_._lfp import LFP
+        self.lfp_downsampled = LFP.downsampled_LFP(expobj=expobj)
+        self.save(expobj=expobj)
+
+    def __repr__(self):
+        return f"ExpobjStrippedTimeDelaySzInvasion - {self.t_series_name}"
+
+    def save(self, expobj):
+        path = expobj.analysis_save_path + '/export/'
+        os.makedirs(path, exist_ok=True)
+        path += f"{expobj.prep}_{expobj.trial}_stripped.pkl"
+        with open(f'{path}', 'wb') as outp:
+            pickle.dump(self, outp, pickle.HIGHEST_PROTOCOL)
+            print(f"|- Successfully saved stripped expobj: {expobj.prep}_{expobj.trial} to {path}")
+
+
+# %% RUN ANALYSIS FOR TARGETS SZ INVASION TEMPORAL RESULTS
 if __name__ == '__main__':
-    main = TargetsSzInvasionTemporal
-    main.data = main.plot_responses_vs_time_to_seizure_SLMTargets_2ddensity()
+    MAIN = TargetsSzInvasionTemporal
+    RESULTS = TargetsSzInvasionTemporalResults.load()
     pass
 
 
@@ -426,168 +495,168 @@ if __name__ == '__main__':
 ### below should be almost all refactored to TargetsSzInvasionTemporal class
 
 
-# %% 3) COLLECT TIME DELAY TO SZ INVASION FOR EACH TARGET AT EACH PHOTOSTIM TIME
-
-# create a df containing delay to sz invasion for each target for each stim frame (dim: n_targets x n_stims)
-@Utils.run_for_loop_across_exps(run_pre4ap_trials=False, run_post4ap_trials=True, allow_rerun=True)
-def collect_time_delay_sz_stims(self, **kwargs):
-    expobj: Post4ap = kwargs['expobj']
-    df = pd.DataFrame(columns=expobj.PhotostimResponsesSLMTargets.adata.var['stim_start_frame'],
-                      index=expobj.slmtargets_data.obs.index)
-    for target in expobj.slmtargets_data.obs.index:
-        # target = 0
-        print(f'\- collecting from target #{target} ... ') if (int(target) % 10) == 0 else None
-        cols_ = [idx for idx, col in enumerate([*expobj.slmtargets_data.obs]) if 'time_del' in col]
-        sz_times = expobj.slmtargets_data.obs.iloc[int(target), cols_]
-        fr_times = [convert_timedel2frames(expobj, sznum, time) for sznum, time in enumerate(sz_times) if
-                    not pd.isnull(time)]
-        for szstart, szstop in zip(expobj.seizure_lfp_onsets, expobj.seizure_lfp_offsets):
-            fr_time = [i for i in fr_times if szstart < i < szstop]
-            if len(fr_time) >= 1:
-                for stim in expobj.stim_start_frames:
-                    if szstart < stim < szstop:
-                        time_del = - (stim - fr_time[0]) / expobj.fps
-                        df.loc[target, stim] = round(time_del, 2)  # secs
-
-    self.time_del_szinv_stims = df
-    self._update_expobj(expobj)
-    expobj.save()
-
-
-# collect_time_delay_sz_stims()
-
-@Utils.run_for_loop_across_exps(run_pre4ap_trials=False, run_post4ap_trials=True, allow_rerun=True)
-def check_collect_time_delay_sz_stims(**kwargs):
-    expobj: Post4ap = kwargs['expobj']
-
-    # plot num stims outside of sz invasion and num stims after sz invasion
-    pos_values_collect = []
-    neg_values_collect = []
-    for idx, row in expobj.time_del_szinv_stims.iterrows():
-        values = row[row.notnull()]
-        pos_values_collect += list(values[values > 0])
-        neg_values_collect += list(values[values < 0])
-
-    expobj.time_delay_sz_stims_pos_values_collect = pos_values_collect
-    expobj.time_delay_sz_stims_neg_values_collect = neg_values_collect
-
-    print(f"avg num stim before sz invasion: {len(pos_values_collect) / expobj.n_targets_total}")
-    print(f"avg num stim after sz invasion: {len(neg_values_collect) / expobj.n_targets_total}")
-
-
-# check_collect_time_delay_sz_stims()
-
-@plot_piping_decorator(figsize=(8, 4), nrows=1, ncols=1, verbose=False)
-def plot_time_delay_sz_stims(**kwargs):
-    fig, ax, expobj = kwargs['fig'], kwargs['ax'], kwargs['expobj']
-
-    ax.hist(expobj.time_delay_sz_stims_pos_values_collect, fc='blue')
-    ax.hist(expobj.time_delay_sz_stims_neg_values_collect, fc='purple')
-
-
-# %% 1) collecting mean of seizure invasion Flu traces from all targets for each experiment
-
-@Utils.run_for_loop_across_exps(run_pre4ap_trials=False, run_post4ap_trials=True)
-def check_targets_sz_invasion_time(**kwargs):
-    expobj: Post4ap = kwargs['expobj']
-    print(expobj.slmtargets_data.obs)
-
-
-# check_targets_sz_invasion_time()
-
-
-# create dictionary containing mean Raw Flu trace around sz invasion time of each target (as well as other info as keyed into dict)
-@Utils.run_for_loop_across_exps(run_pre4ap_trials=False,
-                                run_post4ap_trials=True)  # , run_trials=['RL109 t-016', 'PS07 t-011', 'PS11 t-011'])
-def collect_targets_sz_invasion_traces(**kwargs):
-    expobj: Post4ap = kwargs['expobj']
-
-    fov_traces_ = []
-    traces_ = []
-    pre = 5
-    post = 10
-    for target, coord in enumerate(expobj.slmtargets_data.obs['SLM target coord']):
-        # target, coord = 0, expobj.slmtargets_data.obs['SLM target coord'][0]
-        print(f'\- collecting from target #{target} ... ') if (target % 10) == 0 else None
-        cols_ = [idx for idx, col in enumerate([*expobj.slmtargets_data.obs]) if 'time_del' in col]
-        sz_times = expobj.slmtargets_data.obs.iloc[target, cols_]
-        fr_times = [convert_timedel2frames(expobj, sznum, time) for sznum, time in enumerate(sz_times) if
-                    not pd.isnull(time)]
-
-        # collect each frame seizure invasion time Flu snippet for current target
-        target_traces = []
-        fov_traces = []
-        for fr in fr_times:
-            target_tr = expobj.raw_SLMTargets[target][fr - int(pre * expobj.fps): fr + int(post * expobj.fps)]
-            fov_tr = expobj.meanRawFluTrace[fr - int(pre * expobj.fps): fr + int(post * expobj.fps)]
-            target_traces.append(target_tr)
-            fov_traces.append(fov_tr)
-            # ax.plot(pj.moving_average(to_plot, n=4), alpha=0.2)
-        traces_.append(np.mean(target_traces, axis=0)) if len(target_traces) > 1 else None
-        fov_traces_.append(np.mean(fov_traces, axis=0)) if len(target_traces) > 1 else None
-
-    traces_ = np.array(traces_)
-    fov_traces_ = np.array(fov_traces_)
-    MEAN_TRACE = np.mean(traces_, axis=0)
-    FOV_MEAN_TRACE = np.mean(fov_traces_, axis=0)
-    expobj.mean_targets_szinvasion_trace = {'fov_mean_trace': FOV_MEAN_TRACE,
-                                            'mean_trace': MEAN_TRACE,
-                                            'pre_sec': pre,
-                                            'post_sec': post}
-    expobj.save()
-
-
-# collect_targets_sz_invasion_traces()
-
-# %% 2) PLOT TARGETS FLU PERI- TIME TO INVASION
-
-def plot_targets_sz_invasion_meantraces_full():
-    fig, ax = plt.subplots(figsize=[3, 6])
-
-    @Utils.run_for_loop_across_exps(run_pre4ap_trials=False, run_post4ap_trials=True)
-    def plot_targets_sz_invasion_meantraces(**kwargs):
-        expobj: Post4ap = kwargs['expobj']
-
-        fov_mean_trace, to_plot, pre, post = expobj.mean_targets_szinvasion_trace['fov_mean_trace'], \
-                                             expobj.mean_targets_szinvasion_trace['mean_trace'], \
-                                             expobj.mean_targets_szinvasion_trace['pre_sec'], \
-                                             expobj.mean_targets_szinvasion_trace['post_sec']
-        invasion_spot = int(pre * expobj.fps)
-        to_plot = pj.moving_average(to_plot, n=6)
-        fov_mean_trace = pj.moving_average(fov_mean_trace, n=6)
-        to_plot_normalize = (to_plot - to_plot[0]) / to_plot[0]
-        fov_mean_normalize = (fov_mean_trace - fov_mean_trace[0]) / fov_mean_trace[0]
-
-        x_time = np.linspace(-pre, post, len(to_plot))
-
-        ax.plot(x_time, to_plot_normalize, color=pj.make_random_color_array(n_colors=1)[0], linewidth=3)
-        # ax2.plot(x_time, fov_mean_normalize, color=pj.make_random_color_array(n_colors=1)[0], linewidth=3, alpha=0.5, linestyle='--')
-
-        ax.scatter(x=0, y=to_plot_normalize[invasion_spot], color='crimson', s=45, zorder=5)
-
-        xticks = [-pre, 0, post]
-        # xticks_loc = [xtick*expobj.fps for xtick in [0, pre, pre+post]]
-        ax.set_xticks(xticks)
-        ax.set_xticklabels(xticks)
-        ax.set_xlabel('Time (secs) to sz invasion')
-        ax.set_ylabel('Flu change (norm.)')
-        # ax.set_xlim([np.min(xticks_loc), np.max(xticks_loc)])
-        # ax.set_title(f"{expobj.t_series_name}")
-
-    plot_targets_sz_invasion_meantraces()
-    fig.suptitle('avg Flu at sz invasion', wrap=True, y=0.96)
-    fig.tight_layout(pad=2)
-    fig.show()
-
-
-# plot_targets_sz_invasion_meantraces_full()
-
-
-if __name__ == '__main__':
-    # collect_time_delay_sz_stims()
-    # check_collect_time_delay_sz_stims()
-    # plot_time_delay_sz_stims()
-    #
-    # check_targets_sz_invasion_time()
-    # collect_targets_sz_invasion_traces()
-    pass
+# # %% 3) COLLECT TIME DELAY TO SZ INVASION FOR EACH TARGET AT EACH PHOTOSTIM TIME
+#
+# # create a df containing delay to sz invasion for each target for each stim frame (dim: n_targets x n_stims)
+# @Utils.run_for_loop_across_exps(run_pre4ap_trials=False, run_post4ap_trials=True, allow_rerun=True)
+# def collect_time_delay_sz_stims(self, **kwargs):
+#     expobj: Post4ap = kwargs['expobj']
+#     df = pd.DataFrame(columns=expobj.PhotostimResponsesSLMTargets.adata.var['stim_start_frame'],
+#                       index=expobj.slmtargets_data.obs.index)
+#     for target in expobj.slmtargets_data.obs.index:
+#         # target = 0
+#         print(f'\- collecting from target #{target} ... ') if (int(target) % 10) == 0 else None
+#         cols_ = [idx for idx, col in enumerate([*expobj.slmtargets_data.obs]) if 'time_del' in col]
+#         sz_times = expobj.slmtargets_data.obs.iloc[int(target), cols_]
+#         fr_times = [convert_timedel2frames(expobj, sznum, time) for sznum, time in enumerate(sz_times) if
+#                     not pd.isnull(time)]
+#         for szstart, szstop in zip(expobj.seizure_lfp_onsets, expobj.seizure_lfp_offsets):
+#             fr_time = [i for i in fr_times if szstart < i < szstop]
+#             if len(fr_time) >= 1:
+#                 for stim in expobj.stim_start_frames:
+#                     if szstart < stim < szstop:
+#                         time_del = - (stim - fr_time[0]) / expobj.fps
+#                         df.loc[target, stim] = round(time_del, 2)  # secs
+#
+#     self.time_del_szinv_stims = df
+#     self._update_expobj(expobj)
+#     expobj.save()
+#
+#
+# # collect_time_delay_sz_stims()
+#
+# @Utils.run_for_loop_across_exps(run_pre4ap_trials=False, run_post4ap_trials=True, allow_rerun=True)
+# def check_collect_time_delay_sz_stims(**kwargs):
+#     expobj: Post4ap = kwargs['expobj']
+#
+#     # plot num stims outside of sz invasion and num stims after sz invasion
+#     pos_values_collect = []
+#     neg_values_collect = []
+#     for idx, row in expobj.time_del_szinv_stims.iterrows():
+#         values = row[row.notnull()]
+#         pos_values_collect += list(values[values > 0])
+#         neg_values_collect += list(values[values < 0])
+#
+#     expobj.time_delay_sz_stims_pos_values_collect = pos_values_collect
+#     expobj.time_delay_sz_stims_neg_values_collect = neg_values_collect
+#
+#     print(f"avg num stim before sz invasion: {len(pos_values_collect) / expobj.n_targets_total}")
+#     print(f"avg num stim after sz invasion: {len(neg_values_collect) / expobj.n_targets_total}")
+#
+#
+# # check_collect_time_delay_sz_stims()
+#
+# @plot_piping_decorator(figsize=(8, 4), nrows=1, ncols=1, verbose=False)
+# def plot_time_delay_sz_stims(**kwargs):
+#     fig, ax, expobj = kwargs['fig'], kwargs['ax'], kwargs['expobj']
+#
+#     ax.hist(expobj.time_delay_sz_stims_pos_values_collect, fc='blue')
+#     ax.hist(expobj.time_delay_sz_stims_neg_values_collect, fc='purple')
+#
+#
+# # %% 1) collecting mean of seizure invasion Flu traces from all targets for each experiment
+#
+# @Utils.run_for_loop_across_exps(run_pre4ap_trials=False, run_post4ap_trials=True)
+# def check_targets_sz_invasion_time(**kwargs):
+#     expobj: Post4ap = kwargs['expobj']
+#     print(expobj.slmtargets_data.obs)
+#
+#
+# # check_targets_sz_invasion_time()
+#
+#
+# # create dictionary containing mean Raw Flu trace around sz invasion time of each target (as well as other info as keyed into dict)
+# @Utils.run_for_loop_across_exps(run_pre4ap_trials=False,
+#                                 run_post4ap_trials=True)  # , run_trials=['RL109 t-016', 'PS07 t-011', 'PS11 t-011'])
+# def collect_targets_sz_invasion_traces(**kwargs):
+#     expobj: Post4ap = kwargs['expobj']
+#
+#     fov_traces_ = []
+#     traces_ = []
+#     pre = 5
+#     post = 10
+#     for target, coord in enumerate(expobj.slmtargets_data.obs['SLM target coord']):
+#         # target, coord = 0, expobj.slmtargets_data.obs['SLM target coord'][0]
+#         print(f'\- collecting from target #{target} ... ') if (target % 10) == 0 else None
+#         cols_ = [idx for idx, col in enumerate([*expobj.slmtargets_data.obs]) if 'time_del' in col]
+#         sz_times = expobj.slmtargets_data.obs.iloc[target, cols_]
+#         fr_times = [convert_timedel2frames(expobj, sznum, time) for sznum, time in enumerate(sz_times) if
+#                     not pd.isnull(time)]
+#
+#         # collect each frame seizure invasion time Flu snippet for current target
+#         target_traces = []
+#         fov_traces = []
+#         for fr in fr_times:
+#             target_tr = expobj.raw_SLMTargets[target][fr - int(pre * expobj.fps): fr + int(post * expobj.fps)]
+#             fov_tr = expobj.meanRawFluTrace[fr - int(pre * expobj.fps): fr + int(post * expobj.fps)]
+#             target_traces.append(target_tr)
+#             fov_traces.append(fov_tr)
+#             # ax.plot(pj.moving_average(to_plot, n=4), alpha=0.2)
+#         traces_.append(np.mean(target_traces, axis=0)) if len(target_traces) > 1 else None
+#         fov_traces_.append(np.mean(fov_traces, axis=0)) if len(target_traces) > 1 else None
+#
+#     traces_ = np.array(traces_)
+#     fov_traces_ = np.array(fov_traces_)
+#     MEAN_TRACE = np.mean(traces_, axis=0)
+#     FOV_MEAN_TRACE = np.mean(fov_traces_, axis=0)
+#     expobj.mean_targets_szinvasion_trace = {'fov_mean_trace': FOV_MEAN_TRACE,
+#                                             'mean_trace': MEAN_TRACE,
+#                                             'pre_sec': pre,
+#                                             'post_sec': post}
+#     expobj.save()
+#
+#
+# # collect_targets_sz_invasion_traces()
+#
+# # %% 2) PLOT TARGETS FLU PERI- TIME TO INVASION
+#
+# def plot_targets_sz_invasion_meantraces_full():
+#     fig, ax = plt.subplots(figsize=[3, 6])
+#
+#     @Utils.run_for_loop_across_exps(run_pre4ap_trials=False, run_post4ap_trials=True)
+#     def plot_targets_sz_invasion_meantraces(**kwargs):
+#         expobj: Post4ap = kwargs['expobj']
+#
+#         fov_mean_trace, to_plot, pre, post = expobj.mean_targets_szinvasion_trace['fov_mean_trace'], \
+#                                              expobj.mean_targets_szinvasion_trace['mean_trace'], \
+#                                              expobj.mean_targets_szinvasion_trace['pre_sec'], \
+#                                              expobj.mean_targets_szinvasion_trace['post_sec']
+#         invasion_spot = int(pre * expobj.fps)
+#         to_plot = pj.moving_average(to_plot, n=6)
+#         fov_mean_trace = pj.moving_average(fov_mean_trace, n=6)
+#         to_plot_normalize = (to_plot - to_plot[0]) / to_plot[0]
+#         fov_mean_normalize = (fov_mean_trace - fov_mean_trace[0]) / fov_mean_trace[0]
+#
+#         x_time = np.linspace(-pre, post, len(to_plot))
+#
+#         ax.plot(x_time, to_plot_normalize, color=pj.make_random_color_array(n_colors=1)[0], linewidth=3)
+#         # ax2.plot(x_time, fov_mean_normalize, color=pj.make_random_color_array(n_colors=1)[0], linewidth=3, alpha=0.5, linestyle='--')
+#
+#         ax.scatter(x=0, y=to_plot_normalize[invasion_spot], color='crimson', s=45, zorder=5)
+#
+#         xticks = [-pre, 0, post]
+#         # xticks_loc = [xtick*expobj.fps for xtick in [0, pre, pre+post]]
+#         ax.set_xticks(xticks)
+#         ax.set_xticklabels(xticks)
+#         ax.set_xlabel('Time (secs) to sz invasion')
+#         ax.set_ylabel('Flu change (norm.)')
+#         # ax.set_xlim([np.min(xticks_loc), np.max(xticks_loc)])
+#         # ax.set_title(f"{expobj.t_series_name}")
+#
+#     plot_targets_sz_invasion_meantraces()
+#     fig.suptitle('avg Flu at sz invasion', wrap=True, y=0.96)
+#     fig.tight_layout(pad=2)
+#     fig.show()
+#
+#
+# # plot_targets_sz_invasion_meantraces_full()
+#
+#
+# if __name__ == '__main__':
+#     # collect_time_delay_sz_stims()
+#     # check_collect_time_delay_sz_stims()
+#     # plot_time_delay_sz_stims()
+#     #
+#     # check_targets_sz_invasion_time()
+#     # collect_targets_sz_invasion_traces()
+#     pass

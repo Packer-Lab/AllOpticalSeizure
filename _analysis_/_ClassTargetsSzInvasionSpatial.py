@@ -1,5 +1,5 @@
 import os.path
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import List
 
 import numpy as np
@@ -346,7 +346,7 @@ class TargetsSzInvasionSpatialResults(Results):
     response_type = TargetsSzInvasionSpatial.response_type
 
     range_of_sz_spatial_distance: List[
-        float] = None  # need to collect - represents the 25th, 50th, and 75th percentile range of the sz invasion distance stats calculated across all targets and all exps - maybe each seizure across all exps should be the 'n'?
+        float] = field(default_factory=lambda: [-1.0, -1.0, -1.0])  # need to collect - represents the 25th, 50th, and 75th percentile range of the sz invasion distance stats calculated across all targets and all exps - maybe each seizure across all exps should be the 'n'?
 
     no_slmtargets_szboundary_stim = []
     data_all = None
@@ -359,11 +359,6 @@ class TargetsSzInvasionSpatialResults(Results):
     def load(cls):
         return pj.load_pkl(cls.save_path)
 
-
-
-# try:
-#     Results__TargetsSzInvasionSpatial = pj.load_pkl(TargetsSzInvasionSpatialResults.save_path)
-# except FileNotFoundError:
 
 if not os.path.exists(TargetsSzInvasionSpatialResults.save_path):
     Results__TargetsSzInvasionSpatial = TargetsSzInvasionSpatialResults()

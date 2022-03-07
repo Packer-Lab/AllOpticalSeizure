@@ -95,6 +95,10 @@ def run_photostim_preprocessing(trial, exp_type, tiffs_loc, naparms_loc, paqs_lo
     if processed_tiffs:
         expobj.rm_artifacts_tiffs(expobj, tiffs_loc=tiffs_loc, new_tiffs=new_tiffs)
 
+
+    # MAKE AVG STIM IMAGES AROUND EACH PHOTOSTIM TIMINGS
+    expobj.avg_stim_images(stim_timings=expobj.stims_in_sz, peri_frames=50, to_plot=False, save_img=True)
+
     print('\n----- COMPLETED RUNNING run_photostim_preprocessing() *******')
     print(metainfo)
     expobj.save()
@@ -153,6 +157,10 @@ def run_alloptical_processing_photostim(expobj: Union[alloptical, Post4ap], to_s
         ####################################################################################################################
         # collect raw Flu data from SLM targets
         expobj.collect_traces_from_targets(force_redo=force_redo)
+
+        #####
+        if 'post' in expobj.exptype:
+            expobj.MeanSeizureImages(frames_last=1000)
 
     if plots:
         aoplot.plot_SLMtargets_Locs(expobj, background=expobj.meanFluImg, title='SLM targets location w/ mean Flu img')

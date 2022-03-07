@@ -30,7 +30,7 @@ pd.set_option("expand_frame_repr", True)
 
 # ALL OPTICAL EXPERIMENTS RUN
 def run_for_loop_across_exps(run_pre4ap_trials=False, run_post4ap_trials=False, skip_trials=[], run_trials=[],
-                             set_cache=True, allow_rerun=False, supress_print=False):
+                             set_cache=True, allow_rerun=False, supress_print=False, debug='off'):
     """decorator to use for for-looping through experiment trials across run_pre4ap_trials and run_post4ap_trials.
     the trials to for loop through are defined in allopticalResults.pre_4ap_trials and allopticalResults.post_4ap_trials.
 
@@ -47,13 +47,13 @@ def run_for_loop_across_exps(run_pre4ap_trials=False, run_post4ap_trials=False, 
 
     """
     # if len(run_trials) > 0 or run_pre4ap_trials is True or run_post4ap_trials is True:
-    print(f"\n {'..'*5} [1] INITIATING FOR LOOP DECORATOR {'..'*5}\n")
+    print(f"\n {'..'*5} [1] INITIATING FOR LOOP DECORATOR {'..'*5}\n") if debug == 'on' else None
     t_start = time.time()
     def main_for_loop(func):
-        print(f"\n {'..' * 5} [2] RETURNING FOR LOOP DECORATOR {'..' * 5}\n")
+        print(f"\n {'..' * 5} [2] RETURNING FOR LOOP DECORATOR {'..' * 5}\n") if debug == 'on' else None
         @functools.wraps(func)
         def inner(*args, **kwargs):
-            print(f"\n {'..' * 5} [3] INITIATING FOR LOOP ACROSS EXPS FOR func: {func} {'..' * 5}\n")
+            print(f"\n {'**' * 5} [3] INITIATING FOR LOOP ACROSS EXPS FOR func: {func} {'..' * 5}\n")
 
             if run_trials:
                 print(f"\n{'-' * 5} RUNNING SPECIFIED TRIALS from `trials_run` {'-' * 5}")
@@ -181,29 +181,6 @@ def run_for_loop_across_exps(run_pre4ap_trials=False, run_post4ap_trials=False, 
             print(f" {'--' * 5} COMPLETED FOR LOOP ACROSS EXPS {'--' * 5}\n")
         return inner
     return main_for_loop
-
-# %% UTILITY CLASSES
-class ExpobjStrippedTimeDelaySzInvasion:
-    def __init__(self, expobj):
-        self.t_series_name = expobj.t_series_name
-        self.seizure_lfp_onsets = expobj.seizure_lfp_onsets
-        self.seziure_lfp_offsets = expobj.seizure_lfp_offsets
-        self.raw_SLMTargets = expobj.raw_SLMTargets
-        self.mean_raw_flu_trace = expobj.meanRawFluTrace
-        from _utils_._lfp import LFP
-        self.lfp_downsampled = LFP.downsampled_LFP(expobj=expobj)
-        self.save(expobj=expobj)
-
-    def __repr__(self):
-        return f"ExpobjStrippedTimeDelaySzInvasion - {self.t_series_name}"
-
-    def save(self, expobj):
-        path = expobj.analysis_save_path + '/export/'
-        os.makedirs(path, exist_ok=True)
-        path += f"{expobj.prep}_{expobj.trial}_stripped.pkl"
-        with open(f'{path}', 'wb') as outp:
-            pickle.dump(self, outp, pickle.HIGHEST_PROTOCOL)
-            print(f"|- Successfully saved stripped expobj: {expobj.prep}_{expobj.trial} to {path}")
 
 
 

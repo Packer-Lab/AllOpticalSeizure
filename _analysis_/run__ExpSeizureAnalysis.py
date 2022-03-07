@@ -45,19 +45,12 @@ def procedure__classifying_sz_boundary(**kwargs):
     # expobj.collect_seizures_info(seizures_lfp_timing_matarray=matlab_pairedmeasurements_path)
     # expobj.save()
 
-    # aoplot.plotSLMtargetsLocs(expobj, background=None)
 
     # ######## CLASSIFY SLM PHOTOSTIM TARGETS AS IN OR OUT OF current SZ location in the FOV
     # -- FIRST manually draw boundary on the image in ImageJ and save results as CSV to analysis folder under boundary_csv
 
-    if not hasattr(expobj, 'sz_boundary_csv_done'):
-        expobj.sz_boundary_csv_done = True
-    else:
-        AssertionError('confirm that sz boundary csv creation has been completed')
-        # sys.exit()
 
     # expobj.avg_stim_images(stim_timings=expobj.stims_in_sz, peri_frames=50, to_plot=True, save_img=True)
-
     # expobj.sz_locations_stims() #if not hasattr(expobj, 'stimsSzLocations') else None
 
     ######## - all stims in sz are classified, with individual sz events labelled
@@ -88,6 +81,7 @@ def run_misc(expobj: Post4ap):
     # expobj.collect_seizures_info()
     # expobj.sz_locations_stims()
     main.plot__exp_sz_lfp_fov(expobj=expobj)
+    # expobj.plot_SLMtargets_Locs(background=None)
     # expobj.avg_stim_images(stim_timings=expobj.stims_in_sz, peri_frames=50, to_plot=True, save_img=True)
 
 
@@ -105,9 +99,9 @@ if __name__ == '__main__':
     # expobj: Post4ap = Utils.import_expobj(prep='RL108', trial='t-013')
     # main.remove_stims_to_flip(expobj=expobj)
 
-    run__enter_input_stims_to_flip()
+    # run__enter_input_stims_to_flip()
 
-    # procedure__classifying_sz_boundary()
+    procedure__classifying_sz_boundary()
 
     # main.FOVszInvasionTime()
     # main.plot__sz_incidence()
@@ -115,7 +109,7 @@ if __name__ == '__main__':
     #
     # main.calc__szInvasionTime()
     # main.plot__sz_invasion()
-
+    pass
 
 
 

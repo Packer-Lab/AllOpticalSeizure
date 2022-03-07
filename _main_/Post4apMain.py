@@ -31,7 +31,7 @@ class Post4ap(alloptical):
 
         alloptical.__init__(self, paths, metainfo, stimtype)
         self.time_del_szinv_stims: pd.DataFrame = pd.DataFrame()  # df containing delay to sz invasion for each target for each stim frame (dim: n_targets x n_stims)
-        self.mean_targets_szinvasion_trace: dict = {}  # dictionary containing mean Raw Flu trace around sz invasion time of each target (as well as other info as keyed into dict)
+        # self.mean_targets_szinvasion_trace: dict = {}  # dictionary containing mean Raw Flu trace around sz invasion time of each target (as well as other info as keyed into dict)  # refactored this to a class instance attr under TargetsSzInvasionTemporal
         print('\ninitialized Post4ap expobj of exptype and trial: %s, %s, %s' % (self.metainfo['exptype'],
                                                                                  self.metainfo['trial'],
                                                                                  self.metainfo['date']))
@@ -565,17 +565,16 @@ class Post4ap(alloptical):
 
         if continu:
 
-            if baseline_tiff is None:
-                raise Exception(
-                    'please provide a baseline tiff path to use for this trial -- usually the spont imaging trials of the same experiment')
-
-            print('First loading up and plotting baseline (comparison) tiff from: ', baseline_tiff)
-            im_stack_base = tf.imread(baseline_tiff,
-                                      key=range(5000))  # reading in just the first 5000 frames of the spont
-            avg_baseline = np.mean(im_stack_base, axis=0)
-            plt.imshow(avg_baseline, cmap='gray')
-            plt.suptitle('avg 5000 frames baseline from %s' % baseline_tiff[-35:], wrap=True)
-            plt.show()
+            # if baseline_tiff is None:
+            #     print('WARNING: not subtracting by baseline_tiff, none provided.')
+            #     im_stack_base = np.zeros(shape=[self.frame_x, self.frame_y])
+            # else:
+            #     print('First loading up and plotting baseline (comparison) tiff from: ', baseline_tiff)
+            #     im_stack_base = tf.imread(baseline_tiff, key=range(5000))  # reading in just the first 5000 frames of the spont
+            #     avg_baseline = np.mean(im_stack_base, axis=0)
+            #     plt.imshow(avg_baseline, cmap='gray')
+            #     plt.suptitle('avg 5000 frames baseline from %s' % baseline_tiff[-35:], wrap=True)
+            #     plt.show()
 
             tiffs_loc = '%s/*Ch3.tif' % self.tiff_path_dir
             tiff_path = glob.glob(tiffs_loc)[0]
@@ -611,12 +610,12 @@ class Post4ap(alloptical):
                 counter += 1
 
                 ## create downsampled TIFFs for each sz
-                pj.SaveDownsampledTiff(stack=im_sub, save_as=self.analysis_save_path + '%s_%s_sz%s_downsampled.tiff' % (
-                self.metainfo['date'], self.metainfo['trial'], counter))
+                pj.SaveDownsampledTiff(stack=im_sub, save_as=self.analysis_save_path + '%s_%s_sz%s_downsampled.tiff' % (self.metainfo['date'], self.metainfo['trial'], counter))
 
-                self.meanszimages_r = True
 
             self.avg_sub_list = avg_sub_list
+            self.meanszimages_r = True
+
         else:
             print('skipping remaking of mean sz images')
 

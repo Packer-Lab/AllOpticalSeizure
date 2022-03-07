@@ -10,21 +10,24 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import seaborn as sns
-# from _analysis_._ClassTargetsSzInvasionTemporal import TargetsSzInvasionTemporal as main
 
 import _alloptical_utils as Utils
+from _analysis_._ClassTargetsSzInvasionTemporal import TargetsSzInvasionTemporal, TargetsSzInvasionTemporalResults, \
+    SAVE_PATH
 from _main_.Post4apMain import Post4ap
 
 # SAVE_LOC = "/Users/prajayshah/OneDrive/UTPhD/2022/OXFORD/export/"
 # SAVE_LOC = "/home/pshah/mnt/qnap/Analysis/analysis_export/"
 
-SAVE_LOC = "/home/pshah/mnt/qnap/Analysis/analysis_export/analysis_quantification_classes/"
 
 
 expobj: Post4ap = Utils.import_expobj(prep='RL108', trial='t-013')
 # expobj = Utils.import_expobj(load_backup_path='/home/pshah/mnt/qnap/Analysis/2020-12-18/RL108/2020-12-18_t-013/backups/2020-12-18_RL108_t-013.pkl')
 
 # expobj.PhotostimResponsesSLMTargets.adata.var[['stim_start_frame', 'wvfront in sz', 'seizure_num']]
+
+MAIN: TargetsSzInvasionTemporal = TargetsSzInvasionTemporal
+RESULTS: TargetsSzInvasionTemporalResults = TargetsSzInvasionTemporalResults.load()
 
 
 # %% code development zone
@@ -33,20 +36,25 @@ expobj: Post4ap = Utils.import_expobj(prep='RL108', trial='t-013')
 ## binning and plotting zscored photostim responses vs. time ###########################################################
 # TODO - MAIN WORK RIGHT NOW:
 
+# - bring back the seizure invasion marking by 0.5 secs for two experiments
+#    - need to determine which exps first
+#    - then, bring back the marking for those and replot avg invasion trace
+
 
 # %% code deployment zone
+
 
 @Utils.run_for_loop_across_exps(run_pre4ap_trials=0, run_post4ap_trials=1, allow_rerun=0)
 def run__initTargetsSzInvasionTemporal(**kwargs):
     expobj: Post4ap = kwargs['expobj']
-    expobj.TargetsSzInvasionTemporal = main(expobj=expobj)
+    expobj.TargetsSzInvasionTemporal = MAIN(expobj=expobj)
     expobj.save()
 
 
 # run__initTargetsSzInvasionTemporal()
 
 @Utils.run_for_loop_across_exps(run_pre4ap_trials=False,
-                                run_post4ap_trials=1)  # , run_trials=['RL109 t-016', 'PS07 t-011', 'PS11 t-011'])
+                                run_post4ap_trials=1, allow_rerun=1)  # , run_trials=['RL109 t-016', 'PS07 t-011', 'PS11 t-011'])
 def run__collect_targets_sz_invasion_traces(**kwargs):
     expobj: Post4ap = kwargs['expobj']
     expobj.TargetsSzInvasionTemporal.collect_targets_sz_invasion_traces(expobj=expobj)
@@ -72,7 +80,6 @@ def run_check_collect_time_delay_sz_stims(**kwargs):
 # run_check_collect_time_delay_sz_stims()
 
 
-fig, ax = plt.subplots(figsize=[3, 3])
 
 
 @Utils.run_for_loop_across_exps(run_pre4ap_trials=False, run_post4ap_trials=True, allow_rerun=True)
@@ -80,8 +87,6 @@ def run_plot_time_delay_sz_stims(**kwargs):
     expobj = kwargs['expobj']
     expobj.TargetsSzInvasionTemporal.plot_num_pos_neg_szinvasion_stims(**kwargs)
 
-
-# run_plot_time_delay_sz_stims(fig=fig, ax=ax)
 
 
 @Utils.run_for_loop_across_exps(run_pre4ap_trials=False, run_post4ap_trials=True, allow_rerun=True)
@@ -143,7 +148,7 @@ def plot__szinvasiontime_vs_photostimresponses_indivexp(**kwargs):
 # plot__szinvasiontime_vs_photostimresponses_indivexp()
 
 
-## zscored photostim responses vs time #################################################################################
+# zscored photostim responses vs time #################################################################################
 @Utils.run_for_loop_across_exps(run_pre4ap_trials=False, run_post4ap_trials=True)
 def run__collect_szinvasiontime_vs_photostimresponses_zscored(**kwargs):
     """run collecting dictionary of sz invasion time and photostim responses across all targets for each stim for an expobj"""
@@ -186,7 +191,7 @@ def plot__szinvasiontime_vs_photostimresponseszscored():
 # plot__szinvasiontime_vs_photostimresponseszscored()
 
 
-# %% binning and plotting zscored photostim responses vs. time ###########################################################
+# binning and plotting zscored photostim responses vs. time ###########################################################
 
 @Utils.run_for_loop_across_exps(run_pre4ap_trials=False, run_post4ap_trials=True, allow_rerun=0)
 def run__collect_szinvasiontime_vs_photostimresponses_zscored_new(**kwargs):
@@ -196,7 +201,6 @@ def run__collect_szinvasiontime_vs_photostimresponses_zscored_new(**kwargs):
     expobj.save()
 
 
-run__collect_szinvasiontime_vs_photostimresponses_zscored_new()
 
 
 @Utils.run_for_loop_across_exps(run_pre4ap_trials=False, run_post4ap_trials=True, set_cache=0)
@@ -209,12 +213,10 @@ def run__plot_responses_vs_time_to_seizure_SLMTargets_2ddensity(**kwargs):
     return data
 
 
-# main.save_data('_data_for_photostim_response_vs_time', run__plot_responses_vs_time_to_seizure_SLMTargets_2ddensity())
-
-data = run__plot_responses_vs_time_to_seizure_SLMTargets_2ddensity()
 
 
-# %% TODO running and testing below
+
+# TODO running and testing below
 
 
 def convert_responses_sztimes_percentile_space(data):
@@ -246,8 +248,6 @@ def run__convert_responses_sztimes_percentile_space(data):
     return data_all, percentiles, responses_sorted, times_to_sz_sorted, scale_percentile_times
 
 
-data_all, percentiles, responses_sorted, times_to_sz_sorted, scale_percentile_times = run__convert_responses_sztimes_percentile_space(
-    data=data)
 
 
 def plot_density_responses_sztimes(data_all, times_to_sz_sorted, scale_percentile_times):
@@ -273,12 +273,10 @@ def plot_density_responses_sztimes(data_all, times_to_sz_sorted, scale_percentil
     fig.show()
 
 
-plot_density_responses_sztimes(data_all, times_to_sz_sorted, scale_percentile_times)
 
 
 # plotting line plot for all datapoints for responses vs. time to seizure
-def plot_lineplot_responses_pctsztimes(percentiles, responses_sorted, response_type,
-                                       scale_percentile_times):
+def plot_lineplot_responses_pctsztimes(percentiles, responses_sorted, response_type, scale_percentile_times):
     percentiles_binned = np.round(percentiles)
 
     bin = 5
@@ -307,30 +305,52 @@ def plot_lineplot_responses_pctsztimes(percentiles, responses_sorted, response_t
     plt.show()
 
 
-plot_lineplot_responses_pctsztimes(percentiles=percentiles, responses_sorted=responses_sorted,
-                                   response_type='dFF (zscored)',
-                                   scale_percentile_times=scale_percentile_times)
 
 
 # %%
 
 if __name__ == '__main__':
+
+    @Utils.run_for_loop_across_exps(run_pre4ap_trials=0, run_post4ap_trials=1, allow_rerun=0)
+    def run_misc(**kwargs):
+        expobj: Post4ap = kwargs['expobj']
+        expobj.TargetsSzInvasionTemporal.add_slmtargets_time_delay_sz_data(expobj=expobj)
+        expobj.TargetsSzInvasionTemporal.collect_targets_sz_invasion_traces(expobj=expobj)
+        expobj.save()
+
+
+    # run_misc()
+
     # run__initTargetsSzInvasionTemporal()
     # run_collect_time_delay_sz_stims()
     # run_check_collect_time_delay_sz_stims()
+    # fig, ax = plt.subplots(figsize=[3, 3])
     # run_plot_time_delay_sz_stims(fig=fig, ax=ax)
+    # fig.show()
 
     # - should be done: before running the following below, need to update the expobj slmtargets adata to the new PhotostimResponses Class adata !!!
     # run__collect_szinvasiontime_vs_photostimresponses()
     # plot__szinvasiontime_vs_photostimresponses()
     # plot__szinvasiontime_vs_photostimresponses_indivexp()
 
-    # run__collect_targets_sz_invasion_traces()
-    # main.plot_targets_sz_invasion_meantraces_full()
+    run__collect_targets_sz_invasion_traces()
+    MAIN.plot__targets_sz_invasion_meantraces()
+
 
     # run collecting and plotting zscored photostim responses vs. time delay to sz invasion
     # run__collect_szinvasiontime_vs_photostimresponses_zscored()
     # plot__szinvasiontime_vs_photostimresponseszscored()
+    # run__collect_szinvasiontime_vs_photostimresponses_zscored_new()
+
+    # RESULTS.data = run__plot_responses_vs_time_to_seizure_SLMTargets_2ddensity()
+    # RESULTS.data_all, RESULTS.percentiles, RESULTS.responses_sorted, RESULTS.times_to_sz_sorted, RESULTS.scale_percentile_times = run__convert_responses_sztimes_percentile_space(
+    #     data=RESULTS.data)
+    # plot_density_responses_sztimes(RESULTS.data_all, RESULTS.times_to_sz_sorted, RESULTS.scale_percentile_times)
+    # plot_lineplot_responses_pctsztimes(percentiles=RESULTS.percentiles, responses_sorted=RESULTS.responses_sorted,
+    #                                    response_type='dFF (zscored)',
+    #                                    scale_percentile_times=RESULTS.scale_percentile_times)
+
+
     # main.range_of_sz_invasion_time = [-1, -1, -1]
     # main.saveclass()
     pass

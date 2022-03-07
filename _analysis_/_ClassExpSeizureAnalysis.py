@@ -1,7 +1,5 @@
 # NOTE: ALOT OF THIS CODE IS PRIMARILY COPIED AND REFACTORED OVER FROM alloptical_sz_processing IN AN EFFORT TO class-ify THE ANALYSIS OF THE SZ PROCESSING. COPIED OVER BITS ARE ARCHIVED UNDER THAT ORIGINAL SCRIPT.
 
-from typing import List
-
 import numpy as np
 import os
 from matplotlib import pyplot as plt
@@ -11,15 +9,14 @@ import funcsforprajay.funcs as pj
 import tifffile as tf
 
 from _analysis_._utils import Quantification
-from _exp_metainfo_.exp_metainfo import AllOpticalExpsToAnalyze, ExpMetainfo, OnePhotonStimExpsToAnalyze
+from _exp_metainfo_.exp_metainfo import AllOpticalExpsToAnalyze, ExpMetainfo
 from _main_.Post4apMain import Post4ap
 from _main_.TwoPhotonImagingMain import TwoPhotonImaging
-from _utils_.alloptical_plotting import multi_plot_subplots, _get_ax_for_multi_plot, plot_SLMtargets_Locs, \
-    plotLfpSignal, plotMeanRawFluTrace, plot_lfp_stims
+from _utils_.alloptical_plotting import multi_plot_subplots, _get_ax_for_multi_plot, plot_SLMtargets_Locs, plotMeanRawFluTrace, plot_lfp_stims
 
 SAVE_LOC = "/home/pshah/mnt/qnap/Analysis/analysis_export/analysis_quantification_classes/"
 
-SAVE_PATH_PREFIX = '/home/pshah/mnt/qnap/Analysis/Procesing_figs/sz_processing_boundaries_2022-03-04/'
+SAVE_PATH_PREFIX = '/home/pshah/mnt/qnap/Analysis/Procesing_figs/sz_processing_boundaries_2022-03-07/'
 
 # %%
 from _utils_.io import import_expobj
@@ -105,7 +102,7 @@ class ExpSeizureAnalysis(Quantification):
         expobj.save()
 
     # 1.1) plot the first sz frame for each seizure from each expprep, label with the time delay to sz invasion
-
+    @staticmethod
     @Utils.run_for_loop_across_exps(run_pre4ap_trials=False, run_post4ap_trials=True, allow_rerun=True)
     def plot_sz_invasion(**kwargs):
         expobj: Post4ap = kwargs['expobj']
