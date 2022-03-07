@@ -1,20 +1,4 @@
 #### FILE FOR PUTTING TOGEHTER CODE TO RUN ON THE SERVER
-
-# IMPORT MODULES AND TRIAL expobj OBJECT
-import sys
-
-sys.path.append('/home/pshah/Documents/code/PackerLab_pycharm/')
-sys.path.append('/home/pshah/Documents/code/')
-
-import alloptical_utils_pj as aoutils
-
-# # import results superobject that will collect analyses from various individual experiments
-results_object_path = '/home/pshah/mnt/qnap/Analysis/alloptical_results_superobject.pkl'
-allopticalResults = aoutils.import_resultsobj(pkl_path=results_object_path)
-
-
-# expobj, experiment = aoutils.import_expobj(prep='RL109', trial='t-013')
-
 """######### ZONE FOR CALLING THIS SCRIPT DIRECTLY FROM THE SSH SERVER ###########
 ######### ZONE FOR CALLING THIS SCRIPT DIRECTLY FROM THE SSH SERVER ###########
 ######### ZONE FOR CALLING THIS SCRIPT DIRECTLY FROM THE SSH SERVER ###########
@@ -26,47 +10,26 @@ allopticalResults = aoutils.import_resultsobj(pkl_path=results_object_path)
 ######### ZONE FOR CALLING THIS SCRIPT DIRECTLY FROM THE SSH SERVER ###########
 """
 
-# %% troubleshoot
-
-# prep_trial = 'PS11 t-011'
-#
-# expobj, _ = aoutils.import_expobj(exp_prep=prep_trial)
-#
-# print(expobj.responses_SLMtargets_tracedFF_insz)
-# print(expobj.responses_SLMtargets_tracedFF_outsz)
+# IMPORT MODULES AND TRIAL expobj OBJECT
+import sys; print('Python %s on %s' % (sys.version, sys.platform))
+sys.path.extend(['/home/pshah/Documents/code/AllOpticalSeizure', '/home/pshah/Documents/code/AllOpticalSeizure'])
+sys.path.append('/home/pshah/Documents/code/PackerLab_pycharm/')
+sys.path.append('/home/pshah/Documents/code/')
 
 
-### need to re run alloptical processing photostim
-
-# @aoutils.run_for_loop_across_exps(run_pre4ap_trials=False, run_post4ap_trials=False)
-# def run_on_server(**kwargs):
-#     expobj = kwargs['expobj']
-#     print(expobj.metainfo)
-#
-#
-# run_on_server()
+from _analysis_.run__TargetsSzInvasionTemporal import run_collect_time_delay_sz_stims
 
 
 
-# ### need to re run alloptical processing photostim
-#
-# @aoutils.run_for_loop_across_exps(run_pre4ap_trials=True, run_post4ap_trials=True)
-# def run_on_server(**kwargs):
-#     expobj = kwargs['expobj']
-#     # temp run once fully
-#     aoutils.run_alloptical_processing_photostim(expobj, plots=False,
-#                                                 force_redo=False)
-#
-# run_on_server()
+
+run_collect_time_delay_sz_stims()
 
 
-# aoutils.run_alloptical_processing_photostim(expobj, plots=False)
 
 # %%
 
 
 
-sys.exit(0)
 
 
 
@@ -82,5 +45,5 @@ sys.exit(0)
 ########### END OF // ZONE FOR CALLING THIS SCRIPT DIRECTLY FROM THE SSH SERVER ###########
 """
 
+sys.exit(0)
 
-sys.exit()

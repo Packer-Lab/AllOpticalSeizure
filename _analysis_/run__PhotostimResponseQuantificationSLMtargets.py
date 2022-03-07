@@ -5,10 +5,8 @@ import numpy as np
 import _alloptical_utils as Utils
 from _utils_.io import import_cls, import_expobj
 
-# try:
-#     main = import_cls(pkl_path='/home/pshah/mnt/qnap/Analysis/allopticalseizures/PhotostimResponsesQuantificationSLMtargets.pkl')
-# except:
-#     from _analysis_._ClassPhotostimResponseQuantificationSLMtargets import PhotostimResponsesQuantificationSLMtargets as main
+from _analysis_._ClassPhotostimResponseQuantificationSLMtargets import \
+    PhotostimResponsesQuantificationSLMtargets as main, PhotostimResponsesSLMtargetsResults
 
 from _main_.AllOpticalMain import alloptical
 from _main_.Post4apMain import Post4ap
@@ -16,6 +14,8 @@ from funcsforprajay import plotting as pplot
 from funcsforprajay import funcs as pfuncs
 
 # expobj: Post4ap = import_expobj(prep='RL109', trial='t-018')
+RESULTS: PhotostimResponsesSLMtargetsResults = PhotostimResponsesSLMtargetsResults.load()
+
 
 "##### -------------------- ALL OPTICAL PHOTOSTIM ANALYSIS #############################################################"
 
@@ -174,8 +174,6 @@ def full_plot_mean_responses_magnitudes_zscored():
 
 # %% RUN SCRIPT
 if __name__ == '__main__':
-    from _analysis_._ClassPhotostimResponseQuantificationSLMtargets import \
-        PhotostimResponsesQuantificationSLMtargets as main
 
     run__initPhotostimResponseQuant()
     run__collect_photostim_responses_exp()
@@ -183,12 +181,12 @@ if __name__ == '__main__':
     run__add_stim_group_anndata()
 
     main.allexps_plot_photostim_responses_magnitude()
-    main.mean_photostim_responses_baseline, main.mean_photostim_responses_interictal, main.mean_photostim_responses_ictal = full_plot_mean_responses_magnitudes()
+    RESULTS.mean_photostim_responses_baseline, RESULTS.mean_photostim_responses_interictal, RESULTS.mean_photostim_responses_ictal = full_plot_mean_responses_magnitudes()
 
     run__z_score_photostim_responses_and_interictalzscores()
     main.allexps_plot_photostim_responses_magnitude_zscored()
 
-    main.mean_photostim_responses_baseline_zscored, main.mean_photostim_responses_interictal_zscored, main.mean_photostim_responses_ictal_zscored = full_plot_mean_responses_magnitudes_zscored()
+    RESULTS.mean_photostim_responses_baseline_zscored, RESULTS.mean_photostim_responses_interictal_zscored, RESULTS.mean_photostim_responses_ictal_zscored = full_plot_mean_responses_magnitudes_zscored()
 
     # make plot
     # plot zscored responses

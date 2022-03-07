@@ -15,6 +15,16 @@ import _utils_.alloptical_plotting as aoplot
 SAVE_LOC = "/home/pshah/mnt/qnap/Analysis/analysis_export/analysis_quantification_classes/"
 
 
+"""
+TODO:
+- double check plot - is the result real lol
+
+- minor plots for photostim responses 
+
+"""
+
+
+
 class TargetsSzInvasionSpatial(Quantification):
     response_type = 'dFF (z scored) (interictal)'
 
@@ -342,7 +352,7 @@ class TargetsSzInvasionSpatial(Quantification):
 
 @dataclass
 class TargetsSzInvasionSpatialResults(Results):
-    save_path = SAVE_LOC + 'Results__TargetsSzInvasionSpatial.pkl'
+    SAVE_PATH = SAVE_LOC + 'Results__TargetsSzInvasionSpatial.pkl'
     response_type = TargetsSzInvasionSpatial.response_type
 
     range_of_sz_spatial_distance: List[
@@ -357,10 +367,10 @@ class TargetsSzInvasionSpatialResults(Results):
 
     @classmethod
     def load(cls):
-        return pj.load_pkl(cls.save_path)
+        return pj.load_pkl(cls.SAVE_PATH)
 
 
-if not os.path.exists(TargetsSzInvasionSpatialResults.save_path):
+if not os.path.exists(TargetsSzInvasionSpatialResults.SAVE_PATH):
     Results__TargetsSzInvasionSpatial = TargetsSzInvasionSpatialResults()
     Results__TargetsSzInvasionSpatial.save_results()
 

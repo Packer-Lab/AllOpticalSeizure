@@ -30,8 +30,7 @@ def load_from_backup(prep, trial, date, original_path, backup_path=None):
 class CustomUnpicklerAttributeError(pickle.Unpickler):
     def find_class(self, module, name):
         if name == 'PhotostimResponsesQuantificationSLMtargets':
-            from _analysis_._ClassPhotostimResponseQuantificationSLMtargets import \
-                PhotostimResponsesQuantificationSLMtargets
+            from _analysis_._ClassPhotostimResponseQuantificationSLMtargets import PhotostimResponsesQuantificationSLMtargets
             return PhotostimResponsesQuantificationSLMtargets
         elif name == '_TargetsSzInvasionTemporal':
             from _analysis_._ClassTargetsSzInvasionTemporal import TargetsSzInvasionTemporal

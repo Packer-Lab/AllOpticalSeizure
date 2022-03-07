@@ -601,7 +601,7 @@ class TwoPhotonImaging:
 
 
     def mean_raw_flu_trace(self, save_pkl: bool = True):
-        print('\n-----collecting mean raw flu trace from tiff file...')
+        print('\n-----collecting mean raw FOV flu trace from tiff file...')
         print(self.tiff_path)
         if len(self.tiff_path) == 2:  # this is to account for times when two channel imaging might be used for one t-series
             tiff_path = self.tiff_path[0]

@@ -36,7 +36,7 @@ class Results:
 
     """
 
-    save_path: str = None
+    SAVE_PATH: str = None
 
     def __init__(self, expobj: alloptical):
         self._metainfo = expobj.metainfo
@@ -46,9 +46,9 @@ class Results:
         return f"Results Analysis submodule for expobj <{self.expobj_id}>"
 
     def save_results(self):
-        assert self.save_path, print(f"save path not defined for: {self}")
+        assert self.SAVE_PATH, print(f"save path not defined for: {self}")
         from funcsforprajay.funcs import save_pkl
-        save_pkl(self, self.save_path)
+        save_pkl(self, self.SAVE_PATH)
 
     @property
     def expobj_id(self):

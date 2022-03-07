@@ -1,32 +1,26 @@
-from typing import Union, List
+from dataclasses import dataclass, field
+from typing import Union, List, Dict
 
 import numpy as np
+import os
 import pandas as pd
 
 import _alloptical_utils as Utils
-from _analysis_._utils import Quantification
+from _analysis_._utils import Quantification, Results
 from _main_.AllOpticalMain import alloptical
 from _main_.Post4apMain import Post4ap
 from funcsforprajay import plotting as pplot
+import funcsforprajay.funcs as pj
 
-# SAVE_LOC = "/Users/prajayshah/OneDrive/UTPhD/2022/OXFORD/export/"
 from _utils_._anndata import AnnotatedData2
-from _utils_.io import import_expobj
 
 SAVE_LOC = "/home/pshah/mnt/qnap/Analysis/analysis_export/analysis_quantification_classes/"
-
-
-# %%
-# expobj: Post4ap = Utils.import_expobj(prep='RL108', trial='t-013')
 
 
 # %% COLLECT AND PLOT PHOTOSTIM RESPONSES MAGNITUDES
 
 class PhotostimResponsesQuantificationSLMtargets(Quantification):
-    save_path = SAVE_LOC + 'PhotostimResponsesQuantificationSLMtargets.pkl'
-    mean_photostim_responses_baseline: List[float] = None
-    mean_photostim_responses_interictal: List[float] = None
-    mean_photostim_responses_ictal: List[float] = None
+    # save_path = SAVE_LOC + 'PhotostimResponsesQuantificationSLMtargets.pkl'
     valid_zscore_processing_types = ['dFF (zscored)', 'dFF (zscored) (interictal)']
     valid_photostim_response_processing_types = ['dF/stdF', 'dF/prestimF', 'delta(trace_dFF)']
 
@@ -128,7 +122,9 @@ class PhotostimResponsesQuantificationSLMtargets(Quantification):
 
         """
 
-        if not (hasattr(self, 'responses_SLMtargets_tracedFF') or hasattr(self, 'responses_SLMtargets_dfprestimf') or hasattr(self, 'responses_SLMtargets_dfstdf')):
+        if not (hasattr(self, 'responses_SLMtargets_tracedFF') or hasattr(self,
+                                                                          'responses_SLMtargets_dfprestimf') or hasattr(
+            self, 'responses_SLMtargets_dfstdf')):
             raise Warning(
                 'did not create anndata. anndata creation only available if experiments were processed with suite2p and .paq file(s) provided for temporal synchronization')
         else:
@@ -296,13 +292,15 @@ class PhotostimResponsesQuantificationSLMtargets(Quantification):
 
         return mean_zscores_stims
 
-
-    def plot_photostim_responses_magnitude_zscored(self, zscore_type: str = 'dFF (zscored)', stims: Union[slice, str, list] = None):
+    def plot_photostim_responses_magnitude_zscored(self, zscore_type: str = 'dFF (zscored)',
+                                                   stims: Union[slice, str, list] = None):
         """quick plot of photostim responses of expobj's targets across all stims"""
-        mean_photostim_responses_zscored = self.collect_photostim_responses_magnitude_zscored(zscore_type=zscore_type, stims=stims)
+        mean_photostim_responses_zscored = self.collect_photostim_responses_magnitude_zscored(zscore_type=zscore_type,
+                                                                                              stims=stims)
         x_scatter = [float(np.random.rand(1) * 1)] * len(mean_photostim_responses_zscored)
         fig, ax = pplot.make_general_scatter(x_list=[x_scatter], y_data=[mean_photostim_responses_zscored],
-                                             ax_titles=[self.expobj_id], show=False, figsize=[2, 4], y_label=zscore_type)
+                                             ax_titles=[self.expobj_id], show=False, figsize=[2, 4],
+                                             y_label=zscore_type)
         ax.set_xticks([])
         fig.show()
         # pplot.plot_bar_with_points(data=[mean_photostim_responses], bar = False, title=expobj.t_series_name)
@@ -311,5 +309,176 @@ class PhotostimResponsesQuantificationSLMtargets(Quantification):
     @Utils.run_for_loop_across_exps(run_pre4ap_trials=1, run_post4ap_trials=1, set_cache=0)
     def allexps_plot_photostim_responses_magnitude_zscored(**kwargs):
         expobj: alloptical = kwargs['expobj']
-        expobj.PhotostimResponsesSLMTargets.plot_photostim_responses_magnitude_zscored(zscore_type='dFF (zscored)', stims='all')
+        expobj.PhotostimResponsesSLMTargets.plot_photostim_responses_magnitude_zscored(zscore_type='dFF (zscored)',
+                                                                                       stims='all')
 
+
+# %%
+@dataclass
+class PhotostimResponsesSLMtargetsResults(Results):
+    SAVE_PATH = SAVE_LOC + 'Results__PhotostimResponsesSLMtargets.pkl'
+    mean_photostim_responses_baseline: List[float] = field(default_factory=lambda: [-1])
+    mean_photostim_responses_interictal: List[float] = field(default_factory=lambda: [-1])
+    mean_photostim_responses_ictal: List[float] = field(default_factory=lambda: [-1])
+
+    mean_photostim_responses_baseline_zscored: List[float] = field(default_factory=lambda: [-1])
+    mean_photostim_responses_interictal_zscored: List[float] = field(default_factory=lambda: [-1])
+    mean_photostim_responses_ictal_zscored: List[float] = field(default_factory=lambda: [-1])
+
+    pre_stim_FOV_flu: Dict[
+                      str: List] = None  # averages from pre-stim Flu value for each stim frame for baseline, interictal and ictal groups
+
+    @classmethod
+    def load(cls):
+        return pj.load_pkl(cls.SAVE_PATH)
+
+
+if not os.path.exists(PhotostimResponsesSLMtargetsResults.SAVE_PATH):
+    RESULTS = PhotostimResponsesSLMtargetsResults()
+    RESULTS.save_results()
+
+RESULTS = PhotostimResponsesSLMtargetsResults.load()
+
+# %% CODE DEVELOPMENT ZONE
+
+"""
+TODO:
+1. Measuring photostim responses in relation to pre-stim mean FOV Flu - main priority right now
+
+
+2. measuring photostim responses of targets (suite2p rois) vs. pre-stim surrounding neuropil signal -- not immediately setup yet to do analysis involving suite2p
+    - need to ensure that you have the adata structure for slm targets that are also suite2p ROIs
+    - another approach that sidesteps suite2p is just directly grabbing a torus of area around the SLM target
+
+"""
+
+if __name__ == '__main__':
+    # 5) Measuring photostim responses in relation to pre-stim mean FOV Flu - main priority right now
+
+    def collect__prestim_FOV_Flu():
+        """
+        two act function that collects pre-stim FOV Flu value for each stim frame.
+
+        1) collect pre-stim FOV Flu value for each stim frame. Add these as a var to the expobj.PhotostimResponsesSLMTargets.adata table
+            - length of the pre-stim == expobj.pre_stim
+
+        2) collect average prestim FOV values values across various stim group types.
+
+        """
+
+        import alloptical_utils_pj as aoutils
+        expobj: aoutils.Post4ap = Utils.import_expobj(prep='RL108', trial='t-013')
+
+        # PART 1)   ####################################################################################################
+
+        @Utils.run_for_loop_across_exps(run_pre4ap_trials=True, run_post4ap_trials=False, set_cache=False)
+        def __collect_prestim_FOV_Flu_allstims(**kwargs):
+            expobj: aoutils.alloptical = kwargs['expobj']
+            pre_stim_FOV_flu = []
+            for stim in expobj.PhotostimResponsesSLMTargets.adata.var.stim_start_frame:
+                sli_ce = np.s_[stim - expobj.pre_stim: stim]
+                _pre_stim_FOV_flu = expobj.meanRawFluTrace[sli_ce]
+                pre_stim_FOV_flu.append(np.round(np.mean(_pre_stim_FOV_flu), 3))
+
+            expobj.PhotostimResponsesSLMTargets.adata.add_variable(var_name='pre_stim_FOV_Flu', values=pre_stim_FOV_flu)
+            expobj.save()
+
+        __collect_prestim_FOV_Flu_allstims()
+
+        # PART 2)   ####################################################################################################
+        # TODO edit code to collect the prestimF FOV flu values from the anndata table to have it all centralized (rather than recollecting the prestim FOV flus for each stim
+
+        @Utils.run_for_loop_across_exps(run_pre4ap_trials=True, run_post4ap_trials=False, set_cache=False)
+        def __collect_prestim_FOV_Flu_pre4ap(**kwargs):
+            expobj: aoutils.alloptical = kwargs['expobj']
+
+            if 'pre' in expobj.exptype:
+                # pre_stim_FOV_flu = []
+                # for stim in expobj.PhotostimResponsesSLMTargets.adata.var.stim_start_frame:
+                #     sli_ce = np.s_[stim - expobj.pre_stim: stim]
+                #     _pre_stim_FOV_flu = expobj.meanRawFluTrace[sli_ce]
+                #     pre_stim_FOV_flu.append(np.round(np.mean(_pre_stim_FOV_flu), 3))
+                #
+                # baseline_pre_stim_FOV_flu = pre_stim_FOV_flu
+
+                ###
+                baseline_pre_stim_FOV_flu = expobj.PhotostimResponsesSLMTargets.adata.var.pre_stim_FOV_Flu
+
+                return baseline_pre_stim_FOV_flu
+
+        baseline_pre_stim_FOV_flu = __collect_prestim_FOV_Flu_pre4ap()
+
+        @Utils.run_for_loop_across_exps(run_pre4ap_trials=False, run_post4ap_trials=True, set_cache=False)
+        def __collect_prestim_FOV_Flu_post4ap(**kwargs):
+            expobj: aoutils.Post4ap = kwargs['expobj']
+
+            if 'post' in expobj.exptype:
+                # collect interictal stims ########
+                interictal_stims_idx = \
+                    np.where(expobj.PhotostimResponsesSLMTargets.adata.var.stim_group == 'interictal')[0]
+                # pre_stim_FOV_flu_interic = []
+                # for stim in expobj.PhotostimResponsesSLMTargets.adata.var.stim_start_frame[interictal_stims_idx]:
+                #     sli_ce = np.s_[stim - expobj.pre_stim: stim]
+                #     _pre_stim_FOV_flu = expobj.meanRawFluTrace[sli_ce]
+                #     pre_stim_FOV_flu_interic.append(np.round(np.mean(_pre_stim_FOV_flu), 3))
+                #
+                # interictal_pre_stim_FOV_flu = pre_stim_FOV_flu_interic
+
+                ###
+                interictal_pre_stim_FOV_flu = expobj.PhotostimResponsesSLMTargets.adata.var.pre_stim_FOV_Flu[interictal_stims_idx]
+
+                # collect ictal stims ########
+                ictal_stims_idx = np.where(expobj.PhotostimResponsesSLMTargets.adata.var.stim_group == 'ictal')[0]
+                # pre_stim_FOV_flu_ic = []
+                # for stim in expobj.PhotostimResponsesSLMTargets.adata.var.stim_start_frame[ictal_stims_idx]:
+                #     sli_ce = np.s_[stim - expobj.pre_stim: stim]
+                #     _pre_stim_FOV_flu = expobj.meanRawFluTrace[sli_ce]
+                #     pre_stim_FOV_flu_ic.append(np.round(np.mean(_pre_stim_FOV_flu), 3))
+                #
+                # ictal_pre_stim_FOV_flu = pre_stim_FOV_flu_ic
+
+                ###
+                ictal_pre_stim_FOV_flu = expobj.PhotostimResponsesSLMTargets.adata.var.pre_stim_FOV_Flu[ictal_stims_idx]
+
+
+                return interictal_pre_stim_FOV_flu, ictal_pre_stim_FOV_flu
+
+        func_collector = __collect_prestim_FOV_Flu_post4ap()
+
+        assert len(func_collector) > 0, '__collect_prestim_FOV_Flu_post4ap didnot return any results.'
+
+        interictal_pre_stim_FOV_flu, ictal_pre_stim_FOV_flu = np.asarray(func_collector)[:, 0], np.asarray(
+            func_collector)[:, 1]
+
+        # process returned data to make flat arrays
+        pre_stim_FOV_flu_results = {'baseline': baseline_pre_stim_FOV_flu,
+                                    'interictal': interictal_pre_stim_FOV_flu,
+                                    'ictal': ictal_pre_stim_FOV_flu}
+
+        # PART 2)   ####################################################################################################
+        return pre_stim_FOV_flu_results
+
+
+    RESULTS.pre_stim_FOV_flu = collect__prestim_FOV_Flu()
+    RESULTS.save_results()
+
+
+    def plot__prestim_FOV_Flu(**kwargs):
+        """plot avg pre-stim Flu values across baseline, interictal, and ictal stims"""
+        import alloptical_utils_pj as aoutils
+        expobj: aoutils.Post4ap = Utils.import_expobj(prep='RL108', trial='t-013')
+
+        RESULTS.pre_stim_FOV_flu
+        pass
+
+
+    def measure__photostim_responses_vs_prestim_FOV_flu(**kwargs):
+        import alloptical_utils_pj as aoutils
+        expobj: aoutils.Post4ap = Utils.import_expobj(prep='RL108', trial='t-013')
+
+        # measure/plot avg target photostim responses in relation to pre-stim Flu value across baseline, interictal, and ictal stims
+        for target in range(expobj.PhotostimResponsesSLMTargets.adata.n_obs):
+            pass
+
+
+    pass

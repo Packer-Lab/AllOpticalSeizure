@@ -1075,6 +1075,10 @@ class alloptical(TwoPhotonImaging):
 
         self.seizure_frames = []
 
+        from _analysis_._ClassPhotostimResponseQuantificationSLMtargets import PhotostimResponsesQuantificationSLMtargets
+        self.PhotostimResponsesSLMTargets: PhotostimResponsesQuantificationSLMtargets = None  # module that holds analysis and results for Photostim Responses of SLM Targets
+
+
         # set initial attr's
         self.stimProcessing(stim_channel='markpoints2packio')
         self.paqProcessing(lfp=True)

@@ -41,9 +41,18 @@ RESULTS: TargetsSzInvasionTemporalResults = TargetsSzInvasionTemporalResults.loa
 ## binning and plotting zscored photostim responses vs. time ###########################################################
 # TODO - MAIN WORK RIGHT NOW:
 
+
+# .22/03/07
+# - run through the whole temporal sz invasion pipeline to come up with the final plots after updating sz invasions for the two experiments
+
+
+
+# .22/03/07
 # - bring back the seizure invasion marking by certain amounts for two experiments
 #    - need to determine which exps first: PS04 t-018 move forward by 2secs and PS11 t-011 move forward by 5secs
 #    - then, bring back the marking for those and replot avg invasion trace
+#           - this looks great.
+
 
 
 # %% code deployment zone
@@ -65,7 +74,7 @@ def run__collect_targets_sz_invasion_traces(**kwargs):
     expobj.save()
 
 
-@Utils.run_for_loop_across_exps(run_pre4ap_trials=False, run_post4ap_trials=True, allow_rerun=0)
+@Utils.run_for_loop_across_exps(run_pre4ap_trials=False, run_post4ap_trials=True, allow_rerun=1)
 def run_collect_time_delay_sz_stims(**kwargs):
     expobj: Post4ap = kwargs['expobj']
     expobj.TargetsSzInvasionTemporal.collect_time_delay_sz_stims(expobj=expobj)
@@ -79,19 +88,11 @@ def run_check_collect_time_delay_sz_stims(**kwargs):
     expobj: Post4ap = kwargs['expobj']
     expobj.TargetsSzInvasionTemporal.collect_num_pos_neg_szinvasion_stims(expobj=expobj)
     expobj.save()
-
-
-# run_check_collect_time_delay_sz_stims()
-
-
-
-
-@Utils.run_for_loop_across_exps(run_pre4ap_trials=False, run_post4ap_trials=True, allow_rerun=True)
-def run_plot_time_delay_sz_stims(**kwargs):
-    expobj = kwargs['expobj']
     expobj.TargetsSzInvasionTemporal.plot_num_pos_neg_szinvasion_stims(**kwargs)
 
 
+
+# run_check_collect_time_delay_sz_stims()
 
 @Utils.run_for_loop_across_exps(run_pre4ap_trials=False, run_post4ap_trials=True, allow_rerun=True)
 def run__collect_szinvasiontime_vs_photostimresponses(**kwargs):
@@ -325,20 +326,26 @@ if __name__ == '__main__':
 
     # run_misc()
 
-    # run__initTargetsSzInvasionTemporal()
-    # run_collect_time_delay_sz_stims()
-    # run_check_collect_time_delay_sz_stims()
-    # fig, ax = plt.subplots(figsize=[3, 3])
-    # run_plot_time_delay_sz_stims(fig=fig, ax=ax)
-    # fig.show()
 
-    # - should be done: before running the following below, need to update the expobj slmtargets adata to the new PhotostimResponses Class adata !!!
-    # run__collect_szinvasiontime_vs_photostimresponses()
-    # plot__szinvasiontime_vs_photostimresponses()
-    # plot__szinvasiontime_vs_photostimresponses_indivexp()
+
+    # run__initTargetsSzInvasionTemporal()
 
     # run__collect_targets_sz_invasion_traces()
-    MAIN.plot__targets_sz_invasion_meantraces()
+    # MAIN.plot__targets_sz_invasion_meantraces()
+
+
+    # RUNNING BELOW FOR ANALYSIS CURRENTLY
+    run_collect_time_delay_sz_stims()
+
+    fig, ax = plt.subplots(figsize=[3, 3])
+    run_check_collect_time_delay_sz_stims(fig=fig, ax=ax)
+    fig.show()
+
+
+    run__collect_szinvasiontime_vs_photostimresponses()
+    plot__szinvasiontime_vs_photostimresponses()
+    plot__szinvasiontime_vs_photostimresponses_indivexp()
+
 
 
     # run collecting and plotting zscored photostim responses vs. time delay to sz invasion

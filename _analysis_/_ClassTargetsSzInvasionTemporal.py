@@ -14,13 +14,12 @@ import funcsforprajay.funcs as pj
 
 from _analysis_._utils import Quantification, Results
 from _main_.Post4apMain import Post4ap
-from _sz_processing.temporal_delay_to_sz_invasion import convert_timedel2frames
 
 SAVE_LOC = "/home/pshah/mnt/qnap/Analysis/analysis_export/analysis_quantification_classes/"
 SAVE_PATH = SAVE_LOC + 'TargetsSzInvasionTemporal.pkl'
 
 
-# setting temporal sz invasion adjust amount (in secs):
+# setting temporal sz invasion adjust amount (in secs): note that this adjustment factor is being used globally for all targets + traces for a particular exp.
 ADJUST_SZ_INV = {'PS04 t-018': 2,
                  'PS11 t-011': 5}  # secs
 
@@ -175,12 +174,11 @@ class TargetsSzInvasionTemporal(Quantification):
                           index=expobj.PhotostimResponsesSLMTargets.adata.obs.index)
         for target in expobj.PhotostimResponsesSLMTargets.adata.obs.index:
             # target = 0
-            print(f'\- collecting from target #{target} ... ') if (int(target) % 10) == 0 else None
+            print(f'\- collecting from target # {target}/{expobj.PhotostimResponsesSLMTargets.adata.n_obs} ... ') if (int(target) % 10) == 0 else None
             cols_ = [idx for idx, col in enumerate([*expobj.PhotostimResponsesSLMTargets.adata.obs]) if
                      'time_del' in col]
             sz_times = expobj.PhotostimResponsesSLMTargets.adata.obs.iloc[int(target), cols_]
-            from _sz_processing.temporal_delay_to_sz_invasion import convert_timedel2frames
-            fr_times = [convert_timedel2frames(expobj, sznum, time) for sznum, time in enumerate(sz_times) if
+            fr_times = [TargetsSzInvasionTemporal.convert_timedel2frames(expobj, sznum, time) for sznum, time in enumerate(sz_times) if
                         not pd.isnull(time)]
             for szstart, szstop in zip(expobj.seizure_lfp_onsets, expobj.seizure_lfp_offsets):
                 fr_time = [i for i in fr_times if szstart < i < szstop]
@@ -189,7 +187,6 @@ class TargetsSzInvasionTemporal(Quantification):
                         if szstart < stim < szstop:
                             time_del = - (stim - fr_time[0]) / expobj.fps
                             df.loc[target, stim] = round(time_del, 2)  # secs
-
         self.time_del_szinv_stims = df
 
     def collect_num_pos_neg_szinvasion_stims(self, expobj: Post4ap):
@@ -226,7 +223,7 @@ class TargetsSzInvasionTemporal(Quantification):
     def collect_szinvasiontime_vs_photostimresponses(self, expobj: Post4ap):
         """collects dictionary of sz invasion time and photostim responses across all targets for each stim for an expobj"""
         sztime_v_photostimresponses = {}
-        if not hasattr(self, 'time_del_szinv_stims'):
+        if not hasattr(self, 'time_del_szinv_stims'):  # this shouldn't be needed anymore, all expobj's should have time_del_szinv_stims in the Temporal submodule
             stim_timesz_df = expobj.time_del_szinv_stims
         else:
             stim_timesz_df = self.time_del_szinv_stims
