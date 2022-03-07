@@ -22,7 +22,7 @@ def load_from_backup(prep, trial, date, original_path, backup_path=None):
         with open(load_backup_path, 'rb') as f:
             print(f'\- Loading backup from: {load_backup_path}', end='\r')
             expobj = pickle.load(f)
-    except:
+    except Exception:
         raise ImportError(f"\n** FAILED IMPORT OF * {prep} {trial} * from {original_path}\n")
     print(f'|- Loaded backup of: {expobj.t_series_name} ({load_backup_path}) ... DONE')
     return expobj
@@ -42,6 +42,9 @@ class CustomUnpicklerAttributeError(pickle.Unpickler):
         elif name == 'ExpSeizureAnalysis':
             from _analysis_._ClassExpSeizureAnalysis import ExpSeizureAnalysis
             return ExpSeizureAnalysis
+        elif name == 'AnnotatedData':
+            from _utils_._anndata import AnnotatedData2
+            return AnnotatedData2
 
         return super().find_class(module, name)
 

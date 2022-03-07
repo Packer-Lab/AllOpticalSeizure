@@ -384,6 +384,7 @@ class Post4ap(alloptical):
             # read in avg stim image to use as the background
             avg_stim_img_path = '%s/%s_%s_stim-%s.tif' % (
             self.analysis_save_path[:-1] + 'avg_stim_images', self.metainfo['date'], self.metainfo['trial'], stim)
+            avg_stim_img_path = f"{self.avg_stim_images_path}/{self.t_series_name}_stim-{stim}.tif"
             bg_img = tf.imread(avg_stim_img_path)
             # aoplot.plot_SLMtargets_Locs(self, targets_coords=coords_to_plot_insz, cells=in_sz, edgecolors='yellowgreen', background=bg_img)
             # aoplot.plot_SLMtargets_Locs(self, targets_coords=coords_to_plot_outsz, cells=out_sz, edgecolors='white', background=bg_img)

@@ -1,28 +1,110 @@
-from typing import Union
+import sys
+
+sys.path.extend(['/home/pshah/Documents/code/AllOpticalSeizure', '/home/pshah/Documents/code/AllOpticalSeizure'])
+
 import _alloptical_utils as Utils
 
 from _analysis_._ClassExpSeizureAnalysis import ExpSeizureAnalysis as main
-
-
-# %% 0) initialize analysis module for each expobj
 from _main_.Post4apMain import Post4ap
 
 
-@Utils.run_for_loop_across_exps(run_pre4ap_trials=0, run_post4ap_trials=1, allow_rerun=0)
+# %% 0) initialize analysis module for each expobj
+
+
+@Utils.run_for_loop_across_exps(run_pre4ap_trials=0, run_post4ap_trials=0, allow_rerun=1, run_trials=['RL108 t-011'])
 def run__initExpSeizureAnalysis(**kwargs):
     expobj: Post4ap = kwargs['expobj']
-    expobj.ExpSeizure = main(expobj)
+    expobj.ExpSeizure = main(expobj, not_flip_stims=None
+                             )
     expobj.save()
 
-# %%
+@Utils.run_for_loop_across_exps(run_pre4ap_trials=False, run_post4ap_trials=False, allow_rerun=True,
+                                run_trials=['RL108 t-011', 'RL109 t-020'])
+def procedure__classifying_sz_boundary(**kwargs):
+    """
+    Full procedure for classifying targets (and eventually non-targets) as in or out of sz boundary for each stim.
+
+    Procedure: Runs plotting of sz boundaries for all stims in sz, then asks for stims to correct classification as input,
+    then runs plotting of sz boundaries again.
+
+    Sz boundary is based on manual placement of two coordinates on the
+    avg image of each stim frame. the purpose of this function is to review the classification for each stim during each seizure
+    to see if the cells are classified correctly on either side of the boundary.
+
+    :param kwargs:
+    :return:
+    """
+
+    expobj: Post4ap = kwargs['expobj']
+
+
+    # aoplot.plot_lfp_stims(expobj)
+
+    # matlab_pairedmeasurements_path = '%s/paired_measurements/%s_%s_%s.mat' % (expobj.analysis_save_path[:-23], expobj.metainfo['date'], expobj.metainfo['animal prep.'], trial[2:])  # choose matlab path if need to use or use None for no additional bad frames
+    # expobj.paqProcessing()
+    # expobj.collect_seizures_info(seizures_lfp_timing_matarray=matlab_pairedmeasurements_path)
+    # expobj.save()
+
+    # aoplot.plotSLMtargetsLocs(expobj, background=None)
+
+    # ######## CLASSIFY SLM PHOTOSTIM TARGETS AS IN OR OUT OF current SZ location in the FOV
+    # -- FIRST manually draw boundary on the image in ImageJ and save results as CSV to analysis folder under boundary_csv
+
+    if not hasattr(expobj, 'sz_boundary_csv_done'):
+        expobj.sz_boundary_csv_done = True
+    else:
+        AssertionError('confirm that sz boundary csv creation has been completed')
+        # sys.exit()
+
+    # expobj.avg_stim_images(stim_timings=expobj.stims_in_sz, peri_frames=50, to_plot=True, save_img=True)
+
+    # expobj.sz_locations_stims() #if not hasattr(expobj, 'stimsSzLocations') else None
+
+    ######## - all stims in sz are classified, with individual sz events labelled
+    expobj.ExpSeizure.classify_sz_boundaries_all_stims(expobj=expobj)
+
+    expobj.save()
+
+
+@Utils.run_for_loop_across_exps(run_pre4ap_trials=False, run_post4ap_trials=False, allow_rerun=True,
+                                run_trials=['PS04 t-018'])  # , 'RL109 t-017'])
+def run__plot__sz_boundaries_all_stims(**kwargs):
+    expobj: Post4ap = kwargs['expobj']
+    expobj.ExpSeizure.classify_sz_boundaries_all_stims(expobj=expobj)
+
+
+@Utils.run_for_loop_across_exps(run_pre4ap_trials=False, run_post4ap_trials=False, allow_rerun=True,
+                                run_trials=['RL109 t-016'])  # , 'RL109 t-017'])
+def run__enter_input_stims_to_flip(expobj_r=None, **kwargs):
+    expobj: Post4ap = kwargs['expobj'] if expobj_r is None else expobj_r
+    print(expobj)
+    main.enter_stims_to_flip(expobj=expobj)  # need to run this on the
+    expobj.save()
+
+
+def run_misc(expobj: Post4ap):
+    # expobj.collect_seizures_info()
+    # expobj.sz_locations_stims()
+    main.plot__exp_sz_lfp_fov(expobj=expobj)
+    # expobj.avg_stim_images(stim_timings=expobj.stims_in_sz, peri_frames=50, to_plot=True, save_img=True)
+
+
+# %% RUN PROCESSING CODE
 
 if __name__ == '__main__':
 
+    expobj: Post4ap = Utils.import_expobj(prep='RL108', trial='t-011')
     # run__initExpSeizureAnalysis()
+    run_misc(expobj)
+    #
+    expobj: Post4ap = Utils.import_expobj(prep='RL109', trial='t-020')
+    run_misc(expobj)
+    #
+    # expobj: Post4ap = Utils.import_expobj(prep='RL109', trial='t-017')
+    # run__enter_input_stims_to_flip(expobj_r = expobj)
 
-    main.run__plot__sz_boundaries()
-    #
-    #
+    procedure__classifying_sz_boundary()
+
     # main.FOVszInvasionTime()
     # main.plot__sz_incidence()
     # main.plot__sz_lengths()
@@ -30,3 +112,5 @@ if __name__ == '__main__':
     # main.calc__szInvasionTime()
     # main.plot__sz_invasion()
 
+# [476, 624, 772, 921, 1069, 1217, 1365, 1514, 1662, 1810, 1958, 4923, 5071, 5219, 6850, 6998, 8925, 9074, 9222, 9370,
+#  9518, 12186, 12335, 12483, 12631, 13372, 13521]

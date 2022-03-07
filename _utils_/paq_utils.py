@@ -251,7 +251,7 @@ def plot_paq_interactive_line(paq_df, input_path, channels_to_plot=None):
     fig.show()
 
 
-def frames_discard(paq: dict, input_array, total_frames, discard_all=False):
+def frames_discard(frame_times: list, input_array, total_frames, paq: dict = None, discard_all=False):
     '''
     calculate which 2P imaging frames to discard (or use as bad frames input into suite2p) based on the bad frames
     identified by manually inspecting the paq files in EphysViewer.m
@@ -262,9 +262,9 @@ def frames_discard(paq: dict, input_array, total_frames, discard_all=False):
     :return: array that contains the indices of bad frames (in format ready to input into suite2p processing)
     '''
 
-    frame_times = sta.threshold_detect(paq['data'][0], 1)
-    frame_times = frame_times[
-                  0:total_frames]  # this is necessary as there are more TTL triggers in the paq file than actual frames (which are all at the end)
+    # frame_times = sta.threshold_detect(paq['data'][0], 1)
+    # frame_times = frame_times[
+    #               0:total_frames]  # this is necessary as there are more TTL triggers in the paq file than actual frames (which are all at the end)
 
     all_btwn_paired_frames = []
     paired_frames_first = []

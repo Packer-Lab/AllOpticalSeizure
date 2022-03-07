@@ -13,7 +13,9 @@ import tifffile as tf
 from _analysis_._utils import Quantification
 from _exp_metainfo_.exp_metainfo import AllOpticalExpsToAnalyze, ExpMetainfo, OnePhotonStimExpsToAnalyze
 from _main_.Post4apMain import Post4ap
-from _utils_.alloptical_plotting import multi_plot_subplots, _get_ax_for_multi_plot, plot_SLMtargets_Locs
+from _main_.TwoPhotonImagingMain import TwoPhotonImaging
+from _utils_.alloptical_plotting import multi_plot_subplots, _get_ax_for_multi_plot, plot_SLMtargets_Locs, \
+    plotLfpSignal, plotMeanRawFluTrace, plot_lfp_stims
 
 SAVE_LOC = "/home/pshah/mnt/qnap/Analysis/analysis_export/analysis_quantification_classes/"
 
@@ -26,13 +28,34 @@ from _utils_.io import import_expobj
 class ExpSeizureAnalysis(Quantification):
     save_path = SAVE_LOC + 'Quant__ExpSeizureAnalysis.pkl'
 
-    def __init__(self, expobj: Post4ap):
+    def __init__(self, expobj: Post4ap, not_flip_stims=None):
         super().__init__(expobj)
         print(f'\t\- ADDING NEW ExpSeizureAnalysis MODULE to expobj: {expobj.t_series_name}')
-        self.not_flip_stims = []  #: this is the main attr that stores information about whether a stim needs its sz boundary classification flipped or not
+        if not_flip_stims is None: self.not_flip_stims = expobj.not_flip_stims if hasattr(expobj, 'not_flip_stims') else []  #: this is the main attr that stores information about whether a stim needs its sz boundary classification flipped or not
+        else: self.not_flip_stims = not_flip_stims
+        self.slmtargets_szboundary_stim = expobj.slmtargets_szboundary_stim if hasattr(expobj, 'slmtargets_szboundary_stim') else {}  #: stims for slm targets
+        self.s2prois_szboundary_stim = expobj.s2prois_szboundary_stim if hasattr(expobj, 's2prois_szboundary_stim') else {}
 
     def __repr__(self):
         return f"ExpSeizureAnalysis <-- Quantification Analysis submodule for expobj <{self.expobj_id}>"
+
+    # %% 0) misc functions
+    @staticmethod
+    def plot__exp_sz_lfp_fov(expobj: TwoPhotonImaging = None, prep=None, trial=None):
+        if prep and trial:
+            expobj = Utils.import_expobj(prep=prep, trial=trial)
+        assert expobj, 'expobj not initialized properly.'
+        fig, axs = plt.subplots(2, 1, figsize=(20, 6))
+        fig, ax = plotMeanRawFluTrace(expobj=expobj, stim_span_color=None, x_axis='frames', fig=fig, ax=axs[0],
+                                             show=False)
+        plot_lfp_stims(expobj=expobj, fig=fig, ax=axs[1], show=False)
+        # fig, ax = plotLfpSignal(expobj=expobj, stim_span_color='', x_axis='time', fig=fig, ax=axs[1], show=False)
+        fig.show()
+
+    @staticmethod
+    def run__avg_stim_images(expobj: Post4ap):
+        expobj.avg_stim_images(stim_timings=expobj.stims_in_sz, peri_frames=50, to_plot=True, save_img=True)
+
 
     # %% 1.0) calculate time delay between LFP onset of seizures and imaging FOV invasion for each seizure for each experiment
 
@@ -119,11 +142,19 @@ class ExpSeizureAnalysis(Quantification):
 
     # %% 2.1) procedure for classification of cells in/out of sz boundary
 
-    # 2.1.2) plot seizure boundary classification for all stims that occur during all seizures in an experiment
-    def plot__sz_boundaries(self, expobj: Post4ap):
+    # 2.1.2) classify and plot seizure boundary classification for all stims that occur during all seizures in an experiment
+    def classify_sz_boundaries_all_stims(self, expobj: Post4ap):
+        """sets up and runs the function for classifying cells across the sz boundary for each photostim frame.
+        also makes plots for each stim as well.
 
+        # TODO need to implement rest of code for s2prois_szboundary_stim for nontargets
+
+        """
+
+        print(' \nworking on classifying cells for stims start frames...')
         self.slmtargets_szboundary_stim = {}
         self.s2prois_szboundary_stim = {}
+
         sz_nums = range(expobj.numSeizures)
         sz_stim_frames = []
         for i in sz_nums:
@@ -153,8 +184,7 @@ class ExpSeizureAnalysis(Quantification):
                 try:
                     in_sz, out_sz = expobj.classify_slmtargets_sz_bound(stim=stim, to_plot=True, title=str(stim),
                                                                         flip=flip, fig=fig, ax=ax)
-                    expobj.slmtargets_szboundary_stim[
-                        stim] = in_sz  # for each stim, there will be a ls of cells that will be classified as in seizure or out of seizure
+                    self.slmtargets_szboundary_stim[stim] = in_sz  # for each stim, there will be a ls of cells that will be classified as in seizure or out of seizure
                     # axs[counter // ncols, counter % ncols] = ax
                 except KeyError:
                     print(f"WARNING: stim frame # {stim} missing from boundary csv and/or stim sz locations")
@@ -162,19 +192,38 @@ class ExpSeizureAnalysis(Quantification):
                 counter += 1
 
             fig.suptitle(f'{expobj.t_series_name} - Avg img around stims during sz - seizure # {sz_num + 1}', y=0.995)
+
+            save_path_full = f"{SAVE_PATH_PREFIX}/{expobj.t_series_name} seizure # {sz_num + 1} - {len(stims_of_interest)} stims.png"
+            # print(f"saving fig to: {save_path_full}")
+            Utils.save_figure(fig=fig, save_path_full=save_path_full)
             fig.show()
 
+    # flip of stim boundaries manually
     @staticmethod
-    @Utils.run_for_loop_across_exps(run_pre4ap_trials=False, run_post4ap_trials=False, allow_rerun=True,
-                                    run_trials=['PS04 t-018'])  # , 'RL109 t-017'])
-    def run__plot__sz_boundaries(**kwargs):
-        expobj: Post4ap = kwargs['expobj']
-        expobj.ExpSeizure.plot__sz_boundaries(expobj=expobj)
+    def enter_stims_to_flip(expobj: Post4ap):
+        """when placing sz wavefront boundary, there are stim instances when the classification code places the wrong side of the
+        image as inside the sz boundary. this code asks for which stims are being placed incorrectly and collects these into a list
+        that is further accessed to assign the sz boundary.
+
+        Note; remember that the sz boundary is placed manually as two points.
+        """
+
+        # 180 330 481 631 782 932 1083 1233 1384 1835 1986 2136 2287 2438 2588 3040 3190 3491  # temp stims to flip for PS04 t-018
+
+        input_string = input("Enter list of stims to flip (ensure to separate each stim frame # by exactly one space: ")
+        not_flip_stims = input_string.split()
+
+        expobj.ExpSeizure.not_flip_stims.extend([int(x) for x in not_flip_stims])
+
+        print(f"\n stims in .not_flip_stims list: {expobj.ExpSeizure.not_flip_stims}")
+        # expobj.not_flip_stims = expobj.stims_in_sz[
+        #                         1:]  # specify here the stims where the flip=False leads to incorrect assignment
+
 
     @staticmethod
     @Utils.run_for_loop_across_exps(run_pre4ap_trials=False, run_post4ap_trials=False, allow_rerun=True,
                                     run_trials=['PS04 t-018', 'RL109 t-017'])
-    def classifying_sz_boundary(**kwargs):
+    def classifying_sz_boundary_archive(**kwargs):
         """
         classifies targets (and eventually non-targets) as in or out of sz boundary for each stim.
 
@@ -286,24 +335,7 @@ class ExpSeizureAnalysis(Quantification):
         expobj.save()
         print('end end end.')
 
-    # 2.2) flip of stim boundaries manually
-    @staticmethod
-    def enter_stims_to_flip(expobj):
-        """when placing sz wavefront boundary, there are stim instances when the classification code places the wrong side of the
-        image as inside the sz boundary. this code asks for which stims are being placed incorrectly and collects these into a list
-        that is further accessed to assign the sz boundary.
 
-        Note; remember that the sz boundary is placed manually as two points.
-        """
-
-        input_string = input("Enter list of stims to flip (separated by space)")
-        not_flip_stims = input_string.split()
-
-        expobj.not_flip_stims = not_flip_stims
-        # expobj.not_flip_stims = expobj.stims_in_sz[
-        #                         1:]  # specify here the stims where the flip=False leads to incorrect assignment
-
-        expobj.save()
 
     # %% 4.1) counting seizure incidence across all imaging trials
     @staticmethod
@@ -568,3 +600,11 @@ class ExpSeizureAnalysis(Quantification):
         # axs[2].plot(correlated)
         axs[2].plot(lags, correlated)
         f.show()
+
+
+if __name__ == '__main__':
+    # %% DATA INSPECTION
+
+    ExpSeizureAnalysis.plot__exp_sz_lfp_fov(prep='RL109', trial='t-017')
+
+

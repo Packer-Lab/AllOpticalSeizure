@@ -2183,6 +2183,10 @@ class alloptical(TwoPhotonImaging):
         print('len of seizures_frames:', len(self.seizure_frames))
         print('len of photostim_frames:', len(self.photostim_frames))
 
+    @property
+    def avg_stim_images_path(self):
+        return self.analysis_save_path + 'avg_stim_images'
+
     def avg_stim_images(self, peri_frames: int = 100, stim_timings: list = None, save_img=False, to_plot=False,
                         verbose=False):
         """
@@ -2227,20 +2231,21 @@ class alloptical(TwoPhotonImaging):
 
             if save_img:
                 # save in a subdirectory under the ANALYSIS folder path from whence t-series TIFF came from
-                save_path = self.analysis_save_path + 'avg_stim_images'
-                save_path_stim = save_path + f'/{self.t_series_name}_stim-{stim}.tif'
-                if os.path.exists(save_path):
+                # save_path = self.analysis_save_path + 'avg_stim_images'
+                os.makedirs(self.avg_stim_images_path, exist_ok=True)
+                save_path_stim = self.avg_stim_images_path + f'/{self.t_series_name}_stim-{stim}.tif'
+                if os.path.exists(self.avg_stim_images_path):
                     print("saving stim_img tiff to... %s" % save_path_stim) if verbose else None
                     avg_sub8 = pj.convert_to_8bit(avg_sub, 0, 255)
                     tf.imwrite(save_path_stim,
                                avg_sub8, photometric='minisblack')
-                else:
-                    print('making new directory for saving images at:', save_path)
-                    os.mkdir(save_path)
-                    print("saving as... %s" % save_path_stim)
-                    avg_sub8 = pj.convert_to_8bit(avg_sub, 0, 255)
-                    tf.imwrite(save_path_stim,
-                               avg_sub, photometric='minisblack')
+                # else:
+                #     print('making new directory for saving images at:', save_path)
+                #     os.mkdir(save_path)
+                #     print("saving as... %s" % save_path_stim)
+                #     avg_sub8 = pj.convert_to_8bit(avg_sub, 0, 255)
+                #     tf.imwrite(save_path_stim,
+                #                avg_sub, photometric='minisblack')
 
             if to_plot:
                 plt.imshow(avg_sub, cmap='gray')
@@ -3428,37 +3433,54 @@ class Post4ap(alloptical):
         expobj.stimsSzLocations = pd.DataFrame(data=None, index=expobj.stims_in_sz,
                                                columns=['sz_num', 'coord1', 'coord2', 'wavefront_in_frame'])
 
-        # specify stims for classifying cells
-        on_ = []
-        for start, stop in zip(expobj.seizure_lfp_onsets, expobj.seizure_lfp_offsets):
-            if 0 in expobj.seizure_lfp_onsets:
-                pass
-            on_.append(start)
+        # # specify stims for classifying cells
+        # on_ = []
+        # for start, stop in zip(expobj.seizure_lfp_onsets, expobj.seizure_lfp_offsets):
+        #     on_.append(start)
+        #
+        # if 0 in expobj.seizure_lfp_onsets:  # this is used to check if 2p imaging is starting mid-seizure (which should be signified by the first lfp onset being set at frame # 0)
+        #     on_ = on_ + [expobj.stim_start_frames[0]]
+        # on_.extend(expobj.stims_bf_sz)
+        # if len(expobj.stims_af_sz) != len(on_):
+        #     end = expobj.stims_af_sz + [expobj.stim_start_frames[-1]]
+        # else:
+        #     end = expobj.stims_af_sz
+        #
+        #
+        # # specify stims for classifying cells
+        # on_ = []
+        # end = []
+        # for start, stop in zip(expobj.seizure_lfp_onsets, expobj.seizure_lfp_offsets):
+        #     on_.append(start)
+        #     end.append(stop)
 
-        if 0 in expobj.seizure_lfp_onsets:  # this is used to check if 2p imaging is starting mid-seizure (which should be signified by the first lfp onset being set at frame # 0)
-            on_ = on_ + [expobj.stim_start_frames[0]]
-        on_.extend(expobj.stims_bf_sz)
-        if len(expobj.stims_af_sz) != len(on_):
-            end = expobj.stims_af_sz + [expobj.stim_start_frames[-1]]
-        else:
-            end = expobj.stims_af_sz
-        print(f'\n\t\- seizure start frames: {on_} [{len(on_)}]')
-        print(f'\t\- seizure end frames: {end} [{len(end)}]\n')
+
+        assert len(expobj.seizure_lfp_onsets) == len(expobj.seizure_lfp_offsets), 'mismatch between .seizure_lfp_onsets and .seizure_lfp_offsets'
+
+        # print(f'\n\t\- seizure start frames: {on_} [{len(on_)}]')
+        # print(f'\t\- seizure end frames: {end} [{len(end)}]\n')
+
+        print(f'\n\t\- seizure start frames: {expobj.seizure_lfp_onsets} [{len(expobj.seizure_lfp_onsets)}]')
+        print(f'\t\- seizure end frames: {expobj.seizure_lfp_offsets} [{len(expobj.seizure_lfp_offsets)}]\n')
 
         sz_num = 0
-        for on, off in zip(on_, end):
+        for on, off in zip(expobj.seizure_lfp_onsets, expobj.seizure_lfp_offsets):
             stims_of_interest = [stim for stim in expobj.stim_start_frames if on < stim < off if
                                  stim != expobj.stims_in_sz[0]]
             # stims_of_interest_ = [stim for stim in stims_of_interest if expobj._sz_wavefront_stim(stim=stim)]
             # expobj.stims_sz_wavefront.append(stims_of_interest_)
 
             for _, stim in enumerate(stims_of_interest):
-                if os.path.exists(expobj.sz_border_path(stim=stim)):
+                try:
                     xline, yline = pj.xycsv(csvpath=expobj.sz_border_path(stim=stim))
-                    expobj.stimsSzLocations.loc[stim, :] = [sz_num, [xline[0], yline[0]], [xline[1], yline[1]], None]
-
                     j = expobj._close_to_edge(tuple(yline))
-                    expobj.stimsSzLocations.loc[stim, 'wavefront_in_frame'] = j
+                except FileNotFoundError:
+                    print(f'WARNING: no csv seizure border path found for stim {stim}, {expobj.t_series_name}')
+                    xline, yline = [-1, -1], [-1, -1]
+                    j = None
+                expobj.stimsSzLocations.loc[stim, :] = [sz_num, [xline[0], yline[0]], [xline[1], yline[1]], j]
+
+                # expobj.stimsSzLocations.loc[stim, 'wavefront_in_frame'] = j
 
             sz_num += 1
         expobj.save()
@@ -3598,6 +3620,8 @@ class Post4ap(alloptical):
             # read in avg stim image to use as the background
             avg_stim_img_path = '%s/%s_%s_stim-%s.tif' % (
                 self.analysis_save_path[:-1] + 'avg_stim_images', self.metainfo['date'], self.metainfo['trial'], stim)
+            avg_stim_img_path = f"{self.avg_stim_images_path}/{self.t_series_name}_stim-{stim}.tif"
+
             bg_img = tf.imread(avg_stim_img_path)
 
             from _utils_ import alloptical_plotting as aoplot
@@ -3655,7 +3679,7 @@ class Post4ap(alloptical):
         for cell, _ in enumerate(self.target_coords_all):
             if cell % 10 == 0:
                 msg = f"\t|- stim # {stim}, classifying cell #: {cell} out of {len(self.target_coords_all)}"
-                print(msg, end='\r')
+                print(msg)
             x = self._InOutSz(cell_med=[self.target_coords_all[cell][1], self.target_coords_all[cell][0]],
                               stim_frame=stim)
 
@@ -3687,7 +3711,7 @@ class Post4ap(alloptical):
 
             # pj.plot_cell_loc(self, cells=[cell], show=False)
             # plot sz boundary points
-            if fig is None:
+            if ax is None:
                 fig, ax = plt.subplots(figsize=[5, 5])
 
             ax.scatter(x=xline[0], y=yline[0], facecolors='#1A8B9D')
@@ -3703,6 +3727,8 @@ class Post4ap(alloptical):
             # read in avg stim image to use as the background
             avg_stim_img_path = '%s/%s_%s_stim-%s.tif' % (
                 self.analysis_save_path[:-1] + 'avg_stim_images', self.metainfo['date'], self.metainfo['trial'], stim)
+            avg_stim_img_path = f"{self.avg_stim_images_path}/{self.t_series_name}_stim-{stim}.tif"
+
             bg_img = tf.imread(avg_stim_img_path)
             # aoplot.plot_SLMtargets_Locs(self, targets_coords=coords_to_plot_insz, cells=in_sz, edgecolors='yellowgreen', background=bg_img)
             # aoplot.plot_SLMtargets_Locs(self, targets_coords=coords_to_plot_outsz, cells=out_sz, edgecolors='white', background=bg_img)
@@ -3739,11 +3765,11 @@ class Post4ap(alloptical):
         else:
             pass
 
-        return in_sz, out_sz
-        # if to_plot:
-        #     return in_sz, out_sz #, fig, ax
-        # else:
-        #     return in_sz, out_sz
+        # return in_sz, out_sz
+        if to_plot:
+            return in_sz, out_sz #, fig, ax
+        else:
+            return in_sz, out_sz
 
     def is_cell_insz(self, cell, stim):
         """for a given cell and stim, return True if cell is inside the sz boundary."""
@@ -3799,7 +3825,7 @@ class Post4ap(alloptical):
         # NOTE: the output of all of the following function is in dimensions of the FRAME CLOCK (not official paq clock time)
         if self.seizures_lfp_timing_matarray is not None:
             print('-- using matlab array to collect seizures %s: ' % seizures_lfp_timing_matarray)
-            bad_frames, self.seizure_frames, self.seizure_lfp_onsets, self.seizure_lfp_offsets = frames_discard(
+            bad_frames, self.seizure_frames, self.seizure_lfp_onsets, self.seizure_lfp_offsets = frames_discard(frame_times=self.frame_clock_actual,
                 paq=paq[0], input_array=self.seizures_lfp_timing_matarray, total_frames=self.n_frames,
                 discard_all=discard_all)
             print(

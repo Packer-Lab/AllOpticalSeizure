@@ -57,3 +57,8 @@ if __name__ == '__main__':
                                                                     response_type=Results__TargetsSzInvasionSpatial.response_type,
                                                                     scale_percentile_distances=Results__TargetsSzInvasionSpatial.scale_percentile_distances)
 
+
+# %%
+
+expobj = Utils.import_expobj(prep='RL109', trial='t-017')
+

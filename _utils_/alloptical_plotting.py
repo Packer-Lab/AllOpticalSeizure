@@ -153,7 +153,7 @@ def plot_sz_boundary_location(expobj, fig: mpl.figure.Figure = None, ax: mpl.axe
 ### plot the location of all SLM targets, along with option for plotting the mean img of the current trial
 # @print_start_end_plot
 @plot_piping_decorator(figsize=(5,5), verbose=False)
-def plot_SLMtargets_Locs(expobj, targets_coords: list = None, background: np.ndarray = None, fig=None, ax=None, **kwargs):
+def plot_SLMtargets_Locs(expobj, targets_coords: list = None, background: np.ndarray = None, **kwargs):
     """
     plot SLM target coordinate locations
 
@@ -164,7 +164,10 @@ def plot_SLMtargets_Locs(expobj, targets_coords: list = None, background: np.nda
     :return:
     """
 
-    image_frame_options()
+    # image_frame_options()
+
+    fig = kwargs['fig']
+    ax = kwargs['ax']
 
     if background is None:
         background = np.zeros((expobj.frame_x, expobj.frame_y), dtype='uint16')
@@ -193,7 +196,7 @@ def plot_SLMtargets_Locs(expobj, targets_coords: list = None, background: np.nda
         else:
             edgecolors = 'yellowgreen'
         pj.plot_coordinates(coords=targets_coords, frame_x=expobj.frame_x, frame_y=expobj.frame_y, edgecolors=edgecolors, facecolors=edgecolors,
-                            background=background, ax=ax, title=title)
+                            background=background, ax=ax, title=title, show=False, fig=fig)
 
     ax.margins(0)
 
@@ -1019,7 +1022,7 @@ def plot_lfp_stims(expobj, title='LFP signal with photostim. shown (in different
     #             verticalalignment='top', horizontalalignment='right',
     #             transform=ax.transAxes, fontweight='bold',
     #             color='black', fontsize=10 * shrink_text)
-    return ax2
+    # return fig, ax2
 
 
 @print_start_end_plot

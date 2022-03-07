@@ -1146,6 +1146,10 @@ class alloptical(TwoPhotonImaging):
         print('len of seizures_frames:', len(self.seizure_frames))
         print('len of photostim_frames:', len(self.photostim_frames))
 
+    @property
+    def avg_stim_images_path(self):
+        return self.analysis_save_path + 'avg_stim_images'
+
     def avg_stim_images(self, peri_frames: int = 100, stim_timings: list = None, save_img=False, to_plot=False, verbose=False):
         """
         Outputs (either by saving or plotting, or both) images from raw t-series TIFF for a trial around each individual
@@ -1189,20 +1193,22 @@ class alloptical(TwoPhotonImaging):
 
             if save_img:
                 # save in a subdirectory under the ANALYSIS folder path from whence t-series TIFF came from
-                save_path = self.analysis_save_path + 'avg_stim_images'
-                save_path_stim = save_path + f'/{self.t_series_name}_stim-{stim}.tif'
-                if os.path.exists(save_path):
+                # save_path = self.analysis_save_path + 'avg_stim_images'
+                os.makedirs(self.avg_stim_images_path, exist_ok=True)
+                save_path_stim = self.avg_stim_images_path + f'/{self.t_series_name}_stim-{stim}.tif'
+                if os.path.exists(self.avg_stim_images_path):
                     print("saving stim_img tiff to... %s" % save_path_stim) if verbose else None
                     avg_sub8 = pj.convert_to_8bit(avg_sub, 0, 255)
                     tf.imwrite(save_path_stim,
                                avg_sub8, photometric='minisblack')
-                else:
-                    print('making new directory for saving images at:', save_path)
-                    os.mkdir(save_path)
-                    print("saving as... %s" % save_path_stim)
-                    avg_sub8 = pj.convert_to_8bit(avg_sub, 0, 255)
-                    tf.imwrite(save_path_stim,
-                               avg_sub, photometric='minisblack')
+                # else:
+                #     print('making new directory for saving images at:', save_path)
+                #     os.mkdir(save_path)
+                #     print("saving as... %s" % save_path_stim)
+                #     avg_sub8 = pj.convert_to_8bit(avg_sub, 0, 255)
+                #     tf.imwrite(save_path_stim,
+                #                avg_sub8, photometric='minisblack')
+
 
             if to_plot:
                 plt.imshow(avg_sub, cmap='gray')

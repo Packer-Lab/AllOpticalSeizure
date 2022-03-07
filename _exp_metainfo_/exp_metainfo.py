@@ -120,13 +120,12 @@ class AllOpticalExpsToAnalyze:
 
     post_4ap_trials = [
         ['RL108 t-013'],
-        # ['RL108 t-011'],  # -- need to do sz boundary classifying processing
-        ['RL109 t-020'],  # -- need to do sz boundary classifying processing
+        # ['RL108 t-011'],  # -- need to do sz boundary classifying processing - double checking on .22/03/06
+        ['RL109 t-020'],  # -- need to do sz boundary classifying processing - double checking on .22/03/06
         # ['RL109 t-021'],
         ['RL109 t-018'],
-        ['RL109 t-016'],  # 'RL109 t-017'], # -- need to do sz boundary classifying processing
-        ['PS04 t-018'],
-        # -- need to redo sz boundary classifying processing - TODO need to redo once again? some stims seems to be missing .22/02/22
+        ['RL109 t-016'],  # 'RL109 t-017'], # -- need to do sz boundary classifying processing for t-017
+        ['PS04 t-018'], # -- should be good to go. need to redo sz boundary classifying processing - TODO need to redo once again? some stims seems to be missing .22/02/22
         # ['PS05 t-012'],
         ['PS07 t-011'],
         # ['PS07 t-017'],  -- unclear seizure behaviours
