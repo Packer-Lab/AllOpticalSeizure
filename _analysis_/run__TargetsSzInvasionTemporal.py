@@ -1,3 +1,6 @@
+import sys; print('Python %s on %s' % (sys.version, sys.platform))
+sys.path.extend(['/home/pshah/Documents/code/AllOpticalSeizure', '/home/pshah/Documents/code/AllOpticalSeizure'])
+
 """TODO/GOALS:
 x) plotting average traces around time of seizure invasion for all targets across all exps
     - plot also the mean FOV Flu at the bottom
@@ -16,18 +19,20 @@ from _analysis_._ClassTargetsSzInvasionTemporal import TargetsSzInvasionTemporal
     SAVE_PATH
 from _main_.Post4apMain import Post4ap
 
+MAIN: TargetsSzInvasionTemporal = TargetsSzInvasionTemporal
+RESULTS: TargetsSzInvasionTemporalResults = TargetsSzInvasionTemporalResults.load()
+
+
 # SAVE_LOC = "/Users/prajayshah/OneDrive/UTPhD/2022/OXFORD/export/"
 # SAVE_LOC = "/home/pshah/mnt/qnap/Analysis/analysis_export/"
 
 
 
-expobj: Post4ap = Utils.import_expobj(prep='RL108', trial='t-013')
+# expobj: Post4ap = Utils.import_expobj(prep='RL108', trial='t-013')
 # expobj = Utils.import_expobj(load_backup_path='/home/pshah/mnt/qnap/Analysis/2020-12-18/RL108/2020-12-18_t-013/backups/2020-12-18_RL108_t-013.pkl')
 
 # expobj.PhotostimResponsesSLMTargets.adata.var[['stim_start_frame', 'wvfront in sz', 'seizure_num']]
 
-MAIN: TargetsSzInvasionTemporal = TargetsSzInvasionTemporal
-RESULTS: TargetsSzInvasionTemporalResults = TargetsSzInvasionTemporalResults.load()
 
 
 # %% code development zone
@@ -36,8 +41,8 @@ RESULTS: TargetsSzInvasionTemporalResults = TargetsSzInvasionTemporalResults.loa
 ## binning and plotting zscored photostim responses vs. time ###########################################################
 # TODO - MAIN WORK RIGHT NOW:
 
-# - bring back the seizure invasion marking by 0.5 secs for two experiments
-#    - need to determine which exps first
+# - bring back the seizure invasion marking by certain amounts for two experiments
+#    - need to determine which exps first: PS04 t-018 move forward by 2secs and PS11 t-011 move forward by 5secs
 #    - then, bring back the marking for those and replot avg invasion trace
 
 
@@ -53,8 +58,7 @@ def run__initTargetsSzInvasionTemporal(**kwargs):
 
 # run__initTargetsSzInvasionTemporal()
 
-@Utils.run_for_loop_across_exps(run_pre4ap_trials=False,
-                                run_post4ap_trials=1, allow_rerun=1)  # , run_trials=['RL109 t-016', 'PS07 t-011', 'PS11 t-011'])
+@Utils.run_for_loop_across_exps(run_pre4ap_trials=False, run_post4ap_trials=1, allow_rerun=0)
 def run__collect_targets_sz_invasion_traces(**kwargs):
     expobj: Post4ap = kwargs['expobj']
     expobj.TargetsSzInvasionTemporal.collect_targets_sz_invasion_traces(expobj=expobj)
@@ -311,10 +315,10 @@ def plot_lineplot_responses_pctsztimes(percentiles, responses_sorted, response_t
 
 if __name__ == '__main__':
 
-    @Utils.run_for_loop_across_exps(run_pre4ap_trials=0, run_post4ap_trials=1, allow_rerun=0)
+    @Utils.run_for_loop_across_exps(run_pre4ap_trials=0, run_post4ap_trials=0, allow_rerun=1, run_trials=['PS04 t-018', 'PS11 t-011'])
     def run_misc(**kwargs):
         expobj: Post4ap = kwargs['expobj']
-        expobj.TargetsSzInvasionTemporal.add_slmtargets_time_delay_sz_data(expobj=expobj)
+        # expobj.TargetsSzInvasionTemporal.add_slmtargets_time_delay_sz_data(expobj=expobj)
         expobj.TargetsSzInvasionTemporal.collect_targets_sz_invasion_traces(expobj=expobj)
         expobj.save()
 
@@ -333,7 +337,7 @@ if __name__ == '__main__':
     # plot__szinvasiontime_vs_photostimresponses()
     # plot__szinvasiontime_vs_photostimresponses_indivexp()
 
-    run__collect_targets_sz_invasion_traces()
+    # run__collect_targets_sz_invasion_traces()
     MAIN.plot__targets_sz_invasion_meantraces()
 
 

@@ -20,6 +20,11 @@ SAVE_LOC = "/home/pshah/mnt/qnap/Analysis/analysis_export/analysis_quantificatio
 SAVE_PATH = SAVE_LOC + 'TargetsSzInvasionTemporal.pkl'
 
 
+# setting temporal sz invasion adjust amount (in secs):
+ADJUST_SZ_INV = {'PS04 t-018': 2,
+                 'PS11 t-011': 5}  # secs
+
+
 # archived in favor of a dedicated results class .22/03/07
 # if os.path.exists(SAVE_PATH):
 #     save_TargetsSzInvasionTemporal = pj.load_pkl(pkl_path=SAVE_PATH)
@@ -59,8 +64,15 @@ class TargetsSzInvasionTemporal(Quantification):
     def convert_timedel2frames(expobj: Post4ap, sz_num: int, timestamp: float):
 
         start, stop = expobj.seizure_lfp_onsets[sz_num], expobj.seizure_lfp_offsets[sz_num]
+
+        # apply adjustment factor based on above defined temporal sz invasion adjust amount (in secs):
+        _adjust_factor = 0  # probably want to use this in add_slmtargets_time_delay_sz_data or upstream after determining if this route is viable
+        if expobj.t_series_name in [*ADJUST_SZ_INV]:
+            _adjust_factor_sec = ADJUST_SZ_INV[expobj.t_series_name]
+            _adjust_factor = _adjust_factor_sec * expobj.fps
+
         numFrames = timestamp * expobj.fps
-        frameNumber = numFrames + start
+        frameNumber = numFrames + start - _adjust_factor
 
         return int(round(frameNumber))
 
@@ -86,7 +98,7 @@ class TargetsSzInvasionTemporal(Quantification):
             cols_ = [idx for idx, col in enumerate([*expobj.PhotostimResponsesSLMTargets.adata.obs]) if
                      'time_del' in col]
             sz_times = expobj.PhotostimResponsesSLMTargets.adata.obs.iloc[target, cols_]
-            fr_times = [convert_timedel2frames(expobj, sznum, time) for sznum, time in enumerate(sz_times) if
+            fr_times = [TargetsSzInvasionTemporal.convert_timedel2frames(expobj, sznum, time) for sznum, time in enumerate(sz_times) if
                         not pd.isnull(time)]
 
             # collect each frame seizure invasion time Flu snippet for current target
@@ -114,9 +126,9 @@ class TargetsSzInvasionTemporal(Quantification):
     ## 1.2) plot mean of seizure invasion Flu traces from all targets for each experiment ##############################
     @staticmethod
     def plot__targets_sz_invasion_meantraces():
-        fig, ax = plt.subplots(figsize=[3, 6])
+        fig, ax = plt.subplots(figsize=[3, 5])
 
-        @Utils.run_for_loop_across_exps(run_pre4ap_trials=False, run_post4ap_trials=True)
+        @Utils.run_for_loop_across_exps(run_pre4ap_trials=False, run_post4ap_trials=1, set_cache=False)
         def plot_targets_sz_invasion_meantraces(**kwargs):
             expobj: Post4ap = kwargs['expobj']
 
@@ -132,10 +144,10 @@ class TargetsSzInvasionTemporal(Quantification):
 
             x_time = np.linspace(-pre, post, len(to_plot))
 
-            ax.plot(x_time, to_plot_normalize, color=pj.make_random_color_array(n_colors=1)[0], linewidth=3)
+            ax.plot(x_time, to_plot_normalize, color=pj.make_random_color_array(n_colors=1)[0], linewidth=3, label=expobj.t_series_name)
             # ax2.plot(x_time, fov_mean_normalize, color=pj.make_random_color_array(n_colors=1)[0], linewidth=3, alpha=0.5, linestyle='--')
-
-            ax.scatter(x=0, y=to_plot_normalize[invasion_spot], color='crimson', s=45, zorder=5)
+            # ax.legend(loc='center left', bbox_to_anchor=(1.04, 0.5))
+            ax.scatter(x=0, y=to_plot_normalize[invasion_spot], color='crimson', s=30, zorder=5)
 
             xticks = [-pre, 0, post]
             # xticks_loc = [xtick*expobj.fps for xtick in [0, pre, pre+post]]

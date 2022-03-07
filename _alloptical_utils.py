@@ -228,7 +228,7 @@ def delete_from_cache(func_name: str):
         else:
             print(f"Delete failed: {func_name} found in cache, but was not able to delete. unexpected error.")
     else:
-        print(f'{func_name} was not found in cache. nothing deleted.')
+        print(f'WARNING: {func_name} was not found in cache. nothing deleted.')
 
 
 # random plot just to initialize plotting for PyCharm
