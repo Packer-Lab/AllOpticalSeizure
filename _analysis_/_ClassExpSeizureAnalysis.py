@@ -213,7 +213,31 @@ class ExpSeizureAnalysis(Quantification):
         input_string = input("Enter list of stims to flip (ensure to separate each stim frame # by exactly one space: ")
         not_flip_stims = input_string.split()
 
+        for stim in not_flip_stims:
+            assert int(stim) in expobj.stim_start_frames, f'stim {stim} not found as a stim start frame for {expobj}'
+
         expobj.ExpSeizure.not_flip_stims.extend([int(x) for x in not_flip_stims])
+
+        print(f"\n stims in .not_flip_stims list: {expobj.ExpSeizure.not_flip_stims}")
+        # expobj.not_flip_stims = expobj.stims_in_sz[
+        #                         1:]  # specify here the stims where the flip=False leads to incorrect assignment
+
+    # flip of stim boundaries manually
+    @staticmethod
+    def remove_stims_to_flip(expobj: Post4ap):
+        """
+        To remove incorrectly given stims
+        when placing sz wavefront boundary, there are stim instances when the classification code places the wrong side of the
+        image as inside the sz boundary. this code asks for which stims are being placed incorrectly and collects these into a list
+        that is further accessed to assign the sz boundary.
+
+        Note; remember that the sz boundary is placed manually as two points.
+        """
+
+        input_string = input(f"Enter list of stims to remove from expobj.ExpSeizure.not_flip_stims for {expobj.t_series_name} (ensure to separate each stim frame # by exactly one space: ")
+        remove_stims = input_string.split()
+
+        [expobj.ExpSeizure.not_flip_stims.remove(int(x)) for x in remove_stims]
 
         print(f"\n stims in .not_flip_stims list: {expobj.ExpSeizure.not_flip_stims}")
         # expobj.not_flip_stims = expobj.stims_in_sz[

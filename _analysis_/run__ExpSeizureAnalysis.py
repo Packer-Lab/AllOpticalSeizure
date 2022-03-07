@@ -19,7 +19,7 @@ def run__initExpSeizureAnalysis(**kwargs):
     expobj.save()
 
 @Utils.run_for_loop_across_exps(run_pre4ap_trials=False, run_post4ap_trials=False, allow_rerun=True,
-                                run_trials=['RL108 t-011', 'RL109 t-020'])
+                                run_trials=['RL108 t-011', 'RL108 t-013', 'RL109 t-020'])
 def procedure__classifying_sz_boundary(**kwargs):
     """
     Full procedure for classifying targets (and eventually non-targets) as in or out of sz boundary for each stim.
@@ -74,12 +74,14 @@ def run__plot__sz_boundaries_all_stims(**kwargs):
 
 
 @Utils.run_for_loop_across_exps(run_pre4ap_trials=False, run_post4ap_trials=False, allow_rerun=True,
-                                run_trials=['RL109 t-016'])  # , 'RL109 t-017'])
+                                run_trials=['RL108 t-011'])  # , 'RL109 t-017'])
 def run__enter_input_stims_to_flip(expobj_r=None, **kwargs):
     expobj: Post4ap = kwargs['expobj'] if expobj_r is None else expobj_r
     print(expobj)
     main.enter_stims_to_flip(expobj=expobj)  # need to run this on the
     expobj.save()
+
+
 
 
 def run_misc(expobj: Post4ap):
@@ -93,17 +95,19 @@ def run_misc(expobj: Post4ap):
 
 if __name__ == '__main__':
 
-    expobj: Post4ap = Utils.import_expobj(prep='RL108', trial='t-011')
+    # expobj: Post4ap = Utils.import_expobj(prep='RL108', trial='t-011')
     # run__initExpSeizureAnalysis()
-    run_misc(expobj)
+    # run_misc(expobj)
     #
-    expobj: Post4ap = Utils.import_expobj(prep='RL109', trial='t-020')
-    run_misc(expobj)
-    #
-    # expobj: Post4ap = Utils.import_expobj(prep='RL109', trial='t-017')
-    # run__enter_input_stims_to_flip(expobj_r = expobj)
+    # expobj: Post4ap = Utils.import_expobj(prep='RL109', trial='t-020')
+    # run_misc(expobj)
 
-    procedure__classifying_sz_boundary()
+    # expobj: Post4ap = Utils.import_expobj(prep='RL108', trial='t-013')
+    # main.remove_stims_to_flip(expobj=expobj)
+
+    run__enter_input_stims_to_flip()
+
+    # procedure__classifying_sz_boundary()
 
     # main.FOVszInvasionTime()
     # main.plot__sz_incidence()
@@ -112,5 +116,13 @@ if __name__ == '__main__':
     # main.calc__szInvasionTime()
     # main.plot__sz_invasion()
 
-# [476, 624, 772, 921, 1069, 1217, 1365, 1514, 1662, 1810, 1958, 4923, 5071, 5219, 6850, 6998, 8925, 9074, 9222, 9370,
-#  9518, 12186, 12335, 12483, 12631, 13372, 13521]
+
+
+
+# %% collecting not_flip_stims lists for experimemts
+# 232 381 530 828 5440 5589 5738 5887 6036 6184 6333 6482 6631 6780 6928 7077 7226 7375 7524 7672 7821 7970 8119 8268 8416 8565 8714 8863 9160 13029 13178 13327 13476 13624 13773 13922 14071 14220 14368 14517 14666 14815 - RL109 t-020
+
+# 1720 4092 4240 4388 7798 7946 8094 8242 11207 11355 11504 11652 11800 - RL108 t-011
+
+# 476, 624, 772, 921, 1069, 1217, 1365, 1514, 1662, 1810, 1958, 4923, 5071, 5219, 6850, 6998, 8925, 9074, 9222, 9370,
+# 9518, 12186, 12335, 12483, 12631, 13372, 13521  -- RL108 t-013
