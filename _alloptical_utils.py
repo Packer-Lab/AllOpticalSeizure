@@ -242,10 +242,17 @@ def end_working_on(expobj):
     print(f"{'.'*19} {expobj.metainfo['exptype']} {expobj.metainfo['animal prep.']} {expobj.metainfo['trial']} FINISHED \n")
 
 def save_figure(fig, save_path_suffix: str = None, save_path_full: str = None):
+    """
+    save the provided matplotlib fig to the specified save path.
+    :param fig: matplotlib fig
+    :param save_path_suffix: treat this as the plot's filename. it will be used to save plot with filename (save_path_suffix) at the default location (see save_path_prefix in code).
+    :param save_path_full:
+    """
     if not save_path_full and save_path_suffix:
         ## SET DEFAULT FIGURE SAVE DIRECTORY
         today_date = datetime.today().strftime('%Y-%m-%d')
         save_path_prefix = f"/home/pshah/mnt/qnap/Analysis/Results_figs/{today_date}/"
+        save_path_suffix += '.png' if 'png' not in save_path_suffix else ''
         save_path_full = save_path_prefix + save_path_suffix
     else:
         ValueError('not able to determine where to save figure to!')

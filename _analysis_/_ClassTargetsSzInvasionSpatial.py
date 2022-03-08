@@ -350,30 +350,32 @@ class TargetsSzInvasionSpatial(Quantification):
         plt.show()
 
 
-@dataclass
 class TargetsSzInvasionSpatialResults(Results):
     SAVE_PATH = SAVE_LOC + 'Results__TargetsSzInvasionSpatial.pkl'
     response_type = TargetsSzInvasionSpatial.response_type
 
-    range_of_sz_spatial_distance: List[
-        float] = field(default_factory=lambda: [-1.0, -1.0, -1.0])  # need to collect - represents the 25th, 50th, and 75th percentile range of the sz invasion distance stats calculated across all targets and all exps - maybe each seizure across all exps should be the 'n'?
+    def __init__(self):
+        super().__init__()
 
-    no_slmtargets_szboundary_stim = []
-    data_all = None
-    percentiles = None
-    responses_sorted = None
-    distances_to_sz_sorted = None
-    scale_percentile_distances = None
+        self.range_of_sz_spatial_distance: List[float] = [-1.0, -1.0, -1.0]  # need to collect - represents the 25th, 50th, and 75th percentile range of the sz invasion distance stats calculated across all targets and all exps - maybe each seizure across all exps should be the 'n'?
+
+        self.no_slmtargets_szboundary_stim = []
+        self.data_all = None
+        self.percentiles = None
+        self.responses_sorted = None
+        self.distances_to_sz_sorted = None
+        self.scale_percentile_distances = None
 
     @classmethod
     def load(cls):
         return pj.load_pkl(cls.SAVE_PATH)
 
-
-if not os.path.exists(TargetsSzInvasionSpatialResults.SAVE_PATH):
+REMAKE = False
+if not os.path.exists(TargetsSzInvasionSpatialResults.SAVE_PATH) or REMAKE:
     Results__TargetsSzInvasionSpatial = TargetsSzInvasionSpatialResults()
     Results__TargetsSzInvasionSpatial.save_results()
-
+else:
+    RESULTS: TargetsSzInvasionSpatialResults = TargetsSzInvasionSpatialResults.load()
 
 
 # %% running processing and analysis pipeline

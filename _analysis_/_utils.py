@@ -1,4 +1,8 @@
 #
+import time
+
+import os
+
 from _main_.AllOpticalMain import alloptical
 
 
@@ -38,24 +42,38 @@ class Results:
 
     SAVE_PATH: str = None
 
-    def __init__(self, expobj: alloptical):
-        self._metainfo = expobj.metainfo
-        print(f'\- ADDING NEW Results MODULE to expobj: {expobj.t_series_name}')
+    def __init__(self):
+        pass
 
     def __repr__(self):
-        return f"Results Analysis submodule for expobj <{self.expobj_id}>"
+        return f"Results Analysis Object"
+
+    def __str__(self):
+
+        try:
+            lastmod = time.ctime(os.path.getmtime(self.SAVE_PATH))
+        except FileNotFoundError:
+            lastmod = '-- cannot get --'
+
+        information = ''
+        for attr in [*self.__dict__]:
+            len_ = len(self.__getattribute__(attr)) if self.__getattribute__(attr) is not None else -1
+            information += f"\n\t{attr}: {len_}" if len_ > 0 else f"\n\t{attr}: {self.__getattribute__(attr)}"
+
+        return f"Results Analysis submodule, last saved: {lastmod}"
 
     def save_results(self):
         assert self.SAVE_PATH, print(f"save path not defined for: {self}")
         from funcsforprajay.funcs import save_pkl
+        print(f'\n Saving {self.__repr__()}: ')
         save_pkl(self, self.SAVE_PATH)
 
-    @property
-    def expobj_id(self):
-        return f"{self._metainfo['animal prep.']} {self._metainfo['trial']}"
-
-    @property
-    def expobj_exptype(self):
-        return self._metainfo['exptype']
+    # @property
+    # def expobj_id(self):
+    #     return f"{self._metainfo['animal prep.']} {self._metainfo['trial']}"
+    #
+    # @property
+    # def expobj_exptype(self):
+    #     return self._metainfo['exptype']
 
 

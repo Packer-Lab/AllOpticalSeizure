@@ -22,6 +22,23 @@ SAVE_PATH_PREFIX = '/home/pshah/mnt/qnap/Analysis/Procesing_figs/sz_processing_b
 from _utils_.io import import_expobj
 
 
+# %% 0) misc functions
+def plot__exp_sz_lfp_fov(expobj: TwoPhotonImaging = None, prep=None, trial=None):
+    if prep and trial:
+        expobj = Utils.import_expobj(prep=prep, trial=trial)
+    assert expobj, 'expobj not initialized properly.'
+    fig, axs = plt.subplots(2, 1, figsize=(20, 6))
+    fig, ax = plotMeanRawFluTrace(expobj=expobj, stim_span_color=None, x_axis='frames', fig=fig, ax=axs[0],
+                                  show=False)
+    plot_lfp_stims(expobj=expobj, fig=fig, ax=axs[1], show=False)
+    # fig, ax = plotLfpSignal(expobj=expobj, stim_span_color='', x_axis='time', fig=fig, ax=axs[1], show=False)
+    fig.show()
+
+
+def run__avg_stim_images(expobj: Post4ap):
+    expobj.avg_stim_images(stim_timings=expobj.stims_in_sz, peri_frames=50, to_plot=True, save_img=True)
+
+# %%
 class ExpSeizureAnalysis(Quantification):
     save_path = SAVE_LOC + 'Quant__ExpSeizureAnalysis.pkl'
 
@@ -35,24 +52,6 @@ class ExpSeizureAnalysis(Quantification):
 
     def __repr__(self):
         return f"ExpSeizureAnalysis <-- Quantification Analysis submodule for expobj <{self.expobj_id}>"
-
-    # %% 0) misc functions
-    @staticmethod
-    def plot__exp_sz_lfp_fov(expobj: TwoPhotonImaging = None, prep=None, trial=None):
-        if prep and trial:
-            expobj = Utils.import_expobj(prep=prep, trial=trial)
-        assert expobj, 'expobj not initialized properly.'
-        fig, axs = plt.subplots(2, 1, figsize=(20, 6))
-        fig, ax = plotMeanRawFluTrace(expobj=expobj, stim_span_color=None, x_axis='frames', fig=fig, ax=axs[0],
-                                             show=False)
-        plot_lfp_stims(expobj=expobj, fig=fig, ax=axs[1], show=False)
-        # fig, ax = plotLfpSignal(expobj=expobj, stim_span_color='', x_axis='time', fig=fig, ax=axs[1], show=False)
-        fig.show()
-
-    @staticmethod
-    def run__avg_stim_images(expobj: Post4ap):
-        expobj.avg_stim_images(stim_timings=expobj.stims_in_sz, peri_frames=50, to_plot=True, save_img=True)
-
 
     # %% 1.0) calculate time delay between LFP onset of seizures and imaging FOV invasion for each seizure for each experiment
 

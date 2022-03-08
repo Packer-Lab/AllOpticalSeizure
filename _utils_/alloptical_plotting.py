@@ -5,6 +5,7 @@
 import os
 import numpy as np
 import matplotlib as mpl
+import seaborn as sns
 import matplotlib.pyplot as plt
 import matplotlib.ticker as mticker
 from mpl_point_clicker import clicker
@@ -49,6 +50,24 @@ def image_frame_options():
         'figure.subplot.hspace': .01,
         'ytick.major.left': False,
         'xtick.major.bottom': False
+    })
+
+def dataplot_frame_options():
+    sns.set()
+    sns.set_style('white')
+
+    import matplotlib as mpl
+    mpl.rcParams.update({
+        'axes.spines.top': False,
+        'axes.spines.right': False,
+        'legend.fontsize': 'large',
+        'axes.labelsize': 'x-large',
+        'axes.titlesize': 'x-large',
+        'xtick.labelsize': 'large',
+        'ytick.labelsize': 'large',
+        'legend.frameon': False,
+        'figure.subplot.wspace': .01,
+        'figure.subplot.hspace': .01,
     })
 
 def heatmap_options():

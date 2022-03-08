@@ -3,7 +3,6 @@ from typing import Union
 import numpy as np
 
 import _alloptical_utils as Utils
-from _utils_.io import import_cls, import_expobj
 
 from _analysis_._ClassPhotostimResponseQuantificationSLMtargets import \
     PhotostimResponsesQuantificationSLMtargets as main, PhotostimResponsesSLMtargetsResults
@@ -16,6 +15,8 @@ from funcsforprajay import funcs as pfuncs
 # expobj: Post4ap = import_expobj(prep='RL109', trial='t-018')
 RESULTS: PhotostimResponsesSLMtargetsResults = PhotostimResponsesSLMtargetsResults.load()
 
+print(RESULTS)
+# print(RESULTS.pre_stim_FOV_flu)
 
 "##### -------------------- ALL OPTICAL PHOTOSTIM ANALYSIS #############################################################"
 
@@ -37,6 +38,14 @@ RESULTS: PhotostimResponsesSLMtargetsResults = PhotostimResponsesSLMtargetsResul
 # expobj.save()
 
 
+# RESULTS.pre_stim_FOV_flu = main.collect__prestim_FOV_Flu()
+# RESULTS.save_results()
+# print(RESULTS)
+# print(RESULTS.pre_stim_FOV_flu)
+
+
+# main.run__collect_photostim_responses_magnitude_avgtargets()
+main.plot__photostim_responses_vs_prestim_FOV_flu()
 
 # %% r.0) init and collect photostim responses, create anndata structure
 
@@ -82,7 +91,7 @@ def full_plot_mean_responses_magnitudes():
         expobj: alloptical = kwargs['expobj']
         if 'pre' in expobj.exptype:
             # all stims
-            mean_photostim_responses = expobj.PhotostimResponsesSLMTargets.collect_photostim_responses_magnitude(
+            mean_photostim_responses = expobj.PhotostimResponsesSLMTargets.collect_photostim_responses_magnitude_avgstims(
                 stims='all')
             return np.mean(mean_photostim_responses)
 
@@ -93,11 +102,11 @@ def full_plot_mean_responses_magnitudes():
         expobj: Post4ap = kwargs['expobj']
         if 'post' in expobj.exptype:
             # interictal stims
-            mean_photostim_responses_interictal = expobj.PhotostimResponsesSLMTargets.collect_photostim_responses_magnitude(
+            mean_photostim_responses_interictal = expobj.PhotostimResponsesSLMTargets.collect_photostim_responses_magnitude_avgstims(
                 stims=expobj.stim_idx_outsz)
 
             # ictal stims
-            mean_photostim_responses_ictal = expobj.PhotostimResponsesSLMTargets.collect_photostim_responses_magnitude(
+            mean_photostim_responses_ictal = expobj.PhotostimResponsesSLMTargets.collect_photostim_responses_magnitude_avgstims(
                 stims=expobj.stim_idx_insz)
 
             return np.mean(mean_photostim_responses_interictal), np.mean(mean_photostim_responses_ictal)
@@ -169,6 +178,7 @@ def full_plot_mean_responses_magnitudes_zscored():
         # return mean_photostim_responses_baseline_zscored, mean_photostim_responses_interictal_zscored, mean_photostim_responses_ictal_zscored
 
         return data
+
 
 
 
