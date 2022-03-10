@@ -291,7 +291,7 @@ def plot_lineplot_responses_pctsztimes(percentiles, responses_sorted, response_t
     df = pd.DataFrame(d)
 
     fig, ax = plt.subplots(figsize=(6, 3))
-    sns.lineplot(data=df, x='time to seizure (%tile space)', y='dFF (zscored)', ax=ax)
+    sns.lineplot(data=df, x='time to seizure (%tile space)', y=response_type, ax=ax)
     ax.set_title(f'responses over time to sz, all exps, normalized to percentile space ({bin}% bins)',
                  wrap=True)
     ax.margins(0.02)
@@ -325,34 +325,34 @@ if __name__ == '__main__':
     # run__collect_targets_sz_invasion_traces()
     # MAIN.plot__targets_sz_invasion_meantraces()
 
-    # run_collect_time_delay_sz_stims()
+    run_collect_time_delay_sz_stims()
 
-    # RUNNING BELOW FOR ANALYSIS CURRENTLY
-    # fig, ax = plt.subplots(figsize=[3, 3])
-    # run_check_collect_time_delay_sz_stims(fig=fig, ax=ax)
-    # fig.show()
-    #
-    #
+    # RUNNING BELOW FOR QUANTIFICATION OF PHOTOSTIM RESPONSES VS. TIME DELAY TO SZ INVASION CURRENTLY
+    fig, ax = plt.subplots(figsize=[3, 3])
+    run_check_collect_time_delay_sz_stims(fig=fig, ax=ax)
+    fig.show()
+
+
     run__collect_szinvasiontime_vs_photostimresponses()
-    # plot__szinvasiontime_vs_photostimresponses()
-    # plot__szinvasiontime_vs_photostimresponses_indivexp()
+    plot__szinvasiontime_vs_photostimresponses()
+    plot__szinvasiontime_vs_photostimresponses_indivexp()
 
     # run collecting and plotting zscored photostim responses vs. time delay to sz invasion
     run__collect_szinvasiontime_vs_photostimresponses_zscored()
-    # plot__szinvasiontime_vs_photostimresponseszscored()
+    plot__szinvasiontime_vs_photostimresponseszscored()
 
     run__collect_szinvasiontime_vs_photostimresponses_zscored_df()
     RESULTS.data = run__plot_responses_vs_time_to_seizure_SLMTargets_2ddensity()
     # RESULTS.save_results()
     RESULTS.data_all, RESULTS.percentiles, RESULTS.responses_sorted, RESULTS.times_to_sz_sorted, \
-    RESULTS.scale_percentile_times = run__convert_responses_sztimes_percentile_space(data=RESULTS.data)
-
+        RESULTS.scale_percentile_times = run__convert_responses_sztimes_percentile_space(data=RESULTS.data)
     RESULTS.save_results()
+
 
     MAIN.plot_density_responses_sztimes(RESULTS.data_all, RESULTS.times_to_sz_sorted, RESULTS.scale_percentile_times,
                                         photostim_responses_zscore_type=MAIN.photostim_responses_zscore_type)
     plot_lineplot_responses_pctsztimes(percentiles=RESULTS.percentiles, responses_sorted=RESULTS.responses_sorted,
-                                       response_type='dFF (zscored)',
+                                       response_type=MAIN.photostim_responses_zscore_type,
                                        scale_percentile_times=RESULTS.scale_percentile_times)
 
     # RESULTS.range_of_sz_invasion_time = [-1, -1, -1]

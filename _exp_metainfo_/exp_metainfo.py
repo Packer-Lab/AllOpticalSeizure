@@ -162,12 +162,11 @@ class AllOpticalExpsToAnalyze:
     }, 'post': {
         'a': ['RL108 t-013'],
         # 'b': ['RL108 t-011'], # -- need to redo sz boundary classifying processing - should be done
-        'c': ['RL109 t-020'],  # -- need to redo sz boundary classifying processing - should be done
+        'c': ['RL109 t-020'],
         # 'd': ['RL109 t-021'],
-        'e': ['RL109 t-018'],  # -- need to redo sz boundary classifying processing - should be done
+        'e': ['RL109 t-018'],
         'f': ['RL109 t-016'],  # 'RL109 t-017'], #-- need to do sz boundary classifying processing - should be done
         'g': ['PS04 t-018'],
-        # -- need to redo sz boundary classifying processing - TODO need to redo once again? some stims seems to be missing .22/02/22
         # 'h': ['PS05 t-012'],
         'i': ['PS07 t-011'],
         # 'j': ['PS07 t-017'],  # - need to do sz boundary classifying processing

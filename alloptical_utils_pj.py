@@ -38,264 +38,6 @@ from _utils_.paq_utils import paq_read, frames_discard
 import pickle
 
 
-# %% UTILITY FUNCTIONS and DECORATORS
-def import_expobj(aoresults_map_id: str = None, trial: str = None, prep: str = None, date: str = None,
-                  pkl_path: str = None,
-                  exp_prep: str = None, verbose: bool = False, do_processing: bool = False,
-                  load_backup_path: str = None):
-    """
-    primary function for importing of saved expobj files saved pickel files.
-
-    :param aoresults_map_id:
-    :param trial:
-    :param prep:
-    :param date:
-    :param pkl_path:
-    :param verbose:
-    :param do_processing: whether to do extra misc. processing steps that are the end of the importing code here.
-    :return:
-    """
-
-    if aoresults_map_id is not None:
-        if 'pre' in aoresults_map_id:
-            exp_type = 'pre'
-        elif 'post' in aoresults_map_id:
-            exp_type = 'post'
-        id = aoresults_map_id.split(' ')[1][0]
-        if len(allopticalResults.trial_maps[exp_type][id]) > 1:
-            num_ = int(re.search(r"\d", aoresults_map_id)[0])
-        else:
-            num_ = 0
-        prep, trial = allopticalResults.trial_maps[exp_type][id][num_].split(' ')
-
-    if exp_prep is not None:
-        prep = exp_prep[:-6]
-        trial = exp_prep[-5:]
-
-    # if need to load from backup path!
-    if load_backup_path:
-        pkl_path = load_backup_path
-        print(f"**** loading from backup path! ****")
-
-    if pkl_path is None:
-        if date is None:
-            try:
-                date = allopticalResults.metainfo.loc[
-                    allopticalResults.metainfo['prep_trial'] == f"{prep} {trial}", 'date'].values[0]
-            except ValueError:
-                raise ValueError('not able to find date in allopticalResults.metainfo')
-        pkl_path = "/home/pshah/mnt/qnap/Analysis/%s/%s/%s_%s/%s_%s.pkl" % (date, prep, date, trial, date, trial)
-
-    if not os.path.exists(pkl_path):
-        raise Exception('pkl path NOT found: ' + pkl_path)
-    with open(pkl_path, 'rb') as f:
-        print(f'\- Loading {pkl_path}', end='\r')
-        try:
-            expobj = pickle.load(f)
-        except pickle.UnpicklingError:
-            raise pickle.UnpicklingError(f"\n** FAILED IMPORT OF * {prep} {trial} * from {pkl_path}\n")
-        experiment = f"{expobj.t_series_name} {expobj.metainfo['exptype']} {expobj.metainfo['comments']}"
-        print(f'|- Loaded {expobj.t_series_name} ({pkl_path}) .. DONE') if not verbose else None
-        print(f'|- Loaded {experiment}') if verbose else None
-
-    ### roping in some extraneous processing steps if there's expobj's that haven't completed for them
-
-    # check for existence of backup (if not then make one through the saving func).
-    expobj.save() if not os.path.exists(expobj.backup_pkl) else None
-
-    # save the pkl if loaded from backup path
-    expobj.save() if load_backup_path else None
-
-    if expobj.analysis_save_path[-1] != '/':
-        expobj.analysis_save_path = expobj.analysis_save_path + '/'
-        print(f"updated expobj.analysis_save_path to: {expobj.analysis_save_path}")
-        expobj.save()
-
-    # move expobj to the official save_path from the provided save_path that expobj was loaded from (if different)
-    if pkl_path is not None:
-        if expobj.pkl_path != pkl_path:
-            expobj.save_pkl(save_path=expobj.pkl_path)
-            print('saved new copy of expobj to save_path: ', expobj.pkl_path)
-
-    # other misc. things you want to do when importing expobj -- should be temp code basically - not essential for actual importing of expobj
-
-    return expobj
-
-
-def import_resultsobj(pkl_path: str):
-    assert os.path.exists(pkl_path)
-    with open(pkl_path, 'rb') as f:
-        print(f"\nimporting resultsobj from: {pkl_path} ... ")
-        resultsobj = pickle.load(f)
-        print(f"|-DONE IMPORT of {(type(resultsobj))} resultsobj \n\n")
-    return resultsobj
-
-
-# random plot just to initialize plotting for PyCharm
-def random_plot():
-    pj.make_general_scatter(x_list=[np.random.rand(5)], y_data=[np.random.rand(5)], s=60, alpha=1, figsize=(3, 3))
-
-
-# dictionary of terms, phrases, etc. that are particular to this analysis
-phrase_dictionary = {
-    'delta(trace_dFF)': "photostim measurement; measuring photostim responses with post-stim minus pre-stim, where the post-stim "
-                        "and pre-stim values are dFF values obtained from normalization of the whole trace within the present t-series",
-    'dfprestimf': "photostim meausurement; measuring photostim responses as (post-stim minus pre-stim)/(mean[pre-stim period], "
-                  "where the original trace is the raw (neuropil subtracted) trace",
-    'dfstdf': "photostim measurement; measuring photostim responses as (post-stim minus pre-stim)/(std[pre-stim period], "
-              "where the original trace is the raw (neuropil subtracted) trace",
-    'hits': "successful photostim responses, as defined based on a certain threshold level for dfstdf (>0.3 above prestim) and delta(trace_dFF) (>10 above prestim)",
-    'SLM Targets': "ROI placed on the motion registered TIFF based on the primary target coordinate and expanding a circle of 10um? diameter centered on the coordinate",
-    's2p ROIs': "all ROIs derived directly from the suite2p output",
-    's2p nontargets': "suite2p ROIs excluding those which are filtered out for being in the target exclusion zone",
-    'good cells': "good cells are suite2p ROIs which have some sort of a Flu transient based on a sliding window and std filtering process",
-    'stim_id': "the imaging frame number on which the photostimulation is calculated to have first started",
-    'photostim response': 'synonymous with `delta(trace_dFF)`'
-}
-
-
-def define(x):
-    try:
-        print(f"{x}:    {phrase_dictionary[x]}") if type(x) is str else print(
-            'ERROR: please provide a string object as the key')
-    except KeyError:
-        print('input not found in phrase_dictionary, you should CONSIDER ADDING IT RIGHT NOW!')
-
-
-def show_phrases():
-    print(f"entries in phrase_dictionary: \n {list(phrase_dictionary.keys())}")
-
-
-def working_on(expobj):
-    print(
-        f"STARTING on: {expobj.metainfo['exptype']} {expobj.metainfo['animal prep.']} {expobj.metainfo['trial']} ... ")
-
-
-def end_working_on(expobj):
-    print(
-        f"FINISHED on: {expobj.metainfo['exptype']} {expobj.metainfo['animal prep.']} {expobj.metainfo['trial']} \** \n")
-
-
-def save_figure(fig, save_path_suffix: str = None, save_path_full: str = None):
-    if not save_path_full and save_path_suffix:
-        ## SET DEFAULT FIGURE SAVE DIRECTORY
-        today_date = datetime.today().strftime('%Y-%m-%d')
-        save_path_prefix = f"/home/pshah/mnt/qnap/Analysis/Results_figs/{today_date}/"
-        os.makedirs(save_path_prefix) if not os.path.exists(save_path_prefix) else None
-        save_path_full = save_path_prefix + save_path_suffix
-    else:
-        ValueError('not able to determine where to save figure to!')
-    print(f'\nsaving figure to: {save_path_full}')
-    fig.savefig(save_path_full)
-
-
-## DECORATORS
-def run_for_loop_across_exps(run_pre4ap_trials=False, run_post4ap_trials=False, skip_trials=[], run_trials=[]):
-    """decorator to use for for-looping through experiment trials across run_pre4ap_trials and run_post4ap_trials.
-    the trials to for loop through are defined in allopticalResults.pre_4ap_trials and allopticalResults.post_4ap_trials"""
-    # if len(run_trials) > 0 or run_pre4ap_trials is True or run_post4ap_trials is True:
-    print(f"\n {'..' * 5} INITIATING FOR LOOP ACROSS EXPS {'..' * 5}\n")
-    t_start = time.time()
-
-    def main_for_loop(func):
-        print(f"\n {'..' * 5} [2] INITIATING FOR LOOP ACROSS EXPS {'..' * 5}\n")
-
-        @functools.wraps(func)
-        def inner(*args, **kwargs):
-            print(f"\n {'..' * 5} [3] INITIATING FOR LOOP ACROSS EXPS {'..' * 5}\n")
-
-            if run_trials:
-                print(f"\n{'-' * 5} RUNNING SPECIFIED TRIALS from `trials_run` {'-' * 5}")
-                counter1 = 0
-                for i, exp_prep in enumerate(run_trials):
-                    # print(i, exp_prep)
-                    prep = exp_prep[:-6]
-                    trial = exp_prep[-5:]
-                    try:
-                        expobj = import_expobj(prep=prep, trial=trial, verbose=False)
-                    except:
-                        raise ImportError(f"IMPORT ERROR IN {prep} {trial}")
-                    working_on(expobj)
-                    func(expobj=expobj, **kwargs)
-                    # try:
-                    #     func(expobj=expobj, **kwargs)
-                    # except:
-                    #     print('Exception on the wrapped function call')
-                    end_working_on(expobj)
-                counter1 += 1
-
-            if run_pre4ap_trials:
-                print(f"\n{'-' * 5} RUNNING PRE4AP TRIALS {'-' * 5}")
-                counter_i = 0
-                res = []
-                for i, x in enumerate(allopticalResults.pre_4ap_trials):
-                    counter_j = 0
-                    for j, exp_prep in enumerate(x):
-                        if exp_prep in skip_trials:
-                            pass
-                        else:
-                            # print(i, j, exp_prep)
-                            prep = exp_prep[:-6]
-                            pre4aptrial = exp_prep[-5:]
-                            try:
-                                expobj = import_expobj(prep=prep, trial=pre4aptrial, verbose=False)
-                            except:
-                                raise ImportError(f"IMPORT ERROR IN {prep} {pre4aptrial}")
-
-                            working_on(expobj)
-                            res_ = func(expobj=expobj, **kwargs)
-                            # try:
-                            #     func(expobj=expobj, **kwargs)
-                            # except:
-                            #     print('Exception on the wrapped function call')
-                            end_working_on(expobj)
-                            res.append(res_) if res_ is not None else None
-                        counter_j += 1
-                    counter_i += 1
-                if res:
-                    return res
-
-            if run_post4ap_trials:
-                print(f"\n{'-' * 5} RUNNING POST4AP TRIALS {'-' * 5}")
-                counter_i = 0
-                res = []
-                for i, x in enumerate(allopticalResults.post_4ap_trials):
-                    counter_j = 0
-                    for j, exp_prep in enumerate(x):
-                        if exp_prep in skip_trials:
-                            pass
-                        else:
-                            # print(i, j, exp_prep)
-                            prep = allopticalResults.post_4ap_trials[i][j][:-6]
-                            post4aptrial = allopticalResults.post_4ap_trials[i][j][-5:]
-                            try:
-                                expobj = import_expobj(prep=prep, trial=post4aptrial, verbose=False)
-                            except:
-                                raise ImportError(f"IMPORT ERROR IN {prep} {post4aptrial}")
-
-                            working_on(expobj)
-                            res_ = func(expobj=expobj, **kwargs)
-                            # try:
-                            #     func(expobj=expobj, **kwargs)
-                            # except:
-                            #     print('Exception on the wrapped function call')
-                            end_working_on(expobj)
-                            res.append(res_) if res_ is not None else None
-                        counter_j += 1
-                    counter_i += 1
-                if res:
-                    return res
-            t_end = time.time()
-            pj.timer(t_start, t_end)
-            print(f" {'--' * 5} COMPLETED FOR LOOP ACROSS EXPS {'--' * 5}\n")
-
-        return inner
-
-    return main_for_loop
-
-    # elif len(run_trials) > 0 and (run_pre4ap_trials is True or run_post4ap_trials is True):
-    #     raise Exception('Cannot have both run_trials, and run_pre4ap_trials or run_post4ap_trials active on the same call.')
-
 
 # %% CLASS DEFINITIONS
 class TwoPhotonImaging:
@@ -1065,7 +807,7 @@ class TwoPhotonImaging:
         self.save_pkl()
 
 
-class alloptical(TwoPhotonImaging):
+class alloptical_(TwoPhotonImaging):
 
     def __init__(self, paths, metainfo, stimtype, quick=False):
         # self.metainfo = metainfo
@@ -1208,8 +950,7 @@ class alloptical(TwoPhotonImaging):
 
                 targets_trace = np.zeros([len(self.target_coords_all), data.shape[0]], dtype='float32')
                 for coord in range(len(self.target_coords_all)):
-                    target_areas = np.array(
-                        self.target_areas)  # TODO update this so that it doesn't include the extra exclusion zone
+                    target_areas = np.array(self.target_areas)  # TODO double check this so that it doesn't include the extra exclusion zone
                     x = data[:, target_areas[coord, :, 1], target_areas[coord, :, 0]]  # = 1
                     targets_trace[coord] = np.mean(x, axis=1)
 
@@ -1219,9 +960,8 @@ class alloptical(TwoPhotonImaging):
                 mean_img_stack[counter] = np.mean(data, axis=0)
                 counter += 1
 
-            # final part, crop to the *exact* frames for current trial
-            self.raw_SLMTargets = targets_trace_full[:,
-                                  self.curr_trial_frames[0] - start * 2000: self.curr_trial_frames[1] - (start * 2000)]
+            # final part, crop to the exact frames for current trial
+            self.raw_SLMTargets = targets_trace_full[:, self.curr_trial_frames[0] - start * 2000: self.curr_trial_frames[1] - (start * 2000)]
 
             self.dFF_SLMTargets = normalize_dff(self.raw_SLMTargets, threshold_pct=10)
 
@@ -1936,110 +1676,119 @@ class alloptical(TwoPhotonImaging):
 
         print('FIN. -----Loading up target coordinates-----')
 
-    def _findTargetedS2pROIs(self, force_redo: bool = False, plot: bool = True):
-        '''finding s2p cell ROIs that were also SLM targets (or more specifically within the target areas as specified by _findTargetAreas - include 15um radius from center coordinate of spiral)
+
+    def _TargetsExclusionZone(self):
+        """
+        creates an annulus around each target of the specified diameter that is considered the exclusion zone around the SLM target.
+        """
+
+        ## target_areas that need to be excluded when filtering for nontarget cells
+        radius_px = int(np.ceil(((self.spiral_size / 2) + 2.5) / self.pix_sz_x))
+        print("radius of target exclusion zone (in pixels): {:.2f}px".format(radius_px * self.pix_sz_x))
+
+        target_areas = []
+        for coord in self.target_coords_all:
+            target_area = ([item for item in pj.points_in_circle_np(radius_px, x0=coord[0], y0=coord[1])])
+            target_areas.append(target_area)
+        self.target_areas_exclude = target_areas
+
+        # create annulus by subtracting SLM spiral target pixels
+
+        pass
+
+    def _findTargetedS2pROIs(self, plot: bool = True):
+        """finding s2p cell ROIs that were also SLM targets (or more specifically within the target areas as specified by _findTargetAreas - include 15um radius from center coordinate of spiral)
         --- LAST UPDATED NOV 6 2021 - copied over from Rob's ---
-        '''
 
-        if force_redo:
-            continu = True
-        elif hasattr(self, 's2p_cell_targets'):
-            print('skipped re-running of finding s2p targets from suite2p cell ls')
-            continu = False
-        else:
-            continu = True
+        Make a binary mask of the targets and multiply by an image of the cells
+        to find cells that were targeted
 
-        if continu:
-            '''
-            Make a binary mask of the targets and multiply by an image of the cells
-            to find cells that were targeted
+        --- COPIED FROM ROB'S VAPE INTERAREAL_ANALYSIS.PY ON NOV 5 2021 ---
+        """
 
-            --- COPIED FROM ROB'S VAPE INTERAREAL_ANALYSIS.PY ON NOV 5 2021 ---
-            '''
+        print('searching for targeted cells in suite2p results... [Rob version]')
+        # IDENTIFYING S2P ROIs THAT ARE WITHIN THE SLM TARGET SPIRAL AREAS #############################################
+        # make all target area coords in to a binary mask
+        targ_img = np.zeros([self.frame_x, self.frame_y], dtype='uint16')
+        target_areas = np.array(self.target_areas)
+        targ_img[target_areas[:, :, 1], target_areas[:, :, 0]] = 1
 
-            print('searching for targeted cells in suite2p results... [Rob version]')
-            ##### IDENTIFYING S2P ROIs THAT ARE WITHIN THE SLM TARGET SPIRAL AREAS
-            # make all target area coords in to a binary mask
+        # make an image of every cell area, filled with the index of that cell
+        cell_img = np.zeros_like(targ_img)
+
+        cell_y = np.array(self.cell_x)
+        cell_x = np.array(self.cell_y)
+
+        for i, coord in enumerate(zip(cell_x, cell_y)):
+            cell_img[coord] = i + 1
+
+        # binary mask x cell image to get the cells that overlap with target areas
+        targ_cell = cell_img * targ_img
+
+        targ_cell_ids = np.unique(targ_cell)[1:] - 1  # correct the cell id due to zero indexing
+        self.targeted_cells = np.zeros([self.n_units], dtype='bool')
+        self.targeted_cells[targ_cell_ids] = True
+        # self.s2p_cell_targets = [self.cell_id[i] for i, x in enumerate(self.targeted_cells) if x is True]  # get ls of s2p cells that were photostim targetted
+        self.s2p_cell_targets = [self.cell_id[i] for i in np.where(self.targeted_cells)[
+            0]]  # get ls of s2p cells that were photostim targetted
+
+        self.n_targeted_cells = np.sum(self.targeted_cells)
+
+        print('------- Search completed.')
+        self.save()
+        print('Number of targeted cells: ', self.n_targeted_cells)
+
+        # IDENTIFYING S2P ROIs THAT ARE WITHIN THE EXCLUSION ZONES OF THE SLM TARGETS ##################################
+        # make all target area coords in to a binary mask
+        targ_img = np.zeros([self.frame_x, self.frame_y], dtype='uint16')
+        target_areas_exclude = np.array(self.target_areas_exclude)
+        targ_img[target_areas_exclude[:, :, 1], target_areas_exclude[:, :, 0]] = 1
+
+        # make an image of every cell area, filled with the index of that cell
+        cell_img = np.zeros_like(targ_img)
+
+        cell_y = np.array(self.cell_x)
+        cell_x = np.array(self.cell_y)
+
+        for i, coord in enumerate(zip(cell_x, cell_y)):
+            cell_img[coord] = i + 1
+
+        # binary mask x cell image to get the cells that overlap with target areas
+        targ_cell = cell_img * targ_img
+
+        targ_cell_ids = np.unique(targ_cell)[1:] - 1  # correct the cell id due to zero indexing
+        self.exclude_cells = np.zeros([self.n_units], dtype='bool')
+        self.exclude_cells[targ_cell_ids] = True
+        self.s2p_cells_exclude = [self.cell_id[i] for i in np.where(self.exclude_cells)[
+            0]]  # get ls of s2p cells that were photostim targetted
+
+        self.n_exclude_cells = np.sum(self.exclude_cells)
+
+        print('------- Search completed.')
+        print(f"Number of exclude cells: {self.n_exclude_cells}")
+
+        # define non targets from suite2p ROIs (exclude cells in the SLM targets exclusion - .s2p_cells_exclude)
+        self.s2p_nontargets = [cell for cell in self.good_cells if
+                               cell not in self.s2p_cells_exclude]  ## exclusion of cells that are classified as s2p_cell_targets
+
+        print(f"Number of good, s2p non_targets: {len(self.s2p_nontargets)}")
+        self.save()
+
+        if plot:
+            from _utils_ import alloptical_plotting as aoplot
+            fig, ax = plt.subplots(figsize=[6, 6])
+            fig, ax = aoplot.plot_cells_loc(expobj=self, cells=self.s2p_cell_targets, show=False, fig=fig, ax=ax,
+                                            show_s2p_targets=True,
+                                            title=f"s2p cell targets (red-filled) and target areas (white) {self.metainfo['trial']}/{self.metainfo['animal prep.']}",
+                                            invert_y=True)
+
             targ_img = np.zeros([self.frame_x, self.frame_y], dtype='uint16')
             target_areas = np.array(self.target_areas)
             targ_img[target_areas[:, :, 1], target_areas[:, :, 0]] = 1
-
-            # make an image of every cell area, filled with the index of that cell
-            cell_img = np.zeros_like(targ_img)
-
-            cell_y = np.array(self.cell_x)
-            cell_x = np.array(self.cell_y)
-
-            for i, coord in enumerate(zip(cell_x, cell_y)):
-                cell_img[coord] = i + 1
-
-            # binary mask x cell image to get the cells that overlap with target areas
-            targ_cell = cell_img * targ_img
-
-            targ_cell_ids = np.unique(targ_cell)[1:] - 1  # correct the cell id due to zero indexing
-            self.targeted_cells = np.zeros([self.n_units], dtype='bool')
-            self.targeted_cells[targ_cell_ids] = True
-            # self.s2p_cell_targets = [self.cell_id[i] for i, x in enumerate(self.targeted_cells) if x is True]  # get ls of s2p cells that were photostim targetted
-            self.s2p_cell_targets = [self.cell_id[i] for i in np.where(self.targeted_cells)[
-                0]]  # get ls of s2p cells that were photostim targetted
-
-            self.n_targeted_cells = np.sum(self.targeted_cells)
-
-            print('------- Search completed.')
-            self.save()
-            print('Number of targeted cells: ', self.n_targeted_cells)
-
-            ##### IDENTIFYING S2P ROIs THAT ARE WITHIN THE EXCLUSION ZONES OF THE SLM TARGETS
-            # make all target area coords in to a binary mask
-            targ_img = np.zeros([self.frame_x, self.frame_y], dtype='uint16')
-            target_areas_exclude = np.array(self.target_areas_exclude)
-            targ_img[target_areas_exclude[:, :, 1], target_areas_exclude[:, :, 0]] = 1
-
-            # make an image of every cell area, filled with the index of that cell
-            cell_img = np.zeros_like(targ_img)
-
-            cell_y = np.array(self.cell_x)
-            cell_x = np.array(self.cell_y)
-
-            for i, coord in enumerate(zip(cell_x, cell_y)):
-                cell_img[coord] = i + 1
-
-            # binary mask x cell image to get the cells that overlap with target areas
-            targ_cell = cell_img * targ_img
-
-            targ_cell_ids = np.unique(targ_cell)[1:] - 1  # correct the cell id due to zero indexing
-            self.exclude_cells = np.zeros([self.n_units], dtype='bool')
-            self.exclude_cells[targ_cell_ids] = True
-            self.s2p_cells_exclude = [self.cell_id[i] for i in np.where(self.exclude_cells)[
-                0]]  # get ls of s2p cells that were photostim targetted
-
-            self.n_exclude_cells = np.sum(self.exclude_cells)
-
-            print('------- Search completed.')
-            print(f"Number of exclude cells: {self.n_exclude_cells}")
-
-            # define non targets from suite2p ROIs (exclude cells in the SLM targets exclusion - .s2p_cells_exclude)
-            self.s2p_nontargets = [cell for cell in self.good_cells if
-                                   cell not in self.s2p_cells_exclude]  ## exclusion of cells that are classified as s2p_cell_targets
-
-            print(f"Number of good, s2p non_targets: {len(self.s2p_nontargets)}")
-            self.save()
-
-            if plot:
-                from _utils_ import alloptical_plotting as aoplot
-                fig, ax = plt.subplots(figsize=[6, 6])
-                fig, ax = aoplot.plot_cells_loc(expobj=self, cells=self.s2p_cell_targets, show=False, fig=fig, ax=ax,
-                                                show_s2p_targets=True,
-                                                title=f"s2p cell targets (red-filled) and target areas (white) {self.metainfo['trial']}/{self.metainfo['animal prep.']}",
-                                                invert_y=True)
-
-                targ_img = np.zeros([self.frame_x, self.frame_y], dtype='uint16')
-                target_areas = np.array(self.target_areas)
-                targ_img[target_areas[:, :, 1], target_areas[:, :, 0]] = 1
-                ax.imshow(targ_img, cmap='Greys_r', zorder=0)
-                # for (x, y) in self.target_coords_all:
-                #     ax.scatter(x=x, y=y, edgecolors='white', facecolors='none', linewidths=1.0)
-                fig.show()
+            ax.imshow(targ_img, cmap='Greys_r', zorder=0)
+            # for (x, y) in self.target_coords_all:
+            #     ax.scatter(x=x, y=y, edgecolors='white', facecolors='none', linewidths=1.0)
+            fig.show()
 
     def _findTargets_naparm(self):
 
@@ -3337,13 +3086,13 @@ class alloptical(TwoPhotonImaging):
         save_figure(fig, save_path_suffix=f"{save_fig}") if save_fig else None
 
 
-class Post4ap(alloptical):
+class Post4ap(alloptical_):
 
     def __init__(self, paths, metainfo, stimtype, discard_all):
         from _analysis_._ClassTargetsSzInvasionTemporal import TargetsSzInvasionTemporal
         self.TargetsSzInvasionTemporal = TargetsSzInvasionTemporal()
 
-        alloptical.__init__(self, paths, metainfo, stimtype)
+        alloptical_.__init__(self, paths, metainfo, stimtype)
         print('\ninitialized Post4ap expobj of exptype and trial: %s, %s, %s' % (self.metainfo['exptype'],
                                                                                  self.metainfo['trial'],
                                                                                  self.metainfo['date']))
@@ -4775,19 +4524,6 @@ class AllOpticalResults:  ## initiated in allOptical-results.ipynb
 
 
 # import results superobject that will collect analyses from various individual experiments
-results_object_path = '/home/pshah/mnt/qnap/Analysis/alloptical_results_superobject.pkl'
-local_results_object_path = '/Users/prajayshah/OneDrive/UTPhD/2022/OXFORD/expobj/alloptical_results_superobject.pkl'
-
-for path in [results_object_path, local_results_object_path]:
-    if os.path.exists(path):
-        results_path = path
-        try:
-            allopticalResults = import_resultsobj(
-                pkl_path=results_path)  # this needs to be run AFTER defining the AllOpticalResults class
-        except FileNotFoundError:
-            print(f'not able to get allopticalResults object from {results_object_path}')
-
-        break
 
 
 ########
@@ -5262,7 +4998,7 @@ def run_photostim_preprocessing(trial, exp_type, tiffs_loc, naparms_loc, paqs_lo
     if 'post' in exp_type and '4ap' in exp_type:
         expobj = Post4ap(paths, metainfo=metainfo, stimtype='2pstim', discard_all=discard_all)
     else:
-        expobj = alloptical(paths, metainfo=metainfo, stimtype='2pstim', quick=quick)
+        expobj = alloptical_(paths, metainfo=metainfo, stimtype='2pstim', quick=quick)
 
     # for key, values in vars(expobj).items():
     #     print(key)
@@ -5323,7 +5059,7 @@ def run_photostim_preprocessing(trial, exp_type, tiffs_loc, naparms_loc, paqs_lo
 
 ###### SLM TARGETS analysis + plottings
 # after running suite2p
-def run_alloptical_processing_photostim(expobj: Union[alloptical, Post4ap], to_suite2p=None, baseline_trials=None,
+def run_alloptical_processing_photostim(expobj: Union[alloptical_, Post4ap], to_suite2p=None, baseline_trials=None,
                                         plots: bool = True,
                                         force_redo: bool = False):
     """
@@ -6000,7 +5736,279 @@ def run_allopticalAnalysisNontargetsPost4ap(expobj, normalize_to='pre_stim', to_
     print('------------------------------------------')
 
 
-# %% ARCHIVE
+# %% ARCHIVE ###########################################################################################################
+
+# UTILITY FUNCTIONS and DECORATORS
+def import_expobj(aoresults_map_id: str = None, trial: str = None, prep: str = None, date: str = None,
+                  pkl_path: str = None,
+                  exp_prep: str = None, verbose: bool = False, do_processing: bool = False,
+                  load_backup_path: str = None):
+    """
+    primary function for importing of saved expobj files saved pickel files.
+
+    :param aoresults_map_id:
+    :param trial:
+    :param prep:
+    :param date:
+    :param pkl_path:
+    :param verbose:
+    :param do_processing: whether to do extra misc. processing steps that are the end of the importing code here.
+    :return:
+    """
+
+    if aoresults_map_id is not None:
+        if 'pre' in aoresults_map_id:
+            exp_type = 'pre'
+        elif 'post' in aoresults_map_id:
+            exp_type = 'post'
+        id = aoresults_map_id.split(' ')[1][0]
+        if len(allopticalResults.trial_maps[exp_type][id]) > 1:
+            num_ = int(re.search(r"\d", aoresults_map_id)[0])
+        else:
+            num_ = 0
+        prep, trial = allopticalResults.trial_maps[exp_type][id][num_].split(' ')
+
+    if exp_prep is not None:
+        prep = exp_prep[:-6]
+        trial = exp_prep[-5:]
+
+    # if need to load from backup path!
+    if load_backup_path:
+        pkl_path = load_backup_path
+        print(f"**** loading from backup path! ****")
+
+    if pkl_path is None:
+        if date is None:
+            try:
+                date = allopticalResults.metainfo.loc[
+                    allopticalResults.metainfo['prep_trial'] == f"{prep} {trial}", 'date'].values[0]
+            except ValueError:
+                raise ValueError('not able to find date in allopticalResults.metainfo')
+        pkl_path = "/home/pshah/mnt/qnap/Analysis/%s/%s/%s_%s/%s_%s.pkl" % (date, prep, date, trial, date, trial)
+
+    if not os.path.exists(pkl_path):
+        raise Exception('pkl path NOT found: ' + pkl_path)
+    with open(pkl_path, 'rb') as f:
+        print(f'\- Loading {pkl_path}', end='\r')
+        try:
+            expobj = pickle.load(f)
+        except pickle.UnpicklingError:
+            raise pickle.UnpicklingError(f"\n** FAILED IMPORT OF * {prep} {trial} * from {pkl_path}\n")
+        experiment = f"{expobj.t_series_name} {expobj.metainfo['exptype']} {expobj.metainfo['comments']}"
+        print(f'|- Loaded {expobj.t_series_name} ({pkl_path}) .. DONE') if not verbose else None
+        print(f'|- Loaded {experiment}') if verbose else None
+
+    ### roping in some extraneous processing steps if there's expobj's that haven't completed for them
+
+    # check for existence of backup (if not then make one through the saving func).
+    expobj.save() if not os.path.exists(expobj.backup_pkl) else None
+
+    # save the pkl if loaded from backup path
+    expobj.save() if load_backup_path else None
+
+    if expobj.analysis_save_path[-1] != '/':
+        expobj.analysis_save_path = expobj.analysis_save_path + '/'
+        print(f"updated expobj.analysis_save_path to: {expobj.analysis_save_path}")
+        expobj.save()
+
+    # move expobj to the official save_path from the provided save_path that expobj was loaded from (if different)
+    if pkl_path is not None:
+        if expobj.pkl_path != pkl_path:
+            expobj.save_pkl(save_path=expobj.pkl_path)
+            print('saved new copy of expobj to save_path: ', expobj.pkl_path)
+
+    # other misc. things you want to do when importing expobj -- should be temp code basically - not essential for actual importing of expobj
+
+    return expobj
+
+
+def import_resultsobj(pkl_path: str):
+    assert os.path.exists(pkl_path)
+    with open(pkl_path, 'rb') as f:
+        print(f"\nimporting resultsobj from: {pkl_path} ... ")
+        resultsobj = pickle.load(f)
+        print(f"|-DONE IMPORT of {(type(resultsobj))} resultsobj \n\n")
+    return resultsobj
+
+results_object_path = '/home/pshah/mnt/qnap/Analysis/alloptical_results_superobject.pkl'
+local_results_object_path = '/Users/prajayshah/OneDrive/UTPhD/2022/OXFORD/expobj/alloptical_results_superobject.pkl'
+
+for path in [results_object_path, local_results_object_path]:
+    if os.path.exists(path):
+        results_path = path
+        try:
+            allopticalResults = import_resultsobj(
+                pkl_path=results_path)  # this needs to be run AFTER defining the AllOpticalResults class
+        except FileNotFoundError:
+            print(f'not able to get allopticalResults object from {results_object_path}')
+
+        break
+
+# random plot just to initialize plotting for PyCharm
+def random_plot():
+    pj.make_general_scatter(x_list=[np.random.rand(5)], y_data=[np.random.rand(5)], s=60, alpha=1, figsize=(3, 3))
+
+
+# dictionary of terms, phrases, etc. that are particular to this analysis
+phrase_dictionary = {
+    'delta(trace_dFF)': "photostim measurement; measuring photostim responses with post-stim minus pre-stim, where the post-stim "
+                        "and pre-stim values are dFF values obtained from normalization of the whole trace within the present t-series",
+    'dfprestimf': "photostim meausurement; measuring photostim responses as (post-stim minus pre-stim)/(mean[pre-stim period], "
+                  "where the original trace is the raw (neuropil subtracted) trace",
+    'dfstdf': "photostim measurement; measuring photostim responses as (post-stim minus pre-stim)/(std[pre-stim period], "
+              "where the original trace is the raw (neuropil subtracted) trace",
+    'hits': "successful photostim responses, as defined based on a certain threshold level for dfstdf (>0.3 above prestim) and delta(trace_dFF) (>10 above prestim)",
+    'SLM Targets': "ROI placed on the motion registered TIFF based on the primary target coordinate and expanding a circle of 10um? diameter centered on the coordinate",
+    's2p ROIs': "all ROIs derived directly from the suite2p output",
+    's2p nontargets': "suite2p ROIs excluding those which are filtered out for being in the target exclusion zone",
+    'good cells': "good cells are suite2p ROIs which have some sort of a Flu transient based on a sliding window and std filtering process",
+    'stim_id': "the imaging frame number on which the photostimulation is calculated to have first started",
+    'photostim response': 'synonymous with `delta(trace_dFF)`'
+}
+
+
+def define(x):
+    try:
+        print(f"{x}:    {phrase_dictionary[x]}") if type(x) is str else print(
+            'ERROR: please provide a string object as the key')
+    except KeyError:
+        print('input not found in phrase_dictionary, you should CONSIDER ADDING IT RIGHT NOW!')
+
+
+def show_phrases():
+    print(f"entries in phrase_dictionary: \n {list(phrase_dictionary.keys())}")
+
+
+def working_on(expobj):
+    print(
+        f"STARTING on: {expobj.metainfo['exptype']} {expobj.metainfo['animal prep.']} {expobj.metainfo['trial']} ... ")
+
+
+def end_working_on(expobj):
+    print(
+        f"FINISHED on: {expobj.metainfo['exptype']} {expobj.metainfo['animal prep.']} {expobj.metainfo['trial']} \** \n")
+
+
+def save_figure(fig, save_path_suffix: str = None, save_path_full: str = None):
+    if not save_path_full and save_path_suffix:
+        ## SET DEFAULT FIGURE SAVE DIRECTORY
+        today_date = datetime.today().strftime('%Y-%m-%d')
+        save_path_prefix = f"/home/pshah/mnt/qnap/Analysis/Results_figs/{today_date}/"
+        os.makedirs(save_path_prefix) if not os.path.exists(save_path_prefix) else None
+        save_path_full = save_path_prefix + save_path_suffix
+    else:
+        ValueError('not able to determine where to save figure to!')
+    print(f'\nsaving figure to: {save_path_full}')
+    fig.savefig(save_path_full)
+
+
+## DECORATORS
+def run_for_loop_across_exps(run_pre4ap_trials=False, run_post4ap_trials=False, skip_trials=[], run_trials=[]):
+    """decorator to use for for-looping through experiment trials across run_pre4ap_trials and run_post4ap_trials.
+    the trials to for loop through are defined in allopticalResults.pre_4ap_trials and allopticalResults.post_4ap_trials"""
+    # if len(run_trials) > 0 or run_pre4ap_trials is True or run_post4ap_trials is True:
+    print(f"\n {'..' * 5} INITIATING FOR LOOP ACROSS EXPS {'..' * 5}\n")
+    t_start = time.time()
+
+    def main_for_loop(func):
+        print(f"\n {'..' * 5} [2] INITIATING FOR LOOP ACROSS EXPS {'..' * 5}\n")
+
+        @functools.wraps(func)
+        def inner(*args, **kwargs):
+            print(f"\n {'..' * 5} [3] INITIATING FOR LOOP ACROSS EXPS {'..' * 5}\n")
+
+            if run_trials:
+                print(f"\n{'-' * 5} RUNNING SPECIFIED TRIALS from `trials_run` {'-' * 5}")
+                counter1 = 0
+                for i, exp_prep in enumerate(run_trials):
+                    # print(i, exp_prep)
+                    prep = exp_prep[:-6]
+                    trial = exp_prep[-5:]
+                    try:
+                        expobj = import_expobj(prep=prep, trial=trial, verbose=False)
+                    except:
+                        raise ImportError(f"IMPORT ERROR IN {prep} {trial}")
+                    working_on(expobj)
+                    func(expobj=expobj, **kwargs)
+                    # try:
+                    #     func(expobj=expobj, **kwargs)
+                    # except:
+                    #     print('Exception on the wrapped function call')
+                    end_working_on(expobj)
+                counter1 += 1
+
+            if run_pre4ap_trials:
+                print(f"\n{'-' * 5} RUNNING PRE4AP TRIALS {'-' * 5}")
+                counter_i = 0
+                res = []
+                for i, x in enumerate(allopticalResults.pre_4ap_trials):
+                    counter_j = 0
+                    for j, exp_prep in enumerate(x):
+                        if exp_prep in skip_trials:
+                            pass
+                        else:
+                            # print(i, j, exp_prep)
+                            prep = exp_prep[:-6]
+                            pre4aptrial = exp_prep[-5:]
+                            try:
+                                expobj = import_expobj(prep=prep, trial=pre4aptrial, verbose=False)
+                            except:
+                                raise ImportError(f"IMPORT ERROR IN {prep} {pre4aptrial}")
+
+                            working_on(expobj)
+                            res_ = func(expobj=expobj, **kwargs)
+                            # try:
+                            #     func(expobj=expobj, **kwargs)
+                            # except:
+                            #     print('Exception on the wrapped function call')
+                            end_working_on(expobj)
+                            res.append(res_) if res_ is not None else None
+                        counter_j += 1
+                    counter_i += 1
+                if res:
+                    return res
+
+            if run_post4ap_trials:
+                print(f"\n{'-' * 5} RUNNING POST4AP TRIALS {'-' * 5}")
+                counter_i = 0
+                res = []
+                for i, x in enumerate(allopticalResults.post_4ap_trials):
+                    counter_j = 0
+                    for j, exp_prep in enumerate(x):
+                        if exp_prep in skip_trials:
+                            pass
+                        else:
+                            # print(i, j, exp_prep)
+                            prep = allopticalResults.post_4ap_trials[i][j][:-6]
+                            post4aptrial = allopticalResults.post_4ap_trials[i][j][-5:]
+                            try:
+                                expobj = import_expobj(prep=prep, trial=post4aptrial, verbose=False)
+                            except:
+                                raise ImportError(f"IMPORT ERROR IN {prep} {post4aptrial}")
+
+                            working_on(expobj)
+                            res_ = func(expobj=expobj, **kwargs)
+                            # try:
+                            #     func(expobj=expobj, **kwargs)
+                            # except:
+                            #     print('Exception on the wrapped function call')
+                            end_working_on(expobj)
+                            res.append(res_) if res_ is not None else None
+                        counter_j += 1
+                    counter_i += 1
+                if res:
+                    return res
+            t_end = time.time()
+            pj.timer(t_start, t_end)
+            print(f" {'--' * 5} COMPLETED FOR LOOP ACROSS EXPS {'--' * 5}\n")
+
+        return inner
+
+    return main_for_loop
+
+    # elif len(run_trials) > 0 and (run_pre4ap_trials is True or run_post4ap_trials is True):
+    #     raise Exception('Cannot have both run_trials, and run_pre4ap_trials or run_post4ap_trials active on the same call.')
+
 
 # calculate the dFF responses of the non-targeted cells, create a pandas df of the post-stim dFF responses of all cells - THESE ARE OUTDATED FUNCS. - NEW CODE FOR COLLECTING AND QUANTIFYING RESPONSES OF NONTARGET RESPONSES .21/10/16
 def all_cell_responses_dff(expobj, normalize_to=''):

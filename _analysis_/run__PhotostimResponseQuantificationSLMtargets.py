@@ -185,32 +185,55 @@ def full_plot_mean_responses_magnitudes_zscored():
 # %% RUN SCRIPT
 if __name__ == '__main__':
 
-    run__initPhotostimResponseQuant()
-    run__collect_photostim_responses_exp()
-    run__create_anndata_SLMtargets()
-    run__add_stim_group_anndata()
+    # "Initializing PhotostimResponsesQuantificationSLMtargets Analysis and Results Collection"
+    # run__initPhotostimResponseQuant()
+    #
+    #
+    # "Collecting photostim responses for SLM Targets. Create anndata object to store photostim responses."
+    # run__collect_photostim_responses_exp()
+    # run__create_anndata_SLMtargets()
+    # run__add_stim_group_anndata()
+    #
+    # "Plotting mean photostim responses magnitudes across three brain states."
+    # main.allexps_plot_photostim_responses_magnitude()
+    # RESULTS.mean_photostim_responses_baseline, RESULTS.mean_photostim_responses_interictal, RESULTS.mean_photostim_responses_ictal = full_plot_mean_responses_magnitudes()
+    #
+    #
+    # "Create and plot zscored photostim responses."
+    # run__z_score_photostim_responses_and_interictalzscores()
+    # main.allexps_plot_photostim_responses_magnitude_zscored()
+    #
+    #
+    # "Collecting and plotting zscored photostim responses across groups"
+    # RESULTS.mean_photostim_responses_baseline_zscored, RESULTS.mean_photostim_responses_interictal_zscored, RESULTS.mean_photostim_responses_ictal_zscored = full_plot_mean_responses_magnitudes_zscored()
+    # # make plot
+    # # plot zscored responses
+    # data = full_plot_mean_responses_magnitudes_zscored()
+    # pplot.plot_bar_with_points(
+    #     data=data,
+    #     x_tick_labels=['baseline', 'interictal', 'ictal'], bar=False, colors=['navy', 'green', 'purple'],
+    #     expand_size_x=0.4, title='Average Photostim responses (zscored to baseline?)', y_label='dFF (zscored)')
+    #
+    # pplot.plot_hist_density(data=data, mean_line=False, figsize=[4, 5], title='photostim responses (zscored)',
+    #                         show_legend=True, num_bins=35, line_colors=['navy', 'green', 'purple'],
+    #                         fill_color=['lightgray', 'lightgray', 'lightgray'], alpha=0.2, show_bins=True,
+    #                         legend_labels=['baseline', 'interictal', 'ictal'])
+    # RESULTS.save_results()
+    #
+    #
+    # "Measuring photostim responses in relation to pre-stim mean FOV Flu"
+    # RESULTS.pre_stim_FOV_flu = main.collect__prestim_FOV_Flu()
+    # RESULTS.save_results()
+    # main.plot__prestim_FOV_Flu(RESULTS)
+    # main.run__collect_photostim_responses_magnitude_avgtargets()
+    # main.plot__photostim_responses_vs_prestim_FOV_flu()
+    #
 
-    main.allexps_plot_photostim_responses_magnitude()
-    RESULTS.mean_photostim_responses_baseline, RESULTS.mean_photostim_responses_interictal, RESULTS.mean_photostim_responses_ictal = full_plot_mean_responses_magnitudes()
 
-    run__z_score_photostim_responses_and_interictalzscores()
-    main.allexps_plot_photostim_responses_magnitude_zscored()
+    "Measuring photostim responses in relation to pre-stim mean targets_annulus Flu"
+    main.run__add_targets_annulus_prestim_anndata()
 
-    RESULTS.mean_photostim_responses_baseline_zscored, RESULTS.mean_photostim_responses_interictal_zscored, RESULTS.mean_photostim_responses_ictal_zscored = full_plot_mean_responses_magnitudes_zscored()
 
-    # make plot
-    # plot zscored responses
-    data = full_plot_mean_responses_magnitudes_zscored()
-    pplot.plot_bar_with_points(
-        data=data,
-        x_tick_labels=['baseline', 'interictal', 'ictal'], bar=False, colors=['navy', 'green', 'purple'],
-        expand_size_x=0.4, title='Average Photostim responses (zscored to baseline?)', y_label='dFF (zscored)')
 
-    pplot.plot_hist_density(data=data, mean_line=False, figsize=[4, 5], title='photostim responses (zscored)',
-                            show_legend=True, num_bins=35, line_colors=['navy', 'green', 'purple'],
-                            fill_color=['lightgray', 'lightgray', 'lightgray'], alpha=0.2, show_bins=True,
-                            legend_labels=['baseline', 'interictal', 'ictal'])
-
-    main.saveclass()
     pass
 

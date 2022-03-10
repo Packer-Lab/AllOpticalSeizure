@@ -287,7 +287,8 @@ phrase_dictionary = {
     'good cells': "good cells are suite2p ROIs which have some sort of a Flu transient based on a sliding window and std filtering process",
     'stim_id': "the imaging frame number on which the photostimulation is calculated to have first started",
     'photostim response': 'synonymous with `delta(trace_dFF)`',
-    'im_time_sec': 'anndata storage var key that shows the time (in secs) of the photostim frame from the start of the imaging collection'
+    'im_time_sec': 'anndata storage var key that shows the time (in secs) of the photostim frame from the start of the imaging collection',
+    'targets_annulus': 'refers to the area (in the shape of an annulus) of a defined outer radius around the SLM target.'
 }
 
 def define(x):

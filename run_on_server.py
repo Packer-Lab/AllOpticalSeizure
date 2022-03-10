@@ -11,20 +11,18 @@
 """
 
 # IMPORT MODULES AND TRIAL expobj OBJECT
-import sys; print('Python %s on %s' % (sys.version, sys.platform))
+import sys;
+
+
+print('Python %s on %s' % (sys.version, sys.platform))
 sys.path.extend(['/home/pshah/Documents/code/AllOpticalSeizure', '/home/pshah/Documents/code/AllOpticalSeizure'])
 sys.path.append('/home/pshah/Documents/code/PackerLab_pycharm/')
 sys.path.append('/home/pshah/Documents/code/')
 
 
+from _analysis_._ClassPhotostimResponseQuantificationSLMtargets import PhotostimResponsesQuantificationSLMtargets as main
 
-
-from _analysis_._ClassPhotostimResponseQuantificationSLMtargets import \
-    PhotostimResponsesQuantificationSLMtargets as main, PhotostimResponsesSLMtargetsResults
-
-
-main.plot__photostim_responses_vs_prestim_FOV_flu()
-
+main.run__add_targets_annulus_prestim_anndata()
 
 
 

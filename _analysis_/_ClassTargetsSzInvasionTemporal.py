@@ -235,7 +235,7 @@ class TargetsSzInvasionTemporal(Quantification):
         """collects dictionary of sz invasion time and photostim responses across all targets for each stim for an expobj"""
         sztime_v_photostimresponses = {}
         if not hasattr(self,
-                       'time_del_szinv_stims'):  # this shouldn't be needed anymore, all expobj's should have time_del_szinv_stims in the Temporal submodule
+                       'time_del_szinv_stims'):  # TODO this shouldn't be needed anymore, all expobj's should have time_del_szinv_stims in the Temporal submodule
             stim_timesz_df = expobj.time_del_szinv_stims
         else:
             stim_timesz_df = self.time_del_szinv_stims
@@ -375,11 +375,7 @@ class TargetsSzInvasionTemporal(Quantification):
 
             data_expobj = np.vstack((_data, data_expobj))
 
-        times_to_sz = data_expobj[:, 0]
-        bin_size = 20  # um
-        # bins_num = int((max(times_to_sz) - min(times_to_sz)) / bin_size)
         bins_num = 40
-
         pj.plot_hist2d(data=data_expobj, bins=[bins_num, bins_num], y_label=self.photostim_responses_zscore_type, title=expobj.t_series_name,
                        figsize=(4, 2), x_label='time to seizure (sec)',
                        y_lim=[-2, 2]) if plot else None
@@ -471,6 +467,11 @@ class TargetsSzInvasionTemporalResults(Results):
 
     def __init__(self):
         super().__init__()
+        self.percentiles = None
+        self.responses_sorted = None
+        self.scale_percentile_times = None
+        self.times_to_sz_sorted = None
+        self.data_all = None
         self.data = None  # output of plot_responses_vs_time_to_seizure_SLMTargets_2ddensity
         self.range_of_sz_invasion_time: list = [-1.0, -1.0, -1.0]  # TODO need to collect - represents the 25th, 50th, and 75th percentile range of the sz invasion time stats calculated across all targets and all exps
 

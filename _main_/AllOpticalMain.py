@@ -4,7 +4,6 @@ import glob
 import os
 import sys
 
-
 sys.path.append('/home/pshah/Documents/code/')
 from Vape.utils import STAMovieMaker_noGUI as STAMM
 import scipy.stats as stats
@@ -24,11 +23,13 @@ import _alloptical_utils as Utils
 from _main_.TwoPhotonImagingMain import TwoPhotonImaging
 
 
-
 class alloptical(TwoPhotonImaging):
 
     def __init__(self, paths, metainfo, stimtype, quick=False):
         # self.metainfo = metainfo
+        self.raw_SLMTargets_annulus = None  #: full raw traces of SLM targets_annulus area
+        self.targets_annulus_raw_prestim = None  #: prestim F traces of SLM targets_annulus area
+        self.target_areas_exclude_annulus = None  #: pixels representing area SLM targets_annulus area within the frame of current experiment
         self.stim_type = stimtype
         self.naparm_path = paths['naparms_loc']
         assert os.path.exists(self.naparm_path)
@@ -65,12 +66,12 @@ class alloptical(TwoPhotonImaging):
         self.hits_SLMtargets_dfprestimf = None
         self.hits_SLMtargets_dfstdf = None
 
-        from _analysis_._ClassPhotostimResponseQuantificationSLMtargets import PhotostimResponsesQuantificationSLMtargets
+        from _analysis_._ClassPhotostimResponseQuantificationSLMtargets import \
+            PhotostimResponsesQuantificationSLMtargets
         self.PhotostimResponsesSLMTargets: PhotostimResponsesQuantificationSLMtargets = None  # module that holds analysis and results for Photostim Responses of SLM Targets
 
         from _utils_._anndata import AnnotatedData2
-        self.slmtargets_data: AnnotatedData2 = None   # anndata object of # targets vs. # stims - photostim responses - layers are used to store different processing of data
-
+        self.slmtargets_data: AnnotatedData2 = None  # anndata object of # targets vs. # stims - photostim responses - layers are used to store different processing of data
 
         # .get_alltargets_stim_traces_norm(pre_stim=expobj.pre_stim, post_stim=expobj.post_stim, stims=expobj.stim_start_frames)
         # - various attrs. for collecting photostim timed trace snippets from raw Flu values
@@ -96,7 +97,6 @@ class alloptical(TwoPhotonImaging):
         self.traces_SLMtargets_failures_avg_dfprestimf = None  # trace snippets for only failure stims - normalized by dfstdf
         self.traces_SLMtargets_tracedFF_failures_avg = None  # trace snippets for only successful stims - delta(trace_dff)
 
-
         ## NON PHOTOSTIM SLM TARGETS
         # TODO add attr's related to non targets cells
         self.dff_traces: np.ndarray
@@ -107,7 +107,8 @@ class alloptical(TwoPhotonImaging):
         self.raw_traces_avg: np.ndarray
 
         # put object through 2p imaging processing workflow
-        TwoPhotonImaging.__init__(self, tiff_path=paths['tiffs_loc'], paq_path=paths['paqs_loc'], metainfo=metainfo, analysis_save_path=paths['analysis_save_path'],
+        TwoPhotonImaging.__init__(self, tiff_path=paths['tiffs_loc'], paq_path=paths['paqs_loc'], metainfo=metainfo,
+                                  analysis_save_path=paths['analysis_save_path'],
                                   suite2p_path=None, suite2p_run=False, quick=quick)
 
         # self.tiff_path_dir = paths[0]
@@ -118,8 +119,6 @@ class alloptical(TwoPhotonImaging):
         ## CREATE THE APPROPRIATE ANALYSIS SUBFOLDER TO USE FOR SAVING ANALYSIS RESULTS TO
 
         print('\ninitialized alloptical expobj of exptype and trial: \n', self.metainfo)
-
-
 
         self.save()
 
@@ -207,7 +206,8 @@ class alloptical(TwoPhotonImaging):
             self.save() if save else None
 
     def get_alltargets_stim_traces_norm(self, process: str, targets_idx: int = None, subselect_cells: list = None,
-                                        pre_stim=15, post_stim=200, filter_sz: bool = False, stims: list = None):  # TODO remove the sz filter - this is all more practicably done in other locations of the process
+                                        pre_stim=15, post_stim=200, filter_sz: bool = False,
+                                        stims: list = None):  # TODO remove the sz filter - this is all more practicably done in other locations of the process
         """
         primary function to measure the dFF and dF/setdF trace SNIPPETS for photostimulated targets.
         :param stims:
@@ -227,7 +227,9 @@ class alloptical(TwoPhotonImaging):
             if hasattr(self, 'slmtargets_szboundary_stim') and self.slmtargets_szboundary_stim is not None:
                 pass
             else:
-                print('|- WARNING: classifying of sz boundaries not completed for this expobj, not collecting any stim trace snippets', self.metainfo['animal prep.'], self.metainfo['trial'])
+                print(
+                    '|- WARNING: classifying of sz boundaries not completed for this expobj, not collecting any stim trace snippets',
+                    self.metainfo['animal prep.'], self.metainfo['trial'])
 
         if stims is None:
             stim_timings = self.stim_start_frames
@@ -325,9 +327,11 @@ class alloptical(TwoPhotonImaging):
                         trace = flu[i]
                         mean_pre = np.mean(trace[0:pre_stim])
                         if process == 'trace raw':
-                            trace_dff = ((trace - mean_pre) / mean_pre) * 100  # values of trace_dff are %dF/prestimF compared to raw
+                            trace_dff = ((
+                                                 trace - mean_pre) / mean_pre) * 100  # values of trace_dff are %dF/prestimF compared to raw
                         elif process == 'trace dFF':
-                            trace_dff = (trace - mean_pre)  # don't need to do mean normalization if process traces that are already dFF normalized
+                            trace_dff = (
+                                    trace - mean_pre)  # don't need to do mean normalization if process traces that are already dFF normalized
                         else:
                             ValueError('need to provide `process` as either `trace raw` or `trace dFF`')
                         std_pre = np.std(trace[0:pre_stim])
@@ -355,7 +359,8 @@ class alloptical(TwoPhotonImaging):
             # ## plotting trace snippets for targets_dff to check data processing quality
             # pj.make_general_plot(data_arr=targets_dff_avg, ncols=1, nrows=1, figsize=(6,6), suptitle=f"Avg photostim response ({process}): {targets_dff_avg.shape[0]} targets from {self.metainfo['exptype']} {self.metainfo['animal prep.']} {self.metainfo['trial']}")
 
-            print(f"|- returning targets stims array of shape: {targets_dff.shape[0]} targets, {targets_dff.shape[1]} stims, {targets_dff.shape[2]} frames")
+            print(
+                f"|- returning targets stims array of shape: {targets_dff.shape[0]} targets, {targets_dff.shape[1]} stims, {targets_dff.shape[2]} frames")
             return targets_dff, targets_dff_avg, targets_dfstdF, targets_dfstdF_avg, targets_raw, targets_raw_avg
 
     def _parseNAPARMxml(self):
@@ -552,7 +557,6 @@ class alloptical(TwoPhotonImaging):
         self.stim_dur = total_single_stim
         print('Single stim. Duration (ms): ', self.single_stim_dur)
         print('Total stim. Duration per trial (ms): ', self.stim_dur)
-
 
     def stimProcessing(self, stim_channel):
 
@@ -896,109 +900,99 @@ class alloptical(TwoPhotonImaging):
 
         print('FIN. -----Loading up target coordinates-----')
 
-    def _findTargetedS2pROIs(self, force_redo: bool = False, plot: bool = True):
-        '''finding s2p cell ROIs that were also SLM targets (or more specifically within the target areas as specified by _findTargetAreas - include 15um radius from center coordinate of spiral)
+    def _findTargetedS2pROIs(self, plot: bool = True):
+        """finding s2p cell ROIs that were also SLM targets (or more specifically within the target areas as specified by _findTargetAreas - include 15um radius from center coordinate of spiral)
         --- LAST UPDATED NOV 6 2021 - copied over from Rob's ---
-        '''
 
-        if force_redo:
-            continu = True
-        elif hasattr(self, 's2p_cell_targets'):
-            print('skipped re-running of finding s2p targets from suite2p cell ls')
-            continu = False
-        else:
-            continu = True
+        Make a binary mask of the targets and multiply by an image of the cells
+        to find cells that were targeted
 
-        if continu:
-            '''
-            Make a binary mask of the targets and multiply by an image of the cells
-            to find cells that were targeted
+        --- COPIED FROM ROB'S VAPE INTERAREAL_ANALYSIS.PY ON NOV 5 2021 ---
+        """
 
-            --- COPIED FROM ROB'S VAPE INTERAREAL_ANALYSIS.PY ON NOV 5 2021 ---
-            '''
+        print('searching for targeted cells in suite2p results... [Rob version]')
+        ##### IDENTIFYING S2P ROIs THAT ARE WITHIN THE SLM TARGET SPIRAL AREAS
+        # make all target area coords in to a binary mask
+        targ_img = np.zeros([self.frame_x, self.frame_y], dtype='uint16')
+        target_areas = np.array(self.target_areas)
+        targ_img[target_areas[:, :, 1], target_areas[:, :, 0]] = 1
 
-            print('searching for targeted cells in suite2p results... [Rob version]')
-            ##### IDENTIFYING S2P ROIs THAT ARE WITHIN THE SLM TARGET SPIRAL AREAS
-            # make all target area coords in to a binary mask
+        # make an image of every cell area, filled with the index of that cell
+        cell_img = np.zeros_like(targ_img)
+
+        cell_y = np.array(self.cell_x)
+        cell_x = np.array(self.cell_y)
+
+        for i, coord in enumerate(zip(cell_x, cell_y)):
+            cell_img[coord] = i + 1
+
+        # binary mask x cell image to get the cells that overlap with target areas
+        targ_cell = cell_img * targ_img
+
+        targ_cell_ids = np.unique(targ_cell)[1:] - 1  # correct the cell id due to zero indexing
+        self.targeted_cells = np.zeros([self.n_units], dtype='bool')
+        self.targeted_cells[targ_cell_ids] = True
+        # self.s2p_cell_targets = [self.cell_id[i] for i, x in enumerate(self.targeted_cells) if x is True]  # get ls of s2p cells that were photostim targetted
+        self.s2p_cell_targets = [self.cell_id[i] for i in np.where(self.targeted_cells)[
+            0]]  # get ls of s2p cells that were photostim targetted
+
+        self.n_targeted_cells = np.sum(self.targeted_cells)
+
+        print('------- Search completed.')
+        self.save()
+        print('Number of targeted cells: ', self.n_targeted_cells)
+
+        ##### IDENTIFYING S2P ROIs THAT ARE WITHIN THE EXCLUSION ZONES OF THE SLM TARGETS
+        # make all target area coords in to a binary mask
+        targ_img = np.zeros([self.frame_x, self.frame_y], dtype='uint16')
+        target_areas_exclude = np.array(self.target_areas_exclude)
+        targ_img[target_areas_exclude[:, :, 1], target_areas_exclude[:, :, 0]] = 1
+
+        # make an image of every cell area, filled with the index of that cell
+        cell_img = np.zeros_like(targ_img)
+
+        cell_y = np.array(self.cell_x)
+        cell_x = np.array(self.cell_y)
+
+        for i, coord in enumerate(zip(cell_x, cell_y)):
+            cell_img[coord] = i + 1
+
+        # binary mask x cell image to get the cells that overlap with target areas
+        targ_cell = cell_img * targ_img
+
+        targ_cell_ids = np.unique(targ_cell)[1:] - 1  # correct the cell id due to zero indexing
+        self.exclude_cells = np.zeros([self.n_units], dtype='bool')
+        self.exclude_cells[targ_cell_ids] = True
+        self.s2p_cells_exclude = [self.cell_id[i] for i in np.where(self.exclude_cells)[
+            0]]  # get ls of s2p cells that were photostim targetted
+
+        self.n_exclude_cells = np.sum(self.exclude_cells)
+
+        print('------- Search completed.')
+        print(f"Number of exclude cells: {self.n_exclude_cells}")
+
+        # define non targets from suite2p ROIs (exclude cells in the SLM targets exclusion - .s2p_cells_exclude)
+        self.s2p_nontargets = [cell for cell in self.good_cells if
+                               cell not in self.s2p_cells_exclude]  ## exclusion of cells that are classified as s2p_cell_targets
+
+        print(f"Number of good, s2p non_targets: {len(self.s2p_nontargets)}")
+        self.save()
+
+        if plot:
+            from _utils_ import alloptical_plotting as aoplot
+            fig, ax = plt.subplots(figsize=[6, 6])
+            fig, ax = aoplot.plot_cells_loc(expobj=self, cells=self.s2p_cell_targets, show=False, fig=fig, ax=ax,
+                                            show_s2p_targets=True,
+                                            title=f"s2p cell targets (red-filled) and target areas (white) {self.metainfo['trial']}/{self.metainfo['animal prep.']}",
+                                            invert_y=True)
+
             targ_img = np.zeros([self.frame_x, self.frame_y], dtype='uint16')
             target_areas = np.array(self.target_areas)
             targ_img[target_areas[:, :, 1], target_areas[:, :, 0]] = 1
-
-            # make an image of every cell area, filled with the index of that cell
-            cell_img = np.zeros_like(targ_img)
-
-            cell_y = np.array(self.cell_x)
-            cell_x = np.array(self.cell_y)
-
-            for i, coord in enumerate(zip(cell_x, cell_y)):
-                cell_img[coord] = i + 1
-
-            # binary mask x cell image to get the cells that overlap with target areas
-            targ_cell = cell_img * targ_img
-
-            targ_cell_ids = np.unique(targ_cell)[1:] - 1  # correct the cell id due to zero indexing
-            self.targeted_cells = np.zeros([self.n_units], dtype='bool')
-            self.targeted_cells[targ_cell_ids] = True
-            # self.s2p_cell_targets = [self.cell_id[i] for i, x in enumerate(self.targeted_cells) if x is True]  # get ls of s2p cells that were photostim targetted
-            self.s2p_cell_targets = [self.cell_id[i] for i in np.where(self.targeted_cells)[
-                0]]  # get ls of s2p cells that were photostim targetted
-
-            self.n_targeted_cells = np.sum(self.targeted_cells)
-
-            print('------- Search completed.')
-            self.save()
-            print('Number of targeted cells: ', self.n_targeted_cells)
-
-            ##### IDENTIFYING S2P ROIs THAT ARE WITHIN THE EXCLUSION ZONES OF THE SLM TARGETS
-            # make all target area coords in to a binary mask
-            targ_img = np.zeros([self.frame_x, self.frame_y], dtype='uint16')
-            target_areas_exclude = np.array(self.target_areas_exclude)
-            targ_img[target_areas_exclude[:, :, 1], target_areas_exclude[:, :, 0]] = 1
-
-            # make an image of every cell area, filled with the index of that cell
-            cell_img = np.zeros_like(targ_img)
-
-            cell_y = np.array(self.cell_x)
-            cell_x = np.array(self.cell_y)
-
-            for i, coord in enumerate(zip(cell_x, cell_y)):
-                cell_img[coord] = i + 1
-
-            # binary mask x cell image to get the cells that overlap with target areas
-            targ_cell = cell_img * targ_img
-
-            targ_cell_ids = np.unique(targ_cell)[1:] - 1  # correct the cell id due to zero indexing
-            self.exclude_cells = np.zeros([self.n_units], dtype='bool')
-            self.exclude_cells[targ_cell_ids] = True
-            self.s2p_cells_exclude = [self.cell_id[i] for i in np.where(self.exclude_cells)[0]]  # get ls of s2p cells that were photostim targetted
-
-            self.n_exclude_cells = np.sum(self.exclude_cells)
-
-            print('------- Search completed.')
-            print(f"Number of exclude cells: {self.n_exclude_cells}")
-
-            # define non targets from suite2p ROIs (exclude cells in the SLM targets exclusion - .s2p_cells_exclude)
-            self.s2p_nontargets = [cell for cell in self.good_cells if
-                                   cell not in self.s2p_cells_exclude]  ## exclusion of cells that are classified as s2p_cell_targets
-
-            print(f"Number of good, s2p non_targets: {len(self.s2p_nontargets)}")
-            self.save()
-
-            if plot:
-                from _utils_ import alloptical_plotting as aoplot
-                fig, ax = plt.subplots(figsize=[6, 6])
-                fig, ax = aoplot.plot_cells_loc(expobj=self, cells=self.s2p_cell_targets, show=False, fig=fig, ax=ax,
-                                                show_s2p_targets=True,
-                                                title=f"s2p cell targets (red-filled) and target areas (white) {self.metainfo['trial']}/{self.metainfo['animal prep.']}",
-                                                invert_y=True)
-
-                targ_img = np.zeros([self.frame_x, self.frame_y], dtype='uint16')
-                target_areas = np.array(self.target_areas)
-                targ_img[target_areas[:, :, 1], target_areas[:, :, 0]] = 1
-                ax.imshow(targ_img, cmap='Greys_r', zorder=0)
-                # for (x, y) in self.target_coords_all:
-                #     ax.scatter(x=x, y=y, edgecolors='white', facecolors='none', linewidths=1.0)
-                fig.show()
+            ax.imshow(targ_img, cmap='Greys_r', zorder=0)
+            # for (x, y) in self.target_coords_all:
+            #     ax.scatter(x=x, y=y, edgecolors='white', facecolors='none', linewidths=1.0)
+            fig.show()
 
     def _findTargets_naparm(self):
 
@@ -1150,7 +1144,8 @@ class alloptical(TwoPhotonImaging):
     def avg_stim_images_path(self):
         return self.analysis_save_path + 'avg_stim_images'
 
-    def avg_stim_images(self, peri_frames: int = 100, stim_timings: list = None, save_img=False, to_plot=False, verbose=False):
+    def avg_stim_images(self, peri_frames: int = 100, stim_timings: list = None, save_img=False, to_plot=False,
+                        verbose=False):
         """
         Outputs (either by saving or plotting, or both) images from raw t-series TIFF for a trial around each individual
         stim timings.
@@ -1209,12 +1204,10 @@ class alloptical(TwoPhotonImaging):
                 #     tf.imwrite(save_path_stim,
                 #                avg_sub8, photometric='minisblack')
 
-
             if to_plot:
                 plt.imshow(avg_sub, cmap='gray')
                 plt.suptitle('avg image from %s frames around stim_start_frame %s' % (peri_frames, stim))
                 plt.show()  # just plot for now to make sure that you are doing things correctly so far
-
 
     def run_stamm_nogui(self, numDiffStims, startOnStim, everyXStims, preSeconds=0.75, postSeconds=1.25):
         """run STAmoviemaker for the expobj's trial"""
@@ -1363,7 +1356,7 @@ class alloptical(TwoPhotonImaging):
         if process == 'dF/prestimF':
             if hasattr(self, 'SLMTargets_stims_dff'):
                 targets_traces = self.SLMTargets_stims_dff
-                threshold=10
+                threshold = 10
             else:
                 AttributeError('no SLMTargets_stims_dff attr. [1.2]')
         elif process == 'dF/stdF':
@@ -1379,9 +1372,9 @@ class alloptical(TwoPhotonImaging):
                     self.SLMTargets_tracedFF_stims_dff, self.SLMTargets_tracedFF_stims_dffAvg, self.SLMTargets_tracedFF_stims_dfstdF, \
                     self.SLMTargets_tracedFF_stims_dfstdF_avg, self.SLMTargets_tracedFF_stims_raw, self.SLMTargets_tracedFF_stims_rawAvg = \
                         self.get_alltargets_stim_traces_norm(process='trace dFF', pre_stim=self.pre_stim,
-                                                               post_stim=self.post_stim, stims=self.stim_start_frames)
+                                                             post_stim=self.post_stim, stims=self.stim_start_frames)
                 targets_traces = self.SLMTargets_tracedFF_stims_dff
-                threshold=10
+                threshold = 10
             else:
                 AttributeError('no SLMTargets_tracedFF_stims_dff attr. [1.3]')
         else:
@@ -1432,7 +1425,8 @@ class alloptical(TwoPhotonImaging):
         return reliability_slmtargets, hits_slmtargets_df, df, traces_dff_successes
 
     # retrieves photostim avg traces for each SLM target, also calculates the reliability % for each SLM target
-    def calculate_SLMTarget_SuccessStims(self, hits_slmtargets_df, process: str, stims_idx_l: list, exclude_stims_targets: dict = {}):
+    def calculate_SLMTarget_SuccessStims(self, hits_slmtargets_df, process: str, stims_idx_l: list,
+                                         exclude_stims_targets: dict = {}):
         """uses outputs of calculate_SLMTarget_responses_dff to calculate overall successrate of the specified stims
 
         :param hits_slmtargets_df: pandas dataframe of targets x stims where 1 denotes successful stim response (0 is failure)
@@ -1488,7 +1482,8 @@ class alloptical(TwoPhotonImaging):
                     counter += 1
                     if hits_slmtargets_df.loc[target_idx, stim_idx] == 1:
                         success += 1
-                        dff_trace = targets_traces[target_idx][stim_idx]  # grab the successful photostim trace based on the stim index
+                        dff_trace = targets_traces[target_idx][
+                            stim_idx]  # grab the successful photostim trace based on the stim index
                         traces_SLMtargets_successes_l.append(dff_trace)
                     else:
                         success += 0
@@ -1628,7 +1623,7 @@ class alloptical(TwoPhotonImaging):
                           for stim in stim_timings]
 
             dff_trace = Utils.normalize_dff(self.raw[cell_idx],
-                                      threshold_pct=50)  # normalize trace (dFF) to mean of whole trace
+                                            threshold_pct=50)  # normalize trace (dFF) to mean of whole trace
 
             if normalize_to == 'baseline':  # probably gonna ax this anyways
                 flu_dff = []
@@ -2057,12 +2052,12 @@ class alloptical(TwoPhotonImaging):
                 tf.imwrite(save_path, stack, photometric='minisblack')
                 print('\ns2p ROI + photostim targets masks saved in TIFF to: ', save_path)
 
-
     #### plotting functions
     ### plot the location of all SLM targets, along with option for plotting the mean img of the current trial
     # @print_start_end_plot
     @plot_piping_decorator(figsize=(5, 5))
-    def plot_SLMtargets_Locs(expobj, targets_coords: list = None, background: np.ndarray = None, fig=None, ax=None, **kwargs):
+    def plot_SLMtargets_Locs(expobj, targets_coords: list = None, background: np.ndarray = None, fig=None, ax=None,
+                             **kwargs):
         """
         plot SLM target coordinate locations
 
@@ -2134,7 +2129,8 @@ class alloptical(TwoPhotonImaging):
     # simple plot of the location of the given cell(s) against a black FOV
     # @print_start_end_plot
     @plot_piping_decorator(figsize=(5, 5))
-    def plot_cells_loc(expobj, cells: list, title=None, background: np.array = None, scatter_only: bool = False, show_s2p_targets: bool = True,
+    def plot_cells_loc(expobj, cells: list, title=None, background: np.array = None, scatter_only: bool = False,
+                       show_s2p_targets: bool = True,
                        color_float_list: list = None, cmap: str = 'Reds', invert_y=True, fig=None, ax=None, **kwargs):
         """
         plots an image of the FOV to show the locations of cells given in cells ls.
@@ -2292,6 +2288,167 @@ class alloptical(TwoPhotonImaging):
             y=0.97, fontsize=7)
         plt.show()
         Utils.save_figure(fig, save_path_suffix=f"{save_fig}") if save_fig else None
+
+    # Collect pre-stim frames from all targets_annulus for each stim ###################################################
+    def _TargetsExclusionZone(self, distance: float = 2.5):
+        """
+        creates an annulus around each target of the specified diameter that is considered the exclusion zone around the SLM target.
+
+        # use the SLM targets exclusion zone areas as the annulus around each SLM target
+        # -- for each SLM target: create a numpy array slice that acts as an annulus around the target
+
+
+        :param self:
+        :param distance: distance (in microns) from the edge of the spiral to extend the target exclusion zone
+
+        """
+
+        frame = np.zeros(shape=(self.frame_x, self.frame_y), dtype=int)
+
+        # target_areas that need to be excluded when filtering for nontarget cells
+        radius_px_exc = int(np.ceil(((self.spiral_size / 2) + distance) / self.pix_sz_x))
+        print(f"radius of target exclusion zone (in pixels): {radius_px_exc}px")
+
+        target_areas = []
+        for coord in self.target_coords_all:
+            target_area = ([item for item in pj.points_in_circle_np(radius_px_exc, x0=coord[0], y0=coord[1])])
+            target_areas.append(target_area)
+        self.target_areas_exclude = target_areas
+
+        # create annulus by subtracting SLM spiral target pixels
+        radius_px_target = int(np.ceil(((self.spiral_size / 2)) / self.pix_sz_x))
+        print(f"radius of targets (in pixels): {radius_px_target}px")
+
+        target_areas_annulus_all = []
+        for idx, coord in enumerate(self.target_coords_all):
+            target_area = ([item for item in pj.points_in_circle_np(radius_px_target, x0=coord[0], y0=coord[1])])
+            target_areas_annulus = [coord_ for i, coord_ in enumerate(self.target_areas_exclude[idx]) if
+                                    coord_ not in target_area]
+            target_areas_annulus_all.append(target_areas_annulus)
+        self.target_areas_exclude_annulus = target_areas_annulus_all
+
+        # add to frame_array towards creating a plot
+        for area in self.target_areas_exclude:
+            for x, y in area:
+                frame[x, y] = -10
+
+        for area in self.target_areas_exclude_annulus:
+            for x, y in area:
+                frame[x, y] = 10
+
+        return self.target_areas_exclude_annulus
+        # plt.figure(figsize=(4, 4))
+        # plt.imshow(frame, cmap='BrBG')
+        # plt.show()
+
+    # -- determine slice object for collecting pre-stim frames
+    def _create_slice_obj_excl_zone(self):
+        """
+        creates a list of slice objects for each target.
+
+        :param self:
+        """
+        # frame = np.zeros(shape=(expobj.frame_x, expobj.frame_y), dtype=int)  # test frame
+
+        arr = np.asarray(self.target_areas_exclude_annulus)
+        annulus_slice_obj = []
+        # _test_sum = 0
+        slice_obj_full = np.array([np.array([])] * 2,
+                                  dtype=int)  # not really finding any use for this, but have it here in case need it
+        for idx, coord in enumerate(self.target_coords_all):
+            annulus_slice_obj_target = np.s_[arr[idx][:, 0], arr[idx][:, 1]]
+            # _test_sum += np.sum(frame[annulus_slice_obj_target])
+            annulus_slice_obj.append(annulus_slice_obj_target)
+            slice_obj_full = np.hstack((slice_obj_full, annulus_slice_obj_target))
+
+        # slice_obj_full = np.asarray(annulus_slice_obj)
+        # frame[slice_obj_full[0, :], slice_obj_full[1, :]]
+
+        return annulus_slice_obj
+
+    def _collect_annulus_flu(self, annulus_slice_obj):
+        """
+        Read in raw registered tiffs, then use slice object to collect individual targets' annulus raw traces directly from the tiffs
+
+        :param self:
+        :param annulus_slice_obj: list of len(n_targets) containing the numpy slice object for SLM targets
+        """
+
+        print('\n\ncollecting raw Flu traces from SLM target coord. areas from registered TIFFs')
+
+        # read in registered tiff
+        reg_tif_folder = self.s2p_path + '/reg_tif/'
+        reg_tif_list = os.listdir(reg_tif_folder)
+        reg_tif_list.sort()
+        start = self.curr_trial_frames[0] // 2000  # 2000 because that is the batch size for suite2p run
+        end = self.curr_trial_frames[1] // 2000 + 1
+
+        mean_img_stack = np.zeros([end - start, self.frame_x, self.frame_y])
+        # collect mean traces from target areas of each target coordinate by reading in individual registered tiffs that contain frames for current trial
+        targets_annulus_traces = np.zeros([len(self.slmtargets_ids), (end - start) * 2000], dtype='float32')
+        for i in range(start, end):
+            tif_path_save2 = self.s2p_path + '/reg_tif/' + reg_tif_list[i]
+            with tf.TiffFile(tif_path_save2, multifile=False) as input_tif:
+                print('\t reading tiff: %s' % tif_path_save2)
+                data = input_tif.asarray()
+
+            target_annulus_trace = np.zeros([len(self.target_coords_all), data.shape[0]], dtype='float32')
+            for idx, coord in enumerate(self.target_coords_all):
+                # target_areas = np.array(self.target_areas)
+                # x = data[:, target_areas[coord, :, 1], target_areas[coord, :, 0]]
+                x = data[:, annulus_slice_obj[idx][0], annulus_slice_obj[idx][1]]
+                target_annulus_trace[idx] = np.mean(x, axis=1)
+
+            targets_annulus_traces[:, (i - start) * 2000: ((i - start) * 2000) + data.shape[
+                0]] = target_annulus_trace  # iteratively write to each successive segment of the targets_trace array based on the length of the reg_tiff that is read in.
+
+        # final part, crop to the exact frames for current trial
+        self.raw_SLMTargets_annulus = targets_annulus_traces[:,
+                                      self.curr_trial_frames[0] - start * 2000: self.curr_trial_frames[1] - (
+                                              start * 2000)]
+
+        return self.raw_SLMTargets_annulus
+
+    def retrieve_annulus_prestim_snippets(self):
+        """
+        # -- Collect pre-stim frames from all targets_annulus for each stim
+        #   -- should result in 3D array of # targets x # stims x # pre-stim frames
+        """
+
+        stim_timings = self.stim_start_frames
+
+        data_to_process = self.raw_SLMTargets_annulus
+
+        num_targets = len(self.slmtargets_ids)
+        targets_trace = data_to_process
+
+        # collect photostim timed average dff traces of photostim targets
+        targets_annulus_raw_prestim = np.zeros([num_targets, len(self.stim_start_frames), self.pre_stim])
+
+        for targets_idx in range(num_targets):
+            flu = [targets_trace[targets_idx][stim - self.pre_stim: stim] for stim in stim_timings]
+            for i in range(len(flu)):
+                trace = flu[i]
+                targets_annulus_raw_prestim[targets_idx, i] = trace
+
+        self.targets_annulus_raw_prestim = targets_annulus_raw_prestim
+        print(
+            f"Retrieved targets_annulus pre-stim traces for {num_targets} targets, {len(stim_timings)} stims, and {np.ceil(self.pre_stim / self.fps)} secs")
+        return targets_annulus_raw_prestim
+
+    def procedure__collect_annulus_data(self):
+        """
+        Full procedure to define annulus around each target and retrieve data from annulus.
+
+        Read in raw registered tiffs, then use slice object to collect individual targets' annulus raw traces directly from the tiffs
+
+        """
+        self.target_areas_exclude_annulus = self._TargetsExclusionZone(distance=5)
+        annulus_slice_obj = self._create_slice_obj_excl_zone()
+        self._collect_annulus_flu(annulus_slice_obj=annulus_slice_obj)
+        self.retrieve_annulus_prestim_snippets()
+
+    #  #################################################################################################################
 
     # def create_anndata_SLMtargets(expobj):
     #     """

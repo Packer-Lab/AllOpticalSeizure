@@ -44,6 +44,9 @@ class CustomUnpicklerAttributeError(pickle.Unpickler):
         elif name == 'AnnotatedData':
             from _utils_._anndata import AnnotatedData2
             return AnnotatedData2
+        elif name == 'alloptical':
+            from _main_.AllOpticalMain import alloptical
+            return alloptical
 
         return super().find_class(module, name)
 
@@ -115,7 +118,7 @@ def import_stripped_expobj(pkl_path: str):
 
 def save_pkl(obj, save_path: str = None):
     if save_path is None:
-        if not hasattr(obj, 'save_path'):
+        if not hasattr(obj, 'pkl_path'):
             raise ValueError(
                 'pkl path for saving was not found in object attributes, please provide path to save to')
     else:

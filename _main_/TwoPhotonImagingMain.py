@@ -682,4 +682,8 @@ class TwoPhotonImaging:
 
     def save(self, pkl_path: str = None):
         from _utils_.io import save_pkl
+        if pkl_path is None: pkl_path = self.pkl_path
         save_pkl(obj=self, save_path=pkl_path)
+
+
+

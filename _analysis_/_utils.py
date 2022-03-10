@@ -68,6 +68,12 @@ class Results:
         print(f'\n Saving {self.__repr__()}: ')
         save_pkl(self, self.SAVE_PATH)
 
+    @classmethod
+    def load(cls):
+        from funcsforprajay.funcs import load_pkl
+        print(f'Loading Results Analysis object from {cls.SAVE_PATH} ... ')
+        return load_pkl(cls.SAVE_PATH)
+
     # @property
     # def expobj_id(self):
     #     return f"{self._metainfo['animal prep.']} {self._metainfo['trial']}"
