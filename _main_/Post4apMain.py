@@ -717,12 +717,10 @@ class Post4ap(alloptical):
 
         expobj.save() if save else None
 
-    def calcMinDistanceToSz(self, plot_counter=0):
+    def calcMinDistanceToSz(self):
         """
         Make a dataframe of stim frames x cells, with values being the minimum distance to the sz boundary at the stim.
 
-        :param self:
-        :return:
         """
 
         if hasattr(self, 'slmtargets_szboundary_stim'):

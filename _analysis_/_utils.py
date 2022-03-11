@@ -60,7 +60,7 @@ class Results:
             len_ = len(self.__getattribute__(attr)) if self.__getattribute__(attr) is not None else -1
             information += f"\n\t{attr}: {len_}" if len_ > 0 else f"\n\t{attr}: {self.__getattribute__(attr)}"
 
-        return f"Results Analysis submodule, last saved: {lastmod}"
+        return f"Results Analysis submodule, last saved: {lastmod}, contains: \n{information}"
 
     def save_results(self):
         assert self.SAVE_PATH, print(f"save path not defined for: {self}")

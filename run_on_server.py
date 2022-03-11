@@ -22,7 +22,7 @@ sys.path.append('/home/pshah/Documents/code/')
 
 from _analysis_._ClassPhotostimResponseQuantificationSLMtargets import PhotostimResponsesQuantificationSLMtargets as main
 
-main.run__add_targets_annulus_prestim_anndata()
+main.run__targets_annulus_prestim_Flu()
 
 
 

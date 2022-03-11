@@ -1,11 +1,9 @@
-from dataclasses import dataclass, field
 from typing import Union, List, Dict
 
 import numpy as np
 import os
 import pandas as pd
 from matplotlib import pyplot as plt
-from tifffile import TiffFile
 
 import _alloptical_utils as Utils
 from _analysis_._utils import Quantification, Results
@@ -19,7 +17,7 @@ from _utils_._anndata import AnnotatedData2
 SAVE_LOC = "/home/pshah/mnt/qnap/Analysis/analysis_export/analysis_quantification_classes/"
 
 
-# %% COLLECT AND PLOT PHOTOSTIM RESPONSES MAGNITUDES
+# %% COLLECTING DATA, PROCESSING AND ANALYSIS FOR PHOTOSTIM RESPONSES MAGNITUDES OF SLM TARGETS
 
 class PhotostimResponsesQuantificationSLMtargets(Quantification):
     # save_path = SAVE_LOC + 'PhotostimResponsesQuantificationSLMtargets.pkl'
@@ -199,6 +197,17 @@ class PhotostimResponsesQuantificationSLMtargets(Quantification):
 
         self.adata.add_variable(var_name=str(new_var.name), values=list(new_var))
 
+    @property
+    def interictal_stims_idx(self):
+        """getter to index interictal stims from anndata object after stim groups are added as var to adata."""
+        assert 'stim_group' in self.adata.var_keys()
+        return np.where(self.adata.var.stim_group == 'interictal')[0]
+
+    @property
+    def ictal_stims_idx(self):
+        assert 'stim_group' in self.adata.var_keys()
+        return np.where(self.adata.var.stim_group == 'ictal')[0]
+
     # %% 3) PLOTTING MEAN PHOTOSTIM RESPONSE AMPLITUDES
     def collect_photostim_responses_magnitude_avgtargets(self, stims: Union[slice, str, list] = 'all',
                                                          targets: Union[slice, str, list] = 'all',
@@ -362,23 +371,20 @@ class PhotostimResponsesQuantificationSLMtargets(Quantification):
     @staticmethod
     def collect__prestim_FOV_Flu():
         """
-        two act function that collects pre-stim FOV Flu value for each stim frame.
+        two act function that collects pre-stim FOV Flu value for each stim frame for all experiments, and returns average prestim FOV values across stim group types.
 
         1) collect pre-stim FOV Flu value for each stim frame. Add these as a var to the expobj.PhotostimResponsesSLMTargets.adata table
             - length of the pre-stim == expobj.pre_stim
 
-        2) collect average prestim FOV values values across various stim group types.
+        2) collect average prestim FOV values across various stim group types.
 
         """
 
-        import alloptical_utils_pj as aoutils
-        expobj: aoutils.Post4ap = Utils.import_expobj(prep='RL108', trial='t-013')
-
         # PART 1)   ####################################################################################################
-
         @Utils.run_for_loop_across_exps(run_pre4ap_trials=True, run_post4ap_trials=True)
         def __collect_prestim_FOV_Flu_allstims(**kwargs):
-            expobj: aoutils.alloptical = kwargs['expobj']
+            """collect pre-stim Flu from mean raw flu trace and add as a new variable to anndata object."""
+            expobj: alloptical = kwargs['expobj']
             pre_stim_FOV_flu = []
             for stim in expobj.PhotostimResponsesSLMTargets.adata.var.stim_start_frame:
                 sli_ce = np.s_[stim - expobj.pre_stim: stim]
@@ -393,7 +399,8 @@ class PhotostimResponsesQuantificationSLMtargets(Quantification):
         # PART 2)   ####################################################################################################
         @Utils.run_for_loop_across_exps(run_pre4ap_trials=True, run_post4ap_trials=False, set_cache=False)
         def __collect_prestim_FOV_Flu_pre4ap(**kwargs):
-            expobj: aoutils.alloptical = kwargs['expobj']
+            """Return pre-stim FOV flu for all pre-4ap experiments."""
+            expobj: alloptical = kwargs['expobj']
 
             if 'pre' in expobj.exptype:
                 # pre_stim_FOV_flu = []
@@ -413,7 +420,9 @@ class PhotostimResponsesQuantificationSLMtargets(Quantification):
 
         @Utils.run_for_loop_across_exps(run_pre4ap_trials=False, run_post4ap_trials=True, set_cache=False)
         def __collect_prestim_FOV_Flu_post4ap(**kwargs):
-            expobj: aoutils.Post4ap = kwargs['expobj']
+            """Return pre-stim FOV flu for interictal and ictal stims from all post-4ap experiments."""
+
+            expobj: Post4ap = kwargs['expobj']
 
             if 'post' in expobj.exptype:
                 # collect interictal stims ########
@@ -491,7 +500,7 @@ class PhotostimResponsesQuantificationSLMtargets(Quantification):
         x-axis = pre-stim mean FOV flu, y-axis = photostim responses"""
 
         import alloptical_utils_pj as aoutils
-        expobj: aoutils.Post4ap = Utils.import_expobj(prep='RL108', trial='t-013')
+        expobj: Post4ap = Utils.import_expobj(prep='RL108', trial='t-013')
         from _utils_.alloptical_plotting import dataplot_frame_options
         dataplot_frame_options()
 
@@ -499,7 +508,7 @@ class PhotostimResponsesQuantificationSLMtargets(Quantification):
 
         @Utils.run_for_loop_across_exps(run_pre4ap_trials=1, run_post4ap_trials=0, set_cache=0)
         def _plot_data_pre4ap(**kwargs):
-            expobj: aoutils.alloptical = kwargs['expobj']
+            expobj: alloptical = kwargs['expobj']
             ax = kwargs['ax']
             assert 'pre' in expobj.exptype, f'wrong expobj exptype. {expobj.exptype}. expected pre'
 
@@ -514,7 +523,7 @@ class PhotostimResponsesQuantificationSLMtargets(Quantification):
 
         @Utils.run_for_loop_across_exps(run_pre4ap_trials=0, run_post4ap_trials=1, set_cache=0)
         def _plot_data_post4ap(**kwargs):
-            expobj: aoutils.alloptical = kwargs['expobj']
+            expobj: alloptical = kwargs['expobj']
             ax = kwargs['ax']
             assert 'post' in expobj.exptype, f'wrong expobj exptype. {expobj.exptype}. expected post'
 
@@ -543,10 +552,10 @@ class PhotostimResponsesQuantificationSLMtargets(Quantification):
         Utils.save_figure(fig, save_path_suffix="plot__pre-stim-fov_vs_avg-photostim-response-of-targets.png")
         fig.show()
 
-    # %% 6)
+    # %% 6) measuring photostim responses of targets (suite2p rois) as a function of pre-stim surrounding neuropil signal (targets_annulus Flu)
 
     """
-    1. measuring photostim responses of targets (suite2p rois) vs. pre-stim surrounding neuropil signal -- not immediately setup yet to do analysis involving suite2p
+    1. measuring photostim responses of targets (suite2p rois) as a function of pre-stim surrounding neuropil signal -- not immediately setup yet to do analysis involving suite2p
     - need to ensure that you have the adata structure for slm targets that are also suite2p ROIs
     - another approach that sidesteps suite2p is just directly grabbing a torus of area around the SLM target
 
@@ -555,9 +564,10 @@ class PhotostimResponsesQuantificationSLMtargets(Quantification):
     # -- avg above over axis = 2 then add results to anndata object
     """
 
-    def add_targets_annulus_prestim_anndata(self, expobj: alloptical):
+    # %% 6.1) collect targets_annulus_prestim_Flu
+    def make__targets_annulus_prestim_Flu(self, expobj: Union[alloptical, Post4ap]):
         """
-        avg targets_annulus_raw_prestim over axis = 2 then add results to anndata object
+        Average targets_annulus_raw_prestim over axis = 2 then add results to anndata object as a new layer.
 
         """
 
@@ -570,15 +580,118 @@ class PhotostimResponsesQuantificationSLMtargets(Quantification):
 
     @staticmethod
     @Utils.run_for_loop_across_exps(run_pre4ap_trials=1, run_post4ap_trials=1, allow_rerun=0)
-    def run__add_targets_annulus_prestim_anndata(**kwargs):
+    def run__targets_annulus_prestim_Flu(**kwargs):
         expobj: Union[alloptical, Post4ap] = kwargs['expobj']
-        expobj.PhotostimResponsesSLMTargets.add_targets_annulus_prestim_anndata(expobj=expobj)
+        expobj.PhotostimResponsesSLMTargets.make__targets_annulus_prestim_Flu(expobj=expobj)
         expobj.save()
 
 
+    # %% 6.2) plot targets_annulus_prestim_Flu
+
+    """
+    - maybe could plot across time on the x axis.
+
+    """
+
+    @staticmethod
+    def retrieve__targets_annlus_prestim_Flu():
+        """
+        Gets pre-stim (from anndata object) the targets_annulus Flu value for each stim frame for all experiments.
 
 
-# %%
+        """
+
+        # import alloptical_utils_pj as aoutils
+        # expobj: Post4ap = Utils.import_expobj(prep='RL108', trial='t-013')
+        #
+        # RESULTS: PhotostimResponsesSLMtargetsResults = PhotostimResponsesSLMtargetsResults.load()
+
+        # get targets_annulus prestim Flu from anndata #################################################################
+        @Utils.run_for_loop_across_exps(run_pre4ap_trials=1, run_post4ap_trials=0, allow_rerun=1)
+        def __targets_annulus_prestim_Flu_pre4ap(**kwargs):
+            """Return pre-stim targets annulus for all pre-4ap experiments."""
+            expobj: alloptical = kwargs['expobj']
+
+            if 'pre' in expobj.exptype:
+                baseline = expobj.PhotostimResponsesSLMTargets.adata.layers['targets_annulus_prestim_rawF']
+
+                return np.round(np.mean(baseline), 3)
+
+        baseline_pre_stim_targets_annulus = __targets_annulus_prestim_Flu_pre4ap()
+
+
+        @Utils.run_for_loop_across_exps(run_pre4ap_trials=0, run_post4ap_trials=1, allow_rerun=1)
+        def __targets_annulus_prestim_Flu_post4ap(**kwargs):
+            """Return pre-stim targets annulus for all post-4ap experiments."""
+            expobj: alloptical = kwargs['expobj']
+            cls_inst = expobj.PhotostimResponsesSLMTargets
+            if 'post' in expobj.exptype:
+                interictal_stims = cls_inst.adata.layers['targets_annulus_prestim_rawF'][:, cls_inst.interictal_stims_idx]
+                ictal_stims = cls_inst.adata.layers['targets_annulus_prestim_rawF'][:, cls_inst.ictal_stims_idx]
+
+                print('aay')
+
+                return [np.round(np.mean(interictal_stims), 3), np.round(np.mean(ictal_stims), 3)]
+
+
+        func_collector = __targets_annulus_prestim_Flu_post4ap()
+
+
+        assert len(func_collector) > 0, '__targets_annulus_prestim_Flu_post4ap didnot return any results.'
+
+        interictal_pre_stim_targets_annulus, ictal_pre_stim_targets_annulus = np.asarray(func_collector)[:, 0], np.asarray(
+            func_collector)[:, 1]
+
+        # process returned data to make flat arrays
+        pre_stim_targets_annulus_results = {'baseline': baseline_pre_stim_targets_annulus,
+                                            'interictal': interictal_pre_stim_targets_annulus,
+                                            'ictal': ictal_pre_stim_targets_annulus}
+
+        return pre_stim_targets_annulus_results
+
+    @staticmethod
+    def plot__targets_annulus_prestim_Flu(RESULTS):
+        """
+        1. plot Flu of targets_annulus averaged across all targets and stims across baseline, interictal and ictal group types
+        - but remember that this should be heterogeneous (especially in the ictal group as targets go from out to in seizure).
+        - so might need to consider better ways of plotting this.
+        """
+
+        """plot avg pre-stim Flu values across baseline, interictal, and ictal stims"""
+
+        baseline__prestimannulus_flu = []
+        for exp__prestim_flu in RESULTS.pre_stim_targets_annulus_F['baseline']:
+            baseline__prestimannulus_flu.append(np.round(np.mean(exp__prestim_flu), 5))
+
+        interictal__prestimannulus_flu = []
+        for exp__prestim_flu in RESULTS.pre_stim_targets_annulus_F['interictal']:
+            interictal__prestimannulus_flu.append(np.round(np.mean(exp__prestim_flu), 5))
+
+        ictal__prestimannulus_flu = []
+        for exp__prestim_flu in RESULTS.pre_stim_targets_annulus_F['ictal']:
+            ictal__prestimannulus_flu.append(np.round(np.mean(exp__prestim_flu), 5))
+
+        pplot.plot_bar_with_points(data=[baseline__prestimannulus_flu, interictal__prestimannulus_flu, ictal__prestimannulus_flu],
+                                   bar=False, x_tick_labels=['baseline', 'interictal', 'ictal'],
+                                   colors=['blue', 'green', 'purple'],
+                                   expand_size_x=0.4, title='Average Pre-stim targets annulus F', y_label='raw F')
+
+    @staticmethod
+    def plot__targets_annulus_prestim_Flu3(RESULTS):
+        """plot average targets_annulus for targets in ICTAL comparing targets IN SZ and OUT SZ during seizure ICTAL"""
+
+
+
+        pass
+
+
+    @staticmethod
+    def plot__targets_annulus_prestim_Flu2(RESULTS):
+        """ maybe plot average targets_annulus as a function of the FOV Flu (of individual stims)"""
+        pass
+
+
+# %% COLLECTING RESULTS FOR PHOTOSTIM RESPONSES
 class PhotostimResponsesSLMtargetsResults(Results):
     SAVE_PATH = SAVE_LOC + 'Results__PhotostimResponsesSLMtargets.pkl'
 
@@ -592,8 +705,10 @@ class PhotostimResponsesSLMtargetsResults(Results):
         self.mean_photostim_responses_interictal_zscored: List[float] = [-1]
         self.mean_photostim_responses_ictal_zscored: List[float] = [-1]
 
-        self.pre_stim_FOV_flu: Dict = None  # averages from pre-stim Flu value for each stim frame for baseline, interictal and ictal groups
-
+        self.pre_stim_FOV_flu = None  # averages from pre-stim Flu value for each stim frame for baseline, interictal and ictal groups
+        self.baseline_pre_stim_targets_annulus = None
+        self.interictal_pre_stim_targets_annulus = None
+        self.ictal_pre_stim_targets_annulus = None
 
 REMAKE = False
 if not os.path.exists(PhotostimResponsesSLMtargetsResults.SAVE_PATH) or REMAKE:
@@ -613,178 +728,10 @@ not rise for targets that ARE NOT in seizure. would be really helpful to show an
 - then also compare photostim responses in relation to the targets' annulus Flu.
 
 MINOR
-send out plots for 
+send out plots for prestim FOV flu and prestim targets annulus flu 
 
 """
 
-
-# plan:
-# -- for each SLM target: create a numpy array slice that acts as an annulus around the target
-# -- determine slice object for collecting pre-stim frames
-# -- read in raw registered tiffs, then use slice object to collect individual targets' annulus raw traces directly from the tiffs
-#   -- should result in 3D array of # targets x # stims x # pre-stim frames
-# -- avg above over axis = 2 then add results to anndata object
-
-
-
-# %%
-
-
-#####  moved all below to methods under alloptical main. . 22/03/09
-# Collect pre-stim frames from all targets_annulus for each stim
-def _TargetsExclusionZone(self: alloptical, distance: float = 2.5):
-    """
-    creates an annulus around each target of the specified diameter that is considered the exclusion zone around the SLM target.
-
-    # use the SLM targets exclusion zone areas as the annulus around each SLM target
-    # -- for each SLM target: create a numpy array slice that acts as an annulus around the target
-
-
-    :param self:
-    :param distance: distance from the edge of the spiral to extend the target exclusion zone
-
-    """
-
-    distance = 5
-
-    frame = np.zeros(shape=(self.frame_x, self.frame_y), dtype=int)
-
-    # target_areas that need to be excluded when filtering for nontarget cells
-    radius_px_exc = int(np.ceil(((self.spiral_size / 2) + distance) / self.pix_sz_x))
-    print(f"radius of target exclusion zone (in pixels): {radius_px_exc}px")
-
-    target_areas = []
-    for coord in self.target_coords_all:
-        target_area = ([item for item in pj.points_in_circle_np(radius_px_exc, x0=coord[0], y0=coord[1])])
-        target_areas.append(target_area)
-    self.target_areas_exclude = target_areas
-
-    # create annulus by subtracting SLM spiral target pixels
-    radius_px_target = int(np.ceil(((self.spiral_size / 2)) / self.pix_sz_x))
-    print(f"radius of targets (in pixels): {radius_px_target}px")
-
-    target_areas_annulus_all = []
-    for idx, coord in enumerate(self.target_coords_all):
-        target_area = ([item for item in pj.points_in_circle_np(radius_px_target, x0=coord[0], y0=coord[1])])
-        target_areas_annulus = [coord_ for i, coord_ in enumerate(self.target_areas_exclude[idx]) if coord_ not in target_area]
-        target_areas_annulus_all.append(target_areas_annulus)
-    self.target_areas_exclude_annulus = target_areas_annulus_all
-
-    # add to frame_array towards creating a plot
-    for area in self.target_areas_exclude:
-        for x, y in area:
-            frame[x, y] = -10
-
-    for area in self.target_areas_exclude_annulus:
-        for x, y in area:
-            frame[x, y] = 10
-
-    return self.target_areas_exclude_annulus
-    # plt.figure(figsize=(4, 4))
-    # plt.imshow(frame, cmap='BrBG')
-    # plt.show()
-
-# -- determine slice object for collecting pre-stim frames
-def _create_slice_obj_excl_zone(self: alloptical):
-    """
-    creates a list of slice objects for each target.
-
-    :param self:
-    """
-    # frame = np.zeros(shape=(expobj.frame_x, expobj.frame_y), dtype=int)  # test frame
-
-    arr = np.asarray(self.target_areas_exclude_annulus)
-    annulus_slice_obj = []
-    # _test_sum = 0
-    slice_obj_full = np.array([np.array([])] * 2, dtype=int)  # not really finding any use for this, but have it here in case need it
-    for idx, coord in enumerate(self.target_coords_all):
-        annulus_slice_obj_target = np.s_[arr[idx][:, 0], arr[idx][:, 1]]
-        # _test_sum += np.sum(frame[annulus_slice_obj_target])
-        annulus_slice_obj.append(annulus_slice_obj_target)
-        slice_obj_full = np.hstack((slice_obj_full, annulus_slice_obj_target))
-
-    # slice_obj_full = np.asarray(annulus_slice_obj)
-    # frame[slice_obj_full[0, :], slice_obj_full[1, :]]
-
-    return annulus_slice_obj
-
-def _collect_annulus_flu(self: alloptical, annulus_slice_obj):
-    """
-    Read in raw registered tiffs, then use slice object to collect individual targets' annulus raw traces directly from the tiffs
-
-    :param self:
-    :param annulus_slice_obj: list of len(n_targets) containing the numpy slice object for SLM targets
-    """
-
-    print('\n\ncollecting raw Flu traces from SLM target coord. areas from registered TIFFs')
-
-    # read in registered tiff
-    reg_tif_folder = self.s2p_path + '/reg_tif/'
-    reg_tif_list = os.listdir(reg_tif_folder)
-    reg_tif_list.sort()
-    start = self.curr_trial_frames[0] // 2000  # 2000 because that is the batch size for suite2p run
-    end = self.curr_trial_frames[1] // 2000 + 1
-
-    mean_img_stack = np.zeros([end - start, self.frame_x, self.frame_y])
-    # collect mean traces from target areas of each target coordinate by reading in individual registered tiffs that contain frames for current trial
-    targets_annulus_traces = np.zeros([len(self.slmtargets_ids), (end - start) * 2000], dtype='float32')
-    for i in range(start, end):
-        tif_path_save2 = self.s2p_path + '/reg_tif/' + reg_tif_list[i]
-        with TiffFile(tif_path_save2, multifile=False) as input_tif:
-            print('\t reading tiff: %s' % tif_path_save2)
-            data = input_tif.asarray()
-
-        target_annulus_trace = np.zeros([len(self.target_coords_all), data.shape[0]], dtype='float32')
-        for idx, coord in enumerate(self.target_coords_all):
-            # target_areas = np.array(self.target_areas)
-            # x = data[:, target_areas[coord, :, 1], target_areas[coord, :, 0]]
-            x = data[:, annulus_slice_obj[idx][0], annulus_slice_obj[idx][1]]
-            target_annulus_trace[idx] = np.mean(x, axis=1)
-
-        targets_annulus_traces[:, (i - start) * 2000: ((i - start) * 2000) + data.shape[0]] = target_annulus_trace  # iteratively write to each successive segment of the targets_trace array based on the length of the reg_tiff that is read in.
-
-    # final part, crop to the exact frames for current trial
-    self.raw_SLMTargets_annulus = targets_annulus_traces[:, self.curr_trial_frames[0] - start * 2000: self.curr_trial_frames[1] - (start * 2000)]
-
-    return self.raw_SLMTargets_annulus
-
-def retrieve_annulus_prestim_snippets(self: alloptical):
-    """
-    # -- Collect pre-stim frames from all targets_annulus for each stim
-    #   -- should result in 3D array of # targets x # stims x # pre-stim frames
-    """
-
-    stim_timings = self.stim_start_frames
-
-    data_to_process = self.raw_SLMTargets_annulus
-
-    num_targets = len(self.slmtargets_ids)
-    targets_trace = data_to_process
-
-    # collect photostim timed average dff traces of photostim targets
-    targets_annulus_raw_prestim = np.zeros([num_targets, len(self.stim_start_frames), self.pre_stim])
-
-    for targets_idx in range(num_targets):
-        flu = [targets_trace[targets_idx][stim - self.pre_stim: stim] for stim in stim_timings]
-        for i in range(len(flu)):
-            trace = flu[i]
-            targets_annulus_raw_prestim[targets_idx, i] = trace
-
-    self.targets_annulus_raw_prestim = targets_annulus_raw_prestim
-    print(f"Retrieved targets_annulus pre-stim traces for {num_targets} targets, {len(stim_timings)} stims, and {int(self.pre_stim/self.fps)} secs")
-    return targets_annulus_raw_prestim
-
-def procedure__collect_annulus_data(self: alloptical):
-    """
-    Full procedure to define annulus around each target and retrieve data from annulus.
-
-    Read in raw registered tiffs, then use slice object to collect individual targets' annulus raw traces directly from the tiffs
-
-    """
-    self.target_areas_exclude_annulus = _TargetsExclusionZone(self=self)
-    annulus_slice_obj = _create_slice_obj_excl_zone(self=self)
-    _collect_annulus_flu(self=self, annulus_slice_obj=annulus_slice_obj)
-    retrieve_annulus_prestim_snippets(self=self)
 
 
 
@@ -798,14 +745,177 @@ if __name__ == '__main__':
     # expobj: Post4ap = Utils.import_expobj(prep='RL108', trial='t-013')
     # self = expobj.PhotostimResponsesSLMTargets
     # self.add_targets_annulus_prestim_anndata(expobj=expobj)
-
-
-
-
-
-
-
-
+    RESULTS.pre_stim_targets_annulus_F = PhotostimResponsesQuantificationSLMtargets.retrieve__targets_annlus_prestim_Flu()
+    RESULTS.save_results()
+    PhotostimResponsesQuantificationSLMtargets.plot__targets_annulus_prestim_Flu(RESULTS)
+    
 
     pass
+
+
+
+# %% ARCHIVE
+
+# collect pre-stim flu from targets_annulus:
+# -- for each SLM target: create a numpy array slice that acts as an annulus around the target
+# -- determine slice object for collecting pre-stim frames
+# -- read in raw registered tiffs, then use slice object to collect individual targets' annulus raw traces directly from the tiffs
+#   -- should result in 3D array of # targets x # stims x # pre-stim frames
+# -- avg above over axis = 2 then add results to anndata object
+
+# #####  moved all below to methods under alloptical main. . 22/03/09
+# # Collect pre-stim frames from all targets_annulus for each stim
+# def _TargetsExclusionZone(self: alloptical, distance: float = 2.5):
+#     """
+#     creates an annulus around each target of the specified diameter that is considered the exclusion zone around the SLM target.
+#
+#     # use the SLM targets exclusion zone areas as the annulus around each SLM target
+#     # -- for each SLM target: create a numpy array slice that acts as an annulus around the target
+#
+#
+#     :param self:
+#     :param distance: distance from the edge of the spiral to extend the target exclusion zone
+#
+#     """
+#
+#     distance = 5
+#
+#     frame = np.zeros(shape=(self.frame_x, self.frame_y), dtype=int)
+#
+#     # target_areas that need to be excluded when filtering for nontarget cells
+#     radius_px_exc = int(np.ceil(((self.spiral_size / 2) + distance) / self.pix_sz_x))
+#     print(f"radius of target exclusion zone (in pixels): {radius_px_exc}px")
+#
+#     target_areas = []
+#     for coord in self.target_coords_all:
+#         target_area = ([item for item in pj.points_in_circle_np(radius_px_exc, x0=coord[0], y0=coord[1])])
+#         target_areas.append(target_area)
+#     self.target_areas_exclude = target_areas
+#
+#     # create annulus by subtracting SLM spiral target pixels
+#     radius_px_target = int(np.ceil(((self.spiral_size / 2)) / self.pix_sz_x))
+#     print(f"radius of targets (in pixels): {radius_px_target}px")
+#
+#     target_areas_annulus_all = []
+#     for idx, coord in enumerate(self.target_coords_all):
+#         target_area = ([item for item in pj.points_in_circle_np(radius_px_target, x0=coord[0], y0=coord[1])])
+#         target_areas_annulus = [coord_ for i, coord_ in enumerate(self.target_areas_exclude[idx]) if coord_ not in target_area]
+#         target_areas_annulus_all.append(target_areas_annulus)
+#     self.target_areas_exclude_annulus = target_areas_annulus_all
+#
+#     # add to frame_array towards creating a plot
+#     for area in self.target_areas_exclude:
+#         for x, y in area:
+#             frame[x, y] = -10
+#
+#     for area in self.target_areas_exclude_annulus:
+#         for x, y in area:
+#             frame[x, y] = 10
+#
+#     return self.target_areas_exclude_annulus
+#     # plt.figure(figsize=(4, 4))
+#     # plt.imshow(frame, cmap='BrBG')
+#     # plt.show()
+#
+# # -- determine slice object for collecting pre-stim frames
+# def _create_slice_obj_excl_zone(self: alloptical):
+#     """
+#     creates a list of slice objects for each target.
+#
+#     :param self:
+#     """
+#     # frame = np.zeros(shape=(expobj.frame_x, expobj.frame_y), dtype=int)  # test frame
+#
+#     arr = np.asarray(self.target_areas_exclude_annulus)
+#     annulus_slice_obj = []
+#     # _test_sum = 0
+#     slice_obj_full = np.array([np.array([])] * 2, dtype=int)  # not really finding any use for this, but have it here in case need it
+#     for idx, coord in enumerate(self.target_coords_all):
+#         annulus_slice_obj_target = np.s_[arr[idx][:, 0], arr[idx][:, 1]]
+#         # _test_sum += np.sum(frame[annulus_slice_obj_target])
+#         annulus_slice_obj.append(annulus_slice_obj_target)
+#         slice_obj_full = np.hstack((slice_obj_full, annulus_slice_obj_target))
+#
+#     # slice_obj_full = np.asarray(annulus_slice_obj)
+#     # frame[slice_obj_full[0, :], slice_obj_full[1, :]]
+#
+#     return annulus_slice_obj
+#
+# def _collect_annulus_flu(self: alloptical, annulus_slice_obj):
+#     """
+#     Read in raw registered tiffs, then use slice object to collect individual targets' annulus raw traces directly from the tiffs
+#
+#     :param self:
+#     :param annulus_slice_obj: list of len(n_targets) containing the numpy slice object for SLM targets
+#     """
+#
+#     print('\n\ncollecting raw Flu traces from SLM target coord. areas from registered TIFFs')
+#
+#     # read in registered tiff
+#     reg_tif_folder = self.s2p_path + '/reg_tif/'
+#     reg_tif_list = os.listdir(reg_tif_folder)
+#     reg_tif_list.sort()
+#     start = self.curr_trial_frames[0] // 2000  # 2000 because that is the batch size for suite2p run
+#     end = self.curr_trial_frames[1] // 2000 + 1
+#
+#     mean_img_stack = np.zeros([end - start, self.frame_x, self.frame_y])
+#     # collect mean traces from target areas of each target coordinate by reading in individual registered tiffs that contain frames for current trial
+#     targets_annulus_traces = np.zeros([len(self.slmtargets_ids), (end - start) * 2000], dtype='float32')
+#     for i in range(start, end):
+#         tif_path_save2 = self.s2p_path + '/reg_tif/' + reg_tif_list[i]
+#         with TiffFile(tif_path_save2, multifile=False) as input_tif:
+#             print('\t reading tiff: %s' % tif_path_save2)
+#             data = input_tif.asarray()
+#
+#         target_annulus_trace = np.zeros([len(self.target_coords_all), data.shape[0]], dtype='float32')
+#         for idx, coord in enumerate(self.target_coords_all):
+#             # target_areas = np.array(self.target_areas)
+#             # x = data[:, target_areas[coord, :, 1], target_areas[coord, :, 0]]
+#             x = data[:, annulus_slice_obj[idx][0], annulus_slice_obj[idx][1]]
+#             target_annulus_trace[idx] = np.mean(x, axis=1)
+#
+#         targets_annulus_traces[:, (i - start) * 2000: ((i - start) * 2000) + data.shape[0]] = target_annulus_trace  # iteratively write to each successive segment of the targets_trace array based on the length of the reg_tiff that is read in.
+#
+#     # final part, crop to the exact frames for current trial
+#     self.raw_SLMTargets_annulus = targets_annulus_traces[:, self.curr_trial_frames[0] - start * 2000: self.curr_trial_frames[1] - (start * 2000)]
+#
+#     return self.raw_SLMTargets_annulus
+#
+# def retrieve_annulus_prestim_snippets(self: alloptical):
+#     """
+#     # -- Collect pre-stim frames from all targets_annulus for each stim
+#     #   -- should result in 3D array of # targets x # stims x # pre-stim frames
+#     """
+#
+#     stim_timings = self.stim_start_frames
+#
+#     data_to_process = self.raw_SLMTargets_annulus
+#
+#     num_targets = len(self.slmtargets_ids)
+#     targets_trace = data_to_process
+#
+#     # collect photostim timed average dff traces of photostim targets
+#     targets_annulus_raw_prestim = np.zeros([num_targets, len(self.stim_start_frames), self.pre_stim])
+#
+#     for targets_idx in range(num_targets):
+#         flu = [targets_trace[targets_idx][stim - self.pre_stim: stim] for stim in stim_timings]
+#         for i in range(len(flu)):
+#             trace = flu[i]
+#             targets_annulus_raw_prestim[targets_idx, i] = trace
+#
+#     self.targets_annulus_raw_prestim = targets_annulus_raw_prestim
+#     print(f"Retrieved targets_annulus pre-stim traces for {num_targets} targets, {len(stim_timings)} stims, and {int(self.pre_stim/self.fps)} secs")
+#     return targets_annulus_raw_prestim
+#
+# def procedure__collect_annulus_data(self: alloptical):
+#     """
+#     Full procedure to define annulus around each target and retrieve data from annulus.
+#
+#     Read in raw registered tiffs, then use slice object to collect individual targets' annulus raw traces directly from the tiffs
+#
+#     """
+#     self.target_areas_exclude_annulus = _TargetsExclusionZone(self=self)
+#     annulus_slice_obj = _create_slice_obj_excl_zone(self=self)
+#     _collect_annulus_flu(self=self, annulus_slice_obj=annulus_slice_obj)
+#     retrieve_annulus_prestim_snippets(self=self)
 

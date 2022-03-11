@@ -231,7 +231,7 @@ if __name__ == '__main__':
 
 
     "Measuring photostim responses in relation to pre-stim mean targets_annulus Flu"
-    main.run__add_targets_annulus_prestim_anndata()
+    main.run__targets_annulus_prestim_Flu()
 
 
 

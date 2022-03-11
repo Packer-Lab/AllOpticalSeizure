@@ -3086,7 +3086,7 @@ class alloptical_(TwoPhotonImaging):
         save_figure(fig, save_path_suffix=f"{save_fig}") if save_fig else None
 
 
-class Post4ap(alloptical_):
+class Post4ap_(alloptical_):
 
     def __init__(self, paths, metainfo, stimtype, discard_all):
         from _analysis_._ClassTargetsSzInvasionTemporal import TargetsSzInvasionTemporal
@@ -4996,7 +4996,7 @@ def run_photostim_preprocessing(trial, exp_type, tiffs_loc, naparms_loc, paqs_lo
     #             print('we got an invalid path at: ', path)
 
     if 'post' in exp_type and '4ap' in exp_type:
-        expobj = Post4ap(paths, metainfo=metainfo, stimtype='2pstim', discard_all=discard_all)
+        expobj = Post4ap_(paths, metainfo=metainfo, stimtype='2pstim', discard_all=discard_all)
     else:
         expobj = alloptical_(paths, metainfo=metainfo, stimtype='2pstim', quick=quick)
 
@@ -5059,7 +5059,7 @@ def run_photostim_preprocessing(trial, exp_type, tiffs_loc, naparms_loc, paqs_lo
 
 ###### SLM TARGETS analysis + plottings
 # after running suite2p
-def run_alloptical_processing_photostim(expobj: Union[alloptical_, Post4ap], to_suite2p=None, baseline_trials=None,
+def run_alloptical_processing_photostim(expobj: Union[alloptical_, Post4ap_], to_suite2p=None, baseline_trials=None,
                                         plots: bool = True,
                                         force_redo: bool = False):
     """

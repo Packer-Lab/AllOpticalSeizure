@@ -16,7 +16,7 @@ SAVE_LOC = "/home/pshah/mnt/qnap/Analysis/analysis_export/analysis_quantificatio
 
 
 """
-TODO:
+TODO all code:
 - double check plot - is the result real lol
 
 - minor plots for photostim responses 
@@ -38,16 +38,22 @@ class TargetsSzInvasionSpatial(Quantification):
     ###### 1.0) calculate/collect min distance to seizure and responses at each distance ###############################
 
     @staticmethod
-    @Utils.run_for_loop_across_exps(run_pre4ap_trials=False, run_post4ap_trials=True, allow_rerun=0, skip_trials=['PS04 t-018'])
+    @Utils.run_for_loop_across_exps(run_pre4ap_trials=False, run_post4ap_trials=True, allow_rerun=1)
     def run_calculating_min_distance_to_seizure(**kwargs):
         print(f"\t\- collecting responses vs. distance to seizure [5.0-1]")
 
-        expobj = kwargs['expobj']
+        expobj: Post4ap = kwargs['expobj']
         if not hasattr(expobj, 'stimsSzLocations'):
             expobj.sz_locations_stims()
         x_ = expobj.calcMinDistanceToSz()
+
+        # Add .distance_to_sz attribute (from .calcMinDistanceToSz()) as anndata layer of expobj.PhotostimResponsesSLMTargets.adata
+        expobj.PhotostimResponsesSLMTargets.adata.add_layer(layer_name='distance_to_sz', data=np.array(expobj.distance_to_sz['SLM Targets']))
+        expobj.save()
+
         return x_
-        # no_slmtargets_szboundary_stim.append(x_)
+
+
 
     @staticmethod
     @Utils.run_for_loop_across_exps(run_pre4ap_trials=False, run_post4ap_trials=True, set_cache=0, skip_trials=['PS04 t-018'])
