@@ -31,24 +31,31 @@ class CustomUnpicklerAttributeError(pickle.Unpickler):
     def find_class(self, module, name):
         if name == 'PhotostimResponsesQuantificationSLMtargets':
             from _analysis_._ClassPhotostimResponseQuantificationSLMtargets import PhotostimResponsesQuantificationSLMtargets
+            print(f'\t for: PhotostimResponsesQuantificationSLMtargets')
             return PhotostimResponsesQuantificationSLMtargets
         elif name == '_TargetsSzInvasionTemporal':
             from _analysis_._ClassTargetsSzInvasionTemporal import TargetsSzInvasionTemporal
+            print(f'\t for: _TargetsSzInvasionTemporal')
             return TargetsSzInvasionTemporal
         elif name == 'TargetsSzInvasionSpatial':
             from _analysis_._ClassTargetsSzInvasionSpatial import TargetsSzInvasionSpatial
+            print(f'\t for: TargetsSzInvasionSpatial')
             return TargetsSzInvasionSpatial
         elif name == 'ExpSeizureAnalysis':
             from _analysis_._ClassExpSeizureAnalysis import ExpSeizureAnalysis
+            print(f'\t for: ExpSeizureAnalysis')
             return ExpSeizureAnalysis
         elif name == 'AnnotatedData':
             from _utils_._anndata import AnnotatedData2
+            print(f'\t for: AnnotatedData')
             return AnnotatedData2
         elif name == 'alloptical':
             from _main_.AllOpticalMain import alloptical
+            print(f'\t for: alloptical')
             return alloptical
         elif name == 'Post4ap':
             from _main_.Post4apMain import Post4ap
+            print(f'\t for: Post4ap')
             return Post4ap
 
         return super().find_class(module, name)

@@ -38,13 +38,12 @@ class TargetsSzInvasionSpatial(Quantification):
     ###### 1.0) calculate/collect min distance to seizure and responses at each distance ###############################
 
     @staticmethod
-    @Utils.run_for_loop_across_exps(run_pre4ap_trials=False, run_post4ap_trials=True, allow_rerun=1)
+    @Utils.run_for_loop_across_exps(run_pre4ap_trials=False, run_post4ap_trials=True, allow_rerun=0)
     def run_calculating_min_distance_to_seizure(**kwargs):
         print(f"\t\- collecting responses vs. distance to seizure [5.0-1]")
 
         expobj: Post4ap = kwargs['expobj']
-        if not hasattr(expobj, 'stimsSzLocations'):
-            expobj.sz_locations_stims()
+        expobj.sz_locations_stims()
         x_ = expobj.calcMinDistanceToSz()
 
         # Add .distance_to_sz attribute (from .calcMinDistanceToSz()) as anndata layer of expobj.PhotostimResponsesSLMTargets.adata
@@ -59,6 +58,7 @@ class TargetsSzInvasionSpatial(Quantification):
     def plot_sz_boundary_location(**kwargs):
         expobj = kwargs['expobj']
         aoplot.plot_sz_boundary_location(expobj)
+
 
     def collect_responses_vs_distance_to_seizure_SLMTargets(self, response_type: str, expobj: Post4ap):
         """

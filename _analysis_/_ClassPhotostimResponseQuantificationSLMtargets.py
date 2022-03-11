@@ -530,7 +530,8 @@ class PhotostimResponsesQuantificationSLMtargets(Quantification):
             # inter-ictal stims
             interictal_stims_idx = np.where(expobj.PhotostimResponsesSLMTargets.adata.var.stim_group == 'interictal')[0]
             x_data = expobj.PhotostimResponsesSLMTargets.adata.var['pre_stim_FOV_Flu'][interictal_stims_idx]
-            y_data = expobj.PhotostimResponsesSLMTargets.adata.var['avg targets photostim response'][interictal_stims_idx]
+            y_data = expobj.PhotostimResponsesSLMTargets.adata.var['avg targets photostim response'][
+                interictal_stims_idx]
             ax.scatter(x_data, y_data, facecolor='green', alpha=0.03, s=50)
 
             # ictal stims
@@ -585,7 +586,6 @@ class PhotostimResponsesQuantificationSLMtargets(Quantification):
         expobj.PhotostimResponsesSLMTargets.make__targets_annulus_prestim_Flu(expobj=expobj)
         expobj.save()
 
-
     # %% 6.2) plot targets_annulus_prestim_Flu
 
     """
@@ -619,27 +619,26 @@ class PhotostimResponsesQuantificationSLMtargets(Quantification):
 
         baseline_pre_stim_targets_annulus = __targets_annulus_prestim_Flu_pre4ap()
 
-
         @Utils.run_for_loop_across_exps(run_pre4ap_trials=0, run_post4ap_trials=1, allow_rerun=1)
         def __targets_annulus_prestim_Flu_post4ap(**kwargs):
             """Return pre-stim targets annulus for all post-4ap experiments."""
             expobj: alloptical = kwargs['expobj']
             cls_inst = expobj.PhotostimResponsesSLMTargets
             if 'post' in expobj.exptype:
-                interictal_stims = cls_inst.adata.layers['targets_annulus_prestim_rawF'][:, cls_inst.interictal_stims_idx]
+                interictal_stims = cls_inst.adata.layers['targets_annulus_prestim_rawF'][:,
+                                   cls_inst.interictal_stims_idx]
                 ictal_stims = cls_inst.adata.layers['targets_annulus_prestim_rawF'][:, cls_inst.ictal_stims_idx]
 
                 print('aay')
 
                 return [np.round(np.mean(interictal_stims), 3), np.round(np.mean(ictal_stims), 3)]
 
-
         func_collector = __targets_annulus_prestim_Flu_post4ap()
-
 
         assert len(func_collector) > 0, '__targets_annulus_prestim_Flu_post4ap didnot return any results.'
 
-        interictal_pre_stim_targets_annulus, ictal_pre_stim_targets_annulus = np.asarray(func_collector)[:, 0], np.asarray(
+        interictal_pre_stim_targets_annulus, ictal_pre_stim_targets_annulus = np.asarray(func_collector)[:,
+                                                                              0], np.asarray(
             func_collector)[:, 1]
 
         # process returned data to make flat arrays
@@ -671,23 +670,81 @@ class PhotostimResponsesQuantificationSLMtargets(Quantification):
         for exp__prestim_flu in RESULTS.pre_stim_targets_annulus_F['ictal']:
             ictal__prestimannulus_flu.append(np.round(np.mean(exp__prestim_flu), 5))
 
-        pplot.plot_bar_with_points(data=[baseline__prestimannulus_flu, interictal__prestimannulus_flu, ictal__prestimannulus_flu],
-                                   bar=False, x_tick_labels=['baseline', 'interictal', 'ictal'],
-                                   colors=['blue', 'green', 'purple'],
-                                   expand_size_x=0.4, title='Average Pre-stim targets annulus F', y_label='raw F')
+        pplot.plot_bar_with_points(
+            data=[baseline__prestimannulus_flu, interictal__prestimannulus_flu, ictal__prestimannulus_flu],
+            bar=False, x_tick_labels=['baseline', 'interictal', 'ictal'],
+            colors=['blue', 'green', 'purple'],
+            expand_size_x=0.4, title='Average Pre-stim targets annulus F', y_label='raw F')
+
+    # %% 6.3)
+    @staticmethod
+    def retrieve__targets_annlus_prestim_Flu_duringsz():
+        """
+        Gets pre-stim (from anndata object) the targets_annulus Flu value for each stim frame for all experiments.
+
+
+        """
+
+        # import alloptical_utils_pj as aoutils
+        # expobj: Post4ap = Utils.import_expobj(prep='RL108', trial='t-013')
+        #
+        # RESULTS: PhotostimResponsesSLMtargetsResults = PhotostimResponsesSLMtargetsResults.load()
+
+        # get targets_annulus prestim Flu from anndata #################################################################
+        @Utils.run_for_loop_across_exps(run_pre4ap_trials=0, run_post4ap_trials=1, allow_rerun=1)
+        def __targets_annulus_prestim_Flu_ictal(**kwargs):
+            """Return pre-stim targets annulus for all post-4ap experiments."""
+            expobj: alloptical = kwargs['expobj']
+            cls_inst = expobj.PhotostimResponsesSLMTargets
+            if 'post' in expobj.exptype:
+                out_sz_idxs = cls_inst.adata.layers['distance_to_sz'] > 0
+                in_sz_idxs = cls_inst.adata.layers['distance_to_sz'] < 0
+                out_sz_targets_annulus = out_sz_idxs * cls_inst.adata.layers['targets_annulus_prestim_rawF']
+                in_sz_targets_annulus = in_sz_idxs * cls_inst.adata.layers['targets_annulus_prestim_rawF']
+
+                out_sz_targets_annulus_nonzero = np.where(out_sz_targets_annulus != 0, out_sz_targets_annulus, np.nan)
+                in_sz_targets_annulus_nonzero = np.where(in_sz_targets_annulus != 0, in_sz_targets_annulus, np.nan)
+
+                return np.round(np.nanmean(out_sz_targets_annulus_nonzero),3), np.round(np.nanmean(in_sz_targets_annulus_nonzero), 3)
+
+        func_collector = __targets_annulus_prestim_Flu_ictal()
+
+        assert len(func_collector) > 0, '__targets_annulus_prestim_Flu_post4ap didnot return any results.'
+
+        outsz_pre_stim_targets_annulus, insz_pre_stim_targets_annulus = np.asarray(func_collector)[:, 0], np.asarray(
+            func_collector)[:, 1]
+
+        # process returned data to make flat arrays
+        pre_stim_targets_annulus_results_ictal = {'ictal_outsz': outsz_pre_stim_targets_annulus,
+                                                  'ictal_insz': insz_pre_stim_targets_annulus
+                                                  }
+
+        return pre_stim_targets_annulus_results_ictal
 
     @staticmethod
-    def plot__targets_annulus_prestim_Flu3(RESULTS):
+    def plot__targets_annulus_prestim_Flu_outszvsinsz(RESULTS):
         """plot average targets_annulus for targets in ICTAL comparing targets IN SZ and OUT SZ during seizure ICTAL"""
 
+        outsz_pre_stim_targets_annulus = []
+        for exp__prestim_flu in RESULTS.pre_stim_targets_annulus_results_ictal['ictal_outsz']:
+            outsz_pre_stim_targets_annulus.append(np.round(np.mean(exp__prestim_flu), 5))
 
+        insz_pre_stim_targets_annulus = []
+        for exp__prestim_flu in RESULTS.pre_stim_targets_annulus_results_ictal['ictal_insz']:
+            insz_pre_stim_targets_annulus.append(np.round(np.mean(exp__prestim_flu), 5))
 
+        from _utils_.alloptical_plotting import dataplot_frame_options
+
+        pplot.plot_bar_with_points(
+            data=[outsz_pre_stim_targets_annulus, insz_pre_stim_targets_annulus],
+            bar=False, x_tick_labels=['out sz', 'in sz'], colors=['orange', 'red'],
+            expand_size_x=0.4, title='Average Pre-stim targets annulus F out sz vs. in sz', y_label='raw F')
         pass
-
 
     @staticmethod
     def plot__targets_annulus_prestim_Flu2(RESULTS):
-        """ maybe plot average targets_annulus as a function of the FOV Flu (of individual stims)"""
+        """maybe plot average targets_annulus as a function of the FOV Flu (of individual stims)"""
+
         pass
 
 
@@ -709,6 +766,7 @@ class PhotostimResponsesSLMtargetsResults(Results):
         self.baseline_pre_stim_targets_annulus = None
         self.interictal_pre_stim_targets_annulus = None
         self.ictal_pre_stim_targets_annulus = None
+
 
 REMAKE = False
 if not os.path.exists(PhotostimResponsesSLMtargetsResults.SAVE_PATH) or REMAKE:
@@ -732,12 +790,6 @@ send out plots for prestim FOV flu and prestim targets annulus flu
 
 """
 
-
-
-
-
-
-
 # %%
 
 
@@ -745,14 +797,15 @@ if __name__ == '__main__':
     # expobj: Post4ap = Utils.import_expobj(prep='RL108', trial='t-013')
     # self = expobj.PhotostimResponsesSLMTargets
     # self.add_targets_annulus_prestim_anndata(expobj=expobj)
-    RESULTS.pre_stim_targets_annulus_F = PhotostimResponsesQuantificationSLMtargets.retrieve__targets_annlus_prestim_Flu()
+    # RESULTS.pre_stim_targets_annulus_F = PhotostimResponsesQuantificationSLMtargets.retrieve__targets_annlus_prestim_Flu()
+    # PhotostimResponsesQuantificationSLMtargets.plot__targets_annulus_prestim_Flu(RESULTS)
+    # RESULTS.save_results()
+
+    RESULTS.pre_stim_targets_annulus_results_ictal = PhotostimResponsesQuantificationSLMtargets.retrieve__targets_annlus_prestim_Flu_duringsz()
+    PhotostimResponsesQuantificationSLMtargets.plot__targets_annulus_prestim_Flu_outszvsinsz(RESULTS)
     RESULTS.save_results()
-    PhotostimResponsesQuantificationSLMtargets.plot__targets_annulus_prestim_Flu(RESULTS)
-    
 
     pass
-
-
 
 # %% ARCHIVE
 
@@ -918,4 +971,3 @@ if __name__ == '__main__':
 #     annulus_slice_obj = _create_slice_obj_excl_zone(self=self)
 #     _collect_annulus_flu(self=self, annulus_slice_obj=annulus_slice_obj)
 #     retrieve_annulus_prestim_snippets(self=self)
-

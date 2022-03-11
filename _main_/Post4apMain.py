@@ -750,7 +750,10 @@ class Post4ap(alloptical):
                             # exclude sz stims (set to nan) with unknown absolute locations of sz boundary
                             df.loc[:, stim_frame] = np.nan
                         else:
-                            targetsInSz = self.slmtargets_szboundary_stim[stim_frame]
+                            try:  # TODO remove try except after testing/debugging
+                                targetsInSz = self.slmtargets_szboundary_stim[stim_frame]
+                            except KeyError:
+                                print('need to break here.')
                             coord1, coord2 = self.stimsSzLocations.loc[stim_frame, ['coord1', 'coord2']]
                             for target_idx, target_coord in enumerate(coordinates):
                                 target_coord_ = [target_coord[0], target_coord[1], 0]
