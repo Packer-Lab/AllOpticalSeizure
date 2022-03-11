@@ -739,20 +739,19 @@ class Post4ap(alloptical):
                     #     coordinates.append(stat_['med']) if stat_['original_index'] in indexes else None
                 else: raise Exception('cells argument not set properly')
 
-                df = pd.DataFrame(data=None, index=indexes, columns=self.stimsWithSzWavefront)
+                df = pd.DataFrame(data=None, index=indexes, columns=self.stim_start_frames)
                 # fig2, ax2 = plt.subplots()  ## figure for debuggging
 
-                for _, stim_frame in enumerate(self.stimsWithSzWavefront):
-                    targetsInSz = self.slmtargets_szboundary_stim[stim_frame]
+                for _, stim_frame in enumerate(self.stim_start_frames):
 
-                    if cells == 'SLM Targets':  # debugging set back to zero afterwards
-
-                        coord1, coord2 = self.stimsSzLocations.loc[stim_frame, ['coord1', 'coord2']]
+                    if cells == 'SLM Targets':
                         # xline, yline = pj.xycsv(csvpath=self.sz_border_path(stim=stim_frame))
                         if stim_frame not in self.stimsWithSzWavefront:
                             # exclude sz stims (set to nan) with unknown absolute locations of sz boundary
                             df.loc[:, stim_frame] = np.nan
                         else:
+                            targetsInSz = self.slmtargets_szboundary_stim[stim_frame]
+                            coord1, coord2 = self.stimsSzLocations.loc[stim_frame, ['coord1', 'coord2']]
                             for target_idx, target_coord in enumerate(coordinates):
                                 target_coord_ = [target_coord[0], target_coord[1], 0]
                                 dist, nearest = pnt2line.pnt2line(pnt=target_coord_, start=[coord1[0], coord1[1], 0], end=[coord2[0], coord2[1], 0])

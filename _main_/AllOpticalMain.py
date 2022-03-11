@@ -141,6 +141,17 @@ class alloptical(TwoPhotonImaging):
     def stims_idx(self):
         return list(range(len(self.stim_start_frames)))
 
+    @property
+    def n_stims(self):
+        """number of stims in expobj trial"""
+        return len(self.stims_idx)
+
+    @property
+    def n_targets(self):
+        """number of SLM targets in expobj trial"""
+        return len(self.target_coords_all)
+
+
     def collect_traces_from_targets(self, force_redo: bool = False, save: bool = True):
 
         if force_redo:
@@ -750,7 +761,7 @@ class alloptical(TwoPhotonImaging):
 
         print('\n-----Loading up target coordinates...')
 
-        self.n_targets = []
+        # self.n_targets = []
         self.target_coords = []
         self.target_areas = []
 
@@ -1032,7 +1043,7 @@ class alloptical(TwoPhotonImaging):
             for coord in group:
                 self.target_coords_all.append(coord)
 
-        self.n_targets = len(self.target_coords_all)
+        # self.n_targets = len(self.target_coords_all)
 
         radius = self.spiral_size / self.pix_sz_x
 
