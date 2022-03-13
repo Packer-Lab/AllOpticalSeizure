@@ -19,6 +19,17 @@ import tifffile as tf
 import _alloptical_utils as Utils
 
 
+# %%
+
+@Utils.run_for_loop_across_exps(run_pre4ap_trials=1, run_post4ap_trials=1, allow_rerun=1)
+def run_misc(**kwargs):
+    expobj = kwargs['expobj']
+    expobj.save()
+
+run_misc()
+
+
+
 # %% spont imaging running subset trial frames
 expobj: TwoPhotonImaging = Utils.import_expobj(pkl_path='/home/pshah/mnt/qnap/Analysis/2020-12-19/RL109/2020-12-19_t-006/2020-12-19_t-006.pkl')
 

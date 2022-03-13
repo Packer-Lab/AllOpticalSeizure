@@ -38,7 +38,7 @@ class TargetsSzInvasionSpatial(Quantification):
     ###### 1.0) calculate/collect min distance to seizure and responses at each distance ###############################
 
     @staticmethod
-    @Utils.run_for_loop_across_exps(run_pre4ap_trials=False, run_post4ap_trials=True, allow_rerun=0)
+    @Utils.run_for_loop_across_exps(run_pre4ap_trials=False, run_post4ap_trials=True, allow_rerun=1)
     def run_calculating_min_distance_to_seizure(**kwargs):
         print(f"\t\- collecting responses vs. distance to seizure [5.0-1]")
 
@@ -54,7 +54,7 @@ class TargetsSzInvasionSpatial(Quantification):
 
 
     @staticmethod
-    @Utils.run_for_loop_across_exps(run_pre4ap_trials=False, run_post4ap_trials=True, set_cache=0, skip_trials=['PS04 t-018'])
+    @Utils.run_for_loop_across_exps(run_pre4ap_trials=False, run_post4ap_trials=True, set_cache=0)
     def plot_sz_boundary_location(**kwargs):
         expobj = kwargs['expobj']
         aoplot.plot_sz_boundary_location(expobj)
@@ -129,7 +129,7 @@ class TargetsSzInvasionSpatial(Quantification):
             round(i / expobj.pix_sz_x, 2) for i in expobj.responses_vs_distance_to_seizure_SLMTargets['distance_to_sz']]
 
     @staticmethod
-    @Utils.run_for_loop_across_exps(run_pre4ap_trials=0, run_post4ap_trials=1, allow_rerun=0, skip_trials=['PS04 t-018'])
+    @Utils.run_for_loop_across_exps(run_pre4ap_trials=0, run_post4ap_trials=1, allow_rerun=1)
     def run__collect_responses_vs_distance_to_seizure_SLMTargets(**kwargs):
         expobj = kwargs['expobj']
         expobj.TargetsSzInvasionSpatial.collect_responses_vs_distance_to_seizure_SLMTargets(expobj=expobj,
@@ -139,7 +139,7 @@ class TargetsSzInvasionSpatial(Quantification):
     # TODO need to review below (everything above shouuuuld be working)
     ###### 1.1) PLOT - collect and plot targets responses for stims vs. distance #######################################
     @staticmethod
-    @Utils.run_for_loop_across_exps(run_pre4ap_trials=False, run_post4ap_trials=True, set_cache=0, skip_trials=['PS04 t-018'])
+    @Utils.run_for_loop_across_exps(run_pre4ap_trials=False, run_post4ap_trials=True, set_cache=0)
     def plot_responses_vs_distance_to_seizure_SLMTargets(response_type=response_type, **kwargs):
         # response_type = 'dFF (z scored)'
 
@@ -170,7 +170,7 @@ class TargetsSzInvasionSpatial(Quantification):
         fig.show()
 
     @staticmethod
-    @Utils.run_for_loop_across_exps(run_pre4ap_trials=False, run_post4ap_trials=True, set_cache=0, skip_trials=['PS04 t-018'])
+    @Utils.run_for_loop_across_exps(run_pre4ap_trials=False, run_post4ap_trials=True, set_cache=0)
     def plot_collection_response_distance(response_type=response_type, **kwargs):
         print(f"\t|- plotting a collection of plots measuring responses vs. distance to seizure [5.1-2]")
         expobj = kwargs['expobj']
@@ -202,7 +202,7 @@ class TargetsSzInvasionSpatial(Quantification):
 
     ###### 2.0) PLOT - binning and plotting density plot, and smoothing data across the distance to seizure axis, when comparing to responses
     @staticmethod
-    @Utils.run_for_loop_across_exps(run_pre4ap_trials=False, run_post4ap_trials=True, set_cache=0, skip_trials=['PS04 t-018'])
+    @Utils.run_for_loop_across_exps(run_pre4ap_trials=False, run_post4ap_trials=True, set_cache=0)
     def plot_responses_vs_distance_to_seizure_SLMTargets_2ddensity(response_type, positive_distances_only=False,
                                                                    plot=True, **kwargs):
 

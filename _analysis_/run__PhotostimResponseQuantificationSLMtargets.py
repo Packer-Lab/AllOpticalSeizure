@@ -38,14 +38,6 @@ print(RESULTS)
 # expobj.save()
 
 
-# RESULTS.pre_stim_FOV_flu = main.collect__prestim_FOV_Flu()
-# RESULTS.save_results()
-# print(RESULTS)
-# print(RESULTS.pre_stim_FOV_flu)
-
-
-# main.run__collect_photostim_responses_magnitude_avgtargets()
-main.plot__photostim_responses_vs_prestim_FOV_flu()
 
 # %% r.0) init and collect photostim responses, create anndata structure
 
@@ -70,15 +62,12 @@ def run__create_anndata_SLMtargets(**kwargs):
     expobj.PhotostimResponsesSLMTargets.create_anndata_SLMtargets(expobj=expobj)
     expobj.save()
 
-run__create_anndata_SLMtargets()
 
 @Utils.run_for_loop_across_exps(run_pre4ap_trials=0, run_post4ap_trials=0, allow_rerun=1, run_trials=['PS11 t-011'])
 def run__add_stim_group_anndata(**kwargs):
     expobj: alloptical = kwargs['expobj']
     expobj.PhotostimResponsesSLMTargets.add_stim_group_anndata(expobj=expobj)
     expobj.save()
-
-run__add_stim_group_anndata()
 
 
 
@@ -128,13 +117,12 @@ def full_plot_mean_responses_magnitudes():
 
 # %% r.2) z scoring
 
-@Utils.run_for_loop_across_exps(run_pre4ap_trials=0, run_post4ap_trials=0, allow_rerun=1, run_trials=['PS11 t-011'])
+@Utils.run_for_loop_across_exps(run_pre4ap_trials=0, run_post4ap_trials=0, allow_rerun=0, run_trials=['PS11 t-011'])
 def run__z_score_photostim_responses_and_interictalzscores(**kwargs):
     expobj: alloptical = kwargs['expobj']
     expobj.PhotostimResponsesSLMTargets.z_score_photostim_responses()
     expobj.PhotostimResponsesSLMTargets.z_score_photostim_responses_interictal()
     expobj.save()
-run__z_score_photostim_responses_and_interictalzscores()
 
 
 # plotting mean photostim response magnitude Z SCORED across experiments and experimental groups
@@ -193,7 +181,8 @@ if __name__ == '__main__':
     # run__collect_photostim_responses_exp()
     # run__create_anndata_SLMtargets()
     # run__add_stim_group_anndata()
-    #
+
+
     # "Plotting mean photostim responses magnitudes across three brain states."
     # main.allexps_plot_photostim_responses_magnitude()
     # RESULTS.mean_photostim_responses_baseline, RESULTS.mean_photostim_responses_interictal, RESULTS.mean_photostim_responses_ictal = full_plot_mean_responses_magnitudes()
@@ -227,11 +216,26 @@ if __name__ == '__main__':
     # main.plot__prestim_FOV_Flu(RESULTS)
     # main.run__collect_photostim_responses_magnitude_avgtargets()
     # main.plot__photostim_responses_vs_prestim_FOV_flu()
-    #
+
 
 
     "Measuring photostim responses in relation to pre-stim mean targets_annulus Flu"
-    main.run__targets_annulus_prestim_Flu()
+    # main.run__targets_annulus_prestim_Flu()
+
+    # RESULTS.expavg_pre_stim_targets_annulus_F = PhotostimResponsesQuantificationSLMtargets.retrieve__targets_annlus_prestim_Flu()
+
+    # RESULTS.expavg_pre_stim_targets_annulus_results_ictal = main.retrieve__targets_annlus_prestim_Flu_duringsz()
+    # RESULTS.save_results()
+
+    # main.plot__targets_annulus_prestim_Flu(RESULTS)
+    main.plot__targets_annulus_prestim_Flu_outszvsinsz(RESULTS)
+
+    main.plot__targets_annulus_prestim_Flu_combined(RESULTS)
+
+    RESULTS.pre_stim_targets_annulus_vs_targets_responses_results = main.retrieve__photostim_responses_vs_prestim_targets_annulus_flu()
+    RESULTS.save_results()
+    main.plot__photostim_responses_vs_prestim_targets_annulus_flu(RESULTS)
+    main.plot__targets_annulus_prestim_Flu_all_points(RESULTS)
 
 
 
