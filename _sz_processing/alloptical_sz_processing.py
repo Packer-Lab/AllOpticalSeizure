@@ -692,7 +692,7 @@ def plot_sz_invasion(**kwargs):
         bg_img = tf.imread(avg_stim_img_path)
         # aoplot.plot_SLMtargets_Locs(self, targets_coords=coords_to_plot_insz, cells=in_sz, edgecolors='yellowgreen', background=bg_img)
         # aoplot.plot_SLMtargets_Locs(self, targets_coords=coords_to_plot_outsz, cells=out_sz, edgecolors='white', background=bg_img)
-        ax = aoplot._get_ax_for_multi_plot(axs, counter, ncols)
+        ax = aoplot.get_ax_for_multi_plot(axs, counter, ncols)
         fig, ax = aoplot.plot_SLMtargets_Locs(expobj, fig=fig, ax=ax,
                                               title=f"sz #: {sz}, stim_fr: {stim_frm}, time inv.: {time_del}s",
                                               show=False,

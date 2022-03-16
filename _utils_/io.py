@@ -30,33 +30,37 @@ def load_from_backup(prep, trial, date, original_path, backup_path=None):
 class CustomUnpicklerAttributeError(pickle.Unpickler):
     def find_class(self, module, name):
         if name == 'PhotostimResponsesQuantificationSLMtargets':
-            from _analysis_._ClassPhotostimResponseQuantificationSLMtargets import PhotostimResponsesQuantificationSLMtargets
             print(f'\t for: PhotostimResponsesQuantificationSLMtargets')
+            from _analysis_._ClassPhotostimResponseQuantificationSLMtargets import PhotostimResponsesQuantificationSLMtargets
             return PhotostimResponsesQuantificationSLMtargets
         elif name == '_TargetsSzInvasionTemporal':
-            from _analysis_._ClassTargetsSzInvasionTemporal import TargetsSzInvasionTemporal
             print(f'\t for: _TargetsSzInvasionTemporal')
+            from _analysis_._ClassTargetsSzInvasionTemporal import TargetsSzInvasionTemporal
             return TargetsSzInvasionTemporal
         elif name == 'TargetsSzInvasionSpatial':
-            from _analysis_._ClassTargetsSzInvasionSpatial import TargetsSzInvasionSpatial
             print(f'\t for: TargetsSzInvasionSpatial')
+            from _analysis_._ClassTargetsSzInvasionSpatial import TargetsSzInvasionSpatial
             return TargetsSzInvasionSpatial
         elif name == 'ExpSeizureAnalysis':
-            from _analysis_._ClassExpSeizureAnalysis import ExpSeizureAnalysis
             print(f'\t for: ExpSeizureAnalysis')
+            from _analysis_._ClassExpSeizureAnalysis import ExpSeizureAnalysis
             return ExpSeizureAnalysis
         elif name == 'AnnotatedData':
-            from _utils_._anndata import AnnotatedData2
             print(f'\t for: AnnotatedData')
+            from _utils_._anndata import AnnotatedData2
             return AnnotatedData2
         elif name == 'alloptical':
-            from _main_.AllOpticalMain import alloptical
             print(f'\t for: alloptical')
+            from _main_.AllOpticalMain import alloptical
             return alloptical
         elif name == 'Post4ap':
-            from _main_.Post4apMain import Post4ap
             print(f'\t for: Post4ap')
+            from _main_.Post4apMain import Post4ap
             return Post4ap
+        elif name == 'TwoPhotonImaging':
+            print(f'\t for: TwoPhotonImaging')
+            from _main_.TwoPhotonImagingMain import TwoPhotonImaging
+            return TwoPhotonImaging
 
         return super().find_class(module, name)
 

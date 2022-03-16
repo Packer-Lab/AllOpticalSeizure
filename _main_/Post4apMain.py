@@ -23,6 +23,8 @@ class Post4ap(alloptical):
 
     def __init__(self, paths, metainfo, stimtype, discard_all):
 
+        from _analysis_._ClassTargetsSzInvasionSpatial_codereview import TargetsSzInvasionSpatial_codereview
+        self.TargetsSzInvasionSpatial_codereview: TargetsSzInvasionSpatial_codereview = None  # SLM targets spatial distance to sz wavefront vs. photostim responses analysis object
         from _analysis_._ClassTargetsSzInvasionTemporal import TargetsSzInvasionTemporal
         self.TargetsSzInvasionTemporal = TargetsSzInvasionTemporal(expobj=self)
         from _analysis_._ClassExpSeizureAnalysis import ExpSeizureAnalysis
@@ -717,7 +719,7 @@ class Post4ap(alloptical):
 
         expobj.save() if save else None
 
-    def calcMinDistanceToSz(self):
+    def calcMinDistanceToSz(self, show_debug_plot=False):
         """
         Make a dataframe of stim frames x cells, with values being the minimum distance to the sz boundary at the stim.
 
@@ -731,62 +733,92 @@ class Post4ap(alloptical):
                 if cells == 'SLM Targets':
                     coordinates = self.target_coords_all
                     indexes = range(len(self.target_coords_all))
-                elif cells == 's2p nontargets':  ## TODO fix collecting min. distances for s2p nontargets
-                    pass
+                elif cells == 's2p nontargets':  # TODO add collecting min. distances for s2p nontargets
+                    print('WARNING: still need to add collecting min. distances for s2p nontargets')
                     # indexes = self.s2p_nontargets
                     # coordinates = []
                     # for stat_ in self.stat:
                     #     coordinates.append(stat_['med']) if stat_['original_index'] in indexes else None
-                else: raise Exception('cells argument not set properly')
 
                 df = pd.DataFrame(data=None, index=indexes, columns=self.stim_start_frames)
                 # fig2, ax2 = plt.subplots()  ## figure for debuggging
-
+                plot_counter = 0
                 for _, stim_frame in enumerate(self.stim_start_frames):
 
                     if cells == 'SLM Targets':
-                        # xline, yline = pj.xycsv(csvpath=self.sz_border_path(stim=stim_frame))
                         if stim_frame not in self.stimsWithSzWavefront:
                             # exclude sz stims (set to nan) with unknown absolute locations of sz boundary
                             df.loc[:, stim_frame] = np.nan
                         else:
-                            try:  # TODO remove try except after testing/debugging
-                                targetsInSz = self.slmtargets_szboundary_stim[stim_frame]
-                            except KeyError:
-                                print('need to break here.')
+                            if 0 <= plot_counter < 5 and show_debug_plot:
+                                from _utils_.alloptical_plotting import multi_plot_subplots
+                                from _utils_.alloptical_plotting import get_ax_for_multi_plot
+
+                                # fig, axs, counter, ncols, nrows = multi_plot_subplots(num_total_plots=self.n_targets,
+                                #                                                       ncols=4)
+                            else:
+                                axs = False
+
+
+                            print(f"\ncalculating min distances of targets to sz wavefront for stim frame: {stim_frame} ")
+
+                            xline, yline = pj.xycsv(csvpath=self.sz_border_path(stim=stim_frame))
+                            targetsInSz = self.slmtargets_szboundary_stim[stim_frame]
                             coord1, coord2 = self.stimsSzLocations.loc[stim_frame, ['coord1', 'coord2']]
+                            m, c = pj.eq_line_2points(p1=[coord1[0], coord1[1]], p2=[coord2[0], coord2[1]])
+                            x_range = np.arange(0, self.frame_x * 1.6)
+                            y_range = list(map(lambda x: m * x + c, x_range))
+
                             for target_idx, target_coord in enumerate(coordinates):
                                 target_coord_ = [target_coord[0], target_coord[1], 0]
-                                dist, nearest = pnt2line.pnt2line(pnt=target_coord_, start=[coord1[0], coord1[1], 0], end=[coord2[0], coord2[1], 0])
+                                # dist, nearest = pnt2line.pnt2line(pnt=target_coord_, start=[coord1[0], coord1[1], 0], end=[coord2[0], coord2[1], 0])
+
+
+                                # fig, ax = plt.sub¬plots(figsize=(3,3))
+                                # ax.scatter(x=coord1[0], y=coord1[1])
+                                # ax.plot(x_range, y_range)
+                                # fig.show()
+
+                                dist, nearest = pnt2line.pnt2line(pnt=target_coord_, start=[x_range[0], y_range[0], 0], end=[x_range[-1], y_range[-1], 0])
                                 dist = round(dist, 2)
-                                if target_idx in targetsInSz:
+                                if target_idx in targetsInSz:  # flip distance to negative if target is inside sz boundary
                                     dist = -dist
                                     # print(dist, "target coord inside sz")
-                                # title = f"distance: {dist}, {self.t_series_name}, stim: {stim_frame}"
-
-                                # if 10 < plot_counter < 15:
-                                #     fig, ax = plt.subplots()  ## figure for debuggging
-                                #     pj.plot_coordinates(coords=[(target_coord_[0], target_coord_[1])], frame_x=self.frame_x, frame_y=self.frame_y,
-                                #                             edgecolors='red', show=False, fig=fig, ax=ax, title=title)
-                                #
-                                #     pj.plot_coordinates(coords=[(xline[0], yline[0]), (xline[1], yline[1])], frame_x=self.frame_x, frame_y=self.frame_y,
-                                #                             edgecolors='green', show=False, fig=fig, ax=ax, title=title)
-                                #
-                                #     pj.plot_coordinates(coords=[(nearest[0], nearest[1])], frame_x=self.frame_x, frame_y=self.frame_y,
-                                #                             edgecolors='yellow', show=False, fig=fig, ax=ax, title=title)
-                                #     fig.show()
-                                #
-                                # plot_counter += 1
-
                                 df.loc[target_idx, stim_frame] = dist
 
-                        # aoplot.plot_sz_boundary_location(self)
+                                # #  create plots to make sure the distances are being calculated properly - checked on .22/03/15 - all looks good.
+                                # if axs is not False:
+                                #     title = f"distance: {dist}, {self.t_series_name}, stim: {stim_frame}"
+                                #     # fig, ax = plt.subplots()  ## figure for debuggging
+                                #     ax, counter = get_ax_for_multi_plot(axs=axs, counter=counter, ncols=ncols)
+                                #     pj.plot_coordinates(coords=[(target_coord_[0], target_coord_[1])], frame_x=self.frame_x, frame_y=self.frame_y,
+                                #                         edgecolors='red', show=False, fig=fig, ax=ax, title=title)
+                                #
+                                #     pj.plot_coordinates(coords=[(xline[0], yline[0]), (xline[1], yline[1])], frame_x=self.frame_x, frame_y=self.frame_y,
+                                #                         edgecolors='green', show=False, fig=fig, ax=ax, title=title)
+                                #
+                                #     pj.plot_coordinates(coords=[(nearest[0], nearest[1])], frame_x=self.frame_x, frame_y=self.frame_y,
+                                #                         edgecolors='blue', show=False, fig=fig, ax=ax, title=title)
+                                #
+                                #     ax.plot(np.arange(350, 450), [450]*100, color='white', lw=5)  # 100 px measurement bar
+                                #
+                                #     ax.plot(x_range, y_range, lw=1)
+
+
+
+
+                            # if 0 <= plot_counter < 15 and show_debug_plot:
+                            #     fig.show()
+                            #     plot_counter += 1
+
+                    # aoplot.plot_sz_boundary_location(self)
                 self.distance_to_sz[cells] = df  ## set the dataframe for each of SLM Targets and s2p nontargets
                 # fig2.show()
                 self.save()
+            return self.distance_to_sz
         else:
-            print('self doesnot have slmtargets_szboundary_stim completed')
-            return f"{self.t_series_name}"
+            print(f'WARNING: {self.t_series_name} doesnot have slmtargets_szboundary_stim completed')
+            # return f"{self.t_series_name}"
 
     def avgResponseSzStims_SLMtargets(self, save=False):
         df = pd.DataFrame(columns=['stim_group', 'avg targets response'], index=self.stims_idx)

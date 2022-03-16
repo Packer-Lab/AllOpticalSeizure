@@ -1,5 +1,8 @@
+## this file for code review for Targets Sz Invasion Spatial analysis
+import sys; print('Python %s on %s' % (sys.version, sys.platform))
+sys.path.extend(['/home/pshah/Documents/code/AllOpticalSeizure', '/home/pshah/Documents/code/AllOpticalSeizure'])
+
 import os.path
-from dataclasses import dataclass, field
 from typing import List
 
 import numpy as np
@@ -19,38 +22,91 @@ SAVE_LOC = "/home/pshah/mnt/qnap/Analysis/analysis_export/analysis_quantificatio
 TODO all code:
 - double check plot - is the result real lol
 
-- minor plots for photostim responses 
 
 """
 
+class SLMTargets(Quantification):
+    pass
 
 
-class TargetsSzInvasionSpatial(Quantification):
-    response_type = 'dFF (z scored) (interictal)'
+
+run_trials=['RL108 t-013']
+class TargetsSzInvasionSpatial_codereview(SLMTargets):
+    response_type = 'dFF (zscored) (interictal)'
 
     def __init__(self, expobj: Post4ap):
         super().__init__(expobj)
-        print(f'\t\- ADDING NEW TargetsSzInvasionSpatial MODULE to expobj: {expobj.t_series_name}')
+        print(f'\t\- ADDING NEW TargetsSzInvasionSpatial MODULE codereview to expobj: {expobj.t_series_name}')
 
     def __repr__(self):
-        return f"TargetsSzInvasionSpatial <-- Quantification Analysis submodule for expobj <{self.expobj_id}>"
+        return f"TargetsSzInvasionSpatial <-- Quantification Analysis submodule codereview for expobj <{self.expobj_id}>"
 
     ###### 1.0) calculate/collect min distance to seizure and responses at each distance ###############################
 
+    def create_anndata(self, expobj: Post4ap, distance_to_sz_array):
+        """
+        Creates annotated data (see anndata library for more information on AnnotatedData) object primarily based around min distance to sz wavefront.
+
+        """
+
+        obs_meta = pd.DataFrame(
+            columns=['SLM group #', 'SLM target coord'], index=range(expobj.n_targets_total))
+        for target_idx, coord in enumerate(expobj.target_coords_all):
+            for groupnum, coords in enumerate(expobj.target_coords):
+                if coord in coords:
+                    obs_meta.loc[target_idx, 'SLM group #'] = groupnum
+                    obs_meta.loc[target_idx, 'SLM target coord'] = coord
+                    break
+
+        # SETUP THE VARIABLES ANNOTATIONS TO USE IN anndata
+        # build dataframe for var annot's - based on stim_start_frames
+        var_meta = pd.DataFrame(index=['im_time_secs', 'stim_start_frame', 'wvfront in sz', 'seizure location'],
+                                columns=range(len(expobj.stim_start_frames)))
+        for fr_idx, stim_frame in enumerate(expobj.stim_start_frames):
+            if 'pre' in expobj.exptype:
+                var_meta.loc['wvfront in sz', fr_idx] = None
+                var_meta.loc['seizure location', fr_idx] = None
+            elif 'post' in expobj.exptype:
+                if stim_frame in expobj.stimsWithSzWavefront:
+                    var_meta.loc['wvfront in sz', fr_idx] = True
+                    var_meta.loc['seizure location', fr_idx] = (
+                        expobj.stimsSzLocations.coord1[stim_frame], expobj.stimsSzLocations.coord2[stim_frame])
+                else:
+                    var_meta.loc['wvfront in sz', fr_idx] = False
+                    var_meta.loc['seizure location', fr_idx] = None
+            var_meta.loc['stim_start_frame', fr_idx] = stim_frame
+            var_meta.loc['im_time_secs', fr_idx] = stim_frame * expobj.fps
+
+        # SET PRIMARY DATA
+        _data_type = 'SLM Targets - distance to sz wavefront'  # primary data label
+
+        print(f"\t\----- CREATING annotated data object using AnnData:")
+        # create anndata object
+        from _utils_._anndata import AnnotatedData2
+        distance_to_sz_array_adata = AnnotatedData2(X=distance_to_sz_array, obs=obs_meta, var=var_meta.T, data_label=_data_type)
+
+        print(f"Created: {distance_to_sz_array_adata}")
+        self.adata = distance_to_sz_array_adata
+
     @staticmethod
-    @Utils.run_for_loop_across_exps(run_pre4ap_trials=False, run_post4ap_trials=True, allow_rerun=1)
-    def run_calculating_min_distance_to_seizure(**kwargs):
+    @Utils.run_for_loop_across_exps(run_pre4ap_trials=False, run_post4ap_trials=True, allow_rerun=0)
+    def run__add__min_distance_to_seizure(**kwargs):
+        "Run calculation of min distance of SLM target to seizure wavefront for each target at each sz photostim"
         print(f"\t\- collecting responses vs. distance to seizure [5.0-1]")
+        force_redo = True
 
         expobj: Post4ap = kwargs['expobj']
-        expobj.sz_locations_stims()
-        x_ = expobj.calcMinDistanceToSz()
+        expobj.sz_locations_stims() if not hasattr(expobj, 'stimsSzLocations') else None
+        distance_to_sz_df = expobj.calcMinDistanceToSz(show_debug_plot=False) if not hasattr(expobj, 'distance_to_sz') or force_redo else None  ## <<-- TODO main code line to code review and confirm. try to confirm correct calculation of distances using some plots??
+        # expobj.save()
+
+        # distance_to_sz_arr = np.array(distance_to_sz_df)
+        distance_to_sz_arr = np.array(distance_to_sz_df['SLM Targets'])
 
         # Add .distance_to_sz attribute (from .calcMinDistanceToSz()) as anndata layer of expobj.PhotostimResponsesSLMTargets.adata
-        expobj.PhotostimResponsesSLMTargets.adata.add_layer(layer_name='distance_to_sz', data=np.array(expobj.distance_to_sz['SLM Targets']))
+        expobj.TargetsSzInvasionSpatial_codereview.create_anndata(expobj=expobj, distance_to_sz_array=distance_to_sz_arr)
         expobj.save()
 
-        return x_
 
 
     @staticmethod
@@ -60,12 +116,12 @@ class TargetsSzInvasionSpatial(Quantification):
         aoplot.plot_sz_boundary_location(expobj)
 
 
-    def collect_responses_vs_distance_to_seizure_SLMTargets(self, response_type: str, expobj: Post4ap):
+    def collect__responses_vs_distance_to_seizure_SLMTargets(self, expobj: Post4ap, response_type: str = None):
         """
         Main function to setup data matrix for photostim responses and distances to seizure wavefront for SLM targets.
 
         :param expobj:
-        :param response_type: either 'dFF (z scored)' or 'dFF (z scored) (interictal)'
+        :param response_type: either 'dFF (zscored)' or 'dFF (zscored) (interictal)'
         :param kwargs: must contain expobj as arg key
         """
         print(f"\t\- collecting responses vs. distance to seizure [5.0-2]")
@@ -77,48 +133,52 @@ class TargetsSzInvasionSpatial(Quantification):
         #         expobj.get_SLMTarget_responses_dff(process='trace dFF', threshold=10, stims_to_use=expobj.stim_start_frames)
         #     print(f'WARNING: {expobj.t_series_name} had to rerun .get_SLMTarget_responses_dff')
 
+        response_type = self.response_type if response_type is None else response_type
+
         # (re-)make pandas dataframe
         df = pd.DataFrame(columns=['target_id', 'stim_id', 'inorout_sz', 'distance_to_sz', response_type])
 
         stim_ids = [(idx, stim) for idx, stim in enumerate(expobj.stim_start_frames) if
                     stim in [*expobj.slmtargets_szboundary_stim]]
+
+        # z_scored = expobj.responses_SLMtargets_tracedFF  # initializing z_scored df
+        z_scored = pd.DataFrame(expobj.PhotostimResponsesSLMTargets.adata.layers[self.response_type])  # retrieving zscored responses
         for idx, target in enumerate(expobj.responses_SLMtargets_tracedFF.index):
-
-            ## z-scoring of SLM targets responses:
-            z_scored = expobj.responses_SLMtargets_tracedFF  # initializing z_scored df
-            if response_type == 'dFF (z scored)' or response_type == 'dFF (z scored) (interictal)':
-                # set a different slice of stims for different variation of z scoring
-                if response_type == 'dFF (z scored)':
-                    slice = expobj.responses_SLMtargets_tracedFF.columns  # (z scoring all stims all together from t-series)
-                elif response_type == 'dFF (z scored) (interictal)':
-                    slice = expobj.stim_idx_outsz  # (z scoring all stims relative TO the interictal stims from t-series)
-                __mean = expobj.responses_SLMtargets_tracedFF.loc[target, slice].mean()
-                __std = expobj.responses_SLMtargets_tracedFF.loc[target, slice].std(ddof=1)
-                # __mean = expobj.responses_SLMtargets_tracedFF.loc[target, :].mean()
-                # __std = expobj.responses_SLMtargets_tracedFF.loc[target, :].std(ddof=1)
-
-                __responses = expobj.responses_SLMtargets_tracedFF.loc[target, :]
-                z_scored.loc[target, :] = (__responses - __mean) / __std
+            # ## z-scoring of SLM targets responses: -- this is not necessary (right??) if using .PhotostimResponsesSLMTargets.adata.layers['dFF zscored...'] - as this should already be zscored appropriately (.22/03/15)
+            # if response_type == 'dFF (zscored)' or response_type == 'dFF (zscored) (interictal)':
+            #     # set a different slice of stims for different variation of z scoring
+            #     if response_type == 'dFF (zscored)':
+            #         slice = expobj.responses_SLMtargets_tracedFF.columns  # (z scoring all stims all together from t-series)
+            #     elif response_type == 'dFF (zscored) (interictal)':
+            #         slice = expobj.stim_idx_outsz  # (z scoring all stims relative TO the interictal stims from t-series)
+            #     __mean = np.mean(expobj.responses_SLMtargets_tracedFF.loc[target, slice])
+            #     __std = np.std(expobj.responses_SLMtargets_tracedFF.loc[target, slice], ddof=1)
+            #     # __mean = expobj.responses_SLMtargets_tracedFF.loc[target, :].mean()
+            #     # __std = expobj.responses_SLMtargets_tracedFF.loc[target, :].std(ddof=1)
+            #
+            #     __responses = expobj.responses_SLMtargets_tracedFF.loc[target, :]
+            #     z_scored.loc[target, :] = (__responses - __mean) / __std  # zscore dFF responses and add to zscored matrix
 
             for idx, stim in stim_ids:
-                try:
-                    if target in expobj.slmtargets_szboundary_stim[stim]:
-                        inorout_sz = 'in'
-                    else:
-                        inorout_sz = 'out'
-                except KeyError:
-                    inorout_sz = np.nan
-                    print('break here!! debug if - else loop if erroring out..')
+                if target in expobj.slmtargets_szboundary_stim[stim]:
+                    inorout_sz = 'in'
+                else:
+                    inorout_sz = 'out'
+                # except KeyError:
+                #     inorout_sz = np.nan
+                #     print('break here!! debug if - else loop if erroring out..')
 
-                distance_to_sz = expobj.distance_to_sz['SLM Targets'].loc[target, stim]
+                # distance_to_sz = expobj.distance_to_sz['SLM Targets'].loc[target, stim]
+                distance_to_sz = self.adata.X[target, idx]
 
                 if response_type == 'dFF':
-                    response = expobj.responses_SLMtargets_tracedFF.loc[target, idx]
-                elif response_type == 'dFF (z scored)' or response_type == 'dFF (z scored) (interictal)':
+                    # response = expobj.responses_SLMtargets_tracedFF.loc[target, idx]
+                    response = pd.DataFrame(expobj.PhotostimResponsesSLMTargets.X).loc[target, idx]
+                elif response_type == 'dFF (zscored)' or response_type == 'dFF (zscored) (interictal)':
                     response = z_scored.loc[target, idx]  # z - scoring of SLM targets responses:
                 else:
                     raise ValueError(
-                        'response_type arg must be `dFF` or `dFF (z scored)` or `dFF (z scored) (interictal)`')
+                        'response_type arg must be `dFF` or `dFF (zscored)` or `dFF (zscored) (interictal)`')
 
                 df = pd.concat([df, pd.DataFrame({'target_id': target, 'stim_id': stim, 'inorout_sz': inorout_sz, 'distance_to_sz': distance_to_sz,
                      response_type: response}, index=[idx])])
@@ -133,19 +193,19 @@ class TargetsSzInvasionSpatial(Quantification):
         self.responses_vs_distance_to_seizure_SLMTargets['distance_to_sz_um'] = [round(i / expobj.pix_sz_x, 2) for i in self.responses_vs_distance_to_seizure_SLMTargets['distance_to_sz']]
 
     @staticmethod
-    @Utils.run_for_loop_across_exps(run_pre4ap_trials=0, run_post4ap_trials=1, allow_rerun=1)
+    @Utils.run_for_loop_across_exps(run_pre4ap_trials=0, run_post4ap_trials=1, allow_rerun=0)
     def run__collect_responses_vs_distance_to_seizure_SLMTargets(**kwargs):
+        "code review - looks good to go .22/03/15"
         expobj = kwargs['expobj']
-        expobj.TargetsSzInvasionSpatial.collect__responses_vs_distance_to_seizure_SLMTargets(expobj=expobj,
-                                                                                             response_type=TargetsSzInvasionSpatial.response_type)
+        expobj.TargetsSzInvasionSpatial_codereview.collect__responses_vs_distance_to_seizure_SLMTargets(expobj=expobj,
+                                                                                                        response_type=TargetsSzInvasionSpatial_codereview.response_type)
         expobj.save()
 
-    # TODO need to review below (everything above shouuuuld be working)
     ###### 1.1) PLOT - collect and plot targets responses for stims vs. distance #######################################
     @staticmethod
     @Utils.run_for_loop_across_exps(run_pre4ap_trials=False, run_post4ap_trials=True, set_cache=0)
     def plot_responses_vs_distance_to_seizure_SLMTargets(response_type=response_type, **kwargs):
-        # response_type = 'dFF (z scored)'
+        # response_type = 'dFF (zscored)'
 
         print(f"\t|- plotting responses vs. distance to seizure [5.1-1]")
         expobj = kwargs['expobj']
@@ -178,7 +238,7 @@ class TargetsSzInvasionSpatial(Quantification):
     def plot_collection_response_distance(response_type=response_type, **kwargs):
         print(f"\t|- plotting a collection of plots measuring responses vs. distance to seizure [5.1-2]")
         expobj = kwargs['expobj']
-        # response_type = 'dFF (z scored)'
+        # response_type = 'dFF (zscored)'
         if not hasattr(expobj, 'responses_SLMtargets_tracedFF_avg_df'):
             expobj.avgResponseSzStims_SLMtargets(save=True)
 
@@ -204,22 +264,34 @@ class TargetsSzInvasionSpatial(Quantification):
         fig.tight_layout(pad=1.1)
         fig.show()
 
-    ###### 2.0) PLOT - binning and plotting density plot, and smoothing data across the distance to seizure axis, when comparing to responses
+    ###### 2.0) binning and plotting density plot, and smoothing data across the distance to seizure axis, when comparing to responses
     @staticmethod
-    @Utils.run_for_loop_across_exps(run_pre4ap_trials=False, run_post4ap_trials=True, set_cache=0)
-    def plot_responses_vs_distance_to_seizure_SLMTargets_2ddensity(response_type, positive_distances_only=False,
-                                                                   plot=True, **kwargs):
+    @Utils.run_for_loop_across_exps(run_pre4ap_trials=False, run_post4ap_trials=True, allow_rerun=0)
+    def retrieve__responses_vs_distance_to_seizure(response_type, positive_distances_only=False,
+                                                        plot=False, **kwargs):
+        """
+        Collect photostim responses and distances to seizure wavefront.
 
-        print(f"\t|- binning responses vs. distance to seizure")
-        expobj = kwargs['expobj']
+        code review chunk here - done .22/03/15, things look pretty straightforward in this function.
+
+        :param response_type:
+        :param positive_distances_only:
+        :param plot:
+        :param kwargs:
+        :return: array that is a stack of distance_to_sz and  for each target
+
+        """
+
+        expobj: Post4ap = kwargs['expobj']
+        print(f"\t|- retrieving responses and distance to seizure for each target, stim, {expobj.t_series_name}")
+
+        self: TargetsSzInvasionSpatial_codereview = expobj.TargetsSzInvasionSpatial_codereview
 
         data_expobj = np.array([[], []]).T
         for target in expobj.responses_SLMtargets_tracedFF.index:
-            indexes = expobj.responses_vs_distance_to_seizure_SLMTargets[
-                expobj.responses_vs_distance_to_seizure_SLMTargets['target_id'] == target].index
-            responses = np.array(expobj.responses_vs_distance_to_seizure_SLMTargets.loc[indexes, response_type])
-            distance_to_sz = np.asarray(
-                expobj.responses_vs_distance_to_seizure_SLMTargets.loc[indexes, 'distance_to_sz_um'])
+            indexes = self.responses_vs_distance_to_seizure_SLMTargets[self.responses_vs_distance_to_seizure_SLMTargets['target_id'] == target].index
+            responses = np.array(self.responses_vs_distance_to_seizure_SLMTargets.loc[indexes, response_type])
+            distance_to_sz = np.asarray(self.responses_vs_distance_to_seizure_SLMTargets.loc[indexes, 'distance_to_sz_um'])
             # distance_to_sz_ = np.array(list(expobj.distance_to_sz['SLM Targets'].loc[target, :]))
 
             if positive_distances_only:
@@ -230,8 +302,10 @@ class TargetsSzInvasionSpatial(Quantification):
             else:
                 _data = np.array([distance_to_sz, responses]).T
 
-            data_expobj = np.vstack((_data, data_expobj))
+            data_expobj = np.vstack((_data, data_expobj))  # stack of distance_to_sz and  for each target
 
+
+        # make binned plot using hist2d function
         distances_to_sz = data_expobj[:, 0]
         bin_size = 20  # um
         # bins_num = int((max(distances_to_sz) - min(distances_to_sz)) / bin_size)
@@ -245,11 +319,11 @@ class TargetsSzInvasionSpatial(Quantification):
 
     ###### 2.1) PLOT - binning and plotting density plot, and smoothing data across the distance to seizure axis, when comparing to responses - represent the distances in percentile space
     @staticmethod
-    def convert_responses_szdistances_percentile_space(input_data):
+    def convert__responses_szdistances_percentile_space(input_data):
         """
-        convert matrix of responses vs. sz wavefront distances to percentile space.
+        Main function for converting matrix of responses vs. sz wavefront distances to percentile space.
 
-        :param input_data: list of `data_expobj` outputs from plot_responses_vs_distance_to_seizure_SLMTargets_2ddensity().
+        :param input_data: list of `data_expobj` outputs from plot_responses_vs_distance_to_seizure_SLMTargets_2ddensity(). each iteration represents one experiment.
         :return:
         """
 
@@ -266,8 +340,9 @@ class TargetsSzInvasionSpatial(Quantification):
         distances_to_sz_sorted = distances_to_sz[idx_sorted]
         responses_sorted = data_all[:, 1][idx_sorted]
         # s = pd.Series(distances_to_sz_sorted)
-        print(f"\n\tconverting distances to percentiles {len(distances_to_sz_sorted)}...")
 
+        # convert distances to sz wavefront to percentile space
+        print(f"\n\tconverting distances to percentiles {len(distances_to_sz_sorted)}...")
         percentiles = []
         for idx, x in enumerate(distances_to_sz_sorted):
             print(f"\n\tprogress at {idx} out of {len(distances_to_sz_sorted)}") if idx % 1000 == 0 else None
@@ -303,10 +378,20 @@ class TargetsSzInvasionSpatial(Quantification):
 
         data_all = np.array([percentiles, responses_sorted]).T
 
+
         return data_all, percentiles, responses_sorted, distances_to_sz_sorted, scale_percentile_distances
+
+
+    def create__shuffled_pct_space_distances_list(self):
+        # TODO create a shuffled percentile space list to use as control for statistical tests
+        pass
+
 
     @staticmethod
     def plot_density_responses_szdistances(response_type, data_all, distances_to_sz_sorted, scale_percentile_distances):
+
+
+
         # plotting density plot for all exps, in percentile space (to normalize for excess of data at distances which are closer to zero) - TODO any smoothing?
 
         bin_size = 20  # um
@@ -319,7 +404,7 @@ class TargetsSzInvasionSpatial(Quantification):
                        title=f"2d density plot, all exps, 50%tile = {np.percentile(distances_to_sz_sorted, 50)}um",
                        y_lim=[-3, 3], fig=fig, ax=ax, show=False)
         ax.axhline(0, ls='--', c='white', lw=1)
-        xticks = [1, 25, 50, 57, 75, 100]  # percentile space
+        xticks = [10, 30, 42, 50, 70, 90]  # percentile space
         ax.set_xticks(ticks=xticks)
         labels = [scale_percentile_distances[x_] for x_ in xticks]
         ax.set_xticklabels(labels)
@@ -333,7 +418,7 @@ class TargetsSzInvasionSpatial(Quantification):
                                                scale_percentile_distances):
         percentiles_binned = np.round(percentiles)
 
-        bin = 20
+        bin = 10
         # change to pct% binning
         percentiles_binned = (percentiles_binned // bin) * bin
 
@@ -349,7 +434,7 @@ class TargetsSzInvasionSpatial(Quantification):
         ax.margins(0.02)
         ax.axhline(0, ls='--', c='orange', lw=1)
 
-        xticks = [1, 25, 50, 57, 75, 100]  # percentile space
+        xticks = [10, 30, 42, 50, 70, 90]  # percentile space
         ax.set_xticks(ticks=xticks)
         labels = [scale_percentile_distances[x_] for x_ in xticks]
         ax.set_xticklabels(labels)
@@ -359,16 +444,15 @@ class TargetsSzInvasionSpatial(Quantification):
         plt.show()
 
 
-class TargetsSzInvasionSpatialResults(Results):
-    SAVE_PATH = SAVE_LOC + 'Results__TargetsSzInvasionSpatial.pkl'
-    response_type = TargetsSzInvasionSpatial.response_type
+class TargetsSzInvasionSpatialResults_codereview(Results):
+    SAVE_PATH = SAVE_LOC + 'Results__TargetsSzInvasionSpatial_codereview.pkl'
+    response_type = TargetsSzInvasionSpatial_codereview.response_type
 
     def __init__(self):
         super().__init__()
 
         self.range_of_sz_spatial_distance: List[float] = [-1.0, -1.0, -1.0]  # need to collect - represents the 25th, 50th, and 75th percentile range of the sz invasion distance stats calculated across all targets and all exps - maybe each seizure across all exps should be the 'n'?
-
-        self.no_slmtargets_szboundary_stim = []
+        self.responses_vs_distance_to_seizure = None
         self.data_all = None
         self.percentiles = None
         self.responses_sorted = None
@@ -379,59 +463,68 @@ class TargetsSzInvasionSpatialResults(Results):
     def load(cls):
         return pj.load_pkl(cls.SAVE_PATH)
 
-REMAKE = False
-if not os.path.exists(TargetsSzInvasionSpatialResults.SAVE_PATH) or REMAKE:
-    RESULTS = TargetsSzInvasionSpatialResults()
-    RESULTS.save_results()
-else:
-    RESULTS: TargetsSzInvasionSpatialResults = TargetsSzInvasionSpatialResults.load()
+# REMAKE = False
+# if not os.path.exists(TargetsSzInvasionSpatialResults_codereview.SAVE_PATH) or REMAKE:
+#     RESULTS = TargetsSzInvasionSpatialResults_codereview()
+#     RESULTS.save_results()
+# else:
+#     RESULTS: TargetsSzInvasionSpatialResults_codereview = TargetsSzInvasionSpatialResults_codereview.load()
 
 
 # %% running processing and analysis pipeline
 
+# running processing and analysis pipeline
+
 @Utils.run_for_loop_across_exps(run_pre4ap_trials=0, run_post4ap_trials=1, allow_rerun=0)
 def run__initTargetsSzInvasionSpatial(**kwargs):
     expobj: Post4ap = kwargs['expobj']
-    expobj.TargetsSzInvasionSpatial = TargetsSzInvasionSpatial(expobj=expobj)
+    expobj._parsePVMetadata()
+    expobj.TargetsSzInvasionSpatial_codereview = TargetsSzInvasionSpatial_codereview(expobj=expobj)
     expobj.save()
 
 @Utils.run_for_loop_across_exps(run_pre4ap_trials=0, run_post4ap_trials=1, allow_rerun=1)
 def run__collect_responses_vs_distance_to_seizure_SLMTargets(**kwargs):
     expobj = kwargs['expobj']
-    expobj.TargetsSzInvasionSpatial.collect__responses_vs_distance_to_seizure_SLMTargets(expobj=expobj, response_type=TargetsSzInvasionSpatial.response_type)
+    expobj.TargetsSzInvasionSpatial_codereview.collect__responses_vs_distance_to_seizure_SLMTargets(expobj=expobj, response_type=TargetsSzInvasionSpatial_codereview.response_type)
     expobj.save()
 
 
-
 if __name__ == '__main__':
-    run__initTargetsSzInvasionSpatial()
-    RESULTS.no_slmtargets_szboundary_stim = TargetsSzInvasionSpatial.run_calculating_min_distance_to_seizure()
-    RESULTS.save_results()
-    #
-    # TargetsSzInvasionSpatial.run__collect_responses_vs_distance_to_seizure_SLMTargets()
-    #
-    #
-    # TODO need to review below (the code runs above shouuuuld be working)
+    main = TargetsSzInvasionSpatial_codereview
+    results = TargetsSzInvasionSpatialResults_codereview.load()
 
-    # TargetsSzInvasionSpatial.plot_responses_vs_distance_to_seizure_SLMTargets()
-    #
-    # TargetsSzInvasionSpatial.plot_collection_response_distance()
-    #
-    # TargetsSzInvasionSpatialResults.data = TargetsSzInvasionSpatial.plot_responses_vs_distance_to_seizure_SLMTargets_2ddensity(response_type=TargetsSzInvasionSpatial.response_type, positive_distances_only=False, plot=False)
+    'Running code pipeline for just one experiment all the way thru.'
+    # run__initTargetsSzInvasionSpatial()  # <- code review done
 
-    # RESULTS = TargetsSzInvasionSpatialResults.load()
+    # main.run__add__min_distance_to_seizure()  # <- code review done
 
-    # Results__TargetsSzInvasionSpatial.data_all, Results__TargetsSzInvasionSpatial.percentiles, Results__TargetsSzInvasionSpatial.responses_sorted, \
-    #     Results__TargetsSzInvasionSpatial.distances_to_sz_sorted, Results__TargetsSzInvasionSpatial.scale_percentile_distances = TargetsSzInvasionSpatial.convert_responses_szdistances_percentile_space(input_data=Results__TargetsSzInvasionSpatial.data)
-    #
-    # Results__TargetsSzInvasionSpatial.save_results()
+    # main.run__collect_responses_vs_distance_to_seizure_SLMTargets()  # <- code review done
 
-    # TargetsSzInvasionSpatial.plot_density_responses_szdistances(response_type=RESULTS.response_type,
-    #                                                             data_all=RESULTS.data_all,
-    #                                                             distances_to_sz_sorted=RESULTS.distances_to_sz_sorted,
-    #                                                             scale_percentile_distances=RESULTS.scale_percentile_distances)
-    # TargetsSzInvasionSpatial.plot_lineplot_responses_pctszdistances(RESULTS.percentiles,
-    #                                                                 RESULTS.responses_sorted,
-    #                                                                 response_type=RESULTS.response_type,
-    #                                                                 scale_percentile_distances=RESULTS.scale_percentile_distances)
+
+
+    main.plot_responses_vs_distance_to_seizure_SLMTargets()
+
+    main.plot_collection_response_distance()
+
+    # results.responses_vs_distance_to_seizure = main.retrieve__responses_vs_distance_to_seizure(response_type=main.response_type, positive_distances_only=False, plot=False)  # <- code review done
+
+    # results.save_results()
+
+    # results.data_all, results.percentiles, results.responses_sorted, results.distances_to_sz_sorted, \
+    #     results.scale_percentile_distances = main.convert__responses_szdistances_percentile_space(input_data=results.responses_vs_distance_to_seizure)  # <- code review done
+    # results.save_results()
+
+    # not sure why there are nans in the .distances_to_sz_sorted and .percentiles and .data_all[:, 0], but need to remove them....
+    nan_list = np.isnan(list(results.data_all[:, 0]))
+    results.data_all = results.data_all[~nan_list, :]
+    nan_indexes = np.where(np.isnan(list(results.percentiles)))[0]
+    results.percentiles = [val for i, val in enumerate(results.percentiles) if i not in nan_indexes]
+    results.responses_sorted = [val for i, val in enumerate(results.responses_sorted) if i not in nan_indexes]
+    results.distances_to_sz_sorted = [val for i, val in enumerate(results.distances_to_sz_sorted) if i not in nan_indexes]
+
+    main.plot_density_responses_szdistances(response_type=results.response_type, data_all=results.data_all,
+                                            distances_to_sz_sorted=results.distances_to_sz_sorted, scale_percentile_distances=results.scale_percentile_distances)
+
+    main.plot_lineplot_responses_pctszdistances(results.percentiles, results.responses_sorted, response_type=results.response_type,
+                                                scale_percentile_distances=results.scale_percentile_distances)
 

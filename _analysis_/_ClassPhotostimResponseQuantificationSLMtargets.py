@@ -987,7 +987,7 @@ class PhotostimResponsesQuantificationSLMtargets(Quantification):
 
         # ax.legend(handles_, labels_, loc='center left', bbox_to_anchor=(1.04, 0.5))
         [axs[i].set_xlabel('pre-stim annulus Flu') for i in range(len(axs))]
-        [axs[i].set_ylabel('avg dFF of targets') for i in range(len(axs))]
+        [axs[i].set_ylabel('dFF of targets') for i in range(len(axs))]
         fig.tight_layout(pad=2)
         fig.suptitle('plot__photostim_responses_vs_prestim_targets_annulus_flu')
         # Utils.save_figure(fig, save_path_suffix="plot__pre-stim-fov_vs_avg-photostim-response-of-targets.png")

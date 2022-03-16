@@ -92,7 +92,7 @@ class Klickers:
         return len(self.get_all_klickers())
 
 
-# helper for multiplotting of frames on axes through a for loop
+# pair of helpers for multiplotting of frames on axes through a for loop
 def multi_plot_subplots(num_total_plots: int, ncols: int=3):
     image_frame_options()
     nrows = int(np.ceil(num_total_plots / ncols)) if int(np.ceil(num_total_plots / ncols)) > 1 else 2
@@ -100,10 +100,11 @@ def multi_plot_subplots(num_total_plots: int, ncols: int=3):
     counter = 0
     return fig, axs, counter, ncols, nrows
 
-def _get_ax_for_multi_plot(axs, counter, ncols):
-    counter += 1 if counter != 0 else 0
+def get_ax_for_multi_plot(axs, counter, ncols):
+    counter += 1 #if counter != 0 else 0
     ax = axs[counter // ncols, counter % ncols]
-    return ax
+    return ax, counter
+
 
 
 # %%
