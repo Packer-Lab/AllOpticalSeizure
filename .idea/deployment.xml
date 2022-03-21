@@ -2,13 +2,6 @@
 <project version="4">
   <component name="PublishConfigData" autoUpload="Always" serverName="pshah@packerserver1.dpag.ox.ac.uk:22 agent">
     <serverData>
-      <paths name="pshah@packerserver1.dpag.ox.ac.uk:22">
-        <serverdata>
-          <mappings>
-            <mapping deploy="/home/pshah/Documents/code/AllOpticalSeizure" local="$PROJECT_DIR$" web="/" />
-          </mappings>
-        </serverdata>
-      </paths>
       <paths name="pshah@packerserver1.dpag.ox.ac.uk:22 agent">
         <serverdata>
           <mappings>

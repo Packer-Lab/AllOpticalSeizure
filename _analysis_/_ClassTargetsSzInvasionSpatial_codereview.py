@@ -43,7 +43,7 @@ class TargetsSzInvasionSpatial_codereview(SLMTargets):
 
     ###### 1.0) calculate/collect min distance to seizure and responses at each distance ###############################
 
-    def create_anndata(self, expobj: Post4ap, distance_to_sz_array):
+    def _create_anndata(self, expobj: Post4ap, distance_to_sz_array):
         """
         Creates annotated data (see anndata library for more information on AnnotatedData) object primarily based around min distance to sz wavefront.
 
@@ -104,7 +104,7 @@ class TargetsSzInvasionSpatial_codereview(SLMTargets):
         distance_to_sz_arr = np.array(distance_to_sz_df['SLM Targets'])
 
         # Add .distance_to_sz attribute (from .calcMinDistanceToSz()) as anndata layer of expobj.PhotostimResponsesSLMTargets.adata
-        expobj.TargetsSzInvasionSpatial_codereview.create_anndata(expobj=expobj, distance_to_sz_array=distance_to_sz_arr)
+        expobj.TargetsSzInvasionSpatial_codereview._create_anndata(expobj=expobj, distance_to_sz_array=distance_to_sz_arr)
         expobj.save()
 
 

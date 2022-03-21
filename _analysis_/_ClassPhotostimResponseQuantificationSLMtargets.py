@@ -554,12 +554,11 @@ class PhotostimResponsesQuantificationSLMtargets(Quantification):
         Utils.save_figure(fig, save_path_suffix="plot__pre-stim-fov_vs_avg-photostim-response-of-targets.png")
         fig.show()
 
-    # %% 6) measuring photostim responses of targets (suite2p rois) as a function of pre-stim surrounding neuropil signal (targets_annulus Flu)
+    # %% 6) measuring photostim responses of targets as a function of pre-stim surrounding signal (targets_annulus Flu)
 
     """
-    1. measuring photostim responses of targets (suite2p rois) as a function of pre-stim surrounding neuropil signal -- not immediately setup yet to do analysis involving suite2p
-    - need to ensure that you have the adata structure for slm targets that are also suite2p ROIs
-    - another approach that sidesteps suite2p is just directly grabbing a torus of area around the SLM target
+    1. measuring photostim responses of targets as a function of pre-stim surrounding neuropil signal -- not immediately setup yet to do analysis involving suite2p
+    - using approach that sidesteps suite2p is just directly grabbing a annulus of area around the SLM target
 
     # -- Collect pre-stim frames from all targets_annulus for each stim
     #   -- should result in 3D array of # targets x # stims x # pre-stim frames
@@ -1066,8 +1065,8 @@ if __name__ == '__main__':
     # RESULTS.pre_stim_targets_annulus_vs_targets_responses_results = retrieve__photostim_responses_vs_prestim_targets_annulus_flu()
     # RESULTS.save_results()
     # retrieve__photostim_responses_vs_prestim_targets_annulus_flu()
-    plot__photostim_responses_vs_prestim_targets_annulus_flu(RESULTS)
-    plot__targets_annulus_prestim_Flu_all_points(RESULTS)
+    # plot__photostim_responses_vs_prestim_targets_annulus_flu(RESULTS)
+    # plot__targets_annulus_prestim_Flu_all_points(RESULTS)
 
     pass
 

@@ -13,10 +13,10 @@ from funcsforprajay import plotting as pplot
 from funcsforprajay import funcs as pfuncs
 
 # expobj: Post4ap = import_expobj(prep='RL109', trial='t-018')
-RESULTS: PhotostimResponsesSLMtargetsResults = PhotostimResponsesSLMtargetsResults.load()
+results: PhotostimResponsesSLMtargetsResults = PhotostimResponsesSLMtargetsResults.load()
 
-print(RESULTS)
-# print(RESULTS.pre_stim_FOV_flu)
+print(results)
+# print(results.pre_stim_FOV_flu)
 
 "##### -------------------- ALL OPTICAL PHOTOSTIM ANALYSIS #############################################################"
 
@@ -185,7 +185,7 @@ if __name__ == '__main__':
 
     # "Plotting mean photostim responses magnitudes across three brain states."
     # main.allexps_plot_photostim_responses_magnitude()
-    # RESULTS.mean_photostim_responses_baseline, RESULTS.mean_photostim_responses_interictal, RESULTS.mean_photostim_responses_ictal = full_plot_mean_responses_magnitudes()
+    # results.mean_photostim_responses_baseline, results.mean_photostim_responses_interictal, results.mean_photostim_responses_ictal = full_plot_mean_responses_magnitudes()
     #
     #
     # "Create and plot zscored photostim responses."
@@ -194,7 +194,7 @@ if __name__ == '__main__':
     #
     #
     # "Collecting and plotting zscored photostim responses across groups"
-    # RESULTS.mean_photostim_responses_baseline_zscored, RESULTS.mean_photostim_responses_interictal_zscored, RESULTS.mean_photostim_responses_ictal_zscored = full_plot_mean_responses_magnitudes_zscored()
+    # results.mean_photostim_responses_baseline_zscored, results.mean_photostim_responses_interictal_zscored, results.mean_photostim_responses_ictal_zscored = full_plot_mean_responses_magnitudes_zscored()
     # # make plot
     # # plot zscored responses
     # data = full_plot_mean_responses_magnitudes_zscored()
@@ -207,35 +207,35 @@ if __name__ == '__main__':
     #                         show_legend=True, num_bins=35, line_colors=['navy', 'green', 'purple'],
     #                         fill_color=['lightgray', 'lightgray', 'lightgray'], alpha=0.2, show_bins=True,
     #                         legend_labels=['baseline', 'interictal', 'ictal'])
-    # RESULTS.save_results()
+    # results.save_results()
     #
     #
-    # "Measuring photostim responses in relation to pre-stim mean FOV Flu"
-    # RESULTS.pre_stim_FOV_flu = main.collect__prestim_FOV_Flu()
-    # RESULTS.save_results()
-    # main.plot__prestim_FOV_Flu(RESULTS)
-    # main.run__collect_photostim_responses_magnitude_avgtargets()
-    # main.plot__photostim_responses_vs_prestim_FOV_flu()
+    "Measuring photostim responses in relation to pre-stim mean FOV Flu"
+    results.pre_stim_FOV_flu = main.collect__prestim_FOV_Flu()
+    results.save_results()
+    main.plot__prestim_FOV_Flu(results)
+    main.run__collect_photostim_responses_magnitude_avgtargets()
+    main.plot__photostim_responses_vs_prestim_FOV_flu()
 
 
 
     "Measuring photostim responses in relation to pre-stim mean targets_annulus Flu"
     # main.run__targets_annulus_prestim_Flu()
 
-    # RESULTS.expavg_pre_stim_targets_annulus_F = PhotostimResponsesQuantificationSLMtargets.retrieve__targets_annlus_prestim_Flu()
+    # results.expavg_pre_stim_targets_annulus_F = PhotostimResponsesQuantificationSLMtargets.retrieve__targets_annlus_prestim_Flu()
 
-    # RESULTS.expavg_pre_stim_targets_annulus_results_ictal = main.retrieve__targets_annlus_prestim_Flu_duringsz()
-    # RESULTS.save_results()
+    # results.expavg_pre_stim_targets_annulus_results_ictal = main.retrieve__targets_annlus_prestim_Flu_duringsz()
+    # results.save_results()
 
-    # main.plot__targets_annulus_prestim_Flu(RESULTS)
-    main.plot__targets_annulus_prestim_Flu_outszvsinsz(RESULTS)
-
-    main.plot__targets_annulus_prestim_Flu_combined(RESULTS)
-
-    RESULTS.pre_stim_targets_annulus_vs_targets_responses_results = main.retrieve__photostim_responses_vs_prestim_targets_annulus_flu()
-    RESULTS.save_results()
-    main.plot__photostim_responses_vs_prestim_targets_annulus_flu(RESULTS)
-    main.plot__targets_annulus_prestim_Flu_all_points(RESULTS)
+    # main.plot__targets_annulus_prestim_Flu(results)
+    # main.plot__targets_annulus_prestim_Flu_outszvsinsz(results)
+    #
+    # main.plot__targets_annulus_prestim_Flu_combined(results)
+    #
+    # results.pre_stim_targets_annulus_vs_targets_responses_results = main.retrieve__photostim_responses_vs_prestim_targets_annulus_flu()
+    # results.save_results()
+    # main.plot__photostim_responses_vs_prestim_targets_annulus_flu(results)
+    # main.plot__targets_annulus_prestim_Flu_all_points(results)
 
 
 

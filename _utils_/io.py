@@ -33,14 +33,18 @@ class CustomUnpicklerAttributeError(pickle.Unpickler):
             print(f'\t for: PhotostimResponsesQuantificationSLMtargets')
             from _analysis_._ClassPhotostimResponseQuantificationSLMtargets import PhotostimResponsesQuantificationSLMtargets
             return PhotostimResponsesQuantificationSLMtargets
-        elif name == '_TargetsSzInvasionTemporal':
-            print(f'\t for: _TargetsSzInvasionTemporal')
-            from _analysis_._ClassTargetsSzInvasionTemporal import TargetsSzInvasionTemporal
-            return TargetsSzInvasionTemporal
+        # elif name == 'TargetsSzInvasionTemporal':
+        #     print(f'\t for: TargetsSzInvasionTemporal')
+        #     from _analysis_._ClassTargetsSzInvasionTemporal import TargetsSzInvasionTemporal
+        #     return TargetsSzInvasionTemporal
         elif name == 'TargetsSzInvasionSpatial':
             print(f'\t for: TargetsSzInvasionSpatial')
             from _analysis_._ClassTargetsSzInvasionSpatial import TargetsSzInvasionSpatial
             return TargetsSzInvasionSpatial
+        elif name == 'TargetsSzInvasionSpatial_codereview':
+            print(f'\t for: TargetsSzInvasionSpatial_codereview')
+            from _analysis_._ClassTargetsSzInvasionSpatial_codereview import TargetsSzInvasionSpatial_codereview
+            return TargetsSzInvasionSpatial_codereview
         elif name == 'ExpSeizureAnalysis':
             print(f'\t for: ExpSeizureAnalysis')
             from _analysis_._ClassExpSeizureAnalysis import ExpSeizureAnalysis
@@ -139,10 +143,12 @@ def save_pkl(obj, save_path: str = None):
         obj.pkl_path = save_path
 
     os.makedirs(pj.return_parent_dir(save_path), exist_ok=True)
-    with open(obj.pkl_path, 'wb') as f:
-        pickle.dump(obj, f)
-    print(f"\- expobj saved to {obj.pkl_path} -- ")
-
+    try:
+        with open(obj.pkl_path, 'wb') as f:
+            pickle.dump(obj, f)
+        print(f"\- expobj saved to {obj.pkl_path} -- ")
+    except:
+        raise IOError(f'failed to save pkl object to: {obj.pkl_path}')
     os.makedirs(pj.return_parent_dir(obj.backup_pkl), exist_ok=True)
     with open(obj.backup_pkl, 'wb') as f:
         pickle.dump(obj, f)
