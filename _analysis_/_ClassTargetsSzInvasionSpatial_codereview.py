@@ -484,7 +484,7 @@ class TargetsSzInvasionSpatial_codereview(SLMTargets):
 
         num, y, responses = func_collector[-1][0], func_collector[-1][1], func_collector[-1][2]
 
-        distances = bins + 10
+        distances = bins + bin_width/2  # offset distance values to the center of each bin - for plotting
 
         avg_responses = [np.mean(responses_) for responses_ in responses]
 
