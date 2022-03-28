@@ -1,7 +1,8 @@
 from typing import Union
 
 import numpy as np
-
+from matplotlib import pyplot as plt
+import funcsforprajay.funcs as pj
 import _alloptical_utils as Utils
 
 from _analysis_._ClassPhotostimResponseQuantificationSLMtargets import \
@@ -167,7 +168,114 @@ def full_plot_mean_responses_magnitudes_zscored():
 
         return data
 
+# %% 5) plotting photostim responses in relation to pre-stim mean FOV Flu
 
+# 5.1) plotting pre-stim mean FOV Flu for three stim type groups
+def plot__prestim_FOV_Flu(results):
+    """plot avg pre-stim Flu values across baseline, interictal, and ictal stims"""
+
+    baseline__prestimFOV_flu = []
+    for exp__prestim_flu in results.pre_stim_FOV_flu['baseline']:
+        baseline__prestimFOV_flu.append(np.round(np.mean(exp__prestim_flu), 5))
+
+    interictal__prestimFOV_flu = []
+    for exp__prestim_flu in results.pre_stim_FOV_flu['interictal']:
+        interictal__prestimFOV_flu.append(np.round(np.mean(exp__prestim_flu), 5))
+
+    ictal__prestimFOV_flu = []
+    for exp__prestim_flu in results.pre_stim_FOV_flu['ictal']:
+        ictal__prestimFOV_flu.append(np.round(np.mean(exp__prestim_flu), 5))
+
+    pplot.plot_bar_with_points(data=[baseline__prestimFOV_flu, interictal__prestimFOV_flu, ictal__prestimFOV_flu],
+                               bar=False, x_tick_labels=['baseline', 'interictal', 'ictal'],
+                               colors=['blue', 'green', 'purple'],
+                               expand_size_x=0.4, title='Average Pre-stim FOV Flu', y_label='raw Flu')
+
+
+def plot__photostim_responses_vs_prestim_FOV_flu(alpha=0.1, s=50, xlim=None, ylim=None, log=False):
+    """plot avg target photostim responses in relation to pre-stim Flu value across baseline, interictal, and ictal stims.
+
+    x-axis = pre-stim mean FOV flu, y-axis = photostim responses"""
+
+    # import alloptical_utils_pj as aoutils
+    # expobj: Post4ap = Utils.import_expobj(prep='RL108', trial='t-013')
+    from _utils_.alloptical_plotting import dataplot_frame_options
+    dataplot_frame_options()
+
+    fig, ax = plt.subplots(figsize=(5, 5))
+
+    @Utils.run_for_loop_across_exps(run_pre4ap_trials=1, run_post4ap_trials=0, set_cache=0)
+    def _plot_data_pre4ap(**kwargs):
+        expobj: alloptical = kwargs['expobj']
+        ax = kwargs['ax']
+        assert 'pre' in expobj.exptype, f'wrong expobj exptype. {expobj.exptype}. expected pre'
+
+        x_data = expobj.PhotostimResponsesSLMTargets.adata.var['pre_stim_FOV_Flu']
+        y_data = expobj.PhotostimResponsesSLMTargets.adata.var['avg targets photostim response']
+
+        ax.scatter(x_data, y_data, facecolor='blue', alpha=alpha, s=s)
+
+        return x_data, y_data
+
+    func_collector = _plot_data_pre4ap(ax=ax)
+
+    assert len(func_collector) > 0
+    x_data_baseline, y_data_baseline = pj.flattenOnce(np.asarray(func_collector)[:, 0]), pj.flattenOnce(np.asarray(func_collector)[:, 1])
+                                       # pj.flattenOnce(np.asarray(func_collector)[:, 2])
+
+
+
+    @Utils.run_for_loop_across_exps(run_pre4ap_trials=0, run_post4ap_trials=1, set_cache=0)
+    def _plot_data_post4ap(**kwargs):
+        expobj: alloptical = kwargs['expobj']
+        ax = kwargs['ax']
+        assert 'post' in expobj.exptype, f'wrong expobj exptype. {expobj.exptype}. expected post'
+
+        # inter-ictal stims
+        interictal_stims_idx = np.where(expobj.PhotostimResponsesSLMTargets.adata.var.stim_group == 'interictal')[0]
+        x_data_interic = expobj.PhotostimResponsesSLMTargets.adata.var['pre_stim_FOV_Flu'][interictal_stims_idx]
+        y_data_interic = expobj.PhotostimResponsesSLMTargets.adata.var['avg targets photostim response'][
+            interictal_stims_idx]
+        ax.scatter(x_data_interic, y_data_interic, facecolor='green', alpha=alpha, s=s)
+
+        # ictal stims
+        ictal_stims_idx = np.where(expobj.PhotostimResponsesSLMTargets.adata.var.stim_group == 'ictal')[0]
+        x_data_ic = expobj.PhotostimResponsesSLMTargets.adata.var['pre_stim_FOV_Flu'][ictal_stims_idx]
+        y_data_ic = expobj.PhotostimResponsesSLMTargets.adata.var['avg targets photostim response'][ictal_stims_idx]
+        ax.scatter(x_data_ic, y_data_ic, facecolor='purple', alpha=alpha, s=s)
+
+        return x_data_interic, y_data_interic, x_data_ic, y_data_ic
+
+    func_collector = _plot_data_post4ap(ax=ax)
+    assert len(func_collector) > 0
+    x_data_interic, y_data_interic, x_data_ic, y_data_ic = pj.flattenOnce(np.asarray(func_collector)[:, 0]), \
+                                                               pj.flattenOnce(np.asarray(func_collector)[:, 1]), \
+                                                               pj.flattenOnce(np.asarray(func_collector)[:, 2]), \
+                                                               pj.flattenOnce(np.asarray(func_collector)[:, 3])
+                                                               # pj.flattenOnce(np.asarray(func_collector)[:, 4])
+
+    # return this in the future in a separate function
+    pre_stim_FOVflu_vs_targets_responses_results = {'baseline_FOVflu': x_data_baseline,
+                                                             'baseline_targets_responses': y_data_baseline,
+                                                             'interic_FOVflu': x_data_interic,
+                                                             'interic_targets_responses': y_data_interic,
+                                                             'ictal_FOVflu': x_data_ic,
+                                                             'ictal_targets_responses': y_data_ic}
+
+    # complete plot
+    ax.set_title('pre_stim_FOV vs. avg photostim response of targets', wrap=True)
+    # ax.legend(loc='center left', bbox_to_anchor=(1.04, 0.5))
+    ax.set_xlabel('pre-stim FOV avg Flu (raw)')
+    ax.set_ylabel('avg dFF of targets')
+    ax.set_xlim(xlim) if xlim is not None else None
+    ax.set_ylim(ylim) if ylim is not None else None
+    ax.set_xscale('log')
+
+    fig.tight_layout(pad=2)
+    # Utils.save_figure(fig, save_path_suffix="plot__pre-stim-fov_vs_avg-photostim-response-of-targets.png")
+    fig.show()
+
+plot__photostim_responses_vs_prestim_FOV_flu(alpha=0.05, s=25, xlim=[100, 2000], ylim=[-100, 100], log=True)
 
 
 # %% RUN SCRIPT
@@ -213,9 +321,9 @@ if __name__ == '__main__':
     "Measuring photostim responses in relation to pre-stim mean FOV Flu"
     results.pre_stim_FOV_flu = main.collect__prestim_FOV_Flu()
     results.save_results()
-    main.plot__prestim_FOV_Flu(results)
+    plot__prestim_FOV_Flu(results)
     main.run__collect_photostim_responses_magnitude_avgtargets()
-    main.plot__photostim_responses_vs_prestim_FOV_flu()
+    plot__photostim_responses_vs_prestim_FOV_flu()
 
 
 

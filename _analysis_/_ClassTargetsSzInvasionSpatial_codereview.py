@@ -453,6 +453,12 @@ class TargetsSzInvasionSpatialResults_codereview(Results):
 
         self.range_of_sz_spatial_distance: List[float] = [-1.0, -1.0, -1.0]  # need to collect - represents the 25th, 50th, and 75th percentile range of the sz invasion distance stats calculated across all targets and all exps - maybe each seizure across all exps should be the 'n'?
         self.responses_vs_distance_to_seizure = None
+        self.binned__distance_vs_photostimresponses = {'bin_width_um': None,
+                                                       'distance_bins': None,  # list of distances over which data was binned
+                                                       'num_points_in_bin': None,  # number of datapoints in each indiv bin
+                                                       'avg_photostim_response_in_bin': None,  # avg photostim response within each bin
+                                                       '95conf_int': None  # confidence interval around the avg photostim responses at each bin
+                                                       }  #: photostim responses averaged over binned distances --> used to create step function plot.
         self.data_all = None
         self.percentiles = None
         self.responses_sorted = None

@@ -25,6 +25,7 @@ TODO all code:
 
 
 
+
 class TargetsSzInvasionSpatial(Quantification):
     response_type = 'dFF (z scored) (interictal)'
 
@@ -140,12 +141,10 @@ class TargetsSzInvasionSpatial(Quantification):
                                                                                              response_type=TargetsSzInvasionSpatial.response_type)
         expobj.save()
 
-    # TODO need to review below (everything above shouuuuld be working)
     ###### 1.1) PLOT - collect and plot targets responses for stims vs. distance #######################################
     @staticmethod
     @Utils.run_for_loop_across_exps(run_pre4ap_trials=False, run_post4ap_trials=True, set_cache=0)
     def plot_responses_vs_distance_to_seizure_SLMTargets(response_type=response_type, **kwargs):
-        # response_type = 'dFF (z scored)'
 
         print(f"\t|- plotting responses vs. distance to seizure [5.1-1]")
         expobj = kwargs['expobj']
