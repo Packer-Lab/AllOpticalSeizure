@@ -5,6 +5,7 @@ import os
 from matplotlib import pyplot as plt
 
 import _alloptical_utils as Utils
+import _utils_.alloptical_plotting as aoplot
 import funcsforprajay.funcs as pj
 import tifffile as tf
 
@@ -18,28 +19,14 @@ SAVE_LOC = "/home/pshah/mnt/qnap/Analysis/analysis_export/analysis_quantificatio
 
 SAVE_PATH_PREFIX = '/home/pshah/mnt/qnap/Analysis/Procesing_figs/sz_processing_boundaries_2022-03-07/'
 
-# %%
-from _utils_.io import import_expobj
+import _utils_.io as io_
 
 
-# %% 0) misc functions
-def plot__exp_sz_lfp_fov(expobj: TwoPhotonImaging = None, prep=None, trial=None):
-    if prep and trial:
-        expobj = Utils.import_expobj(prep=prep, trial=trial)
-    assert expobj, 'expobj not initialized properly.'
-    fig, axs = plt.subplots(2, 1, figsize=(20, 6))
-    fig, ax = plotMeanRawFluTrace(expobj=expobj, stim_span_color=None, x_axis='frames', fig=fig, ax=axs[0],
-                                  show=False)
-    plot_lfp_stims(expobj=expobj, fig=fig, ax=axs[1], show=False)
-    # fig, ax = plotLfpSignal(expobj=expobj, stim_span_color='', x_axis='time', fig=fig, ax=axs[1], show=False)
-    fig.show()
-
-
-def run__avg_stim_images(expobj: Post4ap):
-    expobj.avg_stim_images(stim_timings=expobj.stims_in_sz, peri_frames=50, to_plot=True, save_img=True)
 
 # %%
 class ExpSeizureAnalysis(Quantification):
+    """Processing/analysis of seizures overall for photostimulation experiments. Including analysis of seizure individual timed photostim trials."""
+    
     save_path = SAVE_LOC + 'Quant__ExpSeizureAnalysis.pkl'
 
     def __init__(self, expobj: Post4ap, not_flip_stims=None):
@@ -52,6 +39,30 @@ class ExpSeizureAnalysis(Quantification):
 
     def __repr__(self):
         return f"ExpSeizureAnalysis <-- Quantification Analysis submodule for expobj <{self.expobj_id}>"
+
+    # %% 0) misc functions
+    # plotting of LFP trace
+    @staticmethod
+    def plot__photostim_timings_lfp(exp_prep, **kwargs):
+        expobj = io_.import_expobj(exp_prep = exp_prep)
+        aoplot.plot_lfp_stims(expobj, x_axis = 'Time (secs)', sz_markings = False, legend = False,
+                              **kwargs)
+
+    @staticmethod
+    def plot__exp_sz_lfp_fov(expobj: TwoPhotonImaging = None, prep=None, trial=None):
+        if prep and trial and (expobj is None):
+            expobj = io_.import_expobj(prep=prep, trial=trial)
+        assert expobj, 'expobj not initialized properly.'
+        fig, axs = plt.subplots(2, 1, figsize=(20, 6))
+        fig, ax = plotMeanRawFluTrace(expobj=expobj, stim_span_color=None, x_axis='frames', fig=fig, ax=axs[0],
+                                      show=False)
+        plot_lfp_stims(expobj=expobj, fig=fig, ax=axs[1], show=False)
+        # fig, ax = plotLfpSignal(expobj=expobj, stim_span_color='', x_axis='time', fig=fig, ax=axs[1], show=False)
+        fig.show()
+
+    @staticmethod
+    def run__avg_stim_images(expobj: Post4ap):
+        expobj.avg_stim_images(stim_timings=expobj.stims_in_sz, peri_frames=50, to_plot=True, save_img=True)
 
     # %% 1.0) calculate time delay between LFP onset of seizures and imaging FOV invasion for each seizure for each experiment
 
@@ -362,12 +373,12 @@ class ExpSeizureAnalysis(Quantification):
     def count_sz_incidence_2p_trials():
         for key in list([*AllOpticalExpsToAnalyze.trial_maps['post']]):
             # import initial expobj
-            expobj = import_expobj(aoresults_map_id=f'pre {key}.0', verbose=False)
+            expobj = io_.import_expobj(aoresults_map_id=f'pre {key}.0', verbose=False)
             prep = expobj.metainfo['animal prep.']
             # look at all run_post4ap_trials trials in expobj and for loop over all of those run_post4ap_trials trials
             for trial in expobj.metainfo['post4ap_trials']:
                 # import expobj
-                expobj = import_expobj(prep=prep, trial=trial, verbose=False)
+                expobj = io_.import_expobj(prep=prep, trial=trial, verbose=False)
                 total_time_recording = np.round((expobj.n_frames / expobj.fps) / 60., 2)  # return time in mins
 
                 # count seizure incidence (avg. over mins) for each experiment (animal)
@@ -383,7 +394,7 @@ class ExpSeizureAnalysis(Quantification):
     @staticmethod
     def count_sz_incidence_1p_trials():
         for exp_prep in ExpMetainfo.onephotonstim.post_4ap_trials:
-            expobj = import_expobj(exp_prep=exp_prep, verbose=False)
+            expobj = io_.import_expobj(exp_prep=exp_prep, verbose=False)
             total_time_recording = np.round((expobj.n_frames / expobj.fps) / 60., 2)  # return time in mins
 
             # count seizure incidence (avg. over mins) for each experiment (animal)
@@ -420,7 +431,7 @@ class ExpSeizureAnalysis(Quantification):
     def count_sz_lengths_2p_trials():
         for key in list([*AllOpticalExpsToAnalyze.trial_maps['post']]):
             # import initial expobj
-            expobj = import_expobj(aoresults_map_id=f'pre {key}.0', verbose=False)
+            expobj = io_.import_expobj(aoresults_map_id=f'pre {key}.0', verbose=False)
             prep = expobj.metainfo['animal prep.']
             # look at all run_post4ap_trials trials in expobj
             # if 'post-4ap trials' in expobj.metainfo.keys():
@@ -430,7 +441,7 @@ class ExpSeizureAnalysis(Quantification):
             # for loop over all of those run_post4ap_trials trials
             for trial in expobj.metainfo['post4ap_trials']:
                 # import expobj
-                expobj = import_expobj(prep=prep, trial=trial, verbose=False)
+                expobj = io_.import_expobj(prep=prep, trial=trial, verbose=False)
                 # count the average length of each seizure
                 if hasattr(expobj, 'seizure_lfp_onsets'):
                     n_seizures = len(expobj.seizure_lfp_onsets)
@@ -456,7 +467,7 @@ class ExpSeizureAnalysis(Quantification):
     @staticmethod
     def count_sz_lengths_1p_trials():
         for exp_prep in ExpMetainfo.onephotonstim.post_4ap_trials:
-            expobj = import_expobj(exp_prep=exp_prep, verbose=False)
+            expobj = io_.import_expobj(exp_prep=exp_prep, verbose=False)
             # count the average length of each seizure
             if hasattr(expobj, 'seizure_lfp_onsets'):
                 n_seizures = len(expobj.seizure_lfp_onsets)
@@ -592,7 +603,7 @@ class ExpSeizureAnalysis(Quantification):
         """
         import scipy.signal as signal
 
-        expobj = import_expobj(prep='RL109', trial='t-017')
+        expobj = io_.import_expobj(prep='RL109', trial='t-017')
 
         sznum = 1
         slice = np.s_[

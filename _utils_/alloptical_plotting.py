@@ -14,8 +14,10 @@ from funcsforprajay import funcs as pj
 import _alloptical_utils as Utils
 import tifffile as tf
 from _main_.TwoPhotonImagingMain import TwoPhotonImaging
+from _main_.AllOpticalMain import alloptical
+from _main_.Post4apMain import Post4ap
 
-from typing import List
+from typing import List, Union
 
 from funcsforprajay.wrappers import print_start_end_plot, plot_piping_decorator
 
@@ -938,36 +940,27 @@ def plot_flu_trace(expobj, cell, x_lims=None, slm_group=None, to_plot='raw', fig
 # make a plot with the paq file LFP signal to visualize these classifications
 @print_start_end_plot
 @plot_piping_decorator(figsize=(10,3))
-def plot_lfp_stims(expobj, title='LFP signal with photostim. shown (in different colors relative to seizure timing)', shrink_text = 1,
-                   x_axis: str = 'paq', sz_markings: bool = True, fig=None, ax=None, **kwargs):
+def plot_lfp_stims(expobj: Union[alloptical, Post4ap], title='LFP signal with photostim. shown (in different colors relative to seizure timing)', shrink_text = 1,
+                   x_axis: str = 'paq', sz_markings: bool = True, legend = True, fig=None, ax=None, **kwargs):
 
     print(f"\t \- PLOTTING LFP stims trace ... ")
 
-    # if 'fig' in kwargs.keys():
-    #     fig = kwargs['fig']
-    #     ax = kwargs['ax']
-    # else:
-    #     if 'figsize' in kwargs.keys():
-    #         fig, ax = plt.subplots(figsize=kwargs['figsize'])
-    #     else:
-    #         fig, ax = plt.subplots(figsize=[20, 3])
-
     # plot LFP signal
     # ax.plot(expobj.lfp_signal, zorder=0, linewidth=0.5)
-    if 'linewidth' in kwargs and kwargs['linewidth'] is not None:
-        lw = kwargs['linewidth']
-    else:
-        lw = 1
 
+    lw = 1 if 'linewidth' not in [*kwargs] else kwargs['linewidth']
+    color = 'steelblue' if 'color' not in [*kwargs] else kwargs['color']
     fig, ax = plotLfpSignal(expobj=expobj, fig=fig, ax=ax, stim_lines=False, show=False, stim_span_color='', x_axis=x_axis,
-                            sz_markings=sz_markings, color='steelblue', downsample=True, linewidth=lw)
+                            sz_markings=sz_markings, color=color, downsample=True, linewidth=lw)
     # y_loc = np.percentile(expobj.lfp_signal, 75)
     y_loc = 0 # location of where to place the stim markers on the plot
 
+    s = 100 if 'marker_size' not in [*kwargs] else kwargs['marker_size']
 
     # collect and plot stim times (with coloring according to sz times if available)
     # note that there is a crop adjustment to the paq-times which is needed to sync up the stim times with the plot being returned from plotLfpSignal (which also on its own crops the LFP signal)
-    if 'post' in expobj.metainfo['exptype'] and '4ap' in expobj.metainfo['exptype'] and hasattr(expobj, 'stims_in_sz'):
+    if 'post' in expobj.metainfo['exptype']:
+        assert hasattr(expobj, 'stims_in_sz'), 'no stims in sz list found to plot stim timings in sz.'
         if 'ax2' not in kwargs.keys():
             ax2 = ax.twinx()
         else:
@@ -980,8 +973,8 @@ def plot_lfp_stims(expobj, title='LFP signal with photostim. shown (in different
         x_bf = [(expobj.stim_start_times[expobj.stim_start_frames.index(stim)] - expobj.frame_start_time_actual) for stim in expobj.stims_bf_sz]
         x_af = [(expobj.stim_start_times[expobj.stim_start_frames.index(stim)] - expobj.frame_start_time_actual) for stim in expobj.stims_af_sz]
 
-        ax2.scatter(x=x, y=[y_loc] * len(expobj.stims_in_sz), edgecolors='white', facecolors='purple', marker="^", zorder=3, s=100, linewidths=1.0, label='stims in sz')
-        ax2.scatter(x=x_out, y=[y_loc] * len(x_out), edgecolors='white', facecolors='green', marker="^", zorder=3, s=100, linewidths=1.0, label='stims out of sz')
+        ax2.scatter(x=x, y=[y_loc] * len(expobj.stims_in_sz), edgecolors='white', facecolors='violet', marker=11, zorder=3, s=s, linewidths=1.0, label='stims in sz')
+        ax2.scatter(x=x_out, y=[y_loc] * len(x_out), edgecolors='white', facecolors='mediumseagreen', marker=11, zorder=3, s=s, linewidths=1.0, label='stims out of sz')
         # ax2.scatter(x=x_bf, y=[y_loc] * len(expobj.stims_bf_sz), edgecolors='white', facecolors='green', marker="^", zorder=3, s=100, linewidths=1.0, label='stims out of sz')
         # ax2.scatter(x=x_af, y=[y_loc] * len(expobj.stims_af_sz), edgecolors='white', facecolors='green', marker="^", zorder=3, s=100, linewidths=1.0, label='stims out of sz')
     else:
@@ -992,57 +985,28 @@ def plot_lfp_stims(expobj, title='LFP signal with photostim. shown (in different
         if type(expobj.stim_start_frames) != list:
             expobj.stim_start_frames = list(expobj.stim_start_frames)
         x = [(expobj.stim_start_times[expobj.stim_start_frames.index(stim)] - expobj.frame_start_time_actual) for stim in expobj.stim_start_frames]
-        ax2.scatter(x=x, y=[y_loc] * len(x), edgecolors='white', facecolors='black', marker="^", zorder=3, s=100, linewidths=1.0, label='stims')
+        ax2.scatter(x=x, y=[y_loc] * len(x), edgecolors='white', facecolors='dimgrey', marker=11, zorder=3, s=s, linewidths=1.0, label='stims')
 
-    # # change x-axis to frame #s if asked for:
-    # if 'frame' or "frames" or "Frames" or "Frame" in x_axis:
-    #     x_ticks = range(0, expobj.n_frames, 2000)
-    #     x_clocks = [x_fr*expobj.paq_rate/10 for x_fr in x_ticks]  ## convert to paq clock dimension
-    #     ax.set_xticks(x_clocks)
-    #     ax.set_xticklabels(x_ticks)
-    #     ax.set_xlabel(x_axis)
 
-    ax2.set_ylim([-0.004, 0.1])
+
+    # ax2.set_ylim([-0.004, 0.1])
+    ax2.set_ylim([-0.1, 0.004])
     ax2.yaxis.set_tick_params(right=False,
                               labelright=False)
-    if 'ax2' not in kwargs.keys():
+    if 'ax2' not in kwargs.keys() and legend == True:
         ax2.legend(loc='upper left')
 
     if 'ylims' in kwargs and kwargs['ylims'] != None:
         ax.set_ylim(kwargs['ylims'])
 
     if 'xlims' in kwargs and kwargs['xlims'] != None:
+        if 'time' in x_axis or 'Time' in x_axis:
+            kwargs['xlims'] = [kwargs['xlims'][0] * expobj.paq_rate, kwargs['xlims'][1] * expobj.paq_rate]
         ax.set_xlim(kwargs['xlims'])
-
-
-    # # set x ticks at every 30 seconds
-    # labels = ls(range(0, len(expobj.lfp_signal)//expobj.paq_rate, 30))
-    # plt.xticks(ticks=[(label * expobj.paq_rate) for label in labels], labels=labels)
-    # ax.tick_params(axis='both', which='both', length=3)
-    # ax.set_xlabel('Time (secs)')
-
-    # ax.set_xticks([(label * expobj.paq_rate) for label in labels])#, labels=range(0, len(expobj.lfp_signal)//expobj.paq_rate, 30))
-    # ax.set_xticklabels(labels); plt.show()
 
     ax.set_ylabel('LFP - voltage (mV)')
 
     ax.set_title((expobj.metainfo['animal prep.'] + ' ' + expobj.metainfo['trial'] + ' ' + title), wrap=True)
-
-    # if not 'fig' in kwargs.keys():
-    #     ax.set_title((expobj.metainfo['animal prep.'] + ' ' + expobj.metainfo['trial'] + ' ' + title), wrap=True)
-    #
-    # # show or return axes objects
-    # if 'show' in kwargs.keys():
-    #     plt.show() if kwargs['show'] else None
-    # else:
-    #     plt.show()
-    #
-    # if 'fig' in kwargs.keys():
-    #     ax.text(0.99, 0.95, 'LFP trace with stims %s %s %s' % (expobj.metainfo['exptype'], expobj.metainfo['animal prep.'], expobj.metainfo['trial']),
-    #             verticalalignment='top', horizontalalignment='right',
-    #             transform=ax.transAxes, fontweight='bold',
-    #             color='black', fontsize=10 * shrink_text)
-    # return fig, ax2
 
 
 @print_start_end_plot

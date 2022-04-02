@@ -74,7 +74,7 @@ def run_for_loop_across_exps(run_pre4ap_trials=False, run_post4ap_trials=False, 
                         prep = exp_prep[:-6]
                         trial = exp_prep[-5:]
                         try:
-                            expobj = import_expobj(prep=prep, trial=trial, verbose=False)
+                            expobj = import_expobj(prep=prep, trial=trial)
                         except:
                             raise ImportError(f"IMPORT ERROR IN {prep} {trial}")
                         working_on(expobj) if not supress_print else None
@@ -117,7 +117,7 @@ def run_for_loop_across_exps(run_pre4ap_trials=False, run_post4ap_trials=False, 
                                     prep = exp_prep[:-6]
                                     pre4aptrial = exp_prep[-5:]
                                     try:
-                                        expobj = import_expobj(prep=prep, trial=pre4aptrial, verbose=False)
+                                        expobj = import_expobj(prep=prep, trial=pre4aptrial)
                                     except:
                                         raise ImportError(f"IMPORT ERROR IN {prep} {pre4aptrial}")
 
@@ -161,7 +161,7 @@ def run_for_loop_across_exps(run_pre4ap_trials=False, run_post4ap_trials=False, 
                                     prep = exp_prep[:-6]
                                     post4aptrial = exp_prep[-5:]
                                     try:
-                                        expobj = import_expobj(prep=prep, trial=post4aptrial, verbose=False)
+                                        expobj = import_expobj(prep=prep, trial=post4aptrial)
                                     except:
                                         raise ImportError(f"IMPORT ERROR IN {prep} {post4aptrial}")
 

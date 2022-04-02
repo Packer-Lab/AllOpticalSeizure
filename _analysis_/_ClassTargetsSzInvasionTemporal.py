@@ -23,12 +23,6 @@ ADJUST_SZ_INV = {'PS04 t-018': 2,
                  'PS11 t-011': 0}  # - changing PS11 t-011 back because most targets are already up against the lfp onset temporally
 
 
-# archived in favor of a dedicated results class .22/03/07
-# if os.path.exists(SAVE_PATH):
-#     save_TargetsSzInvasionTemporal = pj.load_pkl(pkl_path=SAVE_PATH)
-# else:
-#     save_TargetsSzInvasionTemporal = {}
-
 # %%
 class TargetsSzInvasionTemporal(Quantification):
 
@@ -569,10 +563,10 @@ class TargetsSzInvasionTemporal(Quantification):
             temporal.sztime_v_photostimresponses
 
             for _, row in temporal.sztime_v_photostimresponses_zscored_df.iterrows():
-                dist = row['time_to_szinvasion']
+                time = row['time_to_szinvasion']
                 response = row['photostim_responses']
                 for i, bin in enumerate(bins[:-1]):
-                    if bins[i] < dist < (bins[i + 1]):
+                    if bins[i] < time < (bins[i + 1]):
                         num[i] += 1
                         y[i] += response
                         responses[i].append(response)

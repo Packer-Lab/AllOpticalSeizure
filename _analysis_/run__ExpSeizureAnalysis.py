@@ -1,11 +1,20 @@
 import sys
 
+from _utils_.io import import_expobj
+
 sys.path.extend(['/home/pshah/Documents/code/AllOpticalSeizure', '/home/pshah/Documents/code/AllOpticalSeizure'])
 
 import _alloptical_utils as Utils
 
 from _analysis_._ClassExpSeizureAnalysis import ExpSeizureAnalysis as main
 from _main_.Post4apMain import Post4ap
+
+# expobj = import_expobj(exp_prep='RL108 t-009')
+
+# %%
+
+main.plot__photostim_timings_lfp(exp_prep='RL108 t-009', xlims=[188, 500], ylims=[-2, 7], color='black', linewidth = 0.4,
+                                 marker_size=30)
 
 
 # %% 0) initialize analysis module for each expobj

@@ -21,23 +21,6 @@ print(results)
 
 "##### -------------------- ALL OPTICAL PHOTOSTIM ANALYSIS #############################################################"
 
-# %% c.0) feb 19- 2022: TRYING NEW CLASS DRIVEN APPROACH FOR EACH ANALYSIS
-
-# @Utils.run_for_loop_across_exps(run_pre4ap_trials=True, run_post4ap_trials=True, allow_rerun=True)
-# def delete_old(**kwargs):
-#     expobj: Union[alloptical, Post4ap] = kwargs['expobj']
-#     delattr(expobj, 'PhotostimResponsesQuantificationSLMtargets')
-#     expobj.save()
-# delete_old()
-
-
-# expobj: Post4ap = Utils.import_expobj(prep='RL108', trial='t-013')
-# expobj.PhotostimResponsesSLMTargets = main(expobj)
-# expobj.PhotostimResponsesSLMTargets.collect_photostim_responses_exp(expobj=expobj)
-# expobj.PhotostimResponsesSLMTargets.create_anndata_SLMtargets(expobj=expobj)
-# expobj.PhotostimResponsesSLMTargets.plot_photostim_responses_magnitude(expobj=expobj, stims='all')
-# expobj.save()
-
 
 
 # %% r.0) init and collect photostim responses, create anndata structure

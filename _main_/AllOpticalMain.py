@@ -27,6 +27,16 @@ class alloptical(TwoPhotonImaging):
 
     def __init__(self, paths, metainfo, stimtype, quick=False):
         # self.metainfo = metainfo
+        from _analysis_._ClassPhotostimAnalysisSlmTargets import PhotostimAnalysisSlmTargets
+        self.PhotostimAnalysisSlmTargets: PhotostimAnalysisSlmTargets = None
+        from _analysis_._ClassPhotostimResponseQuantificationSLMtargets import \
+            PhotostimResponsesQuantificationSLMtargets
+        self.PhotostimResponsesSLMTargets: PhotostimResponsesQuantificationSLMtargets = None  # module that holds analysis and results for Photostim Responses of SLM Targets
+
+
+
+
+
         self.raw_SLMTargets_annulus = None  #: full raw traces of SLM targets_annulus area
         self.targets_annulus_raw_prestim = None  #: prestim F traces of SLM targets_annulus area
         self.target_areas_exclude_annulus = None  #: pixels representing area SLM targets_annulus area within the frame of current experiment
@@ -66,9 +76,6 @@ class alloptical(TwoPhotonImaging):
         self.hits_SLMtargets_dfprestimf = None
         self.hits_SLMtargets_dfstdf = None
 
-        from _analysis_._ClassPhotostimResponseQuantificationSLMtargets import \
-            PhotostimResponsesQuantificationSLMtargets
-        self.PhotostimResponsesSLMTargets: PhotostimResponsesQuantificationSLMtargets = None  # module that holds analysis and results for Photostim Responses of SLM Targets
 
         from _utils_._anndata import AnnotatedData2
         self.slmtargets_data: AnnotatedData2 = None  # anndata object of # targets vs. # stims - photostim responses - layers are used to store different processing of data

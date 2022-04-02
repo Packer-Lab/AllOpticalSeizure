@@ -21,7 +21,7 @@ SAVE_LOC = "/home/pshah/mnt/qnap/Analysis/analysis_export/analysis_quantificatio
 # %% COLLECTING DATA, PROCESSING AND ANALYSIS FOR PHOTOSTIM RESPONSES MAGNITUDES OF SLM TARGETS
 
 class PhotostimResponsesQuantificationSLMtargets(Quantification):
-    # save_path = SAVE_LOC + 'PhotostimResponsesQuantificationSLMtargets.pkl'
+    save_path = SAVE_LOC + 'PhotostimResponsesQuantificationSLMtargets.pkl'
     valid_zscore_processing_types = ['dFF (zscored)', 'dFF (zscored) (interictal)']
     valid_photostim_response_processing_types = ['dF/stdF', 'dF/prestimF', 'delta(trace_dFF)']
 

@@ -37,6 +37,14 @@ class CustomUnpicklerAttributeError(pickle.Unpickler):
         #     print(f'\t for: TargetsSzInvasionTemporal')
         #     from _analysis_._ClassTargetsSzInvasionTemporal import TargetsSzInvasionTemporal
         #     return TargetsSzInvasionTemporal
+        elif name == 'TargetsPhotostimResponsesInterictal':
+            print(f'\t for: TargetsPhotostimResponsesInterictal')
+            from _analysis_._ClassTargetsPhotostimResponsesInterictal import TargetsPhotostimResponsesInterictal
+            return TargetsPhotostimResponsesInterictal
+        elif name == 'TargetsPhotostimResponsesInterictalResults':
+            print(f'\t for: TargetsPhotostimResponsesInterictalResults')
+            from _analysis_._ClassTargetsPhotostimResponsesInterictal import TargetsPhotostimResponsesInterictalResults
+            return TargetsPhotostimResponsesInterictalResults
         elif name == 'TargetsSzInvasionSpatial':
             print(f'\t for: TargetsSzInvasionSpatial')
             from _analysis_._ClassTargetsSzInvasionSpatial import TargetsSzInvasionSpatial
@@ -156,7 +164,7 @@ def save_pkl(obj, save_path: str = None):
 
 
 def import_expobj(aoresults_map_id: str = None, trial: str = None, prep: str = None, date: str = None, pkl_path: str = None,
-                  exp_prep: str = None, verbose: bool = False, load_backup_path: str = None):
+                  exp_prep: str = None, load_backup_path: str = None):
     """
     primary function for importing of saved expobj files saved pickel files.
 
@@ -243,6 +251,14 @@ def import_expobj(aoresults_map_id: str = None, trial: str = None, prep: str = N
         expobj = CustomUnpicklerModuleNotFoundError(open(pkl_path, 'rb')).load()
 
     ### roping in some extraneous processing steps if there's expobj's that haven't completed for them
+
+    try:
+        fps = expobj.fps
+    except AttributeError:
+        expobj._parsePVMetadata()
+        expobj.save()
+
+
 
     # check for existence of backup (if not then make one through the saving func).
     if 'OneDrive' not in pkl_path:

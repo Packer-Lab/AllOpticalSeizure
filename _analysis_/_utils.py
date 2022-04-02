@@ -7,9 +7,7 @@ from _main_.AllOpticalMain import alloptical
 
 
 class Quantification:
-    """placeholder for now. some ideas for items to add to this class:
-
-    """
+    """generic parent for Quantification subclasses """
 
     save_path: str = None
 
@@ -36,9 +34,7 @@ class Quantification:
 
 
 class Results:
-    """placeholder for now. some ideas for items to add to this class:
-
-    """
+    """generic parent for Results subclasses"""
 
     SAVE_PATH: str = None
 

@@ -16,7 +16,7 @@ import bisect
 from funcsforprajay import funcs as pj
 from funcsforprajay import pnt2line
 from _utils_.paq_utils import paq_read, frames_discard
-from _utils_ import alloptical_plotting as aoplot
+# from _utils_ import alloptical_plotting as aoplot
 
 
 class Post4ap(alloptical):
@@ -233,6 +233,7 @@ class Post4ap(alloptical):
         :param flip: use True if the seizure orientation is from bottom right to top left.
         :return in_sz = ls; containing the cell_ids of cells that are classified inside the seizure area
         """
+        from _utils_ import alloptical_plotting as aoplot
 
         in_sz = []
         out_sz = []
@@ -332,6 +333,7 @@ class Post4ap(alloptical):
         :param flip: use True if the seizure orientation is from bottom right to top left.
         :return in_sz = ls; containing the cell_ids of cells that are classified inside the seizure area
         """
+        from _utils_ import alloptical_plotting as aoplot
 
         in_sz = []
         out_sz = []
@@ -468,6 +470,8 @@ class Post4ap(alloptical):
         print('\ndone. saved to:', self.analysis_save_path)
 
     def collect_seizures_info(self, seizures_lfp_timing_matarray=None, discard_all=True):
+        from _utils_ import alloptical_plotting as aoplot
+
         print('\ncollecting information about seizures...')
         if seizures_lfp_timing_matarray is not None:
             self.seizures_lfp_timing_matarray = seizures_lfp_timing_matarray  # path to the matlab array containing paired measurements of seizures onset and offsets
