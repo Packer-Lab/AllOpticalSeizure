@@ -1,5 +1,5 @@
 import os
-import pickle
+import sys
 
 import numpy as np
 import pandas as pd
@@ -10,9 +10,11 @@ import funcsforprajay.funcs as pj
 
 from _analysis_._utils import Quantification, Results
 from _main_.Post4apMain import Post4ap
+from _utils_.io import import_expobj
 
 SAVE_LOC = "/home/pshah/mnt/qnap/Analysis/analysis_export/analysis_quantification_classes/"
 SAVE_PATH = SAVE_LOC + 'TargetsPhotostimResponsesInterictal.pkl'
+
 
 
 # %% results
@@ -170,7 +172,7 @@ class TargetsPhotostimResponsesInterictal(Quantification):
             f'photostim responses vs. time to sz LFP onset (binned every {results.binned__szonsettime_vs_photostimresponses["bin_width"]}sec)',
             wrap=True)
         ax.set_xlabel('time to sz onset (secs)')
-        ax.set_ylabel(main.photostim_responses_zscore_type)
+        ax.set_ylabel(TargetsPhotostimResponsesInterictal.photostim_responses_zscore_type)
         ax.margins(0)
 
         pixels = [np.array(num2)] * 10
@@ -190,16 +192,17 @@ def run__init_TargetsStimsSzOnsetTime(cls, **kwargs):
 
 if __name__ == '__main__':
 
+
     main = TargetsPhotostimResponsesInterictal
-
-    REMAKE = False
-    if not os.path.exists(TargetsPhotostimResponsesInterictalResults.SAVE_PATH) or REMAKE:
-        results = TargetsPhotostimResponsesInterictalResults()
-        results.save_results()
-    else:
-        results = TargetsPhotostimResponsesInterictalResults.load()
-
-    run__init_TargetsStimsSzOnsetTime(cls=main)
+    #
+    # REMAKE = False
+    # if not os.path.exists(TargetsPhotostimResponsesInterictalResults.SAVE_PATH) or REMAKE:
+    #     results = TargetsPhotostimResponsesInterictalResults()
+    #     results.save_results()
+    # else:
+    #     results = TargetsPhotostimResponsesInterictalResults.load()
+    #
+    # run__init_TargetsStimsSzOnsetTime(cls=main)
     # bin_width, szonset_time, num, avg_responses, conf_int = main.collect__binned__szonsettime_v_responses()
     # results.binned__szonsettime_vs_photostimresponses = {'bin_width': bin_width,
     #                                                      'szonset_time': szonset_time,
@@ -207,6 +210,6 @@ if __name__ == '__main__':
     #                                                      'avg_responses': avg_responses,
     #                                                      'conf_int': conf_int}
     # results.save_results()
-    main.plot__responses_v_szinvtemporal(results)
+    # main.plot__responses_v_szinvtemporal(results)
 
 

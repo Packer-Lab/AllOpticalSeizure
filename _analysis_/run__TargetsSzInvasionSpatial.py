@@ -3,6 +3,7 @@ import sys;
 import matplotlib.pyplot as plt
 
 from _analysis_._ClassTargetsSzInvasionSpatial_codereview import TargetsSzInvasionSpatial_codereview as main, TargetsSzInvasionSpatialResults_codereview
+from _utils_.io import import_expobj
 
 print('Python %s on %s' % (sys.version, sys.platform))
 sys.path.extend(['/home/pshah/Documents/code/AllOpticalSeizure', '/home/pshah/Documents/code/AllOpticalSeizure'])
@@ -16,6 +17,8 @@ results: TargetsSzInvasionSpatialResults_codereview = TargetsSzInvasionSpatialRe
 
 from _main_.Post4apMain import Post4ap
 SAVE_LOC = "/home/pshah/mnt/qnap/Analysis/analysis_export/analysis_quantification_classes/"
+
+# expobj = import_expobj(exp_prep='RL108 t-013')
 
 
 # running processing and analysis pipeline
@@ -73,10 +76,10 @@ if __name__ == '__main__':
     #                                                                 scale_percentile_distances=Results__TargetsSzInvasionSpatial.scale_percentile_distances)
 
     # collect distance vs. respnses for distance bins
-    bin_width, distances, num, avg_responses, conf_int =  main.collect__binned__distance_v_responses()
-    results.binned__distance_vs_photostimresponses = {'bin_width_um': bin_width, 'distance_bins': distances, 'num_points_in_bin': num,
-    'avg_photostim_response_in_bin': avg_responses, '95conf_int': conf_int}
-    results.save_results()
+    # bin_width, distances, num, avg_responses, conf_int =  main.collect__binned__distance_v_responses()
+    # results.binned__distance_vs_photostimresponses = {'bin_width_um': bin_width, 'distance_bins': distances, 'num_points_in_bin': num,
+    # 'avg_photostim_response_in_bin': avg_responses, '95conf_int': conf_int}
+    # results.save_results()
     main.plot__responses_v_distance_no_normalization(results=results)
 
 

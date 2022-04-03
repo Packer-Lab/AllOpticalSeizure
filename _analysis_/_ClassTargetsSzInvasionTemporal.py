@@ -547,14 +547,14 @@ class TargetsSzInvasionTemporal(Quantification):
     @staticmethod
     def collect__binned__szinvtime_v_responses():
         """collect time vs. respnses for time bins"""
-        bin_width = 5  # sec
+        bin_width = 3  # sec
         bins = np.arange(-60, 0, bin_width)  # -60 --> 0 secs, split in bins
         num = [0 for _ in range(len(bins))]  # num of datapoints in binned sztemporalinv
         y = [0 for _ in range(len(bins))]  # avg responses at distance bin
         responses = [[] for _ in range(len(bins))]  # collect all responses at distance bin
 
         @Utils.run_for_loop_across_exps(run_pre4ap_trials=0, run_post4ap_trials=1, set_cache=False,
-                                        skip_trials=main.EXCLUDE_TRIAL)
+                                        skip_trials=TargetsSzInvasionTemporal.EXCLUDE_TRIAL)
         def add_time_responses(bins, num, y, responses, **kwargs):
             expobj = kwargs['expobj']
 
@@ -604,7 +604,7 @@ class TargetsSzInvasionTemporal(Quantification):
         conf_int_values_neg = pj.flattenOnce([[val, val] for val in conf_int[1:, 0]])
         conf_int_values_pos = pj.flattenOnce([[val, val] for val in conf_int[1:, 1]])
 
-        fig, axs = plt.subplots(figsize=(6, 6), nrows=2, ncols=1)
+        fig, axs = plt.subplots(figsize=(6, 5), nrows=2, ncols=1)
         # ax.plot(sztemporalinv[:-1], avg_responses, c='cornflowerblue', zorder=1)
         ax = axs[0]
         ax2 = axs[1]
@@ -613,12 +613,13 @@ class TargetsSzInvasionTemporal(Quantification):
         ax.fill_between(x=conf_int_sztemporalinv, y1=conf_int_values_neg, y2=conf_int_values_pos, color='lightgray',
                         zorder=0)
         # ax.scatter(sztemporalinv[:-1], avg_responses, c='orange', zorder=4)
-        ax.set_ylim([-0.5, 0.8])
+        ax.set_ylim([-1, 1])
+        ax.invert_xaxis()
         ax.set_title(
             f'photostim responses vs. distance to sz wavefront (binned every {results.binned__time_vs_photostimresponses["bin_width_sec"]}sec)',
             wrap=True)
         ax.set_xlabel('time to sz inv (secs)')
-        ax.set_ylabel(main.photostim_responses_zscore_type)
+        ax.set_ylabel(TargetsSzInvasionTemporal.photostim_responses_zscore_type)
         ax.margins(0)
 
         pixels = [np.array(num2)] * 10

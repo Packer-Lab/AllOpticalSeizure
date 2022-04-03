@@ -510,11 +510,11 @@ class TargetsSzInvasionSpatial_codereview(SLMTargets):
         conf_int_values_neg = pj.flattenOnce([[val, val] for val in conf_int[1:, 0]])
         conf_int_values_pos = pj.flattenOnce([[val, val] for val in conf_int[1:, 1]])
 
-        fig, axs = plt.subplots(figsize=(6, 6), nrows=2, ncols=1)
+        fig, axs = plt.subplots(figsize=(6, 5), nrows=2, ncols=1)
         # ax.plot(distances[:-1], avg_responses, c='cornflowerblue', zorder=1)
         ax = axs[0]
         ax2 = axs[1]
-        ax.step(distances[:-1], avg_responses, c='cornflowerblue', zorder=2)
+        ax.step(distances, avg_responses, c='cornflowerblue', zorder=2)
         # ax.fill_between(x=(distances-0)[:-1], y1=conf_int[:-1, 0], y2=conf_int[:-1, 1], color='lightgray', zorder=0)
         ax.fill_between(x=conf_int_distances, y1=conf_int_values_neg, y2=conf_int_values_pos, color='lightgray',
                         zorder=0)
@@ -524,7 +524,7 @@ class TargetsSzInvasionSpatial_codereview(SLMTargets):
             f'photostim responses vs. distance to sz wavefront (binned every {results.binned__distance_vs_photostimresponses["bin_width_um"]}um)',
             wrap=True)
         ax.set_xlabel('distance to sz wavefront (um)')
-        ax.set_ylabel(main.response_type)
+        ax.set_ylabel(TargetsSzInvasionSpatial_codereview.response_type)
         ax.margins(0)
 
         pixels = [np.array(num2)] * 10

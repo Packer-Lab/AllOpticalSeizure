@@ -41,9 +41,9 @@ class Post4ap(alloptical):
         #### initializing data processing, data analysis and/or results associated attr's
 
         ## SEIZURES RELATED ATTRIBUTES
-        self.seizure_frames = None  # frame #s inside seizure
-        self.seizure_lfp_onsets = None  # frame #s corresponding to ONSET of seizure as manually inspected from the LFP signal
-        self.seizure_lfp_offsets = None  # frame #s corresponding to OFFSET of seizure as manually inspected from the LFP signal
+        self.seizure_frames = None  #: frame #s inside seizure
+        self.seizure_lfp_onsets = None  #: frame #s corresponding to ONSET of seizure as manually inspected from the LFP signal
+        self.seizure_lfp_offsets = None  #: frame #s corresponding to OFFSET of seizure as manually inspected from the LFP signal
 
         ##
         self.slmtargets_szboundary_stim = None  # dictionary of cells classification either inside or outside of boundary

@@ -1,7 +1,3 @@
-from funcsforprajay.wrappers import plot_piping_decorator
-from _analysis_._ClassExpSeizureAnalysis import plot__exp_sz_lfp_fov
-from scipy import stats
-
 
 import sys
 
@@ -12,16 +8,21 @@ sys.path.extend(['/home/pshah/Documents/code/AllOpticalSeizure', '/home/pshah/Do
 """TODO/GOALS:
 x) plotting average traces around time of seizure invasion for all targets across all exps
     - plot also the mean FOV Flu at the bottom
-3) plot average stim response before and after time of seizure invasion for all targets across all exps
-4) plot average stim response vs. time to sz invasion for all targets across all exps
+
+3) plot average stim response vs. (possibly binned?) time to sz invasion for all targets across all exps
+
+4) plot average stim response before and after time of seizure invasion for all targets across all exps - leave for now.
+
+5) plot average stim response of all targets before sz LFP start (-60 to 0secs)
+
 
 """
-
 import funcsforprajay.funcs as pj
 import matplotlib.pyplot as plt
+import seaborn as sns
 import numpy as np
 import pandas as pd
-import seaborn as sns
+import scipy.stats as stats
 
 import _alloptical_utils as Utils
 from _analysis_._ClassTargetsSzInvasionTemporal import TargetsSzInvasionTemporal as main, \
@@ -49,12 +50,6 @@ results: TargetsSzInvasionTemporalResults = TargetsSzInvasionTemporalResults.loa
 # expobj.TargetsSzInvasionTemporal.plot_szinvasiontime_vs_photostimresponses(fig=None, ax=None)
 ## binning and plotting zscored photostim responses vs. time ###########################################################
 
-"""# TODO - MAIN WORK RIGHT NOW:
-
-# - rerunning pipeline, modifying certain plots, sending plots to Adam.
-# - start to think about figure layout for these plots.
-
-"""
 # %% testing the whole analysis pipeline on a singular experiments here
 
 # 0)
@@ -305,7 +300,7 @@ def plot__szinvasiontime_vs_photostimresponseszscored(dataplot='full'):
     fig.show()
 
 
-plot__szinvasiontime_vs_photostimresponseszscored(dataplot='pos_only')
+# plot__szinvasiontime_vs_photostimresponseszscored(dataplot='pos_only')
 
 
 # %%
@@ -412,95 +407,80 @@ if __name__ == '__main__':
         expobj.save()
     # run_misc()
 
-    run__initTargetsSzInvasionTemporal()
-    run_collect_time_delay_sz_stims()
-
-    run__collect_targets_sz_invasion_traces()
-
-    # plot__targets_sz_invasion_meantraces()
-
-
-    # RUNNING BELOW FOR QUANTIFICATION OF PHOTOSTIM RESPONSES VS. TIME DELAY TO SZ INVASION CURRENTLY
-    # fig, ax = plt.subplots(figsize=[3, 3])
-    # run_check_collect_time_delay_sz_stims(fig=fig, ax=ax)
-    # fig.show()
-
-
-    run__collect_szinvasiontime_vs_photostimresponses()
-    # plot__szinvasiontime_vs_photostimresponses()
-    plot__szinvasiontime_vs_photostimresponses_indivexp()
-
-    # run collecting and plotting zscored photostim responses vs. time delay to sz invasion
-    run__collect_szinvasiontime_vs_photostimresponses_zscored()
-    run__collect_szinvasiontime_vs_photostimresponses_zscored_df()
-
-    plot__szinvasiontime_vs_photostimresponseszscored()
-
-    results.data = run__retrieve__responses_vs_time_to_seizure_SLMTargets_plot2ddensity()
+    # run__initTargetsSzInvasionTemporal()
+    # run_collect_time_delay_sz_stims()
+    #
+    # run__collect_targets_sz_invasion_traces()
+    #
+    # # plot__targets_sz_invasion_meantraces()
+    #
+    #
+    # # RUNNING BELOW FOR QUANTIFICATION OF PHOTOSTIM RESPONSES VS. TIME DELAY TO SZ INVASION CURRENTLY
+    # # fig, ax = plt.subplots(figsize=[3, 3])
+    # # run_check_collect_time_delay_sz_stims(fig=fig, ax=ax)
+    # # fig.show()
+    #
+    #
+    # run__collect_szinvasiontime_vs_photostimresponses()
+    # # plot__szinvasiontime_vs_photostimresponses()
+    # plot__szinvasiontime_vs_photostimresponses_indivexp()
+    #
+    # # run collecting and plotting zscored photostim responses vs. time delay to sz invasion
+    # run__collect_szinvasiontime_vs_photostimresponses_zscored()
+    # run__collect_szinvasiontime_vs_photostimresponses_zscored_df()
+    #
+    # plot__szinvasiontime_vs_photostimresponseszscored()
+    #
+    # results.data = run__retrieve__responses_vs_time_to_seizure_SLMTargets_plot2ddensity()
+    # # results.save_results()
+    # results.data_all, results.percentiles, results.responses_sorted, results.times_to_sz_sorted, \
+    #     results.scale_percentile_times = run__convert_responses_sztimes_percentile_space(data=results.data)
     # results.save_results()
-    results.data_all, results.percentiles, results.responses_sorted, results.times_to_sz_sorted, \
-        results.scale_percentile_times = run__convert_responses_sztimes_percentile_space(data=results.data)
-    results.save_results()
-
-
-    main.plot_density_responses_sztimes(results.data_all, results.times_to_sz_sorted, results.scale_percentile_times,
-                                        photostim_responses_zscore_type=main.photostim_responses_zscore_type)
-    plot_lineplot_responses_pctsztimes(percentiles=results.percentiles, responses_sorted=results.responses_sorted,
-                                       response_type=main.photostim_responses_zscore_type,
-                                       scale_percentile_times=results.scale_percentile_times)
+    #
+    #
+    # main.plot_density_responses_sztimes(results.data_all, results.times_to_sz_sorted, results.scale_percentile_times,
+    #                                     photostim_responses_zscore_type=main.photostim_responses_zscore_type)
+    # plot_lineplot_responses_pctsztimes(percentiles=results.percentiles, responses_sorted=results.responses_sorted,
+    #                                    response_type=main.photostim_responses_zscore_type,
+    #                                    scale_percentile_times=results.scale_percentile_times)
 
 
     # plot average stim response vs. (possibly binned?) time to sz invasion for all targets across all exps
-    bin_width, sztemporalinv, num, avg_responses, conf_int = main.collect__binned__szinvtime_v_responses()  # binsize = 5 secs
-    results.binned__time_vs_photostimresponses = {'bin_width_sec': bin_width, 'sztemporal_bins': sztemporalinv,
-                                                  'num_points_in_bin': num,
-                                                  'avg_photostim_response_in_bin': avg_responses,
-                                                  '95conf_int': conf_int}
-
-    results.save_results()
+    # bin_width, sztemporalinv, num, avg_responses, conf_int = main.collect__binned__szinvtime_v_responses()  # binsize = 3 secs
+    # results.binned__time_vs_photostimresponses = {'bin_width_sec': bin_width, 'sztemporal_bins': sztemporalinv,
+    #                                               'num_points_in_bin': num,
+    #                                               'avg_photostim_response_in_bin': avg_responses,
+    #                                               '95conf_int': conf_int}
+    #
+    # results.save_results()
     main.plot__responses_v_szinvtemporal_no_normalization(results=results)
 
     # results.range_of_sz_invasion_time = [-1, -1, -1]
     # main.saveclass()
     pass
 
-# %%
-from funcsforprajay.wrappers import plot_piping_decorator
-from _analysis_._ClassExpSeizureAnalysis import plot__exp_sz_lfp_fov
-from scipy import stats
-
-
-import sys
-
-
-print('Python %s on %s' % (sys.version, sys.platform))
-sys.path.extend(['/home/pshah/Documents/code/AllOpticalSeizure', '/home/pshah/Documents/code/AllOpticalSeizure'])
-
-"""TODO/GOALS:
-x) plotting average traces around time of seizure invasion for all targets across all exps
-    - plot also the mean FOV Flu at the bottom
-
-3) plot average stim response vs. (possibly binned?) time to sz invasion for all targets across all exps
-
-4) plot average stim response before and after time of seizure invasion for all targets across all exps - leave for now.
-
-5) plot average stim response of all targets before sz LFP start (-60 to 0secs)
-
-
-"""
-
-import funcsforprajay.funcs as pj
-import matplotlib.pyplot as plt
-import numpy as np
-import pandas as pd
-import seaborn as sns
-
-import _alloptical_utils as Utils
-from _analysis_._ClassTargetsSzInvasionTemporal import TargetsSzInvasionTemporal as main, \
-    TargetsSzInvasionTemporalResults
-from _main_.Post4apMain import Post4ap
-
-results: TargetsSzInvasionTemporalResults = TargetsSzInvasionTemporalResults.load()
+# # %%
+#
+# import sys
+#
+#
+# print('Python %s on %s' % (sys.version, sys.platform))
+# sys.path.extend(['/home/pshah/Documents/code/AllOpticalSeizure', '/home/pshah/Documents/code/AllOpticalSeizure'])
+#
+#
+#
+# import funcsforprajay.funcs as pj
+# import matplotlib.pyplot as plt
+# import numpy as np
+# import pandas as pd
+# import seaborn as sns
+#
+# import _alloptical_utils as Utils
+# from _analysis_._ClassTargetsSzInvasionTemporal import TargetsSzInvasionTemporal as main, \
+#     TargetsSzInvasionTemporalResults
+# from _main_.Post4apMain import Post4ap
+#
+# results: TargetsSzInvasionTemporalResults = TargetsSzInvasionTemporalResults.load()
 
 # %%
 # collect and plot time vs photostim responses data
@@ -508,42 +488,47 @@ results: TargetsSzInvasionTemporalResults = TargetsSzInvasionTemporalResults.loa
 
 
 
-
-# %%
-
-"""plotting of binned responses over time to sz invasion for each target+stim as a step function, with heatmap showing # of datapoints"""
-# sztemporalinv_bins = results.binned__distance_vs_photostimresponses['sztemporal_bins']
-sztemporalinv = results.binned__time_vs_photostimresponses['sztemporal_bins']
-avg_responses = results.binned__time_vs_photostimresponses['avg_photostim_response_in_bin']
-conf_int = results.binned__time_vs_photostimresponses['95conf_int']
-num2 = results.binned__time_vs_photostimresponses['num_points_in_bin']
-
-conf_int_sztemporalinv = pj.flattenOnce([[sztemporalinv[i], sztemporalinv[i + 1]] for i in range(len(sztemporalinv) - 1)])
-conf_int_values_neg = pj.flattenOnce([[val, val] for val in conf_int[1:, 0]])
-conf_int_values_pos = pj.flattenOnce([[val, val] for val in conf_int[1:, 1]])
-
-fig, axs = plt.subplots(figsize=(6, 6), nrows=2, ncols=1)
-# ax.plot(sztemporalinv[:-1], avg_responses, c='cornflowerblue', zorder=1)
-ax = axs[0]
-ax2 = axs[1]
-ax.step(sztemporalinv, avg_responses, c='cornflowerblue', zorder=2)
-# ax.fill_between(x=(sztemporalinv-0)[:-1], y1=conf_int[:-1, 0], y2=conf_int[:-1, 1], color='lightgray', zorder=0)
-ax.fill_between(x=conf_int_sztemporalinv, y1=conf_int_values_neg, y2=conf_int_values_pos, color='lightgray',
-                zorder=0)
-# ax.scatter(sztemporalinv[:-1], avg_responses, c='orange', zorder=4)
-ax.set_ylim([-0.5, 0.8])
-ax.set_title(
-    f'photostim responses vs. distance to sz wavefront (binned every {results.binned__time_vs_photostimresponses["bin_width_sec"]}sec)',
-    wrap=True)
-ax.set_xlabel('time to sz inv (secs)')
-ax.set_ylabel(main.photostim_responses_zscore_type)
-ax.margins(0)
-
-pixels = [np.array(num2)] * 10
-ax2.imshow(pixels, cmap='Greys', vmin=-5, vmax=150, aspect=0.1)
-# ax.show()
-
-fig.tight_layout(pad=1)
-fig.show()
+#
+# # %%
+#
+# import funcsforprajay.funcs as pj
+# import matplotlib.pyplot as plt
+# import numpy as np
+# import scipy.stats as stats
+#
+# """plotting of binned responses over time to sz invasion for each target+stim as a step function, with heatmap showing # of datapoints"""
+# # sztemporalinv_bins = results.binned__distance_vs_photostimresponses['sztemporal_bins']
+# sztemporalinv = results.binned__time_vs_photostimresponses['sztemporal_bins']
+# avg_responses = results.binned__time_vs_photostimresponses['avg_photostim_response_in_bin']
+# conf_int = results.binned__time_vs_photostimresponses['95conf_int']
+# num2 = results.binned__time_vs_photostimresponses['num_points_in_bin']
+#
+# conf_int_sztemporalinv = pj.flattenOnce([[sztemporalinv[i], sztemporalinv[i + 1]] for i in range(len(sztemporalinv) - 1)])
+# conf_int_values_neg = pj.flattenOnce([[val, val] for val in conf_int[1:, 0]])
+# conf_int_values_pos = pj.flattenOnce([[val, val] for val in conf_int[1:, 1]])
+#
+# fig, axs = plt.subplots(figsize=(6, 6), nrows=2, ncols=1)
+# # ax.plot(sztemporalinv[:-1], avg_responses, c='cornflowerblue', zorder=1)
+# ax = axs[0]
+# ax2 = axs[1]
+# ax.step(sztemporalinv, avg_responses, c='cornflowerblue', zorder=2)
+# # ax.fill_between(x=(sztemporalinv-0)[:-1], y1=conf_int[:-1, 0], y2=conf_int[:-1, 1], color='lightgray', zorder=0)
+# ax.fill_between(x=conf_int_sztemporalinv, y1=conf_int_values_neg, y2=conf_int_values_pos, color='lightgray',
+#                 zorder=0)
+# # ax.scatter(sztemporalinv[:-1], avg_responses, c='orange', zorder=4)
+# ax.set_ylim([-0.5, 0.8])
+# ax.set_title(
+#     f'photostim responses vs. distance to sz wavefront (binned every {results.binned__time_vs_photostimresponses["bin_width_sec"]}sec)',
+#     wrap=True)
+# ax.set_xlabel('time to sz inv (secs)')
+# ax.set_ylabel(main.photostim_responses_zscore_type)
+# ax.margins(0)
+#
+# pixels = [np.array(num2)] * 10
+# ax2.imshow(pixels, cmap='Greys', vmin=-5, vmax=150, aspect=0.1)
+# # ax.show()
+#
+# fig.tight_layout(pad=1)
+# fig.show()
 
 

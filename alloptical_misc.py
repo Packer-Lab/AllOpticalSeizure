@@ -11,12 +11,16 @@ import numpy as np
 from funcsforprajay import funcs as pj
 
 # import results superobject that will collect analyses from various individual experiments
+from _utils_.io import import_expobj
+
 results_object_path = '/home/pshah/mnt/qnap/Analysis/alloptical_results_superobject.pkl'
 allopticalResults = aoutils.import_resultsobj(pkl_path=results_object_path)
 
 import tifffile as tf
 
 import _alloptical_utils as Utils
+
+expobj = import_expobj(exp_prep='RL108 t-013')
 
 
 # %%

@@ -29,6 +29,10 @@ class TwoPhotonImaging:
 
         print('\n***** CREATING NEW TwoPhotonImaging with the following metainfo: ', metainfo)
 
+        from _analysis_._ClassSuite2pROIsSzAnalysis import Suite2pROIsSz
+        self.Suite2pROIsSz: Suite2pROIsSz = None  # analysis of suite2p processed data
+
+
         assert os.path.exists(tiff_path)
         assert os.path.exists(analysis_save_path)
         assert os.path.exists(paq_path)
@@ -60,6 +64,7 @@ class TwoPhotonImaging:
             self.suite2p_path = suite2p_path
             self.s2pProcessing(s2p_path=self.suite2p_path)
 
+        self.dFF = None  #: dFF normalized traces of Suite2p ROIs
         self.save()
 
 
@@ -445,8 +450,7 @@ class TwoPhotonImaging:
 
             if self.n_planes == 1:
                 # s2p_path = os.path.join(self.tiff_path, 'suite2p', 'plane' + str(plane))
-                FminusFneu, spks, self.stat, neuropil = s2p_loader(s2p_path,
-                                                                   subtract_neuropil)  # s2p_loader() is in Vape/utils_func
+                FminusFneu, spks, self.stat, neuropil = s2p_loader(s2p_path, subtract_neuropil)  # s2p_loader() is in Vape/utils_func
                 ops = np.load(os.path.join(s2p_path, 'ops.npy'), allow_pickle=True).item()
 
                 if self.subset_frames is None:
@@ -579,10 +583,12 @@ class TwoPhotonImaging:
             raw = raws[i]
             if np.mean(raw) > 1:  # exclude all negative raw traces and very small mean raw traces
                 raw_ = np.delete(raw, photostim_frames)
-                raw_dff = normalize_dff_jit(
-                    raw_)  # note that this function is defined in this file a little further down
+                # raw_dff = normalize_dff_jit(raw_)  # note that this function is defined in this file a little further down
+                from _alloptical_utils import normalize_dff
+                raw_dff = normalize_dff(raw_)  # note that this function is defined in this file a little further down
                 std_ = raw_dff.std()
 
+                from _alloptical_utils import moving_average
                 raw_dff_ = moving_average(raw_dff, n=4)
 
                 thr = np.mean(raw_dff) + std_thresh * std_
@@ -758,6 +764,11 @@ class TwoPhotonImaging:
         mean_img = np.array(mean_img, dtype='uint16')
 
         return mean_img
+
+    def dfof(self):
+        from _alloptical_utils import normalize_dff
+        dFF = normalize_dff(self.raw)
+        return dFF
 
     def save(self, pkl_path: str = None):
         from _utils_.io import save_pkl

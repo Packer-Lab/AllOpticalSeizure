@@ -29,6 +29,7 @@ class alloptical(TwoPhotonImaging):
         # self.metainfo = metainfo
         from _analysis_._ClassPhotostimAnalysisSlmTargets import PhotostimAnalysisSlmTargets
         self.PhotostimAnalysisSlmTargets: PhotostimAnalysisSlmTargets = None
+
         from _analysis_._ClassPhotostimResponseQuantificationSLMtargets import \
             PhotostimResponsesQuantificationSLMtargets
         self.PhotostimResponsesSLMTargets: PhotostimResponsesQuantificationSLMtargets = None  # module that holds analysis and results for Photostim Responses of SLM Targets

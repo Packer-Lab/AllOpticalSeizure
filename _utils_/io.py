@@ -37,14 +37,22 @@ class CustomUnpicklerAttributeError(pickle.Unpickler):
         #     print(f'\t for: TargetsSzInvasionTemporal')
         #     from _analysis_._ClassTargetsSzInvasionTemporal import TargetsSzInvasionTemporal
         #     return TargetsSzInvasionTemporal
-        elif name == 'TargetsPhotostimResponsesInterictal':
+        elif name == 'PhotostimAnalysisSlmTargets':
+            print(f'\t for: PhotostimAnalysisSlmTargets')
+            from _analysis_._ClassPhotostimAnalysisSlmTargets import PhotostimAnalysisSlmTargets
+            return PhotostimAnalysisSlmTargets
+        elif name == 'TargetsStimsSzOnsetTime':
             print(f'\t for: TargetsPhotostimResponsesInterictal')
             from _analysis_._ClassTargetsPhotostimResponsesInterictal import TargetsPhotostimResponsesInterictal
             return TargetsPhotostimResponsesInterictal
-        elif name == 'TargetsPhotostimResponsesInterictalResults':
-            print(f'\t for: TargetsPhotostimResponsesInterictalResults')
-            from _analysis_._ClassTargetsPhotostimResponsesInterictal import TargetsPhotostimResponsesInterictalResults
-            return TargetsPhotostimResponsesInterictalResults
+        elif name == 'Suite2pROIsSz':
+            print(f'\t for: Suite2pROIsSz')
+            from _analysis_._ClassSuite2pROIsSzAnalysis import Suite2pROIsSz
+            return Suite2pROIsSz
+        # elif name == 'TargetsPhotostimResponsesInterictalResults':
+        #     print(f'\t for: TargetsPhotostimResponsesInterictalResults')
+        #     from _analysis_._ClassTargetsSzOnsetTime import TargetsPhotostimResponsesInterictalResults
+        #     return TargetsPhotostimResponsesInterictalResults
         elif name == 'TargetsSzInvasionSpatial':
             print(f'\t for: TargetsSzInvasionSpatial')
             from _analysis_._ClassTargetsSzInvasionSpatial import TargetsSzInvasionSpatial
@@ -87,6 +95,9 @@ class CustomUnpicklerModuleNotFoundError(pickle.Unpickler):
 
         elif module == '_ClassTargetsSzInvasionSpatial':
             renamed_module = "_analysis_._ClassTargetsSzInvasionSpatial"
+
+        elif module == '_analysis_._ClassTargetsSzOnsetTime':
+            renamed_module = "_analysis_._ClassTargetsPhotostimResponsesInterictal"
 
         else:
             renamed_module = module
@@ -245,10 +256,23 @@ def import_expobj(aoresults_map_id: str = None, trial: str = None, prep: str = N
         # print(f'|- Loaded {experiment}') if verbose else print(f'|- Loaded {expobj.t_series_name} ({pkl_path}) .. DONE')
     except AttributeError:
         print(f"WARNING: needing to try using CustomUnpicklerAttributeError!")
-        expobj = CustomUnpicklerAttributeError(open(pkl_path, 'rb')).load()
+        try:
+            expobj = CustomUnpicklerAttributeError(open(pkl_path, 'rb')).load()
+        except AttributeError:
+            print(f"WARNING: needing to try using CustomUnpicklerAttributeError! <- from AttributeError")
+            expobj = CustomUnpicklerAttributeError(open(pkl_path, 'rb')).load()
+
     except ModuleNotFoundError:
         print(f"WARNING: needing to try using CustomUnpicklerModuleNotFoundError!")
-        expobj = CustomUnpicklerModuleNotFoundError(open(pkl_path, 'rb')).load()
+        try:
+            expobj = CustomUnpicklerModuleNotFoundError(open(pkl_path, 'rb')).load()
+        except AttributeError:
+            print(f"WARNING: needing to try using CustomUnpicklerAttributeError! <- from ModuleNotFoundError")
+            try:
+                expobj = CustomUnpicklerAttributeError(open(pkl_path, 'rb')).load()
+            except ModuleNotFoundError:
+                print(f"WARNING: needing to try using CustomUnpicklerModuleNotFoundError! <- from AttributeError from ModuleNotFoundError")
+                expobj = CustomUnpicklerModuleNotFoundError(open(pkl_path, 'rb')).load()
 
     ### roping in some extraneous processing steps if there's expobj's that haven't completed for them
 

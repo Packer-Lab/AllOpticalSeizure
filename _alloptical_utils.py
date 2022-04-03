@@ -450,6 +450,11 @@ def normalize_dff(arr, threshold_pct=20, threshold_val=None):
 
     return new_array
 
+def moving_average(a, n=4):
+    ret = np.cumsum(a)
+    ret[n:] = ret[n:] - ret[:-n]
+    return ret[n - 1:] / n
+
 ##
 
 
