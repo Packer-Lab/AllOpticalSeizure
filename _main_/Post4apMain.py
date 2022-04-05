@@ -659,14 +659,14 @@ class Post4ap(alloptical):
         ## process out sz stims
         # mean pre and post stimulus (within post-stim response window) flu trace values for all cells, all trials
         stims_outsz = [i for i, stim in enumerate(expobj.stim_start_frames) if stim not in expobj.stims_in_sz]
-        expobj.analysis_array_outsz = expobj.dfstdF_traces[:, stims_outsz, :]  # NOTE: USING dF/stdF TRACES
-        expobj.raw_traces_outsz = expobj.raw_traces[:, stims_outsz, :]
-        expobj.dff_traces_outsz = expobj.dff_traces[:, stims_outsz, :]
+        expobj.analysis_array_outsz = expobj.dfstdF_traces_nontargets[:, stims_outsz, :]  # NOTE: USING dF/stdF TRACES
+        expobj.raw_traces_outsz = expobj.raw_traces_nontargets[:, stims_outsz, :]
+        expobj.dff_traces_outsz = expobj.dff_traces_nontargets[:, stims_outsz, :]
 
         ## checking that there are no additional nan's being added from the code below (unless its specifically for the cell exclusion part)
         # print(f"analysis array outsz nan's: {sum(np.isnan(expobj.analysis_array_outsz))}")
-        # print(f"dfstdF_traces nan's: {sum(np.isnan(expobj.dfstdF_traces))}")
-        # assert sum(np.isnan(expobj.dfstdF_traces[0][0])) == sum(np.isnan(expobj.analysis_array_outsz[0][0])), print('there is a discrepancy in the number of nans in expobj.analysis_array_outsz')
+        # print(f"dfstdF_traces_nontargets nan's: {sum(np.isnan(expobj.dfstdF_traces_nontargets))}")
+        # assert sum(np.isnan(expobj.dfstdF_traces_nontargets[0][0])) == sum(np.isnan(expobj.analysis_array_outsz[0][0])), print('there is a discrepancy in the number of nans in expobj.analysis_array_outsz')
 
         expobj.pre_array_outsz = np.nanmean(expobj.analysis_array_outsz[:, :, expobj.pre_stim_frames_test],
                                             axis=1)  # [cells x prestim frames] (avg'd taken over all stims)
@@ -677,9 +677,9 @@ class Post4ap(alloptical):
         # mean pre and post stimulus (within post-stim response window) flu trace values for all cells, all trials
         stims_sz = [i for i, stim in enumerate(expobj.stim_start_frames) if
                     stim in list(expobj.slmtargets_szboundary_stim.keys())]
-        expobj.analysis_array_insz = expobj.dfstdF_traces[:, stims_sz, :]  # NOTE: USING dF/stdF TRACES
-        expobj.raw_traces_insz = expobj.raw_traces[:, stims_sz, :]
-        expobj.dff_traces_insz = expobj.dff_traces[:, stims_sz, :]
+        expobj.analysis_array_insz = expobj.dfstdF_traces_nontargets[:, stims_sz, :]  # NOTE: USING dF/stdF TRACES
+        expobj.raw_traces_insz = expobj.raw_traces_nontargets[:, stims_sz, :]
+        expobj.dff_traces_insz = expobj.dff_traces_nontargets[:, stims_sz, :]
         expobj.pre_array_insz = np.nanmean(expobj.analysis_array_insz[:, :, expobj.pre_stim_frames_test],
                                            axis=1)  # [cells x prestim frames] (avg'd taken over all stims)
         expobj.post_array_insz = np.nanmean(expobj.analysis_array_insz[:, :, expobj.post_stim_frames_slice],

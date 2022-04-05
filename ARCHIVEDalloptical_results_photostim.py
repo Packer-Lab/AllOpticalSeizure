@@ -233,7 +233,7 @@ expobj.neg_sig_cells = [expobj.sig_cells[i] for i in np.where(np.nanmean(expobj.
 f, ax = plt.subplots(nrows=2, ncols=2, figsize=(10, 10), sharex=True)
 # plot peristim avg dFF of pos_sig_cells
 selection = [expobj.s2p_nontargets.index(i) for i in expobj.pos_sig_cells]
-x = expobj.dff_traces_avg[selection]
+x = expobj.dff_traces_nontargets_avg[selection]
 y_label = 'pct. dFF (normalized to prestim period)'
 f, ax[0, 0], _ = aoplot.plot_periphotostim_avg(arr=x, expobj=expobj, pre_stim_sec=1, post_stim_sec=3,
                               title='positive sig. responders', y_label=y_label, fig=f, ax=ax[0, 0], show=False,
@@ -241,7 +241,7 @@ f, ax[0, 0], _ = aoplot.plot_periphotostim_avg(arr=x, expobj=expobj, pre_stim_se
 
 # plot peristim avg dFF of neg_sig_cells
 selection = [expobj.s2p_nontargets.index(i) for i in expobj.neg_sig_cells]
-x = expobj.dff_traces_avg[selection]
+x = expobj.dff_traces_nontargets_avg[selection]
 y_label = None
 f, ax[0, 1], _ = aoplot.plot_periphotostim_avg(arr=x, expobj=expobj, pre_stim_sec=1, post_stim_sec=3,
                               title='negative sig. responders', y_label=None, fig=f, ax=ax[0, 1], show=False,
@@ -270,9 +270,9 @@ f.show()
 plot_subset = False
 
 if plot_subset:
-    selection = np.random.randint(0, expobj.dff_traces_avg.shape[0], 100)
+    selection = np.random.randint(0, expobj.dff_traces_nontargets_avg.shape[0], 100)
 else:
-    selection = np.arange(expobj.dff_traces_avg.shape[0])
+    selection = np.arange(expobj.dff_traces_nontargets_avg.shape[0])
 
 #### SUITE2P NON-TARGETS - PLOTTING OF AVG PERI-PHOTOSTIM RESPONSES
 f = plt.figure(figsize=[30, 10])
@@ -282,7 +282,7 @@ gs = f.add_gridspec(2, 9)
 
 # PLOT AVG PHOTOSTIM PRE- POST- TRACE AVGed OVER ALL PHOTOSTIM. TRIALS
 a1 = f.add_subplot(gs[0, 0:2])
-x = expobj.dff_traces_avg[selection]
+x = expobj.dff_traces_nontargets_avg[selection]
 y_label = 'pct. dFF (normalized to prestim period)'
 aoplot.plot_periphotostim_avg(arr=x, expobj=expobj, pre_stim_sec=1, post_stim_sec=4,
                               title=None, y_label=y_label, fig=f, ax=a1, show=False,
@@ -306,7 +306,7 @@ aoplot.plot_traces_heatmap(expobj.dfstdF_traces_avg, expobj=expobj, vmin=vmin, v
 a4 = f.add_subplot(gs[0, -3:-1])
 vmin = -100
 vmax = 100
-aoplot.plot_traces_heatmap(expobj.dff_traces_avg, expobj=expobj, vmin=vmin, vmax=vmax, stim_on=int(1 * expobj.fps),
+aoplot.plot_traces_heatmap(expobj.dff_traces_nontargets_avg, expobj=expobj, vmin=vmin, vmax=vmax, stim_on=int(1 * expobj.fps),
                            stim_off=int(1 * expobj.fps + expobj.stim_duration_frames - 1), xlims=(0, expobj.dfstdF_traces_avg.shape[1]),
                            title='dF/stdF heatmap for all nontargets', x_label='Time', cbar=True,
                            fig=f, ax=a4, show=False)
@@ -398,9 +398,9 @@ for i in ls:
             np.where(np.nanmean(expobj.post_array_responses[expobj.sig_units, :], axis=1) < 0)[0]]
         nonsig_responders_avgresponse = np.nanmean(expobj.post_array_responses[~expobj.sig_units], axis=1)
 
-        posunits_prestdF = np.mean(np.std(expobj.raw_traces[np.where(np.nanmean(expobj.post_array_responses[expobj.sig_units, :], axis=1) > 0)[0], :, :], axis=2), axis=1)
-        negunits_prestdF = np.mean(np.std(expobj.raw_traces[np.where(np.nanmean(expobj.post_array_responses[expobj.sig_units, :], axis=1) < 0)[0], :, :], axis=2), axis=1)
-        nonsigunits_prestdF = np.mean(np.std(expobj.raw_traces[~expobj.sig_units, :, :], axis=2), axis=1)
+        posunits_prestdF = np.mean(np.std(expobj.raw_traces_nontargets[np.where(np.nanmean(expobj.post_array_responses[expobj.sig_units, :], axis=1) > 0)[0], :, :], axis=2), axis=1)
+        negunits_prestdF = np.mean(np.std(expobj.raw_traces_nontargets[np.where(np.nanmean(expobj.post_array_responses[expobj.sig_units, :], axis=1) < 0)[0], :, :], axis=2), axis=1)
+        nonsigunits_prestdF = np.mean(np.std(expobj.raw_traces_nontargets[~expobj.sig_units, :, :], axis=2), axis=1)
 
         assert len(possig_responders_avgresponse) == len(posunits_prestdF)
         assert len(negsig_responders_avgresponse) == len(negunits_prestdF)
@@ -443,9 +443,9 @@ for i in ls:
             np.where(np.nanmean(expobj.post_array_responses[expobj.sig_units, :], axis=1) < 0)[0]]
         nonsig_responders_avgresponse = np.nanmean(expobj.post_array_responses[~expobj.sig_units], axis=1)
 
-        posunits_prestdF = np.mean(np.mean(expobj.raw_traces[np.where(np.nanmean(expobj.post_array_responses[expobj.sig_units, :], axis=1) > 0)[0], :, :], axis=2), axis=1)
-        negunits_prestdF = np.mean(np.mean(expobj.raw_traces[np.where(np.nanmean(expobj.post_array_responses[expobj.sig_units, :], axis=1) < 0)[0], :, :], axis=2), axis=1)
-        nonsigunits_prestdF = np.mean(np.mean(expobj.raw_traces[~expobj.sig_units, :, :], axis=2), axis=1)
+        posunits_prestdF = np.mean(np.mean(expobj.raw_traces_nontargets[np.where(np.nanmean(expobj.post_array_responses[expobj.sig_units, :], axis=1) > 0)[0], :, :], axis=2), axis=1)
+        negunits_prestdF = np.mean(np.mean(expobj.raw_traces_nontargets[np.where(np.nanmean(expobj.post_array_responses[expobj.sig_units, :], axis=1) < 0)[0], :, :], axis=2), axis=1)
+        nonsigunits_prestdF = np.mean(np.mean(expobj.raw_traces_nontargets[~expobj.sig_units, :, :], axis=2), axis=1)
 
         assert len(possig_responders_avgresponse) == len(posunits_prestdF)
         assert len(negsig_responders_avgresponse) == len(negunits_prestdF)
@@ -482,11 +482,11 @@ for key in list(allopticalResults.trial_maps['pre'].keys()):
     j = 0  # get just the first trial from the allopticalResults.trial_maps
 
     expobj, experiment = aoutils.import_expobj(aoresults_map_id='pre %s.%s' % (key, j))  # import expobj
-    allunits_prestdF_pre4ap_ = np.mean(np.std(expobj.raw_traces[:, :, expobj.pre_stim_frames_test], axis=2), axis=1)
+    allunits_prestdF_pre4ap_ = np.mean(np.std(expobj.raw_traces_nontargets[:, :, expobj.pre_stim_frames_test], axis=2), axis=1)
 
 
     expobj, experiment = aoutils.import_expobj(aoresults_map_id='post %s.%s' % (key, j))  # import expobj
-    allunits_prestdF_post4ap_ = np.mean(np.std(expobj.raw_traces[:, :, expobj.pre_stim_frames_test], axis=2), axis=1)
+    allunits_prestdF_post4ap_ = np.mean(np.std(expobj.raw_traces_nontargets[:, :, expobj.pre_stim_frames_test], axis=2), axis=1)
 
     # plot the histogram
     ax = axs[counter // ncols, counter % ncols]
@@ -524,13 +524,13 @@ for key in list(allopticalResults.trial_maps['pre'].keys()):
         expobj, experiment = aoutils.import_expobj(aoresults_map_id='pre %s.%s' % (key, j))
 
         # get the std of pre_stim period for each photostim trial from significant and non-significant responders, averaged over all trials for each cell individually
-        sig_units_prestdF_pre4ap_ = np.mean(np.std(expobj.raw_traces[expobj.sig_units, :, expobj.pre_stim_frames_test], axis=2), axis=1)
-        nonsig_units_prestdF_pre4ap_ = np.mean(np.std(expobj.raw_traces[~expobj.sig_units, :, expobj.pre_stim_frames_test], axis=2), axis=1)
+        sig_units_prestdF_pre4ap_ = np.mean(np.std(expobj.raw_traces_nontargets[expobj.sig_units, :, expobj.pre_stim_frames_test], axis=2), axis=1)
+        nonsig_units_prestdF_pre4ap_ = np.mean(np.std(expobj.raw_traces_nontargets[~expobj.sig_units, :, expobj.pre_stim_frames_test], axis=2), axis=1)
 
         sig_units_prestdF_pre4ap.append(sig_units_prestdF_pre4ap_)
         nonsig_units_prestdF_pre4ap.append(nonsig_units_prestdF_pre4ap_)
 
-        allunits_prestdF_pre4ap_ = np.mean(np.std(expobj.raw_traces[:, :, expobj.pre_stim_frames_test], axis=2), axis=1)
+        allunits_prestdF_pre4ap_ = np.mean(np.std(expobj.raw_traces_nontargets[:, :, expobj.pre_stim_frames_test], axis=2), axis=1)
         allunits_prestdF_pre4ap.append(allunits_prestdF_pre4ap_)
 
         # plot the histogram
@@ -568,14 +568,14 @@ for key in list(allopticalResults.trial_maps['post'].keys()):
         expobj, experiment = aoutils.import_expobj(aoresults_map_id='post %s.%s' % (key, j))
         # compare std of significant and nonsignificant units
         sig_units_prestdF_post4ap_ = np.mean(
-            np.std(expobj.raw_traces[expobj.sig_units, :, expobj.pre_stim_frames_test], axis=2), axis=1)
+            np.std(expobj.raw_traces_nontargets[expobj.sig_units, :, expobj.pre_stim_frames_test], axis=2), axis=1)
         nonsig_units_prestdF_post4ap_ = np.mean(
-            np.std(expobj.raw_traces[~expobj.sig_units, :, expobj.pre_stim_frames_test], axis=2), axis=1)
+            np.std(expobj.raw_traces_nontargets[~expobj.sig_units, :, expobj.pre_stim_frames_test], axis=2), axis=1)
 
         sig_units_prestdF_post4ap.append(sig_units_prestdF_post4ap_)
         nonsig_units_prestdF_post4ap.append(nonsig_units_prestdF_post4ap_)
 
-        allunits_prestdF_post4ap_ = np.mean(np.std(expobj.raw_traces[:, :, expobj.pre_stim_frames_test], axis=2), axis=1)
+        allunits_prestdF_post4ap_ = np.mean(np.std(expobj.raw_traces_nontargets[:, :, expobj.pre_stim_frames_test], axis=2), axis=1)
         allunits_prestdF_post4ap.append(allunits_prestdF_post4ap_)
 
         # plot the histogram
@@ -611,10 +611,10 @@ for key in list(allopticalResults.trial_maps['pre'].keys()):
     j = 0  # get just the first trial from the allopticalResults.trial_maps
 
     expobj, experiment = aoutils.import_expobj(aoresults_map_id='pre %s.%s' % (key, j))  # import expobj
-    raw_meanprestim_pre4ap = np.mean(np.mean(expobj.raw_traces[:, :, expobj.pre_stim_frames_test], axis=2), axis=1)  # collect mean prestim for raw traces avg over trials - run_pre4ap_trials
+    raw_meanprestim_pre4ap = np.mean(np.mean(expobj.raw_traces_nontargets[:, :, expobj.pre_stim_frames_test], axis=2), axis=1)  # collect mean prestim for raw traces avg over trials - run_pre4ap_trials
 
     expobj, experiment = aoutils.import_expobj(aoresults_map_id='post %s.%s' % (key, j))  # import expobj
-    raw_meanprestim_post4ap = np.mean(np.mean(expobj.raw_traces[:, :, expobj.pre_stim_frames_test], axis=2), axis=1)  # collect mean prestim for raw traces avg over trials - run_post4ap_trials
+    raw_meanprestim_post4ap = np.mean(np.mean(expobj.raw_traces_nontargets[:, :, expobj.pre_stim_frames_test], axis=2), axis=1)  # collect mean prestim for raw traces avg over trials - run_post4ap_trials
 
     # plot the histogram
     ax = axs[counter // ncols, counter % ncols]

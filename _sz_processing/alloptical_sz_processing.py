@@ -373,14 +373,14 @@ def _trialProcessing_nontargets(expobj, normalize_to='pre-stim', save=True):
             exclude_list = [idx for idx, cell in enumerate(expobj.s2p_nontargets) if
                             cell in expobj.slmtargets_szboundary_stim[stim]]
 
-            expobj.dff_traces[exclude_list, x, :] = [np.nan] * expobj.dff_traces.shape[2]
-            expobj.dfstdF_traces[exclude_list, x, :] = [np.nan] * expobj.dfstdF_traces.shape[2]
-            expobj.raw_traces[exclude_list, x, :] = [np.nan] * expobj.raw_traces.shape[2]
+            expobj.dff_traces_nontargets[exclude_list, x, :] = [np.nan] * expobj.dff_traces_nontargets.shape[2]
+            expobj.dfstdF_traces_nontargets[exclude_list, x, :] = [np.nan] * expobj.dfstdF_traces_nontargets.shape[2]
+            expobj.raw_traces_nontargets[exclude_list, x, :] = [np.nan] * expobj.raw_traces_nontargets.shape[2]
 
         ## need to redefine _avg arrays post exclusion for Post4ap expobj's
-        expobj.dff_traces_avg = np.nanmean(expobj.dff_traces, axis=1)
-        expobj.dfstdF_traces_avg = np.nanmean(expobj.dfstdF_traces, axis=1)
-        expobj.raw_traces_avg = np.nanmean(expobj.raw_traces, axis=1)
+        expobj.dff_traces_nontargets_avg = np.nanmean(expobj.dff_traces_nontargets, axis=1)
+        expobj.dfstdF_traces_avg = np.nanmean(expobj.dfstdF_traces_nontargets, axis=1)
+        expobj.raw_traces_nontargets_avg = np.nanmean(expobj.raw_traces_nontargets, axis=1)
 
     else:
         AttributeError(
@@ -394,7 +394,7 @@ def _trialProcessing_nontargets(expobj, normalize_to='pre-stim', save=True):
     expobj.post_stim_frames_slice = np.s_[stim_end: stim_end + expobj.post_stim_response_frames_window]
 
     # mean pre and post stimulus (within post-stim response window) flu trace values for all cells, all trials
-    expobj.analysis_array = expobj.dfstdF_traces  # NOTE: USING dF/stdF TRACES
+    expobj.analysis_array = expobj.dfstdF_traces_nontargets  # NOTE: USING dF/stdF TRACES
     expobj.pre_array = np.mean(expobj.analysis_array[:, :, expobj.pre_stim_frames_test],
                                axis=1)  # [cells x prestim frames] (avg'd taken over all stims)
     expobj.post_array = np.mean(expobj.analysis_array[:, :, expobj.post_stim_frames_slice],

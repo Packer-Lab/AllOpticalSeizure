@@ -32,7 +32,7 @@ class PhotostimResponsesQuantificationSLMtargets(Quantification):
     def __repr__(self):
         return f"PhotostimResponsesSLMTargets <-- Quantification Analysis submodule for expobj <{self.expobj_id}>"
 
-    # %% 1)
+    # 1) collect various photostimulation success rates, matrix of hits/failures, responses sizes and photostim stims trace snippets of SLM targets
     def collect_photostim_responses_exp(self, expobj: Union[alloptical, Post4ap]):
         """
         runs calculations of photostim responses, calculating reliability of photostim of slm targets,
@@ -116,7 +116,7 @@ class PhotostimResponsesQuantificationSLMtargets(Quantification):
                         f'******* No slmtargets_szboundary_stim (sz boundary classification not done) for: {expobj.t_series_name}',
                         ' [*2.3] ')
 
-    # %% 2) create anndata SLM targets to store photostim responses for each experiment
+    # 2) create anndata SLM targets to store photostim responses for each experiment
     def create_anndata_SLMtargets(self, expobj: Union[alloptical, Post4ap]):
         """
         Creates annotated data (see anndata library for more information on AnnotatedData) object based around the Ca2+ matrix of the imaging trial.
@@ -185,7 +185,7 @@ class PhotostimResponsesQuantificationSLMtargets(Quantification):
             print(f"Created: {photostim_responses_adata}")
             self.adata = photostim_responses_adata
 
-    # 2.1) modify anndata
+    # 2.1) add to anndata - stim groups (baseline, interictal vs. ictal)
     def add_stim_group_anndata(self, expobj: Union[alloptical, Post4ap]):
         new_var = pd.Series(name='stim_group', index=self.adata.var.index, dtype='str')
 
@@ -209,7 +209,20 @@ class PhotostimResponsesQuantificationSLMtargets(Quantification):
         assert 'stim_group' in self.adata.var_keys()
         return np.where(self.adata.var.stim_group == 'ictal')[0]
 
-    # %% 3) PLOTTING MEAN PHOTOSTIM RESPONSE AMPLITUDES
+    # 2.2) add to anndata - hit trials
+    def add_hit_trials_anndata(self):
+        """
+        hit trials: successful photostimulation trials across experiments.
+        - threshold for successful photostimulation trials: >10% dFF response
+
+        add success (1) or failure (0) at each target/stim matrix as a layer to anndata.
+        """
+
+        self.adata.add_layer(layer_name='hits/failures (trade_dff)', data=self.hits_SLMtargets_tracedFF)
+
+
+
+    # 3) PLOTTING MEAN PHOTOSTIM RESPONSE AMPLITUDES
     def collect_photostim_responses_magnitude_avgtargets(self, stims: Union[slice, str, list] = 'all',
                                                          targets: Union[slice, str, list] = 'all',
                                                          adata_layer: str = 'primary'):
@@ -282,7 +295,7 @@ class PhotostimResponsesQuantificationSLMtargets(Quantification):
         expobj: alloptical = kwargs['expobj']
         expobj.PhotostimResponsesSLMTargets.plot_photostim_responses_magnitude(expobj=expobj, stims='all')
 
-    # %% 4) Zscoring of photostimulation responses
+    # 4) Zscoring of photostimulation responses
     def z_score_photostim_responses(self):
         """
         z scoring of photostimulation response across all stims for each target.
@@ -368,7 +381,7 @@ class PhotostimResponsesQuantificationSLMtargets(Quantification):
         expobj.PhotostimResponsesSLMTargets.plot_photostim_responses_magnitude_zscored(zscore_type='dFF (zscored)',
                                                                                        stims='all')
 
-    # %% 5) Measuring photostim responses in relation to pre-stim mean FOV Flu
+    # 5) Measuring photostim responses in relation to pre-stim mean FOV Flu
     @staticmethod
     def collect__prestim_FOV_Flu():
         """
@@ -472,7 +485,7 @@ class PhotostimResponsesQuantificationSLMtargets(Quantification):
         return pre_stim_FOV_flu_results
 
 
-    # %% 6) measuring photostim responses of targets as a function of pre-stim surrounding signal (targets_annulus Flu)
+    # 6) measuring photostim responses of targets as a function of pre-stim surrounding signal (targets_annulus Flu)
 
     """
     1. measuring photostim responses of targets as a function of pre-stim surrounding neuropil signal -- not immediately setup yet to do analysis involving suite2p

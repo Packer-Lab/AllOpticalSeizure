@@ -19,9 +19,6 @@ results: PhotostimResponsesSLMtargetsResults = PhotostimResponsesSLMtargetsResul
 print(results)
 # print(results.pre_stim_FOV_flu)
 
-"##### -------------------- ALL OPTICAL PHOTOSTIM ANALYSIS #############################################################"
-
-
 
 # %% r.0) init and collect photostim responses, create anndata structure
 
@@ -38,7 +35,11 @@ def run__collect_photostim_responses_exp(**kwargs):
     expobj.PhotostimResponsesSLMTargets.collect_photostim_responses_exp(expobj=expobj)
     expobj.save()
 
-
+@Utils.run_for_loop_across_exps(run_pre4ap_trials=1, run_post4ap_trials=1, allow_rerun=0)
+def run__add_hit_trials_anndata(**kwargs):
+    expobj: Union[alloptical, Post4ap] = kwargs['expobj']
+    expobj.PhotostimResponsesSLMTargets.add_hit_trials_anndata()
+    expobj.save()
 
 @Utils.run_for_loop_across_exps(run_pre4ap_trials=0, run_post4ap_trials=0, allow_rerun=1, run_trials=['PS11 t-011'])
 def run__create_anndata_SLMtargets(**kwargs):
@@ -99,7 +100,7 @@ def full_plot_mean_responses_magnitudes():
 
 
 
-# %% r.2) z scoring
+# r.2) z scoring
 
 @Utils.run_for_loop_across_exps(run_pre4ap_trials=0, run_post4ap_trials=0, allow_rerun=0, run_trials=['PS11 t-011'])
 def run__z_score_photostim_responses_and_interictalzscores(**kwargs):
@@ -151,7 +152,7 @@ def full_plot_mean_responses_magnitudes_zscored():
 
         return data
 
-# %% 5) plotting photostim responses in relation to pre-stim mean FOV Flu
+# 5) plotting photostim responses in relation to pre-stim mean FOV Flu
 
 # 5.1) plotting pre-stim mean FOV Flu for three stim type groups
 def plot__prestim_FOV_Flu(results):
@@ -258,7 +259,7 @@ def plot__photostim_responses_vs_prestim_FOV_flu(alpha=0.1, s=50, xlim=None, yli
     # Utils.save_figure(fig, save_path_suffix="plot__pre-stim-fov_vs_avg-photostim-response-of-targets.png")
     fig.show()
 
-plot__photostim_responses_vs_prestim_FOV_flu(alpha=0.05, s=25, xlim=[100, 2000], ylim=[-100, 100], log=True)
+# plot__photostim_responses_vs_prestim_FOV_flu(alpha=0.05, s=25, xlim=[100, 2000], ylim=[-100, 100], log=True)
 
 
 # %% RUN SCRIPT

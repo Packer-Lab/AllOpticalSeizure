@@ -548,8 +548,8 @@ for exptype in ['post', 'pre']:
                 expobj.mean_raw_flu_trace(plot=True)
 
             # for suite2p detected non-ROIs
-            expobj.dff_traces, expobj.dff_traces_avg, expobj.dfstdF_traces, \
-                expobj.dfstdF_traces_avg, expobj.raw_traces, expobj.raw_traces_avg = \
+            expobj.dff_traces_nontargets, expobj.dff_traces_nontargets_avg, expobj.dfstdF_traces_nontargets, \
+            expobj.dfstdF_traces_avg, expobj.raw_traces_nontargets, expobj.raw_traces_nontargets_avg = \
                 aoutils.get_nontargets_stim_traces_norm(expobj=expobj, normalize_to='pre-stim', pre_stim=expobj.pre_stim,
                                                         post_stim=expobj.post_stim)
             # for s2p detected target ROIs
@@ -677,7 +677,7 @@ aoplot.plot_traces_heatmap(arr, expobj=expobj, vmin=-20, vmax=20, stim_on=expobj
                            title=('peristim avg trace heatmap' + ' - slm targets only'), x_label='Time')
 
 arr = np.asarray([i for i in expobj.dfstdF_traces_avg]); vmin = -1; vmax = 1
-arr = np.asarray([i for i in expobj.dff_traces_avg]); vmin = -20; vmax = 20
+arr = np.asarray([i for i in expobj.dff_traces_nontargets_avg]); vmin = -20; vmax = 20
 aoplot.plot_traces_heatmap(arr, expobj=expobj, vmin=vmin, vmax=vmax, stim_on=expobj.pre_stim, stim_off=expobj.pre_stim + expobj.stim_duration_frames - 1,
                            title=('peristim avg trace heatmap' + ' - nontargets'), x_label='Time')
 

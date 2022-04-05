@@ -15,7 +15,6 @@ from funcsforprajay import plotting as pplot
 import funcsforprajay.funcs as pj
 
 from _utils_._anndata import AnnotatedData2
-from _utils_.io import import_expobj
 
 SAVE_LOC = "/home/pshah/mnt/qnap/Analysis/analysis_export/analysis_quantification_classes/"
 
@@ -27,13 +26,22 @@ class PhotostimAnalysisSlmTargets(Quantification):
 
     save_path = SAVE_LOC + 'PhotostimAnalysisSlmTargets.pkl'
     valid_targets_trace_types = ['trace_dFF', 'raw']
-    pre_stim_sec = 1
-    post_stim_sec = 4
+    _pre_stim_sec = 1
+    _post_stim_sec = 4
+    pre_stim_response_window_msec = 500 # msec
+    post_stim_response_window_msec = 500  # msec
 
     def __init__(self, expobj: Union[alloptical, Post4ap]):
         super().__init__(expobj)
         print(f'\- ADDING NEW PhotostimAnalysisSlmTargets MODULE to expobj: {expobj.t_series_name}')
         self.create_anndata(expobj=expobj)
+        self.pre_stim_fr = int(self._pre_stim_sec * expobj.fps)  # length of pre stim trace collected (in frames)
+        self.post_stim_fr = int(self._post_stim_sec * expobj.fps)  # length of post stim trace collected (in frames)
+        self.pre_stim_response_frames_window = int(
+            expobj.fps * self.pre_stim_response_window_msec / 1000)  # length of the pre stim response test window (in frames)
+        self.post_stim_response_frames_window = int(
+            expobj.fps * self.post_stim_response_window_msec / 1000)  # length of the post stim response test window (in frames)
+
 
     @staticmethod
     @Utils.run_for_loop_across_exps(run_pre4ap_trials=True, run_post4ap_trials=True, allow_rerun=0)
@@ -99,7 +107,7 @@ class PhotostimAnalysisSlmTargets(Quantification):
         self.adata = photostim_responses_adata
 
 
-    # 0) COLLECT ALL PHOTOSTIM TIMED TRACE SNIPPETS
+    # 0) COLLECT ALL PHOTOSTIM TIMED TRACE SNIPPETS --> found under PhotostimResponsesQuantificationSLMtargets class
 
     # 1) plot peri-photostim avg traces for all trials analyzed to make sure they look alright -- plot as little postage stamps
     @staticmethod
@@ -185,7 +193,7 @@ class PhotostimAnalysisSlmTargets(Quantification):
         fig.tight_layout(pad=1.8)
         fig.show()
 
-    # 1.1) calculating mean variability across targets:
+    # 2) calculating mean variability across targets:
     def calculate_variability(self, stims):
         """calculate standard deviation (ddof = 1) variability of photostim repsonses across trials for each inidividual target."""
 
@@ -378,10 +386,6 @@ class PhotostimAnalysisSlmTargets(Quantification):
                                    facecolors=['none'], edgecolors=['mediumorchid'], lw=1.3, figsize=(4,4))
 
 
-    # 2) MEASURE RELIABILITY OF PHOTOSTIM RESPONSES BASED ON A THRESHOLDING OF PHOTOSTIM RESPONSES TODO
-    def calculate_reliability(self):
-        """calculate photostimulation reliability across whole all photostim trials."""
-        pass
 
 
 

@@ -1,3 +1,4 @@
+#### NOTE: THIS FILE IS ACTIVELY BEING ARCHIVED AND REFACTORED TO OTHER LOCATIONS - DO NOT ADD ANY CODE HERE, USE ONLY FOR REFACTORING CODE OUT OF THE FILE ITSELF!
 #### NOTE: THIS IS NOT CURRENTLY SETUP TO BE ABLE TO HANDLE MULTIPLE GROUPS/STIMS (IT'S REALLY ONLY FOR a SINGLE STIM TRIGGER PHOTOSTIM RESPONSES)
 
 """# TODO need to condense functions that are currently all calculating photostim responses
@@ -2510,7 +2511,7 @@ class alloptical_(TwoPhotonImaging):
                     dff_traces_avg))
             self.dff_traces = dff_traces
             self.dff_traces_avg = dff_traces_avg
-            # return dff_traces, dff_traces_avg
+            # return dff_traces_nontargets, dff_traces_nontargets_avg
         elif normalize_to == 'pre-stim' or normalize_to == 'whole-trace':
             print(
                 f'\nCompleted collecting pre to post stim traces -- normalized to pre-stim period or maybe whole-trace -- for {len(dff_traces_avg)} cells, {len(flu_trials)} stims')
@@ -2525,7 +2526,7 @@ class alloptical_(TwoPhotonImaging):
 
         self.save() if save else None
 
-        # return dff_traces, dff_traces_avg, dfstdF_traces, dfstdF_traces_avg, raw_traces, raw_traces_avg
+        # return dff_traces_nontargets, dff_traces_nontargets_avg, dfstdF_traces_nontargets, dfstdF_traces_avg, raw_traces_nontargets, raw_traces_nontargets_avg
 
     def _trialProcessing_nontargets(expobj, normalize_to='pre-stim', save=True):
         '''
@@ -3762,8 +3763,8 @@ class Post4ap_(alloptical_):
 
         ## checking that there are no additional nan's being added from the code below (unless its specifically for the cell exclusion part)
         # print(f"analysis array outsz nan's: {sum(np.isnan(expobj.analysis_array_outsz))}")
-        # print(f"dfstdF_traces nan's: {sum(np.isnan(expobj.dfstdF_traces))}")
-        # assert sum(np.isnan(expobj.dfstdF_traces[0][0])) == sum(np.isnan(expobj.analysis_array_outsz[0][0])), print('there is a discrepancy in the number of nans in expobj.analysis_array_outsz')
+        # print(f"dfstdF_traces_nontargets nan's: {sum(np.isnan(expobj.dfstdF_traces_nontargets))}")
+        # assert sum(np.isnan(expobj.dfstdF_traces_nontargets[0][0])) == sum(np.isnan(expobj.analysis_array_outsz[0][0])), print('there is a discrepancy in the number of nans in expobj.analysis_array_outsz')
 
         expobj.pre_array_outsz = np.nanmean(expobj.analysis_array_outsz[:, :, expobj.pre_stim_frames_test],
                                             axis=1)  # [cells x prestim frames] (avg'd taken over all stims)
@@ -5216,7 +5217,7 @@ def run_alloptical_processing_photostim(expobj: Union[alloptical_, Post4ap_], to
                                                     stims_idx_l=expobj.stims_idx)
 
         ## GET NONTARGETS TRACES - not changed yet to handle the trace dFF processing
-        # expobj.dff_traces, expobj.dff_traces_avg, expobj.dfstdF_traces, expobj.dfstdF_traces_avg, expobj.raw_traces, expobj.raw_traces_avg = \
+        # expobj.dff_traces_nontargets, expobj.dff_traces_nontargets_avg, expobj.dfstdF_traces_nontargets, expobj.dfstdF_traces_avg, expobj.raw_traces_nontargets, expobj.raw_traces_nontargets_avg = \
         #     get_nontargets_stim_traces_norm(expobj=expobj, normalize_to='pre-stim', pre_stim=expobj.pre_stim,
         #                                     post_stim=expobj.post_stim)
 
@@ -5548,9 +5549,9 @@ def fig_non_targets_responses(expobj, plot_subset: bool = True, save_fig_suffix=
     print('----------------------------------------------------------------')
 
     if plot_subset:
-        selection = np.random.randint(0, expobj.dff_traces_avg.shape[0], 100)
+        selection = np.random.randint(0, expobj.dff_traces_nontargets_avg.shape[0], 100)
     else:
-        selection = np.arange(expobj.dff_traces_avg.shape[0])
+        selection = np.arange(expobj.dff_traces_nontargets_avg.shape[0])
 
     #### SUITE2P NON-TARGETS - PLOTTING OF AVG PERI-PHOTOSTIM RESPONSES
     if sum(expobj.sig_units) > 0:
@@ -5564,7 +5565,7 @@ def fig_non_targets_responses(expobj, plot_subset: bool = True, save_fig_suffix=
     from _utils_ import alloptical_plotting as aoplot
 
     a1 = f.add_subplot(gs[0, 0:2])
-    x = expobj.dff_traces_avg[selection]
+    x = expobj.dff_traces_nontargets_avg[selection]
     y_label = 'pct. dFF (normalized to prestim period)'
     aoplot.plot_periphotostim_avg(arr=x, expobj=expobj, pre_stim_sec=1, post_stim_sec=3,
                                   title='Average photostim all trials response', y_label=y_label, fig=f, ax=a1,
@@ -5592,7 +5593,7 @@ def fig_non_targets_responses(expobj, plot_subset: bool = True, save_fig_suffix=
     a4 = f.add_subplot(gs[0, -3:-1])
     vmin = -100
     vmax = 100
-    aoplot.plot_traces_heatmap(arr=expobj.dff_traces_avg, expobj=expobj, vmin=vmin, vmax=vmax,
+    aoplot.plot_traces_heatmap(arr=expobj.dff_traces_nontargets_avg, expobj=expobj, vmin=vmin, vmax=vmax,
                                stim_on=int(1 * expobj.fps),
                                stim_off=int(1 * expobj.fps + expobj.stim_duration_frames),
                                xlims=(0, expobj.dfstdF_traces_avg.shape[1]),

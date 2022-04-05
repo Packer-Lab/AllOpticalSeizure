@@ -271,8 +271,8 @@ aoutils._good_photostim_cells(expobj=expobj, pre_stim=expobj.pre_stim, post_stim
 
 # %% Collect pre to post stim traces for NON-TARGETS
 
-expobj.dff_traces, expobj.dff_traces_avg, expobj.dfstdF_traces, \
-    expobj.dfstdF_traces_avg, expobj.raw_traces, expobj.raw_traces_avg = \
+expobj.dff_traces_nontargets, expobj.dff_traces_nontargets_avg, expobj.dfstdF_traces_nontargets, \
+expobj.dfstdF_traces_avg, expobj.raw_traces_nontargets, expobj.raw_traces_nontargets_avg = \
     aoutils.get_nontargets_stim_traces_norm(expobj=expobj, normalize_to='pre-stim', pre_stim=expobj.pre_stim,
                                             post_stim=expobj.post_stim)
 

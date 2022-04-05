@@ -71,8 +71,8 @@ short_list_post = [('post', 'e', '0')]
 #                                          save_plot_suffix='Nontargets_responses_2021-10-24/%s_%s.png' % (expobj.metainfo['animal prep.'], expobj.metainfo['trial']))
 
 
-# expobj.dff_traces, expobj.dff_traces_avg, expobj.dfstdF_traces, \
-# expobj.dfstdF_traces_avg, expobj.raw_traces, expobj.raw_traces_avg = \
+# expobj.dff_traces_nontargets, expobj.dff_traces_nontargets_avg, expobj.dfstdF_traces_nontargets, \
+# expobj.dfstdF_traces_avg, expobj.raw_traces_nontargets, expobj.raw_traces_nontargets_avg = \
 #     aoutils.get_nontargets_stim_traces_norm(expobj=expobj, normalize_to='pre-stim', pre_stim_sec=expobj.pre_stim_sec,
 #                                             post_stim_sec=expobj.post_stim_sec)
 
@@ -96,13 +96,6 @@ for (i, key, j) in code_run_list_all:
 
 # %% 1.1) for loop to go through each expobj to analyze nontargets - run_pre4ap_trials trials - TODO - update using trace_dFF processed data
 
-# ######### decorated ################################
-# # ls = ['PS05 t-010', 'PS06 t-011', 'PS11 t-010', 'PS17 t-005', 'PS17 t-006', 'PS17 t-007', 'PS18 t-006']
-# ls = pj.flattenOnce(allopticalResults.pre_4ap_trials)
-# for (i, key, j) in code_run_list_pre:
-#     # import expobj
-#     expobj, experiment = aoutils.import_expobj(aoresults_map_id='pre %s.%s' % (key, j))
-# ######### decorated ################################
 @aoutils.run_for_loop_across_exps(run_pre4ap_trials=True, run_post4ap_trials=False)
 def run_allopticalNontargets(**kwargs):
     expobj = kwargs['expobj']
