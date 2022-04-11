@@ -184,6 +184,10 @@ class PhotostimResponsesQuantificationNonTargets(Quantification):
     mean_photostim_responses_ictal: List[float] = None
 
     def __init__(self, expobj: Union[alloptical, Post4ap]):
+
+        self.diff_responses = None  #: subtraction of stim responses post array with stim responses pre array (direct diff. of post-stim - pre-stim value for each nontarget across all stims)
+
+
         super().__init__(expobj)
         print(f'\- ADDING NEW PhotostimResponsesNonTargets MODULE to expobj: {expobj.t_series_name}')
         self._allopticalAnalysisNontargets(expobj=expobj, normalize_to='pre-stim', to_plot=False)
@@ -208,8 +212,8 @@ class PhotostimResponsesQuantificationNonTargets(Quantification):
 
     def _allopticalAnalysisNontargets(self, expobj: Union[alloptical, Post4ap], normalize_to='pre_stim', to_plot=True, save_plot_suffix=''):
         if 'pre' in expobj.exptype:
-            self.responses, self.wilcoxons = expobj._trialProcessing_nontargets(normalize_to='pre-stim', stims = 'all')
-            self.sig_units = expobj._sigTestAvgResponse_nontargets(p_vals=self.wilcoxons, alpha=0.1, save=False)  #: array of bool describing statistical significance of responder
+            self.diff_responses, self.wilcoxons, self.sig_units = expobj._trialProcessing_nontargets(normalize_to='pre-stim', stims = 'all', fdr_alpha=0.25)
+            # self.sig_units = expobj._sigTestAvgResponse_nontargets(p_vals=self.wilcoxons, alpha=0.1, save=False)  #: array of bool describing statistical significance of responder
 
             self.dff_stimtraces = expobj.dff_traces_nontargets  #: all stim timed trace snippets for all nontargets, shape: # cells x # stims x # frames of trace snippet
             self.dff_avgtraces = expobj.dff_traces_nontargets_avg  #: avg of trace snippets from all stims for all nontargets, shape: # cells x # frames of trace snippet
@@ -218,16 +222,14 @@ class PhotostimResponsesQuantificationNonTargets(Quantification):
 
         elif 'post' in expobj.exptype:
             # all stims
-            self.responses, self.wilcoxons = expobj._trialProcessing_nontargets(normalize_to='pre-stim',
-                                                                                stims='all')
+            self.diff_responses, self.wilcoxons, self.sig_units = expobj._trialProcessing_nontargets(normalize_to='pre-stim',
+                                                                                stims='all', fdr_alpha=0.25)
             self.dff_stimtraces = expobj.dff_traces_nontargets
 
             # interictal stims only
-            self.responses_interictal, self.wilcoxons_interictal = expobj._trialProcessing_nontargets(normalize_to='pre-stim',
-                                                                                                      stims=expobj.stims_out_sz)
-            self.sig_units_interictal = expobj._sigTestAvgResponse_nontargets(p_vals=self.wilcoxons, alpha=0.1, save=False)
-
-
+            self.diff_responses_interictal, self.wilcoxons_interictal, self.sig_units_interictal = expobj._trialProcessing_nontargets(normalize_to='pre-stim',
+                                                                                                      stims=expobj.stims_out_sz, fdr_alpha=0.25)
+            # self.sig_units_interictal = expobj._sigTestAvgResponse_nontargets(p_vals=self.wilcoxons, alpha=0.1, save=False)
             self.dff_stimtraces_interictal = expobj.dff_traces_nontargets  #: all stim timed trace snippets for all nontargets, shape: # cells x # stims x # frames of trace snippet
             self.dff_avgtraces_interictal = expobj.dff_traces_nontargets_avg  #: avg of trace snippets from all stims for all nontargets, shape: # cells x # frames of trace snippet
             self.dfstdF_stimtraces_interictal = expobj.dfstdF_traces_nontargets  #: all stim timed trace snippets for all nontargets, shape: # cells x # stims x # frames of trace snippet
@@ -235,11 +237,10 @@ class PhotostimResponsesQuantificationNonTargets(Quantification):
 
 
 
-
             # ictal stims only
-            self.responses_ictal, self.wilcoxons_ictal = expobj._trialProcessing_nontargets(normalize_to='pre-stim',
-                                                                                            stims=expobj.stims_in_sz)
-            self.sig_units_ictal = expobj._sigTestAvgResponse_nontargets(p_vals=self.wilcoxons, alpha=0.1, save=False)
+            self.diff_responses_ictal, self.wilcoxons_ictal, self.sig_units_ictal = expobj._trialProcessing_nontargets(normalize_to='pre-stim',
+                                                                                            stims=expobj.stims_in_sz, fdr_alpha=0.25)
+            # self.sig_units_ictal = expobj._sigTestAvgResponse_nontargets(p_vals=self.wilcoxons, alpha=0.1)
 
 
         # # make figure containing plots showing average responses of nontargets to photostim
@@ -252,7 +253,7 @@ class PhotostimResponsesQuantificationNonTargets(Quantification):
         print(
             '-------------------------------------------------------------------------------------------------------------\n\n')
 
-    @Utils.run_for_loop_across_exps(run_pre4ap_trials=1, run_post4ap_trials=1, allow_rerun=0, skip_trials=['PS04 t-012'])
+    @Utils.run_for_loop_across_exps(run_pre4ap_trials=1, run_post4ap_trials=1, allow_rerun=1, run_trials=['PS04 t-017', 'PS07 t-007'])
     def run_allopticalNontargets(**kwargs):
         expobj = kwargs['expobj']
         # if not hasattr(expobj, 's2p_nontargets'):
@@ -353,7 +354,7 @@ class PhotostimResponsesQuantificationNonTargets(Quantification):
                        'PhotostimResponsesSLMTargets'), 'no photostim responses found to use to create anndata base.'
         print(f"\t\----- CREATING annotated data object using AnnData:")
         # create anndata object
-        photostim_responses_adata = AnnotatedData2(X=self.responses, obs=obs_meta, var=var_meta.T, obsm=obs_m,
+        photostim_responses_adata = AnnotatedData2(X=self.diff_responses, obs=obs_meta, var=var_meta.T, obsm=obs_m,
                                                    data_label='nontargets dFF responses')
 
         print(f"Created: {photostim_responses_adata}")
@@ -370,28 +371,28 @@ class PhotostimResponsesQuantificationNonTargets(Quantification):
 
     @property
     def pos_sig_responders(self):
-        return np.where(np.nanmean(self.responses[self.sig_units, :], axis=1) > 0)[0]
+        return np.where(np.nanmean(self.diff_responses[self.sig_units, :], axis=1) > 0)[0]
     @property
     def neg_sig_responders(self):
-        return np.where(np.nanmean(self.responses[self.sig_units, :], axis=1) < 0)[0]
+        return np.where(np.nanmean(self.diff_responses[self.sig_units, :], axis=1) < 0)[0]
 
     @property
     def pos_sig_responders_interictal(self):
         assert 'post' in self.expobj_exptype, f'incorrect call for {self.expobj_exptype} exp.'
-        return np.where(np.nanmean(self.responses_interictal[self.sig_units_interictal, :], axis=1) > 0)[0]
+        return np.where(np.nanmean(self.diff_responses_interictal[self.sig_units_interictal, :], axis=1) > 0)[0]
     @property
     def neg_sig_responders_interictal(self):
         assert 'post' in self.expobj_exptype, f'incorrect call for {self.expobj_exptype} exp.'
-        return np.where(np.nanmean(self.responses_interictal[self.sig_units_interictal, :], axis=1) > 0)[0]
+        return np.where(np.nanmean(self.diff_responses_interictal[self.sig_units_interictal, :], axis=1) > 0)[0]
 
     @property
     def pos_sig_responders_ictal(self):
         assert 'post' in self.expobj_exptype, f'incorrect call for {self.expobj_exptype} exp.'
-        return np.where(np.nanmean(self.responses_ictal[self.sig_units_ictal, :], axis=1) > 0)[0]
+        return np.where(np.nanmean(self.diff_responses_ictal[self.sig_units_ictal, :], axis=1) > 0)[0]
     @property
     def neg_sig_responders_ictal(self):
         assert 'post' in self.expobj_exptype, f'incorrect call for {self.expobj_exptype} exp.'
-        return np.where(np.nanmean(self.responses_ictal[self.sig_units_ictal, :], axis=1) > 0)[0]
+        return np.where(np.nanmean(self.diff_responses_ictal[self.sig_units_ictal, :], axis=1) > 0)[0]
 
     def collect__sig_responders_responses(self, expobj: Union[alloptical, Post4ap]):
         """
@@ -410,12 +411,12 @@ class PhotostimResponsesQuantificationNonTargets(Quantification):
             # pre4ap_possig_responders_avgtrace = []
             # pre4ap_negsig_responders_avgtrace = []
 
-            self.pre4ap_possig_responders_responses = self.responses[self.sig_units][self.pos_sig_responders]  #: response magnitude for all pos responders for all stims
-            self.pre4ap_negsig_responders_responses = self.responses[self.sig_units][self.neg_sig_responders]  #: response magnitude for all neg responders for all stims
+            self.pre4ap_possig_responders_responses = self.diff_responses[self.sig_units][self.pos_sig_responders]  #: response magnitude for all pos responders for all stims
+            self.pre4ap_negsig_responders_responses = self.diff_responses[self.sig_units][self.neg_sig_responders]  #: response magnitude for all neg responders for all stims
 
 
-            self.pre4ap_possig_responders_traces = self.dfstdF_stimtraces[self.sig_units][np.where(np.nanmean(self.responses[self.sig_units, :], axis=1) > 0)[0]]
-            self.pre4ap_negsig_responders_traces = self.dfstdF_stimtraces[self.sig_units][np.where(np.nanmean(self.responses[self.sig_units, :], axis=1) < 0)[0]]
+            self.pre4ap_possig_responders_traces = self.dfstdF_stimtraces[self.sig_units][np.where(np.nanmean(self.diff_responses[self.sig_units, :], axis=1) > 0)[0]]
+            self.pre4ap_negsig_responders_traces = self.dfstdF_stimtraces[self.sig_units][np.where(np.nanmean(self.diff_responses[self.sig_units, :], axis=1) < 0)[0]]
 
 
             ## MAKE ARRAY OF TRACE SNIPPETS THAT HAVE PHOTOSTIM PERIOD ZERO'D
@@ -475,12 +476,12 @@ class PhotostimResponsesQuantificationNonTargets(Quantification):
             # post4ap_num_neg = 0
 
 
-            self.post4ap_possig_responders_responses_interictal = self.responses_interictal[self.sig_units_interictal][self.pos_sig_responders_interictal]  #: response magnitude for all pos responders for all stims
-            self.post4ap_negsig_responders_responses_interictal = self.responses_interictal[self.sig_units_interictal][self.neg_sig_responders_interictal]  #: response magnitude for all neg responders for all stims
+            self.post4ap_possig_responders_responses_interictal = self.diff_responses_interictal[self.sig_units_interictal][self.pos_sig_responders_interictal]  #: response magnitude for all pos responders for all stims
+            self.post4ap_negsig_responders_responses_interictal = self.diff_responses_interictal[self.sig_units_interictal][self.neg_sig_responders_interictal]  #: response magnitude for all neg responders for all stims
 
 
-            self.post4ap_possig_responders_traces = self.dfstdF_stimtraces_interictal[self.sig_units_interictal][np.where(np.nanmean(self.responses_interictal[self.sig_units_interictal, :], axis=1) > 0)[0]]
-            self.post4ap_negsig_responders_traces = self.dfstdF_stimtraces_interictal[self.sig_units_interictal][np.where(np.nanmean(self.responses_interictal[self.sig_units_interictal, :], axis=1) < 0)[0]]
+            self.post4ap_possig_responders_traces = self.dfstdF_stimtraces_interictal[self.sig_units_interictal][np.where(np.nanmean(self.diff_responses_interictal[self.sig_units_interictal, :], axis=1) > 0)[0]]
+            self.post4ap_negsig_responders_traces = self.dfstdF_stimtraces_interictal[self.sig_units_interictal][np.where(np.nanmean(self.diff_responses_interictal[self.sig_units_interictal, :], axis=1) < 0)[0]]
 
 
             ## MAKE ARRAY OF TRACE SNIPPETS THAT HAVE PHOTOSTIM PERIOD ZERO'D
@@ -608,7 +609,7 @@ class PhotostimResponsesQuantificationNonTargets(Quantification):
         def return__avg_magntiude_neg_response_interictal(**kwargs):
             """return avg magnitude of negitive responders of stim trials - interictal"""
             expobj: Union[alloptical, Post4ap] = kwargs['expobj']
-            return np.mean(expobj.PhotostimResponsesNonTargets.negt4ap_negsig_responders_responses_interictal)
+            return np.mean(expobj.PhotostimResponsesNonTargets.post4ap_negsig_responders_responses_interictal)
 
         pos_baseline = return__avg_magntiude_pos_response()
         pos_interictal = return__avg_magntiude_pos_response_interictal()

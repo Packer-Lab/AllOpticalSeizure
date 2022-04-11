@@ -18,6 +18,7 @@ import pandas as pd
 import xml.etree.ElementTree as ET
 import tifffile as tf
 from funcsforprajay import funcs as pj
+from funcsforprajay import plotting as pplot
 from funcsforprajay.wrappers import plot_piping_decorator
 from _utils_.paq_utils import paq_read
 
@@ -25,6 +26,7 @@ import _alloptical_utils as Utils
 from _main_.TwoPhotonImagingMain import TwoPhotonImaging
 
 
+# noinspection PyMethodParameters
 class alloptical(TwoPhotonImaging):
 
     def __init__(self, paths, metainfo, stimtype, quick=False):
@@ -1621,14 +1623,15 @@ class alloptical(TwoPhotonImaging):
     #
     #     return targets_dff, targets_dff_avg, targets_dfstdF, targets_dfstdF_avg, targets_raw, targets_raw_avg
 
-    def _makeNontargetsStimTracesArray(self, stim_frames, normalize_to='pre-stim', save=True):
+    # NONTARGETS STIM RESPONSES PROCESSING;
+    def _makeNontargetsStimTracesArray(expobj, stim_frames, normalize_to='pre-stim', save=True, plot=False):
         """
         primary function to retrieve photostimulation trial timed Fluorescence traces for non-targets (ROIs taken from suite2p).
-        :param self: alloptical experiment object
+        :param expobj: alloptical experiment object
         :param normalize_to: str; either "baseline" or "pre-stim" or "whole-trace"
         :return: plot of avg_dFF of 100 randomly selected nontargets
         """
-        print('\n\-Collecting peri-stim traces ...')
+        print('\n\- Collecting peri-stim traces ...')
 
         # collect photostim timed average dff traces of photostim targets
         dff_traces = []
@@ -1641,47 +1644,48 @@ class alloptical(TwoPhotonImaging):
         raw_traces_avg = []
 
 
-        self.s2p_nontargets_exclude = []
-        for cell in self.s2p_nontargets:
+        expobj.s2p_nontargets_exclude = []
+        for cell in expobj.s2p_nontargets:
             # print('considering cell # %s' % cell)
-            cell_idx = self.cell_id.index(cell)
-            flu_trials = [self.raw[cell_idx][stim - self.pre_stim: stim + self.stim_duration_frames + self.post_stim]
+            cell_idx = expobj.cell_id.index(cell)
+            flu_trials = [expobj.raw[cell_idx][stim - expobj.pre_stim: stim + expobj.stim_duration_frames + expobj.post_stim]
                           for stim in stim_frames]
 
-            dff_trace = Utils.normalize_dff(self.raw[cell_idx],
+            dff_trace = Utils.normalize_dff(expobj.raw[cell_idx],
                                             threshold_pct=50)  # normalize trace (dFF) to mean of whole trace
 
             # if normalize_to == 'baseline':  # probably gonna ax this anyways
             #     flu_dff = []
-            #     mean_spont_baseline = np.mean(self.baseline_raw[cell_idx])
+            #     mean_spont_baseline = np.mean(expobj.baseline_raw[cell_idx])
             #     for i in range(len(flu_trials)):
             #         trace_dff = ((flu_trials[i] - mean_spont_baseline) / mean_spont_baseline) * 100
             #
             #         # add nan if cell is inside sz boundary for this stim
-            #         if hasattr(self, 'slmtargets_szboundary_stim'):
-            #             if self.is_cell_insz(cell=cell, stim=stim_timings[i]):
+            #         if hasattr(expobj, 'slmtargets_szboundary_stim'):
+            #             if expobj.is_cell_insz(cell=cell, stim=stim_timings[i]):
             #                 trace_dff = [np.nan] * len(flu_trials[i])
             #
             #         flu_dff.append(trace_dff)
             #
             # elif normalize_to == 'whole-trace':
-            mean_ = np.mean(self.raw[cell_idx])
-            # dfstdf_trace = (self.raw[cell_idx] - np.mean(self.raw[cell_idx])) / np.std(self.raw[cell_idx], ddof=1)  # normalize trace (dFstdF) to std of whole trace
+            mean_ = np.mean(expobj.raw[cell_idx])
+            # dfstdf_trace = (expobj.raw[cell_idx] - np.mean(expobj.raw[cell_idx])) / np.std(expobj.raw[cell_idx], ddof=1)  # normalize trace (dFstdF) to std of whole trace
             if mean_ < 10:  # filter cells with low s2p neu corrected mean trace value
-                self.s2p_nontargets_exclude.append(cell)
+                expobj.s2p_nontargets_exclude.append(cell)
 
             else:
-                # print(f's2p neu. corrected trace statistics: mean: {mean_} (min: {np.min(self.raw[cell_idx])}, max: {np.max(self.raw[cell_idx])}, std: {np.std(self.raw[cell_idx], ddof=1)})')
+                # print(f's2p neu. corrected trace statistics: mean: {mean_} (min: {np.min(expobj.raw[cell_idx])}, max: {np.max(expobj.raw[cell_idx])}, std: {np.std(expobj.raw[cell_idx], ddof=1)})')
 
                 flu_dfstdF = []
                 flu_dff = []
-                flu_dff_ = [dff_trace[stim - self.pre_stim: stim + self.stim_duration_frames + self.post_stim] for stim in stim_frames]
+                # flu_dff_ = [dff_trace[stim - expobj.pre_stim: stim + expobj.stim_duration_frames + expobj.post_stim] for stim in stim_frames]
+                flu_dff_ = [dff_trace[stim - expobj.PhotostimAnalysisSlmTargets.pre_stim_fr: stim + expobj.stim_duration_frames + expobj.PhotostimAnalysisSlmTargets.post_stim_fr] for stim in stim_frames]
 
                 for i in range(len(flu_dff_)):
                     trace = flu_dff_[i]
-                    mean_pre = np.mean(trace[0:self.pre_stim])
+                    mean_pre = np.mean(trace[0:expobj.PhotostimAnalysisSlmTargets.pre_stim_fr])
                     trace_dff = trace - mean_pre  # correct dFF of this trial to mean of pre-stim dFF
-                    std_pre = np.std(trace[0:self.pre_stim], ddof=1)
+                    std_pre = np.std(trace[0:expobj.PhotostimAnalysisSlmTargets.pre_stim_fr], ddof=1)
                     dFstdF = trace_dff / std_pre  # normalize dFF of this trial by std of pre-stim dFF
 
                     flu_dff.append(trace_dff)
@@ -1693,9 +1697,9 @@ class alloptical(TwoPhotonImaging):
             #     # print('|- splitting trace by photostim. trials and correcting by pre-stim period')
             #     for i in range(len(flu_trials)):
             #         trace = flu_trials[i]
-            #         mean_pre = np.mean(trace[0:self.pre_stim])
+            #         mean_pre = np.mean(trace[0:expobj.pre_stim])
             #
-            #         std_pre = np.std(trace[0:self.pre_stim], ddof=1)
+            #         std_pre = np.std(trace[0:expobj.pre_stim], ddof=1)
             #         # dFstdF = (((trace - mean_pre) / mean_pre) * 100) / std_pre  # make dF divided by std of pre-stim F trace
             #         dFstdF = (trace - mean_pre) / std_pre  # make dF divided by std of pre-stim F trace
             #
@@ -1707,14 +1711,14 @@ class alloptical(TwoPhotonImaging):
             #         else:
             #             # trace_dff = ((trace - mean_pre) / mean_pre) * 100
             #             trace_dff = Utils.normalize_dff(trace, threshold_val=mean_pre)
-            #             # std_pre = np.std(trace[0:self.pre_stim], ddof=1)
+            #             # std_pre = np.std(trace[0:expobj.pre_stim], ddof=1)
             #             # # dFstdF = (((trace - mean_pre) / mean_pre) * 100) / std_pre  # make dF divided by std of pre-stim F trace
             #             # dFstdF = (trace - mean_pre) / std_pre  # make dF divided by std of pre-stim F trace
             #
             #         # # add nan if cell is inside sz boundary for this stim -- temporarily commented out for a while
-            #         # if 'post' in self.metainfo['exptype']:
-            #         #     if hasattr(self, 'slmtargets_szboundary_stim'):
-            #         #         if self.is_cell_insz(cell=cell, stim=stim_timings[i]):
+            #         # if 'post' in expobj.metainfo['exptype']:
+            #         #     if hasattr(expobj, 'slmtargets_szboundary_stim'):
+            #         #         if expobj.is_cell_insz(cell=cell, stim=stim_timings[i]):
             #         #             trace_dff = [np.nan] * len(trace)
             #         #             dFstdF = [np.nan] * len(trace)
             #         #     else:
@@ -1740,91 +1744,63 @@ class alloptical(TwoPhotonImaging):
             print(
                 '\nCompleted collecting pre to post stim traces -- normalized to spont imaging as baseline -- for %s cells' % len(
                     dff_traces_avg))
-            self.dff_traces_nontargets = dff_traces
-            self.dff_traces_nontargets_avg = dff_traces_avg
+            expobj.dff_traces_nontargets = dff_traces
+            expobj.dff_traces_nontargets_avg = dff_traces_avg
             # return dff_traces_nontargets, dff_traces_nontargets_avg
         elif normalize_to == 'pre-stim' or normalize_to == 'whole-trace':
-            print(
-                f'\nCompleted collecting pre to post stim traces -- normalized to pre-stim period or maybe whole-trace -- for {len(dff_traces_avg)} cells, {len(flu_trials)} stims')
-            self.dff_traces_nontargets = np.asarray(dff_traces)
-            self.dff_traces_nontargets_avg = np.asarray([i for i in dff_traces_avg])
-            self.dfstdF_traces_nontargets = np.asarray(dfstdF_traces)
-            self.dfstdF_traces_nontargets_avg = np.asarray([i for i in dfstdF_traces_avg])
-            self.raw_traces_nontargets = np.asarray(raw_traces)
-            self.raw_traces_nontargets_avg = np.asarray([i for i in raw_traces_avg])
+            expobj.dff_traces_nontargets = np.asarray(dff_traces)
+            expobj.dff_traces_nontargets_avg = np.asarray([i for i in dff_traces_avg])
+            expobj.dfstdF_traces_nontargets = np.asarray(dfstdF_traces)
+            expobj.dfstdF_traces_nontargets_avg = np.asarray([i for i in dfstdF_traces_avg])
+            expobj.raw_traces_nontargets = np.asarray(raw_traces)
+            expobj.raw_traces_nontargets_avg = np.asarray([i for i in raw_traces_avg])
+            print(f'\nCompleted collecting pre to post stim traces -- normalized to pre-stim period or maybe whole-trace -- for '
+                  f'{expobj.dff_traces_nontargets.shape[0]} cells, {expobj.dff_traces_nontargets.shape[1]} stims, {expobj.dff_traces_nontargets.shape[2]} frames')
 
         print('\nFinished collecting peri-stim traces ')
 
-        self.save() if save else None
+        expobj.save() if save else None
 
-        # return dff_traces_nontargets, dff_traces_nontargets_avg, dfstdF_traces_nontargets, dfstdF_traces_nontargets_avg, raw_traces_nontargets, raw_traces_nontargets_avg
+        plot = False
+        if plot:
+            cells_plot = np.random.randint(0, expobj.dff_traces_nontargets.shape[0], 100)
+            fig, ax = plt.subplots(figsize = (4,4))
+            for cell in cells_plot:
+                ax.plot(expobj.dfstdF_traces_nontargets_avg[cell])
+            ax.plot(np.mean(expobj.dfstdF_traces_nontargets_avg[cells_plot], axis=0), lw='2', color='black')
+            fig.show()
+
+            for i in cells_plot:
+                print(f"cell: {i}, max: {np.max(expobj.dfstdF_traces_nontargets_avg[i])}")
+
+            cell = 267
+            for trace in expobj.dfstdF_traces_nontargets[cell]:
+                plt.plot(trace)
+            plt.plot(np.mean(expobj.dfstdF_traces_nontargets[cell], axis=0), color='black')
+            plt.show()
 
     def _runWilcoxonsTest(expobj, array1, array2):
 
         # check if the two distributions of flu values (pre/post) are different
         assert array1.shape == array2.shape, 'shapes for expobj.pre_array and expobj.post_array need to be the same for wilcoxon test'
-        wilcoxons = np.empty(len(array1))  # [cell (p-value)]
 
-        for cell in range(len(array1)):
+        # # averaged responses arrays:
+        # if array1.ndim > 1 and array2.ndim > 1:
+        #     wilcoxons = stats.wilcoxon(array2, array1)[1]
+
+        # multid responses arrays:
+        wilcoxons = np.zeros(array1.shape[0])  # [cell (p-value)]
+        for cell in range(array1.shape[0]):
             wilcoxons[cell] = stats.wilcoxon(array2[cell], array1[cell])[1]
 
         return wilcoxons
 
         # expobj.save() if save else None
 
-
-    def _trialProcessing_nontargets(expobj, normalize_to='pre-stim', save=True, stims: Union[list, str] = 'all'):
-        '''
-        Uses dfstdf traces for individual cells and photostim trials, calculate the mean amplitudes of response and
-        statistical significance across all trials for all cells
-
-        Inputs:
-            plane             - imaging plane n
-        '''
-
-        print('\n----------------------------------------------------------------')
-        print('running trial Processing for nontargets ')
-        print('----------------------------------------------------------------')
-
-        # make trial arrays from dff data shape: [cells x stims x frames]
-        if stims != 'all':
-            expobj._makeNontargetsStimTracesArray(stim_frames=stims, normalize_to=normalize_to, save=False)
-        else:
-            expobj._makeNontargetsStimTracesArray(stim_frames=expobj.stim_start_frames, normalize_to=normalize_to, save=False)
-
-        # create parameters, slices, and subsets for making pre-stim and post-stim arrays to use in stats comparison
-        # test_period = expobj.pre_stim_response_window_msec / 1000  # sec
-        # expobj.test_frames = int(expobj.fps * test_period)  # test period for stats
-        expobj.pre_stim_frames_test = np.s_[expobj.PhotostimAnalysisSlmTargets.pre_stim_fr - expobj.PhotostimAnalysisSlmTargets.pre_stim_response_frames_window: expobj.PhotostimAnalysisSlmTargets.pre_stim_fr]
-        stim_end = expobj.PhotostimAnalysisSlmTargets.pre_stim_fr + expobj.stim_duration_frames
-        expobj.post_stim_frames_slice = np.s_[stim_end: stim_end + expobj.PhotostimAnalysisSlmTargets.post_stim_response_frames_window]
-
-        # mean pre and post stimulus (within post-stim response window) flu trace values for all cells, all trials
-        # analysis_array = expobj.dff_traces_nontargets  # NOTE: USING dFF TRACES
-        analysis_array = expobj.dfstdF_traces_nontargets  # NOTE: USING dF/stdF TRACES
-        expobj.pre_array = np.mean(analysis_array[:, :, expobj.pre_stim_frames_test],
-                                   axis=1)  # [cells x prestim frames] (avg'd taken over all stims)
-        expobj.post_array = np.mean(analysis_array[:, :, expobj.post_stim_frames_slice],
-                                    axis=1)  # [cells x poststim frames] (avg'd taken over all stims)
-
-        # measure avg response value for each trial, each cell --> return array with 2 axes; response_magnitude_per_stim (avg'd taken over response window): [cells x stims]
-        # expobj.post_array_responses = []  ### this and the for loop below was implemented to try to root out stims with nan's but it's likley not necessary...
-        # for i in np.arange(analysis_array.shape[0]):
-        #     a = analysis_array[i][~np.isnan(analysis_array[i]).any(axis=1)]
-        #     responses = a.mean(axis=1)
-        #     expobj.post_array_responses.append(responses)
-
-        expobj.post_array_responses = np.mean(analysis_array[:, :, expobj.post_stim_frames_slice], axis=2)  #: response post- stim for all cells, stims: [cells x stims]
-        expobj.wilcoxons = expobj._runWilcoxonsTest(array1=expobj.pre_array, array2=expobj.post_array)  #: wilcoxon  value across all cells: len = # cells
-
-        # expobj.save() if save else None
-
-        return expobj.post_array_responses, expobj.wilcoxons
-
-
-    def _sigTestAvgResponse_nontargets(expobj, p_vals=None, alpha=0.1, save=True):
+    @staticmethod
+    def _sigTestAvgResponse_nontargets(p_vals=None, alpha=0.25):
         """
-        Uses the p values and a threshold for the Benjamini-Hochberg correction to return which
+        Uses the p values and a threshold for the Benjamini-Hochberg correction (false discovery rate) to return which
         cells are still significant after correcting for multiple significance testing
         """
         print('\n----------------------------------------------------------------')
@@ -1835,10 +1811,7 @@ class alloptical(TwoPhotonImaging):
         sig_units = np.full_like(p_vals, False, dtype=bool)
 
         try:
-            # sig_units, _, _, _ = sm.stats.multitest.multipletests(p_vals, alpha=alpha, method='fdr_bh',
-            #                                                       is_sorted=False, returnsorted=False)
-            sig_units, _, _, _ = multi.multipletests(p_vals, alpha=alpha, method='fdr_bh',
-                                                                  is_sorted=False, returnsorted=False)
+            sig_units, corrected_pvals, _, _ = multi.multipletests(p_vals, alpha=alpha, method='fdr_bh', is_sorted=False, returnsorted=False)
         except ZeroDivisionError:
             print('no cells responding')
 
@@ -1855,6 +1828,154 @@ class alloptical(TwoPhotonImaging):
         #         sig_units[bonf_corr] = True
 
         return sig_units
+
+    def _trialProcessing_nontargets(expobj, normalize_to='pre-stim', save=True, stims: Union[list, str] = 'all',
+                                    fdr_alpha=0.10):
+        """
+        Uses dfstdf traces for individual cells and photostim trials, calculate the mean amplitudes of response and
+        statistical significance across all trials for all cells
+
+        :param normalize_to:
+        :param save:
+        :param stims:
+        :param fdr_alpha: false discovery rate for multiple corrections BH type test
+        :return:
+
+        """
+
+        print('\n----------------------------------------------------------------')
+        print('running trial Processing for nontargets ')
+        print('----------------------------------------------------------------')
+
+        # make trial arrays from dff data shape: [cells x stims x frames]
+        if stims != 'all':
+            expobj._makeNontargetsStimTracesArray(stim_frames=stims, normalize_to=normalize_to, save=False, plot=True)
+        else:
+            expobj._makeNontargetsStimTracesArray(stim_frames=expobj.stim_start_frames, normalize_to=normalize_to, save=False, plot=True)
+
+        # create parameters, slices, and subsets for making pre-stim and post-stim arrays to use in stats comparison
+        # test_period = expobj.pre_stim_response_window_msec / 1000  # sec
+        # expobj.test_frames = int(expobj.fps * test_period)  # test period for stats
+        expobj.pre_stim_frames_test = np.s_[expobj.PhotostimAnalysisSlmTargets.pre_stim_fr - expobj.PhotostimAnalysisSlmTargets.pre_stim_response_frames_window: expobj.PhotostimAnalysisSlmTargets.pre_stim_fr]
+        stim_end = expobj.PhotostimAnalysisSlmTargets.pre_stim_fr + expobj.stim_duration_frames
+        expobj.post_stim_frames_test = np.s_[stim_end: stim_end + expobj.PhotostimAnalysisSlmTargets.post_stim_response_frames_window]
+
+        # mean pre and post stimulus (within post-stim response window) flu trace values for all cells, all trials
+        # analysis_array = expobj.dff_traces_nontargets  # NOTE: USING dFF TRACES
+        analysis_array = expobj.dfstdF_traces_nontargets  # NOTE: USING dF/stdF TRACES
+        expobj.pre_array = np.mean(analysis_array[:, :, expobj.pre_stim_frames_test],
+                                   axis=1)  # [cells x prestim frames] (avg'd taken over all stims)
+        expobj.post_array = np.mean(analysis_array[:, :, expobj.post_stim_frames_test],
+                                    axis=1)  # [cells x poststim frames] (avg'd taken over all stims)
+
+        # measure avg response value for each trial, each cell --> return array with 2 axes; response_magnitude_per_stim (avg'd taken over response window): [cells x stims]
+        # expobj.post_array_responses = []  ### this and the for loop below was implemented to try to root out stims with nan's but it's likley not necessary...
+        # for i in np.arange(analysis_array.shape[0]):
+        #     a = analysis_array[i][~np.isnan(analysis_array[i]).any(axis=1)]
+        #     responses = a.mean(axis=1)
+        #     expobj.post_array_responses.append(responses)
+
+        expobj.post_array_responses = np.mean(analysis_array[:, :, expobj.post_stim_frames_test], axis=2)  #: response post- stim for all cells, stims: [cells x stims]
+        expobj.pre_array_responses = np.mean(analysis_array[:, :, expobj.pre_stim_frames_test], axis=2)  #: response post- stim for all cells, stims: [cells x stims]
+        diff_responses_array = expobj.post_array_responses - expobj.pre_array_responses
+
+        # expobj.post_array_responses = np.mean(expobj.pre_array, axis=1)  #: response post- stim for all cells, stims: [cells x stims]
+        # expobj.pre_array_responses = np.mean(expobj.post_array, axis=1)  #: response post- stim for all cells, stims: [cells x stims]
+        expobj.wilcoxons = expobj._runWilcoxonsTest(array1=expobj.pre_array, array2=expobj.post_array)  #: wilcoxon  value across all cells: len = # cells
+
+
+        # fdr_alpa = 0.20
+        sig_units = expobj._sigTestAvgResponse_nontargets(p_vals=expobj.wilcoxons, alpha=fdr_alpha)
+
+        # expobj.save() if save else None
+
+        avg_post = np.mean(expobj.post_array_responses, axis=1)
+        avg_pre = np.mean(expobj.pre_array_responses, axis=1)
+
+        # BUNCH OF PLOT TO TEST HOW RESPONSES ARE BEING STATISTICALLY FILTERED:
+
+        fig, axs = plt.subplots(figsize=(8,8), nrows=2, ncols=2)
+
+        # pplot.plot_bar_with_points(data=[avg_pre, avg_post], bar=False, points=True, paired=True, colors=['blue', 'green'], alpha=0.04,
+        #                            x_tick_labels=['prearray', 'postarray'])
+        # pplot.plot_bar_with_points(data=[avg_post], bar=False, points=True, colors=['blue'], alpha=0.04, x_tick_labels=['postarray'])
+
+        # # comparing post - pre responses directly:
+        # traces_ = []
+        # for cell in range(expobj.pre_array.shape[0]):
+        #     if avg_post[cell] > avg_pre[cell]:
+        #         plt.plot(expobj.dfstdF_traces_nontargets_avg[cell])
+        #         traces_.append(expobj.dfstdF_traces_nontargets_avg[cell])
+        # plt.plot(np.mean(traces_, axis=0), color='black')
+        # plt.suptitle('post - pre: positive')
+        # print(f'Number of pos post-pre cells: {len(traces_)}')
+        # plt.show()
+        #
+        # # comparing post - pre responses directly:
+        # traces_ = []
+        # for cell in range(expobj.pre_array.shape[0]):
+        #     if avg_post[cell] < avg_pre[cell]:
+        #         plt.plot(expobj.dfstdF_traces_nontargets_avg[cell])
+        #         traces_.append(expobj.dfstdF_traces_nontargets_avg[cell])
+        # plt.plot(np.mean(traces_, axis=0), color='black')
+        # plt.suptitle('post - pre: negative')
+        # print(f'Number of neg post-pre cells: {len(traces_)}')
+        # plt.show()
+
+        # using the results of the wilcoxon test for comparison:
+        traces_ = []
+        for cell in range(expobj.pre_array.shape[0]):
+            if expobj.wilcoxons[cell] < 0.05:
+                if avg_post[cell] > avg_pre[cell]:
+                    axs[0,0].plot(expobj.dfstdF_traces_nontargets_avg[cell])
+                    traces_.append(expobj.dfstdF_traces_nontargets_avg[cell])
+        axs[0,0].plot(np.mean(traces_, axis=0), color='black')
+        axs[0,0].set_title(f'wilcoxon: {len(traces_)} positive')
+        print(f'Number of pos wilcoxon cells: {len(traces_)}')
+        # plt.show()
+
+        # using the results of the wilcoxon test for comparison:
+        traces_ = []
+        for cell in range(expobj.pre_array.shape[0]):
+            if expobj.wilcoxons[cell] < 0.05:
+                if avg_post[cell] < avg_pre[cell]:
+                    axs[0,1].plot(expobj.dfstdF_traces_nontargets_avg[cell])
+                    traces_.append(expobj.dfstdF_traces_nontargets_avg[cell])
+        axs[0,1].plot(np.mean(traces_, axis=0), color='black')
+        axs[0,1].set_title(f'wilcoxon: {len(traces_)} negative')
+        print(f'Number of neg wilcoxon cells: {len(traces_)}')
+        # plt.show()
+
+
+        # using the results of the wilcoxon test + FDR correction for comparison:
+        traces_ = []
+        for cell in range(expobj.pre_array.shape[0]):
+            if sig_units[cell]:
+                if avg_post[cell] > avg_pre[cell]:
+                    axs[1,0].plot(expobj.dfstdF_traces_nontargets_avg[cell])
+                    traces_.append(expobj.dfstdF_traces_nontargets_avg[cell])
+        axs[1,0].plot(np.mean(traces_, axis=0), color='black')
+        axs[1,0].set_title(f'wilcoxon + {fdr_alpha} FDR: {len(traces_)} positive')
+        print(f'Number of pos wilcoxon + FDR cells: {len(traces_)}')
+        # plt.show()
+
+        # using the results of the wilcoxon test + FDR correction for comparison:
+        traces_ = []
+        for cell in range(expobj.pre_array.shape[0]):
+            if sig_units[cell]:
+                if avg_post[cell] < avg_pre[cell]:
+                    axs[1,1].plot(expobj.dfstdF_traces_nontargets_avg[cell])
+                    traces_.append(expobj.dfstdF_traces_nontargets_avg[cell])
+        axs[1,1].plot(np.mean(traces_, axis=0), color='black')
+        axs[1,1].set_title(f'wilcoxon + {fdr_alpha} FDR: {len(traces_)} negative')
+        print(f'Number of neg wilcoxon + FDR cells: {len(traces_)}')
+        fig.suptitle(f"{expobj.t_series_name}")
+        fig.show()
+
+        return diff_responses_array, expobj.wilcoxons, sig_units
+
+
+
 
     # used for creating tiffs that remove artifacts from alloptical experiments with photostim artifacts
     def rm_artifacts_tiffs(expobj, tiffs_loc, new_tiffs):

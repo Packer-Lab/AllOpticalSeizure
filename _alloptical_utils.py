@@ -221,17 +221,21 @@ def get_from_cache(func_name, item):
     func_dict = __load_cache()
     return True if item in func_dict[func_name] else False
 
-def delete_from_cache(func_name: str):
+def delete_from_cache(func_name: str, items: list = None):
     func_dict = __load_cache()
     if func_name in [*func_dict]:
-        func_dict.pop(func_name, None)
-        if func_name not in [*func_dict]:
-            pickle.dump(func_dict, open(f"{cache_path}", "wb"))
-            print(f"Deleted {func_name} from cache.")
+        if items is None:
+            func_dict.pop(func_name, None)
+            if func_name not in [*func_dict]:
+                pickle.dump(func_dict, open(f"{cache_path}", "wb"))
+                print(f"Deleted {func_name} from cache.")
+            else:
+                print(f"Delete failed: {func_name} found in cache, but was not able to delete. unexpected error.")
         else:
-            print(f"Delete failed: {func_name} found in cache, but was not able to delete. unexpected error.")
+            assert type(items) == list, 'provide items as list.'
+            [func_dict[func_name].remove(item) for item in items]
     else:
-        print(f'WARNING: {func_name} was not found in cache. nothing deleted.')
+        ValueError(f'{func_name} was not found in cache. nothing deleted.')
 
 
 # random plot just to initialize plotting for PyCharm
