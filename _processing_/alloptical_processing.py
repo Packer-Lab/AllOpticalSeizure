@@ -264,7 +264,7 @@ def run_alloptical_processing_photostim(expobj: Union[alloptical, Post4ap], to_s
 
 
         ## GET NONTARGETS TRACES - not changed yet to handle the trace dFF processing
-        # expobj.dff_traces_nontargets, expobj.dff_traces_nontargets_avg, expobj.dfstdF_traces_nontargets, expobj.dfstdF_traces_avg, expobj.raw_traces_nontargets, expobj.raw_traces_nontargets_avg = \
+        # expobj.dff_traces_nontargets, expobj.dff_traces_nontargets_avg, expobj.dfstdF_traces_nontargets, expobj.dfstdF_traces_nontargets_avg, expobj.raw_traces_nontargets, expobj.raw_traces_nontargets_avg = \
         #     get_nontargets_stim_traces_norm(expobj=expobj, normalize_to='pre-stim', pre_stim=expobj.pre_stim,
         #                                     post_stim=expobj.post_stim)
 

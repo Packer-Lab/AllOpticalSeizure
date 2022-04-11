@@ -72,7 +72,7 @@ short_list_post = [('post', 'e', '0')]
 
 
 # expobj.dff_traces_nontargets, expobj.dff_traces_nontargets_avg, expobj.dfstdF_traces_nontargets, \
-# expobj.dfstdF_traces_avg, expobj.raw_traces_nontargets, expobj.raw_traces_nontargets_avg = \
+# expobj.dfstdF_traces_nontargets_avg, expobj.raw_traces_nontargets, expobj.raw_traces_nontargets_avg = \
 #     aoutils.get_nontargets_stim_traces_norm(expobj=expobj, normalize_to='pre-stim', pre_stim_sec=expobj.pre_stim_sec,
 #                                             post_stim_sec=expobj.post_stim_sec)
 
@@ -158,8 +158,8 @@ for key in list(allopticalResults.trial_maps['pre'].keys()):
         expobj, experiment = aoutils.import_expobj(aoresults_map_id='pre %s.%s' % (key, i))
         if sum(expobj.sig_units) > 0:
             name += expobj.metainfo['trial']
-            pre4ap_possig_responders_avgresponse_ = expobj.dfstdF_traces_avg[expobj.sig_units][np.where(np.nanmean(expobj.post_array_responses[expobj.sig_units, :], axis=1) > 0)[0]]
-            pre4ap_negsig_responders_avgresponse_ = expobj.dfstdF_traces_avg[expobj.sig_units][np.where(np.nanmean(expobj.post_array_responses[expobj.sig_units, :], axis=1) < 0)[0]]
+            pre4ap_possig_responders_avgresponse_ = expobj.dfstdF_traces_nontargets_avg[expobj.sig_units][np.where(np.nanmean(expobj.post_array_responses[expobj.sig_units, :], axis=1) > 0)[0]]
+            pre4ap_negsig_responders_avgresponse_ = expobj.dfstdF_traces_nontargets_avg[expobj.sig_units][np.where(np.nanmean(expobj.post_array_responses[expobj.sig_units, :], axis=1) < 0)[0]]
 
             if i == 0:  # only taking trials averages from the first sub-trial from the matched comparisons
                 pre4ap_possig_responders_avgresponse.append(pre4ap_possig_responders_avgresponse_)
@@ -210,9 +210,9 @@ for key in list(allopticalResults.trial_maps['pre'].keys()):
         expobj, experiment = aoutils.import_expobj(aoresults_map_id='post %s.%s' % (key, i))
         if sum(expobj.sig_units) > 0:
             name += expobj.metainfo['trial']
-            post4ap_possig_responders_avgresponse_ = expobj.dfstdF_traces_avg[expobj.sig_units][
+            post4ap_possig_responders_avgresponse_ = expobj.dfstdF_traces_nontargets_avg[expobj.sig_units][
             np.where(np.nanmean(expobj.post_array_responses[expobj.sig_units, :], axis=1) > 0)[0]]
-            post4ap_negsig_responders_avgresponse_ = expobj.dfstdF_traces_avg[expobj.sig_units][
+            post4ap_negsig_responders_avgresponse_ = expobj.dfstdF_traces_nontargets_avg[expobj.sig_units][
             np.where(np.nanmean(expobj.post_array_responses[expobj.sig_units, :], axis=1) < 0)[0]]
 
             if i == 0:

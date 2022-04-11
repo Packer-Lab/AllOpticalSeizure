@@ -73,7 +73,7 @@ def plot_dff_significant_pos_neg_responders(**kwargs):
 
     # plot peristim avg dFstdF of pos_sig_cells
     selection = [expobj.s2p_nontargets.index(i) for i in expobj.pos_sig_cells]
-    x = expobj.dfstdF_traces_avg[selection]
+    x = expobj.dfstdF_traces_nontargets_avg[selection]
     y_label = 'dF/stdF'
     f, ax[1, 0] = aoplot.plot_periphotostim_avg(arr=x, expobj=expobj, pre_stim_sec=1, post_stim_sec=3,
                                   title=None, y_label=y_label, fig=f, ax=ax[1, 0], show=False,
@@ -81,7 +81,7 @@ def plot_dff_significant_pos_neg_responders(**kwargs):
 
     # plot peristim avg dFstdF of neg_sig_cells
     selection = [expobj.s2p_nontargets.index(i) for i in expobj.neg_sig_cells]
-    x = expobj.dfstdF_traces_avg[selection]
+    x = expobj.dfstdF_traces_nontargets_avg[selection]
     y_label = None
     f, ax[1, 1] = aoplot.plot_periphotostim_avg(arr=x, expobj=expobj, pre_stim_sec=1, post_stim_sec=3,
                                   title=None, y_label=y_label, fig=f, ax=ax[1, 1], show=False,

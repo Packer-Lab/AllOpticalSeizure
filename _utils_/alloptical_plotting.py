@@ -572,17 +572,6 @@ def plot_photostim_traces_overlap(array, expobj, exclude_id=[], y_spacing_factor
 def plot_periphotostim_avg2(dataset, fps=None, legend_labels=None, colors=None, avg_with_std=False,
                             title='high quality plot', pre_stim_sec=None, ylim=None, fig=None, ax=None, **kwargs):
 
-    # if 'fig' in kwargs.keys():
-    #     fig = kwargs['fig']
-    #     ax = kwargs['ax']
-    # else:
-    #     if 'figsize' in kwargs.keys():
-    #         fig, ax = plt.subplots(figsize=kwargs['figsize'])
-    #     else:
-    #         fig, ax = plt.subplots(figsize=[5, 4])
-
-
-
     meantraces = []
     stdtraces = []
     if type(dataset) == list and len(dataset) > 1:
@@ -608,17 +597,20 @@ def plot_periphotostim_avg2(dataset, fps=None, legend_labels=None, colors=None, 
         std = np.std(dataset[0], axis=0, ddof=1)
         meantraces.append(meanst)
         stdtraces.append(std)
-        colors = ['black']
+        colors = ['black'] if colors is None else colors
     else:
         AttributeError('please provide the data to plot in a ls format, each different data group as a ls item...')
 
-    if 'xlabel' not in kwargs or kwargs['xlabel'] is None or 'frames' not in kwargs['xlabel'] or 'Frames' not in kwargs['xlabel']:
+    assert len(meantraces[0]) == dataset[0].shape[1], 'length of meantraces is not equal to the dataset provided.'
+    assert len(stdtraces[0]) == dataset[0].shape[1], 'length of stdtraces is not equal to the dataset provided.'
+
+    if 'xlabel' not in kwargs or kwargs['xlabel'] is None or 'time' in kwargs['xlabel'] or 'Time' in kwargs['xlabel']:
         ## change xaxis to time (secs)
         if fps is not None:
             if pre_stim_sec is not None:
                 x_range = np.linspace(0, len(meantraces[0]) / fps, len(
                     meantraces[0])) - pre_stim_sec  # x scale, but in time domain (transformed from frames based on the provided fps)
-                if 'xlabel' in kwargs.keys():
+                if 'xlabel' in kwargs:
                     ax.set_xlabel(kwargs['xlabel'])
                 else:
                     ax.set_xlabel('Time post stim (secs)')
@@ -626,8 +618,8 @@ def plot_periphotostim_avg2(dataset, fps=None, legend_labels=None, colors=None, 
                 AttributeError('need to provide a pre_stim_sec value to the function call!')
         else:
             AttributeError('need to provide fps value to convert xaxis in units of time (secs)')
-    elif 'frames' in kwargs['xlabel'] or 'Frames' in kwargs['xlabel']:
-        x_range = range(len(meanst[0]))
+    else:
+        x_range = range(len(meantraces[0]))
         ax.set_xlabel('Frames')
 
     for i in range(len(meantraces)):

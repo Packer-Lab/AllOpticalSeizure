@@ -2526,7 +2526,7 @@ class alloptical_(TwoPhotonImaging):
 
         self.save() if save else None
 
-        # return dff_traces_nontargets, dff_traces_nontargets_avg, dfstdF_traces_nontargets, dfstdF_traces_avg, raw_traces_nontargets, raw_traces_nontargets_avg
+        # return dff_traces_nontargets, dff_traces_nontargets_avg, dfstdF_traces_nontargets, dfstdF_traces_nontargets_avg, raw_traces_nontargets, raw_traces_nontargets_avg
 
     def _trialProcessing_nontargets(expobj, normalize_to='pre-stim', save=True):
         '''
@@ -5217,7 +5217,7 @@ def run_alloptical_processing_photostim(expobj: Union[alloptical_, Post4ap_], to
                                                     stims_idx_l=expobj.stims_idx)
 
         ## GET NONTARGETS TRACES - not changed yet to handle the trace dFF processing
-        # expobj.dff_traces_nontargets, expobj.dff_traces_nontargets_avg, expobj.dfstdF_traces_nontargets, expobj.dfstdF_traces_avg, expobj.raw_traces_nontargets, expobj.raw_traces_nontargets_avg = \
+        # expobj.dff_traces_nontargets, expobj.dff_traces_nontargets_avg, expobj.dfstdF_traces_nontargets, expobj.dfstdF_traces_nontargets_avg, expobj.raw_traces_nontargets, expobj.raw_traces_nontargets_avg = \
         #     get_nontargets_stim_traces_norm(expobj=expobj, normalize_to='pre-stim', pre_stim=expobj.pre_stim,
         #                                     post_stim=expobj.post_stim)
 
@@ -5573,7 +5573,7 @@ def fig_non_targets_responses(expobj, plot_subset: bool = True, save_fig_suffix=
                                   x_label='Time (seconds)', y_lims=[-50, 200])
     # PLOT AVG PHOTOSTIM PRE- POST- TRACE AVGed OVER ALL PHOTOSTIM. TRIALS
     a2 = f.add_subplot(gs[0, 2:4])
-    x = expobj.dfstdF_traces_avg[selection]
+    x = expobj.dfstdF_traces_nontargets_avg[selection]
     y_label = 'dFstdF (normalized to prestim period)'
     aoplot.plot_periphotostim_avg(arr=x, expobj=expobj, pre_stim_sec=1, post_stim_sec=3,
                                   title='Average photostim all trials response', y_label=y_label, fig=f, ax=a2,
@@ -5583,10 +5583,10 @@ def fig_non_targets_responses(expobj, plot_subset: bool = True, save_fig_suffix=
     a3 = f.add_subplot(gs[0, 4:6])
     vmin = -1
     vmax = 1
-    aoplot.plot_traces_heatmap(arr=expobj.dfstdF_traces_avg, expobj=expobj, vmin=vmin, vmax=vmax,
+    aoplot.plot_traces_heatmap(arr=expobj.dfstdF_traces_nontargets_avg, expobj=expobj, vmin=vmin, vmax=vmax,
                                stim_on=int(1 * expobj.fps),
                                stim_off=int(1 * expobj.fps + expobj.stim_duration_frames),
-                               xlims=(0, expobj.dfstdF_traces_avg.shape[1]),
+                               xlims=(0, expobj.dfstdF_traces_nontargets_avg.shape[1]),
                                title='dF/stdF heatmap for all nontargets', x_label='Time', cbar=True,
                                fig=f, ax=a3, show=False)
     # PLOT HEATMAP OF AVG PRE- POST TRACE AVGed OVER ALL PHOTOSTIM. TRIALS - ALL CELLS (photostim targets at top) - Lloyd style :D - df/stdf
@@ -5596,7 +5596,7 @@ def fig_non_targets_responses(expobj, plot_subset: bool = True, save_fig_suffix=
     aoplot.plot_traces_heatmap(arr=expobj.dff_traces_nontargets_avg, expobj=expobj, vmin=vmin, vmax=vmax,
                                stim_on=int(1 * expobj.fps),
                                stim_off=int(1 * expobj.fps + expobj.stim_duration_frames),
-                               xlims=(0, expobj.dfstdF_traces_avg.shape[1]),
+                               xlims=(0, expobj.dfstdF_traces_nontargets_avg.shape[1]),
                                title='dF/F heatmap for all nontargets', x_label='Time', cbar=True,
                                fig=f, ax=a4, show=False)
     # bar plot of avg post stim response quantified between responders and non-responders
@@ -5620,14 +5620,14 @@ def fig_non_targets_responses(expobj, plot_subset: bool = True, save_fig_suffix=
     if sum(expobj.sig_units) > 0:
         # plot PERI-STIM AVG TRACES of sig nontargets
         a10 = f.add_subplot(gs[1, 0:2])
-        x = expobj.dfstdF_traces_avg[expobj.sig_units]
+        x = expobj.dfstdF_traces_nontargets_avg[expobj.sig_units]
         aoplot.plot_periphotostim_avg(arr=x, expobj=expobj, pre_stim_sec=1, post_stim_sec=3, fig=f, ax=a10, show=False,
                                       title='significant responders', y_label='dFstdF (normalized to prestim period)',
                                       x_label='Time (seconds)', y_lims=[-1, 3])
 
         # plot PERI-STIM AVG TRACES of nonsig nontargets
         a11 = f.add_subplot(gs[1, 2:4])
-        x = expobj.dfstdF_traces_avg[~expobj.sig_units]
+        x = expobj.dfstdF_traces_nontargets_avg[~expobj.sig_units]
         aoplot.plot_periphotostim_avg(arr=x, expobj=expobj, pre_stim_sec=1, post_stim_sec=3, fig=f, ax=a11, show=False,
                                       title='non-significant responders',
                                       y_label='dFstdF (normalized to prestim period)',
@@ -5635,7 +5635,7 @@ def fig_non_targets_responses(expobj, plot_subset: bool = True, save_fig_suffix=
 
         # plot PERI-STIM AVG TRACES of sig. positive responders
         a12 = f.add_subplot(gs[1, 4:6])
-        x = expobj.dfstdF_traces_avg[expobj.sig_units][
+        x = expobj.dfstdF_traces_nontargets_avg[expobj.sig_units][
             np.where(np.nanmean(expobj.post_array_responses[expobj.sig_units, :], axis=1) > 0)[0]]
         aoplot.plot_periphotostim_avg(arr=x, expobj=expobj, pre_stim_sec=1, post_stim_sec=3, fig=f, ax=a12, show=False,
                                       title='positive signif. responders',
@@ -5644,7 +5644,7 @@ def fig_non_targets_responses(expobj, plot_subset: bool = True, save_fig_suffix=
 
         # plot PERI-STIM AVG TRACES of sig. negative responders
         a13 = f.add_subplot(gs[1, -3:-1])
-        x = expobj.dfstdF_traces_avg[expobj.sig_units][
+        x = expobj.dfstdF_traces_nontargets_avg[expobj.sig_units][
             np.where(np.nanmean(expobj.post_array_responses[expobj.sig_units, :], axis=1) < 0)[0]]
         aoplot.plot_periphotostim_avg(arr=x, expobj=expobj, pre_stim_sec=1, post_stim_sec=3, fig=f, ax=a13, show=False,
                                       title='negative signif. responders',

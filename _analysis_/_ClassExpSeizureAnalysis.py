@@ -50,6 +50,7 @@ class ExpSeizureAnalysis(Quantification):
 
     @staticmethod
     def plot__exp_sz_lfp_fov(expobj: TwoPhotonImaging = None, prep=None, trial=None):
+        """plot FOV mean raw trace and lfp trace (with stim markings)"""
         if prep and trial and (expobj is None):
             expobj = io_.import_expobj(prep=prep, trial=trial)
         assert expobj, 'expobj not initialized properly.'

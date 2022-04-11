@@ -8,7 +8,8 @@ from typing import Union
 sys.path.append('/home/pshah/Documents/code/')
 from Vape.utils import STAMovieMaker_noGUI as STAMM
 import scipy.stats as stats
-import statsmodels as sm
+# import statsmodels as sm
+import statsmodels.stats.multitest as multi
 import matplotlib.pyplot as plt
 import seaborn as sns
 import time
@@ -100,7 +101,7 @@ class alloptical(TwoPhotonImaging):
         self.dff_traces_nontargets: np.ndarray
         self.dff_traces_nontargets_avg: np.ndarray
         self.dfstdF_traces_nontargets: np.ndarray
-        self.dfstdF_traces_avg: np.ndarray
+        self.dfstdF_traces_nontargets_avg: np.ndarray
         self.raw_traces_nontargets: np.ndarray
         self.raw_traces_nontargets_avg: np.ndarray
 
@@ -1627,7 +1628,7 @@ class alloptical(TwoPhotonImaging):
         :param normalize_to: str; either "baseline" or "pre-stim" or "whole-trace"
         :return: plot of avg_dFF of 100 randomly selected nontargets
         """
-        print('\nCollecting peri-stim traces ')
+        print('\n\-Collecting peri-stim traces ...')
 
         # collect photostim timed average dff traces of photostim targets
         dff_traces = []
@@ -1639,6 +1640,8 @@ class alloptical(TwoPhotonImaging):
         raw_traces = []
         raw_traces_avg = []
 
+
+        self.s2p_nontargets_exclude = []
         for cell in self.s2p_nontargets:
             # print('considering cell # %s' % cell)
             cell_idx = self.cell_id.index(cell)
@@ -1662,74 +1665,76 @@ class alloptical(TwoPhotonImaging):
             #         flu_dff.append(trace_dff)
             #
             # elif normalize_to == 'whole-trace':
-            #     print('s2p neu. corrected trace statistics: mean: %s (min: %s, max: %s, std: %s)' %
-            #           (np.mean(self.raw[cell_idx]), np.min(self.raw[cell_idx]), np.max(self.raw[cell_idx]),
-            #            np.std(self.raw[cell_idx], ddof=1)))
-            #     # dfstdf_trace = (self.raw[cell_idx] - np.mean(self.raw[cell_idx])) / np.std(self.raw[cell_idx], ddof=1)  # normalize trace (dFstdF) to std of whole trace
-            #     flu_dfstdF = []
+            mean_ = np.mean(self.raw[cell_idx])
+            # dfstdf_trace = (self.raw[cell_idx] - np.mean(self.raw[cell_idx])) / np.std(self.raw[cell_idx], ddof=1)  # normalize trace (dFstdF) to std of whole trace
+            if mean_ < 10:  # filter cells with low s2p neu corrected mean trace value
+                self.s2p_nontargets_exclude.append(cell)
+
+            else:
+                # print(f's2p neu. corrected trace statistics: mean: {mean_} (min: {np.min(self.raw[cell_idx])}, max: {np.max(self.raw[cell_idx])}, std: {np.std(self.raw[cell_idx], ddof=1)})')
+
+                flu_dfstdF = []
+                flu_dff = []
+                flu_dff_ = [dff_trace[stim - self.pre_stim: stim + self.stim_duration_frames + self.post_stim] for stim in stim_frames]
+
+                for i in range(len(flu_dff_)):
+                    trace = flu_dff_[i]
+                    mean_pre = np.mean(trace[0:self.pre_stim])
+                    trace_dff = trace - mean_pre  # correct dFF of this trial to mean of pre-stim dFF
+                    std_pre = np.std(trace[0:self.pre_stim], ddof=1)
+                    dFstdF = trace_dff / std_pre  # normalize dFF of this trial by std of pre-stim dFF
+
+                    flu_dff.append(trace_dff)
+                    flu_dfstdF.append(dFstdF)
+
+            # elif normalize_to == 'pre-stim':
             #     flu_dff = []
-            #     flu_dff_ = [dff_trace[stim - self.pre_stim: stim + self.stim_duration_frames + self.post_stim] for
-            #                 stim in stim_timings if
-            #                 stim not in self.seizure_frames]
-            #
-            #     for i in range(len(flu_dff_)):
-            #         trace = flu_dff_[i]
+            #     flu_dfstdF = []
+            #     # print('|- splitting trace by photostim. trials and correcting by pre-stim period')
+            #     for i in range(len(flu_trials)):
+            #         trace = flu_trials[i]
             #         mean_pre = np.mean(trace[0:self.pre_stim])
-            #         trace_dff = trace - mean_pre  # correct dFF of this trial to mean of pre-stim dFF
+            #
             #         std_pre = np.std(trace[0:self.pre_stim], ddof=1)
-            #         dFstdF = trace_dff / std_pre  # normalize dFF of this trial by std of pre-stim dFF
+            #         # dFstdF = (((trace - mean_pre) / mean_pre) * 100) / std_pre  # make dF divided by std of pre-stim F trace
+            #         dFstdF = (trace - mean_pre) / std_pre  # make dF divided by std of pre-stim F trace
+            #
+            #         if mean_pre < 1:
+            #             # print('risky cell here at cell # %s, trial # %s, mean pre: %s [1.1]' % (cell, i+1, mean_pre))
+            #             trace_dff = [np.nan] * len(trace)
+            #             dFstdF = [np.nan] * len(
+            #                 trace)  # - commented out to test if we need to exclude cells for this correction with low mean_pre since you're not dividing by a bad mean_pre value
+            #         else:
+            #             # trace_dff = ((trace - mean_pre) / mean_pre) * 100
+            #             trace_dff = Utils.normalize_dff(trace, threshold_val=mean_pre)
+            #             # std_pre = np.std(trace[0:self.pre_stim], ddof=1)
+            #             # # dFstdF = (((trace - mean_pre) / mean_pre) * 100) / std_pre  # make dF divided by std of pre-stim F trace
+            #             # dFstdF = (trace - mean_pre) / std_pre  # make dF divided by std of pre-stim F trace
+            #
+            #         # # add nan if cell is inside sz boundary for this stim -- temporarily commented out for a while
+            #         # if 'post' in self.metainfo['exptype']:
+            #         #     if hasattr(self, 'slmtargets_szboundary_stim'):
+            #         #         if self.is_cell_insz(cell=cell, stim=stim_timings[i]):
+            #         #             trace_dff = [np.nan] * len(trace)
+            #         #             dFstdF = [np.nan] * len(trace)
+            #         #     else:
+            #         #         AttributeError(
+            #         #             'no slmtargets_szboundary_stim attr, so classify cells in sz boundary hasnot been saved for this expobj')
             #
             #         flu_dff.append(trace_dff)
             #         flu_dfstdF.append(dFstdF)
 
-            # elif normalize_to == 'pre-stim':
-            flu_dff = []
-            flu_dfstdF = []
-            # print('|- splitting trace by photostim. trials and correcting by pre-stim period')
-            for i in range(len(flu_trials)):
-                trace = flu_trials[i]
-                mean_pre = np.mean(trace[0:self.pre_stim])
+            # else:
+            #     TypeError('need to specify what to normalize to in get_targets_dFF (choose "baseline" or "pre-stim")')
 
-                std_pre = np.std(trace[0:self.pre_stim], ddof=1)
-                # dFstdF = (((trace - mean_pre) / mean_pre) * 100) / std_pre  # make dF divided by std of pre-stim F trace
-                dFstdF = (trace - mean_pre) / std_pre  # make dF divided by std of pre-stim F trace
+                dff_traces.append(flu_dff)  # contains all individual dFF traces for all stim times
+                dff_traces_avg.append(np.nanmean(flu_dff, axis=0))  # contains the dFF trace averaged across all stim times
 
-                if mean_pre < 1:
-                    # print('risky cell here at cell # %s, trial # %s, mean pre: %s [1.1]' % (cell, i+1, mean_pre))
-                    trace_dff = [np.nan] * len(trace)
-                    dFstdF = [np.nan] * len(
-                        trace)  # - commented out to test if we need to exclude cells for this correction with low mean_pre since you're not dividing by a bad mean_pre value
-                else:
-                    # trace_dff = ((trace - mean_pre) / mean_pre) * 100
-                    trace_dff = Utils.normalize_dff(trace, threshold_val=mean_pre)
-                    # std_pre = np.std(trace[0:self.pre_stim], ddof=1)
-                    # # dFstdF = (((trace - mean_pre) / mean_pre) * 100) / std_pre  # make dF divided by std of pre-stim F trace
-                    # dFstdF = (trace - mean_pre) / std_pre  # make dF divided by std of pre-stim F trace
+                dfstdF_traces.append(flu_dfstdF)
+                dfstdF_traces_avg.append(np.nanmean(flu_dfstdF, axis=0))
 
-                # # add nan if cell is inside sz boundary for this stim -- temporarily commented out for a while
-                # if 'post' in self.metainfo['exptype']:
-                #     if hasattr(self, 'slmtargets_szboundary_stim'):
-                #         if self.is_cell_insz(cell=cell, stim=stim_timings[i]):
-                #             trace_dff = [np.nan] * len(trace)
-                #             dFstdF = [np.nan] * len(trace)
-                #     else:
-                #         AttributeError(
-                #             'no slmtargets_szboundary_stim attr, so classify cells in sz boundary hasnot been saved for this expobj')
-
-                flu_dff.append(trace_dff)
-                flu_dfstdF.append(dFstdF)
-
-            else:
-                TypeError('need to specify what to normalize to in get_targets_dFF (choose "baseline" or "pre-stim")')
-
-            dff_traces.append(flu_dff)  # contains all individual dFF traces for all stim times
-            dff_traces_avg.append(np.nanmean(flu_dff, axis=0))  # contains the dFF trace averaged across all stim times
-
-            dfstdF_traces.append(flu_dfstdF)
-            dfstdF_traces_avg.append(np.nanmean(flu_dfstdF, axis=0))
-
-            raw_traces.append(flu_trials)
-            raw_traces_avg.append(np.nanmean(flu_trials, axis=0))
+                raw_traces.append(flu_trials)
+                raw_traces_avg.append(np.nanmean(flu_trials, axis=0))
 
         if normalize_to == 'baseline':
             print(
@@ -1744,7 +1749,7 @@ class alloptical(TwoPhotonImaging):
             self.dff_traces_nontargets = np.asarray(dff_traces)
             self.dff_traces_nontargets_avg = np.asarray([i for i in dff_traces_avg])
             self.dfstdF_traces_nontargets = np.asarray(dfstdF_traces)
-            self.dfstdF_traces_avg = np.asarray([i for i in dfstdF_traces_avg])
+            self.dfstdF_traces_nontargets_avg = np.asarray([i for i in dfstdF_traces_avg])
             self.raw_traces_nontargets = np.asarray(raw_traces)
             self.raw_traces_nontargets_avg = np.asarray([i for i in raw_traces_avg])
 
@@ -1752,9 +1757,23 @@ class alloptical(TwoPhotonImaging):
 
         self.save() if save else None
 
-        # return dff_traces_nontargets, dff_traces_nontargets_avg, dfstdF_traces_nontargets, dfstdF_traces_avg, raw_traces_nontargets, raw_traces_nontargets_avg
+        # return dff_traces_nontargets, dff_traces_nontargets_avg, dfstdF_traces_nontargets, dfstdF_traces_nontargets_avg, raw_traces_nontargets, raw_traces_nontargets_avg
 
-    def _trialProcessing_nontargets(expobj, normalize_to='pre-stim', save=True, stims: Union[list, str] = None):
+    def _runWilcoxonsTest(expobj, array1, array2):
+
+        # check if the two distributions of flu values (pre/post) are different
+        assert array1.shape == array2.shape, 'shapes for expobj.pre_array and expobj.post_array need to be the same for wilcoxon test'
+        wilcoxons = np.empty(len(array1))  # [cell (p-value)]
+
+        for cell in range(len(array1)):
+            wilcoxons[cell] = stats.wilcoxon(array2[cell], array1[cell])[1]
+
+        return wilcoxons
+
+        # expobj.save() if save else None
+
+
+    def _trialProcessing_nontargets(expobj, normalize_to='pre-stim', save=True, stims: Union[list, str] = 'all'):
         '''
         Uses dfstdf traces for individual cells and photostim trials, calculate the mean amplitudes of response and
         statistical significance across all trials for all cells
@@ -1768,7 +1787,7 @@ class alloptical(TwoPhotonImaging):
         print('----------------------------------------------------------------')
 
         # make trial arrays from dff data shape: [cells x stims x frames]
-        if stims is not 'all':
+        if stims != 'all':
             expobj._makeNontargetsStimTracesArray(stim_frames=stims, normalize_to=normalize_to, save=False)
         else:
             expobj._makeNontargetsStimTracesArray(stim_frames=expobj.stim_start_frames, normalize_to=normalize_to, save=False)
@@ -1781,41 +1800,27 @@ class alloptical(TwoPhotonImaging):
         expobj.post_stim_frames_slice = np.s_[stim_end: stim_end + expobj.PhotostimAnalysisSlmTargets.post_stim_response_frames_window]
 
         # mean pre and post stimulus (within post-stim response window) flu trace values for all cells, all trials
-        analysis_array = expobj.dff_traces_nontargets  # NOTE: USING dFF TRACES
+        # analysis_array = expobj.dff_traces_nontargets  # NOTE: USING dFF TRACES
+        analysis_array = expobj.dfstdF_traces_nontargets  # NOTE: USING dF/stdF TRACES
         expobj.pre_array = np.mean(analysis_array[:, :, expobj.pre_stim_frames_test],
                                    axis=1)  # [cells x prestim frames] (avg'd taken over all stims)
         expobj.post_array = np.mean(analysis_array[:, :, expobj.post_stim_frames_slice],
                                     axis=1)  # [cells x poststim frames] (avg'd taken over all stims)
 
-        # measure avg response value for each trial, all cells --> return array with 3 axes [cells x response_magnitude_per_stim (avg'd taken over response window)]
-        expobj.post_array_responses = []  ### this and the for loop below was implemented to try to root out stims with nan's but it's likley not necessary...
-        for i in np.arange(analysis_array.shape[0]):
-            a = analysis_array[i][~np.isnan(analysis_array[i]).any(axis=1)]
-            responses = a.mean(axis=1)
-            expobj.post_array_responses.append(responses)
+        # measure avg response value for each trial, each cell --> return array with 2 axes; response_magnitude_per_stim (avg'd taken over response window): [cells x stims]
+        # expobj.post_array_responses = []  ### this and the for loop below was implemented to try to root out stims with nan's but it's likley not necessary...
+        # for i in np.arange(analysis_array.shape[0]):
+        #     a = analysis_array[i][~np.isnan(analysis_array[i]).any(axis=1)]
+        #     responses = a.mean(axis=1)
+        #     expobj.post_array_responses.append(responses)
 
-        expobj.post_array_responses = np.mean(analysis_array[:, :, expobj.post_stim_frames_slice], axis=2)
-        expobj.wilcoxons = expobj._runWilcoxonsTest()
-
-        expobj.save() if save else None
-
-        return expobj.post_array_responses, expobj.wilcoxons
-    def _runWilcoxonsTest(expobj, array1=None, array2=None):
-
-        if array1 is None and array2 is None:
-            array1 = expobj.pre_array;
-            array2 = expobj.post_array
-
-        # check if the two distributions of flu values (pre/post) are different
-        assert array1.shape == array2.shape, 'shapes for expobj.pre_array and expobj.post_array need to be the same for wilcoxon test'
-        wilcoxons = np.empty(len(array1))  # [cell (p-value)]
-
-        for cell in range(len(array1)):
-            wilcoxons[cell] = stats.wilcoxon(array2[cell], array1[cell])[1]
-
-        return wilcoxons
+        expobj.post_array_responses = np.mean(analysis_array[:, :, expobj.post_stim_frames_slice], axis=2)  #: response post- stim for all cells, stims: [cells x stims]
+        expobj.wilcoxons = expobj._runWilcoxonsTest(array1=expobj.pre_array, array2=expobj.post_array)  #: wilcoxon  value across all cells: len = # cells
 
         # expobj.save() if save else None
+
+        return expobj.post_array_responses, expobj.wilcoxons
+
 
     def _sigTestAvgResponse_nontargets(expobj, p_vals=None, alpha=0.1, save=True):
         """
@@ -1830,7 +1835,9 @@ class alloptical(TwoPhotonImaging):
         sig_units = np.full_like(p_vals, False, dtype=bool)
 
         try:
-            sig_units, _, _, _ = sm.stats.multitest.multipletests(p_vals, alpha=alpha, method='fdr_bh',
+            # sig_units, _, _, _ = sm.stats.multitest.multipletests(p_vals, alpha=alpha, method='fdr_bh',
+            #                                                       is_sorted=False, returnsorted=False)
+            sig_units, _, _, _ = multi.multipletests(p_vals, alpha=alpha, method='fdr_bh',
                                                                   is_sorted=False, returnsorted=False)
         except ZeroDivisionError:
             print('no cells responding')

@@ -379,7 +379,7 @@ def _trialProcessing_nontargets(expobj, normalize_to='pre-stim', save=True):
 
         ## need to redefine _avg arrays post exclusion for Post4ap expobj's
         expobj.dff_traces_nontargets_avg = np.nanmean(expobj.dff_traces_nontargets, axis=1)
-        expobj.dfstdF_traces_avg = np.nanmean(expobj.dfstdF_traces_nontargets, axis=1)
+        expobj.dfstdF_traces_nontargets_avg = np.nanmean(expobj.dfstdF_traces_nontargets, axis=1)
         expobj.raw_traces_nontargets_avg = np.nanmean(expobj.raw_traces_nontargets, axis=1)
 
     else:

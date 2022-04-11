@@ -93,7 +93,7 @@ class PhotostimAnalysisSlmTargets(Quantification):
                     var_meta.loc['wvfront in sz', fr_idx] = False
                     var_meta.loc['seizure location', fr_idx] = None
             var_meta.loc['stim_start_frame', fr_idx] = stim_frame
-            var_meta.loc['im_time_secs', fr_idx] = stim_frame * expobj.fps
+            var_meta.loc['im_time_secs', fr_idx] = stim_frame / expobj.fps
 
         # SET PRIMARY DATA
         assert hasattr(expobj, 'PhotostimResponsesSLMTargets'), 'no photostim responses found to use to create anndata base.'
