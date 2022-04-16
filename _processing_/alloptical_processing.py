@@ -163,9 +163,9 @@ def run_alloptical_processing_photostim(expobj: Union[alloptical, Post4ap], to_s
             expobj.MeanSeizureImages(frames_last=1000)
 
     if plots:
-        aoplot.plot_SLMtargets_Locs(expobj, background=expobj.meanFluImg, title='SLM targets location w/ mean Flu img')
+        aoplot.plot_SLMtargets_Locs(expobj, background=expobj.meanFluImg, title=f'SLM targets location w/ mean Flu img - {expobj.t_series_name}')
         aoplot.plot_SLMtargets_Locs(expobj, background=expobj.meanFluImg_registered,
-                                    title='SLM targets location w/ registered mean Flu img')
+                                    title=f'SLM targets location w/ registered mean Flu img - {expobj.t_series_name}')
 
     # # collect SLM photostim individual targets -- individual, full traces, dff normalized
     # expobj.dff_SLMTargets = normalize_dff(np.array(expobj.raw_SLMTargets))
@@ -177,54 +177,56 @@ def run_alloptical_processing_photostim(expobj: Union[alloptical, Post4ap], to_s
         # Collecting stim trace snippets of SLM targets
         expobj.SLMTargets_stims_dff, expobj.SLMTargets_stims_dffAvg, expobj.SLMTargets_stims_dfstdF, \
         expobj.SLMTargets_stims_dfstdF_avg, expobj.SLMTargets_stims_raw, expobj.SLMTargets_stims_rawAvg = \
-            expobj.get_alltargets_stim_traces_norm(process='trace raw', pre_stim=expobj.pre_stim,
-                                                   post_stim=expobj.post_stim, stims=expobj.stim_start_frames)
+            expobj.get_alltargets_stim_traces_norm(process='trace raw', pre_stim=expobj.PhotostimAnalysisSlmTargets.pre_stim_fr,
+                                                   post_stim=expobj.PhotostimAnalysisSlmTargets.post_stim_fr, stims=expobj.stim_start_frames)
 
         expobj.SLMTargets_tracedFF_stims_dff, expobj.SLMTargets_tracedFF_stims_dffAvg, expobj.SLMTargets_tracedFF_stims_dfstdF, \
         expobj.SLMTargets_tracedFF_stims_dfstdF_avg, expobj.SLMTargets_tracedFF_stims_raw, expobj.SLMTargets_tracedFF_stims_rawAvg = \
-            expobj.get_alltargets_stim_traces_norm(process='trace dFF', pre_stim=expobj.pre_stim,
-                                                   post_stim=expobj.post_stim, stims=expobj.stim_start_frames)
+            expobj.get_alltargets_stim_traces_norm(process='trace dFF', pre_stim=expobj.PhotostimAnalysisSlmTargets.pre_stim_fr,
+                                                   post_stim=expobj.PhotostimAnalysisSlmTargets.post_stim_fr, stims=expobj.stim_start_frames)
 
         SLMtarget_ids = list(range(len(expobj.SLMTargets_stims_dfstdF)))
 
-    # only out of sz stims (use for post-4ap trials)
+    # filtering of stims in / outside sz period (use for post-4ap trials)
     elif 'post' in expobj.metainfo['exptype']:
 
+        # all stims
         expobj.SLMTargets_stims_dff, expobj.SLMTargets_stims_dffAvg, expobj.SLMTargets_stims_dfstdF, \
         expobj.SLMTargets_stims_dfstdF_avg, expobj.SLMTargets_stims_raw, expobj.SLMTargets_stims_rawAvg = \
-            expobj.get_alltargets_stim_traces_norm(process='trace raw', pre_stim=expobj.pre_stim,
-                                                   post_stim=expobj.post_stim,
+            expobj.get_alltargets_stim_traces_norm(process='trace raw', pre_stim=expobj.PhotostimAnalysisSlmTargets.pre_stim_fr,
+                                                   post_stim=expobj.PhotostimAnalysisSlmTargets.post_stim_fr,
                                                    stims=expobj.stim_start_frames)
 
         expobj.SLMTargets_tracedFF_stims_dff, expobj.SLMTargets_tracedFF_stims_dffAvg, expobj.SLMTargets_tracedFF_stims_dfstdF, \
         expobj.SLMTargets_tracedFF_stims_dfstdF_avg, expobj.SLMTargets_tracedFF_stims_raw, expobj.SLMTargets_tracedFF_stims_rawAvg = \
-            expobj.get_alltargets_stim_traces_norm(process='trace dFF', pre_stim=expobj.pre_stim,
-                                                   post_stim=expobj.post_stim,
+            expobj.get_alltargets_stim_traces_norm(process='trace dFF', pre_stim=expobj.PhotostimAnalysisSlmTargets.pre_stim_fr,
+                                                   post_stim=expobj.PhotostimAnalysisSlmTargets.post_stim_fr,
                                                    stims=expobj.stim_start_frames)
 
-        stims = [stim for stim in expobj.stim_start_frames if stim not in expobj.seizure_frames]
-        expobj.SLMTargets_stims_dff_outsz, expobj.SLMTargets_stims_dffAvg_outsz, expobj.SLMTargets_stims_dfstdF_outsz, \
-        expobj.SLMTargets_stims_dfstdF_avg_outsz, expobj.SLMTargets_stims_raw_outsz, expobj.SLMTargets_stims_rawAvg_outsz = \
-            expobj.get_alltargets_stim_traces_norm(process='trace raw', pre_stim=expobj.pre_stim,
-                                                   post_stim=expobj.post_stim, stims=stims)
-
-        expobj.SLMTargets_tracedFF_stims_dff_outsz, expobj.SLMTargets_tracedFF_stims_dffAvg_outsz, expobj.SLMTargets_tracedFF_stims_dfstdF_outsz, \
-        expobj.SLMTargets_tracedFF_stims_dfstdF_avg_outsz, expobj.SLMTargets_tracedFF_stims_raw_outsz, expobj.SLMTargets_tracedFF_stims_rawAvg_outsz = \
-            expobj.get_alltargets_stim_traces_norm(process='trace dFF', pre_stim=expobj.pre_stim,
-                                                   post_stim=expobj.post_stim, stims=stims)
-
-        # only in sz stims (use for post-4ap trials) - includes exclusion of cells inside of sz boundary
         if hasattr(expobj, 'stims_in_sz'):
+            # out of sz stims:
+            stims = [stim for stim in expobj.stim_start_frames if stim not in expobj.seizure_frames]
+            expobj.SLMTargets_stims_dff_outsz, expobj.SLMTargets_stims_dffAvg_outsz, expobj.SLMTargets_stims_dfstdF_outsz, \
+            expobj.SLMTargets_stims_dfstdF_avg_outsz, expobj.SLMTargets_stims_raw_outsz, expobj.SLMTargets_stims_rawAvg_outsz = \
+                expobj.get_alltargets_stim_traces_norm(process='trace raw', pre_stim=expobj.PhotostimAnalysisSlmTargets.pre_stim_fr,
+                                                       post_stim=expobj.PhotostimAnalysisSlmTargets.post_stim_fr, stims=stims)
+
+            expobj.SLMTargets_tracedFF_stims_dff_outsz, expobj.SLMTargets_tracedFF_stims_dffAvg_outsz, expobj.SLMTargets_tracedFF_stims_dfstdF_outsz, \
+            expobj.SLMTargets_tracedFF_stims_dfstdF_avg_outsz, expobj.SLMTargets_tracedFF_stims_raw_outsz, expobj.SLMTargets_tracedFF_stims_rawAvg_outsz = \
+                expobj.get_alltargets_stim_traces_norm(process='trace dFF', pre_stim=expobj.PhotostimAnalysisSlmTargets.pre_stim_fr,
+                                                       post_stim=expobj.PhotostimAnalysisSlmTargets.post_stim_fr, stims=stims)
+
+            # only in sz stims (use for post-4ap trials) - includes exclusion of cells inside of sz boundary
             stims = [expobj.stim_start_frames.index(stim) for stim in expobj.stims_in_sz]
             expobj.SLMTargets_stims_dff_insz, expobj.SLMTargets_stims_dffAvg_insz, expobj.SLMTargets_stims_dfstdF_insz, \
             expobj.SLMTargets_stims_dfstdF_avg_insz, expobj.SLMTargets_stims_raw_insz, expobj.SLMTargets_stims_rawAvg_insz = \
-                expobj.get_alltargets_stim_traces_norm(process='trace raw', pre_stim=expobj.pre_stim,
-                                                       post_stim=expobj.post_stim, stims=stims, filter_sz=True)
+                expobj.get_alltargets_stim_traces_norm(process='trace raw', pre_stim=expobj.PhotostimAnalysisSlmTargets.pre_stim_fr,
+                                                       post_stim=expobj.PhotostimAnalysisSlmTargets.post_stim_fr, stims=stims, filter_sz=True)
 
             expobj.SLMTargets_tracedFF_stims_dff_insz, expobj.SLMTargets_tracedFF_stims_dffAvg_insz, expobj.SLMTargets_tracedFF_stims_dfstdF_insz, \
             expobj.SLMTargets_tracedFF_stims_dfstdF_avg_insz, expobj.SLMTargets_tracedFF_stims_raw_insz, expobj.SLMTargets_tracedFF_stims_rawAvg_insz = \
-                expobj.get_alltargets_stim_traces_norm(process='trace dFF', pre_stim=expobj.pre_stim,
-                                                       post_stim=expobj.post_stim, stims=stims, filter_sz=True)
+                expobj.get_alltargets_stim_traces_norm(process='trace dFF', pre_stim=expobj.PhotostimAnalysisSlmTargets.pre_stim_fr,
+                                                       post_stim=expobj.PhotostimAnalysisSlmTargets.post_stim_fr, stims=stims, filter_sz=True)
 
 
     else:
@@ -368,6 +370,11 @@ def run_alloptical_processing_photostim(expobj: Union[alloptical, Post4ap], to_s
 
         expobj.avgResponseSzStims_SLMtargets()
     create_anndata_SLMtargets(expobj)
+
+    if plots:
+        aoplot.plot_periphotostim_avg(arr=expobj.SLMTargets_stims_dffAvg, pre_stim_sec=1.0, post_stim_sec=3.0,
+                                      title=f'{expobj.t_series_name} - all stims', expobj=expobj,
+                                      x_label='Time (secs)', y_label='dFF')
 
     expobj.save()
 

@@ -27,7 +27,7 @@ class PhotostimAnalysisSlmTargets(Quantification):
     save_path = SAVE_LOC + 'PhotostimAnalysisSlmTargets.pkl'
     valid_targets_trace_types = ['trace_dFF', 'raw']
     _pre_stim_sec = 1
-    _post_stim_sec = 4
+    _post_stim_sec = 3
     pre_stim_response_window_msec = 500 # msec
     post_stim_response_window_msec = 500  # msec
 
@@ -35,13 +35,23 @@ class PhotostimAnalysisSlmTargets(Quantification):
         super().__init__(expobj)
         print(f'\- ADDING NEW PhotostimAnalysisSlmTargets MODULE to expobj: {expobj.t_series_name}')
         self.create_anndata(expobj=expobj)
-        self.pre_stim_fr = int(self._pre_stim_sec * expobj.fps)  # length of pre stim trace collected (in frames)
-        self.post_stim_fr = int(self._post_stim_sec * expobj.fps)  # length of post stim trace collected (in frames)
-        self.pre_stim_response_frames_window = int(
-            expobj.fps * self.pre_stim_response_window_msec / 1000)  # length of the pre stim response test window (in frames)
-        self.post_stim_response_frames_window = int(
-            expobj.fps * self.post_stim_response_window_msec / 1000)  # length of the post stim response test window (in frames)
+        self._fps = expobj.fps
 
+    @property
+    def pre_stim_fr(self):
+        return int(self._pre_stim_sec * self._fps)  # length of pre stim trace collected (in frames)
+
+    @property
+    def post_stim_fr(self):
+        return int(self._post_stim_sec * self._fps)  # length of post stim trace collected (in frames)
+
+    @property
+    def pre_stim_response_frames_window(self):
+        return int(self._fps * self.pre_stim_response_window_msec / 1000)  # length of the pre stim response test window (in frames)
+
+    @property
+    def post_stim_response_frames_window(self):
+        return int(self._fps * self.post_stim_response_window_msec / 1000)  # length of the post stim response test window (in frames)
 
     @staticmethod
     @Utils.run_for_loop_across_exps(run_pre4ap_trials=True, run_post4ap_trials=True, allow_rerun=0)
@@ -49,6 +59,14 @@ class PhotostimAnalysisSlmTargets(Quantification):
         expobj = kwargs['expobj']
         expobj.PhotostimAnalysisSlmTargets = PhotostimAnalysisSlmTargets(expobj=expobj)
         expobj.save()
+
+    @staticmethod
+    @Utils.run_for_loop_across_exps(run_pre4ap_trials=True, run_post4ap_trials=True, allow_rerun=0)
+    def run__add_fps(**kwargs):
+        expobj = kwargs['expobj']
+        expobj.PhotostimAnalysisSlmTargets._fps = expobj.fps
+        expobj.save()
+
 
     def __repr__(self):
         return f"PhotostimAnalysisSlmTargets <-- Quantification Analysis submodule for expobj <{self.expobj_id}>"
@@ -192,6 +210,33 @@ class PhotostimAnalysisSlmTargets(Quantification):
         # fig.savefig('/home/pshah/mnt/qnap/Analysis/%s/%s/results/%s_%s_individual targets dFF.png' % (date, j[:-6], date, j))
         fig.tight_layout(pad=1.8)
         fig.show()
+
+    # 1.1) plot peri-photostim avg traces across all targets for all experiment trials
+    def plot_peristim_avg_photostims(self):
+
+        for trial in pj.flattenOnce(AllOpticalExpsToAnalyze.pre_4ap_trials):
+            if 'RL109' in trial:
+                from _utils_.io import import_expobj
+                expobj: alloptical = import_expobj(exp_prep=trial)
+                trace_snippets_avg = np.mean(expobj.SLMTargets_stims_dff, axis=1)
+                print(trace_snippets_avg.shape[1])
+                fig, axs = plt.subplots(nrows=2, ncols=1, figsize=[4, 8])
+                # aoplot.plot_periphotostim_avg2(dataset=trace_snippets_avg, fps=expobj.fps, pre_stim_sec=expobj.PhotostimAnalysisSlmTargets._pre_stim_sec, title=f'{expobj.t_series_name}')
+                from _utils_.alloptical_plotting import plot_periphotostim_avg
+                plot_periphotostim_avg(arr=trace_snippets_avg, pre_stim_sec=1.0, post_stim_sec=3.0,
+                                              title=f'{expobj.t_series_name} - pre4ap', expobj=expobj,
+                                              x_label='Time (secs)', y_label='dFF response', fig=fig, ax=axs[0],
+                                              show=False)
+
+                post4ap_exp = AllOpticalExpsToAnalyze.find_matched_trial(pre4ap_trial_name=expobj.t_series_name)
+                print(post4ap_exp)
+                expobj: Post4ap = import_expobj(exp_prep=post4ap_exp)
+                trace_snippets_avg = np.mean(expobj.SLMTargets_stims_dff, axis=1)
+                print(trace_snippets_avg.shape[1], '\n')
+                plot_periphotostim_avg(arr=trace_snippets_avg, pre_stim_sec=1.0, post_stim_sec=3.0,
+                                              title=f'{expobj.t_series_name} - post4ap', expobj=expobj,
+                                              x_label='Time (secs)', y_label='dFF response', fig=fig, ax=axs[1])
+                fig.show()
 
     # 2) calculating mean variability across targets:
     def calculate_variability(self, stims):
@@ -391,10 +436,11 @@ class PhotostimAnalysisSlmTargets(Quantification):
 
 if __name__ == '__main__':
     main = PhotostimAnalysisSlmTargets
-    main.run__init()
+    # main.run__init()
+    main.run__add_fps()
     # main.plot_postage_stamps_photostim_traces()
     # main.plot__variability()
-    main.plot__mean_response_vs_variability()
+    # main.plot__mean_response_vs_variability()
 
 # expobj = import_expobj(prep='RL108', trial='t-009')
 

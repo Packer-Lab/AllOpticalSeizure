@@ -50,6 +50,37 @@ class Post4ap(alloptical):
         self.slmtargets_szboundary_stim = None  # dictionary of cells classification either inside or outside of boundary
 
         ## PHOTOSTIM SLM TARGETS
+
+        self.SLMTargets_stims_dff_outsz = None
+        self.SLMTargets_stims_dffAvg_outsz = None
+        self.SLMTargets_stims_dfstdF_outsz = None
+        self.SLMTargets_stims_dfstdF_avg_outsz = None
+        self.SLMTargets_stims_raw_outsz = None
+        self.SLMTargets_stims_rawAvg_outsz = None
+
+        self.SLMTargets_tracedFF_stims_dff_outsz = None
+        self.SLMTargets_tracedFF_stims_dffAvg_outsz = None
+        self.SLMTargets_tracedFF_stims_dfstdF_outsz = None
+        self.SLMTargets_tracedFF_stims_dfstdF_avg_outsz = None
+        self.SLMTargets_tracedFF_stims_raw_outsz = None
+        self.SLMTargets_tracedFF_stims_rawAvg_outsz = None
+        
+        self.SLMTargets_stims_dff_insz = None
+        self.SLMTargets_stims_dffAvg_insz = None
+        self.SLMTargets_stims_dfstdF_insz = None
+        self.SLMTargets_stims_dfstdF_avg_insz = None
+        self.SLMTargets_stims_raw_insz = None
+        self.SLMTargets_stims_rawAvg_insz = None
+
+        self.SLMTargets_tracedFF_stims_dff_insz = None
+        self.SLMTargets_tracedFF_stims_dffAvg_insz = None
+        self.SLMTargets_tracedFF_stims_dfstdF_insz = None
+        self.SLMTargets_tracedFF_stims_dfstdF_avg_insz = None
+        self.SLMTargets_tracedFF_stims_raw_insz = None
+        self.SLMTargets_tracedFF_stims_rawAvg_insz = None
+
+
+        # photostim responses
         self.responses_SLMtargets_dfstdf_outsz = None  # dFstdF responses for all SLM targets for photostim trials outside sz
         self.responses_SLMtargets_dfstdf_insz = None  # dFstdF responses for all SLM targets for photostim trials outside sz - excluding targets inside the sz boundary
         self.responses_SLMtargets_dfprestimf_outsz = None  # dF/prestimF responses for all SLM targets for photostim trials outside sz

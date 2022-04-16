@@ -295,15 +295,9 @@ class alloptical(TwoPhotonImaging):
             print('collecting stim traces for cell ', targets_idx + 1)
             if filter_sz:
                 flu = [targets_trace[targets_idx][stim - pre_stim: stim + self.stim_duration_frames + post_stim] for
-                       stim in
-                       stim_timings if
-                       stim not in self.seizure_frames]
+                       stim in stim_timings if stim not in self.seizure_frames]
             else:
-                flu = [targets_trace[targets_idx][stim - pre_stim: stim + self.stim_duration_frames + post_stim] for
-                       stim in
-                       stim_timings]
-            # flu_dfstdF = []
-            # flu_dff = []
+                flu = [targets_trace[targets_idx][stim - pre_stim: stim + self.stim_duration_frames + post_stim] for stim in stim_timings]
             for i in range(len(flu)):
                 trace = flu[i]
                 mean_pre = np.mean(trace[0:pre_stim])
@@ -342,8 +336,7 @@ class alloptical(TwoPhotonImaging):
                     #        in stim_timings if
                     #        stim not in self.seizure_frames]
                 else:
-                    flu = [targets_trace[cell_idx][stim - pre_stim: stim + self.stim_duration_frames + post_stim] for
-                           stim in stim_timings]
+                    flu = [targets_trace[cell_idx][stim - pre_stim: stim + self.stim_duration_frames + post_stim] for stim in stim_timings]
 
                 # flu_dfstdF = []
                 # flu_dff = []
@@ -1392,7 +1385,7 @@ class alloptical(TwoPhotonImaging):
             else:
                 AttributeError('no SLMTargets_stims_dff attr. [1.2]')
 
-        elif process == 'delta(trace_dFF)':
+        elif process == 'trace dFF':
             if hasattr(self, 'SLMTargets_tracedFF_stims_dff'):
                 if type(self.SLMTargets_tracedFF_stims_dff) == list:
                     self.SLMTargets_tracedFF_stims_dff, self.SLMTargets_tracedFF_stims_dffAvg, self.SLMTargets_tracedFF_stims_dfstdF, \
@@ -1410,7 +1403,10 @@ class alloptical(TwoPhotonImaging):
         if hasattr(self, 'SLMTargets_stims_dff'):
             d = {}
             for stim in stims_idx:
-                d[stim] = [None] * targets_traces.shape[0]
+                try:
+                    d[stim] = [None] * targets_traces.shape[0]
+                except:
+                    print('debug here')
             df = pd.DataFrame(d, index=range(targets_traces.shape[0]))  # population dataframe
         else:
             AttributeError('no SLMTargets_stims_dff attr. [1.2]')
@@ -1480,7 +1476,7 @@ class alloptical(TwoPhotonImaging):
             else:
                 AttributeError('no SLMTargets_stims_dff attr. [1.2]')
 
-        elif process == 'delta(trace_dFF)':
+        elif process == 'trace dFF':
             if hasattr(self, 'SLMTargets_stims_dff'):
                 targets_traces = self.SLMTargets_tracedFF_stims_dff
             else:

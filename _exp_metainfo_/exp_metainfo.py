@@ -6,6 +6,7 @@ import pickle
 from dataclasses import dataclass
 from funcsforprajay.funcs import save_pkl, load_pkl
 import os
+import funcsforprajay.funcs as pj
 
 import numpy as np
 import pandas as pd
@@ -189,6 +190,42 @@ class AllOpticalExpsToAnalyze:
 
     def add_to_csv(self):
         pass
+
+    @classmethod
+    def all_pre4ap_trials(cls):
+        return pj.flattenOnce(cls.pre_4ap_trials)
+
+    @classmethod
+    def all_post4ap_trials(cls):
+        return pj.flattenOnce(cls.post_4ap_trials)
+
+    @classmethod
+    def find_matched_trial(cls, pre4ap_trial_name = None, post4ap_trial_name = None):
+        """
+        Returns the matched trial ID depending on whether the pre4ap trial or post4ap trial was given as input.
+        
+        :param pre4ap_trial_name: 
+        :param post4ap_trial_name: 
+        """
+        # return the pre4ap matched trial
+        if post4ap_trial_name:
+            for map_key, expid in cls.trial_maps['post'].items():  # find the pre4ap exp that matches with the current post4ap experiment
+                if post4ap_trial_name in expid:
+                    pre4ap_match_id = cls.trial_maps['pre'][map_key]
+                    if map_key == 'g':
+                        pre4ap_match_id = cls.trial_maps['pre'][map_key][1]
+                        return pre4ap_match_id
+                    else:
+                        return pre4ap_match_id[0]
+
+        # return the post4ap matched trial
+        elif pre4ap_trial_name:
+            for map_key, expid in cls.trial_maps['pre'].items():  # find the pre4ap exp that matches with the current post4ap experiment
+                if pre4ap_trial_name in expid:
+                    post4ap_match_id = cls.trial_maps['post'][map_key]
+                    return post4ap_match_id[0]
+        else:
+            ValueError('no pre4ap or post4ap trial names provided to match.')
 
 
 assert len(AllOpticalExpsToAnalyze.pre_4ap_trials) == len(AllOpticalExpsToAnalyze.post_4ap_trials), (

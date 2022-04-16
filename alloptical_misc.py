@@ -3,9 +3,11 @@ import pickle
 import pandas as pd
 
 import alloptical_utils_pj as aoutils
+from _exp_metainfo_.exp_metainfo import AllOpticalExpsToAnalyze
 from _main_.AllOpticalMain import alloptical
 from _main_.Post4apMain import Post4ap
 from _main_.TwoPhotonImagingMain import TwoPhotonImaging
+from _processing_.alloptical_processing import run_alloptical_processing_photostim
 from _utils_ import alloptical_plotting as aoplot
 import matplotlib.pyplot as plt
 import numpy as np
@@ -22,17 +24,67 @@ import tifffile as tf
 
 import _alloptical_utils as Utils
 
-preexp: alloptical = import_expobj(exp_prep='RL108 t-009')
-postexp: alloptical = import_expobj(exp_prep='RL108 t-013')
 
 
 
 # %% decide which exp trial from RL109 to keep - pick the one with the strongest targets and nontargets photostim responses
 
 
+for trial in pj.flattenOnce(AllOpticalExpsToAnalyze.pre_4ap_trials):
+    if 'RL109' in trial:
+        expobj: alloptical = import_expobj(exp_prep=trial)
+        # trace_snippets_avg = np.mean(expobj.SLMTargets_stims_dff, axis=1)
+        trace_snippets_avg = expobj.SLMTargets_tracedFF_stims_dffAvg
+        print(expobj.pre_stim)
+        print(expobj.post_stim)
+        print(expobj.stim_duration_frames)
+        print(trace_snippets_avg.shape[1])
+
+
+        fig, axs = plt.subplots(nrows=3, ncols=1, figsize = [4, 12])
+        # aoplot.plot_periphotostim_avg2(dataset=trace_snippets_avg, fps=expobj.fps, pre_stim_sec=expobj.PhotostimAnalysisSlmTargets._pre_stim_sec, title=f'{expobj.t_series_name}')
+        aoplot.plot_periphotostim_avg(arr=trace_snippets_avg, pre_stim_sec=1.0, post_stim_sec=3.0, title=f'{expobj.t_series_name} - baseline', expobj=expobj,
+                                      x_label='Time (secs)', y_label='dFF response', fig=fig, ax = axs[0], show=False)
+
+
+        post4ap_exp = AllOpticalExpsToAnalyze.find_matched_trial(pre4ap_trial_name=expobj.t_series_name)
+        print(post4ap_exp)
+        expobj: Post4ap = import_expobj(exp_prep=post4ap_exp)
+        trace_snippets_avg = expobj.SLMTargets_tracedFF_stims_dffAvg
+        print(expobj.pre_stim)
+        print(expobj.post_stim)
+        print(expobj.stim_duration_frames)
+        print(trace_snippets_avg.shape[1], '\n')
+
+        # trace_snippets_avg = np.mean(expobj.SLMTargets_stims_dff_outsz, axis=1)
+        trace_snippets_avg = expobj.SLMTargets_tracedFF_stims_dffAvg_outsz
+        print(trace_snippets_avg.shape[1], '\n')
+        aoplot.plot_periphotostim_avg(arr=trace_snippets_avg, pre_stim_sec=1.0, post_stim_sec=3.0, title=f'{expobj.t_series_name} - interictal', expobj=expobj,
+                                      x_label='Time (secs)', y_label='dFF response', fig=fig, ax = axs[1], show=False)
+
+        trace_snippets_avg = expobj.SLMTargets_tracedFF_stims_dffAvg
+        print(trace_snippets_avg.shape[1])
+        aoplot.plot_periphotostim_avg(arr=trace_snippets_avg, pre_stim_sec=1.0, post_stim_sec=3.0, title=f'{expobj.t_series_name} - all', expobj=expobj,
+                                      x_label='Time (secs)', y_label='dFF response', fig=fig, ax = axs[2])
+        fig.show()
+
+
+# %% fixing trace snippets for RL109 post4ap trials
+for trial in AllOpticalExpsToAnalyze.all_post4ap_trials():
+    if 'RL109' in trial:
+        expobj: Post4ap = import_expobj(exp_prep=trial)
+        print(expobj.SLMTargets_stims_dff.shape)
+        print(f'len of trace snippet: {round(expobj.SLMTargets_tracedFF_stims_dffAvg_outsz.shape[1] / expobj.fps, 3)}')
+        run_alloptical_processing_photostim(expobj=expobj, plots=True)
+        expobj: Post4ap = import_expobj(exp_prep=trial)
+        print(expobj.SLMTargets_stims_dff.shape)
+        print(f'len of trace snippet (after rerunning): {round(expobj.SLMTargets_tracedFF_stims_dffAvg_outsz.shape[1] / expobj.fps, 3)}', '\n')
 
 
 # %% measuring total activity of all non-targets (significant and non-significant responders) and then z-scoring (if needed) -  april 15 '22
+preexp: alloptical = import_expobj(exp_prep='RL108 t-009')
+postexp: alloptical = import_expobj(exp_prep='RL108 t-013')
+
 # - pre4ap
 from scipy import stats
 

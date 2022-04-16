@@ -574,7 +574,11 @@ def plot_periphotostim_avg2(dataset, fps=None, legend_labels=None, colors=None, 
 
     meantraces = []
     stdtraces = []
-    if type(dataset) == list and len(dataset) > 1:
+
+    if type(dataset) != list:
+        dataset = [dataset]
+
+    if len(dataset) > 1:
         assert len(legend_labels) == len(dataset), print('please provide same number of legend labels as dataset')
         if colors is None:
             colors = ['black', pj.make_random_color_array(len(dataset) - 1)]
@@ -591,25 +595,25 @@ def plot_periphotostim_avg2(dataset, fps=None, legend_labels=None, colors=None, 
             if not std.shape == stdtraces[i - 1].shape:
                 print(f"|--- length mismatch in std traces of datasets...{title}, shape0 {std.shape} and shape1 {stdtraces[i - 1].shape}")
 
-    elif type(dataset) is not list or len(dataset) == 1:
-        dataset = list(dataset)
+        assert len(meantraces[0]) == dataset[0].shape[1], 'length of meantraces is not equal to the dataset provided.'
+        assert len(stdtraces[0]) == dataset[0].shape[1], 'length of stdtraces is not equal to the dataset provided.'
+
+    elif len(dataset) == 1:
+        # dataset = list(dataset)
         meanst = np.mean(dataset[0], axis=0)
         std = np.std(dataset[0], axis=0, ddof=1)
         meantraces.append(meanst)
         stdtraces.append(std)
-        colors = ['black'] if colors is None else colors
+        colors = pj.flattenOnce([['black'], pj.make_random_color_array(dataset[0].shape[0])]) if colors is None else colors
     else:
         AttributeError('please provide the data to plot in a ls format, each different data group as a ls item...')
 
-    assert len(meantraces[0]) == dataset[0].shape[1], 'length of meantraces is not equal to the dataset provided.'
-    assert len(stdtraces[0]) == dataset[0].shape[1], 'length of stdtraces is not equal to the dataset provided.'
 
     if 'xlabel' not in kwargs or kwargs['xlabel'] is None or 'time' in kwargs['xlabel'] or 'Time' in kwargs['xlabel']:
         ## change xaxis to time (secs)
         if fps is not None:
             if pre_stim_sec is not None:
-                x_range = np.linspace(0, len(meantraces[0]) / fps, len(
-                    meantraces[0])) - pre_stim_sec  # x scale, but in time domain (transformed from frames based on the provided fps)
+                x_range = np.linspace(0, len(meantraces[0]) / fps, len(meantraces[0])) - pre_stim_sec  # x scale, but in time domain (transformed from frames based on the provided fps)
                 if 'xlabel' in kwargs:
                     ax.set_xlabel(kwargs['xlabel'])
                 else:
@@ -633,9 +637,9 @@ def plot_periphotostim_avg2(dataset, fps=None, legend_labels=None, colors=None, 
             ax.plot(x_range, meantraces[i], color=colors[i], lw=2)
             ax.fill_between(x_range, meantraces[i] - stdtraces[i], meantraces[i] + stdtraces[i], alpha=0.15, color=colors[i])
         else:
-            ax.plot(x_range, meantraces[i], color=colors[i], lw=2)
-            for trace in dataset[i]:
-                ax.plot(x_range, trace, color=colors[i], alpha=0.3, lw=2)
+            ax.plot(x_range, meantraces[i], color=colors[i], lw=2, zorder=5)
+            for idx, trace in enumerate(dataset[i]):
+                ax.plot(x_range, trace, color=colors[idx + 1], alpha=0.3, lw=2, zorder=1)
 
 
     if legend_labels:
@@ -718,9 +722,9 @@ def plot_periphotostim_avg(arr=None, pre_stim_sec=1.0, post_stim_sec=3.0, title=
 
         if avg_only is True:
             # ax.axvspan(exp_prestim/fps, (exp_prestim + stim_duration + 1) / fps, alpha=alpha, color='plum', zorder = 3)
-            ax.axvspan(0 - 1/fps, 0 + stim_duration + 1 / fps, alpha=alpha, color='plum', zorder = 3)  # note that we are setting 0 as the stimulation time
+            ax.axvspan(0 - pre_stim_sec/fps, 0 + stim_duration + pre_stim_sec / fps, alpha=alpha, color='plum', zorder = 3)  # note that we are setting 0 as the stimulation time
         else:
-            ax.axvspan(0 - 1/fps, 0 - 1/fps + stim_duration, alpha=alpha, color='plum', zorder = 3)  # note that we are setting 0 as the stimulation time
+            ax.axvspan(0 - pre_stim_sec/fps, 0 - pre_stim_sec/fps + stim_duration, alpha=alpha, color='plum', zorder = 3)  # note that we are setting 0 as the stimulation time
     else:
         ax.axvspan(exp_prestim, exp_prestim + int(stim_duration*fps), alpha=alpha, color='tomato')
 
