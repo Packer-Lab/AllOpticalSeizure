@@ -3,12 +3,14 @@ import pickle
 import pandas as pd
 
 import alloptical_utils_pj as aoutils
+from _main_.AllOpticalMain import alloptical
 from _main_.Post4apMain import Post4ap
 from _main_.TwoPhotonImagingMain import TwoPhotonImaging
 from _utils_ import alloptical_plotting as aoplot
 import matplotlib.pyplot as plt
 import numpy as np
 from funcsforprajay import funcs as pj
+from funcsforprajay import plotting as pplot
 
 # import results superobject that will collect analyses from various individual experiments
 from _utils_.io import import_expobj
@@ -20,18 +22,69 @@ import tifffile as tf
 
 import _alloptical_utils as Utils
 
-expobj = import_expobj(exp_prep='RL108 t-013')
+preexp: alloptical = import_expobj(exp_prep='RL108 t-009')
+postexp: alloptical = import_expobj(exp_prep='RL108 t-013')
 
 
-# %%
 
-@Utils.run_for_loop_across_exps(run_pre4ap_trials=1, run_post4ap_trials=1, allow_rerun=1)
-def run_misc(**kwargs):
-    expobj = kwargs['expobj']
-    expobj.save()
+# %% decide which exp trial from RL109 to keep - pick the one with the strongest targets and nontargets photostim responses
 
-run_misc()
 
+
+
+# %% measuring total activity of all non-targets (significant and non-significant responders) and then z-scoring (if needed) -  april 15 '22
+# - pre4ap
+from scipy import stats
+
+network_summed_activity = np.sum(preexp.PhotostimResponsesNonTargets.adata.X, axis=0)
+network_summed_activity_zsco = np.round(stats.zscore(network_summed_activity, ddof=1), 3)
+
+
+targets_summed_activity = np.sum(preexp.PhotostimResponsesSLMTargets.adata.X, axis=0)
+targets_summed_activity_zsco = np.round(stats.zscore(targets_summed_activity, ddof=1), 3)
+
+slope, intercept, r_value, p_value, std_err = stats.linregress(x = targets_summed_activity_zsco, y = network_summed_activity_zsco)
+regression_y = slope * targets_summed_activity_zsco + intercept
+
+df1 = pd.DataFrame({
+    'total targets activity': targets_summed_activity_zsco,
+    'total network activity': network_summed_activity_zsco,
+    'stim_group': 'baseline'
+})
+
+fig, ax = pplot.make_general_scatter(x_list = [targets_summed_activity_zsco], y_data=[network_summed_activity_zsco], figsize=(6.5,4), s=50, facecolors=['gray'], edgecolors=['black'], lw=1, alpha=1,
+                                     x_labels=['total targets activity'], y_labels=['total network activity'], legend_labels=[f'baseline - $R^2$: {r_value**2:.2e}'], show = False)
+
+ax.plot(targets_summed_activity_zsco, regression_y, color = 'black')
+
+
+# - post4ap
+
+network_summed_activity = np.sum(postexp.PhotostimResponsesNonTargets.adata.X[:, postexp.PhotostimResponsesNonTargets.adata.var['stim_group'] == 'interictal'], axis=0)
+network_summed_activity_zsco = np.round(stats.zscore(network_summed_activity, ddof=1), 3)
+
+
+targets_summed_activity = np.sum(postexp.PhotostimResponsesSLMTargets.adata.X[:, postexp.PhotostimResponsesNonTargets.adata.var['stim_group'] == 'interictal'], axis=0)
+targets_summed_activity_zsco = np.round(stats.zscore(targets_summed_activity, ddof=1), 3)
+slope, intercept, r_value, p_value, std_err = stats.linregress(x = targets_summed_activity_zsco, y = network_summed_activity_zsco)
+regression_y = slope * targets_summed_activity_zsco + intercept
+
+
+df2 = pd.DataFrame({
+    'total targets activity': targets_summed_activity_zsco,
+    'total network activity': network_summed_activity_zsco,
+    'stim_group': 'interictal'
+})
+
+
+pplot.make_general_scatter(x_list = [targets_summed_activity_zsco], y_data=[network_summed_activity_zsco], s=50, facecolors=['green'], edgecolors=['black'], lw=1, alpha=1,
+                           x_labels=['total targets activity'], y_labels=['total network activity'], fig = fig, ax= ax, legend_labels=[f'interictal - $R^2$: {r_value**2:.1e}'], show = False)
+
+ax.plot(targets_summed_activity_zsco, regression_y, color = 'green')
+
+ax.grid(True)
+fig.suptitle('Total activity for all trials')
+fig.show()
 
 
 # %% spont imaging running subset trial frames

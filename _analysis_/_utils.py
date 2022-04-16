@@ -1,9 +1,21 @@
 #
+import pickle
 import time
 
 import os
 
 from _main_.AllOpticalMain import alloptical
+
+
+class CustomUnpicklerAttributeError(pickle.Unpickler):
+    def find_class(self, module, name):
+        if name == 'PhotostimResponsesNonTargetsResults':
+            print(f'\t for: PhotostimResponsesNonTargetsResults')
+            from _analysis_._ClassPhotostimResponseQuantificationNonTargets import \
+                PhotostimResponsesNonTargetsResults
+            return PhotostimResponsesNonTargetsResults
+
+        return super().find_class(module, name)
 
 
 class Quantification:
@@ -68,7 +80,10 @@ class Results:
     def load(cls):
         from funcsforprajay.funcs import load_pkl
         print(f'Loading Results Analysis object from {cls.SAVE_PATH} ... ')
-        return load_pkl(cls.SAVE_PATH)
+        try:
+            return load_pkl(cls.SAVE_PATH)
+        except AttributeError:
+            CustomUnpicklerAttributeError(open(cls.SAVE_PATH, 'rb')).load()
 
     # @property
     # def expobj_id(self):

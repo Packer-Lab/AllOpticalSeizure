@@ -102,7 +102,7 @@ def full_plot_mean_responses_magnitudes():
 
 # r.2) z scoring
 
-@Utils.run_for_loop_across_exps(run_pre4ap_trials=0, run_post4ap_trials=0, allow_rerun=0, run_trials=['PS11 t-011'])
+@Utils.run_for_loop_across_exps(run_pre4ap_trials=0, run_post4ap_trials=1, allow_rerun=0, run_trials=['PS11 t-011'])
 def run__z_score_photostim_responses_and_interictalzscores(**kwargs):
     expobj: alloptical = kwargs['expobj']
     expobj.PhotostimResponsesSLMTargets.z_score_photostim_responses()
