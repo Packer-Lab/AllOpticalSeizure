@@ -30,43 +30,44 @@ import _alloptical_utils as Utils
 # %% decide which exp trial from RL109 to keep - pick the one with the strongest targets and nontargets photostim responses
 
 
-for trial in pj.flattenOnce(AllOpticalExpsToAnalyze.pre_4ap_trials):
-    if 'RL109' in trial:
-        expobj: alloptical = import_expobj(exp_prep=trial)
-        # trace_snippets_avg = np.mean(expobj.SLMTargets_stims_dff, axis=1)
-        trace_snippets_avg = expobj.SLMTargets_tracedFF_stims_dffAvg
-        print(expobj.pre_stim)
-        print(expobj.post_stim)
-        print(expobj.stim_duration_frames)
-        print(trace_snippets_avg.shape[1])
+for exp in AllOpticalExpsToAnalyze.exp_ids:
+    for trial in pj.flattenOnce(AllOpticalExpsToAnalyze.pre_4ap_trials):
+        if exp in trial:
+            expobj: alloptical = import_expobj(exp_prep=trial)
+            # trace_snippets_avg = np.mean(expobj.SLMTargets_stims_dff, axis=1)
+            trace_snippets_avg = expobj.SLMTargets_tracedFF_stims_dffAvg
+            # print(expobj.pre_stim)
+            # print(expobj.post_stim)
+            # print(expobj.stim_duration_frames)
+            # print(trace_snippets_avg.shape[1])
 
 
-        fig, axs = plt.subplots(nrows=3, ncols=1, figsize = [4, 12])
-        # aoplot.plot_periphotostim_avg2(dataset=trace_snippets_avg, fps=expobj.fps, pre_stim_sec=expobj.PhotostimAnalysisSlmTargets._pre_stim_sec, title=f'{expobj.t_series_name}')
-        aoplot.plot_periphotostim_avg(arr=trace_snippets_avg, pre_stim_sec=1.0, post_stim_sec=3.0, title=f'{expobj.t_series_name} - baseline', expobj=expobj,
-                                      x_label='Time (secs)', y_label='dFF response', fig=fig, ax = axs[0], show=False)
+            fig, axs = plt.subplots(nrows=3, ncols=1, figsize = [4, 12])
+            # aoplot.plot_periphotostim_avg2(dataset=trace_snippets_avg, fps=expobj.fps, pre_stim_sec=expobj.PhotostimAnalysisSlmTargets._pre_stim_sec, title=f'{expobj.t_series_name}')
+            aoplot.plot_periphotostim_avg(arr=trace_snippets_avg, pre_stim_sec=1.0, post_stim_sec=3.0, title=f'{expobj.t_series_name} - baseline', expobj=expobj,
+                                          x_label='Time (secs)', y_label='dFF response', fig=fig, ax = axs[0], show=False, y_lims=[-15, 100])
 
 
-        post4ap_exp = AllOpticalExpsToAnalyze.find_matched_trial(pre4ap_trial_name=expobj.t_series_name)
-        print(post4ap_exp)
-        expobj: Post4ap = import_expobj(exp_prep=post4ap_exp)
-        trace_snippets_avg = expobj.SLMTargets_tracedFF_stims_dffAvg
-        print(expobj.pre_stim)
-        print(expobj.post_stim)
-        print(expobj.stim_duration_frames)
-        print(trace_snippets_avg.shape[1], '\n')
+            post4ap_exp = AllOpticalExpsToAnalyze.find_matched_trial(pre4ap_trial_name=expobj.t_series_name)
+            expobj: Post4ap = import_expobj(exp_prep=post4ap_exp)
+            # trace_snippets_avg = expobj.SLMTargets_tracedFF_stims_dffAvg
+            # print(post4ap_exp)
+            # print(expobj.pre_stim)
+            # print(expobj.post_stim)
+            # print(expobj.stim_duration_frames)
+            # print(trace_snippets_avg.shape[1], '\n')
 
-        # trace_snippets_avg = np.mean(expobj.SLMTargets_stims_dff_outsz, axis=1)
-        trace_snippets_avg = expobj.SLMTargets_tracedFF_stims_dffAvg_outsz
-        print(trace_snippets_avg.shape[1], '\n')
-        aoplot.plot_periphotostim_avg(arr=trace_snippets_avg, pre_stim_sec=1.0, post_stim_sec=3.0, title=f'{expobj.t_series_name} - interictal', expobj=expobj,
-                                      x_label='Time (secs)', y_label='dFF response', fig=fig, ax = axs[1], show=False)
+            # trace_snippets_avg = np.mean(expobj.SLMTargets_stims_dff_outsz, axis=1)
+            trace_snippets_avg = expobj.SLMTargets_tracedFF_stims_dffAvg_outsz
+            # print(trace_snippets_avg.shape[1], '\n')
+            aoplot.plot_periphotostim_avg(arr=trace_snippets_avg, pre_stim_sec=1.0, post_stim_sec=3.0, title=f'{expobj.t_series_name} - interictal', expobj=expobj,
+                                          x_label='Time (secs)', y_label='dFF response', fig=fig, ax = axs[1], show=False, y_lims=[-15, 100])
 
-        trace_snippets_avg = expobj.SLMTargets_tracedFF_stims_dffAvg
-        print(trace_snippets_avg.shape[1])
-        aoplot.plot_periphotostim_avg(arr=trace_snippets_avg, pre_stim_sec=1.0, post_stim_sec=3.0, title=f'{expobj.t_series_name} - all', expobj=expobj,
-                                      x_label='Time (secs)', y_label='dFF response', fig=fig, ax = axs[2])
-        fig.show()
+            trace_snippets_avg = expobj.SLMTargets_tracedFF_stims_dffAvg
+            # print(trace_snippets_avg.shape[1])
+            aoplot.plot_periphotostim_avg(arr=trace_snippets_avg, pre_stim_sec=1.0, post_stim_sec=3.0, title=f'{expobj.t_series_name} - all', expobj=expobj,
+                                          x_label='Time (secs)', y_label='dFF response', fig=fig, ax = axs[2], y_lims=[-15, 100], show=False)
+            fig.show()
 
 
 # %% fixing trace snippets for RL109 post4ap trials

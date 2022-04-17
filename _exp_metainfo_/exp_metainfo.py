@@ -96,13 +96,22 @@ class AllOpticalExpsToAnalyze:
     """Lists of alloptical experiments to use during analysis"""
     csv_path: str = CSV_PATH_ao
 
+    exp_ids = [
+        'RL108',
+        'RL109',
+        'PS04',
+        'PS07',
+        'PS06',
+        'PS11'
+    ]
+
     pre_4ap_trials = [
         ['RL108 t-009'],
         # ['RL108 t-010'],
-        ['RL109 t-007'],
+        # ['RL109 t-007'], - not great targets responses
         # ['RL109 t-008'],
         ['RL109 t-013'],
-        ['RL109 t-014'],
+        # ['RL109 t-014'], -- good targets responses but choosing t-013 because stim length more similar to other experiments
         ['PS04 t-012',
          # , 'PS04 t-014',  # - not sure what's wrong with PS04 t-014, but the photostim and Flu are falling out of sync .21/10/09
          'PS04 t-017'],  # just commented out until t-018 gets fully sorted out again.
@@ -122,10 +131,10 @@ class AllOpticalExpsToAnalyze:
     post_4ap_trials = [
         ['RL108 t-013'],
         # ['RL108 t-011'],  # -- need to do sz boundary classifying processing - double checking on .22/03/06, should be good to go .22/03/07
-        ['RL109 t-020'],  # -- need to do sz boundary classifying processing - double checking on .22/03/06
+        # ['RL109 t-020'],  # -- need to do sz boundary classifying processing - double checking on .22/03/06
         # ['RL109 t-021'],
         ['RL109 t-018'],
-        ['RL109 t-016'],  # 'RL109 t-017'], # -- need to do sz boundary classifying processing for t-017
+        # ['RL109 t-016'],  # 'RL109 t-017'], # -- need to do sz boundary classifying processing for t-017, -- t-016 good targets responses but choosing t-013 because stim length more similar to other experiments
         ['PS04 t-018'],  # -- should be good to go. need to redo sz boundary classifying processing - TODO need to redo once again? some stims seems to be missing .22/02/22
         # ['PS05 t-012'],
         ['PS07 t-011'],
@@ -143,10 +152,10 @@ class AllOpticalExpsToAnalyze:
     trial_maps = {'pre': {
         'a': ['RL108 t-009'],
         # 'b': ['RL108 t-010'],
-        'c': ['RL109 t-007'],
+        # 'c': ['RL109 t-007'],
         # 'd': ['RL109 t-008'],
         'e': ['RL109 t-013'],
-        'f': ['RL109 t-014'],
+        # 'f': ['RL109 t-014'],
         'g': ['PS04 t-012',  # 'PS04 t-014',  # - temp just until PS04 gets reprocessed
               'PS04 t-017'],
         # 'h': ['PS05 t-010'],
@@ -163,10 +172,10 @@ class AllOpticalExpsToAnalyze:
     }, 'post': {
         'a': ['RL108 t-013'],
         # 'b': ['RL108 t-011'], # -- need to redo sz boundary classifying processing - should be done
-        'c': ['RL109 t-020'],
+        # 'c': ['RL109 t-020'],
         # 'd': ['RL109 t-021'],
         'e': ['RL109 t-018'],
-        'f': ['RL109 t-016'],  # 'RL109 t-017'], #-- need to do sz boundary classifying processing - should be done
+        # 'f': ['RL109 t-016'],  # 'RL109 t-017'], #-- need to do sz boundary classifying processing - should be done
         'g': ['PS04 t-018'],
         # 'h': ['PS05 t-012'],
         'i': ['PS07 t-011'],

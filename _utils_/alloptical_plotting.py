@@ -599,12 +599,13 @@ def plot_periphotostim_avg2(dataset, fps=None, legend_labels=None, colors=None, 
         assert len(stdtraces[0]) == dataset[0].shape[1], 'length of stdtraces is not equal to the dataset provided.'
 
     elif len(dataset) == 1:
-        # dataset = list(dataset)
-        meanst = np.mean(dataset[0], axis=0)
-        std = np.std(dataset[0], axis=0, ddof=1)
-        meantraces.append(meanst)
-        stdtraces.append(std)
-        colors = pj.flattenOnce([['black'], pj.make_random_color_array(dataset[0].shape[0])]) if colors is None else colors
+        dataset = [dataset]
+        # meanst = np.mean(dataset[0], axis=0)
+        # std = np.std(dataset[0], axis=0, ddof=1)
+        meantraces = dataset
+        # stdtraces.append(std)
+        # colors = pj.flattenOnce([['black'], pj.make_random_color_array(dataset[0].shape[0])]) if colors is None else colors
+        colors = ['black']
     else:
         AttributeError('please provide the data to plot in a ls format, each different data group as a ls item...')
 
@@ -638,8 +639,9 @@ def plot_periphotostim_avg2(dataset, fps=None, legend_labels=None, colors=None, 
             ax.fill_between(x_range, meantraces[i] - stdtraces[i], meantraces[i] + stdtraces[i], alpha=0.15, color=colors[i])
         else:
             ax.plot(x_range, meantraces[i], color=colors[i], lw=2, zorder=5)
-            for idx, trace in enumerate(dataset[i]):
-                ax.plot(x_range, trace, color=colors[idx + 1], alpha=0.3, lw=2, zorder=1)
+            if len(dataset[i]) > 1:
+                for idx, trace in enumerate(dataset[i]):
+                    ax.plot(x_range, trace, color=colors[idx + 1], alpha=0.3, lw=2, zorder=1)
 
 
     if legend_labels:
@@ -701,9 +703,6 @@ def plot_periphotostim_avg(arr=None, pre_stim_sec=1.0, post_stim_sec=3.0, title=
     else:
         stim_duration = expobj.stim_dur / 1000  # seconds of stimulation duration
 
-    x = list(range(arr.shape[1]))
-    # x range in time (secs)
-    x_time = np.linspace(0, arr.shape[1]/fps, arr.shape[1]) - pre_stim_sec  # x scale, but in time domain (transformed from frames based on the provided fps)
 
     len_ = len(arr)
     flu_avg = np.mean(arr, axis=0)
@@ -716,9 +715,12 @@ def plot_periphotostim_avg(arr=None, pre_stim_sec=1.0, post_stim_sec=3.0, title=
         alpha = 0.2
 
     if x_label is None or not 'Frames' in x_label or 'frames' in x_label:
-        x = x_time  # set the x plotting range
+        # x range in time (secs)
+        x_time = np.linspace(0, arr.shape[1] / fps, arr.shape[
+            1]) - pre_stim_sec  # x scale, but in time domain (transformed from frames based on the provided fps)
+        x = x_time  # set the x plotting range to time
         if x_label is not None:
-            x_label = x_label + 'post-stimulation relative'
+            x_label = x_label + ' post-stimulation'
 
         if avg_only is True:
             # ax.axvspan(exp_prestim/fps, (exp_prestim + stim_duration + 1) / fps, alpha=alpha, color='plum', zorder = 3)
@@ -726,6 +728,7 @@ def plot_periphotostim_avg(arr=None, pre_stim_sec=1.0, post_stim_sec=3.0, title=
         else:
             ax.axvspan(0 - pre_stim_sec/fps, 0 - pre_stim_sec/fps + stim_duration, alpha=alpha, color='plum', zorder = 3)  # note that we are setting 0 as the stimulation time
     else:
+        x = list(range(arr.shape[1]))  # x axis is Frames
         ax.axvspan(exp_prestim, exp_prestim + int(stim_duration*fps), alpha=alpha, color='tomato')
 
     if not avg_only:
@@ -741,7 +744,7 @@ def plot_periphotostim_avg(arr=None, pre_stim_sec=1.0, post_stim_sec=3.0, title=
 
     ax.plot(x, flu_avg, color='black', linewidth=2.3, zorder=2)  # plot average trace
 
-    if 'y_lims' in kwargs.keys():
+    if 'y_lims' in kwargs:
         ax.set_ylim(kwargs['y_lims'])
     if pre_stim_sec and post_stim_sec:
         if x_label is None or not 'Frames' in x_label or 'frames' in x_label:
