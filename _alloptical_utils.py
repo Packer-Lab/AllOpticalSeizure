@@ -265,7 +265,7 @@ def save_figure(fig, save_path_suffix: str = None, save_path_full: str = None):
         ValueError('not able to determine where to save figure to!')
     parent_dir = pj.return_parent_dir(save_path_full)
     os.makedirs(parent_dir, exist_ok=True)
-    print(f'\nsaving figure to: {save_path_full}')
+    print(f'\-saving figure to: {save_path_full}')
     fig.savefig(save_path_full)
 
 

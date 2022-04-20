@@ -76,16 +76,14 @@ class PhotostimResponsesQuantificationSLMtargets(Quantification):
                     print('|- calculating stim responses (outsz) - %s stims [2.2.1]' % len(stims_outsz_idx))
                     # dF/stdF
                     self.StimSuccessRate_SLMtargets_dfstdf_outsz, self.hits_SLMtargets_dfstdf_outsz, self.responses_SLMtargets_dfstdf_outsz, self.traces_SLMtargets_successes_dfstdf_outsz = \
-                        expobj.get_SLMTarget_responses_dff(process='dF/stdF', threshold=0.3,
-                                                           stims_to_use=expobj.stims_out_sz)
+                        expobj.get_SLMTarget_responses_dff(process='dF/stdF', threshold=0.3, stims_to_use=expobj.stims_out_sz)
+
                     # dF/prestimF
                     self.StimSuccessRate_SLMtargets_dfprestimf_outsz, self.hits_SLMtargets_dfprestimf_outsz, self.responses_SLMtargets_dfprestimf_outsz, self.traces_SLMtargets_successes_dfprestimf_outsz = \
-                        expobj.get_SLMTarget_responses_dff(process='dF/prestimF', threshold=10,
-                                                           stims_to_use=expobj.stims_out_sz)
+                        expobj.get_SLMTarget_responses_dff(process='dF/prestimF', threshold=10, stims_to_use=expobj.stims_out_sz)
                     # trace dFF
                     self.StimSuccessRate_SLMtargets_tracedFF_outsz, self.hits_SLMtargets_tracedFF_outsz, self.responses_SLMtargets_tracedFF_outsz, self.traces_SLMtargets_tracedFF_successes_outsz = \
-                        expobj.get_SLMTarget_responses_dff(process='delta(trace_dFF)', threshold=10,
-                                                           stims_to_use=expobj.stims_out_sz)
+                        expobj.get_SLMTarget_responses_dff(process='delta(trace_dFF)', threshold=10, stims_to_use=expobj.stims_out_sz)
 
             ### STIMS IN SEIZURE
             if expobj.stims_in_sz:
@@ -95,16 +93,13 @@ class PhotostimResponsesQuantificationSLMtargets(Quantification):
                         print('|- calculating stim responses (insz) - %s stims [2.3.1]' % len(stims_insz_idx))
                         # dF/stdF
                         self.StimSuccessRate_SLMtargets_dfstdf_insz, self.hits_SLMtargets_dfstdf_insz, self.responses_SLMtargets_dfstdf_insz, self.traces_SLMtargets_successes_dfstdf_insz = \
-                            expobj.get_SLMTarget_responses_dff(process='dF/stdF', threshold=0.3,
-                                                               stims_to_use=expobj.stims_in_sz)
+                            expobj.get_SLMTarget_responses_dff(process='dF/stdF', threshold=0.3, stims_to_use=expobj.stims_in_sz)
                         # dF/prestimF
                         self.StimSuccessRate_SLMtargets_dfprestimf_insz, self.hits_SLMtargets_dfprestimf_insz, self.responses_SLMtargets_dfprestimf_insz, self.traces_SLMtargets_successes_dfprestimf_insz = \
-                            expobj.get_SLMTarget_responses_dff(process='dF/prestimF', threshold=10,
-                                                               stims_to_use=expobj.stims_in_sz)
+                            expobj.get_SLMTarget_responses_dff(process='dF/prestimF', threshold=10, stims_to_use=expobj.stims_in_sz)
                         # trace dFF
                         self.StimSuccessRate_SLMtargets_tracedFF_insz, self.hits_SLMtargets_tracedFF_insz, self.responses_SLMtargets_tracedFF_insz, self.traces_SLMtargets_tracedFF_successes_insz = \
-                            expobj.get_SLMTarget_responses_dff(process='delta(trace_dFF)', threshold=10,
-                                                               stims_to_use=expobj.stims_in_sz)
+                            expobj.get_SLMTarget_responses_dff(process='delta(trace_dFF)', threshold=10, stims_to_use=expobj.stims_in_sz)
 
 
                     else:

@@ -13,8 +13,8 @@ from _main_.Post4apMain import Post4ap
 
 # %%
 
-main.plot__photostim_timings_lfp(exp_prep='RL108 t-009', xlims=[188, 500], ylims=[-2, 7], color='black', linewidth = 0.4,
-                                 marker_size=30)
+# main.plot__photostim_timings_lfp(exp_prep='RL108 t-009', xlims=[188, 500], ylims=[-2, 7], color='black', linewidth = 0.4,
+#                                  marker_size=30)
 
 
 # %% 0) initialize analysis module for each expobj
@@ -23,12 +23,13 @@ main.plot__photostim_timings_lfp(exp_prep='RL108 t-009', xlims=[188, 500], ylims
 @Utils.run_for_loop_across_exps(run_pre4ap_trials=0, run_post4ap_trials=0, allow_rerun=1, run_trials=['RL108 t-011'])
 def run__initExpSeizureAnalysis(**kwargs):
     expobj: Post4ap = kwargs['expobj']
-    expobj.ExpSeizure = main(expobj, not_flip_stims=None
-                             )
+    expobj.ExpSeizure = main(expobj, not_flip_stims=None)
     expobj.save()
 
-@Utils.run_for_loop_across_exps(run_pre4ap_trials=False, run_post4ap_trials=False, allow_rerun=True,
-                                run_trials=['RL108 t-011', 'RL108 t-013', 'RL109 t-020'])
+
+
+
+@Utils.run_for_loop_across_exps(run_pre4ap_trials=False, run_post4ap_trials=True, allow_rerun=True)
 def procedure__classifying_sz_boundary(**kwargs):
     """
     Full procedure for classifying targets (and eventually non-targets) as in or out of sz boundary for each stim.
@@ -45,34 +46,15 @@ def procedure__classifying_sz_boundary(**kwargs):
     """
 
     expobj: Post4ap = kwargs['expobj']
-
-
-    # aoplot.plot_lfp_stims(expobj)
-
-    # matlab_pairedmeasurements_path = '%s/paired_measurements/%s_%s_%s.mat' % (expobj.analysis_save_path[:-23], expobj.metainfo['date'], expobj.metainfo['animal prep.'], trial[2:])  # choose matlab path if need to use or use None for no additional bad frames
-    # expobj.paqProcessing()
-    # expobj.collect_seizures_info(seizures_lfp_timing_matarray=matlab_pairedmeasurements_path)
-    # expobj.save()
-
-
-    # ######## CLASSIFY SLM PHOTOSTIM TARGETS AS IN OR OUT OF current SZ location in the FOV
-    # -- FIRST manually draw boundary on the image in ImageJ and save results as CSV to analysis folder under boundary_csv
-
-
-    # expobj.avg_stim_images(stim_timings=expobj.stims_in_sz, peri_frames=50, to_plot=True, save_img=True)
-    # expobj.sz_locations_stims() #if not hasattr(expobj, 'stimsSzLocations') else None
-
-    ######## - all stims in sz are classified, with individual sz events labelled
-    expobj.ExpSeizure.classify_sz_boundaries_all_stims(expobj=expobj)
-
+    main._procedure__classifying_sz_boundary(expobj=expobj)
     expobj.save()
 
 
-@Utils.run_for_loop_across_exps(run_pre4ap_trials=False, run_post4ap_trials=False, allow_rerun=True,
-                                run_trials=['PS04 t-018'])  # , 'RL109 t-017'])
-def run__plot__sz_boundaries_all_stims(**kwargs):
-    expobj: Post4ap = kwargs['expobj']
-    expobj.ExpSeizure.classify_sz_boundaries_all_stims(expobj=expobj)
+# @Utils.run_for_loop_across_exps(run_pre4ap_trials=False, run_post4ap_trials=False, allow_rerun=True,
+#                                 run_trials=['PS04 t-018'])  # , 'RL109 t-017'])
+# def run__plot__sz_boundaries_all_stims(**kwargs):
+#     expobj: Post4ap = kwargs['expobj']
+#     expobj.ExpSeizure.classify_sz_boundaries_all_stims(expobj=expobj)
 
 
 @Utils.run_for_loop_across_exps(run_pre4ap_trials=False, run_post4ap_trials=False, allow_rerun=True,
@@ -80,7 +62,7 @@ def run__plot__sz_boundaries_all_stims(**kwargs):
 def run__enter_input_stims_to_flip(expobj_r=None, **kwargs):
     expobj: Post4ap = kwargs['expobj'] if expobj_r is None else expobj_r
     print(expobj)
-    main.enter_stims_to_flip(expobj=expobj)  # need to run this on the
+    main.enter_stims_to_flip(expobj=expobj)  # need to run this on the server
     expobj.save()
 
 

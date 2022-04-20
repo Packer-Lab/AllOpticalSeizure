@@ -24,6 +24,8 @@ class Post4ap(alloptical):
 
     def __init__(self, paths, metainfo, stimtype, discard_all):
 
+        from _analysis_._ClassNonTargetsSzInvasionSpatial import NonTargetsSzInvasionSpatial
+        self.NonTargetsSzInvasionSpatial: NonTargetsSzInvasionSpatial = None
         from _analysis_._ClassTargetsSzInvasionSpatial_codereview import TargetsSzInvasionSpatial_codereview
         self.TargetsSzInvasionSpatial_codereview: TargetsSzInvasionSpatial_codereview = None  # SLM targets spatial distance to sz wavefront vs. photostim responses analysis object
         from _analysis_._ClassTargetsSzInvasionTemporal import TargetsSzInvasionTemporal
@@ -47,7 +49,8 @@ class Post4ap(alloptical):
         self.seizure_lfp_offsets = None  #: frame #s corresponding to OFFSET of seizure as manually inspected from the LFP signal
 
         ##
-        self.slmtargets_szboundary_stim = None  # dictionary of cells classification either inside or outside of boundary
+        self.slmtargets_szboundary_stim = None  # dictionary of cells classification either inside or outside of boundary - SLM targets
+        self.nontargets_szboundary_stim = None  # dictionary of cells classification either inside or outside of boundary - suite2p nontargets
 
         ## PHOTOSTIM SLM TARGETS
 
@@ -105,7 +108,7 @@ class Post4ap(alloptical):
 
         ## distances and responses relative to distances to sz wavefront
         self.distance_to_sz = {'SLM Targets': {'uninitialized'},
-                               's2p nontargets': {'uninitialized'}}  # calculating the distance between the sz wavefront and cells
+                               's2p nontargets': {'uninitialized'}}  # calculating the distance between the sz wavefront and cells (data in pixels!)
         self.responses_vs_distance_to_seizure_SLMTargets = None  # dataframe that contains min distance to seizure for each target and responses (zscored)
         self.responsesPre4apZscored_vs_distance_to_seizure_SLMTargets = None
 
@@ -158,23 +161,36 @@ class Post4ap(alloptical):
             return True
 
     def sz_locations_stims(expobj):
+        """Creates a dataframe that, for each stim frame inside of ictal period, defines various information about the seizure boundary."""
+
         expobj.stimsSzLocations = pd.DataFrame(data=None, index=expobj.stims_in_sz, columns=['sz_num', 'coord1', 'coord2', 'wavefront_in_frame'])
 
         # specify stims for classifying cells
         on_ = []
-        if 0 in expobj.seizure_lfp_onsets:  # this is used to check if 2p imaging is starting mid-seizure (which should be signified by the first lfp onset being set at frame # 0)
-            on_ = on_ + [expobj.stim_start_frames[0]]
-        on_.extend(expobj.stims_bf_sz)
-        if len(expobj.stims_af_sz) != len(on_):
-            end = expobj.stims_af_sz + [expobj.stim_start_frames[-1]]
-        else:
-            end = expobj.stims_af_sz
-        print(f'\n\t\- seizure start frames: {on_} [{len(on_)}]')
-        print(f'\t\- seizure end frames: {end} [{len(end)}]\n')
+        for sz_start in expobj.seizure_lfp_onsets:
+            if sz_start == 0: # this is used to check if 2p imaging is starting mid-seizure (which should be signified by the first lfp onset being set at frame # 0)
+                on_ = on_ + [expobj.stim_start_frames[0]]
+            else:
+
+                on_.extend([pj.findClosest(arr=expobj.stims_in_sz, input=sz_start)[0]]) if expobj.stim_start_frames[0] < sz_start < expobj.stim_start_frames[-1] else None
+        # on_.extend(expobj.stims_bf_sz)
+        # if len(expobj.seizure_lfp_offsets) != len(on_):
+        #     end = expobj.stims_af_sz + [expobj.stim_start_frames[-1]]
+        # else:
+        #     end = expobj.stims_af_sz
+
+        end = []
+        for sz_stop in expobj.seizure_lfp_offsets:
+            end.extend([pj.findClosest(arr=expobj.stims_in_sz, input=sz_stop)[0]]) if expobj.stim_start_frames[0] < sz_stop < expobj.stim_start_frames[-1] else None
+        if len(end) != len(on_):
+            end.extend([expobj.stim_start_frames[-1]])
+
+        print(f'\n\t\- seizure start closest stim frames: {on_} [{len(on_)}]')
+        print(f'\t\- seizure end closest stim frames: {end} [{len(end)}]\n')
 
         sz_num = 0
         for on, off in zip(on_, end):
-            stims_of_interest = [stim for stim in expobj.stim_start_frames if on < stim < off if stim != expobj.stims_in_sz[0]]
+            stims_of_interest = [stim for stim in expobj.stim_start_frames if on <= stim <= off if stim != expobj.stims_in_sz[0]]
             # stims_of_interest_ = [stim for stim in stims_of_interest if expobj._sz_wavefront_stim(stim=stim)]
             # expobj.stims_sz_wavefront.append(stims_of_interest_)
 
@@ -277,19 +293,18 @@ class Post4ap(alloptical):
 
         in_sz = []
         out_sz = []
-        for _, s in enumerate(self.stat):
-            in_seizure = self._InOutSz(cell_med=s['med'], stim_frame=stim)
+        for idx, s in enumerate(self.stat):
+            if self.stat[idx]['original_index'] in self.s2p_nontargets:
+                in_seizure = self._InOutSz(cell_med=s['med'], stim_frame=stim)
 
-            if in_seizure is True:
-                in_sz.append(s['original_index'])  # this is the s2p cell id
-            elif in_seizure is False:
-                out_sz.append(s['original_index'])  # this is the s2p cell id
+                if in_seizure is True:
+                    in_sz.append(s['original_index'])  # this is the s2p cell id
+                elif in_seizure is False:
+                    out_sz.append(s['original_index'])  # this is the s2p cell id
 
         if flip:
-            # pass
-            in_sz_2 = in_sz
             in_sz_final = out_sz
-            out_sz_final = in_sz_2
+            out_sz_final = in_sz
         else:
             in_sz_final = in_sz
             out_sz_final = out_sz
@@ -327,10 +342,10 @@ class Post4ap(alloptical):
             bg_img = tf.imread(avg_stim_img_path)
             fig, ax = aoplot.plot_cells_loc(self, cells=in_sz_final, fig=fig, ax=ax, title=title, show=False,
                                             background=bg_img, cmap='gray', text=text,
-                                            edgecolors='yellowgreen')
+                                            edgecolors='orange', show_s2p_targets=False)
             fig, ax = aoplot.plot_cells_loc(self, cells=out_sz_final, fig=fig, ax=ax, title=title, show=False,
                                             background=bg_img, cmap='gray', text=text,
-                                            edgecolors='white')
+                                            edgecolors='yellowgreen', show_s2p_targets = False)
 
             # plt.gca().invert_yaxis()
             # plt.show()  # the indiviual cells were plotted in ._InOutSz
@@ -354,15 +369,13 @@ class Post4ap(alloptical):
         # plt.gca().invert_yaxis()
         # plt.show()  # the indiviual cells were plotted in ._InOutSz
 
-        else:
-            pass
-
         if to_plot:
             return in_sz_final, out_sz_final, fig, ax
         else:
             return in_sz_final, out_sz_final
 
-    def classify_slmtargets_sz_bound(self, stim, to_plot=True, title=None, flip=False, fig=None, ax=None):
+
+    def classify_slmtargets_sz_bound(self, stim, to_plot=True, title=None, flip=False, fig=None, ax=None, text=None):
         """
         going to use Rob's suggestions to define boundary of the seizure in ImageJ and then read in the ImageJ output,
         and use this to classify cells as in seizure or out of seizure in a particular image (which will relate to stim time).
@@ -433,7 +446,7 @@ class Post4ap(alloptical):
             # aoplot.plot_SLMtargets_Locs(self, targets_coords=coords_to_plot_insz, cells=in_sz, edgecolors='yellowgreen', background=bg_img)
             # aoplot.plot_SLMtargets_Locs(self, targets_coords=coords_to_plot_outsz, cells=out_sz, edgecolors='white', background=bg_img)
             fig, ax = aoplot.plot_SLMtargets_Locs(self, targets_coords=coords_to_plot_insz, fig=fig, ax=ax, cells=in_sz,
-                                                  title=title, show=False, background=bg_img,
+                                                  title=title, show=False, background=bg_img, text=text,
                                                   edgecolors='red')
             # fig, ax = aoplot.plot_SLMtargets_Locs(self, targets_coords=coords_to_plot_outsz, fig=fig, ax=ax,
             #                                       cells=out_sz, title=title, show=False, background=bg_img,
@@ -542,12 +555,11 @@ class Post4ap(alloptical):
 
             self.stims_bf_sz = [stim for stim in self.stim_start_frames
                                 for sz_start in self.seizure_lfp_onsets
-                                if 0 < (
-                                        sz_start - stim) < 10 * self.fps]  # select stims that occur within 5 seconds before of the sz onset
+                                if 0 < (sz_start - stim) < 10 * self.fps]  # select stims that occur within 10 seconds before of the sz onset
             self.stims_af_sz = [stim for stim in self.stim_start_frames
                                 for sz_start in self.seizure_lfp_offsets
                                 if 0 < -1 * (
-                                        sz_start - stim) < 10 * self.fps]  # select stims that occur within 5 seconds afterof the sz offset
+                                        sz_start - stim) < 10 * self.fps]  # select stims that occur within 10 seconds afterof the sz offset
             print(' \n|- stims_in_sz:', self.stims_in_sz, ' \n|- stims_out_sz:', self.stims_out_sz,
                   ' \n|- stims_bf_sz:', self.stims_bf_sz, ' \n|- stims_af_sz:', self.stims_af_sz)
             aoplot.plot_lfp_stims(expobj=self)
@@ -762,33 +774,155 @@ class Post4ap(alloptical):
     #
     #     expobj.save() if save else None
 
-    def calcMinDistanceToSz(self, show_debug_plot=False):
+    def calcMinDistanceToSz_newer(self, analyse_cells, show_debug_plot=False):
+        """
+        Make a dataframe of stim frames x cells, with values being the minimum distance to the sz boundary at the stim.
+
+        :param analyse_cells: either 'SLM Targets' or 's2p nontargets'
+        :param show_debug_plot:
+        :return:
+
+        """
+
+        # assert hasattr(self.ExpSeizure, 'slmtargets_szboundary_stim'), 'no slmtargets_szboundary_stim found for experiment trial.'
+        assert hasattr(self.ExpSeizure, 'nontargets_szboundary_stim'), 'no nontargets_szboundary_stim found for experiment trial.'
+
+        print(f'\t\- Calculating min distances to sz boundaries for {analyse_cells} ... ')
+
+        if analyse_cells == 'SLM Targets':
+            coordinates = self.target_coords_all
+            indexes = range(len(self.target_coords_all))
+            cellsInSzStims = self.slmtargets_szboundary_stim
+        elif analyse_cells == 's2p nontargets':
+            print('WARNING (TESTING ANLAYSES): testing collecting min. distances for s2p nontargets')
+            indexes = [cell for cell in self.s2p_nontargets if cell not in self.s2p_nontargets_exclude]
+            cellsInSzStims = self.ExpSeizure.nontargets_szboundary_stim
+            coordinates = []
+            for stat_ in self.stat:
+                if stat_['original_index'] in indexes:
+                    y, x = stat_['med']
+                    coordinates.append([x, y])
+                ### todo need to test collecting coordinates for nontargets - seems wrong ones are being chosen.
+        else:
+            raise ValueError('incorrect analyse cells argument.')
+
+        df = pd.DataFrame(data=None, index=indexes, columns=self.stim_start_frames)
+        assert df.shape[0] == self.dff_traces_nontargets.shape[0], 'incorrect number of nontargets traces collected and nontargets being calculated for sz boundary distance.'
+        plot_counter = 0  # counts the number of plots created across stims
+        for _, stim_frame in enumerate(self.stim_start_frames):
+
+            if stim_frame not in self.stimsWithSzWavefront:
+                # exclude sz stims (set to nan) with unknown absolute locations of sz boundary
+                df.loc[:, stim_frame] = np.nan
+            elif stim_frame in self.stimsWithSzWavefront:
+                if 0 <= plot_counter < 15 and show_debug_plot:
+                    from _utils_.alloptical_plotting import multi_plot_subplots
+                    from _utils_.alloptical_plotting import get_ax_for_multi_plot
+                    num_plots = 12
+                    fig, axs, counter, ncols, nrows = multi_plot_subplots(num_total_plots=num_plots,
+                                                                          ncols=4)
+                else:
+                    axs = False
+                    num_plots = 0
+                    counter = 0
+
+
+                print(f"\ncalculating min distances of targets to sz wavefront for stim frame: {stim_frame} ")
+
+                # calculate line of best fit across the sz boundary coordinates
+                xline, yline = pj.xycsv(csvpath=self.sz_border_path(stim=stim_frame))
+                try:
+                    cellsInSz = cellsInSzStims[stim_frame]
+                except KeyError:
+                    print('debug here!')
+                coord1, coord2 = self.stimsSzLocations.loc[stim_frame, ['coord1', 'coord2']]
+                m, c = pj.eq_line_2points(p1=[coord1[0], coord1[1]], p2=[coord2[0], coord2[1]])
+                x_range = np.arange(0, self.frame_x * 1.6)
+                y_range = list(map(lambda x: m * x + c, x_range))
+
+                for idx, cell_coord in enumerate(coordinates):
+                    cell_idx = indexes[idx]
+                    cell_coord_ = [cell_coord[0], cell_coord[1], 0]
+
+                    dist, nearest = pnt2line.pnt2line(pnt=cell_coord_, start=[x_range[0], y_range[0], 0], end=[x_range[-1], y_range[-1], 0])
+                    dist = round(dist, 2)  # in pixels
+                    if cell_idx in cellsInSz:  # flip distance to negative if target is inside sz boundary
+                        dist = -dist
+                        plot = True
+                        # if stim_frame == 624:  # debugging
+                        #     print('debug here! - problem with out of sz cells from this stim (and other stims too) being turned to negative distance')
+
+                    else: plot = False
+                        # print(dist, "target coord inside sz")
+                    df.loc[cell_idx, stim_frame] = dist  # ADD DISTANCE (pixels) TO DATA FRAME !!!!!!!!!!!
+
+                    #  create plots to make sure the distances are being calculated properly - checked on .22/03/15 - all looks good.
+                    if axs is not False and counter < num_plots and plot:
+                        title = f"distance: {dist}, {self.t_series_name}, stim: {stim_frame}"
+                        # fig, ax = plt.subplots()  ## figure for debuggging
+
+                        try:
+                            ax, counter = get_ax_for_multi_plot(axs=axs, counter=counter, ncols=ncols)
+                            # print(counter, num_plots)
+                        except TypeError:
+                            print(counter, num_plots)
+                            print('debug here')
+
+                        pj.plot_coordinates(coords=[(cell_coord_[0], cell_coord_[1])], frame_x=self.frame_x, frame_y=self.frame_y,
+                                            edgecolors='red', show=False, fig=fig, ax=ax, title=title)
+
+                        pj.plot_coordinates(coords=[(xline[0], yline[0]), (xline[1], yline[1])], frame_x=self.frame_x, frame_y=self.frame_y,
+                                            edgecolors='green', show=False, fig=fig, ax=ax, title=title)
+
+                        pj.plot_coordinates(coords=[(nearest[0], nearest[1])], frame_x=self.frame_x, frame_y=self.frame_y,
+                                            edgecolors='blue', show=False, fig=fig, ax=ax, title=title)
+
+                        ax.plot(np.arange(350, 450), [450]*100, color='white', lw=5, solid_capstyle='butt')  # 100 px measurement bar
+
+                        ax.plot(x_range, y_range, lw=1)
+
+
+
+
+                if 0 <= plot_counter < 15 and show_debug_plot:
+                    fig.show()
+                    plot_counter += 1
+
+            # aoplot.plot_sz_boundary_location(self)
+        self.distance_to_sz[analyse_cells] = df  ## set the dataframe for each of SLM Targets and s2p nontargets
+        self.save()
+        return self.distance_to_sz[analyse_cells]
+
+
+    def calcMinDistanceToSz_old(self, analyse_cells, show_debug_plot=False):
         """
         Make a dataframe of stim frames x cells, with values being the minimum distance to the sz boundary at the stim.
 
         """
 
         if hasattr(self, 'slmtargets_szboundary_stim'):
-            for cells in ['SLM Targets', 's2p nontargets']:
+            for analyse_cells in ['SLM Targets', 's2p nontargets']:
 
-                print(f'\t\- Calculating min distances to sz boundaries for {cells} ... ')
+                print(f'\t\- Calculating min distances to sz boundaries for {analyse_cells} ... ')
 
-                if cells == 'SLM Targets':
+                if analyse_cells == 'SLM Targets':
                     coordinates = self.target_coords_all
                     indexes = range(len(self.target_coords_all))
-                elif cells == 's2p nontargets':  # TODO add collecting min. distances for s2p nontargets
+                elif analyse_cells == 's2p nontargets':  # TODO add collecting min. distances for s2p nontargets
                     print('WARNING: still need to add collecting min. distances for s2p nontargets')
-                    # indexes = self.s2p_nontargets
-                    # coordinates = []
-                    # for stat_ in self.stat:
-                    #     coordinates.append(stat_['med']) if stat_['original_index'] in indexes else None
+                    indexes = self.s2p_nontargets
+                    coordinates = []
+                    for stat_ in self.stat:
+                        coordinates.append(stat_['med']) if stat_['original_index'] in indexes else None
+                else:
+                    raise ValueError('incorrect analyse cells argument.')
 
                 df = pd.DataFrame(data=None, index=indexes, columns=self.stim_start_frames)
                 # fig2, ax2 = plt.subplots()  ## figure for debuggging
                 plot_counter = 0
                 for _, stim_frame in enumerate(self.stim_start_frames):
 
-                    if cells == 'SLM Targets':
+                    if analyse_cells == 'SLM Targets':
                         if stim_frame not in self.stimsWithSzWavefront:
                             # exclude sz stims (set to nan) with unknown absolute locations of sz boundary
                             df.loc[:, stim_frame] = np.nan
@@ -855,7 +989,7 @@ class Post4ap(alloptical):
                             #     plot_counter += 1
 
                     # aoplot.plot_sz_boundary_location(self)
-                self.distance_to_sz[cells] = df  ## set the dataframe for each of SLM Targets and s2p nontargets
+                self.distance_to_sz[analyse_cells] = df  ## set the dataframe for each of SLM Targets and s2p nontargets
                 # fig2.show()
                 self.save()
             return self.distance_to_sz

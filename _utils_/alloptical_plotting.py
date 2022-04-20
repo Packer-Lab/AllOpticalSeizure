@@ -103,9 +103,12 @@ def multi_plot_subplots(num_total_plots: int, ncols: int=3):
     return fig, axs, counter, ncols, nrows
 
 def get_ax_for_multi_plot(axs, counter, ncols):
-    counter += 1 #if counter != 0 else 0
-    ax = axs[counter // ncols, counter % ncols]
-    return ax, counter
+    try:
+        ax = axs[counter // ncols, counter % ncols]
+        counter += 1  # if counter != 0 else 0
+        return ax, counter
+    except IndexError:
+        print('debug here')
 
 
 
@@ -262,36 +265,29 @@ def plot_cells_loc(expobj, cells: list, title=None, background: np.array = None,
 
     x_list = []
     y_list = []
-    for cell in cells:
-        y, x = expobj.stat[expobj.cell_id.index(cell)]['med']
-        x_list.append(x)
-        y_list.append(y)
 
-        if show_s2p_targets:
-            if hasattr(expobj, 's2p_cell_targets'):
-                if cell in expobj.s2p_cell_targets:
-                    color_ = '#F02A71'
-                else:
-                    color_ = 'none'
-            else:
-                color_ = 'none'
-            ax.scatter(x=x, y=y, edgecolors=None, facecolors=color_, linewidths=0.8)
-        elif color_float_list:
-            # ax.scatter(x=x, y=y, edgecolors='none', c=color_float_list[cells.index(cell)], linewidths=0.8,
-            #            cmap=cmap)
-            pass
-        else:
-            if 'edgecolors' in kwargs.keys():
-                edgecolors = kwargs['edgecolors']
-            else:
-                edgecolors = 'yellowgreen'
-            ax.scatter(x=x, y=y, edgecolors=edgecolors, facecolors='none', linewidths=0.8)
+    facecolors = kwargs['facecolors'] if 'facecolors' in kwargs else 'yellowgreen'
+    edgecolors = kwargs['edgecolors'] if 'edgecolors' in kwargs else 'yellowgreen'
 
     if color_float_list:
         ac = ax.scatter(x=x_list, y=y_list, edgecolors='none', c=color_float_list, linewidths=0.8,
                    cmap=cmap, zorder=1)
 
         plt.colorbar(ac, ax=ax)
+    else:
+        for cell in cells:
+            y, x = expobj.stat[expobj.cell_id.index(cell)]['med']
+            x_list.append(x)
+            y_list.append(y)
+
+            if not show_s2p_targets:
+                ax.scatter(x=x, y=y, edgecolors=edgecolors, facecolors='none', linewidths=0.8)
+            else:
+                if hasattr(expobj, 's2p_cell_targets'):
+                    if cell in expobj.s2p_cell_targets:
+                        facecolors = '#F02A71'
+                ax.scatter(x=x, y=y, edgecolors=None, facecolors=facecolors, linewidths=0.8)
+
 
     if not scatter_only:
         if background is None:
@@ -317,7 +313,6 @@ def plot_cells_loc(expobj, cells: list, title=None, background: np.array = None,
         ax.set_xticklabels([])
         ax.set_yticks(ticks=[])
         ax.set_yticklabels([])
-
 
 
     if 'invert_y' in kwargs.keys():
@@ -993,7 +988,7 @@ def plot_lfp_stims(expobj: Union[alloptical, Post4ap], title='LFP signal with ph
     ax2.yaxis.set_tick_params(right=False,
                               labelright=False)
     if 'ax2' not in kwargs.keys() and legend == True:
-        ax2.legend(loc='upper left')
+        ax2.legend(loc='lower right')
 
     if 'ylims' in kwargs and kwargs['ylims'] != None:
         ax.set_ylim(kwargs['ylims'])

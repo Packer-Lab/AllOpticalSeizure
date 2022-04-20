@@ -22,7 +22,7 @@ SAVE_LOC = "/home/pshah/mnt/qnap/Analysis/analysis_export/analysis_quantificatio
 TODO all code:
 - double check plot - is the result real lol
 
-
+    
 """
 
 class SLMTargets(Quantification):
@@ -78,7 +78,7 @@ class TargetsSzInvasionSpatial_codereview(SLMTargets):
             var_meta.loc['im_time_secs', fr_idx] = stim_frame * expobj.fps
 
         # SET PRIMARY DATA
-        _data_type = 'SLM Targets - distance to sz wavefront'  # primary data label
+        _data_type = 'SLM Targets - distance to sz wavefront (pixels)'  # primary data label
 
         print(f"\t\----- CREATING annotated data object using AnnData:")
         # create anndata object
@@ -104,7 +104,7 @@ class TargetsSzInvasionSpatial_codereview(SLMTargets):
 
         expobj: Post4ap = kwargs['expobj']
         expobj.sz_locations_stims() if not hasattr(expobj, 'stimsSzLocations') else None
-        distance_to_sz_df = expobj.calcMinDistanceToSz(show_debug_plot=False) if not hasattr(expobj, 'distance_to_sz') or force_redo else None  ## <<-- TODO main code line to code review and confirm. try to confirm correct calculation of distances using some plots??
+        distance_to_sz_df = expobj.calcMinDistanceToSz_newer(show_debug_plot=False) if not hasattr(expobj, 'distance_to_sz') or force_redo else None  ## <<-- TODO main code line to code review and confirm. try to confirm correct calculation of distances using some plots??
         # expobj.save()
 
         # distance_to_sz_arr = np.array(distance_to_sz_df)
@@ -196,7 +196,7 @@ class TargetsSzInvasionSpatial_codereview(SLMTargets):
 
         self.responses_vs_distance_to_seizure_SLMTargets = df
 
-        # convert distances to microns
+        # convert distances to sz boundary (in pixels) to microns
         self.responses_vs_distance_to_seizure_SLMTargets['distance_to_sz_um'] = [round(i / expobj.pix_sz_x, 2) for i in self.responses_vs_distance_to_seizure_SLMTargets['distance_to_sz']]
 
     @staticmethod

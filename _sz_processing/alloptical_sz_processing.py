@@ -117,9 +117,9 @@ for i in ls2:
         # break
 
         print(' \nworking on classifying cells for stims start frames...')
-        ## TODO need to implement rest of code for s2prois_szboundary_stim
+        ## TODO need to implement rest of code for nontargets_szboundary_stim
         expobj.slmtargets_szboundary_stim = {}
-        expobj.s2prois_szboundary_stim = {}
+        expobj.nontargets_szboundary_stim = {}
 
         ######## - all stims in sz are classified, with individual sz events labelled
 
@@ -151,7 +151,7 @@ for i in ls2:
                 # # classification of suite2p ROIs relative to sz boundary
                 # in_sz, out_sz, fig, ax = expobj.classify_cells_sz_bound(stim=stim, to_plot=True,
                 #                                                         flip=flip, fig=fig, ax=ax, text='sz %s stim %s' % (sz_num, stim))
-                # expobj.s2prois_szboundary_stim[stim] = in_sz
+                # expobj.nontargets_szboundary_stim[stim] = in_sz
 
                 # # classification of SLM targets relative to sz boundary
                 in_sz, out_sz, fig, ax = expobj.classify_slmtargets_sz_bound(stim=stim, to_plot=True, title=stim,
@@ -196,7 +196,7 @@ expobj.save()
 
 # %% 2.1.2) re-run with new flip stims
 expobj.slmtargets_szboundary_stim = {}
-expobj.s2prois_szboundary_stim = {}
+expobj.nontargets_szboundary_stim = {}
 sz_num = 0
 for sz_num, stims_of_interest in enumerate(expobj.stimsWithSzWavefront):
     print('|-', stims_of_interest)

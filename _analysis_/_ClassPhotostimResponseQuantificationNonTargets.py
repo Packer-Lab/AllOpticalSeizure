@@ -1,3 +1,7 @@
+import sys
+
+sys.path.extend(['/home/pshah/Documents/code/AllOpticalSeizure', '/home/pshah/Documents/code/AllOpticalSeizure'])
+
 import os
 from typing import Union, List
 
@@ -190,7 +194,7 @@ class PhotostimResponsesQuantificationNonTargets(Quantification):
 
 
     Tasks:
-    [ ] scatter plot of individual stim trials: response magnitude of targets vs. response magnitude of all (significantly responding) nontargets
+    [x] scatter plot of individual stim trials: response magnitude of targets vs. response magnitude of all (significantly responding) nontargets
                                                                                 - (maybe, evoked summed magnitude of pos and neg sig. responders - check previous plots on this to see if there's some insights there....)
         [x] set up code to split post4ap nontargets responses collected data into interictal and ictal
         [x] continue working thorugh workflow to collect traces for pos and neg sig. responders - pre4ap and post4ap
@@ -199,10 +203,14 @@ class PhotostimResponsesQuantificationNonTargets(Quantification):
             [x] or simple z - scoring of targets and non-targets responses --> think I'll try this first - do for one experiment and plot results
         [x] also might consider measuring activity responses of ALL cells, not just the significantly responding nontargets < -- seems to be a promising avenue
 
-        [ ] plan: calculate $R^2$ for each experiment (pre4ap and post4ap interictal), and compare on bar plot
-            [ ] - could also consider aggregating z scores across all experiments for baseline and interictal stims
+        [x] plan: calculate $R^2$ for each experiment (pre4ap and post4ap interictal), and compare on bar plot
+            [x] - could also consider aggregating z scores across all experiments for baseline and interictal stims
 
-    [ ] code for splitting nontargets inside and outside sz boundary
+    [ ] code for quantifying nontargets responses inside and outside sz boundary - during ictal stims
+        - how do you setup the stats tests for nontargets? do you exclude cells that are inside the sz boundary for certain stims?
+        - alt. approach is to take the significant responders from baseline, and apply those same responders to interictal and ictal:
+            - i.e. don't quantify significant responders separately in interictal and ictal
+            -
 
     """
 
@@ -216,7 +224,8 @@ class PhotostimResponsesQuantificationNonTargets(Quantification):
     def __init__(self, expobj: Union[alloptical, Post4ap]):
 
         self.diff_responses = None  #: subtraction of stim responses post array with stim responses pre array (direct diff. of post-stim - pre-stim value for each nontarget across all stims)
-
+        self.wilcoxons = None
+        self.sig_units = None
 
         super().__init__(expobj)
         print(f'\- ADDING NEW PhotostimResponsesNonTargets MODULE to expobj: {expobj.t_series_name}')
@@ -224,7 +233,7 @@ class PhotostimResponsesQuantificationNonTargets(Quantification):
         if not hasattr(expobj, 's2p_nontargets'):
             expobj._parseNAPARMgpl()
             expobj._findTargetsAreas()
-            expobj._findTargetedS2pROIs(force_redo=True, plot=False)
+            expobj._findTargetedS2pROIs(plot=False)
             expobj.save()
 
 
@@ -238,7 +247,58 @@ class PhotostimResponsesQuantificationNonTargets(Quantification):
     def __repr__(self):
         return f"PhotostimResponsesNonTargets <-- Quantification Analysis submodule for expobj <{self.expobj_id}>"
 
-    # 0) ANALYSIS OF NON-TARGETS IN ALL OPTICAL EXPERIMENTS.
+    # 0.1) CLASSIFY NONTARGETS ACROSS SEIZURE BOUNDARY, INCLUDING MEASURING DISTANCE TO SEIZURE BOUNDARY - refactoring out to _ClassNonTargetsSzInvasionSpatial
+    def _classify_nontargets_szboundary(self, expobj: Post4ap, force_redo = False):
+        """set a matrix of 1s/0s that classifies nontargets inside seizure boundary.
+        1: outside sz boundary
+        0: inside sz boundary
+
+        """
+
+        if not hasattr(expobj.ExpSeizure, 'nontargets_szboundary_stim') or force_redo:
+            expobj.ExpSeizure._procedure__classifying_sz_boundary(expobj=expobj, cells='nontargets')
+
+        assert hasattr(expobj.ExpSeizure, 'nontargets_szboundary_stim')
+        if not hasattr(expobj, 'stimsSzLocations'): expobj.sz_locations_stims()
+
+
+    def _calc_min_distance_sz_nontargets(self, expobj: Post4ap, force_redo=False):
+        assert hasattr(expobj.ExpSeizure, 'nontargets_szboundary_stim')
+
+        if not force_redo:
+            return
+
+        distance_to_sz_df = expobj.calcMinDistanceToSz_newer(analyse_cells='s2p nontargets', show_debug_plot=False)
+
+        assert distance_to_sz_df.shape == self.adata.shape
+        # add distance to sz df to anndata - similar to targets distance to sz df
+        self.adata.add_layer(layer_name='distance_to_sz (pixels)', data=distance_to_sz_df)
+        # distance_to_sz_arr = np.array(distance_to_sz_df['SLM Targets'])
+
+        # convert distances to sz boundary (in pixels) to microns - copied from targets sz invasion spatial
+        self.adata.add_layer(layer_name= 'distance_to_sz (um)', data=(distance_to_sz_df / expobj.pix_sz_x))
+
+    def _add_nontargets_sz_boundary_anndata(self):
+        """add layer to anndata table that splits nontarget cell in or out of sz boundary"""
+
+        arr = np.empty_like(self.adata.layers['distance_to_sz (pixels)'])
+
+        arr[np.where(self.adata.layers['distance_to_sz (pixels)'] > 0)] = 1
+        arr[np.where(self.adata.layers['distance_to_sz (pixels)'] < 0)] = 0
+
+        self.adata.add_layer(layer_name='in/out sz', data=arr)
+
+
+    @staticmethod
+    @Utils.run_for_loop_across_exps(run_pre4ap_trials=False, run_post4ap_trials=True, skip_trials=EXCLUDE_TRIALS, allow_rerun=1)
+    def run__classify_and_measure_nontargets_szboundary(force_redo=False, **kwargs):
+        expobj: Post4ap = kwargs['expobj']
+        expobj.PhotostimResponsesNonTargets._classify_nontargets_szboundary(expobj=expobj, force_redo=force_redo)
+        expobj.PhotostimResponsesNonTargets._calc_min_distance_sz_nontargets(expobj=expobj, force_redo=force_redo)
+        expobj.PhotostimResponsesNonTargets._add_nontargets_sz_boundary_anndata()
+        expobj.save()
+
+    # 0) PRIMARY ANALYSIS OF NON-TARGETS IN ALL OPTICAL EXPERIMENTS.
 
     def _allopticalAnalysisNontargets(self, expobj: Union[alloptical, Post4ap], normalize_to='pre_stim', to_plot=True, save_plot_suffix=''):
         if 'pre' in expobj.exptype:
@@ -283,6 +343,7 @@ class PhotostimResponsesQuantificationNonTargets(Quantification):
         print(
             '-------------------------------------------------------------------------------------------------------------\n\n')
 
+    # main function for running the analysis of nontargets responses
     @Utils.run_for_loop_across_exps(run_pre4ap_trials=1, run_post4ap_trials=1, allow_rerun=0, skip_trials=EXCLUDE_TRIALS)
     def run_allopticalNontargets(**kwargs):
         expobj = kwargs['expobj']
@@ -292,17 +353,17 @@ class PhotostimResponsesQuantificationNonTargets(Quantification):
         #     expobj._findTargetedS2pROIs(force_redo=True, plot=False)
         #     expobj.save()
 
-        # expobj.PhotostimAnalysisSlmTargets.pre_stim_fr = int(expobj.PhotostimAnalysisSlmTargets._pre_stim_sec * expobj.fps)  # length of pre stim trace collected (in frames)
-        # expobj.PhotostimAnalysisSlmTargets.post_stim_fr = int(expobj.PhotostimAnalysisSlmTargets._post_stim_sec * expobj.fps)  # length of post stim trace collected (in frames)
-        # expobj.PhotostimAnalysisSlmTargets.pre_stim_response_frames_window = int(
-        #     expobj.fps * expobj.PhotostimAnalysisSlmTargets.pre_stim_response_window_msec / 1000)  # length of the pre stim response test window (in frames)
-        # expobj.PhotostimAnalysisSlmTargets.post_stim_response_frames_window = int(
-        #     expobj.fps * expobj.PhotostimAnalysisSlmTargets.post_stim_response_window_msec / 1000)  # length of the post stim response test window (in frames)
+        expobj.PhotostimAnalysisSlmTargets.pre_stim_fr = int(expobj.PhotostimAnalysisSlmTargets._pre_stim_sec * expobj.fps)  # length of pre stim trace collected (in frames)
+        expobj.PhotostimAnalysisSlmTargets.post_stim_fr = int(expobj.PhotostimAnalysisSlmTargets._post_stim_sec * expobj.fps)  # length of post stim trace collected (in frames)
+        expobj.PhotostimAnalysisSlmTargets.pre_stim_response_frames_window = int(
+            expobj.fps * expobj.PhotostimAnalysisSlmTargets.pre_stim_response_window_msec / 1000)  # length of the pre stim response test window (in frames)
+        expobj.PhotostimAnalysisSlmTargets.post_stim_response_frames_window = int(
+            expobj.fps * expobj.PhotostimAnalysisSlmTargets.post_stim_response_window_msec / 1000)  # length of the post stim response test window (in frames)
 
 
 
-        # expobj.PhotostimResponsesNonTargets._allopticalAnalysisNontargets(expobj=expobj, normalize_to='pre-stim', to_plot=False)
-        # expobj.save()
+        expobj.PhotostimResponsesNonTargets._allopticalAnalysisNontargets(expobj=expobj, normalize_to='pre-stim', to_plot=False)
+        expobj.save()
 
 
         #### running other functions:
@@ -457,8 +518,6 @@ class PhotostimResponsesQuantificationNonTargets(Quantification):
         assert new_var.name in self.adata.var_keys()
         self.adata.var[new_var.name] = new_var
 
-
-
     @staticmethod
     def run__fix_anndata(rerun=0):
         @Utils.run_for_loop_across_exps(run_post4ap_trials=1, allow_rerun=rerun, skip_trials=PhotostimResponsesQuantificationNonTargets.EXCLUDE_TRIALS)
@@ -467,6 +526,10 @@ class PhotostimResponsesQuantificationNonTargets(Quantification):
             expobj.PhotostimResponsesNonTargets.fix_anndata(expobj=expobj)
             expobj.save()
         __fix_anndata()
+
+
+
+
 
     # 2) COLLECT pos/neg sig. responders traces and responses
 
@@ -809,7 +872,7 @@ class PhotostimResponsesQuantificationNonTargets(Quantification):
                                    colors=['blue', 'green'], y_label='Avg. number of responders', title='Negative responders', bar=False, ylims=[0, 600])
 
 
-    # 3)
+    # 3) ANALYSIS OF TOTAL EVOKED RESPONSES OF NETWORK
     def _calculate__summed_responses(self):
         """calculate total responses of significantly responding nontargets."""
         if 'pre' in self.expobj_exptype:
@@ -1083,7 +1146,7 @@ class PhotostimResponsesQuantificationNonTargets(Quantification):
 
 # %%
 if __name__ == '__main__':
-    # expobj = Utils.import_expobj(exp_prep='RL108 t-009')
+    expobj: Post4ap = Utils.import_expobj(exp_prep='RL108 t-013')
 
     main = PhotostimResponsesQuantificationNonTargets
     results: PhotostimResponsesNonTargetsResults = PhotostimResponsesNonTargetsResults.load()
@@ -1094,6 +1157,8 @@ if __name__ == '__main__':
     # # main.run__plot_sig_responders_traces()
     # # main.run__create_anndata()
     # # main.run__plot_sig_responders_traces()
+    main.run__classify_and_measure_nontargets_szboundary(force_redo=False)
+
     #
     # # 2) basic plotting of responders pre4ap and interictal
     # # main.collect__avg_magnitude_response(results=results)
@@ -1103,8 +1168,10 @@ if __name__ == '__main__':
     #
     #
     # #3) calculate summed responses and plot against evoked targets' activity
-    main.run__summed_responses(rerun=0)
-    main.plot__summed_activity_vs_targets_activity(results=results)
+    # main.run__summed_responses(rerun=0)
+    # main.plot__summed_activity_vs_targets_activity(results=results)
+
+
 
 
     # main.run__fix_anndata()

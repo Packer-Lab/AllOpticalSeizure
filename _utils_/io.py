@@ -37,6 +37,10 @@ class CustomUnpicklerAttributeError(pickle.Unpickler):
         #     print(f'\t for: TargetsSzInvasionTemporal')
         #     from _analysis_._ClassTargetsSzInvasionTemporal import TargetsSzInvasionTemporal
         #     return TargetsSzInvasionTemporal
+        elif name == 'NonTargetsSzInvasionSpatial':
+            print(f'\t for: NonTargetsSzInvasionSpatial')
+            from _analysis_._ClassNonTargetsSzInvasionSpatial import NonTargetsSzInvasionSpatial
+            return NonTargetsSzInvasionSpatial
         elif name == 'PhotostimResponsesQuantificationNonTargets':
             print(f'\t for: PhotostimResponsesQuantificationNonTargets')
             from _analysis_._ClassPhotostimResponseQuantificationNonTargets import \

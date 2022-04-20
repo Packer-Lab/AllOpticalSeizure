@@ -25,7 +25,6 @@ TODO all code:
 
 
 
-
 class TargetsSzInvasionSpatial(Quantification):
     response_type = 'dFF (z scored) (interictal)'
 
@@ -37,7 +36,6 @@ class TargetsSzInvasionSpatial(Quantification):
         return f"TargetsSzInvasionSpatial <-- Quantification Analysis submodule for expobj <{self.expobj_id}>"
 
     ###### 1.0) calculate/collect min distance to seizure and responses at each distance ###############################
-
     @staticmethod
     @Utils.run_for_loop_across_exps(run_pre4ap_trials=False, run_post4ap_trials=True, allow_rerun=1)
     def run_calculating_min_distance_to_seizure(**kwargs):

@@ -260,7 +260,6 @@ class PhotostimAnalysisSlmTargets(Quantification):
         for exp in AllOpticalExpsToAnalyze.exp_ids:
             for trial in pj.flattenOnce(AllOpticalExpsToAnalyze.pre_4ap_trials):
                 if exp in trial:
-
                     # pre4ap trial
                     expobj: alloptical = import_expobj(exp_prep=trial)
                     trace_snippets_avg = np.mean(expobj.SLMTargets_tracedFF_stims_dffAvg, axis=0)

@@ -1825,14 +1825,12 @@ class alloptical(TwoPhotonImaging):
 
         return sig_units
 
-    def _trialProcessing_nontargets(expobj, normalize_to='pre-stim', save=True, stims: Union[list, str] = 'all',
-                                    fdr_alpha=0.10):
+    def _trialProcessing_nontargets(expobj, normalize_to='pre-stim', stims: Union[list, str] = 'all', fdr_alpha=0.10):
         """
         Uses dfstdf traces for individual cells and photostim trials, calculate the mean amplitudes of response and
         statistical significance across all trials for all cells
 
         :param normalize_to:
-        :param save:
         :param stims:
         :param fdr_alpha: false discovery rate for multiple corrections BH type test
         :return:
@@ -1889,13 +1887,10 @@ class alloptical(TwoPhotonImaging):
         avg_pre = np.mean(expobj.pre_array_responses, axis=1)
 
         # BUNCH OF PLOT TO TEST HOW RESPONSES ARE BEING STATISTICALLY FILTERED:
-
         fig, axs = plt.subplots(figsize=(8,8), nrows=2, ncols=2)
-
         # pplot.plot_bar_with_points(data=[avg_pre, avg_post], bar=False, points=True, paired=True, colors=['blue', 'green'], alpha=0.04,
         #                            x_tick_labels=['prearray', 'postarray'])
         # pplot.plot_bar_with_points(data=[avg_post], bar=False, points=True, colors=['blue'], alpha=0.04, x_tick_labels=['postarray'])
-
         # # comparing post - pre responses directly:
         # traces_ = []
         # for cell in range(expobj.pre_array.shape[0]):
@@ -1917,7 +1912,6 @@ class alloptical(TwoPhotonImaging):
         # plt.suptitle('post - pre: negative')
         # print(f'Number of neg post-pre cells: {len(traces_)}')
         # plt.show()
-
         # using the results of the wilcoxon test for comparison:
         traces_ = []
         for cell in range(expobj.pre_array.shape[0]):
@@ -1929,7 +1923,6 @@ class alloptical(TwoPhotonImaging):
         axs[0,0].set_title(f'wilcoxon: {len(traces_)} positive')
         print(f'Number of pos wilcoxon cells: {len(traces_)}')
         # plt.show()
-
         # using the results of the wilcoxon test for comparison:
         traces_ = []
         for cell in range(expobj.pre_array.shape[0]):
@@ -1941,8 +1934,6 @@ class alloptical(TwoPhotonImaging):
         axs[0,1].set_title(f'wilcoxon: {len(traces_)} negative')
         print(f'Number of neg wilcoxon cells: {len(traces_)}')
         # plt.show()
-
-
         # using the results of the wilcoxon test + FDR correction for comparison:
         traces_ = []
         for cell in range(expobj.pre_array.shape[0]):
@@ -1954,7 +1945,6 @@ class alloptical(TwoPhotonImaging):
         axs[1,0].set_title(f'wilcoxon + {fdr_alpha} FDR: {len(traces_)} positive')
         print(f'Number of pos wilcoxon + FDR cells: {len(traces_)}')
         # plt.show()
-
         # using the results of the wilcoxon test + FDR correction for comparison:
         traces_ = []
         for cell in range(expobj.pre_array.shape[0]):
@@ -1969,8 +1959,6 @@ class alloptical(TwoPhotonImaging):
         fig.show()
 
         return diff_responses_array, expobj.wilcoxons, sig_units
-
-
 
 
     # used for creating tiffs that remove artifacts from alloptical experiments with photostim artifacts
