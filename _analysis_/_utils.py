@@ -22,9 +22,14 @@ class Quantification:
     """generic parent for Quantification subclasses """
 
     save_path: str = None
+    _pre_stim_sec = 1
+    _post_stim_sec = 3
+    pre_stim_response_window_msec = 500 # msec
+    post_stim_response_window_msec = 500  # msec
 
     def __init__(self, expobj: alloptical):
         self._metainfo = expobj.metainfo
+        self._fps = expobj.fps
         print(f'\- ADDING NEW Quantification MODULE to expobj: {expobj.t_series_name}')
 
     def __repr__(self):
@@ -43,6 +48,24 @@ class Quantification:
     @property
     def expobj_exptype(self):
         return self._metainfo['exptype']
+
+
+    # analysis properties
+    @property
+    def pre_stim_fr(self):
+        return int(self._pre_stim_sec * self._fps)  # length of pre stim trace collected (in frames)
+
+    @property
+    def post_stim_fr(self):
+        return int(self._post_stim_sec * self._fps)  # length of post stim trace collected (in frames)
+
+    @property
+    def pre_stim_response_frames_window(self):
+        return int(self._fps * self.pre_stim_response_window_msec / 1000)  # length of the pre stim response test window (in frames)
+
+    @property
+    def post_stim_response_frames_window(self):
+        return int(self._fps * self.post_stim_response_window_msec / 1000)  # length of the post stim response test window (in frames)
 
 
 class Results:

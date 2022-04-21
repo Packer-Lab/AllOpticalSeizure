@@ -1850,9 +1850,9 @@ class alloptical(TwoPhotonImaging):
         # create parameters, slices, and subsets for making pre-stim and post-stim arrays to use in stats comparison
         # test_period = expobj.pre_stim_response_window_msec / 1000  # sec
         # expobj.test_frames = int(expobj.fps * test_period)  # test period for stats
-        expobj.pre_stim_frames_test = np.s_[expobj.PhotostimAnalysisSlmTargets.pre_stim_fr - expobj.PhotostimAnalysisSlmTargets.pre_stim_response_frames_window: expobj.PhotostimAnalysisSlmTargets.pre_stim_fr]
-        stim_end = expobj.PhotostimAnalysisSlmTargets.pre_stim_fr + expobj.stim_duration_frames
-        expobj.post_stim_frames_test = np.s_[stim_end: stim_end + expobj.PhotostimAnalysisSlmTargets.post_stim_response_frames_window]
+        expobj.pre_stim_frames_test = np.s_[expobj.PhotostimResponsesNonTargets.pre_stim_fr - expobj.PhotostimResponsesNonTargets.pre_stim_response_frames_window: expobj.PhotostimResponsesNonTargets.pre_stim_fr]
+        stim_end = expobj.PhotostimResponsesNonTargets.pre_stim_fr + expobj.stim_duration_frames
+        expobj.post_stim_frames_test = np.s_[stim_end: stim_end + expobj.PhotostimResponsesNonTargets.post_stim_response_frames_window]
 
         # mean pre and post stimulus (within post-stim response window) flu trace values for all cells, all trials
         # analysis_array = expobj.dff_traces_nontargets  # NOTE: USING dFF TRACES
