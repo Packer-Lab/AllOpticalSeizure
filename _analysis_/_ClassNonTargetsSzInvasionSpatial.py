@@ -46,7 +46,7 @@ class NonTargetsSzInvasionSpatial(Quantification):
 
     Tasks:
     [x] code for splitting nontargets inside and outside sz boundary - during ictal stims
-    [ ] run through for all experiments - transfer over from the NontargetsPhotostimResponsesQuant class
+    [x] run through for all experiments - transfer over from the NontargetsPhotostimResponsesQuant class
 
     """
 
@@ -54,18 +54,20 @@ class NonTargetsSzInvasionSpatial(Quantification):
     EXCLUDE_TRIALS = ['PS04 t-012',  # no responding cells and also doubled up by PS04 t-017 in any case
                       ]
 
-    def __init__(self, expobj: Union[alloptical, Post4ap]):
+    def __init__(self, expobj: Post4ap):
         super().__init__(expobj)
 
-        distance_to_sz = self.classify_and_measure_nontargets_szboundary(expobj=expobj, force_redo=True)
-        self.adata: AnnotatedData2 = self.create_anndata(expobj=expobj, distance_to_sz=distance_to_sz) #: anndata table to hold data about distances to seizure boundary for nontargets
+        self._classify_nontargets_szboundary(expobj=expobj, force_redo=False)
+        # expobj.save()
+        distance_to_sz_um = self._calc_min_distance_sz_nontargets(expobj=expobj)
+        self.adata: AnnotatedData2 = self.create_anndata(expobj=expobj, distance_to_sz=distance_to_sz_um) #: anndata table to hold data about distances to seizure boundary for nontargets
 
         print(f'\- ADDING NEW NonTargetsSzInvasionSpatial MODULE to expobj: {expobj.t_series_name}')
 
 
     @staticmethod
     @Utils.run_for_loop_across_exps(run_pre4ap_trials=False, run_post4ap_trials=True, allow_rerun=1, skip_trials=EXCLUDE_TRIALS)
-    def run__initNonTargetsSzInvasionSpatial(**kwargs):
+    def run__NonTargetsSzInvasionSpatial(**kwargs):
         expobj: Union[alloptical, Post4ap] = kwargs['expobj']
         expobj.NonTargetsSzInvasionSpatial = NonTargetsSzInvasionSpatial(expobj=expobj)
         expobj.save()
@@ -85,32 +87,21 @@ class NonTargetsSzInvasionSpatial(Quantification):
         if not hasattr(expobj, 'stimsSzLocations'): expobj.sz_locations_stims()
 
     @staticmethod
-    @Utils.run_for_loop_across_exps(run_post4ap_trials=True)
+    @Utils.run_for_loop_across_exps(run_post4ap_trials=False, run_trials=['RL109 t-018', 'PS06 t-013'], allow_rerun=1)
     def run__classify_nontargets_szboundary(**kwargs):
         expobj: Post4ap = kwargs['expobj']
         expobj.NonTargetsSzInvasionSpatial._classify_nontargets_szboundary(expobj=expobj, force_redo=True)
         expobj.save()
 
 
-    def _calc_min_distance_sz_nontargets(self, expobj: Post4ap, force_redo=False):
+    def _calc_min_distance_sz_nontargets(self, expobj: Post4ap):
         assert hasattr(expobj.ExpSeizure, 'nontargets_szboundary_stim')
-
-        if not force_redo:
-            return
 
         distance_to_sz_df = expobj.calcMinDistanceToSz_newer(analyse_cells='s2p nontargets', show_debug_plot=False)
 
-        assert distance_to_sz_df.shape == self.adata.shape
+        assert distance_to_sz_df.shape == expobj.PhotostimResponsesNonTargets.adata.shape
 
         return distance_to_sz_df / expobj.pix_sz_x
-
-
-    def classify_and_measure_nontargets_szboundary(self, force_redo=False, **kwargs):
-        expobj: Post4ap = kwargs['expobj']
-        self._classify_nontargets_szboundary(expobj=expobj, force_redo=force_redo)
-        expobj.save()
-        distance_to_sz_um = expobj.PhotostimResponsesNonTargets._calc_min_distance_sz_nontargets(expobj=expobj, force_redo=force_redo)
-        return distance_to_sz_um
 
 
     # 1) CREATE ANNDATA - using distance to sz dataframe collected above ###############################################
@@ -125,11 +116,12 @@ class NonTargetsSzInvasionSpatial(Quantification):
 
         obs_meta = pd.DataFrame(
             columns=['original_index', 'footprint', 'mrs', 'mrs0', 'compact', 'med', 'npix', 'radius',
-                     'aspect_ratio', 'npix_norm', 'skew', 'std'], index=range((len(expobj.s2p_nontargets)) - len(expobj.s2p_nontargets_exclude)))
+                     'aspect_ratio', 'npix_norm', 'skew', 'std'], index=distance_to_sz.index)
         for i, idx in enumerate(obs_meta.index):
-            if idx not in expobj.s2p_nontargets_exclude:
-                for __column in obs_meta:
-                    obs_meta.loc[i, __column] = expobj.stat[i][__column]
+            assert idx not in expobj.s2p_nontargets_exclude
+            _stat = expobj.stat[expobj.cell_id.index(idx)]
+            for __column in obs_meta:
+                obs_meta.loc[idx, __column] = _stat[__column]
 
 
         # build numpy array for multidimensional obs metadata
@@ -165,8 +157,9 @@ class NonTargetsSzInvasionSpatial(Quantification):
         # SET PRIMARY DATA
         print(f"\t\----- CREATING annotated data object using AnnData:")
         # create anndata object
-        photostim_responses_adata = AnnotatedData2(X=distance_to_sz, obs=obs_meta, var=var_meta.T, obsm=obs_m,
-                                                   data_label='distance to sz (um)')
+        distance_to_sz.index = distance_to_sz.index.astype(str)
+        distance_to_sz.columns = var_meta.columns
+        photostim_responses_adata = AnnotatedData2(X=distance_to_sz, obs=obs_meta, var=var_meta.T, obsm=obs_m, data_label='distance to sz (um)')
 
         print(f"Created: {photostim_responses_adata}")
         return photostim_responses_adata
@@ -188,7 +181,7 @@ class NonTargetsSzInvasionSpatial(Quantification):
         self.adata.add_layer(layer_name='in/out sz', data=arr)
 
 if __name__ == '__main__':
-    NonTargetsSzInvasionSpatial.run__initNonTargetsSzInvasionSpatial()
-
     # NonTargetsSzInvasionSpatial.run__classify_nontargets_szboundary()
+    NonTargetsSzInvasionSpatial.run__NonTargetsSzInvasionSpatial()
+
 

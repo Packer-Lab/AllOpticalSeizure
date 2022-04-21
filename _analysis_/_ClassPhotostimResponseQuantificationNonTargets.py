@@ -262,11 +262,8 @@ class PhotostimResponsesQuantificationNonTargets(Quantification):
         if not hasattr(expobj, 'stimsSzLocations'): expobj.sz_locations_stims()
 
 
-    def _calc_min_distance_sz_nontargets(self, expobj: Post4ap, force_redo=False):
+    def _calc_min_distance_sz_nontargets(self, expobj: Post4ap):
         assert hasattr(expobj.ExpSeizure, 'nontargets_szboundary_stim')
-
-        if not force_redo:
-            return
 
         distance_to_sz_df = expobj.calcMinDistanceToSz_newer(analyse_cells='s2p nontargets', show_debug_plot=False)
 

@@ -259,7 +259,7 @@ class ExpSeizureAnalysis(Quantification):
 
     # flip of stim boundaries manually
     @staticmethod
-    def enter_stims_to_flip(expobj: Post4ap):
+    def enter_stims_to_flip(expobj: Post4ap, stims=None):
         """when placing sz wavefront boundary, there are stim instances when the classification code places the wrong side of the
         image as inside the sz boundary. this code asks for which stims are being placed incorrectly and collects these into a list
         that is further accessed to assign the sz boundary.
@@ -268,14 +268,17 @@ class ExpSeizureAnalysis(Quantification):
         """
 
         # 180 330 481 631 782 932 1083 1233 1384 1835 1986 2136 2287 2438 2588 3040 3190 3491  # temp stims to flip for PS04 t-018
+        if stims is None:
+            input_string = input("Enter a string of stims to flip (ensure to separate each stim frame # by exactly one space: ")
+            add_stims = input_string.split()
+        else:
+            add_stims = stims
 
-        input_string = input("Enter a string of stims to flip (ensure to separate each stim frame # by exactly one space: ")
-        not_flip_stims = input_string.split()
 
-        for stim in not_flip_stims:
+        for stim in add_stims:
             assert int(stim) in expobj.stim_start_frames, f'stim {stim} not found as a stim start frame for {expobj}'
 
-        expobj.ExpSeizure.not_flip_stims.extend([int(x) for x in not_flip_stims])
+        expobj.ExpSeizure.not_flip_stims.extend([int(x) for x in add_stims])
 
         print(f"\n stims in .not_flip_stims list: {expobj.ExpSeizure.not_flip_stims}")
         # expobj.not_flip_stims = expobj.stims_in_sz[
@@ -302,6 +305,12 @@ class ExpSeizureAnalysis(Quantification):
 
         expobj.ExpSeizure.not_flip_stims = [stim for stim in expobj.ExpSeizure.not_flip_stims if stim not in remove_stims]
 
+        for stim in remove_stims:
+            if stim in expobj.ExpSeizure.not_flip_stims:
+                print(f'not found to remove: {stim}')
+            else:
+                print(f'removed: {stim}')
+
 
         # for x in remove_stims:
         #     if x in expobj.ExpSeizure.not_flip_stims:
@@ -310,7 +319,7 @@ class ExpSeizureAnalysis(Quantification):
         #         print(f"{x} is not in .not_flip_stims")
         # # [expobj.ExpSeizure.not_flip_stims.remove(int(x)) for x in remove_stims]
 
-        print(f"\n stims in .not_flip_stims list: {expobj.ExpSeizure.not_flip_stims}")
+        print(f"\n stims in .not_flip_stims list: {expobj.ExpSeizure.not_flip_stims} \n")
         # expobj.not_flip_stims = expobj.stims_in_sz[
         #                         1:]  # specify here the stims where the flip=False leads to incorrect assignment
         expobj.save()
@@ -702,10 +711,11 @@ if __name__ == '__main__':
 
     # ExpSeizureAnalysis.plot__exp_sz_lfp_fov(prep='RL109', trial='t-017')
 
-    expobj: Post4ap = io_.import_expobj(exp_prep='RL109 t-018')
+    expobj: Post4ap = io_.import_expobj(exp_prep='PS06 t-013')
 
-    # print(expobj.ExpSeizure.not_flip_stims)
-    ExpSeizureAnalysis.remove_stims_to_flip(expobj=expobj, stims=[9230, 9379, 9528, 9677, 9826, 9974, 10123, 10272, 10471, 10570])
+    print(expobj.ExpSeizure.not_flip_stims)
+    ExpSeizureAnalysis.enter_stims_to_flip(expobj=expobj, stims=[14916])
+    # ExpSeizureAnalysis.remove_stims_to_flip(expobj=expobj, stims=[14916])
     # RL109 t-018 not flip stims entry: 2386 2534 2683 7891 8040 8189 8338 8486 8635 8784 8933 9082 9230 9379 9528 9677 9826 9974 10123 10272 10421 10570
 
 
