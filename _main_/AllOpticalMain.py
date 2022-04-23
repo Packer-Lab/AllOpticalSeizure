@@ -100,6 +100,8 @@ class alloptical(TwoPhotonImaging):
 
         ## NON PHOTOSTIM SLM TARGETS
         # TODO add attr's related to non targets cells
+        self.s2p_nontargets = None  #: cell ids of nontargets from suite2p after exclusion of SLM targets
+        self.s2p_nontargets_analysis = None  #: cell ids of nontargets to use for nontargets analysis (after excluding some non-targets)
         self.dff_traces_nontargets: np.ndarray
         self.dff_traces_nontargets_avg: np.ndarray
         self.dfstdF_traces_nontargets: np.ndarray
@@ -1736,6 +1738,8 @@ class alloptical(TwoPhotonImaging):
                 raw_traces.append(flu_trials)
                 raw_traces_avg.append(np.nanmean(flu_trials, axis=0))
 
+        expobj.s2p_nontargets_analysis = [cell for cell in expobj.s2p_nontargets if cell not in expobj.s2p_nontargets_exclude]
+
         if normalize_to == 'baseline':
             print(
                 '\nCompleted collecting pre to post stim traces -- normalized to spont imaging as baseline -- for %s cells' % len(
@@ -1825,7 +1829,8 @@ class alloptical(TwoPhotonImaging):
 
         return sig_units
 
-    def _trialProcessing_nontargets(expobj, normalize_to='pre-stim', stims: Union[list, str] = 'all', fdr_alpha=0.10):
+    def _trialProcessing_nontargets(expobj, pre_stim_fr, pre_stim_response_frames_window, post_stim_response_frames_window, normalize_to='pre-stim', stims: Union[list, str] = 'all',
+                                    fdr_alpha=0.20):
         """
         Uses dfstdf traces for individual cells and photostim trials, calculate the mean amplitudes of response and
         statistical significance across all trials for all cells
@@ -1850,9 +1855,9 @@ class alloptical(TwoPhotonImaging):
         # create parameters, slices, and subsets for making pre-stim and post-stim arrays to use in stats comparison
         # test_period = expobj.pre_stim_response_window_msec / 1000  # sec
         # expobj.test_frames = int(expobj.fps * test_period)  # test period for stats
-        expobj.pre_stim_frames_test = np.s_[expobj.PhotostimResponsesNonTargets.pre_stim_fr - expobj.PhotostimResponsesNonTargets.pre_stim_response_frames_window: expobj.PhotostimResponsesNonTargets.pre_stim_fr]
-        stim_end = expobj.PhotostimResponsesNonTargets.pre_stim_fr + expobj.stim_duration_frames
-        expobj.post_stim_frames_test = np.s_[stim_end: stim_end + expobj.PhotostimResponsesNonTargets.post_stim_response_frames_window]
+        expobj.pre_stim_frames_test = np.s_[pre_stim_fr - pre_stim_response_frames_window: pre_stim_fr]
+        stim_end = pre_stim_fr + expobj.stim_duration_frames
+        expobj.post_stim_frames_test = np.s_[stim_end: stim_end + post_stim_response_frames_window]
 
         # mean pre and post stimulus (within post-stim response window) flu trace values for all cells, all trials
         # analysis_array = expobj.dff_traces_nontargets  # NOTE: USING dFF TRACES
@@ -1880,6 +1885,7 @@ class alloptical(TwoPhotonImaging):
 
         # fdr_alpa = 0.20
         sig_units = expobj._sigTestAvgResponse_nontargets(p_vals=expobj.wilcoxons, alpha=fdr_alpha)
+        sig_responders = [cell for idx, cell in enumerate(expobj.s2p_nontargets_analysis) if sig_units[idx]]
 
         # expobj.save() if save else None
 
@@ -1958,7 +1964,7 @@ class alloptical(TwoPhotonImaging):
         fig.suptitle(f"{expobj.t_series_name}")
         fig.show()
 
-        return diff_responses_array, expobj.wilcoxons, sig_units
+        return diff_responses_array, expobj.wilcoxons, sig_units, sig_responders
 
 
     # used for creating tiffs that remove artifacts from alloptical experiments with photostim artifacts
