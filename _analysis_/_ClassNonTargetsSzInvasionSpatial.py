@@ -61,7 +61,7 @@ class NonTargetsSzInvasionSpatial(Quantification):
         # expobj.save()
         distance_to_sz_um = self._calc_min_distance_sz_nontargets(expobj=expobj)
         self.adata: AnnotatedData2 = self.create_anndata(expobj=expobj, distance_to_sz=distance_to_sz_um) #: anndata table to hold data about distances to seizure boundary for nontargets
-
+        self._add_nontargets_sz_boundary_anndata()
         print(f'\- ADDING NEW NonTargetsSzInvasionSpatial MODULE to expobj: {expobj.t_series_name}')
 
 
@@ -173,10 +173,10 @@ class NonTargetsSzInvasionSpatial(Quantification):
 
         """
 
-        arr = np.empty_like(self.adata.X)
+        arr = np.full_like(self.adata.X, np.nan)
 
-        arr[np.where(self.adata.X > 0)] = 1
-        arr[np.where(self.adata.X < 0)] = 0
+        arr[self.adata.X > 0] = 1
+        arr[self.adata.X < 0] = 0
 
         self.adata.add_layer(layer_name='in/out sz', data=arr)
 

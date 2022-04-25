@@ -1629,7 +1629,7 @@ class alloptical(TwoPhotonImaging):
         :param normalize_to: str; either "baseline" or "pre-stim" or "whole-trace"
         :return: plot of avg_dFF of 100 randomly selected nontargets
         """
-        print('\n\- Collecting peri-stim traces ...')
+        print('\n\- Collecting peri-stim traces [AllOpticalMain version] ...')
 
         # collect photostim timed average dff traces of photostim targets
         dff_traces = []
@@ -1642,8 +1642,13 @@ class alloptical(TwoPhotonImaging):
         raw_traces_avg = []
 
 
+
+        assert 'pre' in expobj.exptype
+        cells_to_analyse = expobj.s2p_nontargets
+
+
         expobj.s2p_nontargets_exclude = []
-        for cell in expobj.s2p_nontargets:
+        for cell in cells_to_analyse:
             # print('considering cell # %s' % cell)
             cell_idx = expobj.cell_id.index(cell)
             flu_trials = [expobj.raw[cell_idx][stim - expobj.pre_stim: stim + expobj.stim_duration_frames + expobj.post_stim]

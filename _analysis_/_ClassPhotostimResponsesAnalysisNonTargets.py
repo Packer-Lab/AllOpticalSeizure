@@ -1,6 +1,5 @@
 import sys
 
-from _analysis_._ClassPhotostimAnalysisSlmTargets import PhotostimAnalysisSlmTargets
 from _analysis_._ClassPhotostimResponseQuantificationNonTargets import PhotostimResponsesNonTargetsResults, \
     PhotostimResponsesQuantificationNonTargets
 
@@ -16,13 +15,10 @@ from scipy import stats
 from matplotlib import pyplot as plt
 
 import _alloptical_utils as Utils
-from _analysis_._utils import Quantification, Results
 from _main_.AllOpticalMain import alloptical
 from _main_.Post4apMain import Post4ap
 from funcsforprajay import plotting as pplot
 
-# SAVE_LOC = "/Users/prajayshah/OneDrive/UTPhD/2022/OXFORD/export/"
-from _utils_._anndata import AnnotatedData2
 
 SAVE_LOC = "/home/pshah/mnt/qnap/Analysis/analysis_export/analysis_quantification_classes/"
 
@@ -53,13 +49,33 @@ class PhotostimResponsesAnalysisNonTargets(PhotostimResponsesQuantificationNonTa
     """
 
     def __init__(self, expobj: Union[alloptical, Post4ap]):
-        super().__init__(expobj)
+        super().__init__(expobj=expobj, results=results)
 
-
-    # 2.0.1) CREATE LIST OF EXPERIMENTS WITH RESPONDERS TO ANALYZE
     @staticmethod
-    def collect__exp_responders(results: PhotostimResponsesNonTargetsResults):
-        """collect experiments that will be used for non targets analysis. these experiments have to have atleast """
+    @Utils.run_for_loop_across_exps(run_pre4ap_trials=0,
+                                    run_post4ap_trials=1,
+                                    allow_rerun=1,
+                                    skip_trials=PhotostimResponsesQuantificationNonTargets.EXCLUDE_TRIALS,)
+                                    # run_trials=PhotostimResponsesQuantificationNonTargets.TEST_TRIALS)
+    def run__initPhotostimResponsesAnalysisNonTargets(**kwargs):
+        expobj: Union[alloptical, Post4ap] = kwargs['expobj']
+        expobj.PhotostimResponsesNonTargets = PhotostimResponsesAnalysisNonTargets(expobj=expobj)
+        expobj.save()
+
+
+
+    @staticmethod
+    @Utils.run_for_loop_across_exps(run_pre4ap_trials=0,
+                                    run_post4ap_trials=1,
+                                    allow_rerun=1,
+                                    skip_trials=PhotostimResponsesQuantificationNonTargets.EXCLUDE_TRIALS,)
+                                    # run_trials=PhotostimResponsesQuantificationNonTargets.TEST_TRIALS)
+    def run__collect__sig_responders_responses_type2(**kwargs):
+        expobj = kwargs['expobj']
+        expobj.PhotostimResponsesNonTargets.collect__sig_responders_responses_type2(expobj=expobj, results=results)
+        if 'pre' in expobj.exptype: assert hasattr(expobj.PhotostimResponsesNonTargets, "pre4ap_possig_responders_avgtraces_baseline")
+        if 'post' in expobj.exptype: assert hasattr(expobj.PhotostimResponsesNonTargets, "post4ap_baseline_possig_responders_responses_interictal")
+        expobj.save()
 
     # 2.1) PLOT - POS AND NEG SIG RESPONDERS TRACES FOR EXPERIMENT
     def plot__sig_responders_traces(self, expobj: Union[alloptical, Post4ap]):
@@ -103,17 +119,106 @@ class PhotostimResponsesAnalysisNonTargets(PhotostimResponsesQuantificationNonTa
 
         fig.show()
 
+
+    # 2.2) PLOT - POS AND NEG SIG RESPONDERS TRACES FOR EXPERIMENT
     @staticmethod
-    @Utils.run_for_loop_across_exps(run_pre4ap_trials=0, run_post4ap_trials=0, set_cache=0, skip_trials=super().EXCLUDE_TRIALS, run_trials=['PS07 t-007', 'PS07 t-011'])
-    def run__plot_sig_responders_traces(**kwargs):
-        expobj = kwargs['expobj']
-        expobj.PhotostimResponsesNonTargets.plot__sig_responders_traces(expobj=expobj)
+    def plot__pos_neg_responders_traces(expobj: alloptical, pos_avg_traces=None, neg_avg_traces=None, title=''):
+        """
+        Plot avg peri-stim traces of input +ve and -ve responders traces.
+
+        :param expobj:
+        :param pos_avg_traces:
+        :param neg_avg_traces:
+        """
+        if pos_avg_traces is None:
+            pos_avg_traces = [[]]
+        if neg_avg_traces is None:
+            neg_avg_traces = [[]]
+        from _analysis_._ClassPhotostimAnalysisSlmTargets import PhotostimAnalysisSlmTargets
+        from _utils_.alloptical_plotting import plot_periphotostim_avg2
+
+        fig, axs = plt.subplots(figsize=(4, 6), nrows=2, ncols=1)
+
+        if len(pos_avg_traces[0]) > 0:
+            plot_periphotostim_avg2(dataset=pos_avg_traces, fps=expobj.fps,
+                                    legend_labels=[f"pos. cells: {len(pos_avg_traces[0])}"],
+                                    colors=['red'], avg_with_std=True,
+                                    suptitle=f"{expobj.t_series_name} - {expobj.exptype} - +ve sig. responders {title}",
+                                    ylim=[-0.3, 0.8], fig=fig, ax=axs[0],
+                                    pre_stim_sec=PhotostimAnalysisSlmTargets._pre_stim_sec,
+                                    show=False, fontsize='small', figsize=(4, 4),
+                                    xlabel='Time (secs)', ylabel='Avg. Stim. Response (dF/stdF)')
+        else:
+            print(f"**** {expobj.t_series_name} has no statistically significant positive responders.")
+        if len(neg_avg_traces[0]) > 0:
+            plot_periphotostim_avg2(dataset=neg_avg_traces, fps=expobj.fps,
+                                    legend_labels=[f"neg. cells: {len(neg_avg_traces[0])}"],
+                                    colors=['blue'], avg_with_std=True,
+                                    title=f"{expobj.t_series_name} - {expobj.exptype} - -ve sig. responders {title}",
+                                    ylim=[-0.6, 0.5], fig=fig, ax=axs[1],
+                                    pre_stim_sec=PhotostimAnalysisSlmTargets._pre_stim_sec,
+                                    show=False, fontsize='small', figsize=(4, 4),
+                                    xlabel='Time (secs)', ylabel='Avg. Stim. Response (dF/stdF)')
+        else:
+            print(f"**** {expobj.t_series_name} has no statistically significant negative responders.")
+        fig.show()
+
+
+    @staticmethod
+    @Utils.run_for_loop_across_exps(run_pre4ap_trials=1, run_post4ap_trials=1, set_cache=0, skip_trials=PhotostimResponsesQuantificationNonTargets.EXCLUDE_TRIALS,)
+                                    # run_trials=PhotostimResponsesQuantificationNonTargets.TEST_TRIALS)
+    def run__plot_sig_responders_traces(plot_baseline_responders=False, **kwargs):
+        """
+        :param plot_baseline_responders: if True, for post-4ap exp, use the baseline responders' avgtraces for interictal and ictal groups
+        :param kwargs:
+        """
+        expobj: Union[alloptical, Post4ap] = kwargs['expobj']
+        if 'pre' in expobj.exptype:
+            pos_avg_traces = [expobj.PhotostimResponsesNonTargets.pre4ap_possig_responders_avgtraces_baseline]
+            neg_avg_traces = [expobj.PhotostimResponsesNonTargets.pre4ap_negsig_responders_avgtraces_baseline]
+
+            expobj.PhotostimResponsesNonTargets.plot__pos_neg_responders_traces(expobj=expobj,
+                                                                                pos_avg_traces=pos_avg_traces,
+                                                                                neg_avg_traces=neg_avg_traces)
+
+        elif 'post' in expobj.exptype:
+            # INTERICTAL
+            if plot_baseline_responders:
+                pos_avg_traces = [expobj.PhotostimResponsesNonTargets.post4ap_baseline_possig_responders_avgtraces_interictal]  # baseline responders
+                neg_avg_traces = [expobj.PhotostimResponsesNonTargets.post4ap_baseline_negsig_responders_avgtraces_interictal]  # baseline responders
+
+            else:
+                pos_avg_traces = [expobj.PhotostimResponsesNonTargets.post4ap_possig_responders_avgtraces_interictal]
+                neg_avg_traces = [expobj.PhotostimResponsesNonTargets.post4ap_negsig_responders_avgtraces_interictal]
+
+            expobj.PhotostimResponsesNonTargets.plot__pos_neg_responders_traces(expobj=expobj,
+                                                                                pos_avg_traces=pos_avg_traces,
+                                                                                neg_avg_traces=neg_avg_traces,
+                                                                                title='interictal datapoints')
+
+
+            # ICTAL
+            if plot_baseline_responders:
+                pos_avg_traces = [expobj.PhotostimResponsesNonTargets.post4ap_baseline_possig_responders_avgtraces_ictal]  # baseline responders
+                neg_avg_traces = [expobj.PhotostimResponsesNonTargets.post4ap_baseline_negsig_responders_avgtraces_ictal]  # baseline responders
+
+            else:
+                pos_avg_traces = [expobj.PhotostimResponsesNonTargets.post4ap_possig_responders_avgtraces_ictal]  # .post4ap_possig_responders_avgtraces_ictal not coded up yet
+                neg_avg_traces = [expobj.PhotostimResponsesNonTargets.post4ap_negsig_responders_avgtraces_ictal]  # .post4ap_negsig_responders_avgtraces_ictal not coded up yet
+
+            expobj.PhotostimResponsesNonTargets.plot__pos_neg_responders_traces(expobj=expobj,
+                                                                                pos_avg_traces=pos_avg_traces,
+                                                                                neg_avg_traces=neg_avg_traces,
+                                                                                title='outsz datapoints')
+
+
+
 
 
     # 2.2) PLOT -- BAR PLOT OF AVG MAGNITUDE OF RESPONSE
 
     @staticmethod
-    def collect__avg_magnitude_response(results: PhotostimResponsesNonTargetsResults):
+    def collect__avg_magnitude_response(results: PhotostimResponsesNonTargetsResults, collect_baseline_responders=False):
         """plot bar plot of avg magnitude of statistically significant responders across baseline and interictal, split up by positive and negative responders"""
         @Utils.run_for_loop_across_exps(run_pre4ap_trials=1, run_post4ap_trials=0, set_cache=0, skip_trials=PhotostimResponsesQuantificationNonTargets.EXCLUDE_TRIALS)
         def return__avg_magntiude_pos_response(**kwargs):
@@ -125,13 +230,10 @@ class PhotostimResponsesAnalysisNonTargets(PhotostimResponsesQuantificationNonTa
         def return__avg_magntiude_pos_response_interictal(**kwargs):
             """return avg magnitude of positive responders of stim trials - interictal"""
             expobj: Union[alloptical, Post4ap] = kwargs['expobj']
-            return np.mean(expobj.PhotostimResponsesNonTargets.post4ap_possig_responders_responses_interictal)
-
-        # @Utils.run_for_loop_across_exps(run_pre4ap_trials=0, run_post4ap_trials=1, set_cache=0)
-        # def return__avg_magntiude_pos_response(**kwargs):
-        #     """return avg magnitude of positive responders of stim trials - ictal"""
-        #     expobj: Union[alloptical, Post4ap] = kwargs['expobj']
-        #     return np.mean(expobj.PhotostimResponsesNonTargets.post4ap_possig_responders_responses_ictal)
+            if collect_baseline_responders:
+                return np.mean(expobj.PhotostimResponsesNonTargets.post4ap_baseline_possig_responders_responses_interictal)
+            else:
+                return np.mean(expobj.PhotostimResponsesNonTargets.post4ap_possig_responders_responses_interictal)
 
         @Utils.run_for_loop_across_exps(run_pre4ap_trials=1, run_post4ap_trials=0, set_cache=0, skip_trials=PhotostimResponsesQuantificationNonTargets.EXCLUDE_TRIALS)
         def return__avg_magntiude_neg_response(**kwargs):
@@ -143,29 +245,49 @@ class PhotostimResponsesAnalysisNonTargets(PhotostimResponsesQuantificationNonTa
         def return__avg_magntiude_neg_response_interictal(**kwargs):
             """return avg magnitude of negitive responders of stim trials - interictal"""
             expobj: Union[alloptical, Post4ap] = kwargs['expobj']
-            return np.mean(expobj.PhotostimResponsesNonTargets.post4ap_negsig_responders_responses_interictal)
+            if collect_baseline_responders:
+                return np.mean(
+                    expobj.PhotostimResponsesNonTargets.post4ap_baseline_negsig_responders_responses_interictal)
+            else:
+                return np.mean(expobj.PhotostimResponsesNonTargets.post4ap_negsig_responders_responses_interictal)
 
         pos_baseline = return__avg_magntiude_pos_response()
         pos_interictal = return__avg_magntiude_pos_response_interictal()
         neg_baseline = return__avg_magntiude_neg_response()
         neg_interictal = return__avg_magntiude_neg_response_interictal()
 
-        results.avg_responders_magnitude = {'baseline_positive': [val for i, val in enumerate(pos_baseline) if (not np.isnan(val) and not np.isnan(pos_interictal[i]))],
-                                            'interictal_positive': [val for i, val in enumerate(pos_interictal) if (not np.isnan(val) and not np.isnan(pos_baseline[i]))],
-                                            'baseline_negative': [val for i, val in enumerate(neg_baseline) if (not np.isnan(val) and not np.isnan(neg_interictal[i]))],
-                                            'interictal_negative': [val for i, val in enumerate(neg_interictal) if (not np.isnan(val) and not np.isnan(neg_baseline[i]))]}
+        if collect_baseline_responders:
+            results.avg_baseline_responders_magnitude = {'baseline_positive': [val for i, val in enumerate(pos_baseline) if (not np.isnan(val) and not np.isnan(pos_interictal[i]))],
+                                                'interictal_positive': [val for i, val in enumerate(pos_interictal) if (not np.isnan(val) and not np.isnan(pos_baseline[i]))],
+                                                'baseline_negative': [val for i, val in enumerate(neg_baseline) if (not np.isnan(val) and not np.isnan(neg_interictal[i]))],
+                                                'interictal_negative': [val for i, val in enumerate(neg_interictal) if (not np.isnan(val) and not np.isnan(neg_baseline[i]))]}
+
+        else:
+            results.avg_responders_magnitude = {'baseline_positive': [val for i, val in enumerate(pos_baseline) if (not np.isnan(val) and not np.isnan(pos_interictal[i]))],
+                                                'interictal_positive': [val for i, val in enumerate(pos_interictal) if (not np.isnan(val) and not np.isnan(pos_baseline[i]))],
+                                                'baseline_negative': [val for i, val in enumerate(neg_baseline) if (not np.isnan(val) and not np.isnan(neg_interictal[i]))],
+                                                'interictal_negative': [val for i, val in enumerate(neg_interictal) if (not np.isnan(val) and not np.isnan(neg_baseline[i]))]}
         results.save_results()
 
 
     @staticmethod
-    def plot__avg_magnitude_response(results: PhotostimResponsesNonTargetsResults):
-        """plot bar plot of avg magnitude of statistically significant responders across baseline and interictal, split up by positive and negative responders"""
+    def plot__avg_magnitude_response(results: PhotostimResponsesNonTargetsResults, plot_baseline_responders= False):
+        """plot bar plot of avg magnitude of statistically significant responders across baseline and interictal, split up by positive and negative responders
+        :param results:
+        :param plot_baseline_responders: if True, for post-4ap exp, use the baseline responders' avgtraces magnitude for interictal and ictal groups
 
-        pplot.plot_bar_with_points(data=[results.avg_responders_magnitude['baseline_positive'], results.avg_responders_magnitude['interictal_positive']],
+        """
+
+        if plot_baseline_responders:
+            results_to_plot= results.avg_baseline_responders_magnitude
+        else:
+            results_to_plot = results.avg_responders_magnitude
+
+        pplot.plot_bar_with_points(data=[results_to_plot['baseline_positive'], results_to_plot['interictal_positive']],
                                    paired=True, points = True, x_tick_labels=['baseline', 'interictal'],
                                    colors=['blue', 'green'], y_label='Avg. magnitude of response', title='Positive responders', bar=False, ylims=[0, 1.0])
 
-        pplot.plot_bar_with_points(data=[results.avg_responders_magnitude['baseline_negative'], results.avg_responders_magnitude['interictal_negative']],
+        pplot.plot_bar_with_points(data=[results_to_plot['baseline_negative'], results_to_plot['interictal_negative']],
                                    paired=True, points = True, x_tick_labels=['baseline', 'interictal'],
                                    colors=['blue', 'green'], y_label='Avg. magnitude of response', title='Negative responders', bar=False, ylims=[-1.0, 0])
 
@@ -496,24 +618,30 @@ class PhotostimResponsesAnalysisNonTargets(PhotostimResponsesQuantificationNonTa
 
 
 if __name__ == '__main__':
-    expobj: Post4ap = Utils.import_expobj(exp_prep='RL108 t-013')
+    # expobj: alloptical = Utils.import_expobj(exp_prep='RL108 t-009')
+    # expobj: Post4ap = Utils.import_expobj(exp_prep='RL108 t-013')
 
     main = PhotostimResponsesAnalysisNonTargets
     results: PhotostimResponsesNonTargetsResults = PhotostimResponsesNonTargetsResults.load()
 
-    # # main.run__plot_sig_responders_traces()
+    # main.run__initPhotostimResponsesAnalysisNonTargets()
+    main.run__collect__sig_responders_responses_type2()
+
+    main.run__plot_sig_responders_traces(plot_baseline_responders=True)
     # # main.run__create_anndata()
-    # # main.run__plot_sig_responders_traces()
     # main.run__classify_and_measure_nontargets_szboundary(force_redo=False)
 
+
+    # 2) basic plotting of responders pre4ap and interictal
+    # main.collect__avg_magnitude_response(results=results, collect_baseline_responders=True)
+    # main.plot__avg_magnitude_response(results=results, plot_baseline_responders=True)
+
+
+
+    # main.collect__avg_num_response(results=results)
+    # main.plot__avg_num_responders(results=results)
     #
-    # # 2) basic plotting of responders pre4ap and interictal
-    # # main.collect__avg_magnitude_response(results=results)
-    # # main.plot__avg_magnitude_response(results=results)
-    # # main.collect__avg_num_response(results=results)
-    # # main.plot__avg_num_responders(results=results)
     #
-    #
-    # #3) calculate summed responses and plot against evoked targets' activity
+    #3) calculate summed responses and plot against evoked targets' activity
     # main.run__summed_responses(rerun=0)
     # main.plot__summed_activity_vs_targets_activity(results=results)

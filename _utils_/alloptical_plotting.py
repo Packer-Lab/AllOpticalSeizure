@@ -570,13 +570,11 @@ def plot_periphotostim_avg2(dataset, fps=None, legend_labels=None, colors=None, 
     meantraces = []
     stdtraces = []
 
-    if type(dataset) != list:
-        dataset = [dataset]
+    assert type(dataset) == list, 'provide dataset as list of groups of data'
 
     if len(dataset) > 1:
         assert len(legend_labels) == len(dataset), print('please provide same number of legend labels as dataset')
-        if colors is None:
-            colors = ['black', pj.make_random_color_array(len(dataset) - 1)]
+        if colors is None: colors = ['black', pj.make_random_color_array(len(dataset) - 1)]
         assert len(colors) == len(legend_labels)
         avg_only = True
         print('-- plotting average +/- std fill for each dataset')
@@ -594,13 +592,13 @@ def plot_periphotostim_avg2(dataset, fps=None, legend_labels=None, colors=None, 
         assert len(stdtraces[0]) == dataset[0].shape[1], 'length of stdtraces is not equal to the dataset provided.'
 
     elif len(dataset) == 1:
-        dataset = [dataset]
-        # meanst = np.mean(dataset[0], axis=0)
-        # std = np.std(dataset[0], axis=0, ddof=1)
-        meantraces = dataset
-        # stdtraces.append(std)
+        meanst = np.mean(dataset[0], axis=0)
+        std = np.std(dataset[0], axis=0, ddof=1)
+        meantraces.append(meanst)
+        stdtraces.append(std)
         # colors = pj.flattenOnce([['black'], pj.make_random_color_array(dataset[0].shape[0])]) if colors is None else colors
-        colors = ['black']
+        if colors is None: colors = ['black']
+        assert len(colors) >= len(dataset)
     else:
         AttributeError('please provide the data to plot in a ls format, each different data group as a ls item...')
 
