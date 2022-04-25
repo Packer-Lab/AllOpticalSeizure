@@ -36,12 +36,13 @@ if not os.path.exists(PhotostimResponsesNonTargetsResults.SAVE_PATH) or REMAKE:
 
 class PhotostimResponsesAnalysisNonTargets(PhotostimResponsesQuantificationNonTargets):
     """
-
     continuation from class: photostim responses quantification nontargets
 
 
-    [i] plotting of significant responders (pos and neg) traces from baseline, during baseline, interictal and ictal (outsz) states
+    [ ] quantify the number of responders that are statistically significant across baseline and interictal (and maybe even out of sz) (as oppossed significant responders within each condition)
     [ ] plotting of significant responders (pos and neg) traces across baseline, interictal and ictal (outsz)
+
+    [i] plotting of significant responders (pos and neg) traces from baseline, during baseline, interictal and ictal (outsz) states
 
     """
 

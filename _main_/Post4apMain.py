@@ -1082,7 +1082,6 @@ class Post4ap(alloptical):
             # dfstdf_trace = (expobj.raw[cell_idx] - np.mean(expobj.raw[cell_idx])) / np.std(expobj.raw[cell_idx], ddof=1)  # normalize trace (dFstdF) to std of whole trace
             if mean_ < 10:  # filter cells with low s2p neu corrected mean trace value
                 expobj.s2p_nontargets_exclude.append(cell)
-
             else:
                 # print(f's2p neu. corrected trace statistics: mean: {mean_} (min: {np.min(expobj.raw[cell_idx])}, max: {np.max(expobj.raw[cell_idx])}, std: {np.std(expobj.raw[cell_idx], ddof=1)})')
 

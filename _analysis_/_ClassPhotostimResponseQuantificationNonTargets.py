@@ -210,15 +210,13 @@ class PhotostimResponsesQuantificationNonTargets(Quantification):
         [x] plan: calculate $R^2$ for each experiment (pre4ap and post4ap interictal), and compare on bar plot
             [x] - could also consider aggregating z scores across all experiments for baseline and interictal stims
 
-    [ ] quantifying nontargets responses inside and outside sz boundary - during ictal stims
+    [x] quantifying nontargets responses inside and outside sz boundary - during ictal stims
         - how do you setup the stats tests for nontargets? do you exclude cells that are inside the sz boundary for certain stims?
-        [ ] alt. approach is to take the significant responders from baseline, and apply those same responders to interictal and ictal:
+        [x] alt. approach is to take the significant responders from baseline, and apply those same responders to interictal and ictal:
             - i.e. don't quantify significant responders separately in interictal and ictal
             - collect__sig_responders_responses_type2 <- testing this right now, and then use outputs to create required plots of response magnitudes for baseline, interictal, and in/out of seizure
         [x] collect nontargets traces during seizures and correlate with seizure position
         [x] building code to collect nontagets traces from just out sz cells during sz stims
-
-    [ ] quantify the number of responders that are statistically significant across baseline and interictal (and maybe even out of sz) (as oppossed significant responders within each condition)
 
 
     """
@@ -257,7 +255,7 @@ class PhotostimResponsesQuantificationNonTargets(Quantification):
             expobj.save()
         self.collect__sig_responders_responses_type1(expobj=expobj)
         self.collect__sig_responders_responses_type2(expobj=expobj, results=results)
-        # self.create_anndata(expobj=expobj)  # <- still need to test!
+        self.create_anndata(expobj=expobj)  # <- still need to test!
 
 
     @staticmethod
@@ -414,9 +412,8 @@ class PhotostimResponsesQuantificationNonTargets(Quantification):
 
         obs_meta = pd.DataFrame(
             columns=['original_index', 'footprint', 'mrs', 'mrs0', 'compact', 'med', 'npix', 'radius',
-                     'aspect_ratio', 'npix_norm', 'skew', 'std'], index=range((len(expobj.s2p_nontargets)) - len(expobj.s2p_nontargets_exclude)))
+                     'aspect_ratio', 'npix_norm', 'skew', 'std'], index=range(len(expobj.s2p_nontargets_analysis)))
         for i, idx in enumerate(obs_meta.index):
-            if idx not in expobj.s2p_nontargets_exclude:
                 for __column in obs_meta:
                     obs_meta.loc[i, __column] = expobj.stat[i][__column]
 
@@ -466,7 +463,7 @@ class PhotostimResponsesQuantificationNonTargets(Quantification):
         obs_m = {'ypix': [],
                  'xpix': []}
         for col in [*obs_m]:
-            for i, idx in enumerate(expobj.s2p_nontargets):
+            for i, idx in enumerate(expobj.s2p_nontargets_analysis):
                 if idx not in expobj.s2p_nontargets_exclude:
                     obs_m[col].append(expobj.stat[i][col])
             obs_m[col] = np.asarray(obs_m[col])
@@ -514,8 +511,9 @@ class PhotostimResponsesQuantificationNonTargets(Quantification):
         print(f"Created: {photostim_responses_adata}")
         self.adata = photostim_responses_adata
 
+
     @staticmethod
-    def run__create_anndata(rerun=0):
+    def run__create_anndata(rerun=1):
         @Utils.run_for_loop_across_exps(run_pre4ap_trials=1, run_post4ap_trials=1, allow_rerun=rerun, skip_trials=PhotostimResponsesQuantificationNonTargets.EXCLUDE_TRIALS)
         def _run__create_anndata(**kwargs):
             expobj: Union[alloptical, Post4ap]  = kwargs['expobj']
@@ -713,7 +711,7 @@ class PhotostimResponsesQuantificationNonTargets(Quantification):
 
 
             ### ICTAL GROUP - OUTSIDE SEIZURE BOUNDARY
-            # todo - probably need to test if bugging up....
+            # - probably need to test if bugging up....
             self.post4ap_possig_responders_responses_ictal = self.diff_responses_ictal[self.sig_units_ictal][self.pos_sig_responders_ictal]  #: response magnitude for all pos responders for all stims
             self.post4ap_negsig_responders_responses_ictal = self.diff_responses_ictal[self.sig_units_ictal][self.neg_sig_responders_ictal]  #: response magnitude for all neg responders for all stims
 
@@ -914,7 +912,6 @@ class PhotostimResponsesQuantificationNonTargets(Quantification):
 
 
             ### ICTAL GROUP - OUTSIDE SEIZURE BOUNDARY
-            # todo - running for all exps now
             if not 'in/out sz' in expobj.NonTargetsSzInvasionSpatial.adata.layers:
                 expobj.NonTargetsSzInvasionSpatial._add_nontargets_sz_boundary_anndata()
                 expobj.save()
@@ -995,18 +992,13 @@ if __name__ == '__main__':
     results: PhotostimResponsesNonTargetsResults = PhotostimResponsesNonTargetsResults.load()
 
 
-    main.run__testing(results=results)
+    # main.run__testing(results=results)
 
-
+    main.run__create_anndata()
 
     # main.run__fix_anndata()
 
 
-    # %%
-    # results -- calculate pos/neg sig. responders avg response
-
-
-    # %%
 
     # expobj = Utils.import_expobj(exp_prep='RL108 t-009')
 
