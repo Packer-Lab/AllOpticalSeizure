@@ -563,19 +563,23 @@ class PhotostimResponsesQuantificationNonTargets(Quantification):
     def neg_sig_responders(self):
         return np.where(np.nanmean(self.diff_responses[self.sig_units, :], axis=1) < 0)[0]
 
+
     @property
     def pos_sig_responders_interictal(self):
         assert 'post' in self.expobj_exptype, f'incorrect call for {self.expobj_exptype} exp.'
         return np.where(np.nanmean(self.diff_responses_interictal[self.sig_units_interictal, :], axis=1) > 0)[0]
+
     @property
     def neg_sig_responders_interictal(self):
         assert 'post' in self.expobj_exptype, f'incorrect call for {self.expobj_exptype} exp.'
         return np.where(np.nanmean(self.diff_responses_interictal[self.sig_units_interictal, :], axis=1) < 0)[0]
 
+
     @property
     def pos_sig_responders_ictal(self):
         assert 'post' in self.expobj_exptype, f'incorrect call for {self.expobj_exptype} exp.'
         return np.where(np.nanmean(self.diff_responses_ictal[self.sig_units_ictal, :], axis=1) > 0)[0]
+
     @property
     def neg_sig_responders_ictal(self):
         assert 'post' in self.expobj_exptype, f'incorrect call for {self.expobj_exptype} exp.'
