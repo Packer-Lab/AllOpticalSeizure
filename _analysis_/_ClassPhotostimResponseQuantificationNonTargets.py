@@ -216,7 +216,7 @@ class PhotostimResponsesQuantificationNonTargets(Quantification):
             - i.e. don't quantify significant responders separately in interictal and ictal
             - collect__sig_responders_responses_type2 <- testing this right now, and then use outputs to create required plots of response magnitudes for baseline, interictal, and in/out of seizure
         [x] collect nontargets traces during seizures and correlate with seizure position
-        [ ] building code to collect nontagets traces from just out sz cells during sz stims
+        [x] building code to collect nontagets traces from just out sz cells during sz stims
 
     [ ] quantify the number of responders that are statistically significant across baseline and interictal (and maybe even out of sz) (as oppossed significant responders within each condition)
 
@@ -237,8 +237,6 @@ class PhotostimResponsesQuantificationNonTargets(Quantification):
                    'RL108 t-013']
 
     def __init__(self, results, expobj: Union[alloptical, Post4ap]):
-
-
         super().__init__(expobj)
 
         # self = expobj.PhotostimResponsesNonTargets  # temp during testing, can remove when running all experiments.
@@ -251,12 +249,14 @@ class PhotostimResponsesQuantificationNonTargets(Quantification):
         print(f'\- ADDING NEW PhotostimResponsesNonTargets MODULE to expobj: {expobj.t_series_name}')
         self._allopticalAnalysisNontargets(expobj=expobj, results=results)
         results.save_results()
+        
         if not hasattr(expobj, 's2p_nontargets'):
             expobj._parseNAPARMgpl()
             expobj._findTargetsAreas()
             expobj._findTargetedS2pROIs(plot=False)
             expobj.save()
-        # self.collect__sig_responders_responses_type2(expobj=expobj, results=results)
+        self.collect__sig_responders_responses_type1(expobj=expobj)
+        self.collect__sig_responders_responses_type2(expobj=expobj, results=results)
         # self.create_anndata(expobj=expobj)  # <- still need to test!
 
 
@@ -377,8 +377,6 @@ class PhotostimResponsesQuantificationNonTargets(Quantification):
 
 
             # ICTAL stims only
-
-            # todo building code to collect nontagets traces from just out sz cells during sz stims
             self.diff_responses_ictal, self.wilcoxons_ictal, self.sig_units_ictal, self.responders_ictal = expobj._trialProcessing_nontargets(normalize_to='pre-stim',
                                                                                                                        stims=expobj.stims_in_sz, fdr_alpha=0.25,
                                                                                                                                       pre_stim_fr=self.pre_stim_fr,
@@ -715,13 +713,13 @@ class PhotostimResponsesQuantificationNonTargets(Quantification):
 
 
             ### ICTAL GROUP - OUTSIDE SEIZURE BOUNDARY
-            # todo - blocked by: building code to collect sig units from just out sz stims/cells
-            self.post4ap_possig_responders_responses_interictal = self.diff_responses_interictal[self.sig_units_interictal][self.pos_sig_responders_interictal]  #: response magnitude for all pos responders for all stims
-            self.post4ap_negsig_responders_responses_interictal = self.diff_responses_interictal[self.sig_units_interictal][self.neg_sig_responders_interictal]  #: response magnitude for all neg responders for all stims
+            # todo - probably need to test if bugging up....
+            self.post4ap_possig_responders_responses_ictal = self.diff_responses_ictal[self.sig_units_ictal][self.pos_sig_responders_ictal]  #: response magnitude for all pos responders for all stims
+            self.post4ap_negsig_responders_responses_ictal = self.diff_responses_ictal[self.sig_units_ictal][self.neg_sig_responders_ictal]  #: response magnitude for all neg responders for all stims
 
 
-            self.post4ap_possig_responders_traces = self.dfstdF_stimtraces_interictal[self.sig_units_interictal][np.where(np.nanmean(self.diff_responses_interictal[self.sig_units_interictal, :], axis=1) > 0)[0]]
-            self.post4ap_negsig_responders_traces = self.dfstdF_stimtraces_interictal[self.sig_units_interictal][np.where(np.nanmean(self.diff_responses_interictal[self.sig_units_interictal, :], axis=1) < 0)[0]]
+            self.post4ap_possig_responders_traces = self.dfstdF_stimtraces_ictal[self.sig_units_ictal][np.where(np.nanmean(self.diff_responses_ictal[self.sig_units_ictal, :], axis=1) > 0)[0]]
+            self.post4ap_negsig_responders_traces = self.dfstdF_stimtraces_ictal[self.sig_units_ictal][np.where(np.nanmean(self.diff_responses_ictal[self.sig_units_ictal, :], axis=1) < 0)[0]]
 
 
             ## MAKE ARRAY OF TRACE SNIPPETS THAT HAVE PHOTOSTIM PERIOD ZERO'D
@@ -743,8 +741,8 @@ class PhotostimResponsesQuantificationNonTargets(Quantification):
                 trace_ = np.append(trace_, trace[
                                            expobj.pre_stim + expobj.stim_duration_frames: expobj.pre_stim + expobj.stim_duration_frames + post_stim_fr])
                 data_traces.append(trace_)
-            self.post4ap_possig_responders_avgtraces_interictal = np.array(data_traces)
-            print(f"shape of post4ap_possig_responders trace array {self.post4ap_possig_responders_avgtraces_interictal.shape} [2.2-1]")
+            self.post4ap_possig_responders_avgtraces_ictal = np.array(data_traces)
+            print(f"shape of post4ap_possig_responders trace array {self.post4ap_possig_responders_avgtraces_ictal.shape} [2.2-1]")
 
 
             # negative responders
@@ -756,13 +754,13 @@ class PhotostimResponsesQuantificationNonTargets(Quantification):
                 trace_ = np.append(trace_, trace[
                                            expobj.pre_stim + expobj.stim_duration_frames: expobj.pre_stim + expobj.stim_duration_frames + post_stim_fr])
                 data_traces.append(trace_)
-            self.post4ap_negsig_responders_avgtraces_interictal = np.array(data_traces)
-            print(f"shape of post4ap_negsig_responders trace array {self.post4ap_negsig_responders_avgtraces_interictal.shape} [2.2-2]")
+            self.post4ap_negsig_responders_avgtraces_ictal = np.array(data_traces)
+            print(f"shape of post4ap_negsig_responders trace array {self.post4ap_negsig_responders_avgtraces_ictal.shape} [2.2-2]")
             # print('stop here... [5.5-2]')
 
 
-            self.post4ap_num_pos_interictal = self.post4ap_possig_responders_avgtraces_interictal.shape[0]
-            self.post4ap_num_neg_interictal = self.post4ap_negsig_responders_avgtraces_interictal.shape[0]
+            self.post4ap_num_pos_ictal = self.post4ap_possig_responders_avgtraces_ictal.shape[0]
+            self.post4ap_num_neg_ictal = self.post4ap_negsig_responders_avgtraces_ictal.shape[0]
 
 
 

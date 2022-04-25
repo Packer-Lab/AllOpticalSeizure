@@ -40,11 +40,8 @@ class PhotostimResponsesAnalysisNonTargets(PhotostimResponsesQuantificationNonTa
     continuation from class: photostim responses quantification nontargets
 
 
-    [ ] quantifying nontargets responses inside and outside sz boundary - during ictal stims
-        - how do you setup the stats tests for nontargets? do you exclude cells that are inside the sz boundary for certain stims?
-        [ ] alt. approach is to take the significant responders from baseline, and apply those same responders to interictal and ictal:
-            - i.e. don't quantify significant responders separately in interictal and ictal
-            -
+    [i] plotting of significant responders (pos and neg) traces from baseline, during baseline, interictal and ictal (outsz) states
+    [ ] plotting of significant responders (pos and neg) traces across baseline, interictal and ictal (outsz)
 
     """
 
@@ -52,9 +49,9 @@ class PhotostimResponsesAnalysisNonTargets(PhotostimResponsesQuantificationNonTa
         super().__init__(expobj=expobj, results=results)
 
     @staticmethod
-    @Utils.run_for_loop_across_exps(run_pre4ap_trials=0,
+    @Utils.run_for_loop_across_exps(run_pre4ap_trials=1,
                                     run_post4ap_trials=1,
-                                    allow_rerun=1,
+                                    allow_rerun=0,
                                     skip_trials=PhotostimResponsesQuantificationNonTargets.EXCLUDE_TRIALS,)
                                     # run_trials=PhotostimResponsesQuantificationNonTargets.TEST_TRIALS)
     def run__initPhotostimResponsesAnalysisNonTargets(**kwargs):
@@ -62,20 +59,6 @@ class PhotostimResponsesAnalysisNonTargets(PhotostimResponsesQuantificationNonTa
         expobj.PhotostimResponsesNonTargets = PhotostimResponsesAnalysisNonTargets(expobj=expobj)
         expobj.save()
 
-
-
-    @staticmethod
-    @Utils.run_for_loop_across_exps(run_pre4ap_trials=0,
-                                    run_post4ap_trials=1,
-                                    allow_rerun=1,
-                                    skip_trials=PhotostimResponsesQuantificationNonTargets.EXCLUDE_TRIALS,)
-                                    # run_trials=PhotostimResponsesQuantificationNonTargets.TEST_TRIALS)
-    def run__collect__sig_responders_responses_type2(**kwargs):
-        expobj = kwargs['expobj']
-        expobj.PhotostimResponsesNonTargets.collect__sig_responders_responses_type2(expobj=expobj, results=results)
-        if 'pre' in expobj.exptype: assert hasattr(expobj.PhotostimResponsesNonTargets, "pre4ap_possig_responders_avgtraces_baseline")
-        if 'post' in expobj.exptype: assert hasattr(expobj.PhotostimResponsesNonTargets, "post4ap_baseline_possig_responders_responses_interictal")
-        expobj.save()
 
     # 2.1) PLOT - POS AND NEG SIG RESPONDERS TRACES FOR EXPERIMENT
     def plot__sig_responders_traces(self, expobj: Union[alloptical, Post4ap]):
@@ -624,10 +607,10 @@ if __name__ == '__main__':
     main = PhotostimResponsesAnalysisNonTargets
     results: PhotostimResponsesNonTargetsResults = PhotostimResponsesNonTargetsResults.load()
 
-    # main.run__initPhotostimResponsesAnalysisNonTargets()
-    main.run__collect__sig_responders_responses_type2()
+    main.run__initPhotostimResponsesAnalysisNonTargets()
 
     main.run__plot_sig_responders_traces(plot_baseline_responders=True)
+    main.run__plot_sig_responders_traces(plot_baseline_responders=False)
     # # main.run__create_anndata()
     # main.run__classify_and_measure_nontargets_szboundary(force_redo=False)
 
