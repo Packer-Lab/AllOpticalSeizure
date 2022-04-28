@@ -259,12 +259,13 @@ class PhotostimResponsesQuantificationNonTargets(Quantification):
 
 
     @staticmethod
-    @Utils.run_for_loop_across_exps(run_pre4ap_trials=False, run_post4ap_trials=False, allow_rerun=1, skip_trials=EXCLUDE_TRIALS, run_trials=TEST_TRIALS)
-    def run__testing(results, **kwargs):
+    @Utils.run_for_loop_across_exps(run_pre4ap_trials=1, run_post4ap_trials=1, allow_rerun=1, skip_trials=EXCLUDE_TRIALS,)
+                                    # run_trials=TEST_TRIALS)
+    def run__testing(**kwargs):
         expobj: Union[alloptical, Post4ap] = kwargs['expobj']
-        expobj.PhotostimResponsesNonTargets._allopticalAnalysisNontargets(expobj=expobj, results=results)
+        # expobj.PhotostimResponsesNonTargets._allopticalAnalysisNontargets(expobj=expobj, results=results)
         # collect traces of statistically significant followers:
-        # expobj.PhotostimResponsesNonTargets.collect__sig_responders_responses_type1(expobj=expobj)
+        expobj.PhotostimResponsesNonTargets.collect__sig_responders_responses_type1(expobj=expobj)
         # expobj.PhotostimResponsesNonTargets.collect__sig_responders_responses_type2(expobj=expobj, results=results)
         expobj.save()
 
@@ -996,9 +997,9 @@ if __name__ == '__main__':
     results: PhotostimResponsesNonTargetsResults = PhotostimResponsesNonTargetsResults.load()
 
 
-    # main.run__testing(results=results)
+    main.run__testing()
 
-    main.run__create_anndata()
+    # main.run__create_anndata()
 
     # main.run__fix_anndata()
 

@@ -27,15 +27,15 @@ SAVE_LOC = "/home/pshah/mnt/qnap/Analysis/analysis_export/analysis_quantificatio
 # %% ###### NON TARGETS analysis + plottings
 
 class NonTargetsResponsesSpatialResults(Results):
-    SAVE_PATH = SAVE_LOC + 'Results__PhotostimResponsesNonTargets.pkl'
+    SAVE_PATH = SAVE_LOC + 'Results__NonTargetsResponsesSpatialResults.pkl'
 
     def __init__(self):
         super().__init__()
 
 
 REMAKE = False
-if not os.path.exists(PhotostimResponsesNonTargetsResults.SAVE_PATH) or REMAKE:
-    results = PhotostimResponsesNonTargetsResults()
+if not os.path.exists(NonTargetsResponsesSpatialResults.SAVE_PATH) or REMAKE:
+    results = NonTargetsResponsesSpatialResults()
     results.save_results()
 
 class NonTargetsResponsesSpatialAnalysis(Quantification):
@@ -73,6 +73,10 @@ class NonTargetsResponsesSpatialAnalysis(Quantification):
         """
         assert hasattr(expobj, 'NonTargetsSzInvasionSpatial'), 'nontargets sz invasion spatial processing not found for exp obj.'
 
+
+if __name__ == '__main__':
+    main = NonTargetsResponsesSpatialAnalysis
+    results: NonTargetsResponsesSpatialResults = NonTargetsResponsesSpatialResults.load()
 
 
 

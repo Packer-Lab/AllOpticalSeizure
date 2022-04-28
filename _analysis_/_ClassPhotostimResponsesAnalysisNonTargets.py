@@ -44,6 +44,13 @@ class PhotostimResponsesAnalysisNonTargets(PhotostimResponsesQuantificationNonTa
 
     [i] plotting of significant responders (pos and neg) traces from baseline, during baseline, interictal and ictal (outsz) states
 
+
+    [ ] fake-sham trials in the analysis.
+        [ ] create fake sham stim frames - halfway in between each stim trial
+        [ ] collect photostim targets fake sham responses
+        [ ] collect nontargets fake sham responses
+
+
     """
 
     def __init__(self, expobj: Union[alloptical, Post4ap]):
@@ -200,7 +207,6 @@ class PhotostimResponsesAnalysisNonTargets(PhotostimResponsesQuantificationNonTa
 
 
     # 2.2) PLOT -- BAR PLOT OF AVG MAGNITUDE OF RESPONSE
-
     @staticmethod
     def collect__avg_magnitude_response(results: PhotostimResponsesNonTargetsResults, collect_baseline_responders=False):
         """plot bar plot of avg magnitude of statistically significant responders across baseline and interictal, split up by positive and negative responders"""
@@ -210,6 +216,12 @@ class PhotostimResponsesAnalysisNonTargets(PhotostimResponsesQuantificationNonTa
             expobj: Union[alloptical, Post4ap] = kwargs['expobj']
             return np.mean(expobj.PhotostimResponsesNonTargets.pre4ap_possig_responders_responses)
 
+        @Utils.run_for_loop_across_exps(run_pre4ap_trials=1, run_post4ap_trials=0, set_cache=0, skip_trials=PhotostimResponsesQuantificationNonTargets.EXCLUDE_TRIALS)
+        def return__avg_magntiude_neg_response(**kwargs):
+            """return avg magnitude of negitive responders of stim trials -pre4ap """
+            expobj: Union[alloptical, Post4ap] = kwargs['expobj']
+            return np.mean(expobj.PhotostimResponsesNonTargets.pre4ap_negsig_responders_responses)
+
         @Utils.run_for_loop_across_exps(run_pre4ap_trials=0, run_post4ap_trials=1, set_cache=0, skip_trials=PhotostimResponsesQuantificationNonTargets.EXCLUDE_TRIALS)
         def return__avg_magntiude_pos_response_interictal(**kwargs):
             """return avg magnitude of positive responders of stim trials - interictal"""
@@ -218,12 +230,6 @@ class PhotostimResponsesAnalysisNonTargets(PhotostimResponsesQuantificationNonTa
                 return np.mean(expobj.PhotostimResponsesNonTargets.post4ap_baseline_possig_responders_responses_interictal)
             else:
                 return np.mean(expobj.PhotostimResponsesNonTargets.post4ap_possig_responders_responses_interictal)
-
-        @Utils.run_for_loop_across_exps(run_pre4ap_trials=1, run_post4ap_trials=0, set_cache=0, skip_trials=PhotostimResponsesQuantificationNonTargets.EXCLUDE_TRIALS)
-        def return__avg_magntiude_neg_response(**kwargs):
-            """return avg magnitude of negitive responders of stim trials -pre4ap """
-            expobj: Union[alloptical, Post4ap] = kwargs['expobj']
-            return np.mean(expobj.PhotostimResponsesNonTargets.pre4ap_negsig_responders_responses)
 
         @Utils.run_for_loop_across_exps(run_pre4ap_trials=0, run_post4ap_trials=1, set_cache=0, skip_trials=PhotostimResponsesQuantificationNonTargets.EXCLUDE_TRIALS)
         def return__avg_magntiude_neg_response_interictal(**kwargs):
@@ -235,22 +241,49 @@ class PhotostimResponsesAnalysisNonTargets(PhotostimResponsesQuantificationNonTa
             else:
                 return np.mean(expobj.PhotostimResponsesNonTargets.post4ap_negsig_responders_responses_interictal)
 
+        @Utils.run_for_loop_across_exps(run_pre4ap_trials=0, run_post4ap_trials=1, set_cache=0, skip_trials=PhotostimResponsesQuantificationNonTargets.EXCLUDE_TRIALS)
+        def return__avg_magntiude_pos_response_ictal(**kwargs):
+            """return avg magnitude of positive responders of stim trials - ictal"""
+            expobj: Union[alloptical, Post4ap] = kwargs['expobj']
+            if collect_baseline_responders:
+                return np.mean(expobj.PhotostimResponsesNonTargets.post4ap_baseline_possig_responders_responses_ictal)
+            else:
+                return np.mean(expobj.PhotostimResponsesNonTargets.post4ap_possig_responders_responses_ictal)
+
+        @Utils.run_for_loop_across_exps(run_pre4ap_trials=0, run_post4ap_trials=1, set_cache=0, skip_trials=PhotostimResponsesQuantificationNonTargets.EXCLUDE_TRIALS)
+        def return__avg_magntiude_neg_response_ictal(**kwargs):
+            """return avg magnitude of negitive responders of stim trials - ictal"""
+            expobj: Union[alloptical, Post4ap] = kwargs['expobj']
+            if collect_baseline_responders:
+                return np.mean(
+                    expobj.PhotostimResponsesNonTargets.post4ap_baseline_negsig_responders_responses_ictal)
+            else:
+                return np.mean(expobj.PhotostimResponsesNonTargets.post4ap_negsig_responders_responses_ictal)
+
         pos_baseline = return__avg_magntiude_pos_response()
-        pos_interictal = return__avg_magntiude_pos_response_interictal()
         neg_baseline = return__avg_magntiude_neg_response()
+        pos_interictal = return__avg_magntiude_pos_response_interictal()
         neg_interictal = return__avg_magntiude_neg_response_interictal()
+        pos_ictal = return__avg_magntiude_pos_response_ictal()
+        neg_ictal = return__avg_magntiude_neg_response_ictal()
 
         if collect_baseline_responders:
             results.avg_baseline_responders_magnitude = {'baseline_positive': [val for i, val in enumerate(pos_baseline) if (not np.isnan(val) and not np.isnan(pos_interictal[i]))],
-                                                'interictal_positive': [val for i, val in enumerate(pos_interictal) if (not np.isnan(val) and not np.isnan(pos_baseline[i]))],
-                                                'baseline_negative': [val for i, val in enumerate(neg_baseline) if (not np.isnan(val) and not np.isnan(neg_interictal[i]))],
-                                                'interictal_negative': [val for i, val in enumerate(neg_interictal) if (not np.isnan(val) and not np.isnan(neg_baseline[i]))]}
+                                                            'baseline_negative': [val for i, val in enumerate(neg_baseline) if (not np.isnan(val) and not np.isnan(neg_interictal[i]))],
+                                                            'interictal_positive': [val for i, val in enumerate(pos_interictal) if (not np.isnan(val) and not np.isnan(pos_baseline[i]))],
+                                                            'interictal_negative': [val for i, val in enumerate(neg_interictal) if (not np.isnan(val) and not np.isnan(neg_baseline[i]))],
+                                                            'ictal_positive': [val for i, val in enumerate(pos_ictal) if (not np.isnan(val) and not np.isnan(pos_baseline[i]))],
+                                                            'ictal_negative': [val for i, val in enumerate(neg_ictal) if (not np.isnan(val) and not np.isnan(neg_baseline[i]))]
+                                                         }
 
         else:
             results.avg_responders_magnitude = {'baseline_positive': [val for i, val in enumerate(pos_baseline) if (not np.isnan(val) and not np.isnan(pos_interictal[i]))],
-                                                'interictal_positive': [val for i, val in enumerate(pos_interictal) if (not np.isnan(val) and not np.isnan(pos_baseline[i]))],
                                                 'baseline_negative': [val for i, val in enumerate(neg_baseline) if (not np.isnan(val) and not np.isnan(neg_interictal[i]))],
-                                                'interictal_negative': [val for i, val in enumerate(neg_interictal) if (not np.isnan(val) and not np.isnan(neg_baseline[i]))]}
+                                                'interictal_negative': [val for i, val in enumerate(neg_interictal) if (not np.isnan(val) and not np.isnan(neg_baseline[i]))],
+                                                'interictal_positive': [val for i, val in enumerate(pos_interictal) if (not np.isnan(val) and not np.isnan(pos_baseline[i]))],
+                                                'ictal_negative': [val for i, val in enumerate(neg_ictal) if (not np.isnan(val) and not np.isnan(neg_baseline[i]))],
+                                                'ictal_positive': [val for i, val in enumerate(pos_ictal) if (not np.isnan(val) and not np.isnan(pos_baseline[i]))],
+                                                }
         results.save_results()
 
 
@@ -264,76 +297,95 @@ class PhotostimResponsesAnalysisNonTargets(PhotostimResponsesQuantificationNonTa
 
         if plot_baseline_responders:
             results_to_plot= results.avg_baseline_responders_magnitude
+            title = ' - matched baseline responders'
         else:
             results_to_plot = results.avg_responders_magnitude
+            title = '- within condition'
 
-        pplot.plot_bar_with_points(data=[results_to_plot['baseline_positive'], results_to_plot['interictal_positive']],
-                                   paired=True, points = True, x_tick_labels=['baseline', 'interictal'],
-                                   colors=['blue', 'green'], y_label='Avg. magnitude of response', title='Positive responders', bar=False, ylims=[0, 1.0])
+        pplot.plot_bar_with_points(data=[results_to_plot['baseline_positive'], results_to_plot['interictal_positive'], results_to_plot['ictal_positive']],
+                                   paired=True, points = True, x_tick_labels=['baseline', 'interictal', 'ictal'],
+                                   colors=['blue', 'green', 'purple'], y_label='Avg. magnitude of response', title='Positive responders' + title, bar=False, ylims=[-0.1, 1.0])
 
-        pplot.plot_bar_with_points(data=[results_to_plot['baseline_negative'], results_to_plot['interictal_negative']],
-                                   paired=True, points = True, x_tick_labels=['baseline', 'interictal'],
-                                   colors=['blue', 'green'], y_label='Avg. magnitude of response', title='Negative responders', bar=False, ylims=[-1.0, 0])
+        pplot.plot_bar_with_points(data=[results_to_plot['baseline_negative'], results_to_plot['interictal_negative'], results_to_plot['ictal_negative']],
+                                   paired=True, points = True, x_tick_labels=['baseline', 'interictal', 'ictal'],
+                                   colors=['blue', 'green', 'purple'], y_label='Avg. magnitude of response', title='Negative responders' + title, bar=False, ylims=[-1.0, 0.1])
+
 
 
     # 2.3) PLOT -- BAR PLOT OF AVG TOTAL NUMBER OF POS. AND NEG RESPONSIVE CELLS
     @staticmethod
     def collect__avg_num_response(results: PhotostimResponsesNonTargetsResults):
-        """collect: avg num of statistically significant responders across baseline and interictal, split up by positive and negative responders"""
-        @Utils.run_for_loop_across_exps(run_pre4ap_trials=1, run_post4ap_trials=1, set_cache=0, skip_trials=PhotostimResponsesQuantificationNonTargets.EXCLUDE_TRIALS)
+        """
+        collect: avg num of statistically significant responders across baseline and interictal, split up by positive and negative responders"""
+        @Utils.run_for_loop_across_exps(run_pre4ap_trials=1, run_post4ap_trials=0, set_cache=0, skip_trials=PhotostimResponsesQuantificationNonTargets.EXCLUDE_TRIALS)
         def return__num_pos_responders(**kwargs):
             """return avg magnitude of positive responders of stim trials - pre4ap """
             expobj: Union[alloptical, Post4ap] = kwargs['expobj']
-            return expobj.PhotostimResponsesNonTargets.pre4ap_num_pos
-
-        @Utils.run_for_loop_across_exps(run_pre4ap_trials=0, run_post4ap_trials=1, set_cache=0, skip_trials=PhotostimResponsesQuantificationNonTargets.EXCLUDE_TRIALS)
-        def return__num_pos_responders_interictal(**kwargs):
-            """return avg magnitude of positive responders of stim trials - interictal"""
-            expobj: Union[alloptical, Post4ap] = kwargs['expobj']
-            return expobj.PhotostimResponsesNonTargets.post4ap_num_pos_interictal
-
-        # @Utils.run_for_loop_across_exps(run_pre4ap_trials=0, run_post4ap_trials=1, set_cache=0)
-        # def return__avg_magntiude_pos_response(**kwargs):
-        #     """return avg magnitude of positive responders of stim trials - ictal"""
-        #     expobj: Union[alloptical, Post4ap] = kwargs['expobj']
-        #     return np.mean(expobj.PhotostimResponsesNonTargets.post4ap_possig_responders_responses_ictal)
+            return round((expobj.PhotostimResponsesNonTargets.pre4ap_num_pos / len(expobj.s2p_nontargets_analysis)) * 100, 2)
 
         @Utils.run_for_loop_across_exps(run_pre4ap_trials=1, run_post4ap_trials=0, set_cache=0, skip_trials=PhotostimResponsesQuantificationNonTargets.EXCLUDE_TRIALS)
         def return__num_neg_responders(**kwargs):
             """return avg magnitude of negitive responders of stim trials - pre4ap """
             expobj: Union[alloptical, Post4ap] = kwargs['expobj']
-            return expobj.PhotostimResponsesNonTargets.pre4ap_num_neg
+            return round((expobj.PhotostimResponsesNonTargets.pre4ap_num_neg / len(expobj.s2p_nontargets_analysis)) * 100, 2)
+
+        @Utils.run_for_loop_across_exps(run_pre4ap_trials=0, run_post4ap_trials=1, set_cache=0, skip_trials=PhotostimResponsesQuantificationNonTargets.EXCLUDE_TRIALS)
+        def return__num_pos_responders_interictal(**kwargs):
+            """return avg magnitude of positive responders of stim trials - interictal"""
+            expobj: Union[alloptical, Post4ap] = kwargs['expobj']
+            return round((expobj.PhotostimResponsesNonTargets.post4ap_num_pos_interictal / len(expobj.s2p_nontargets_analysis)) * 100, 2)
 
         @Utils.run_for_loop_across_exps(run_pre4ap_trials=0, run_post4ap_trials=1, set_cache=0, skip_trials=PhotostimResponsesQuantificationNonTargets.EXCLUDE_TRIALS)
         def return__num_neg_responders_interictal(**kwargs):
             """return avg magnitude of negitive responders of stim trials - interictal"""
             expobj: Union[alloptical, Post4ap] = kwargs['expobj']
-            return expobj.PhotostimResponsesNonTargets.post4ap_num_neg_interictal
+            return round((expobj.PhotostimResponsesNonTargets.post4ap_num_neg_interictal / len(expobj.s2p_nontargets_analysis)) * 100, 2)
+
+        @Utils.run_for_loop_across_exps(run_pre4ap_trials=0, run_post4ap_trials=1, set_cache=0, skip_trials=PhotostimResponsesQuantificationNonTargets.EXCLUDE_TRIALS)
+        def return__num_pos_responders_ictal(**kwargs):
+            """return avg magnitude of positive responders of stim trials - ictal"""
+            expobj: Union[alloptical, Post4ap] = kwargs['expobj']
+            return round((expobj.PhotostimResponsesNonTargets.post4ap_num_pos_ictal / len(expobj.s2p_nontargets_analysis)) * 100, 2)
+
+        @Utils.run_for_loop_across_exps(run_pre4ap_trials=0, run_post4ap_trials=1, set_cache=0, skip_trials=PhotostimResponsesQuantificationNonTargets.EXCLUDE_TRIALS)
+        def return__num_neg_responders_ictal(**kwargs):
+            """return avg magnitude of negitive responders of stim trials - ictal"""
+            expobj: Union[alloptical, Post4ap] = kwargs['expobj']
+            return round((expobj.PhotostimResponsesNonTargets.post4ap_num_neg_ictal / len(expobj.s2p_nontargets_analysis)) * 100, 2)
+
 
         pos_baseline = return__num_pos_responders()
-        pos_interictal = return__num_pos_responders_interictal()
         neg_baseline = return__num_neg_responders()
+        pos_interictal = return__num_pos_responders_interictal()
         neg_interictal = return__num_neg_responders_interictal()
+        pos_ictal = return__num_pos_responders_ictal()
+        neg_ictal = return__num_neg_responders_ictal()
 
         results.avg_responders_num = {'baseline_positive': [val for i, val in enumerate(pos_baseline) if (not np.isnan(val) and not np.isnan(pos_interictal[i]))],
-                                      'interictal_positive': [val for i, val in enumerate(pos_interictal) if (not np.isnan(val) and not np.isnan(pos_baseline[i]))],
                                       'baseline_negative': [val for i, val in enumerate(neg_baseline) if (not np.isnan(val) and not np.isnan(neg_interictal[i]))],
-                                      'interictal_negative': [val for i, val in enumerate(neg_interictal) if (not np.isnan(val) and not np.isnan(neg_baseline[i]))]}
+                                      'interictal_positive': [val for i, val in enumerate(pos_interictal) if
+                                                              (not np.isnan(val) and not np.isnan(pos_baseline[i]))],
+                                      'interictal_negative': [val for i, val in enumerate(neg_interictal) if (not np.isnan(val) and not np.isnan(neg_baseline[i]))],
+                                      'ictal_positive': [val for i, val in enumerate(pos_ictal) if
+                                                              (not np.isnan(val) and not np.isnan(pos_baseline[i]))],
+                                      'ictal_negative': [val for i, val in enumerate(neg_ictal) if (not np.isnan(val) and not np.isnan(neg_baseline[i]))]
+                                      }
         results.save_results()
 
     @staticmethod
     def plot__avg_num_responders(results: PhotostimResponsesNonTargetsResults):
         """plot bar plot of avg number of statistically significant responders across baseline and interictal, split up by positive and negative responders"""
-        pplot.plot_bar_with_points(data=[results.avg_responders_num['baseline_positive'], results.avg_responders_num['interictal_positive']],
-                                   paired=True, points = True, x_tick_labels=['baseline', 'interictal'],
-                                   colors=['blue', 'green'], y_label='Avg. number of responders', title='Positive responders', bar=False, ylims=[0, 600])
+        pplot.plot_bar_with_points(data=[results.avg_responders_num['baseline_positive'], results.avg_responders_num['interictal_positive'], results.avg_responders_num['ictal_positive']],
+                                   paired=True, points = True, x_tick_labels=['baseline', 'interictal', 'ictal'],
+                                   colors=['blue', 'green', 'purple'], y_label='Avg. responders (%)', title='Positive responders - within condition', bar=False, ylims=[0, 50])
 
-        pplot.plot_bar_with_points(data=[results.avg_responders_num['baseline_negative'], results.avg_responders_num['interictal_negative']],
-                                   paired=True, points = True, x_tick_labels=['baseline', 'interictal'],
-                                   colors=['blue', 'green'], y_label='Avg. number of responders', title='Negative responders', bar=False, ylims=[0, 600])
+        pplot.plot_bar_with_points(data=[results.avg_responders_num['baseline_negative'], results.avg_responders_num['interictal_negative'], results.avg_responders_num['ictal_negative']],
+                                   paired=True, points = True, x_tick_labels=['baseline', 'interictal', 'ictal'],
+                                   colors=['blue', 'green', 'purple'], y_label='Avg. responders (%)', title='Negative responders - within condition', bar=False, ylims=[0, 50])
 
 
-    # 3) ANALYSIS OF TOTAL EVOKED RESPONSES OF NETWORK
+
+    # 3) ANALYSIS OF TOTAL EVOKED RESPONSES OF NETWORK #################################################################
     def _calculate__summed_responses(self):
         """calculate total responses of significantly responding nontargets."""
         if 'pre' in self.expobj_exptype:
@@ -378,7 +430,7 @@ class PhotostimResponsesAnalysisNonTargets(PhotostimResponsesQuantificationNonTa
             self.adata.add_variable(var_name='summed_response_neg_ictal', values=summed_response_negative_ictal)
 
     def _calculate__summed_responses_targets(self, expobj: Union[alloptical, Post4ap]):
-        """calculate total summed responses of SLM targets of experiments to compare with summed responses of nontargets."""
+        """calculate total summed dFF responses of SLM targets of experiments to compare with summed responses of nontargets."""
 
         if 'pre' in self.expobj_exptype:
             summed_responses = list(np.sum(expobj.PhotostimResponsesSLMTargets.adata.X, axis=0))
@@ -608,24 +660,32 @@ if __name__ == '__main__':
     main = PhotostimResponsesAnalysisNonTargets
     results: PhotostimResponsesNonTargetsResults = PhotostimResponsesNonTargetsResults.load()
 
-    main.run__initPhotostimResponsesAnalysisNonTargets()
+    # main.run__initPhotostimResponsesAnalysisNonTargets()
 
-    main.run__plot_sig_responders_traces(plot_baseline_responders=True)
-    main.run__plot_sig_responders_traces(plot_baseline_responders=False)
-    # # main.run__create_anndata()
+    # main.run__plot_sig_responders_traces(plot_baseline_responders=True)
+    # main.run__plot_sig_responders_traces(plot_baseline_responders=False)
+    # main.run__create_anndata()
     # main.run__classify_and_measure_nontargets_szboundary(force_redo=False)
 
 
-    # 2) basic plotting of responders pre4ap and interictal
+    # 2) basic plotting of responders baseline, interictal, and ictal
     # main.collect__avg_magnitude_response(results=results, collect_baseline_responders=True)
+    # results: PhotostimResponsesNonTargetsResults = PhotostimResponsesNonTargetsResults.load()
     # main.plot__avg_magnitude_response(results=results, plot_baseline_responders=True)
 
+    # main.collect__avg_magnitude_response(results=results, collect_baseline_responders=False)
+    # results: PhotostimResponsesNonTargetsResults = PhotostimResponsesNonTargetsResults.load()
+    main.plot__avg_magnitude_response(results=results, plot_baseline_responders=False)  # < - there is one experiment that doesn't have any responders i think....
 
 
     # main.collect__avg_num_response(results=results)
-    # main.plot__avg_num_responders(results=results)
+    main.plot__avg_num_responders(results=results)
+
+
     #
     #
     #3) calculate summed responses and plot against evoked targets' activity
     # main.run__summed_responses(rerun=0)
     # main.plot__summed_activity_vs_targets_activity(results=results)
+
+

@@ -157,7 +157,13 @@ class alloptical(TwoPhotonImaging):
     @property
     def stims_idx(self):
         return list(range(len(self.stim_start_frames)))
+    
+    @property
+    def fake_stim_start_frames(self):
+        """create fake sham stim frames - halfway in between each stim trial"""
+        return [((self.stim_start_frames[idx + 1] - self.stim_start_frames[idx]) // 2) + frame for idx, frame in enumerate(self.stim_start_frames[:-1])]
 
+    
     @property
     def n_stims(self):
         """number of stims in expobj trial"""
@@ -1370,8 +1376,15 @@ class alloptical(TwoPhotonImaging):
             stims_idx = [self.stim_start_frames.index(stim) for stim in stims_to_use]
         elif stims_to_use:
             stims_idx = [self.stim_start_frames.index(stim) for stim in stims_to_use]
+        elif stims_to_use == 'fake_stims':
+            stims_idx = range(len(self.fake_stim_start_frames))
         else:
             AttributeError('no stims set to analyse [1.1]')
+
+
+        # set stims to use to collect stim trace snippets for targets - actual or fake photostims
+        stims_frames = self.stim_start_frames if stims_to_use != 'fake_stims' else self.fake_stim_start_frames
+
 
         # choose between .SLMTargets_stims_dff, or .SLMTargets_stims_dfstdF and .SLMTargets_stims_tracedFF for data to process
         if process == 'dF/prestimF':

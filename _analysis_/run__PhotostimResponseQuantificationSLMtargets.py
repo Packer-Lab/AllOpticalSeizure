@@ -35,6 +35,12 @@ def run__collect_photostim_responses_exp(**kwargs):
     expobj.PhotostimResponsesSLMTargets.collect_photostim_responses_exp(expobj=expobj)
     expobj.save()
 
+@Utils.run_for_loop_across_exps(run_pre4ap_trials=1, run_post4ap_trials=0, allow_rerun=0)
+def run__collect_fake_photostim_responses_exp(**kwargs):
+    expobj: alloptical = kwargs['expobj']
+    expobj.PhotostimResponsesSLMTargets.collect_fake_photostim_responses_exp(expobj=expobj)
+    expobj.save()
+
 @Utils.run_for_loop_across_exps(run_pre4ap_trials=1, run_post4ap_trials=1, allow_rerun=0)
 def run__add_hit_trials_anndata(**kwargs):
     expobj: Union[alloptical, Post4ap] = kwargs['expobj']
@@ -271,21 +277,27 @@ if __name__ == '__main__':
     #
     # "Collecting photostim responses for SLM Targets. Create anndata object to store photostim responses."
     # run__collect_photostim_responses_exp()
+    run__collect_fake_photostim_responses_exp()
     # run__create_anndata_SLMtargets()
     # run__add_stim_group_anndata()
 
 
-    # "Plotting mean photostim responses magnitudes across three brain states."
+    "Plotting mean photostim responses magnitudes across three brain states."
     # main.allexps_plot_photostim_responses_magnitude()
     # results.mean_photostim_responses_baseline, results.mean_photostim_responses_interictal, results.mean_photostim_responses_ictal = full_plot_mean_responses_magnitudes()
     #
     #
-    # "Create and plot zscored photostim responses."
+
+
+    "Create and plot zscored photostim responses."
     # run__z_score_photostim_responses_and_interictalzscores()
     # main.allexps_plot_photostim_responses_magnitude_zscored()
     #
     #
-    # "Collecting and plotting zscored photostim responses across groups"
+
+
+
+    "Collecting and plotting zscored photostim responses across groups"
     # results.mean_photostim_responses_baseline_zscored, results.mean_photostim_responses_interictal_zscored, results.mean_photostim_responses_ictal_zscored = full_plot_mean_responses_magnitudes_zscored()
     # # make plot
     # # plot zscored responses
@@ -302,12 +314,13 @@ if __name__ == '__main__':
     # results.save_results()
     #
     #
+
     "Measuring photostim responses in relation to pre-stim mean FOV Flu"
-    results.pre_stim_FOV_flu = main.collect__prestim_FOV_Flu()
-    results.save_results()
-    plot__prestim_FOV_Flu(results)
-    main.run__collect_photostim_responses_magnitude_avgtargets()
-    plot__photostim_responses_vs_prestim_FOV_flu()
+    # results.pre_stim_FOV_flu = main.collect__prestim_FOV_Flu()
+    # results.save_results()
+    # plot__prestim_FOV_Flu(results)
+    # main.run__collect_photostim_responses_magnitude_avgtargets()
+    # plot__photostim_responses_vs_prestim_FOV_flu()
 
 
 

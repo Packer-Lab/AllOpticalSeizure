@@ -17,8 +17,45 @@ from _utils_._anndata import AnnotatedData2
 
 SAVE_LOC = "/home/pshah/mnt/qnap/Analysis/analysis_export/analysis_quantification_classes/"
 
-
 # %% COLLECTING DATA, PROCESSING AND ANALYSIS FOR PHOTOSTIM RESPONSES MAGNITUDES OF SLM TARGETS
+
+"""
+
+[ ] create fake sham trials to use as artificial 'catch' trials 
+
+
+"""
+
+
+class PhotostimResponsesSLMtargetsResults(Results):
+    SAVE_PATH = SAVE_LOC + 'Results__PhotostimResponsesSLMtargets.pkl'
+
+    def __init__(self):
+        super().__init__()
+        self.pre_stim_targets_annulus_vs_targets_responses_results = None
+        self.mean_photostim_responses_baseline: List[float] = [-1]
+        self.mean_photostim_responses_interictal: List[float] = [-1]
+        self.mean_photostim_responses_ictal: List[float] = [-1]
+
+        self.mean_photostim_responses_baseline_zscored: List[float] = [-1]
+        self.mean_photostim_responses_interictal_zscored: List[float] = [-1]
+        self.mean_photostim_responses_ictal_zscored: List[float] = [-1]
+
+        self.pre_stim_FOV_flu = None  # averages from pre-stim Flu value for each stim frame for baseline, interictal and ictal groups
+        self.baseline_pre_stim_targets_annulus = None
+        self.interictal_pre_stim_targets_annulus = None
+        self.ictal_pre_stim_targets_annulus = None
+        self.expavg_pre_stim_targets_annulus_F = None
+        self.expavg_pre_stim_targets_annulus_results_ictal = None
+
+
+REMAKE = False
+if not os.path.exists(PhotostimResponsesSLMtargetsResults.SAVE_PATH) or REMAKE:
+    RESULTS = PhotostimResponsesSLMtargetsResults()
+    RESULTS.save_results()
+else:
+    RESULTS = PhotostimResponsesSLMtargetsResults.load()
+
 
 class PhotostimResponsesQuantificationSLMtargets(Quantification):
     save_path = SAVE_LOC + 'PhotostimResponsesQuantificationSLMtargets.pkl'
@@ -28,9 +65,40 @@ class PhotostimResponsesQuantificationSLMtargets(Quantification):
     def __init__(self, expobj: alloptical):
         super().__init__(expobj)
         print(f'\- ADDING NEW PhotostimResponsesSLMTargets MODULE to expobj: {expobj.t_series_name}')
+        self.fake_stim_frames = None  #: fake stim time frames - create fake sham stim frames - halfway in between each stim trial
+
 
     def __repr__(self):
         return f"PhotostimResponsesSLMTargets <-- Quantification Analysis submodule for expobj <{self.expobj_id}>"
+
+    # 0) IDENTIFY, GROUP, CLASSIFY, CREATE PHOTOSTIMULATION FRAMES
+
+    # 0.1) SET FAKE-SHAM PHOTOSTIMULATION TRIALS
+    @staticmethod
+    def _set_fake_sham_photostim(expobj: Union[alloptical, Post4ap], plot=False):
+        """set fake sham stim frames - halfway in between each stim trial"""
+        fake_stims = expobj.fake_stim_start_frames
+        if plot:
+            # make plot to confirm timings line up:
+            fig, ax = plt.subplots(figsize=[10, 2])
+            ax.plot(range(expobj.n_frames), [0] * expobj.n_frames)
+            for stim in expobj.stim_start_frames:
+                ax.axvline(stim, color='red')
+            for fake in fake_stims:
+                ax.axvline(fake, color='gray')
+            ax.set_xticks(np.arange(0, expobj.n_frames, 60 * expobj.fps))
+            ax.set_xticklabels([int(time) for time in np.arange(0, expobj.n_frames / expobj.fps, 60)])
+            ax.set_xlabel('Time (secs)')
+            fig.tight_layout(pad=2)
+            ax.set_yticks([])
+            ax.set_title(f"{expobj.t_series_name}")
+            fig.show()
+
+        return fake_stims
+
+
+
+
 
     # 1) collect various photostimulation success rates, matrix of hits/failures, responses sizes and photostim stims trace snippets of SLM targets
     def collect_photostim_responses_exp(self, expobj: Union[alloptical, Post4ap]):
@@ -110,6 +178,45 @@ class PhotostimResponsesQuantificationSLMtargets(Quantification):
                     print(
                         f'******* No slmtargets_szboundary_stim (sz boundary classification not done) for: {expobj.t_series_name}',
                         ' [*2.3] ')
+
+
+    def collect_fake_photostim_responses_exp(self, expobj: alloptical):
+        """
+        Uses fake photostim stim timing frames. JUST IMPLEMENTED FOR BASELINE STIMS FOR NOW.
+        runs calculations of photostim responses, calculating reliability of photostim of slm targets,
+        saving success stim locations, and saving stim response magnitudes as pandas dataframe.
+        - of various methods -
+
+        :param expobj: experiment trial object
+
+        """
+
+        # PRIMARY
+
+        # dF/stdF
+        self.fake_StimSuccessRate_SLMtargets_dfstdf, self.fake_hits_SLMtargets_dfstdf, self.fake_responses_SLMtargets_dfstdf, self.fake_traces_SLMtargets_successes_dfstdf = \
+            expobj.get_SLMTarget_responses_dff(process='dF/stdF', threshold=0.3,
+                                               stims_to_use=expobj.fake_stim_start_frames)
+        # dF/prestimF
+        self.fake_StimSuccessRate_SLMtargets_dfprestimf, self.fake_hits_SLMtargets_dfprestimf, self.fake_responses_SLMtargets_dfprestimf, self.fake_traces_SLMtargets_successes_dfprestimf = \
+            expobj.get_SLMTarget_responses_dff(process='dF/prestimF', threshold=10,
+                                               stims_to_use=expobj.fake_stim_start_frames)
+        # trace dFF
+        self.fake_StimSuccessRate_SLMtargets_tracedFF, self.fake_hits_SLMtargets_tracedFF, self.fake_responses_SLMtargets_tracedFF, self.fake_traces_SLMtargets_tracedFF_successes = \
+            expobj.get_SLMTarget_responses_dff(process='delta(trace_dFF)', threshold=10,
+                                               stims_to_use=expobj.fake_stim_start_frames)
+
+        f, ax = pplot.make_general_scatter(x_list=[np.random.random(self.fake_responses_SLMtargets_tracedFF.shape[0])],
+                                           y_data=[np.mean(self.fake_responses_SLMtargets_tracedFF, axis=1)],
+                                           ax_titles=[f"{expobj.t_series_name}"], show=False,
+                                           y_label='delta(trace_dff)', figsize=[2, 4],
+                                           x_lim=[-1, 2], y_lim=[-50, 100])
+        ax.set_xticks([0.5])
+        ax.set_xticklabels(['targets'])
+        f.show()
+
+
+
 
     # 2) create anndata SLM targets to store photostim responses for each experiment
     def create_anndata_SLMtargets(self, expobj: Union[alloptical, Post4ap]):
@@ -937,36 +1044,6 @@ class PhotostimResponsesQuantificationSLMtargets(Quantification):
             title='plot__targets_annulus_prestim_Flu_all_points', alpha=0.1)
 
 
-# %% COLLECTING RESULTS FOR PHOTOSTIM RESPONSES
-class PhotostimResponsesSLMtargetsResults(Results):
-    SAVE_PATH = SAVE_LOC + 'Results__PhotostimResponsesSLMtargets.pkl'
-
-    def __init__(self):
-        super().__init__()
-        self.pre_stim_targets_annulus_vs_targets_responses_results = None
-        self.mean_photostim_responses_baseline: List[float] = [-1]
-        self.mean_photostim_responses_interictal: List[float] = [-1]
-        self.mean_photostim_responses_ictal: List[float] = [-1]
-
-        self.mean_photostim_responses_baseline_zscored: List[float] = [-1]
-        self.mean_photostim_responses_interictal_zscored: List[float] = [-1]
-        self.mean_photostim_responses_ictal_zscored: List[float] = [-1]
-
-        self.pre_stim_FOV_flu = None  # averages from pre-stim Flu value for each stim frame for baseline, interictal and ictal groups
-        self.baseline_pre_stim_targets_annulus = None
-        self.interictal_pre_stim_targets_annulus = None
-        self.ictal_pre_stim_targets_annulus = None
-        self.expavg_pre_stim_targets_annulus_F = None
-        self.expavg_pre_stim_targets_annulus_results_ictal = None
-
-
-REMAKE = False
-if not os.path.exists(PhotostimResponsesSLMtargetsResults.SAVE_PATH) or REMAKE:
-    RESULTS = PhotostimResponsesSLMtargetsResults()
-    RESULTS.save_results()
-else:
-    RESULTS = PhotostimResponsesSLMtargetsResults.load()
-
 # %% CODE DEVELOPMENT ZONE
 
 """
@@ -984,7 +1061,7 @@ send out plots for prestim FOV flu and prestim targets annulus flu
 
 
 if __name__ == '__main__':
-    # expobj: Post4ap = Utils.import_expobj(prep='RL108', trial='t-013')
+    expobj: Post4ap = Utils.import_expobj(prep='RL108', trial='t-009')
     # self = expobj.PhotostimResponsesSLMTargets
     # self.add_targets_annulus_prestim_anndata(expobj=expobj)
 
