@@ -45,7 +45,10 @@ class PhotostimResponsesAnalysisNonTargets(PhotostimResponsesQuantificationNonTa
     [i] plotting of significant responders (pos and neg) traces from baseline, during baseline, interictal and ictal (outsz) states
 
 
-    [ ] fake-sham trials in the analysis.
+    [ ] fake-sham trials in the analysis for total targets activity vs. total network activity:
+        - try plotting without z scoring first for one experiment - and send to Adam on slack.
+            - this will allow you to put all the photostim and fakestim responses on one plot (as two separate groups)
+                    - then for z scoring you should probably consider z scoring to baseline if you really get to this point....
         [ ] create fake sham stim frames - halfway in between each stim trial
         [ ] collect photostim targets fake sham responses
             [ ] plot peri-stim avg

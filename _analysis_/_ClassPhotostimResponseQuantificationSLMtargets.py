@@ -132,12 +132,12 @@ class PhotostimResponsesQuantificationSLMtargets(Quantification):
                                                stims_to_use=expobj.stim_start_frames)
 
         f, ax = pplot.make_general_scatter(x_list=[np.random.random(self.responses_SLMtargets_tracedFF.shape[0])],
-                                           y_data=[np.mean(self.responses_SLMtargets_tracedFF, axis=1)],
-                                           ax_titles=[f"{expobj.t_series_name}"], show=False,
-                                           y_label='delta(trace_dff)', figsize=[2, 4],
-                                           x_lim=[-1, 2], y_lim=[-50, 100])
+                                           y_data=[np.mean(self.responses_SLMtargets_tracedFF, axis=1)], show=False,
+                                           y_label='delta(trace_dff)', figsize=[2, 4], x_lim=[-1, 2], y_lim=[-50, 100])
         ax.set_xticks([0.5])
         ax.set_xticklabels(['targets'])
+        ax.set_title(f"{expobj.t_series_name} - photostim avg responses", wrap = True)
+        f.tight_layout(pad=2)
         f.show()
 
         # SECONDARY - SPLIT DOWN BY STIMS IN AND OUT OF SZ FOR POST4AP TRIALS
@@ -214,15 +214,13 @@ class PhotostimResponsesQuantificationSLMtargets(Quantification):
                                                stims_to_use='fake_stims')
 
         f, ax = pplot.make_general_scatter(x_list=[np.random.random(self.fake_responses_SLMtargets_tracedFF.shape[0])],
-                                           y_data=[np.mean(self.fake_responses_SLMtargets_tracedFF, axis=1)],
-                                           ax_titles=[f"{expobj.t_series_name} - fakestims avg responses"], show=False,
-                                           y_label='delta(trace_dff)', figsize=[2, 4],
-                                           x_lim=[-1, 2], y_lim=[-50, 100])
+                                           y_data=[np.mean(self.fake_responses_SLMtargets_tracedFF, axis=1)], show=False,
+                                           y_label='delta(trace_dff)', figsize=[2, 4], x_lim=[-1, 2], y_lim=[-50, 100])
         ax.set_xticks([0.5])
         ax.set_xticklabels(['targets'])
+        ax.set_title(f"{expobj.t_series_name} - fakestims avg responses", wrap = True)
+        f.tight_layout(pad=2)
         f.show()
-
-
 
 
 
