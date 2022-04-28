@@ -48,6 +48,10 @@ class PhotostimResponsesAnalysisNonTargets(PhotostimResponsesQuantificationNonTa
     [ ] fake-sham trials in the analysis.
         [ ] create fake sham stim frames - halfway in between each stim trial
         [ ] collect photostim targets fake sham responses
+            [ ] plot peri-stim avg
+            [ ] plot response magnitude
+
+
         [ ] collect nontargets fake sham responses
 
 

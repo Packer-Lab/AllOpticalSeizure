@@ -62,6 +62,11 @@ class PhotostimResponsesQuantificationSLMtargets(Quantification):
     valid_zscore_processing_types = ['dFF (zscored)', 'dFF (zscored) (interictal)']
     valid_photostim_response_processing_types = ['dF/stdF', 'dF/prestimF', 'delta(trace_dFF)']
 
+
+    TEST_TRIALS = [
+        'RL108 t-009'
+    ]
+
     def __init__(self, expobj: alloptical):
         super().__init__(expobj)
         print(f'\- ADDING NEW PhotostimResponsesSLMTargets MODULE to expobj: {expobj.t_series_name}')
@@ -194,14 +199,15 @@ class PhotostimResponsesQuantificationSLMtargets(Quantification):
 
         # PRIMARY
 
-        # dF/stdF
-        self.fake_StimSuccessRate_SLMtargets_dfstdf, self.fake_hits_SLMtargets_dfstdf, self.fake_responses_SLMtargets_dfstdf, self.fake_traces_SLMtargets_successes_dfstdf = \
-            expobj.get_SLMTarget_responses_dff(process='dF/stdF', threshold=0.3,
-                                               stims_to_use='fake_stims')
-        # dF/prestimF
-        self.fake_StimSuccessRate_SLMtargets_dfprestimf, self.fake_hits_SLMtargets_dfprestimf, self.fake_responses_SLMtargets_dfprestimf, self.fake_traces_SLMtargets_successes_dfprestimf = \
-            expobj.get_SLMTarget_responses_dff(process='dF/prestimF', threshold=10,
-                                               stims_to_use='fake_stims')
+        # # dF/stdF
+        # self.fake_StimSuccessRate_SLMtargets_dfstdf, self.fake_hits_SLMtargets_dfstdf, self.fake_responses_SLMtargets_dfstdf, self.fake_traces_SLMtargets_successes_dfstdf = \
+        #     expobj.get_SLMTarget_responses_dff(process='dF/stdF', threshold=0.3,
+        #                                        stims_to_use='fake_stims')
+        # # dF/prestimF
+        # self.fake_StimSuccessRate_SLMtargets_dfprestimf, self.fake_hits_SLMtargets_dfprestimf, self.fake_responses_SLMtargets_dfprestimf, self.fake_traces_SLMtargets_successes_dfprestimf = \
+        #     expobj.get_SLMTarget_responses_dff(process='dF/prestimF', threshold=10,
+        #                                        stims_to_use='fake_stims')
+
         # trace dFF
         self.fake_StimSuccessRate_SLMtargets_tracedFF, self.fake_hits_SLMtargets_tracedFF, self.fake_responses_SLMtargets_tracedFF, self.fake_traces_SLMtargets_tracedFF_successes = \
             expobj.get_SLMTarget_responses_dff(process='delta(trace_dFF)', threshold=10,
@@ -209,12 +215,14 @@ class PhotostimResponsesQuantificationSLMtargets(Quantification):
 
         f, ax = pplot.make_general_scatter(x_list=[np.random.random(self.fake_responses_SLMtargets_tracedFF.shape[0])],
                                            y_data=[np.mean(self.fake_responses_SLMtargets_tracedFF, axis=1)],
-                                           ax_titles=[f"{expobj.t_series_name}"], show=False,
+                                           ax_titles=[f"{expobj.t_series_name} - fakestims avg responses"], show=False,
                                            y_label='delta(trace_dff)', figsize=[2, 4],
                                            x_lim=[-1, 2], y_lim=[-50, 100])
         ax.set_xticks([0.5])
         ax.set_xticklabels(['targets'])
         f.show()
+
+
 
 
 
@@ -416,7 +424,7 @@ class PhotostimResponsesQuantificationSLMtargets(Quantification):
         return mean_photostim_responses
         
     def collect_fakestim_responses_magnitude_avgstims(self, stims: Union[slice, str, list] = 'all',
-                                                       adata_layer: str = 'primary'):
+                                                       adata_layer: str = 'fakestim_responses'):
         """collect mean fakestim response magnitudes over all stims specified for all targets.
         the type of fakestim response magnitude collected is specified by adata_layer (where 'primary' just means the primary adata layer). check .adata.layers to see available options.
         """
@@ -446,8 +454,13 @@ class PhotostimResponsesQuantificationSLMtargets(Quantification):
 
             mean_fakestim_responses = self.collect_fakestim_responses_magnitude_avgstims(stims)
             x_scatter = [float(np.random.rand(1) * 1)] * len(mean_photostim_responses)
+            pplot.make_general_scatter(x_list=[x_scatter], y_data=[mean_fakestim_responses],
+                                       ax_titles=[f"{expobj.t_series_name} - fakestims"],
+                                       figsize=[2, 4], y_label='delta(trace_dFF)')
+
+            x_scatter = [float(np.random.rand(1) * 1)] * len(mean_photostim_responses)
             pplot.make_general_scatter(x_list=[x_scatter], y_data=[mean_photostim_responses],
-                                       ax_titles=[expobj.t_series_name],
+                                       ax_titles=[f"{expobj.t_series_name} - photostims"],
                                        figsize=[2, 4], y_label='delta(trace_dFF)')
 
         else:
@@ -459,7 +472,7 @@ class PhotostimResponsesQuantificationSLMtargets(Quantification):
 
     # 3.1) Plotting mean photostim response amplitude across experiments
     @staticmethod
-    @Utils.run_for_loop_across_exps(run_pre4ap_trials=1, run_post4ap_trials=1, allow_rerun=True, set_cache=False)
+    @Utils.run_for_loop_across_exps(run_pre4ap_trials=1, run_post4ap_trials=0, allow_rerun=True, set_cache=False)
     def allexps_plot_photostim_responses_magnitude(**kwargs):
         expobj: alloptical = kwargs['expobj']
         expobj.PhotostimResponsesSLMTargets.plot_photostim_responses_magnitude(expobj=expobj, stims='all')

@@ -4,6 +4,7 @@ import numpy as np
 from matplotlib import pyplot as plt
 import funcsforprajay.funcs as pj
 import _alloptical_utils as Utils
+from _analysis_._ClassPhotostimAnalysisSlmTargets import plot_peristim_avg_fakestims, plot_peristim_avg_photostims
 
 from _analysis_._ClassPhotostimResponseQuantificationSLMtargets import \
     PhotostimResponsesQuantificationSLMtargets as main, PhotostimResponsesSLMtargetsResults
@@ -35,7 +36,7 @@ def run__collect_photostim_responses_exp(**kwargs):
     expobj.PhotostimResponsesSLMTargets.collect_photostim_responses_exp(expobj=expobj)
     expobj.save()
 
-@Utils.run_for_loop_across_exps(run_pre4ap_trials=1, run_post4ap_trials=0, allow_rerun=0)
+@Utils.run_for_loop_across_exps(run_pre4ap_trials=1, run_post4ap_trials=0, allow_rerun=1)#, run_trials=main.TEST_TRIALS)
 def run__collect_fake_photostim_responses_exp(**kwargs):
     expobj: alloptical = kwargs['expobj']
     expobj.PhotostimResponsesSLMTargets.collect_fake_photostim_responses_exp(expobj=expobj)
@@ -61,12 +62,24 @@ def run__add_stim_group_anndata(**kwargs):
     expobj.save()\
 
 
-@Utils.run_for_loop_across_exps(run_pre4ap_trials=1, run_post4ap_trials=0, allow_rerun=1)
+@Utils.run_for_loop_across_exps(run_pre4ap_trials=1, run_post4ap_trials=0, allow_rerun=1)#, run_trials=main.TEST_TRIALS)
 def run__add_fakestim_adata_layer(**kwargs):
     expobj: alloptical = kwargs['expobj']
-    expobj.PhotostimResponsesSLMTargets.add_fakestim_adata_layer(expobj=expobj)
+    expobj.PhotostimResponsesSLMTargets.add_fakestim_adata_layer()
     expobj.save()
 
+
+
+# %% r.0.1) plotting peristim avg traces for photostims and fakestims
+def run__plot_peristimavg():
+    @Utils.run_for_loop_across_exps(run_pre4ap_trials=True, run_post4ap_trials=True, set_cache=False, allow_rerun=1)
+    def pre4apexps_collect_photostim_responses(**kwargs):
+        expobj: alloptical = kwargs['expobj']
+        if 'pre' in expobj.exptype:
+            # all stims
+            mean_photostim_responses = expobj.PhotostimResponsesSLMTargets.collect_photostim_responses_magnitude_avgstims(
+                stims='all')
+            return np.mean(mean_photostim_responses)
 
 
 # %% r.1) plotting mean photostim response magnitude across experiments and experimental groups
@@ -127,7 +140,7 @@ def run__z_score_photostim_responses_and_interictalzscores(**kwargs):
 def full_plot_mean_responses_magnitudes_zscored():
     """create plot of mean photostim responses magnitudes (zscored) for all three exptype groups"""
 
-    # todo add fakestim comparison for pre4ap baseline plots
+    # todo add fakestim comparison for pre4ap baseline plots, and also grand average plot for 2p stim peristim traces
 
     @Utils.run_for_loop_across_exps(run_pre4ap_trials=True, run_post4ap_trials=False, set_cache=False)
     def pre4apexps_collect_photostim_responses_zscored(**kwargs):
@@ -284,17 +297,21 @@ if __name__ == '__main__':
     # run__initPhotostimResponseQuant()
     #
     #
-    # "Collecting photostim responses for SLM Targets. Create anndata object to store photostim responses."
+    "Collecting photostim responses for SLM Targets. Create anndata object to store photostim responses."
     # run__collect_photostim_responses_exp()
     run__collect_fake_photostim_responses_exp()
     # run__create_anndata_SLMtargets()
+    run__add_fakestim_adata_layer()
     # run__add_stim_group_anndata()
 
 
+    "Plotting photostim and fakestim peristim avg traces"
+    plot_peristim_avg_fakestims()
+    # plot_peristim_avg_photostims()
+
     "Plotting mean photostim responses magnitudes across three brain states."
-    # main.allexps_plot_photostim_responses_magnitude()
+    main.allexps_plot_photostim_responses_magnitude()   # <- plotting here after next to quantify the response magnitude of photostim vs. fake stims across experiments.
     # results.mean_photostim_responses_baseline, results.mean_photostim_responses_interictal, results.mean_photostim_responses_ictal = full_plot_mean_responses_magnitudes()
-    #
     #
 
 

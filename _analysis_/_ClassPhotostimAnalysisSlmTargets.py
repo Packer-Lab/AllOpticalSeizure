@@ -7,6 +7,7 @@ import pandas as pd
 from matplotlib import pyplot as plt
 
 import _alloptical_utils as Utils
+from _analysis_._ClassPhotostimResponseQuantificationSLMtargets import PhotostimResponsesQuantificationSLMtargets
 from _analysis_._utils import Quantification, Results
 from _exp_metainfo_.exp_metainfo import AllOpticalExpsToAnalyze
 from _main_.AllOpticalMain import alloptical
@@ -212,118 +213,6 @@ class PhotostimAnalysisSlmTargets(Quantification):
         fig.tight_layout(pad=1.8)
         fig.show()
 
-    # 1.1) plot peri-photostim avg traces across all targets for all experiment trials
-    def plot_peristim_avg_photostims(self):
-
-        for trial in pj.flattenOnce(AllOpticalExpsToAnalyze.pre_4ap_trials):
-            from _utils_.io import import_expobj
-            expobj: alloptical = import_expobj(exp_prep=trial)
-            trace_snippets_avg = np.mean(expobj.SLMTargets_tracedFF_stims_dff, axis=1)
-            print(trace_snippets_avg.shape[1])
-            fig, axs = plt.subplots(nrows=2, ncols=1, figsize=[4, 8])
-            # aoplot.plot_periphotostim_avg2(dataset=trace_snippets_avg, fps=expobj.fps, pre_stim_sec=expobj.PhotostimAnalysisSlmTargets._pre_stim_sec, title=f'{expobj.t_series_name}')
-            from _utils_.alloptical_plotting import plot_periphotostim_avg
-            plot_periphotostim_avg(arr=trace_snippets_avg, pre_stim_sec=1.0, post_stim_sec=3.0,
-                                          title=f'{expobj.t_series_name} - pre4ap', expobj=expobj,
-                                          x_label='Time (secs)', y_label='dFF response', fig=fig, ax=axs[0],
-                                          show=False)
-
-            post4ap_exp = AllOpticalExpsToAnalyze.find_matched_trial(pre4ap_trial_name=expobj.t_series_name)
-            print(post4ap_exp)
-            expobj: Post4ap = import_expobj(exp_prep=post4ap_exp)
-            trace_snippets_avg = np.mean(expobj.SLMTargets_tracedFF_stims_dff, axis=1)
-            print(trace_snippets_avg.shape[1], '\n')
-            plot_periphotostim_avg(arr=trace_snippets_avg, pre_stim_sec=1.0, post_stim_sec=3.0,
-                                          title=f'{expobj.t_series_name} - post4ap', expobj=expobj,
-                                          x_label='Time (secs)', y_label='dFF response', fig=fig, ax=axs[1])
-            fig.show()
-
-    # 1.1) plot peri-fakestim avg traces across all targets for all experiment trials
-    def plot_peristim_avg_fakestims(self):
-
-        for trial in pj.flattenOnce(AllOpticalExpsToAnalyze.pre_4ap_trials):
-            from _utils_.io import import_expobj
-            expobj: alloptical = import_expobj(exp_prep=trial)
-            trace_snippets_avg = np.mean(expobj.fake_SLMTargets_tracedFF_stims_dff, axis=1)
-            print(trace_snippets_avg.shape[1])
-            fig, axs = plt.subplots(nrows=2, ncols=1, figsize=[4, 8])
-            # aoplot.plot_periphotostim_avg2(dataset=trace_snippets_avg, fps=expobj.fps, pre_stim_sec=expobj.PhotostimAnalysisSlmTargets._pre_stim_sec, title=f'{expobj.t_series_name}')
-            from _utils_.alloptical_plotting import plot_periphotostim_avg
-            plot_periphotostim_avg(arr=trace_snippets_avg, pre_stim_sec=1.0, post_stim_sec=3.0,
-                                          title=f'{expobj.t_series_name} - pre4ap', expobj=expobj,
-                                          x_label='Time (secs)', y_label='dFF response', fig=fig, ax=axs[0],
-                                          show=False)
-
-            fig.show()
-
-
-    # 1.2) plot photostim avg of all targets from each experiment
-    @staticmethod
-    def plot__avg_photostim_dff_allexps():
-
-        fig, axs = plt.subplots(nrows=2, ncols=1, figsize=[4, 8])
-        axs[0].set_ylim([-15, 50])
-        axs[1].set_ylim([-15, 50])
-        axs[0].axvspan(0, 0.250, alpha=1, color='tomato', zorder=5)
-        axs[1].axvspan(0, 0.250, alpha=1, color='tomato', zorder=5)
-
-        for ax in axs:
-            ax.set_xlabel('Time (secs)')
-        for ax in axs:
-            ax.set_ylabel('dFF')
-        axs[0].set_title('baseline')
-        axs[1].set_title('interictal')
-
-
-        for exp in AllOpticalExpsToAnalyze.exp_ids:
-            for trial in pj.flattenOnce(AllOpticalExpsToAnalyze.pre_4ap_trials):
-                if exp in trial:
-                    # pre4ap trial
-                    expobj: alloptical = import_expobj(exp_prep=trial)
-                    trace_snippets_avg = np.mean(expobj.SLMTargets_tracedFF_stims_dffAvg, axis=0)
-
-                    pre_stim_slice = np.s_[0: expobj.PhotostimAnalysisSlmTargets.pre_stim_fr]
-                    stim_dur_slice = np.s_[expobj.PhotostimAnalysisSlmTargets.pre_stim_fr: expobj.PhotostimAnalysisSlmTargets.pre_stim_fr + int(0.250 * expobj.fps)]
-                    post_stim_slice = np.s_[expobj.PhotostimAnalysisSlmTargets.pre_stim_fr + expobj.stim_duration_frames: expobj.PhotostimAnalysisSlmTargets.pre_stim_fr + expobj.stim_duration_frames + expobj.PhotostimAnalysisSlmTargets.post_stim_fr]
-
-                    dff_trace = np.concatenate((trace_snippets_avg[pre_stim_slice], np.array([1000] * int(0.250 * expobj.fps)), trace_snippets_avg[post_stim_slice]))
-
-                    pre_stim_x = np.linspace(-expobj.PhotostimAnalysisSlmTargets._pre_stim_sec, 0, int(expobj.PhotostimAnalysisSlmTargets._pre_stim_sec * expobj.fps))  # x scale, but in time domain (transformed from frames based on the provided fps)
-                    stim_dur_x = np.linspace(0, 0.250, int(0.250 * expobj.fps))
-                    post_stim_x = np.linspace(0.250, 0.250 + expobj.PhotostimAnalysisSlmTargets._post_stim_sec, int(expobj.PhotostimAnalysisSlmTargets._post_stim_sec * expobj.fps))  # x scale, but in time domain (transformed from frames based on the provided fps)
-
-                    x_scale = np.concatenate((pre_stim_x, stim_dur_x, post_stim_x))
-                    assert len(x_scale) == len(dff_trace), 'x axis scale is too short or too long.'
-                    axs[0].plot(x_scale, dff_trace, color='black')
-
-
-                    # post4ap trial
-                    post4ap_exp = AllOpticalExpsToAnalyze.find_matched_trial(pre4ap_trial_name=expobj.t_series_name)
-                    print(post4ap_exp)
-                    expobj: Post4ap = import_expobj(exp_prep=post4ap_exp)
-
-                    trace_snippets_avg = np.mean(expobj.SLMTargets_tracedFF_stims_dffAvg_outsz, axis=0)
-
-                    pre_stim_slice = np.s_[0: expobj.PhotostimAnalysisSlmTargets.pre_stim_fr]
-                    stim_dur_slice = np.s_[expobj.PhotostimAnalysisSlmTargets.pre_stim_fr: expobj.PhotostimAnalysisSlmTargets.pre_stim_fr + int(0.250 * expobj.fps)]
-                    post_stim_slice = np.s_[expobj.PhotostimAnalysisSlmTargets.pre_stim_fr + expobj.stim_duration_frames: expobj.PhotostimAnalysisSlmTargets.pre_stim_fr + expobj.stim_duration_frames + expobj.PhotostimAnalysisSlmTargets.post_stim_fr]
-
-                    dff_trace = np.concatenate((trace_snippets_avg[pre_stim_slice], np.array([1000] * int(0.250 * expobj.fps)), trace_snippets_avg[post_stim_slice]))
-
-                    pre_stim_x = np.linspace(-expobj.PhotostimAnalysisSlmTargets._pre_stim_sec, 0, int(expobj.PhotostimAnalysisSlmTargets._pre_stim_sec * expobj.fps))  # x scale, but in time domain (transformed from frames based on the provided fps)
-                    stim_dur_x = np.linspace(0, 0.250, int(0.250 * expobj.fps))
-                    post_stim_x = np.linspace(0.250, 0.250 + expobj.PhotostimAnalysisSlmTargets._post_stim_sec, int(expobj.PhotostimAnalysisSlmTargets._post_stim_sec * expobj.fps))  # x scale, but in time domain (transformed from frames based on the provided fps)
-
-                    x_scale = np.concatenate((pre_stim_x, stim_dur_x, post_stim_x))
-                    assert len(x_scale) == len(dff_trace), 'x axis scale is too short or too long.'
-                    axs[1].plot(x_scale, dff_trace, color='green')
-
-
-
-
-        fig.show()
-
-
     # 2) calculating mean variability across targets:
     def calculate_variability(self, stims):
         """calculate standard deviation (ddof = 1) variability of photostim repsonses across trials for each inidividual target."""
@@ -520,6 +409,129 @@ class PhotostimAnalysisSlmTargets(Quantification):
 
 
 
+# 1.1) plot peri-photostim avg traces across all targets for all experiment trials
+def plot_peristim_avg_photostims():
+    plot = True
+
+    for trial in pj.flattenOnce(AllOpticalExpsToAnalyze.pre_4ap_trials):
+        if trial in PhotostimResponsesQuantificationSLMtargets.TEST_TRIALS:
+            plot = True
+        else: plot = False
+        if plot:
+            from _utils_.io import import_expobj
+            expobj: alloptical = import_expobj(exp_prep=trial)
+            trace_snippets_avg = np.mean(expobj.SLMTargets_tracedFF_stims_dff, axis=1)
+            print(trace_snippets_avg.shape[1])
+            fig, axs = plt.subplots(nrows=2, ncols=1, figsize=[4, 8])
+            # aoplot.plot_periphotostim_avg2(dataset=trace_snippets_avg, fps=expobj.fps, pre_stim_sec=expobj.PhotostimAnalysisSlmTargets._pre_stim_sec, title=f'{expobj.t_series_name}')
+            from _utils_.alloptical_plotting import plot_periphotostim_avg
+            plot_periphotostim_avg(arr=trace_snippets_avg, pre_stim_sec=1.0, post_stim_sec=3.0,
+                                          title=f'{expobj.t_series_name} - pre4ap', expobj=expobj,
+                                          x_label='Time (secs)', y_label='dFF response', fig=fig, ax=axs[0],
+                                          show=False)
+
+            post4ap_exp = AllOpticalExpsToAnalyze.find_matched_trial(pre4ap_trial_name=expobj.t_series_name)
+            print(post4ap_exp)
+            expobj: Post4ap = import_expobj(exp_prep=post4ap_exp)
+            trace_snippets_avg = np.mean(expobj.SLMTargets_tracedFF_stims_dff, axis=1)
+            print(trace_snippets_avg.shape[1], '\n')
+            plot_periphotostim_avg(arr=trace_snippets_avg, pre_stim_sec=1.0, post_stim_sec=3.0,
+                                          title=f'{expobj.t_series_name} - post4ap', expobj=expobj,
+                                          x_label='Time (secs)', y_label='dFF response', fig=fig, ax=axs[1])
+            fig.show()
+
+# 1.1.1) plot peri-fakestim avg traces across all targets for all experiment trials
+def plot_peristim_avg_fakestims():
+    plot = True
+
+    for trial in pj.flattenOnce(AllOpticalExpsToAnalyze.pre_4ap_trials):
+        # if trial in PhotostimResponsesQuantificationSLMtargets.TEST_TRIALS:
+        #     plot = True
+        # else:
+        #     plot = False
+
+        if plot:
+            from _utils_.io import import_expobj
+            expobj: alloptical = import_expobj(exp_prep=trial)
+            trace_snippets_avg = np.mean(expobj.fake_SLMTargets_tracedFF_stims_dff, axis=1)
+            print(trace_snippets_avg.shape[1])
+            fig, axs = plt.subplots(nrows=2, ncols=1, figsize=[4, 8])
+            # aoplot.plot_periphotostim_avg2(dataset=trace_snippets_avg, fps=expobj.fps, pre_stim_sec=expobj.PhotostimAnalysisSlmTargets._pre_stim_sec, title=f'{expobj.t_series_name}')
+            from _utils_.alloptical_plotting import plot_periphotostim_avg
+            plot_periphotostim_avg(arr=trace_snippets_avg, pre_stim_sec=1.0, post_stim_sec=3.0,
+                                          title=f'{expobj.t_series_name} - pre4ap', expobj=expobj,
+                                          x_label='Time (secs)', y_label='dFF response', fig=fig, ax=axs[0],
+                                          show=False)
+
+            fig.show()
+
+
+# 1.2) plot photostim avg of all targets from each experiment
+def plot__avg_photostim_dff_allexps():
+
+    fig, axs = plt.subplots(nrows=2, ncols=1, figsize=[4, 8])
+    axs[0].set_ylim([-15, 50])
+    axs[1].set_ylim([-15, 50])
+    axs[0].axvspan(0, 0.250, alpha=1, color='tomato', zorder=5)
+    axs[1].axvspan(0, 0.250, alpha=1, color='tomato', zorder=5)
+
+    for ax in axs:
+        ax.set_xlabel('Time (secs)')
+    for ax in axs:
+        ax.set_ylabel('dFF')
+    axs[0].set_title('baseline')
+    axs[1].set_title('interictal')
+
+
+    for exp in AllOpticalExpsToAnalyze.exp_ids:
+        for trial in pj.flattenOnce(AllOpticalExpsToAnalyze.pre_4ap_trials):
+            if exp in trial:
+                # pre4ap trial
+                expobj: alloptical = import_expobj(exp_prep=trial)
+                trace_snippets_avg = np.mean(expobj.SLMTargets_tracedFF_stims_dffAvg, axis=0)
+
+                pre_stim_slice = np.s_[0: expobj.PhotostimAnalysisSlmTargets.pre_stim_fr]
+                stim_dur_slice = np.s_[expobj.PhotostimAnalysisSlmTargets.pre_stim_fr: expobj.PhotostimAnalysisSlmTargets.pre_stim_fr + int(0.250 * expobj.fps)]
+                post_stim_slice = np.s_[expobj.PhotostimAnalysisSlmTargets.pre_stim_fr + expobj.stim_duration_frames: expobj.PhotostimAnalysisSlmTargets.pre_stim_fr + expobj.stim_duration_frames + expobj.PhotostimAnalysisSlmTargets.post_stim_fr]
+
+                dff_trace = np.concatenate((trace_snippets_avg[pre_stim_slice], np.array([1000] * int(0.250 * expobj.fps)), trace_snippets_avg[post_stim_slice]))
+
+                pre_stim_x = np.linspace(-expobj.PhotostimAnalysisSlmTargets._pre_stim_sec, 0, int(expobj.PhotostimAnalysisSlmTargets._pre_stim_sec * expobj.fps))  # x scale, but in time domain (transformed from frames based on the provided fps)
+                stim_dur_x = np.linspace(0, 0.250, int(0.250 * expobj.fps))
+                post_stim_x = np.linspace(0.250, 0.250 + expobj.PhotostimAnalysisSlmTargets._post_stim_sec, int(expobj.PhotostimAnalysisSlmTargets._post_stim_sec * expobj.fps))  # x scale, but in time domain (transformed from frames based on the provided fps)
+
+                x_scale = np.concatenate((pre_stim_x, stim_dur_x, post_stim_x))
+                assert len(x_scale) == len(dff_trace), 'x axis scale is too short or too long.'
+                axs[0].plot(x_scale, dff_trace, color='black')
+
+
+                # post4ap trial
+                post4ap_exp = AllOpticalExpsToAnalyze.find_matched_trial(pre4ap_trial_name=expobj.t_series_name)
+                print(post4ap_exp)
+                expobj: Post4ap = import_expobj(exp_prep=post4ap_exp)
+
+                trace_snippets_avg = np.mean(expobj.SLMTargets_tracedFF_stims_dffAvg_outsz, axis=0)
+
+                pre_stim_slice = np.s_[0: expobj.PhotostimAnalysisSlmTargets.pre_stim_fr]
+                stim_dur_slice = np.s_[expobj.PhotostimAnalysisSlmTargets.pre_stim_fr: expobj.PhotostimAnalysisSlmTargets.pre_stim_fr + int(0.250 * expobj.fps)]
+                post_stim_slice = np.s_[expobj.PhotostimAnalysisSlmTargets.pre_stim_fr + expobj.stim_duration_frames: expobj.PhotostimAnalysisSlmTargets.pre_stim_fr + expobj.stim_duration_frames + expobj.PhotostimAnalysisSlmTargets.post_stim_fr]
+
+                dff_trace = np.concatenate((trace_snippets_avg[pre_stim_slice], np.array([1000] * int(0.250 * expobj.fps)), trace_snippets_avg[post_stim_slice]))
+
+                pre_stim_x = np.linspace(-expobj.PhotostimAnalysisSlmTargets._pre_stim_sec, 0, int(expobj.PhotostimAnalysisSlmTargets._pre_stim_sec * expobj.fps))  # x scale, but in time domain (transformed from frames based on the provided fps)
+                stim_dur_x = np.linspace(0, 0.250, int(0.250 * expobj.fps))
+                post_stim_x = np.linspace(0.250, 0.250 + expobj.PhotostimAnalysisSlmTargets._post_stim_sec, int(expobj.PhotostimAnalysisSlmTargets._post_stim_sec * expobj.fps))  # x scale, but in time domain (transformed from frames based on the provided fps)
+
+                x_scale = np.concatenate((pre_stim_x, stim_dur_x, post_stim_x))
+                assert len(x_scale) == len(dff_trace), 'x axis scale is too short or too long.'
+                axs[1].plot(x_scale, dff_trace, color='green')
+
+
+
+
+    fig.show()
+
+
 if __name__ == '__main__':
     main = PhotostimAnalysisSlmTargets
     main.run__init()
@@ -529,7 +541,7 @@ if __name__ == '__main__':
     # main.plot_postage_stamps_photostim_traces()
     # main.plot__variability()
     # main.plot__mean_response_vs_variability()
-    main.plot__avg_photostim_dff_allexps()
+    plot__avg_photostim_dff_allexps()
 
 
 
