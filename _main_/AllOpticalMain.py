@@ -83,12 +83,15 @@ class alloptical(TwoPhotonImaging):
         self.SLMTargets_stims_raw = None
         self.SLMTargets_stims_rawAvg = None
 
-        self.SLMTargets_tracedFF_stims_dff = None
+        self.SLMTargets_tracedFF_stims_dff = None  #: trace snippets for stim frames times, calculated as post - pre dFF
         self.SLMTargets_tracedFF_stims_dffAvg = None
         self.SLMTargets_tracedFF_stims_dfstdF = None
         self.SLMTargets_tracedFF_stims_dfstdF_avg = None
         self.SLMTargets_tracedFF_stims_raw = None
         self.SLMTargets_tracedFF_stims_rawAvg = None
+
+        self.fake_SLMTargets_tracedFF_stims_dff = None  #: trace snippets for fake stim frames times, calculated as post - pre dFF
+
 
         ## breaking down success and failure stims
         self.traces_SLMtargets_successes_avg_dfstdf = None  # trace snippets for only successful stims - normalized by dfstdf
@@ -161,7 +164,7 @@ class alloptical(TwoPhotonImaging):
     @property
     def fake_stim_start_frames(self):
         """create fake sham stim frames - halfway in between each stim trial"""
-        return [((self.stim_start_frames[idx + 1] - self.stim_start_frames[idx]) // 2) + frame for idx, frame in enumerate(self.stim_start_frames[:-1])]
+        return [((self.stim_start_frames[1] - self.stim_start_frames[0]) // 2) + frame for idx, frame in enumerate(self.stim_start_frames)]
 
     
     @property
@@ -1361,29 +1364,29 @@ class alloptical(TwoPhotonImaging):
                 # y.append(avg)
         return x
 
-    def get_SLMTarget_responses_dff(self, process: str, threshold=10, stims_to_use: list = None):
+    def get_SLMTarget_responses_dff(self, process: str, threshold=10, stims_to_use: Union[list, str] = None):
         """
         calculations of dFF responses to photostimulation of SLM Targets. Includes calculating reliability of slm targets,
         saving success stim locations, and saving stim response magnitudes as pandas dataframe.
 
         :param threshold: dFF threshold above which a response for a photostim trial is considered a success.
-        :param stims_to_use: ls of stims to retrieve photostim trial dFF responses
+        :param stims_to_use: ls of stims to retrieve photostim trial dFF responses, use "fake_stims" to evaluate fake_stims
         :return:
         """
         print(f'\n---------- Calculating {process} stim evoked responses (of SLM targets) [.1] ---------- ')
-        if stims_to_use is None:
+        if stims_to_use is None or 'all':
             stims_to_use = range(len(self.stim_start_frames))
             stims_idx = [self.stim_start_frames.index(stim) for stim in stims_to_use]
         elif stims_to_use:
             stims_idx = [self.stim_start_frames.index(stim) for stim in stims_to_use]
-        elif stims_to_use == 'fake_stims':
+        elif stims_to_use == 'fake_stims':  # use fake stim start frames
             stims_idx = range(len(self.fake_stim_start_frames))
         else:
-            AttributeError('no stims set to analyse [1.1]')
+            raise AttributeError('no stims set to analyse [1.1]')
 
 
-        # set stims to use to collect stim trace snippets for targets - actual or fake photostims
-        stims_frames = self.stim_start_frames if stims_to_use != 'fake_stims' else self.fake_stim_start_frames
+        # # set stims to use to collect stim trace snippets for targets - actual or fake photostims
+        # stims_frames = self.fake_stim_start_frames if stims_to_use == 'fake_stims' else self.stim_start_frames
 
 
         # choose between .SLMTargets_stims_dff, or .SLMTargets_stims_dfstdF and .SLMTargets_stims_tracedFF for data to process
@@ -1392,27 +1395,39 @@ class alloptical(TwoPhotonImaging):
                 targets_traces = self.SLMTargets_stims_dff
                 threshold = 10
             else:
-                AttributeError('no SLMTargets_stims_dff attr. [1.2]')
+                raise AttributeError('no SLMTargets_stims_dff attr. [1.2]')
         elif process == 'dF/stdF':
             if hasattr(self, 'SLMTargets_stims_dfstdF'):
                 targets_traces = self.SLMTargets_stims_dfstdF
                 threshold = 0.3
             else:
-                AttributeError('no SLMTargets_stims_dff attr. [1.2]')
+                raise AttributeError('no SLMTargets_stims_dff attr. [1.2]')
 
         elif process == 'trace dFF':
-            if hasattr(self, 'SLMTargets_tracedFF_stims_dff'):
-                if type(self.SLMTargets_tracedFF_stims_dff) == list:
-                    self.SLMTargets_tracedFF_stims_dff, self.SLMTargets_tracedFF_stims_dffAvg, self.SLMTargets_tracedFF_stims_dfstdF, \
-                    self.SLMTargets_tracedFF_stims_dfstdF_avg, self.SLMTargets_tracedFF_stims_raw, self.SLMTargets_tracedFF_stims_rawAvg = \
+            if stims_to_use == 'fake_stims':
+                if hasattr(self, 'fake_SLMTargets_tracedFF_stims_dff'):
+                    targets_traces = self.fake_SLMTargets_tracedFF_stims_dff
+                    threshold = 10
+                else:
+                    self.fake_SLMTargets_tracedFF_stims_dff, self.fake_SLMTargets_tracedFF_stims_dffAvg, self.fake_SLMTargets_tracedFF_stims_dfstdF, \
+                    self.fake_SLMTargets_tracedFF_stims_dfstdF_avg, self.fake_SLMTargets_tracedFF_stims_raw, self.fake_SLMTargets_tracedFF_stims_rawAvg = \
                         self.get_alltargets_stim_traces_norm(process='trace dFF', pre_stim=self.pre_stim,
-                                                             post_stim=self.post_stim, stims=self.stim_start_frames)
-                targets_traces = self.SLMTargets_tracedFF_stims_dff
-                threshold = 10
+                                                             post_stim=self.post_stim, stims=self.fake_stim_start_frames)
+                    targets_traces = self.fake_SLMTargets_tracedFF_stims_dff
+                    threshold = 10
             else:
-                AttributeError('no SLMTargets_tracedFF_stims_dff attr. [1.3]')
+                if hasattr(self, 'SLMTargets_tracedFF_stims_dff'):
+                    if type(self.SLMTargets_tracedFF_stims_dff) == list:
+                        self.SLMTargets_tracedFF_stims_dff, self.SLMTargets_tracedFF_stims_dffAvg, self.SLMTargets_tracedFF_stims_dfstdF, \
+                        self.SLMTargets_tracedFF_stims_dfstdF_avg, self.SLMTargets_tracedFF_stims_raw, self.SLMTargets_tracedFF_stims_rawAvg = \
+                            self.get_alltargets_stim_traces_norm(process='trace dFF', pre_stim=self.pre_stim,
+                                                                 post_stim=self.post_stim, stims=self.stim_start_frames)
+                    targets_traces = self.SLMTargets_tracedFF_stims_dff
+                    threshold = 10
+                else:
+                    raise AttributeError('no SLMTargets_tracedFF_stims_dff attr. [1.3]')
         else:
-            ValueError('need to assign to process: dF/prestimF or dF/stdF or trace dFF')
+            raise ValueError('need to assign to process: dF/prestimF or dF/stdF or trace dFF')
 
         # initializing pandas df that collects responses of stimulations
         if hasattr(self, 'SLMTargets_stims_dff'):

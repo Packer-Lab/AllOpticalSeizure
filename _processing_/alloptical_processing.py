@@ -185,6 +185,11 @@ def run_alloptical_processing_photostim(expobj: Union[alloptical, Post4ap], to_s
             expobj.get_alltargets_stim_traces_norm(process='trace dFF', pre_stim=expobj.PhotostimAnalysisSlmTargets.pre_stim_fr,
                                                    post_stim=expobj.PhotostimAnalysisSlmTargets.post_stim_fr, stims=expobj.stim_start_frames)
 
+        expobj.fake_SLMTargets_tracedFF_stims_dff, expobj.fake_SLMTargets_tracedFF_stims_dffAvg, expobj.fake_SLMTargets_tracedFF_stims_dfstdF, \
+        expobj.fake_SLMTargets_tracedFF_stims_dfstdF_avg, expobj.fake_SLMTargets_tracedFF_stims_raw, expobj.fake_SLMTargets_tracedFF_stims_rawAvg = \
+            expobj.get_alltargets_stim_traces_norm(process='trace dFF', pre_stim=expobj.pre_stim,
+                                                 post_stim=expobj.post_stim, stims=expobj.fake_stim_start_frames)
+        
         SLMtarget_ids = list(range(len(expobj.SLMTargets_stims_dfstdF)))
 
     # filtering of stims in / outside sz period (use for post-4ap trials)
@@ -202,6 +207,11 @@ def run_alloptical_processing_photostim(expobj: Union[alloptical, Post4ap], to_s
             expobj.get_alltargets_stim_traces_norm(process='trace dFF', pre_stim=expobj.PhotostimAnalysisSlmTargets.pre_stim_fr,
                                                    post_stim=expobj.PhotostimAnalysisSlmTargets.post_stim_fr,
                                                    stims=expobj.stim_start_frames)
+
+        expobj.fake_SLMTargets_tracedFF_stims_dff, expobj.fake_SLMTargets_tracedFF_stims_dffAvg, expobj.fake_SLMTargets_tracedFF_stims_dfstdF, \
+        expobj.fake_SLMTargets_tracedFF_stims_dfstdF_avg, expobj.fake_SLMTargets_tracedFF_stims_raw, expobj.fake_SLMTargets_tracedFF_stims_rawAvg = \
+            expobj.get_alltargets_stim_traces_norm(process='trace dFF', pre_stim=expobj.pre_stim,
+                                                 post_stim=expobj.post_stim, stims=expobj.fake_stim_start_frames)
 
         if hasattr(expobj, 'stims_in_sz'):
             # out of sz stims:

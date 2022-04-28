@@ -128,7 +128,7 @@ class PhotostimAnalysisSlmTargets(Quantification):
 
     # 0) COLLECT ALL PHOTOSTIM TIMED TRACE SNIPPETS --> found under PhotostimResponsesQuantificationSLMtargets class
 
-    # 1) plot peri-photostim avg traces for all trials analyzed to make sure they look alright -- plot as little postage stamps
+    # 1) plot peri-photostim avg traces for all targets from all exp analyzed to make sure they look alright -- plot as little postage stamps
     @staticmethod
     @Utils.run_for_loop_across_exps(run_trials=[])#[AllOpticalExpsToAnalyze.pre_4ap_trials[0][0], AllOpticalExpsToAnalyze.post_4ap_trials[0][0]])
     def plot_postage_stamps_photostim_traces(to_plot='dFF',**kwargs):
@@ -216,28 +216,46 @@ class PhotostimAnalysisSlmTargets(Quantification):
     def plot_peristim_avg_photostims(self):
 
         for trial in pj.flattenOnce(AllOpticalExpsToAnalyze.pre_4ap_trials):
-            if 'RL109' in trial:
-                from _utils_.io import import_expobj
-                expobj: alloptical = import_expobj(exp_prep=trial)
-                trace_snippets_avg = np.mean(expobj.SLMTargets_stims_dff, axis=1)
-                print(trace_snippets_avg.shape[1])
-                fig, axs = plt.subplots(nrows=2, ncols=1, figsize=[4, 8])
-                # aoplot.plot_periphotostim_avg2(dataset=trace_snippets_avg, fps=expobj.fps, pre_stim_sec=expobj.PhotostimAnalysisSlmTargets._pre_stim_sec, title=f'{expobj.t_series_name}')
-                from _utils_.alloptical_plotting import plot_periphotostim_avg
-                plot_periphotostim_avg(arr=trace_snippets_avg, pre_stim_sec=1.0, post_stim_sec=3.0,
-                                              title=f'{expobj.t_series_name} - pre4ap', expobj=expobj,
-                                              x_label='Time (secs)', y_label='dFF response', fig=fig, ax=axs[0],
-                                              show=False)
+            from _utils_.io import import_expobj
+            expobj: alloptical = import_expobj(exp_prep=trial)
+            trace_snippets_avg = np.mean(expobj.SLMTargets_tracedFF_stims_dff, axis=1)
+            print(trace_snippets_avg.shape[1])
+            fig, axs = plt.subplots(nrows=2, ncols=1, figsize=[4, 8])
+            # aoplot.plot_periphotostim_avg2(dataset=trace_snippets_avg, fps=expobj.fps, pre_stim_sec=expobj.PhotostimAnalysisSlmTargets._pre_stim_sec, title=f'{expobj.t_series_name}')
+            from _utils_.alloptical_plotting import plot_periphotostim_avg
+            plot_periphotostim_avg(arr=trace_snippets_avg, pre_stim_sec=1.0, post_stim_sec=3.0,
+                                          title=f'{expobj.t_series_name} - pre4ap', expobj=expobj,
+                                          x_label='Time (secs)', y_label='dFF response', fig=fig, ax=axs[0],
+                                          show=False)
 
-                post4ap_exp = AllOpticalExpsToAnalyze.find_matched_trial(pre4ap_trial_name=expobj.t_series_name)
-                print(post4ap_exp)
-                expobj: Post4ap = import_expobj(exp_prep=post4ap_exp)
-                trace_snippets_avg = np.mean(expobj.SLMTargets_stims_dff, axis=1)
-                print(trace_snippets_avg.shape[1], '\n')
-                plot_periphotostim_avg(arr=trace_snippets_avg, pre_stim_sec=1.0, post_stim_sec=3.0,
-                                              title=f'{expobj.t_series_name} - post4ap', expobj=expobj,
-                                              x_label='Time (secs)', y_label='dFF response', fig=fig, ax=axs[1])
-                fig.show()
+            post4ap_exp = AllOpticalExpsToAnalyze.find_matched_trial(pre4ap_trial_name=expobj.t_series_name)
+            print(post4ap_exp)
+            expobj: Post4ap = import_expobj(exp_prep=post4ap_exp)
+            trace_snippets_avg = np.mean(expobj.SLMTargets_tracedFF_stims_dff, axis=1)
+            print(trace_snippets_avg.shape[1], '\n')
+            plot_periphotostim_avg(arr=trace_snippets_avg, pre_stim_sec=1.0, post_stim_sec=3.0,
+                                          title=f'{expobj.t_series_name} - post4ap', expobj=expobj,
+                                          x_label='Time (secs)', y_label='dFF response', fig=fig, ax=axs[1])
+            fig.show()
+
+    # 1.1) plot peri-fakestim avg traces across all targets for all experiment trials
+    def plot_peristim_avg_fakestims(self):
+
+        for trial in pj.flattenOnce(AllOpticalExpsToAnalyze.pre_4ap_trials):
+            from _utils_.io import import_expobj
+            expobj: alloptical = import_expobj(exp_prep=trial)
+            trace_snippets_avg = np.mean(expobj.fake_SLMTargets_tracedFF_stims_dff, axis=1)
+            print(trace_snippets_avg.shape[1])
+            fig, axs = plt.subplots(nrows=2, ncols=1, figsize=[4, 8])
+            # aoplot.plot_periphotostim_avg2(dataset=trace_snippets_avg, fps=expobj.fps, pre_stim_sec=expobj.PhotostimAnalysisSlmTargets._pre_stim_sec, title=f'{expobj.t_series_name}')
+            from _utils_.alloptical_plotting import plot_periphotostim_avg
+            plot_periphotostim_avg(arr=trace_snippets_avg, pre_stim_sec=1.0, post_stim_sec=3.0,
+                                          title=f'{expobj.t_series_name} - pre4ap', expobj=expobj,
+                                          x_label='Time (secs)', y_label='dFF response', fig=fig, ax=axs[0],
+                                          show=False)
+
+            fig.show()
+
 
     # 1.2) plot photostim avg of all targets from each experiment
     @staticmethod

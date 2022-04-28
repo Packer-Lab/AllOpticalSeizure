@@ -58,6 +58,13 @@ def run__create_anndata_SLMtargets(**kwargs):
 def run__add_stim_group_anndata(**kwargs):
     expobj: alloptical = kwargs['expobj']
     expobj.PhotostimResponsesSLMTargets.add_stim_group_anndata(expobj=expobj)
+    expobj.save()\
+
+
+@Utils.run_for_loop_across_exps(run_pre4ap_trials=1, run_post4ap_trials=0, allow_rerun=1)
+def run__add_fakestim_adata_layer(**kwargs):
+    expobj: alloptical = kwargs['expobj']
+    expobj.PhotostimResponsesSLMTargets.add_fakestim_adata_layer(expobj=expobj)
     expobj.save()
 
 
@@ -119,6 +126,8 @@ def run__z_score_photostim_responses_and_interictalzscores(**kwargs):
 # plotting mean photostim response magnitude Z SCORED across experiments and experimental groups
 def full_plot_mean_responses_magnitudes_zscored():
     """create plot of mean photostim responses magnitudes (zscored) for all three exptype groups"""
+
+    # todo add fakestim comparison for pre4ap baseline plots
 
     @Utils.run_for_loop_across_exps(run_pre4ap_trials=True, run_post4ap_trials=False, set_cache=False)
     def pre4apexps_collect_photostim_responses_zscored(**kwargs):

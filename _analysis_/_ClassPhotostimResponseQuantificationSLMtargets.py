@@ -190,21 +190,22 @@ class PhotostimResponsesQuantificationSLMtargets(Quantification):
         :param expobj: experiment trial object
 
         """
+        # NOTE: ONLY IMPLEMENTED FOR TRACE_DFF PROCESSED TRACES SO FAR.
 
         # PRIMARY
 
         # dF/stdF
         self.fake_StimSuccessRate_SLMtargets_dfstdf, self.fake_hits_SLMtargets_dfstdf, self.fake_responses_SLMtargets_dfstdf, self.fake_traces_SLMtargets_successes_dfstdf = \
             expobj.get_SLMTarget_responses_dff(process='dF/stdF', threshold=0.3,
-                                               stims_to_use=expobj.fake_stim_start_frames)
+                                               stims_to_use='fake_stims')
         # dF/prestimF
         self.fake_StimSuccessRate_SLMtargets_dfprestimf, self.fake_hits_SLMtargets_dfprestimf, self.fake_responses_SLMtargets_dfprestimf, self.fake_traces_SLMtargets_successes_dfprestimf = \
             expobj.get_SLMTarget_responses_dff(process='dF/prestimF', threshold=10,
-                                               stims_to_use=expobj.fake_stim_start_frames)
+                                               stims_to_use='fake_stims')
         # trace dFF
         self.fake_StimSuccessRate_SLMtargets_tracedFF, self.fake_hits_SLMtargets_tracedFF, self.fake_responses_SLMtargets_tracedFF, self.fake_traces_SLMtargets_tracedFF_successes = \
             expobj.get_SLMTarget_responses_dff(process='delta(trace_dFF)', threshold=10,
-                                               stims_to_use=expobj.fake_stim_start_frames)
+                                               stims_to_use='fake_stims')
 
         f, ax = pplot.make_general_scatter(x_list=[np.random.random(self.fake_responses_SLMtargets_tracedFF.shape[0])],
                                            y_data=[np.mean(self.fake_responses_SLMtargets_tracedFF, axis=1)],
@@ -322,6 +323,11 @@ class PhotostimResponsesQuantificationSLMtargets(Quantification):
 
         self.adata.add_layer(layer_name='hits/failures (trade_dff)', data=self.hits_SLMtargets_tracedFF)
 
+    # 2.0.1) add to anndata - fake photostim responses as layer
+    def add_fakestim_adata_layer(self):
+        assert 'pre' in self.expobj_exptype, 'fakestim responses currenty only available for pre4ap baseline trials'
+        fakestim_responses = self.fake_responses_SLMtargets_tracedFF
+        self.adata.add_layer(layer_name='fakestim_responses', data=fakestim_responses)
 
 
     # 3) PLOTTING MEAN PHOTOSTIM RESPONSE AMPLITUDES
@@ -350,14 +356,42 @@ class PhotostimResponsesQuantificationSLMtargets(Quantification):
 
         # return mean_photostim_responses
 
+    def collect_fakestim_responses_magnitude_avgtargets(self, stims: Union[slice, str, list] = 'all',
+                                                         targets: Union[slice, str, list] = 'all',
+                                                         adata_layer: str = 'fakestim_responses'):
+        "collect avg fakestim responses of targets overall individual stims - add to .adata.var"
+        assert self.adata, print('cannot find .adata')
+        if not stims or stims == 'all': stims = range(self.adata.n_vars)
+        if not targets or targets == 'all': targets = slice(0, self.adata.n_obs)
+
+        assert adata_layer in self.adata.layers, f"`{adata_layer}` layer not found to collect fakestim response magnitudes from."
+        df = self.adata.layers[adata_layer]
+
+        # select stims to use to collect data from
+        mean_fakestim_responses = []
+        for stim in stims:
+            mean_fakestim_response = np.mean(df[targets, stim])
+            mean_fakestim_responses.append(mean_fakestim_response)
+
+        self.adata.add_variable(var_name='avg targets fakestim response', values=mean_fakestim_responses)
+
+        # return mean_photostim_responses
+
+
     @staticmethod
     @Utils.run_for_loop_across_exps(run_pre4ap_trials=1, run_post4ap_trials=1, allow_rerun=0)
     def run__collect_photostim_responses_magnitude_avgtargets(**kwargs):
         expobj: Union[alloptical, Post4ap] = kwargs['expobj']
         expobj.PhotostimResponsesSLMTargets.collect_photostim_responses_magnitude_avgtargets(stims='all', targets='all',
                                                                                              adata_layer='primary')
+
+        if 'pre' in expobj.exptype:
+            expobj.PhotostimResponsesSLMTargets.collect_fakestim_responses_magnitude_avgtargets(stims='all', targets='all', adata_layer='fakestim_responses')
+
         expobj.save()
 
+
+    # 3.1) COLLECT PHOTOSTIM RESPONSES FOR TARGETS AVG ACROSS ALL STIMS
     def collect_photostim_responses_magnitude_avgstims(self, stims: Union[slice, str, list] = 'all',
                                                        adata_layer: str = 'primary'):
         """collect mean photostim response magnitudes over all stims specified for all targets.
@@ -380,15 +414,48 @@ class PhotostimResponsesQuantificationSLMtargets(Quantification):
             mean_photostim_response = np.mean(df[target, stims])
             mean_photostim_responses.append(mean_photostim_response)
         return mean_photostim_responses
+        
+    def collect_fakestim_responses_magnitude_avgstims(self, stims: Union[slice, str, list] = 'all',
+                                                       adata_layer: str = 'primary'):
+        """collect mean fakestim response magnitudes over all stims specified for all targets.
+        the type of fakestim response magnitude collected is specified by adata_layer (where 'primary' just means the primary adata layer). check .adata.layers to see available options.
+        """
+
+        assert self.adata, print('cannot find .adata')
+        if not stims or stims == 'all': stims = slice(0, self.adata.n_vars)
+
+        assert adata_layer in self.adata.layers, f"`{adata_layer}` layer not found to collect photostim response magnitudes from."
+        df = self.adata.layers[adata_layer]
+
+        mean_fakestim_responses = []
+        for target in self.adata.obs.index:
+            target = int(target)
+            mean_fakestim_response = np.mean(df[target, stims])
+            mean_fakestim_responses.append(mean_fakestim_response)
+        return mean_fakestim_responses
+
+
+    # todo add plot of mean fakestim responses magnitude --> full_plot_mean_responses_magnitudes_zscored
 
     def plot_photostim_responses_magnitude(self, expobj: alloptical, stims: Union[slice, str, list] = None):
         """quick plot of photostim responses of expobj's targets across all stims"""
         mean_photostim_responses = self.collect_photostim_responses_magnitude_avgstims(stims)
-        x_scatter = [float(np.random.rand(1) * 1)] * len(mean_photostim_responses)
-        pplot.make_general_scatter(x_list=[x_scatter], y_data=[mean_photostim_responses],
-                                   ax_titles=[expobj.t_series_name],
-                                   figsize=[2, 4], y_label='delta(trace_dFF)')
-        # pplot.plot_bar_with_points(data=[mean_photostim_responses], bar = False, title=expobj.t_series_name)
+
+        if 'pre' in expobj.exptype:
+            # todo add plot of mean fakestim responses magnitude
+
+            mean_fakestim_responses = self.collect_fakestim_responses_magnitude_avgstims(stims)
+            x_scatter = [float(np.random.rand(1) * 1)] * len(mean_photostim_responses)
+            pplot.make_general_scatter(x_list=[x_scatter], y_data=[mean_photostim_responses],
+                                       ax_titles=[expobj.t_series_name],
+                                       figsize=[2, 4], y_label='delta(trace_dFF)')
+
+        else:
+            x_scatter = [float(np.random.rand(1) * 1)] * len(mean_photostim_responses)
+            pplot.make_general_scatter(x_list=[x_scatter], y_data=[mean_photostim_responses],
+                                       ax_titles=[expobj.t_series_name],
+                                       figsize=[2, 4], y_label='delta(trace_dFF)')
+            # pplot.plot_bar_with_points(data=[mean_photostim_responses], bar = False, title=expobj.t_series_name)
 
     # 3.1) Plotting mean photostim response amplitude across experiments
     @staticmethod
@@ -396,6 +463,7 @@ class PhotostimResponsesQuantificationSLMtargets(Quantification):
     def allexps_plot_photostim_responses_magnitude(**kwargs):
         expobj: alloptical = kwargs['expobj']
         expobj.PhotostimResponsesSLMTargets.plot_photostim_responses_magnitude(expobj=expobj, stims='all')
+
 
     # 4) Zscoring of photostimulation responses
     def z_score_photostim_responses(self):
