@@ -10,12 +10,15 @@ from _utils_.io import import_expobj
 
 # %% processing alloptical photostim and fakestim responses
 
-PhotostimResponsesAnalysisNonTargets.run__initPhotostimResponsesAnalysisNonTargets()
+# PhotostimResponsesAnalysisNonTargets.run__initPhotostimResponsesAnalysisNonTargets()
 
 PhotostimResponsesQuantificationNonTargets.run__fakestims_processing()
 
 # %% plotting alloptical and fakestim responses
-PhotostimResponsesAnalysisNonTargets.run__plot_sig_responders_traces(plot_baseline_responders=False)
+# PhotostimResponsesAnalysisNonTargets.run__plot_sig_responders_traces(plot_baseline_responders=False)
+
+# %% collecting all summed nontargets photostim and fakestim responses vs. total targets photostim and fakestim responses
+PhotostimResponsesAnalysisNonTargets.run__summed_responses(rerun=0)
 
 
 # %% plotting total nontargets photostim (and fakestim) responses vs. total targets photostim (and fakestim) responses

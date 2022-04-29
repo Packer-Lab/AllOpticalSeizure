@@ -488,11 +488,11 @@ class PhotostimResponsesAnalysisNonTargets(PhotostimResponsesQuantificationNonTa
 
     @staticmethod
     def run__summed_responses(rerun=0):
-        @Utils.run_for_loop_across_exps(run_pre4ap_trials=1, run_post4ap_trials=1, allow_rerun=rerun, skip_trials=PhotostimResponsesQuantificationNonTargets.EXCLUDE_TRIALS)
+        @Utils.run_for_loop_across_exps(run_pre4ap_trials=1, run_post4ap_trials=0, allow_rerun=rerun, skip_trials=PhotostimResponsesQuantificationNonTargets.EXCLUDE_TRIALS)
         def _run__summed_responses(**kwargs):
             expobj: Union[alloptical, Post4ap] = kwargs['expobj']
             expobj.PhotostimResponsesNonTargets._calculate__summed_responses()
-            expobj.PhotostimResponsesNonTargets._calculate__summed_responses_targets(expobj=expobj)
+            # expobj.PhotostimResponsesNonTargets._calculate__summed_responses_targets(expobj=expobj)
             expobj.save()
 
         _run__summed_responses()
@@ -515,7 +515,7 @@ class PhotostimResponsesAnalysisNonTargets(PhotostimResponsesQuantificationNonTa
         fig, axs[0] = pplot.make_general_scatter(x_list=[targets_responses_summed],
                                                  y_data=[nontargets_responses_summed], figsize=(6.5, 4), fig=fig, ax=axs[0],
                                                  s=50,facecolors=['orange'], edgecolors=['black'], lw=1, alpha=1,
-                                                 x_labels=['total targets activity (dFF summed)'], y_labels=['total network activity (dF/stdF summed'],
+                                                 x_labels=['total targets activity (dFF summed)'], y_labels=['total network activity (dF/stdF summed)'],
                                                  legend_labels=[f'photostim trials - $R^2$: {r_value ** 2:.2e}, p = {p_value**2:.2e}'], show=False)
         axs[0].plot(targets_responses_summed, regression_y, color='black')
 
@@ -525,7 +525,7 @@ class PhotostimResponsesAnalysisNonTargets(PhotostimResponsesQuantificationNonTa
         regression_y = slope * targets_responses_summed + intercept
 
         pplot.make_general_scatter(x_list = [targets_responses_summed],
-                                   y_data=[nontargets_responses_summed], s=50, facecolors=['gray'],
+                                   y_data=[nontargets_fakestims_responses_summed], s=50, facecolors=['gray'],
                                    edgecolors=['black'], lw=1, alpha=1, x_labels=['total targets activity'],
                                    y_labels=['total network activity'], fig = fig, ax= axs[1], legend_labels=[f'fakestim trials - $R^2$: {r_value**2:.2e}, p = {p_value**2:.2e}'], show = False)
         axs[1].plot(targets_responses_summed, regression_y, color = 'black')

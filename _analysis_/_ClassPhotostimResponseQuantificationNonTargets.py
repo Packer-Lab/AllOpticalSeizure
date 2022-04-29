@@ -286,7 +286,7 @@ class PhotostimResponsesQuantificationNonTargets(Quantification):
 
         if 'pre' in expobj.exptype:
             expobj._makeNontargetsStimTracesArray(stim_frames=expobj.fake_stim_start_frames, normalize_to='pre-stim',
-                                                  save=False, plot=True)
+                                                  save=False, plot=False)
 
             pre_stim_fr = self.pre_stim_fr
             pre_stim_response_frames_window = self.pre_stim_response_frames_window
@@ -307,7 +307,7 @@ class PhotostimResponsesQuantificationNonTargets(Quantification):
 
             self.fakestims.post_array_responses = np.mean(analysis_array[:, :, self.fakestims.post_stim_frames_test],
                                                   axis=2)  #: response post- stim for all cells, stims: [cells x stims]
-            self.fakestims.pre_array_responses = np.mean(analysis_array[:, :, self.fakestims.post_stim_frames_test],
+            self.fakestims.pre_array_responses = np.mean(analysis_array[:, :, self.fakestims.pre_stim_frames_test],
                                                  axis=2)  #: response post- stim for all cells, stims: [cells x stims]
 
             self.fakestims.diff_responses_array = self.fakestims.post_array_responses - self.fakestims.pre_array_responses
@@ -324,13 +324,13 @@ class PhotostimResponsesQuantificationNonTargets(Quantification):
             avg_post = np.mean(self.fakestims.post_array_responses, axis=1)
             avg_pre = np.mean(self.fakestims.pre_array_responses, axis=1)
 
-            # BUNCH OF PLOT TO TEST HOW RESPONSES ARE BEING STATISTICALLY FILTERED:
-            fig, axs = plt.subplots(figsize=(4, 3.5))
-            [axs.plot(expobj.fakestims_dfstdF_traces_nontargets[cell], color='gray', alpha=0.2) for cell in range(self.fakestims.pre_array.shape[0])]
-            axs.plot(np.mean(expobj.fakestims_dfstdF_traces_nontargets, axis=0), color='black')
-
-            fig.suptitle(f"{expobj.t_series_name} - nontargets fakestims responses")
-            fig.show()
+            # PLOT TO TEST HOW RESPONSES ARE BEING STATISTICALLY FILTERED:
+            # fig, axs = plt.subplots(figsize=(4, 3.5))
+            # [axs.plot(expobj.fakestims_dfstdF_traces_nontargets[cell], color='gray', alpha=0.2) for cell in range(self.fakestims.pre_array.shape[0])]
+            # axs.plot(np.mean(expobj.fakestims_dfstdF_traces_nontargets, axis=0), color='black')
+            #
+            # fig.suptitle(f"{expobj.t_series_name} - nontargets fakestims responses")
+            # fig.show()
 
 
         print('\n** FIN. * fake stims allopticalAnalysisNontargets * %s %s **** ' % (
