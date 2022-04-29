@@ -324,25 +324,9 @@ class PhotostimResponsesQuantificationNonTargets(Quantification):
             avg_pre = np.mean(self.fakestims.pre_array_responses, axis=1)
 
             # BUNCH OF PLOT TO TEST HOW RESPONSES ARE BEING STATISTICALLY FILTERED:
-            fig, axs = plt.subplots(figsize=(8, 8), nrows=2, ncols=2)
-            traces_ = []
-            for cell in range(self.fakestims.pre_array.shape[0]):
-                if avg_post[cell] > avg_pre[cell]:
-                    axs[0, 0].plot(expobj.fakestims_dfstdF_traces_nontargets[cell])
-                    traces_.append(expobj.fakestims_dfstdF_traces_nontargets[cell])
-            axs[0, 0].plot(np.mean(traces_, axis=0), color='black')
-            axs[0, 0].set_title(f'{len(traces_)} positive going traces')
-            print(f'Number of pos wilcoxon cells: {len(traces_)}')
-
-
-            traces_ = []
-            for cell in range(self.fakestims.pre_array.shape[0]):
-                if avg_post[cell] < avg_pre[cell]:
-                    axs[0, 0].plot(expobj.fakestims_dfstdF_traces_nontargets[cell])
-                    traces_.append(expobj.fakestims_dfstdF_traces_nontargets[cell])
-            axs[0, 0].plot(np.mean(traces_, axis=0), color='black')
-            axs[0, 0].set_title(f'{len(traces_)} negative going traces')
-            print(f'Number of neg wilcoxon cells: {len(traces_)}')
+            fig, axs = plt.subplots(figsize=(4, 3.5))
+            [axs.plot(expobj.fakestims_dfstdF_traces_nontargets[cell]) for cell in range(self.fakestims.pre_array.shape[0])]
+            axs.plot(np.mean(expobj.fakestims_dfstdF_traces_nontargets, axis=0), color='black')
 
             fig.suptitle(f"{expobj.t_series_name} - nontargets fakestims responses")
             fig.show()

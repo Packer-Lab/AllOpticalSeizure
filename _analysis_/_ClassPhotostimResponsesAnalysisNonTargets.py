@@ -55,12 +55,10 @@ class PhotostimResponsesAnalysisNonTargets(PhotostimResponsesQuantificationNonTa
             [x] plot response magnitude
 
 
-        [ ] collect nontargets fake sham responses
-            [ ] test for significant responders
-            [ ] add to collect__sig_responders_responses_type1, for baseline
+        [x] collect nontargets fake sham responses
+            [x] test for significant responders - came out nil as expected for all nontargets
             [ ] plug into plot peri-stim avg for photostim_nontargets analysis
-
-        [ ] make graph of peri-stim avg with pos significant responders, neg significant responders, fakestims, and nonresponders
+                [ ] make graph of peri-stim avg with pos significant responders, neg significant responders, fakestims, and nonresponders
 
         [ ] scatter plot of total nontargets activity and total targets activity
 
@@ -83,51 +81,52 @@ class PhotostimResponsesAnalysisNonTargets(PhotostimResponsesQuantificationNonTa
 
 
     # 2.1) PLOT - POS AND NEG SIG RESPONDERS TRACES FOR EXPERIMENT
-    def plot__sig_responders_traces(self, expobj: Union[alloptical, Post4ap]):
-
-        from _analysis_._ClassPhotostimAnalysisSlmTargets import PhotostimAnalysisSlmTargets
-        from _utils_.alloptical_plotting import plot_periphotostim_avg2
-
-        if 'pre' in self.expobj_exptype:
-            pos_avg_traces = [self.pre4ap_possig_responders_avgtraces_baseline]
-            neg_avg_traces = [self.pre4ap_negsig_responders_avgtraces_baseline]
-        elif 'post' in self.expobj_exptype:
-            pos_avg_traces = [self.post4ap_possig_responders_avgtraces_interictal]
-            neg_avg_traces = [self.post4ap_negsig_responders_avgtraces_interictal]
-        else:
-            raise Exception()
-
-        fig, axs = plt.subplots(figsize=(4, 6), nrows=2, ncols=1)
-
-        if len(pos_avg_traces[0]) > 0:
-            plot_periphotostim_avg2(dataset=pos_avg_traces, fps=expobj.fps,
-                                    legend_labels=[f"pos. cells: {len(pos_avg_traces[0])}"],
-                                    colors=['red'], avg_with_std=True,
-                                    suptitle=f"{self.expobj_id} - {self.expobj_exptype} - sig. responders",
-                                    ylim=[-0.3, 0.8], fig=fig, ax=axs[0],
-                                    pre_stim_sec=PhotostimAnalysisSlmTargets._pre_stim_sec,
-                                    show=False, fontsize='small', figsize=(4, 4),
-                                    xlabel='Time (secs)', ylabel='Avg. Stim. Response (dF/stdF)')
-        else:
-            print(f"**** {expobj.t_series_name} has no statistically significant positive responders.")
-        if len(neg_avg_traces[0]) > 0:
-            plot_periphotostim_avg2(dataset=neg_avg_traces, fps=expobj.fps,
-                                    legend_labels=[f"neg. cells: {len(neg_avg_traces[0])}"],
-                                    colors=['blue'], avg_with_std=True,
-                                    title=f"{self.expobj_id} - {self.expobj_exptype} - -ve sig. responders",
-                                    ylim=[-0.6, 0.5], fig=fig, ax=axs[1],
-                                    pre_stim_sec=PhotostimAnalysisSlmTargets._pre_stim_sec,
-                                    show=False, fontsize='small', figsize=(4, 4),
-                                    xlabel='Time (secs)', ylabel='Avg. Stim. Response (dF/stdF)')
-        else:
-            print(f"**** {expobj.t_series_name} has no statistically significant negative responders.")
-
-        fig.show()
+    # def plot__sig_responders_traces(self, expobj: Union[alloptical, Post4ap]):
+    #
+    #     from _analysis_._ClassPhotostimAnalysisSlmTargets import PhotostimAnalysisSlmTargets
+    #     from _utils_.alloptical_plotting import plot_periphotostim_avg2
+    #
+    #     if 'pre' in self.expobj_exptype:
+    #         pos_avg_traces = [self.pre4ap_possig_responders_avgtraces_baseline]
+    #         neg_avg_traces = [self.pre4ap_negsig_responders_avgtraces_baseline]
+    #     elif 'post' in self.expobj_exptype:
+    #         pos_avg_traces = [self.post4ap_possig_responders_avgtraces_interictal]
+    #         neg_avg_traces = [self.post4ap_negsig_responders_avgtraces_interictal]
+    #     else:
+    #         raise Exception()
+    #
+    #     fig, axs = plt.subplots(figsize=(4, 6), nrows=2, ncols=1)
+    #
+    #     if len(pos_avg_traces[0]) > 0:
+    #         plot_periphotostim_avg2(dataset=pos_avg_traces, fps=expobj.fps,
+    #                                 legend_labels=[f"pos. cells: {len(pos_avg_traces[0])}"],
+    #                                 colors=['red'], avg_with_std=True,
+    #                                 suptitle=f"{self.expobj_id} - {self.expobj_exptype} - sig. responders",
+    #                                 ylim=[-0.3, 0.8], fig=fig, ax=axs[0],
+    #                                 pre_stim_sec=PhotostimAnalysisSlmTargets._pre_stim_sec,
+    #                                 show=False, fontsize='small', figsize=(4, 4),
+    #                                 xlabel='Time (secs)', ylabel='Avg. Stim. Response (dF/stdF)')
+    #     else:
+    #         print(f"**** {expobj.t_series_name} has no statistically significant positive responders.")
+    #     if len(neg_avg_traces[0]) > 0:
+    #         plot_periphotostim_avg2(dataset=neg_avg_traces, fps=expobj.fps,
+    #                                 legend_labels=[f"neg. cells: {len(neg_avg_traces[0])}"],
+    #                                 colors=['blue'], avg_with_std=True,
+    #                                 title=f"{self.expobj_id} - {self.expobj_exptype} - -ve sig. responders",
+    #                                 ylim=[-0.6, 0.5], fig=fig, ax=axs[1],
+    #                                 pre_stim_sec=PhotostimAnalysisSlmTargets._pre_stim_sec,
+    #                                 show=False, fontsize='small', figsize=(4, 4),
+    #                                 xlabel='Time (secs)', ylabel='Avg. Stim. Response (dF/stdF)')
+    #     else:
+    #         print(f"**** {expobj.t_series_name} has no statistically significant negative responders.")
+    #
+    #     fig.show()
 
 
     # 2.2) PLOT - POS AND NEG SIG RESPONDERS TRACES FOR EXPERIMENT
     @staticmethod
-    def plot__pos_neg_responders_traces(expobj: alloptical, pos_avg_traces=None, neg_avg_traces=None, title=''):
+    def plot__pos_neg_responders_traces(expobj: alloptical, pos_avg_traces: list = None, neg_avg_traces: list = None,
+                                        fake_avg_traces: list = None, title: str = ''):
         """
         Plot avg peri-stim traces of input +ve and -ve responders traces.
 
@@ -142,30 +141,50 @@ class PhotostimResponsesAnalysisNonTargets(PhotostimResponsesQuantificationNonTa
         from _analysis_._ClassPhotostimAnalysisSlmTargets import PhotostimAnalysisSlmTargets
         from _utils_.alloptical_plotting import plot_periphotostim_avg2
 
-        fig, axs = plt.subplots(figsize=(4, 6), nrows=2, ncols=1)
+        same_plot = True
+
+        if not same_plot:
+            fig, axs = plt.subplots(figsize=(4, 6), nrows=2, ncols=1)
+        else:
+            fig, axs = plt.subplots(figsize=(3, 3))
 
         if len(pos_avg_traces[0]) > 0:
+            ax = axs if same_plot else axs[0]
             plot_periphotostim_avg2(dataset=pos_avg_traces, fps=expobj.fps,
                                     legend_labels=[f"pos. cells: {len(pos_avg_traces[0])}"],
                                     colors=['red'], avg_with_std=True,
                                     suptitle=f"{expobj.t_series_name} - {expobj.exptype} - +ve sig. responders {title}",
-                                    ylim=[-0.3, 0.8], fig=fig, ax=axs[0],
+                                    ylim=[-0.3, 0.8], fig=fig, ax=ax,
                                     pre_stim_sec=PhotostimAnalysisSlmTargets._pre_stim_sec,
                                     show=False, fontsize='small', figsize=(4, 4),
                                     xlabel='Time (secs)', ylabel='Avg. Stim. Response (dF/stdF)')
         else:
             print(f"**** {expobj.t_series_name} has no statistically significant positive responders.")
         if len(neg_avg_traces[0]) > 0:
+            ax = axs if same_plot else axs[1]
             plot_periphotostim_avg2(dataset=neg_avg_traces, fps=expobj.fps,
                                     legend_labels=[f"neg. cells: {len(neg_avg_traces[0])}"],
                                     colors=['blue'], avg_with_std=True,
                                     title=f"{expobj.t_series_name} - {expobj.exptype} - -ve sig. responders {title}",
-                                    ylim=[-0.6, 0.5], fig=fig, ax=axs[1],
+                                    ylim=[-0.6, 0.5], fig=fig, ax=ax,
                                     pre_stim_sec=PhotostimAnalysisSlmTargets._pre_stim_sec,
                                     show=False, fontsize='small', figsize=(4, 4),
                                     xlabel='Time (secs)', ylabel='Avg. Stim. Response (dF/stdF)')
         else:
             print(f"**** {expobj.t_series_name} has no statistically significant negative responders.")
+
+        if len(fake_avg_traces[0]) > 0:
+            ax = axs if same_plot else None
+            plot_periphotostim_avg2(dataset=neg_avg_traces, fps=expobj.fps,
+                                    legend_labels=[f"neg. cells: {len(neg_avg_traces[0])}"],
+                                    colors=['blue'], avg_with_std=True,
+                                    title=f"{expobj.t_series_name} - {expobj.exptype} - -ve sig. responders {title}",
+                                    ylim=[-0.6, 0.5], fig=fig, ax=ax,
+                                    pre_stim_sec=PhotostimAnalysisSlmTargets._pre_stim_sec,
+                                    show=False, fontsize='small', figsize=(4, 4),
+                                    xlabel='Time (secs)', ylabel='Avg. Stim. Response (dF/stdF)')
+
+
         fig.show()
 
 
@@ -181,10 +200,11 @@ class PhotostimResponsesAnalysisNonTargets(PhotostimResponsesQuantificationNonTa
         if 'pre' in expobj.exptype:
             pos_avg_traces = [expobj.PhotostimResponsesNonTargets.pre4ap_possig_responders_avgtraces_baseline]
             neg_avg_traces = [expobj.PhotostimResponsesNonTargets.pre4ap_negsig_responders_avgtraces_baseline]
-
+            fake_avg_traces = [expobj.fakestims_dfstdF_traces_nontargets]
             expobj.PhotostimResponsesNonTargets.plot__pos_neg_responders_traces(expobj=expobj,
                                                                                 pos_avg_traces=pos_avg_traces,
-                                                                                neg_avg_traces=neg_avg_traces)
+                                                                                neg_avg_traces=neg_avg_traces,
+                                                                                fake_avg_traces=fake_avg_traces)
 
         elif 'post' in expobj.exptype:
             # INTERICTAL
