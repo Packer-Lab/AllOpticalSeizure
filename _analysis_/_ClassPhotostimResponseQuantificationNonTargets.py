@@ -55,6 +55,9 @@ class FakeStimsQuantification(Quantification):
     """class for holding analyses attr for fakestim responses."""
 
     save_path = SAVE_LOC + 'PhotostimResponsesQuantificationNonTargets.pkl'
+    EXCLUDE_TRIALS = ['RL108 t-009',
+                      'RL109 t-013'  # these both have negative going targets traces in the fake stims period
+                      ]
 
     def __init__(self, expobj):
         super().__init__(expobj=expobj)
@@ -142,7 +145,7 @@ class PhotostimResponsesQuantificationNonTargets(Quantification):
         expobj.save()
 
     @staticmethod
-    @Utils.run_for_loop_across_exps(run_pre4ap_trials=1, run_post4ap_trials=0, allow_rerun=1, skip_trials=EXCLUDE_TRIALS,)
+    @Utils.run_for_loop_across_exps(run_pre4ap_trials=1, run_post4ap_trials=0, allow_rerun=0, skip_trials=EXCLUDE_TRIALS,)
                                     # run_trials=TEST_TRIALS)
     def run__fakestims_processing(**kwargs):
         expobj: alloptical = kwargs['expobj']

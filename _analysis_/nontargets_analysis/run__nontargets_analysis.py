@@ -12,7 +12,7 @@ from _utils_.io import import_expobj
 
 # PhotostimResponsesAnalysisNonTargets.run__initPhotostimResponsesAnalysisNonTargets()
 
-PhotostimResponsesQuantificationNonTargets.run__fakestims_processing()
+# PhotostimResponsesQuantificationNonTargets.run__fakestims_processing()
 
 # %% plotting alloptical and fakestim responses
 # PhotostimResponsesAnalysisNonTargets.run__plot_sig_responders_traces(plot_baseline_responders=False)
@@ -23,9 +23,7 @@ PhotostimResponsesAnalysisNonTargets.run__summed_responses(rerun=0)
 
 # %% plotting total nontargets photostim (and fakestim) responses vs. total targets photostim (and fakestim) responses
 
-expobj: alloptical = import_expobj(exp_prep='RL108 t-009')
-
-expobj.PhotostimResponsesNonTargets.plot__exps_summed_nontargets_vs_summed_targets(expobj=expobj)
+PhotostimResponsesAnalysisNonTargets.plot__exps_summed_nontargets_vs_summed_targets()
 
 
 

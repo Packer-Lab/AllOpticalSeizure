@@ -1,7 +1,7 @@
 import sys
 
 from _analysis_._ClassPhotostimResponseQuantificationNonTargets import PhotostimResponsesNonTargetsResults, \
-    PhotostimResponsesQuantificationNonTargets
+    PhotostimResponsesQuantificationNonTargets, FakeStimsQuantification
 
 sys.path.extend(['/home/pshah/Documents/code/AllOpticalSeizure', '/home/pshah/Documents/code/AllOpticalSeizure'])
 
@@ -434,6 +434,7 @@ class PhotostimResponsesAnalysisNonTargets(PhotostimResponsesQuantificationNonTa
 
             network_summed_activity = list(np.sum(self.adata.X, axis=0))  #: summed responses across all nontargets at each photostim trial
 
+            assert 'nontargets fakestim_responses' in self.adata.layers, 'nontargets fakestim_responses not found in adata layers'
             fakestims_network_summed_activity = list(np.sum(self.adata.layers['nontargets fakestim_responses'], axis=0))  #: summed responses across all nontargets at each photostim trial
 
             # add as var to anndata
@@ -474,8 +475,10 @@ class PhotostimResponsesAnalysisNonTargets(PhotostimResponsesQuantificationNonTa
 
         if 'pre' in self.expobj_exptype:
             summed_responses = list(np.sum(expobj.PhotostimResponsesSLMTargets.adata.X, axis=0))
+            summed_fakestims_responses = list(np.sum(expobj.PhotostimResponsesSLMTargets.adata.layers['fakestim_responses'], axis=0))
 
             expobj.PhotostimResponsesSLMTargets.adata.add_variable(var_name='summed_response_SLMtargets', values=summed_responses)
+            expobj.PhotostimResponsesSLMTargets.adata.add_variable(var_name='summed_fakestims_response_SLMtargets', values=summed_fakestims_responses)
 
             # return summed_responses
 
@@ -486,59 +489,93 @@ class PhotostimResponsesAnalysisNonTargets(PhotostimResponsesQuantificationNonTa
 
             # return summed_responses
 
+        expobj.save()
+
     @staticmethod
     def run__summed_responses(rerun=0):
         @Utils.run_for_loop_across_exps(run_pre4ap_trials=1, run_post4ap_trials=0, allow_rerun=rerun, skip_trials=PhotostimResponsesQuantificationNonTargets.EXCLUDE_TRIALS)
         def _run__summed_responses(**kwargs):
             expobj: Union[alloptical, Post4ap] = kwargs['expobj']
             expobj.PhotostimResponsesNonTargets._calculate__summed_responses()
-            # expobj.PhotostimResponsesNonTargets._calculate__summed_responses_targets(expobj=expobj)
+            expobj.PhotostimResponsesNonTargets._calculate__summed_responses_targets(expobj=expobj)
+            assert 'summed_response_SLMtargets' in expobj.PhotostimResponsesSLMTargets.adata.var_keys(), 'summed responses SLM targets not saving in adata.var...'
             expobj.save()
 
         _run__summed_responses()
 
     # 3.0.1) plot - scatter plot of total nontargets evoked responses on trial vs. total responses of SLM targets on same trial - not zscored - individual trials, includes nontargets fakestims
-    def plot__exps_summed_nontargets_vs_summed_targets(self, expobj: alloptical):
+    @staticmethod
+    @Utils.run_for_loop_across_exps(run_pre4ap_trials=1, run_post4ap_trials=0, set_cache=0, skip_trials=FakeStimsQuantification.EXCLUDE_TRIALS + PhotostimResponsesQuantificationNonTargets.EXCLUDE_TRIALS,)
+                                    # run_trials=PhotostimResponsesQuantificationNonTargets.TEST_TRIALS)
+    def plot__exps_summed_nontargets_vs_summed_targets(**kwargs):
+        expobj: alloptical = kwargs['expobj']
 
+        self = expobj.PhotostimResponsesNonTargets
         assert 'pre' in self.expobj_exptype, 'need to change code for post4ap experiments.'
         targets_responses_summed = expobj.PhotostimResponsesSLMTargets.adata.var['summed_response_SLMtargets']
+        targets_fakestims_responses_summed = expobj.PhotostimResponsesSLMTargets.adata.var['summed_fakestims_response_SLMtargets']
         nontargets_responses_summed = self.adata.var['total_nontargets_responses']
         nontargets_fakestims_responses_summed = self.adata.var['total_nontargets_fakestims_responses']
 
 
-        fig, axs = plt.subplots(nrows=2, ncols=1, figsize=(8, 8))
+        # fig, axs = plt.subplots(nrows=2, ncols=1, figsize=(8, 8))
+        # 
+        # # photostim trials total targets vs. total non targets
+        # slope, intercept, r_value, p_value, std_err = stats.linregress(x=targets_responses_summed,
+        #                                                                y=nontargets_responses_summed)
+        # regression_y = slope * targets_responses_summed + intercept
+        # fig, axs[0] = pplot.make_general_scatter(x_list=[targets_responses_summed],
+        #                                          y_data=[nontargets_responses_summed], figsize=(6.5, 4), fig=fig, ax=axs[0],
+        #                                          s=50,facecolors=['orange'], edgecolors=['black'], lw=1, alpha=1,
+        #                                          x_labels=['total targets activity (dFF summed)'], y_labels=['total network activity (dF/stdF summed)'],
+        #                                          legend_labels=[f'photostim trials - $R^2$: {r_value ** 2:.2e}, p = {p_value**2:.2e}'], show=False)
+        # axs[0].plot(targets_responses_summed, regression_y, color='black')
+        # 
+        # # fake stim trials
+        # slope, intercept, r_value, p_value, std_err = stats.linregress(x=targets_fakestims_responses_summed,
+        #                                                                y=nontargets_fakestims_responses_summed)
+        # regression_y = slope * targets_fakestims_responses_summed + intercept
+        # 
+        # pplot.make_general_scatter(x_list = [targets_fakestims_responses_summed],
+        #                            y_data=[nontargets_fakestims_responses_summed], s=50, facecolors=['gray'],
+        #                            edgecolors=['black'], lw=1, alpha=1,
+        #                            x_labels=['total targets activity (dFF summed)'], y_labels=['total network activity (dF/stdF summed)'],
+        #                            fig = fig, ax= axs[1], legend_labels=[f'fakestim trials - $R^2$: {r_value**2:.2e}, p = {p_value**2:.2e}'], show = False)
+        # axs[1].plot(targets_fakestims_responses_summed, regression_y, color = 'black')
+        # 
+        # axs[0].grid(True)
+        # axs[1].grid(True)
+        # fig.suptitle(f'Total responses for all trials {expobj.t_series_name}', wrap = True)
+        # fig.tight_layout(pad=0.6)
+        # fig.show()
+        
+        
+        fig, axs = plt.subplots(figsize=(8, 4))
 
         # photostim trials total targets vs. total non targets
         slope, intercept, r_value, p_value, std_err = stats.linregress(x=targets_responses_summed,
                                                                        y=nontargets_responses_summed)
-        regression_y = slope * targets_responses_summed + intercept
-        fig, axs[0] = pplot.make_general_scatter(x_list=[targets_responses_summed],
-                                                 y_data=[nontargets_responses_summed], figsize=(6.5, 4), fig=fig, ax=axs[0],
-                                                 s=50,facecolors=['orange'], edgecolors=['black'], lw=1, alpha=1,
-                                                 x_labels=['total targets activity (dFF summed)'], y_labels=['total network activity (dF/stdF summed)'],
-                                                 legend_labels=[f'photostim trials - $R^2$: {r_value ** 2:.2e}, p = {p_value**2:.2e}'], show=False)
-        axs[0].plot(targets_responses_summed, regression_y, color='black')
+        photostimregression_y = slope * targets_responses_summed + intercept
+        axs.scatter(targets_responses_summed, nontargets_responses_summed ,color = 'orange', s=50, label=f'photostim trials - $R^2$: {r_value ** 2:.2e}, p = {p_value**2:.2e}')
+
 
         # fake stim trials
-        slope, intercept, r_value, p_value, std_err = stats.linregress(x=targets_responses_summed,
+        slope, intercept, r_value, p_value, std_err = stats.linregress(x=targets_fakestims_responses_summed,
                                                                        y=nontargets_fakestims_responses_summed)
-        regression_y = slope * targets_responses_summed + intercept
+        fakestimregression_y = slope * targets_fakestims_responses_summed + intercept
+        axs.scatter(targets_fakestims_responses_summed, nontargets_fakestims_responses_summed, color='gray', s=50, label=f'fakestim trials - $R^2$: {r_value ** 2:.2e}, p = {p_value**2:.2e}')
 
-        pplot.make_general_scatter(x_list = [targets_responses_summed],
-                                   y_data=[nontargets_fakestims_responses_summed], s=50, facecolors=['gray'],
-                                   edgecolors=['black'], lw=1, alpha=1, x_labels=['total targets activity'],
-                                   y_labels=['total network activity'], fig = fig, ax= axs[1], legend_labels=[f'fakestim trials - $R^2$: {r_value**2:.2e}, p = {p_value**2:.2e}'], show = False)
-        axs[1].plot(targets_responses_summed, regression_y, color = 'black')
-
-        axs[0].grid(True)
-        axs[1].grid(True)
-        axs[0].set_ylim([-15, 15])
-        axs[1].set_ylim([-15, 15])
-        axs[0].set_xlim([-7, 7])
-        axs[1].set_xlim([-7, 7])
-        fig.suptitle('Total z-scored (to baseline) responses for all trials, all exps', wrap = True)
+        axs.set_xlabel('total targets activity (dFF summed)')
+        axs.set_ylabel('total network activity (dF/stdF summed)')
+        axs.plot(targets_responses_summed, photostimregression_y, color='orange')
+        axs.plot(targets_fakestims_responses_summed, fakestimregression_y, color = 'black')
+        axs.grid(True)
+        axs.grid(True)
+        axs.legend(bbox_to_anchor=(1.04, 1), loc="upper left")
+        fig.suptitle(f'Total responses for all trials {expobj.t_series_name}', wrap = True)
         fig.tight_layout(pad=0.6)
         fig.show()
+
 
 
     # 3.1) plot - scatter plot of total evoked activity on trial vs. total activity of SLM targets on same trial - split up based on groups - z scored - all trials
