@@ -1635,6 +1635,16 @@ class alloptical(TwoPhotonImaging):
         """
         print('\n\- Collecting peri-stim traces [AllOpticalMain version] ...')
 
+        # set stim frames to analyse
+        if stim_frames is None or stim_frames == 'all':
+            stim_timings = expobj.stim_start_frames
+        elif stim_frames == 'fake_stims':
+            stim_timings = expobj.fake_stim_start_frames
+        else:
+            stim_timings = stim_frames
+
+        stim_frames = stim_timings
+
         # collect photostim timed average dff traces of photostim targets
         dff_traces = []
         dff_traces_avg = []
@@ -1655,8 +1665,7 @@ class alloptical(TwoPhotonImaging):
         for cell in cells_to_analyse:
             # print('considering cell # %s' % cell)
             cell_idx = expobj.cell_id.index(cell)
-            flu_trials = [expobj.raw[cell_idx][stim - expobj.pre_stim: stim + expobj.stim_duration_frames + expobj.post_stim]
-                          for stim in stim_frames]
+            flu_trials = [expobj.raw[cell_idx][stim - expobj.PhotostimAnalysisSlmTargets.pre_stim_fr: stim + expobj.stim_duration_frames + expobj.PhotostimAnalysisSlmTargets.post_stim_fr] for stim in stim_frames]
 
             dff_trace = Utils.normalize_dff(expobj.raw[cell_idx],
                                             threshold_pct=50)  # normalize trace (dFF) to mean of whole trace
@@ -1677,6 +1686,7 @@ class alloptical(TwoPhotonImaging):
             # elif normalize_to == 'whole-trace':
             mean_ = np.mean(expobj.raw[cell_idx])
             # dfstdf_trace = (expobj.raw[cell_idx] - np.mean(expobj.raw[cell_idx])) / np.std(expobj.raw[cell_idx], ddof=1)  # normalize trace (dFstdF) to std of whole trace
+
             if mean_ < 10:  # filter cells with low s2p neu corrected mean trace value
                 expobj.s2p_nontargets_exclude.append(cell)
 
@@ -1689,14 +1699,21 @@ class alloptical(TwoPhotonImaging):
                 flu_dff_ = [dff_trace[stim - expobj.PhotostimAnalysisSlmTargets.pre_stim_fr: stim + expobj.stim_duration_frames + expobj.PhotostimAnalysisSlmTargets.post_stim_fr] for stim in stim_frames]
 
                 for i in range(len(flu_dff_)):
-                    trace = flu_dff_[i]
-                    mean_pre = np.mean(trace[0:expobj.PhotostimAnalysisSlmTargets.pre_stim_fr])
-                    trace_dff = trace - mean_pre  # correct dFF of this trial to mean of pre-stim dFF
-                    std_pre = np.std(trace[0:expobj.PhotostimAnalysisSlmTargets.pre_stim_fr], ddof=1)
-                    dFstdF = trace_dff / std_pre  # normalize dFF of this trial by std of pre-stim dFF
 
-                    flu_dff.append(trace_dff)
-                    flu_dfstdF.append(dFstdF)
+                    if len(flu_dff_[i]) < expobj.PhotostimAnalysisSlmTargets.pre_stim_fr + expobj.stim_duration_frames + expobj.PhotostimAnalysisSlmTargets.post_stim_fr:
+                        Warning(f'excluding trace for stim frame: {stim_frames[i]}, becuase it is too short.')
+                    else:
+                        trace = flu_dff_[i]
+                        mean_pre = np.mean(trace[0:expobj.PhotostimAnalysisSlmTargets.pre_stim_fr])
+                        trace_dff = trace - mean_pre  # correct dFF of this trial to mean of pre-stim dFF
+                        std_pre = np.std(trace[0:expobj.PhotostimAnalysisSlmTargets.pre_stim_fr], ddof=1)
+                        dFstdF = trace_dff / std_pre  # normalize dFF of this trial by std of pre-stim dFF
+
+                        flu_dff.append(trace_dff)
+                        flu_dfstdF.append(dFstdF)
+
+
+
 
             # elif normalize_to == 'pre-stim':
             #     flu_dff = []
@@ -1757,14 +1774,24 @@ class alloptical(TwoPhotonImaging):
             expobj.dff_traces_nontargets_avg = dff_traces_avg
             # return dff_traces_nontargets, dff_traces_nontargets_avg
         elif normalize_to == 'pre-stim' or normalize_to == 'whole-trace':
-            expobj.dff_traces_nontargets = np.asarray(dff_traces)
-            expobj.dff_traces_nontargets_avg = np.asarray([i for i in dff_traces_avg])
-            expobj.dfstdF_traces_nontargets = np.asarray(dfstdF_traces)
-            expobj.dfstdF_traces_nontargets_avg = np.asarray([i for i in dfstdF_traces_avg])
-            expobj.raw_traces_nontargets = np.asarray(raw_traces)
-            expobj.raw_traces_nontargets_avg = np.asarray([i for i in raw_traces_avg])
+            if stim_frames == expobj.fake_stim_start_frames:
+                expobj.fakestims_dff_traces_nontargets = np.asarray(dff_traces)
+                expobj.fakestims_dff_traces_nontargets_avg = np.asarray([i for i in dff_traces_avg])
+                expobj.fakestims_dfstdF_traces_nontargets = np.asarray(dfstdF_traces)
+                expobj.fakestims_dfstdF_traces_nontargets_avg = np.asarray([i for i in dfstdF_traces_avg])
+
+            else:
+                expobj.dff_traces_nontargets = np.asarray(dff_traces)
+                expobj.dff_traces_nontargets_avg = np.asarray([i for i in dff_traces_avg])
+                expobj.dfstdF_traces_nontargets = np.asarray(dfstdF_traces)
+                expobj.dfstdF_traces_nontargets_avg = np.asarray([i for i in dfstdF_traces_avg])
+                expobj.raw_traces_nontargets = np.asarray(raw_traces)
+                expobj.raw_traces_nontargets_avg = np.asarray([i for i in raw_traces_avg])
             print(f'\nCompleted collecting pre to post stim traces -- normalized to pre-stim period or maybe whole-trace -- for '
-                  f'{expobj.dff_traces_nontargets.shape[0]} cells, {expobj.dff_traces_nontargets.shape[1]} stims, {expobj.dff_traces_nontargets.shape[2]} frames')
+                  f'{np.asarray(dff_traces).shape[0]} cells, {np.asarray(dff_traces).shape[1]} stims, {np.asarray(dff_traces).shape[2]} frames')
+
+
+
 
         print('\nFinished collecting peri-stim traces ')
 
@@ -1788,7 +1815,8 @@ class alloptical(TwoPhotonImaging):
             plt.plot(np.mean(expobj.dfstdF_traces_nontargets[cell], axis=0), color='black')
             plt.show()
 
-    def _runWilcoxonsTest(expobj, array1, array2):
+    @staticmethod
+    def _runWilcoxonsTest(array1, array2):
 
         # check if the two distributions of flu values (pre/post) are different
         assert array1.shape == array2.shape, 'shapes for expobj.pre_array and expobj.post_array need to be the same for wilcoxon test'

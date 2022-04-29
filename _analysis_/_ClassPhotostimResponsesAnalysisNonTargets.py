@@ -49,13 +49,20 @@ class PhotostimResponsesAnalysisNonTargets(PhotostimResponsesQuantificationNonTa
         - try plotting without z scoring first for one experiment - and send to Adam on slack.
             - this will allow you to put all the photostim and fakestim responses on one plot (as two separate groups)
                     - then for z scoring you should probably consider z scoring to baseline if you really get to this point....
-        [ ] create fake sham stim frames - halfway in between each stim trial
-        [ ] collect photostim targets fake sham responses
-            [ ] plot peri-stim avg
-            [ ] plot response magnitude
+        [x] create fake sham stim frames - halfway in between each stim trial
+        [x] collect photostim targets fake sham responses
+            [x] plot peri-stim avg
+            [x] plot response magnitude
 
 
         [ ] collect nontargets fake sham responses
+            [ ] test for significant responders
+            [ ] add to collect__sig_responders_responses_type1, for baseline
+            [ ] plug into plot peri-stim avg for photostim_nontargets analysis
+
+        [ ] make graph of peri-stim avg with pos significant responders, neg significant responders, fakestims, and nonresponders
+
+        [ ] scatter plot of total nontargets activity and total targets activity
 
 
     """
