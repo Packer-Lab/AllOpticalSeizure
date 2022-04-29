@@ -57,8 +57,8 @@ class PhotostimResponsesAnalysisNonTargets(PhotostimResponsesQuantificationNonTa
 
         [x] collect nontargets fake sham responses
             [x] test for significant responders - came out nil as expected for all nontargets
-            [ ] plug into plot peri-stim avg for photostim_nontargets analysis
-                [ ] make graph of peri-stim avg with pos significant responders, neg significant responders, fakestims, and nonresponders
+            [x] plug into plot peri-stim avg for photostim_nontargets analysis
+                [ipr] make graph of peri-stim avg with pos significant responders, neg significant responders, fakestims, and nonresponders
 
         [ ] scatter plot of total nontargets activity and total targets activity
 
@@ -146,12 +146,12 @@ class PhotostimResponsesAnalysisNonTargets(PhotostimResponsesQuantificationNonTa
         if not same_plot:
             fig, axs = plt.subplots(figsize=(4, 6), nrows=2, ncols=1)
         else:
-            fig, axs = plt.subplots(figsize=(3, 3))
+            fig, axs = plt.subplots(figsize=(5, 5))
 
         if len(pos_avg_traces[0]) > 0:
             ax = axs if same_plot else axs[0]
             plot_periphotostim_avg2(dataset=pos_avg_traces, fps=expobj.fps,
-                                    legend_labels=[f"pos. cells: {len(pos_avg_traces[0])}"],
+                                    # legend_labels=[f"pos. cells: {len(pos_avg_traces[0])}"],
                                     colors=['red'], avg_with_std=True,
                                     suptitle=f"{expobj.t_series_name} - {expobj.exptype} - +ve sig. responders {title}",
                                     ylim=[-0.3, 0.8], fig=fig, ax=ax,
@@ -163,7 +163,7 @@ class PhotostimResponsesAnalysisNonTargets(PhotostimResponsesQuantificationNonTa
         if len(neg_avg_traces[0]) > 0:
             ax = axs if same_plot else axs[1]
             plot_periphotostim_avg2(dataset=neg_avg_traces, fps=expobj.fps,
-                                    legend_labels=[f"neg. cells: {len(neg_avg_traces[0])}"],
+                                    # legend_labels=[f"neg. cells: {len(neg_avg_traces[0])}"],
                                     colors=['blue'], avg_with_std=True,
                                     title=f"{expobj.t_series_name} - {expobj.exptype} - -ve sig. responders {title}",
                                     ylim=[-0.6, 0.5], fig=fig, ax=ax,
@@ -175,21 +175,23 @@ class PhotostimResponsesAnalysisNonTargets(PhotostimResponsesQuantificationNonTa
 
         if len(fake_avg_traces[0]) > 0:
             ax = axs if same_plot else None
-            plot_periphotostim_avg2(dataset=neg_avg_traces, fps=expobj.fps,
-                                    legend_labels=[f"neg. cells: {len(neg_avg_traces[0])}"],
-                                    colors=['blue'], avg_with_std=True,
-                                    title=f"{expobj.t_series_name} - {expobj.exptype} - -ve sig. responders {title}",
+            plot_periphotostim_avg2(dataset=fake_avg_traces, fps=expobj.fps,
+                                    # legend_labels=[f"neg. cells: {len(neg_avg_traces[0])}"],
+                                    colors=['black'], avg_with_std=True,
+                                    title=f"{expobj.t_series_name} - {expobj.exptype}",
                                     ylim=[-0.6, 0.5], fig=fig, ax=ax,
                                     pre_stim_sec=PhotostimAnalysisSlmTargets._pre_stim_sec,
                                     show=False, fontsize='small', figsize=(4, 4),
                                     xlabel='Time (secs)', ylabel='Avg. Stim. Response (dF/stdF)')
 
+        if same_plot:
+            axs.set_xlim([-1, 2.5])
 
         fig.show()
 
 
     @staticmethod
-    @Utils.run_for_loop_across_exps(run_pre4ap_trials=1, run_post4ap_trials=1, set_cache=0, skip_trials=PhotostimResponsesQuantificationNonTargets.EXCLUDE_TRIALS,)
+    @Utils.run_for_loop_across_exps(run_pre4ap_trials=1, run_post4ap_trials=0, set_cache=0, skip_trials=PhotostimResponsesQuantificationNonTargets.EXCLUDE_TRIALS,)
                                     # run_trials=PhotostimResponsesQuantificationNonTargets.TEST_TRIALS)
     def run__plot_sig_responders_traces(plot_baseline_responders=False, **kwargs):
         """
@@ -200,7 +202,7 @@ class PhotostimResponsesAnalysisNonTargets(PhotostimResponsesQuantificationNonTa
         if 'pre' in expobj.exptype:
             pos_avg_traces = [expobj.PhotostimResponsesNonTargets.pre4ap_possig_responders_avgtraces_baseline]
             neg_avg_traces = [expobj.PhotostimResponsesNonTargets.pre4ap_negsig_responders_avgtraces_baseline]
-            fake_avg_traces = [expobj.fakestims_dfstdF_traces_nontargets]
+            fake_avg_traces = [np.mean(expobj.fakestims_dfstdF_traces_nontargets, axis=1)]
             expobj.PhotostimResponsesNonTargets.plot__pos_neg_responders_traces(expobj=expobj,
                                                                                 pos_avg_traces=pos_avg_traces,
                                                                                 neg_avg_traces=neg_avg_traces,
@@ -420,6 +422,7 @@ class PhotostimResponsesAnalysisNonTargets(PhotostimResponsesQuantificationNonTa
 
 
     # 3) ANALYSIS OF TOTAL EVOKED RESPONSES OF NETWORK #################################################################
+    # 3.0) calculate - scatter plot of total evoked activity on trial vs. total activity of SLM targets on same trial - split up based on groups
     def _calculate__summed_responses(self):
         """calculate total responses of significantly responding nontargets."""
         if 'pre' in self.expobj_exptype:
@@ -431,10 +434,13 @@ class PhotostimResponsesAnalysisNonTargets(PhotostimResponsesQuantificationNonTa
 
             network_summed_activity = list(np.sum(self.adata.X, axis=0))  #: summed responses across all nontargets at each photostim trial
 
+            fakestims_network_summed_activity = list(np.sum(self.adata.layers['nontargets fakestim_responses'], axis=0))  #: summed responses across all nontargets at each photostim trial
+
             # add as var to anndata
             self.adata.add_variable(var_name='summed_response_pos_baseline', values=summed_response_positive_baseline)
             self.adata.add_variable(var_name='summed_response_neg_baseline', values=summed_response_negative_baseline)
             self.adata.add_variable(var_name='total_nontargets_responses', values=network_summed_activity)
+            self.adata.add_variable(var_name='total_nontargets_fakestims_responses', values=fakestims_network_summed_activity)
 
         elif 'post' in self.expobj_exptype:
             network_summed_activity = list(np.sum(self.adata.X, axis=0))
@@ -491,7 +497,51 @@ class PhotostimResponsesAnalysisNonTargets(PhotostimResponsesQuantificationNonTa
 
         _run__summed_responses()
 
-    # 3.1) plot - scatter plot of total evoked activity on trial vs. total activity of SLM targets on same trial - split up based on groups
+    # 3.0.1) plot - scatter plot of total nontargets evoked responses on trial vs. total responses of SLM targets on same trial - not zscored - individual trials, includes nontargets fakestims
+    def plot__exps_summed_nontargets_vs_summed_targets(self, expobj: alloptical):
+
+        assert 'pre' in self.expobj_exptype, 'need to change code for post4ap experiments.'
+        targets_responses_summed = expobj.PhotostimResponsesSLMTargets.adata.var['summed_response_SLMtargets']
+        nontargets_responses_summed = self.adata.var['total_nontargets_responses']
+        nontargets_fakestims_responses_summed = self.adata.var['total_nontargets_fakestims_responses']
+
+
+        fig, axs = plt.subplots(nrows=2, ncols=1, figsize=(8, 8))
+
+        # photostim trials total targets vs. total non targets
+        slope, intercept, r_value, p_value, std_err = stats.linregress(x=targets_responses_summed,
+                                                                       y=nontargets_responses_summed)
+        regression_y = slope * targets_responses_summed + intercept
+        fig, axs[0] = pplot.make_general_scatter(x_list=[targets_responses_summed],
+                                                 y_data=[nontargets_responses_summed], figsize=(6.5, 4), fig=fig, ax=axs[0],
+                                                 s=50,facecolors=['orange'], edgecolors=['black'], lw=1, alpha=1,
+                                                 x_labels=['total targets activity (dFF summed)'], y_labels=['total network activity (dF/stdF summed'],
+                                                 legend_labels=[f'photostim trials - $R^2$: {r_value ** 2:.2e}, p = {p_value**2:.2e}'], show=False)
+        axs[0].plot(targets_responses_summed, regression_y, color='black')
+
+        # fake stim trials
+        slope, intercept, r_value, p_value, std_err = stats.linregress(x=targets_responses_summed,
+                                                                       y=nontargets_fakestims_responses_summed)
+        regression_y = slope * targets_responses_summed + intercept
+
+        pplot.make_general_scatter(x_list = [targets_responses_summed],
+                                   y_data=[nontargets_responses_summed], s=50, facecolors=['gray'],
+                                   edgecolors=['black'], lw=1, alpha=1, x_labels=['total targets activity'],
+                                   y_labels=['total network activity'], fig = fig, ax= axs[1], legend_labels=[f'fakestim trials - $R^2$: {r_value**2:.2e}, p = {p_value**2:.2e}'], show = False)
+        axs[1].plot(targets_responses_summed, regression_y, color = 'black')
+
+        axs[0].grid(True)
+        axs[1].grid(True)
+        axs[0].set_ylim([-15, 15])
+        axs[1].set_ylim([-15, 15])
+        axs[0].set_xlim([-7, 7])
+        axs[1].set_xlim([-7, 7])
+        fig.suptitle('Total z-scored (to baseline) responses for all trials, all exps', wrap = True)
+        fig.tight_layout(pad=0.6)
+        fig.show()
+
+
+    # 3.1) plot - scatter plot of total evoked activity on trial vs. total activity of SLM targets on same trial - split up based on groups - z scored - all trials
     @staticmethod
     def plot__summed_activity_vs_targets_activity(results: PhotostimResponsesNonTargetsResults):
 
@@ -504,7 +554,8 @@ class PhotostimResponsesAnalysisNonTargets(PhotostimResponsesQuantificationNonTa
                                              'targets': expobj.PhotostimResponsesSLMTargets.adata.var['summed_response_SLMtargets'],
                                              'non-targets_pos': expobj.PhotostimResponsesNonTargets.adata.var['summed_response_pos_baseline'],
                                              'non-targets_neg': expobj.PhotostimResponsesNonTargets.adata.var['summed_response_neg_baseline'],
-                                             'all_non-targets': expobj.PhotostimResponsesNonTargets.adata.var['total_nontargets_responses']})
+                                             'all_non-targets': expobj.PhotostimResponsesNonTargets.adata.var['total_nontargets_responses'],
+                                             'all_nontargets_fakestims': expobj.PhotostimResponsesNonTargets.adata.var['total_nontargets_fakestims_responses']})
 
             # z scoring of all collected responses
             network_summed_activity_zsco = np.round(stats.zscore(summed_responses['all_non-targets'], ddof=1), 3)
@@ -573,7 +624,7 @@ class PhotostimResponsesAnalysisNonTargets(PhotostimResponsesQuantificationNonTa
             network_summed_activity_zsco = np.round(stats.zscore(summed_responses['all_non-targets'], ddof=1), 3)
             targets_summed_activity_zsco = np.round(stats.zscore(summed_responses['targets'], ddof=1), 3)
 
-            # z scoring to mean and std of baseline group of same experiment
+            # z scoring to mean and std of BASELINE group of same experiment
             from _exp_metainfo_.exp_metainfo import AllOpticalExpsToAnalyze
             for map_key, expid in AllOpticalExpsToAnalyze.trial_maps['post'].items():  # find the pre4ap exp that matches with the current post4ap experiment
                 if expobj.t_series_name in expid:

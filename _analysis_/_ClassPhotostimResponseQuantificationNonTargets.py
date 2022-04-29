@@ -1,5 +1,6 @@
 import sys
 
+
 sys.path.extend(['/home/pshah/Documents/code/AllOpticalSeizure', '/home/pshah/Documents/code/AllOpticalSeizure'])
 
 import os
@@ -325,7 +326,7 @@ class PhotostimResponsesQuantificationNonTargets(Quantification):
 
             # BUNCH OF PLOT TO TEST HOW RESPONSES ARE BEING STATISTICALLY FILTERED:
             fig, axs = plt.subplots(figsize=(4, 3.5))
-            [axs.plot(expobj.fakestims_dfstdF_traces_nontargets[cell]) for cell in range(self.fakestims.pre_array.shape[0])]
+            [axs.plot(expobj.fakestims_dfstdF_traces_nontargets[cell], color='gray', alpha=0.2) for cell in range(self.fakestims.pre_array.shape[0])]
             axs.plot(np.mean(expobj.fakestims_dfstdF_traces_nontargets, axis=0), color='black')
 
             fig.suptitle(f"{expobj.t_series_name} - nontargets fakestims responses")
@@ -943,9 +944,12 @@ if __name__ == '__main__':
 
     # running fake stims alloptical analysis for non targets here currently: (apr 28 2022)
     # main.run__methods()
-    main.run__fakestims_processing()
+    # main.run__fakestims_processing()
 
+    from _analysis_._ClassPhotostimResponsesAnalysisNonTargets import PhotostimResponsesAnalysisNonTargets
+    PhotostimResponsesAnalysisNonTargets.run__plot_sig_responders_traces(plot_baseline_responders=False)
 
+    PhotostimResponsesAnalysisNonTargets.plot__exps_summed_nontargets_vs_summed_targets
 
     # main.run__create_anndata()
 
