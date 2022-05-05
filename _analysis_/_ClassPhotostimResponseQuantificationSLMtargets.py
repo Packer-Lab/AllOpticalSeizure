@@ -80,7 +80,7 @@ class PhotostimResponsesQuantificationSLMtargets(Quantification):
 
     # 0.1) SET FAKE-SHAM PHOTOSTIMULATION TRIALS
     @staticmethod
-    def _set_fake_sham_photostim(expobj: Union[alloptical, Post4ap], plot=False):
+    def plot__fake_sham_photostim(expobj: Union[alloptical, Post4ap], plot=False):
         """set fake sham stim frames - halfway in between each stim trial"""
         fake_stims = expobj.fake_stim_start_frames
         if plot:
@@ -185,7 +185,7 @@ class PhotostimResponsesQuantificationSLMtargets(Quantification):
                         ' [*2.3] ')
 
 
-    def collect_fake_photostim_responses_exp(self, expobj: alloptical):
+    def collect_fake_photostim_responses_exp(self, expobj: Union[alloptical, Post4ap]):
         """
         Uses fake photostim stim timing frames. JUST IMPLEMENTED FOR BASELINE STIMS FOR NOW.
         runs calculations of photostim responses, calculating reliability of photostim of slm targets,
@@ -331,7 +331,7 @@ class PhotostimResponsesQuantificationSLMtargets(Quantification):
 
     # 2.0.1) add to anndata - fake photostim responses as layer
     def add_fakestim_adata_layer(self):
-        assert 'pre' in self.expobj_exptype, 'fakestim responses currenty only available for pre4ap baseline trials'
+        # assert 'pre' in self.expobj_exptype, 'fakestim responses currenty only available for pre4ap baseline trials'
         fakestim_responses = self.fake_responses_SLMtargets_tracedFF
         self.adata.add_layer(layer_name='fakestim_responses', data=fakestim_responses)
 
@@ -470,7 +470,7 @@ class PhotostimResponsesQuantificationSLMtargets(Quantification):
 
     # 3.1) Plotting mean photostim response amplitude across experiments
     @staticmethod
-    @Utils.run_for_loop_across_exps(run_pre4ap_trials=1, run_post4ap_trials=0, allow_rerun=True, set_cache=False)
+    @Utils.run_for_loop_across_exps(run_pre4ap_trials=0, run_post4ap_trials=1, allow_rerun=True, set_cache=False)
     def allexps_plot_photostim_responses_magnitude(**kwargs):
         expobj: alloptical = kwargs['expobj']
         expobj.PhotostimResponsesSLMTargets.plot_photostim_responses_magnitude(expobj=expobj, stims='all')

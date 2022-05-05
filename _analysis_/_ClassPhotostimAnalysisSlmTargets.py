@@ -465,6 +465,28 @@ def plot_peristim_avg_fakestims():
 
             fig.show()
 
+    for trial in pj.flattenOnce(AllOpticalExpsToAnalyze.post_4ap_trials):
+        # if trial in PhotostimResponsesQuantificationSLMtargets.TEST_TRIALS:
+        #     plot = True
+        # else:
+        #     plot = False
+
+        if plot:
+            from _utils_.io import import_expobj
+            expobj: Post4ap = import_expobj(exp_prep=trial)
+            trace_snippets_avg = np.mean(expobj.fake_SLMTargets_tracedFF_stims_dff[:, expobj.fake_stim_idx_outsz], axis=1)
+            print(trace_snippets_avg.shape[1])
+            fig, axs = plt.subplots(nrows=2, ncols=1, figsize=[4, 8])
+            # aoplot.plot_periphotostim_avg2(dataset=trace_snippets_avg, fps=expobj.fps, pre_stim_sec=expobj.PhotostimAnalysisSlmTargets._pre_stim_sec, title=f'{expobj.t_series_name}')
+            from _utils_.alloptical_plotting import plot_periphotostim_avg
+            plot_periphotostim_avg(arr=trace_snippets_avg, pre_stim_sec=1.0, post_stim_sec=3.0,
+                                          title=f'{expobj.t_series_name} - interictal', expobj=expobj,
+                                          x_label='Time (secs)', y_label='dFF response', fig=fig, ax=axs[0],
+                                          show=False)
+
+            fig.show()
+
+
 
 # 1.2) plot photostim avg of all targets from each experiment
 def plot__avg_photostim_dff_allexps():

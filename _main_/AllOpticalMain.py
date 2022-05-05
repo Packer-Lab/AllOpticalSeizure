@@ -246,7 +246,7 @@ class alloptical(TwoPhotonImaging):
                                         stims: Union[list, str] = None):
         """
         primary function to measure the dFF and dF/setdF trace SNIPPETS for photostimulated targets.
-        :param stims:
+        :param stims: stim frames
         :param targets_idx: integer for the index of target cell to process
         :param subselect_cells: ls of cells to subset from the overall set of traces (use in place of targets_idx if desired)
         :param pre_stim: number of frames to use as pre-stim
@@ -1349,7 +1349,7 @@ class alloptical(TwoPhotonImaging):
         :param stims_to_use: ls of stims to retrieve photostim trial dFF responses, use "fake_stims" to evaluate fake_stims
         :return:
         """
-        print(f'\n---------- Calculating {process} stim evoked responses (of SLM targets) [.1] ---------- ')
+        print(f'\n---------- Calculating {process} stim evoked responses (of SLM targets) for {stims_to_use} [.1] ---------- ')
         if stims_to_use is None or stims_to_use == 'all':
             stims_to_use = range(len(self.stim_start_frames))
             stims_idx = [self.stim_start_frames.index(stim) for stim in stims_to_use]
@@ -1403,7 +1403,7 @@ class alloptical(TwoPhotonImaging):
                 else:
                     raise AttributeError('no SLMTargets_tracedFF_stims_dff attr. [1.3]')
         else:
-            raise ValueError('need to assign to process: dF/prestimF or dF/stdF or trace dFF')
+            raise ValueError('need to assign to process: dF/prestimF or dF/stdF or delta(trace_dFF)')
 
         # initializing pandas df that collects responses of stimulations
         if hasattr(self, 'SLMTargets_stims_dff'):
@@ -1415,7 +1415,7 @@ class alloptical(TwoPhotonImaging):
                     print('debug here')
             df = pd.DataFrame(d, index=range(targets_traces.shape[0]))  # population dataframe
         else:
-            AttributeError('no SLMTargets_stims_dff attr. [1.2]')
+            raise AttributeError('no SLMTargets_stims_dff attr. [1.2]')
 
         # initializing pandas df for binary showing of success and fails (1= success, 0= fails)
         hits_slmtargets = {}  # to be converted in pandas df below - will contain 1 for every success stim, 0 for non success stims

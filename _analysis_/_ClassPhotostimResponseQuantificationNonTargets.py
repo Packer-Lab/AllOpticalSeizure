@@ -59,10 +59,42 @@ class FakeStimsQuantification(Quantification):
                       'RL109 t-013'  # these both have negative going targets traces in the fake stims period
                       ]
 
-    def __init__(self, expobj):
+    def __init__(self, expobj: Union[alloptical, Post4ap]):
         super().__init__(expobj=expobj)
         self.diff_responses_array: np.ndarray = None  #: array of responses calculated for nontargets from fakestims
+        self.out_sz = None
+        self.in_sz = None
+        
+        if 'post' in expobj.exptype:
 
+            def fake_stims_outsz(self: Post4ap):
+                """fake stim frames - all stims out of sz imaging frames"""
+                stims = []
+                idxs = []
+                for idx, stim in enumerate(self.fake_stim_start_frames):
+                    if stim not in self.seizure_frames:
+                        stims.append(stim)
+                        idxs.append(idx)
+
+                # return [stim for stim in self.fake_stim_start_frames if stim in self.im_idx_outsz]
+                return idxs, stims
+            expobj.fake_stims_outsz, expobj.fake_stim_idx_outsz = fake_stims_outsz(self=expobj)
+
+            def fake_stims_insz(self: Post4ap):
+                """fake stim frames - all stims out of sz imaging frames"""
+                stims = []
+                idxs = []
+                for idx, stim in enumerate(self.fake_stim_start_frames):
+                    if stim in self.seizure_frames:
+                        stims.append(stim)
+                        idxs.append(idx)
+
+                # return [stim for stim in self.fake_stim_start_frames if stim in self.im_idx_insz]
+                return idxs, stims
+            expobj.fake_stims_insz, expobj.fake_stim_idx_insz = fake_stims_insz(self=expobj)
+            expobj.save()
+
+            
 
 class PhotostimResponsesQuantificationNonTargets(Quantification):
     """class for quanitying responses of non-targeted cells at photostimulation trials.
@@ -103,8 +135,8 @@ class PhotostimResponsesQuantificationNonTargets(Quantification):
 
     REPRESENTATIVE_TRIALS = ['PS07 t-007', 'PS07 t-011']
     TEST_TRIALS = [
-                    'RL108 t-009'
-                   # 'RL108 t-013'
+                    # 'RL108 t-009'
+                   'RL108 t-013'
                     ]
 
     def __init__(self, results, expobj: Union[alloptical, Post4ap]):
@@ -132,6 +164,9 @@ class PhotostimResponsesQuantificationNonTargets(Quantification):
 
         self.fakestims: FakeStimsQuantification = FakeStimsQuantification(expobj=expobj)
         self.fakestims_allopticalAnalysisNontargets(expobj=expobj)
+        # self.fakestims_allopticalAnalysisNontargets_split_post4ap(expobj=expobj)
+        self.add_fakestims_anndata()
+
 
     @staticmethod
     @Utils.run_for_loop_across_exps(run_pre4ap_trials=0, run_post4ap_trials=0, allow_rerun=1, skip_trials=EXCLUDE_TRIALS,
@@ -145,12 +180,15 @@ class PhotostimResponsesQuantificationNonTargets(Quantification):
         expobj.save()
 
     @staticmethod
-    @Utils.run_for_loop_across_exps(run_pre4ap_trials=1, run_post4ap_trials=0, allow_rerun=0, skip_trials=EXCLUDE_TRIALS,)
+    @Utils.run_for_loop_across_exps(run_pre4ap_trials=0, run_post4ap_trials=1, allow_rerun=1, skip_trials=EXCLUDE_TRIALS,)
                                     # run_trials=TEST_TRIALS)
     def run__fakestims_processing(**kwargs):
         expobj: alloptical = kwargs['expobj']
+
+        expobj.PhotostimResponsesNonTargets.fix_anndata(expobj=expobj)
         expobj.PhotostimResponsesNonTargets.fakestims = FakeStimsQuantification(expobj=expobj)
         expobj.PhotostimResponsesNonTargets.fakestims_allopticalAnalysisNontargets(expobj=expobj)
+        # if 'post' in expobj.exptype: expobj.PhotostimResponsesNonTargets.fakestims_allopticalAnalysisNontargets_split_post4ap(expobj=expobj)
         expobj.PhotostimResponsesNonTargets.add_fakestims_anndata()
         expobj.save()
 
@@ -284,12 +322,81 @@ class PhotostimResponsesQuantificationNonTargets(Quantification):
         print(
             '-------------------------------------------------------------------------------------------------------------\n\n')
 
-    def fakestims_allopticalAnalysisNontargets(self, expobj: alloptical):
-        #### TODO DEVELOPING CODE FOR COLLECTING FAKESTIM TRACES FOR NONTARGETS!!!!!!!
+    def fakestims_allopticalAnalysisNontargets(self, expobj: Union[alloptical, Post4ap]):
+        # COLLECTING FAKESTIM TRACES RESPONSES FOR NONTARGETS
 
-        if 'pre' in expobj.exptype:
-            expobj._makeNontargetsStimTracesArray(stim_frames=expobj.fake_stim_start_frames, normalize_to='pre-stim',
-                                                  save=False, plot=False)
+        fake_stims_quant = self.fakestims
+
+        expobj._makeNontargetsStimTracesArray(stim_frames=expobj.fake_stim_start_frames, normalize_to='pre-stim',
+                                              save=False, plot=False)
+
+        pre_stim_fr = self.pre_stim_fr
+        pre_stim_response_frames_window = self.pre_stim_response_frames_window
+        post_stim_response_frames_window = self.post_stim_response_frames_window
+
+        # create parameters, slices, and subsets for making pre-stim and post-stim arrays to use in stats comparison
+        # test_period = expobj.pre_stim_response_window_msec / 1000  # sec
+        # expobj.test_frames = int(expobj.fps * test_period)  # test period for stats
+        self.fakestims.pre_stim_frames_test = np.s_[pre_stim_fr - pre_stim_response_frames_window: pre_stim_fr]
+        stim_end = pre_stim_fr + expobj.stim_duration_frames
+        self.fakestims.post_stim_frames_test = np.s_[stim_end: stim_end + post_stim_response_frames_window]
+
+        # mean pre and post stimulus (within post-stim response window) flu trace values for all cells, all trials
+        # analysis_array = expobj.dff_traces_nontargets  # NOTE: USING dFF TRACES
+        analysis_array = expobj.fakestims_dfstdF_traces_nontargets  # NOTE: USING dF/stdF TRACES
+        fake_stims_quant.pre_array = np.mean(analysis_array[:, :, self.fakestims.pre_stim_frames_test], axis=1)  # [cells x prestim frames] (avg'd taken over all stims)
+        fake_stims_quant.post_array = np.mean(analysis_array[:, :, self.fakestims.post_stim_frames_test], axis=1)  # [cells x poststim frames] (avg'd taken over all stims)
+
+        fake_stims_quant.post_array_responses = np.mean(analysis_array[:, :, self.fakestims.post_stim_frames_test],
+                                              axis=2)  #: response post- stim for all cells, stims: [cells x stims]
+        fake_stims_quant.pre_array_responses = np.mean(analysis_array[:, :, self.fakestims.pre_stim_frames_test],
+                                             axis=2)  #: response post- stim for all cells, stims: [cells x stims]
+
+        fake_stims_quant.diff_responses_array = fake_stims_quant.post_array_responses - fake_stims_quant.pre_array_responses
+
+        fake_stims_quant.wilcoxons = expobj._runWilcoxonsTest(array1=fake_stims_quant.pre_array,
+                                                    array2=fake_stims_quant.post_array)  #: wilcoxon  value across all cells: len = # cells
+
+        # fdr_alpa = 0.20
+        fake_stims_quant.sig_units = expobj._sigTestAvgResponse_nontargets(p_vals=fake_stims_quant.wilcoxons, alpha=self.nontargets_sig_fdr_alpha)
+        fake_stims_quant.sig_responders = [cell for idx, cell in enumerate(expobj.s2p_nontargets_analysis) if fake_stims_quant.sig_units[idx]]
+
+        # expobj.save() if save else None
+
+        avg_post = np.mean(fake_stims_quant.post_array_responses, axis=1)
+        avg_pre = np.mean(fake_stims_quant.pre_array_responses, axis=1)
+
+        # PLOT TO TEST HOW RESPONSES ARE BEING STATISTICALLY FILTERED:
+        # fig, axs = plt.subplots(figsize=(4, 3.5))
+        # [axs.plot(expobj.fakestims_dfstdF_traces_nontargets[cell], color='gray', alpha=0.2) for cell in range(self.fakestims.pre_array.shape[0])]
+        # axs.plot(np.mean(expobj.fakestims_dfstdF_traces_nontargets, axis=0), color='black')
+        #
+        # fig.suptitle(f"{expobj.t_series_name} - nontargets fakestims responses")
+        # fig.show()
+
+        self.fakestims = fake_stims_quant
+
+        print('\n** FIN. * fake stims allopticalAnalysisNontargets * %s %s **** ' % (
+            expobj.metainfo['animal prep.'], expobj.metainfo['trial']))
+        print(
+            '-------------------------------------------------------------------------------------------------------------\n\n')
+
+    def fakestims_allopticalAnalysisNontargets_split_post4ap(self, expobj: Union[alloptical, Post4ap]):
+        #### CODE FOR COLLECTING FAKESTIM TRACES FOR NONTARGETS in INTERICTAL!
+
+        if 'post' in expobj.exptype:
+
+            for i in ['out_sz', 'in_sz']:
+
+                if i == 'out_sz':
+                    fake_stims_quant = self.fakestims.out_sz
+                    expobj._makeNontargetsStimTracesArray(stim_frames=expobj.fake_stims_outsz, normalize_to='pre-stim',
+                                                          save=False, plot=False)
+                else:
+                    fake_stims_quant = self.fakestims.in_sz
+                    expobj._makeNontargetsStimTracesArray(stim_frames=expobj.fake_stims_insz, normalize_to='pre-stim',
+                                                          save=False, plot=False)
+
 
             pre_stim_fr = self.pre_stim_fr
             pre_stim_response_frames_window = self.pre_stim_response_frames_window
@@ -305,27 +412,24 @@ class PhotostimResponsesQuantificationNonTargets(Quantification):
             # mean pre and post stimulus (within post-stim response window) flu trace values for all cells, all trials
             # analysis_array = expobj.dff_traces_nontargets  # NOTE: USING dFF TRACES
             analysis_array = expobj.fakestims_dfstdF_traces_nontargets  # NOTE: USING dF/stdF TRACES
-            self.fakestims.pre_array = np.mean(analysis_array[:, :, self.fakestims.pre_stim_frames_test], axis=1)  # [cells x prestim frames] (avg'd taken over all stims)
-            self.fakestims.post_array = np.mean(analysis_array[:, :, self.fakestims.post_stim_frames_test], axis=1)  # [cells x poststim frames] (avg'd taken over all stims)
+            fake_stims_quant.pre_array = np.mean(analysis_array[:, :, self.fakestims.pre_stim_frames_test], axis=1)  # [cells x prestim frames] (avg'd taken over all stims)
+            fake_stims_quant.post_array = np.mean(analysis_array[:, :, self.fakestims.post_stim_frames_test], axis=1)  # [cells x poststim frames] (avg'd taken over all stims)
 
-            self.fakestims.post_array_responses = np.mean(analysis_array[:, :, self.fakestims.post_stim_frames_test],
-                                                  axis=2)  #: response post- stim for all cells, stims: [cells x stims]
-            self.fakestims.pre_array_responses = np.mean(analysis_array[:, :, self.fakestims.pre_stim_frames_test],
-                                                 axis=2)  #: response post- stim for all cells, stims: [cells x stims]
+            fake_stims_quant.post_array_responses = np.mean(analysis_array[:, :, self.fakestims.post_stim_frames_test], axis=2)  #: response post- stim for all cells, stims: [cells x stims]
+            fake_stims_quant.pre_array_responses = np.mean(analysis_array[:, :, self.fakestims.pre_stim_frames_test], axis=2)  #: response post- stim for all cells, stims: [cells x stims]
 
-            self.fakestims.diff_responses_array = self.fakestims.post_array_responses - self.fakestims.pre_array_responses
+            fake_stims_quant.diff_responses_array = fake_stims_quant.post_array_responses - fake_stims_quant.pre_array_responses
 
-            self.fakestims.wilcoxons = expobj._runWilcoxonsTest(array1=self.fakestims.pre_array,
-                                                        array2=self.fakestims.post_array)  #: wilcoxon  value across all cells: len = # cells
+            fake_stims_quant.wilcoxons = expobj._runWilcoxonsTest(array1=fake_stims_quant.pre_array, array2=fake_stims_quant.post_array)  #: wilcoxon  value across all cells: len = # cells
 
             # fdr_alpa = 0.20
-            self.fakestims.sig_units = expobj._sigTestAvgResponse_nontargets(p_vals=self.fakestims.wilcoxons, alpha=self.nontargets_sig_fdr_alpha)
-            self.fakestims.sig_responders = [cell for idx, cell in enumerate(expobj.s2p_nontargets_analysis) if self.fakestims.sig_units[idx]]
+            fake_stims_quant.sig_units = expobj._sigTestAvgResponse_nontargets(p_vals=fake_stims_quant.wilcoxons, alpha=self.nontargets_sig_fdr_alpha)
+            fake_stims_quant.sig_responders = [cell for idx, cell in enumerate(expobj.s2p_nontargets_analysis) if fake_stims_quant.sig_units[idx]]
 
             # expobj.save() if save else None
 
-            avg_post = np.mean(self.fakestims.post_array_responses, axis=1)
-            avg_pre = np.mean(self.fakestims.pre_array_responses, axis=1)
+            avg_post = np.mean(fake_stims_quant.post_array_responses, axis=1)
+            avg_pre = np.mean(fake_stims_quant.pre_array_responses, axis=1)
 
             # PLOT TO TEST HOW RESPONSES ARE BEING STATISTICALLY FILTERED:
             # fig, axs = plt.subplots(figsize=(4, 3.5))
@@ -334,7 +438,8 @@ class PhotostimResponsesQuantificationNonTargets(Quantification):
             #
             # fig.suptitle(f"{expobj.t_series_name} - nontargets fakestims responses")
             # fig.show()
-
+            if i == 'out_sz': self.fakestims.out_sz = fake_stims_quant
+            else: self.fakestims.in_sz = fake_stims_quant
 
         print('\n** FIN. * fake stims allopticalAnalysisNontargets * %s %s **** ' % (
             expobj.metainfo['animal prep.'], expobj.metainfo['trial']))
@@ -479,6 +584,7 @@ class PhotostimResponsesQuantificationNonTargets(Quantification):
         assert new_var.name in self.adata.var_keys()
         self.adata.var[new_var.name] = new_var
 
+
     @staticmethod
     def run__fix_anndata(rerun=0):
         @Utils.run_for_loop_across_exps(run_post4ap_trials=1, allow_rerun=rerun, skip_trials=PhotostimResponsesQuantificationNonTargets.EXCLUDE_TRIALS)
@@ -488,8 +594,9 @@ class PhotostimResponsesQuantificationNonTargets(Quantification):
             expobj.save()
         __fix_anndata()
 
+
     def add_fakestims_anndata(self):
-        assert 'pre' in self.expobj_exptype, 'fakestim nontargets responses currenty only available for pre4ap baseline trials'
+        # assert 'pre' in self.expobj_exptype, 'fakestim nontargets responses currenty only available for pre4ap baseline trials'
         print(f"\- adding fakestims responses to anndata array.")
         fakestim_responses = self.fakestims.diff_responses_array
         self.adata.add_layer(layer_name='nontargets fakestim_responses', data=fakestim_responses)
@@ -947,12 +1054,12 @@ if __name__ == '__main__':
 
     # running fake stims alloptical analysis for non targets here currently: (apr 28 2022)
     # main.run__methods()
-    # main.run__fakestims_processing()
+    main.run__fakestims_processing()
 
-    from _analysis_._ClassPhotostimResponsesAnalysisNonTargets import PhotostimResponsesAnalysisNonTargets
-    PhotostimResponsesAnalysisNonTargets.run__plot_sig_responders_traces(plot_baseline_responders=False)
+    # from _analysis_._ClassPhotostimResponsesAnalysisNonTargets import PhotostimResponsesAnalysisNonTargets
+    # PhotostimResponsesAnalysisNonTargets.run__plot_sig_responders_traces(plot_baseline_responders=False)
 
-    PhotostimResponsesAnalysisNonTargets.plot__exps_summed_nontargets_vs_summed_targets
+    # PhotostimResponsesAnalysisNonTargets.plot__exps_summed_nontargets_vs_summed_targets
 
     # main.run__create_anndata()
 

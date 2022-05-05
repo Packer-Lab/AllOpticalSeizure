@@ -423,7 +423,7 @@ class PhotostimResponsesAnalysisNonTargets(PhotostimResponsesQuantificationNonTa
 
     # 3) ANALYSIS OF TOTAL EVOKED RESPONSES OF NETWORK #################################################################
     # 3.0) calculate - scatter plot of total evoked activity on trial vs. total activity of SLM targets on same trial - split up based on groups
-    def _calculate__summed_responses(self):
+    def _calculate__summed_responses(self, expobj: Union[alloptical, Post4ap]):
         """calculate total responses of significantly responding nontargets."""
         if 'pre' in self.expobj_exptype:
             __positive_responders_responses = self.adata.X[self.adata.obs['positive_responder_baseline']]
@@ -446,6 +446,10 @@ class PhotostimResponsesAnalysisNonTargets(PhotostimResponsesQuantificationNonTa
         elif 'post' in self.expobj_exptype:
             network_summed_activity = list(np.sum(self.adata.X, axis=0))
 
+            assert 'nontargets fakestim_responses' in self.adata.layers, 'nontargets fakestim_responses not found in adata layers'
+            fakestims_network_summed_activity = list(np.sum(self.adata.layers['nontargets fakestim_responses'], axis=0))  #: summed responses across all nontargets at each photostim trial
+
+
             # interictal
             __positive_responders_responses = self.adata.X[self.adata.obs['positive_responder_interictal']]
             summed_response_positive_interictal = list(np.sum(__positive_responders_responses, axis=0))  #: summed response across all positive responders at each photostim trial
@@ -453,6 +457,7 @@ class PhotostimResponsesAnalysisNonTargets(PhotostimResponsesQuantificationNonTa
             __negative_responders_responses = self.adata.X[self.adata.obs['negative_responder_interictal']]
             summed_response_negative_interictal = list(np.sum(__negative_responders_responses, axis=0))  #: summed response across all negative responders at each photostim trial
 
+            fakestims_network_summed_activity_interictal = list(np.sum(self.adata.layers['nontargets fakestim_responses'][:, expobj.stim_idx_outsz], axis=0))  #: summed responses across all nontargets at each photostim trial
 
             # ictal
             __positive_responders_responses = self.adata.X[self.adata.obs['positive_responder_ictal']]
@@ -460,6 +465,8 @@ class PhotostimResponsesAnalysisNonTargets(PhotostimResponsesQuantificationNonTa
 
             __negative_responders_responses = self.adata.X[self.adata.obs['negative_responder_ictal']]
             summed_response_negative_ictal = list(np.sum(__negative_responders_responses, axis=0))  #: summed response across all negative responders at each photostim trial
+
+            fakestims_network_summed_activity_ictal = list(np.sum(self.adata.layers['nontargets fakestim_responses'][:, expobj.stim_idx_insz], axis=0))  #: summed responses across all nontargets at each photostim trial
 
             # add as var to anndata
             self.adata.add_variable(var_name='total_nontargets_responses', values=network_summed_activity)
@@ -484,8 +491,10 @@ class PhotostimResponsesAnalysisNonTargets(PhotostimResponsesQuantificationNonTa
 
         elif 'post' in self.expobj_exptype:
             summed_responses = list(np.sum(expobj.PhotostimResponsesSLMTargets.adata.X, axis=0))
+            summed_fakestims_responses = list(np.sum(expobj.PhotostimResponsesSLMTargets.adata.layers['fakestim_responses'], axis=0))
 
             expobj.PhotostimResponsesSLMTargets.adata.add_variable(var_name='summed_response_SLMtargets', values=summed_responses)
+            expobj.PhotostimResponsesSLMTargets.adata.add_variable(var_name='summed_fakestims_response_SLMtargets', values=summed_fakestims_responses)
 
             # return summed_responses
 
@@ -493,10 +502,11 @@ class PhotostimResponsesAnalysisNonTargets(PhotostimResponsesQuantificationNonTa
 
     @staticmethod
     def run__summed_responses(rerun=0):
-        @Utils.run_for_loop_across_exps(run_pre4ap_trials=1, run_post4ap_trials=0, allow_rerun=rerun, skip_trials=PhotostimResponsesQuantificationNonTargets.EXCLUDE_TRIALS)
+        @Utils.run_for_loop_across_exps(run_pre4ap_trials=0, run_post4ap_trials=1, allow_rerun=rerun, skip_trials=PhotostimResponsesQuantificationNonTargets.EXCLUDE_TRIALS,
+                                        run_trials=PhotostimResponsesQuantificationNonTargets.TEST_TRIALS)
         def _run__summed_responses(**kwargs):
             expobj: Union[alloptical, Post4ap] = kwargs['expobj']
-            expobj.PhotostimResponsesNonTargets._calculate__summed_responses()
+            expobj.PhotostimResponsesNonTargets._calculate__summed_responses(expobj=expobj)
             expobj.PhotostimResponsesNonTargets._calculate__summed_responses_targets(expobj=expobj)
             assert 'summed_response_SLMtargets' in expobj.PhotostimResponsesSLMTargets.adata.var_keys(), 'summed responses SLM targets not saving in adata.var...'
             expobj.save()
@@ -505,18 +515,24 @@ class PhotostimResponsesAnalysisNonTargets(PhotostimResponsesQuantificationNonTa
 
     # 3.0.1) plot - scatter plot of total nontargets evoked responses on trial vs. total responses of SLM targets on same trial - not zscored - individual trials, includes nontargets fakestims
     @staticmethod
-    @Utils.run_for_loop_across_exps(run_pre4ap_trials=1, run_post4ap_trials=0, set_cache=0, skip_trials=FakeStimsQuantification.EXCLUDE_TRIALS + PhotostimResponsesQuantificationNonTargets.EXCLUDE_TRIALS,)
+    @Utils.run_for_loop_across_exps(run_pre4ap_trials=0, run_post4ap_trials=1, set_cache=0, skip_trials=FakeStimsQuantification.EXCLUDE_TRIALS + PhotostimResponsesQuantificationNonTargets.EXCLUDE_TRIALS,)
                                     # run_trials=PhotostimResponsesQuantificationNonTargets.TEST_TRIALS)
     def plot__exps_summed_nontargets_vs_summed_targets(**kwargs):
-        expobj: alloptical = kwargs['expobj']
+        expobj: Union[alloptical, Post4ap] = kwargs['expobj']
 
         self = expobj.PhotostimResponsesNonTargets
-        assert 'pre' in self.expobj_exptype, 'need to change code for post4ap experiments.'
-        targets_responses_summed = expobj.PhotostimResponsesSLMTargets.adata.var['summed_response_SLMtargets']
-        targets_fakestims_responses_summed = expobj.PhotostimResponsesSLMTargets.adata.var['summed_fakestims_response_SLMtargets']
-        nontargets_responses_summed = self.adata.var['total_nontargets_responses']
-        nontargets_fakestims_responses_summed = self.adata.var['total_nontargets_fakestims_responses']
-
+        if 'pre' in self.expobj_exptype:
+            targets_responses_summed = expobj.PhotostimResponsesSLMTargets.adata.var['summed_response_SLMtargets']
+            targets_fakestims_responses_summed = expobj.PhotostimResponsesSLMTargets.adata.var['summed_fakestims_response_SLMtargets']
+            nontargets_responses_summed = self.adata.var['total_nontargets_responses']
+            nontargets_fakestims_responses_summed = self.adata.var['total_nontargets_fakestims_responses']
+        elif 'post' in self.expobj_exptype:
+            targets_responses_summed = expobj.PhotostimResponsesSLMTargets.adata.var['summed_response_SLMtargets'][expobj.stim_idx_outsz]
+            targets_fakestims_responses_summed = expobj.PhotostimResponsesSLMTargets.adata.var['summed_fakestims_response_SLMtargets'][expobj.fake_stim_idx_outsz]
+            nontargets_responses_summed = self.adata.var['total_nontargets_responses'][expobj.stim_idx_outsz]
+            nontargets_fakestims_responses_summed = self.adata.var['total_nontargets_fakestims_responses'][expobj.fake_stim_idx_outsz]
+        else:
+            raise AttributeError()
 
         # fig, axs = plt.subplots(nrows=2, ncols=1, figsize=(8, 8))
         # 

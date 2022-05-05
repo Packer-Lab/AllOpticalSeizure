@@ -36,10 +36,11 @@ def run__collect_photostim_responses_exp(**kwargs):
     expobj.PhotostimResponsesSLMTargets.collect_photostim_responses_exp(expobj=expobj)
     expobj.save()
 
-@Utils.run_for_loop_across_exps(run_pre4ap_trials=1, run_post4ap_trials=0, allow_rerun=1)#, run_trials=main.TEST_TRIALS)
+@Utils.run_for_loop_across_exps(run_pre4ap_trials=0, run_post4ap_trials=1, allow_rerun=1)#, run_trials=main.TEST_TRIALS)
 def run__collect_fake_photostim_responses_exp(**kwargs):
     expobj: alloptical = kwargs['expobj']
     expobj.PhotostimResponsesSLMTargets.collect_fake_photostim_responses_exp(expobj=expobj)
+    # print(expobj.PhotostimResponsesSLMTargets.fake_responses_SLMtargets_tracedFF.shape)
     expobj.save()
 
 @Utils.run_for_loop_across_exps(run_pre4ap_trials=1, run_post4ap_trials=1, allow_rerun=0)
@@ -62,7 +63,7 @@ def run__add_stim_group_anndata(**kwargs):
     expobj.save()\
 
 
-@Utils.run_for_loop_across_exps(run_pre4ap_trials=1, run_post4ap_trials=0, allow_rerun=1)#, run_trials=main.TEST_TRIALS)
+@Utils.run_for_loop_across_exps(run_pre4ap_trials=0, run_post4ap_trials=1, allow_rerun=1)#, run_trials=main.TEST_TRIALS)
 def run__add_fakestim_adata_layer(**kwargs):
     expobj: alloptical = kwargs['expobj']
     expobj.PhotostimResponsesSLMTargets.add_fakestim_adata_layer()

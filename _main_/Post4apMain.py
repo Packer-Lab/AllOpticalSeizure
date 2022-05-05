@@ -25,6 +25,8 @@ class Post4ap(alloptical):
 
     def __init__(self, paths, metainfo, stimtype, discard_all):
 
+        self.fake_stims_insz = None  #: fake stim frames idx - all stims out of sz imaging frames
+        self.fake_stims_outsz = None  #: fake stim frames idx - all stims out of sz imaging frames
         from _analysis_._ClassNonTargetsSzInvasionSpatial import NonTargetsSzInvasionSpatial
         self.NonTargetsSzInvasionSpatial: NonTargetsSzInvasionSpatial = None
         from _analysis_._ClassTargetsSzInvasionSpatial_codereview import TargetsSzInvasionSpatial_codereview
@@ -139,6 +141,26 @@ class Post4ap(alloptical):
     @property
     def stim_idx_insz(self):
         return [idx for idx, stim in enumerate(self.stim_start_frames) if stim in self.stims_in_sz]
+
+    # @property
+    # def fake_stims_outsz(self):
+    #     """fake stim frames - all stims out of sz imaging frames"""
+    #     return [stim for stim in self.fake_stim_start_frames if stim in self.im_idx_outsz]
+    #
+    # @property
+    # def fake_stim_idx_outsz(self):
+    #     """fake stim frames idx - all stims out of sz imaging frames"""
+    #     return [idx for idx, stim in enumerate(self.fake_stim_start_frames) if stim in self.fake_stims_outsz]
+    #
+    # @property
+    # def fake_stims_insz(self):
+    #     """fake stim frames - all stims in sz imaging frames"""
+    #     return [stim for stim in self.fake_stim_start_frames if stim in self.im_idx_insz]
+    #
+    # @property
+    # def fake_stim_idx_insz(self):
+    #     """fake stim frames idx - all stims out of sz imaging frames"""
+    #     return [idx for idx, stim in enumerate(self.fake_stim_start_frames) if stim in self.fake_stims_insz]
 
     @property
     def im_idx_insz(self):
@@ -1018,6 +1040,143 @@ class Post4ap(alloptical):
         for i in range(self.numSeizures):
             pass
 
+    def get_SLMTarget_responses_dff(self, process: str, threshold=10, stims_to_use: Union[list, str] = None):
+        """
+        calculations of dFF responses to photostimulation of SLM Targets. Includes calculating reliability of slm targets,
+        saving success stim locations, and saving stim response magnitudes as pandas dataframe.
+
+        :param process:
+        :param threshold: dFF threshold above which a response for a photostim trial is considered a success.
+        :param stims_to_use: ls of stims to retrieve photostim trial dFF responses, use "fake_stims" to evaluate fake_stims
+        :return:
+        """
+        print(f'\n---------- Calculating {process} stim evoked responses (of SLM targets) [.1] ---------- ')
+        if stims_to_use is None or stims_to_use == 'all':
+            stims_to_use = range(len(self.stim_start_frames))
+            stims_idx = [self.stim_start_frames.index(stim) for stim in stims_to_use]
+        elif stims_to_use is not None and stims_to_use != 'fake_stims':
+            stims_idx = [self.stim_start_frames.index(stim) for stim in stims_to_use]
+        elif stims_to_use == 'fake_stims':  # use fake stim start frames
+            stims_idx = range(len(self.fake_stim_start_frames))
+        else:
+            raise AttributeError('no stims set to analyse [1.1]')
+
+
+        # # set stims to use to collect stim trace snippets for targets - actual or fake photostims
+        if process == 'delta(trace_dFF)':
+            if stims_to_use == 'fake_stims':
+                if hasattr(self, 'fake_SLMTargets_tracedFF_stims_dff'):
+                    targets_traces = self.fake_SLMTargets_tracedFF_stims_dff
+                    threshold = 10
+                else:
+                    self.fake_SLMTargets_tracedFF_stims_dff, self.fake_SLMTargets_tracedFF_stims_dffAvg, self.fake_SLMTargets_tracedFF_stims_dfstdF, \
+                    self.fake_SLMTargets_tracedFF_stims_dfstdF_avg, self.fake_SLMTargets_tracedFF_stims_raw, self.fake_SLMTargets_tracedFF_stims_rawAvg = \
+                        self.get_alltargets_stim_traces_norm(process='delta(trace_dFF)', pre_stim=self.pre_stim,
+                                                             post_stim=self.post_stim, stims='fake_stims')
+                    targets_traces = self.fake_SLMTargets_tracedFF_stims_dff
+                    threshold = 10
+
+                # if hasattr(self, 'fake_SLMTargets_tracedFF_stims_dff_outsz'):
+                #     targets_traces_outsz = self.fake_SLMTargets_tracedFF_stims_dff_outsz
+                #     targets_traces_insz = self.fake_SLMTargets_tracedFF_stims_dff_insz
+                #     threshold = 10
+                # else:
+                #     self.fake_SLMTargets_tracedFF_stims_dff_outsz, self.fake_SLMTargets_tracedFF_stims_dffAvg_outsz, \
+                #     self.fake_SLMTargets_tracedFF_stims_dfstdF_outsz, self.fake_SLMTargets_tracedFF_stims_dfstdF_avg_outsz, \
+                #     self.fake_SLMTargets_tracedFF_stims_raw_outsz, self.fake_SLMTargets_tracedFF_stims_rawAvg_outsz = \
+                #         self.get_alltargets_stim_traces_norm(process='delta(trace_dFF)', pre_stim=self.PhotostimAnalysisSlmTargets.pre_stim_fr,
+                #                                              post_stim=self.PhotostimAnalysisSlmTargets.post_stim_fr, stims=self.fake_stims_outsz)
+                #
+                #     self.fake_SLMTargets_tracedFF_stims_dff_insz, self.fake_SLMTargets_tracedFF_stims_dffAvg_insz, \
+                #     self.fake_SLMTargets_tracedFF_stims_dfstdF_insz, self.fake_SLMTargets_tracedFF_stims_dfstdF_avg_insz, \
+                #     self.fake_SLMTargets_tracedFF_stims_raw_insz, self.fake_SLMTargets_tracedFF_stims_rawAvg_insz = \
+                #         self.get_alltargets_stim_traces_norm(process='delta(trace_dFF)', pre_stim=self.PhotostimAnalysisSlmTargets.pre_stim_fr,
+                #                                              post_stim=self.PhotostimAnalysisSlmTargets.post_stim_fr, stims=self.fake_stims_insz)
+                #
+                #     targets_traces_outsz = self.fake_SLMTargets_tracedFF_stims_dff_outsz
+                #     targets_traces_insz = self.fake_SLMTargets_tracedFF_stims_dff_insz
+                #     threshold = 10
+
+            else:
+                if hasattr(self, 'SLMTargets_tracedFF_stims_dff_outsz'):
+
+                    if type(self.SLMTargets_tracedFF_stims_dff) == list:
+                        self.SLMTargets_tracedFF_stims_dff, self.SLMTargets_tracedFF_stims_dffAvg, self.SLMTargets_tracedFF_stims_dfstdF, \
+                        self.SLMTargets_tracedFF_stims_dfstdF_avg, self.SLMTargets_tracedFF_stims_raw, self.SLMTargets_tracedFF_stims_rawAvg = \
+                            self.get_alltargets_stim_traces_norm(process='delta(trace_dFF)', pre_stim=self.pre_stim,
+                                                                 post_stim=self.post_stim, stims='all')
+
+                        self.SLMTargets_tracedFF_stims_dff_outsz, self.SLMTargets_tracedFF_stims_dffAvg_outsz, self.SLMTargets_tracedFF_stims_dfstdF_outsz, \
+                        self.SLMTargets_tracedFF_stims_dfstdF_avg_outsz, self.SLMTargets_tracedFF_stims_raw_outsz, self.SLMTargets_tracedFF_stims_rawAvg_outsz = \
+                            self.get_alltargets_stim_traces_norm(process='delta(trace_dFF)',
+                                                                   pre_stim=self.PhotostimAnalysisSlmTargets.pre_stim_fr,
+                                                                   post_stim=self.PhotostimAnalysisSlmTargets.post_stim_fr,
+                                                                   stims=self.stims_out_sz)
+
+                        self.SLMTargets_tracedFF_stims_dff_insz, self.SLMTargets_tracedFF_stims_dffAvg_insz, self.SLMTargets_tracedFF_stims_dfstdF_insz, \
+                        self.SLMTargets_tracedFF_stims_dfstdF_avg_insz, self.SLMTargets_tracedFF_stims_raw_insz, self.SLMTargets_tracedFF_stims_rawAvg_insz = \
+                            self.get_alltargets_stim_traces_norm(process='delta(trace_dFF)',
+                                                                   pre_stim=self.PhotostimAnalysisSlmTargets.pre_stim_fr,
+                                                                   post_stim=self.PhotostimAnalysisSlmTargets.post_stim_fr,
+                                                                   stims=self.stims_in_sz)
+
+                    targets_traces = self.SLMTargets_tracedFF_stims_dff
+                    targets_traces_outsz = self.SLMTargets_tracedFF_stims_dff_outsz
+                    targets_traces_insz = self.SLMTargets_tracedFF_stims_dff_insz
+
+                    threshold = 10
+                else:
+                    raise AttributeError('no SLMTargets_tracedFF_stims_dff attr. [1.3]')
+        else:
+            raise ValueError('can only assign process to: delta(trace_dFF)')
+
+        # initializing pandas df that collects responses of stimulations
+        if hasattr(self, 'SLMTargets_stims_dff'):
+            d = {}
+            for stim in stims_idx:
+                try:
+                    d[stim] = [None] * targets_traces.shape[0]
+                except:
+                    print('debug here')
+            df = pd.DataFrame(d, index=range(targets_traces.shape[0]))  # population dataframe
+        else:
+            raise AttributeError('no SLMTargets_stims_dff attr. [1.2]')
+
+        # initializing pandas df for binary showing of success and fails (1= success, 0= fails)
+        hits_slmtargets = {}  # to be converted in pandas df below - will contain 1 for every success stim, 0 for non success stims
+        for stim in stims_idx:
+            hits_slmtargets[stim] = [None] * len(self.slmtargets_ids)  # start with 0 for all stims
+        hits_slmtargets_df = pd.DataFrame(hits_slmtargets, index=self.slmtargets_ids)  # population dataframe
+
+        reliability_slmtargets = {}  # dict will be used to store the reliability results for each targeted cell
+
+        # dFF response traces for successful photostim trials
+        traces_dff_successes = {}
+        cell_ids = df.index
+        for target_idx in range(len(cell_ids)):
+            traces_dff_successes_l = []
+            success = 0
+            counter = 0
+            responses = []
+            for stim_idx in stims_idx:
+                dff_trace = targets_traces[target_idx][stim_idx]
+                response_result = np.mean(dff_trace[self.pre_stim + self.stim_duration_frames + 1:
+                                                    self.pre_stim + self.stim_duration_frames + self.post_stim_response_frames_window])  # calculate the dF over pre-stim mean F response within the response window
+                responses.append(round(response_result, 2))
+                if response_result >= threshold:
+                    success += 1
+                    hits_slmtargets_df.loc[target_idx, stim_idx] = 1
+                    traces_dff_successes_l.append(dff_trace)
+                else:
+                    hits_slmtargets_df.loc[target_idx, stim_idx] = 0
+
+                df.loc[target_idx, stim_idx] = response_result
+                counter += 1
+            reliability_slmtargets[target_idx] = round(success / counter * 100., 2)
+            traces_dff_successes[target_idx] = np.array(traces_dff_successes_l)
+
+        return reliability_slmtargets, hits_slmtargets_df, df, traces_dff_successes
+
     # nontargets stim arrays
     def _makeNontargetsStimTracesArray(expobj, stim_frames, normalize_to='pre-stim', save=True, plot=False):
         """
@@ -1044,25 +1203,29 @@ class Post4ap(alloptical):
         assert 'in/out sz' in expobj.NonTargetsSzInvasionSpatial.adata.layers
         if stim_frames == expobj.stims_out_sz:
             for cell in expobj.s2p_nontargets:
-                stim_cells_analyse[cell] = expobj.stim_idx_outsz
+                stim_cells_analyse[cell] = expobj.stims_out_sz
         elif stim_frames == expobj.stims_in_sz:
             for cell in expobj.s2p_nontargets:
                 if str(cell) in expobj.NonTargetsSzInvasionSpatial.adata.obs['original_index']:  # note that some nontarget cells are excluded in Nontargets Sz Invasion Spatial . adata - not totally sure yet why - but should be able to find out by looking at that code
                     cell_idx = list(expobj.NonTargetsSzInvasionSpatial.adata.obs['original_index']).index(cell)
                     stimidx_to_analyse_for_cell = np.where(expobj.NonTargetsSzInvasionSpatial.adata.layers['in/out sz'][cell_idx, :] == 1)[0]
-                    stim_cells_analyse[cell] = stimidx_to_analyse_for_cell
+                    stim_cells_analyse[cell] = expobj.stim_start_frames[stimidx_to_analyse_for_cell]
         elif stim_frames == expobj.stim_start_frames:
             for cell in expobj.s2p_nontargets:
-                stim_cells_analyse[cell] = expobj.stims_idx
+                stim_cells_analyse[cell] = expobj.stim_start_frames
+        elif stim_frames == expobj.fake_stim_start_frames:
+            for cell in expobj.s2p_nontargets:
+                stim_cells_analyse[cell] = expobj.fake_stim_start_frames
+
+
 
         expobj.s2p_nontargets_exclude = []
         for cell in [*stim_cells_analyse]:
             # print(f'considering cell # {cell},  {len(stim_cells_analyse[cell])} stims')
             cell_idx = expobj.cell_id.index(cell)
-            flu_trials = [expobj.raw[cell_idx][expobj.stim_start_frames[stim_idx] - expobj.pre_stim: expobj.stim_start_frames[stim_idx] + expobj.stim_duration_frames + expobj.post_stim] for stim_idx in stim_cells_analyse[cell]]
+            flu_trials = [expobj.raw[cell_idx][stim_fr - expobj.pre_stim: stim_fr + expobj.stim_duration_frames + expobj.post_stim] for stim_fr in stim_cells_analyse[cell]]
 
-            dff_trace = Utils.normalize_dff(expobj.raw[cell_idx],
-                                            threshold_pct=50)  # normalize trace (dFF) to mean of whole trace
+            dff_trace = Utils.normalize_dff(expobj.raw[cell_idx], threshold_pct=50)  # normalize trace (dFF) to mean of whole trace
 
             # if normalize_to == 'baseline':  # probably gonna ax this anyways
             #     flu_dff = []
@@ -1159,12 +1322,18 @@ class Post4ap(alloptical):
             expobj.dff_traces_nontargets_avg = dff_traces_avg
             # return dff_traces_nontargets, dff_traces_nontargets_avg
         elif normalize_to == 'pre-stim' or normalize_to == 'whole-trace':
-            expobj.dff_traces_nontargets = np.asarray(dff_traces)
-            expobj.dff_traces_nontargets_avg = np.asarray([i for i in dff_traces_avg])
-            expobj.dfstdF_traces_nontargets = np.asarray(dfstdF_traces)
-            expobj.dfstdF_traces_nontargets_avg = np.asarray([i for i in dfstdF_traces_avg])
-            expobj.raw_traces_nontargets = np.asarray(raw_traces)
-            expobj.raw_traces_nontargets_avg = np.asarray([i for i in raw_traces_avg])
+            if stim_frames == expobj.fake_stim_start_frames:
+                expobj.fakestims_dff_traces_nontargets = np.asarray(dff_traces)
+                expobj.fakestims_dff_traces_nontargets_avg = np.asarray([i for i in dff_traces_avg])
+                expobj.fakestims_dfstdF_traces_nontargets = np.asarray(dfstdF_traces)
+                expobj.fakestims_dfstdF_traces_nontargets_avg = np.asarray([i for i in dfstdF_traces_avg])
+            else:
+                expobj.dff_traces_nontargets = np.asarray(dff_traces)
+                expobj.dff_traces_nontargets_avg = np.asarray([i for i in dff_traces_avg])
+                expobj.dfstdF_traces_nontargets = np.asarray(dfstdF_traces)
+                expobj.dfstdF_traces_nontargets_avg = np.asarray([i for i in dfstdF_traces_avg])
+                expobj.raw_traces_nontargets = np.asarray(raw_traces)
+                expobj.raw_traces_nontargets_avg = np.asarray([i for i in raw_traces_avg])
             print(f'\nCompleted collecting pre to post stim traces -- normalized to pre-stim period or maybe whole-trace -- for '
                   f'{expobj.dff_traces_nontargets.shape[0]} cells, {expobj.dff_traces_nontargets.shape[1]} stims, {expobj.dff_traces_nontargets.shape[2]} frames')
 

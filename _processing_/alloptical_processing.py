@@ -182,12 +182,12 @@ def run_alloptical_processing_photostim(expobj: Union[alloptical, Post4ap], to_s
 
         expobj.SLMTargets_tracedFF_stims_dff, expobj.SLMTargets_tracedFF_stims_dffAvg, expobj.SLMTargets_tracedFF_stims_dfstdF, \
         expobj.SLMTargets_tracedFF_stims_dfstdF_avg, expobj.SLMTargets_tracedFF_stims_raw, expobj.SLMTargets_tracedFF_stims_rawAvg = \
-            expobj.get_alltargets_stim_traces_norm(process='trace dFF', pre_stim=expobj.PhotostimAnalysisSlmTargets.pre_stim_fr,
+            expobj.get_alltargets_stim_traces_norm(process='delta(trace_dFF)', pre_stim=expobj.PhotostimAnalysisSlmTargets.pre_stim_fr,
                                                    post_stim=expobj.PhotostimAnalysisSlmTargets.post_stim_fr, stims=expobj.stim_start_frames)
 
         expobj.fake_SLMTargets_tracedFF_stims_dff, expobj.fake_SLMTargets_tracedFF_stims_dffAvg, expobj.fake_SLMTargets_tracedFF_stims_dfstdF, \
         expobj.fake_SLMTargets_tracedFF_stims_dfstdF_avg, expobj.fake_SLMTargets_tracedFF_stims_raw, expobj.fake_SLMTargets_tracedFF_stims_rawAvg = \
-            expobj.get_alltargets_stim_traces_norm(process='trace dFF', pre_stim=expobj.pre_stim,
+            expobj.get_alltargets_stim_traces_norm(process='delta(trace_dFF)', pre_stim=expobj.pre_stim,
                                                  post_stim=expobj.post_stim, stims=expobj.fake_stim_start_frames)
         
         SLMtarget_ids = list(range(len(expobj.SLMTargets_stims_dfstdF)))
@@ -204,13 +204,13 @@ def run_alloptical_processing_photostim(expobj: Union[alloptical, Post4ap], to_s
 
         expobj.SLMTargets_tracedFF_stims_dff, expobj.SLMTargets_tracedFF_stims_dffAvg, expobj.SLMTargets_tracedFF_stims_dfstdF, \
         expobj.SLMTargets_tracedFF_stims_dfstdF_avg, expobj.SLMTargets_tracedFF_stims_raw, expobj.SLMTargets_tracedFF_stims_rawAvg = \
-            expobj.get_alltargets_stim_traces_norm(process='trace dFF', pre_stim=expobj.PhotostimAnalysisSlmTargets.pre_stim_fr,
+            expobj.get_alltargets_stim_traces_norm(process='delta(trace_dFF)', pre_stim=expobj.PhotostimAnalysisSlmTargets.pre_stim_fr,
                                                    post_stim=expobj.PhotostimAnalysisSlmTargets.post_stim_fr,
                                                    stims=expobj.stim_start_frames)
 
         expobj.fake_SLMTargets_tracedFF_stims_dff, expobj.fake_SLMTargets_tracedFF_stims_dffAvg, expobj.fake_SLMTargets_tracedFF_stims_dfstdF, \
         expobj.fake_SLMTargets_tracedFF_stims_dfstdF_avg, expobj.fake_SLMTargets_tracedFF_stims_raw, expobj.fake_SLMTargets_tracedFF_stims_rawAvg = \
-            expobj.get_alltargets_stim_traces_norm(process='trace dFF', pre_stim=expobj.pre_stim,
+            expobj.get_alltargets_stim_traces_norm(process='delta(trace_dFF)', pre_stim=expobj.pre_stim,
                                                  post_stim=expobj.post_stim, stims=expobj.fake_stim_start_frames)
 
         if hasattr(expobj, 'stims_in_sz'):
@@ -223,7 +223,7 @@ def run_alloptical_processing_photostim(expobj: Union[alloptical, Post4ap], to_s
 
             expobj.SLMTargets_tracedFF_stims_dff_outsz, expobj.SLMTargets_tracedFF_stims_dffAvg_outsz, expobj.SLMTargets_tracedFF_stims_dfstdF_outsz, \
             expobj.SLMTargets_tracedFF_stims_dfstdF_avg_outsz, expobj.SLMTargets_tracedFF_stims_raw_outsz, expobj.SLMTargets_tracedFF_stims_rawAvg_outsz = \
-                expobj.get_alltargets_stim_traces_norm(process='trace dFF', pre_stim=expobj.PhotostimAnalysisSlmTargets.pre_stim_fr,
+                expobj.get_alltargets_stim_traces_norm(process='delta(trace_dFF)', pre_stim=expobj.PhotostimAnalysisSlmTargets.pre_stim_fr,
                                                        post_stim=expobj.PhotostimAnalysisSlmTargets.post_stim_fr, stims=stims)
 
             # only in sz stims (use for post-4ap trials) - includes exclusion of cells inside of sz boundary
@@ -231,12 +231,12 @@ def run_alloptical_processing_photostim(expobj: Union[alloptical, Post4ap], to_s
             expobj.SLMTargets_stims_dff_insz, expobj.SLMTargets_stims_dffAvg_insz, expobj.SLMTargets_stims_dfstdF_insz, \
             expobj.SLMTargets_stims_dfstdF_avg_insz, expobj.SLMTargets_stims_raw_insz, expobj.SLMTargets_stims_rawAvg_insz = \
                 expobj.get_alltargets_stim_traces_norm(process='trace raw', pre_stim=expobj.PhotostimAnalysisSlmTargets.pre_stim_fr,
-                                                       post_stim=expobj.PhotostimAnalysisSlmTargets.post_stim_fr, stims=stims, filter_sz=True)
+                                                       post_stim=expobj.PhotostimAnalysisSlmTargets.post_stim_fr, stims=stims)
 
             expobj.SLMTargets_tracedFF_stims_dff_insz, expobj.SLMTargets_tracedFF_stims_dffAvg_insz, expobj.SLMTargets_tracedFF_stims_dfstdF_insz, \
             expobj.SLMTargets_tracedFF_stims_dfstdF_avg_insz, expobj.SLMTargets_tracedFF_stims_raw_insz, expobj.SLMTargets_tracedFF_stims_rawAvg_insz = \
-                expobj.get_alltargets_stim_traces_norm(process='trace dFF', pre_stim=expobj.PhotostimAnalysisSlmTargets.pre_stim_fr,
-                                                       post_stim=expobj.PhotostimAnalysisSlmTargets.post_stim_fr, stims=stims, filter_sz=True)
+                expobj.get_alltargets_stim_traces_norm(process='delta(trace_dFF)', pre_stim=expobj.PhotostimAnalysisSlmTargets.pre_stim_fr,
+                                                       post_stim=expobj.PhotostimAnalysisSlmTargets.post_stim_fr, stims=stims)
 
 
     else:
@@ -267,10 +267,10 @@ def run_alloptical_processing_photostim(expobj: Union[alloptical, Post4ap], to_s
                                                     stims_idx_l=expobj.stims_idx)
         # trace dFF
         expobj.StimSuccessRate_SLMtargets_tracedFF, expobj.hits_SLMtargets_tracedFF, expobj.responses_SLMtargets_tracedFF, expobj.traces_SLMtargets_tracedFF_successes = \
-            expobj.get_SLMTarget_responses_dff(process='trace dFF', threshold=10, stims_to_use=expobj.stim_start_frames)
+            expobj.get_SLMTarget_responses_dff(process='delta(trace_dFF)', threshold=10, stims_to_use=expobj.stim_start_frames)
         # trace dFF
         expobj.StimSuccessRate_SLMtargets_tracedFF, expobj.traces_SLMtargets_tracedFF_successes_avg, expobj.traces_SLMtargets_tracedFF_failures_avg = \
-            expobj.calculate_SLMTarget_SuccessStims(process='trace dFF',
+            expobj.calculate_SLMTarget_SuccessStims(process='delta(trace_dFF)',
                                                     hits_slmtargets_df=expobj.hits_SLMtargets_tracedFF,
                                                     stims_idx_l=expobj.stims_idx)
 
@@ -295,7 +295,7 @@ def run_alloptical_processing_photostim(expobj: Union[alloptical, Post4ap], to_s
                                                stims_to_use=expobj.stim_start_frames)
         # trace dFF
         expobj.StimSuccessRate_SLMtargets_tracedFF, expobj.hits_SLMtargets_tracedFF, expobj.responses_SLMtargets_tracedFF, expobj.traces_SLMtargets_tracedFF_successes = \
-            expobj.get_SLMTarget_responses_dff(process='trace dFF', threshold=10, stims_to_use=expobj.stim_start_frames)
+            expobj.get_SLMTarget_responses_dff(process='delta(trace_dFF)', threshold=10, stims_to_use=expobj.stim_start_frames)
 
         ### STIMS OUT OF SEIZURE
         if expobj.stims_out_sz:
@@ -312,7 +312,7 @@ def run_alloptical_processing_photostim(expobj: Union[alloptical, Post4ap], to_s
                                                        stims_to_use=expobj.stims_out_sz)
                 # trace dFF
                 expobj.StimSuccessRate_SLMtargets_tracedFF_outsz, expobj.hits_SLMtargets_tracedFF_outsz, expobj.responses_SLMtargets_tracedFF_outsz, expobj.traces_SLMtargets_tracedFF_successes_outsz = \
-                    expobj.get_SLMTarget_responses_dff(process='trace dFF', threshold=10,
+                    expobj.get_SLMTarget_responses_dff(process='delta(trace_dFF)', threshold=10,
                                                        stims_to_use=expobj.stims_out_sz)
 
                 print('|- calculating stim success rates (outsz) - %s stims [2.2.0]' % len(stims_outsz_idx))
@@ -328,7 +328,7 @@ def run_alloptical_processing_photostim(expobj: Union[alloptical, Post4ap], to_s
                                                                                                                  stims_idx_l=stims_outsz_idx)
                 # trace dFF
                 expobj.outsz_StimSuccessRate_SLMtargets_tracedFF, expobj.outsz_traces_SLMtargets_tracedFF_successes_avg, \
-                expobj.outsz_traces_SLMtargets_tracedFF_failures_avg = expobj.calculate_SLMTarget_SuccessStims(process='trace dFF',
+                expobj.outsz_traces_SLMtargets_tracedFF_failures_avg = expobj.calculate_SLMTarget_SuccessStims(process='delta(trace_dFF)',
                                                                                                                hits_slmtargets_df=expobj.hits_SLMtargets_tracedFF_outsz,
                                                                                                                stims_idx_l=stims_outsz_idx)
 
@@ -348,7 +348,7 @@ def run_alloptical_processing_photostim(expobj: Union[alloptical, Post4ap], to_s
                                                            stims_to_use=expobj.stims_in_sz)
                     # trace dFF
                     expobj.StimSuccessRate_SLMtargets_tracedFF_insz, expobj.hits_SLMtargets_tracedFF_insz, expobj.responses_SLMtargets_tracedFF_insz, expobj.traces_SLMtargets_tracedFF_successes_insz = \
-                        expobj.get_SLMTarget_responses_dff(process='trace dFF', threshold=10,
+                        expobj.get_SLMTarget_responses_dff(process='delta(trace_dFF)', threshold=10,
                                                            stims_to_use=expobj.stims_in_sz)
 
                     print('|- calculating stim success rates (insz) - %s stims [2.3.0]' % len(stims_insz_idx))
@@ -364,7 +364,7 @@ def run_alloptical_processing_photostim(expobj: Union[alloptical, Post4ap], to_s
                                                                 stims_idx_l=stims_insz_idx)
                     # trace dFF
                     expobj.insz_StimSuccessRate_SLMtargets_tracedFF, expobj.insz_traces_SLMtargets_tracedFF_successes_avg, expobj.insz_traces_SLMtargets_tracedFF_failures_avg = \
-                        expobj.calculate_SLMTarget_SuccessStims(process='trace dFF',
+                        expobj.calculate_SLMTarget_SuccessStims(process='delta(trace_dFF)',
                                                                 hits_slmtargets_df=expobj.hits_SLMtargets_tracedFF_insz,
                                                                 stims_idx_l=stims_insz_idx,
                                                                 exclude_stims_targets=expobj.slmtargets_szboundary_stim)
