@@ -76,9 +76,8 @@ class FakeStimsQuantification(Quantification):
                         stims.append(stim)
                         idxs.append(idx)
 
-                # return [stim for stim in self.fake_stim_start_frames if stim in self.im_idx_outsz]
                 return idxs, stims
-            expobj.fake_stims_outsz, expobj.fake_stim_idx_outsz = fake_stims_outsz(self=expobj)
+            expobj.fake_stim_idx_outsz, expobj.fake_stims_outsz = fake_stims_outsz(self=expobj)
 
             def fake_stims_insz(self: Post4ap):
                 """fake stim frames - all stims out of sz imaging frames"""
@@ -89,9 +88,8 @@ class FakeStimsQuantification(Quantification):
                         stims.append(stim)
                         idxs.append(idx)
 
-                # return [stim for stim in self.fake_stim_start_frames if stim in self.im_idx_insz]
                 return idxs, stims
-            expobj.fake_stims_insz, expobj.fake_stim_idx_insz = fake_stims_insz(self=expobj)
+            expobj.fake_stim_idx_insz, expobj.fake_stims_insz = fake_stims_insz(self=expobj)
             expobj.save()
 
             

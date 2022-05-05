@@ -1123,7 +1123,7 @@ class PhotostimResponsesQuantificationSLMtargets(Quantification):
             title='plot__targets_annulus_prestim_Flu_all_points', alpha=0.1)
 
 
-# %% CODE DEVELOPMENT ZONE
+# %% CODE RUNNING ZONE
 
 """
 TODO:

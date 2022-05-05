@@ -25,8 +25,10 @@ class Post4ap(alloptical):
 
     def __init__(self, paths, metainfo, stimtype, discard_all):
 
-        self.fake_stims_insz = None  #: fake stim frames idx - all stims out of sz imaging frames
-        self.fake_stims_outsz = None  #: fake stim frames idx - all stims out of sz imaging frames
+        self.fake_stim_idx_outsz = None  #: fake stim frames idx - all stims out of sz imaging frames
+        self.fake_stim_idx_insz = None  #: fake stim frames idx - all stims in sz imaging frames
+        self.fake_stims_insz = None  #: fake stim frames - all stims out of sz imaging frames
+        self.fake_stims_outsz = None  #: fake stim frames idx - all stims in sz imaging frames
         from _analysis_._ClassNonTargetsSzInvasionSpatial import NonTargetsSzInvasionSpatial
         self.NonTargetsSzInvasionSpatial: NonTargetsSzInvasionSpatial = None
         from _analysis_._ClassTargetsSzInvasionSpatial_codereview import TargetsSzInvasionSpatial_codereview
