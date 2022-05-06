@@ -29,7 +29,7 @@ class Post4ap(alloptical):
         self.fake_stim_idx_insz = None  #: fake stim frames idx - all stims in sz imaging frames
         self.fake_stims_insz = None  #: fake stim frames - all stims out of sz imaging frames
         self.fake_stims_outsz = None  #: fake stim frames idx - all stims in sz imaging frames
-        from _analysis_._ClassNonTargetsSzInvasionSpatial import NonTargetsSzInvasionSpatial
+        from _analysis_.nontargets_analysis._ClassNonTargetsSzInvasionSpatial import NonTargetsSzInvasionSpatial
         self.NonTargetsSzInvasionSpatial: NonTargetsSzInvasionSpatial = None
         from _analysis_._ClassTargetsSzInvasionSpatial_codereview import TargetsSzInvasionSpatial_codereview
         self.TargetsSzInvasionSpatial_codereview: TargetsSzInvasionSpatial_codereview = None  # SLM targets spatial distance to sz wavefront vs. photostim responses analysis object

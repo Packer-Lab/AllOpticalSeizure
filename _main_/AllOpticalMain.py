@@ -18,7 +18,6 @@ import pandas as pd
 import xml.etree.ElementTree as ET
 import tifffile as tf
 from funcsforprajay import funcs as pj
-from funcsforprajay import plotting as pplot
 from funcsforprajay.wrappers import plot_piping_decorator
 from _utils_.paq_utils import paq_read
 
@@ -134,7 +133,7 @@ class alloptical(TwoPhotonImaging):
             PhotostimResponsesQuantificationSLMtargets
         self.PhotostimResponsesSLMTargets: PhotostimResponsesQuantificationSLMtargets = None  # module that holds analysis and results for Photostim Responses of SLM Targets
 
-        from _analysis_._ClassPhotostimResponseQuantificationNonTargets import \
+        from _analysis_.nontargets_analysis._ClassPhotostimResponseQuantificationNonTargets import \
             PhotostimResponsesQuantificationNonTargets
         self.PhotostimResponsesNonTargets: PhotostimResponsesQuantificationNonTargets = \
             PhotostimResponsesQuantificationNonTargets(expobj=self)

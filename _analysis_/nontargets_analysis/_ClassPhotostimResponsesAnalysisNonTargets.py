@@ -1,12 +1,12 @@
 import sys
 
-from _analysis_._ClassPhotostimResponseQuantificationNonTargets import PhotostimResponsesNonTargetsResults, \
+from _analysis_.nontargets_analysis._ClassPhotostimResponseQuantificationNonTargets import PhotostimResponsesNonTargetsResults, \
     PhotostimResponsesQuantificationNonTargets, FakeStimsQuantification
 
 sys.path.extend(['/home/pshah/Documents/code/AllOpticalSeizure', '/home/pshah/Documents/code/AllOpticalSeizure'])
 
 import os
-from typing import Union, List
+from typing import Union
 
 import numpy as np
 import pandas as pd
@@ -955,6 +955,7 @@ class PhotostimResponsesAnalysisNonTargets(PhotostimResponsesQuantificationNonTa
                                    paired = True, bar = False, colors=['blue', 'gray', 'green', 'gray'], edgecolor='black', lw=1,
                                    x_tick_labels=['Base', 'Base-fake', 'Inter', 'Inter-fake'], ylims=[0, 1], y_label='$R^2$', title='$R^2$ value per experiment')
 
+
         pplot.plot_bar_with_points(data=[[i for i in results.lin_reg_summed_responses['baseline']['slope']],
                                          [i for i in results.lin_reg_summed_responses['baseline - fakestims']['slope']],
                                          [i for i in results.lin_reg_summed_responses['interictal']['slope']],
@@ -968,10 +969,12 @@ class PhotostimResponsesAnalysisNonTargets(PhotostimResponsesQuantificationNonTa
                                    paired = True, bar = False, colors=['blue', 'green'], edgecolor='black', lw=1,
                                    x_tick_labels=['Base', 'Inter'], ylims=[0, 1.5], y_label='photostim/fakestims $R^2$', title='ratio of $R^2$ per experiment')
 
+
         pplot.plot_bar_with_points(data=[[val / results.lin_reg_summed_responses['baseline - fakestims']['slope'][i] for i, val in enumerate(results.lin_reg_summed_responses['baseline']['slope'])],
                                          [val / results.lin_reg_summed_responses['interictal - fakestims']['slope'][i] for i, val in enumerate(results.lin_reg_summed_responses['interictal']['slope'])]],
                                    paired = True, bar = False, colors=['blue', 'green'], edgecolor='black', lw=1,
                                    x_tick_labels=['Base', 'Inter'], ylims=[0, 4.5], y_label='photostim/fakestims $m$', title='ratio of $m$ per experiment')
+
 
         pass
 

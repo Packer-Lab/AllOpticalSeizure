@@ -38,19 +38,19 @@ class CustomUnpicklerAttributeError(pickle.Unpickler):
         #     return TargetsSzInvasionTemporal
         elif name == 'NonTargetsSzInvasionSpatial':
             print(f'\t for: NonTargetsSzInvasionSpatial')
-            from _analysis_._ClassNonTargetsSzInvasionSpatial import NonTargetsSzInvasionSpatial
+            from _analysis_.nontargets_analysis._ClassNonTargetsSzInvasionSpatial import NonTargetsSzInvasionSpatial
             return NonTargetsSzInvasionSpatial
         elif name == 'FakeStimsQuantification':
             print(f'\t for: FakeStimsQuantification')
-            from _analysis_._ClassPhotostimResponseQuantificationNonTargets import FakeStimsQuantification
+            from _analysis_.nontargets_analysis._ClassPhotostimResponseQuantificationNonTargets import FakeStimsQuantification
             return FakeStimsQuantification
         elif name == 'PhotostimResponsesAnalysisNonTargets':
             print(f'\t for: PhotostimResponsesAnalysisNonTargets')
-            from _analysis_._ClassPhotostimResponsesAnalysisNonTargets import PhotostimResponsesAnalysisNonTargets
+            from _analysis_.nontargets_analysis._ClassPhotostimResponsesAnalysisNonTargets import PhotostimResponsesAnalysisNonTargets
             return PhotostimResponsesAnalysisNonTargets
         elif name == 'PhotostimResponsesQuantificationNonTargets':
             print(f'\t for: PhotostimResponsesQuantificationNonTargets')
-            from _analysis_._ClassPhotostimResponseQuantificationNonTargets import \
+            from _analysis_.nontargets_analysis._ClassPhotostimResponseQuantificationNonTargets import \
                 PhotostimResponsesQuantificationNonTargets
             return PhotostimResponsesQuantificationNonTargets
         elif name == 'PhotostimAnalysisSlmTargets':

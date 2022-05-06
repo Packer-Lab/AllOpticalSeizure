@@ -1,25 +1,17 @@
 import sys
 
-from _analysis_._ClassPhotostimResponseQuantificationNonTargets import PhotostimResponsesNonTargetsResults, \
+from _analysis_.nontargets_analysis._ClassPhotostimResponseQuantificationNonTargets import \
     PhotostimResponsesQuantificationNonTargets
 from _analysis_._utils import Results, Quantification
 
 sys.path.extend(['/home/pshah/Documents/code/AllOpticalSeizure', '/home/pshah/Documents/code/AllOpticalSeizure'])
 
 import os
-from typing import Union, List
-
-import numpy as np
-import pandas as pd
-from scipy import stats
-
-from matplotlib import pyplot as plt
+from typing import Union
 
 import _alloptical_utils as Utils
 from _main_.AllOpticalMain import alloptical
 from _main_.Post4apMain import Post4ap
-from funcsforprajay import plotting as pplot
-
 
 SAVE_LOC = "/home/pshah/mnt/qnap/Analysis/analysis_export/analysis_quantification_classes/"
 

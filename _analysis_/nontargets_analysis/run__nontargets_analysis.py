@@ -1,10 +1,6 @@
-from _analysis_._ClassPhotostimResponseQuantificationNonTargets import PhotostimResponsesQuantificationNonTargets, \
+from _analysis_.nontargets_analysis._ClassPhotostimResponseQuantificationNonTargets import \
     PhotostimResponsesNonTargetsResults
-from _analysis_._ClassPhotostimResponsesAnalysisNonTargets import PhotostimResponsesAnalysisNonTargets
-
-from _main_.AllOpticalMain import alloptical
-from _utils_.io import import_expobj
-
+from _analysis_.nontargets_analysis._ClassPhotostimResponsesAnalysisNonTargets import PhotostimResponsesAnalysisNonTargets
 
 # %% run processing/analysis/plotting:
 

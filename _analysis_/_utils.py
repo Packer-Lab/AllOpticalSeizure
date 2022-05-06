@@ -11,7 +11,7 @@ class CustomUnpicklerAttributeError(pickle.Unpickler):
     def find_class(self, module, name):
         if name == 'PhotostimResponsesNonTargetsResults':
             print(f'\t for: PhotostimResponsesNonTargetsResults')
-            from _analysis_._ClassPhotostimResponseQuantificationNonTargets import \
+            from _analysis_.nontargets_analysis._ClassPhotostimResponseQuantificationNonTargets import \
                 PhotostimResponsesNonTargetsResults
             return PhotostimResponsesNonTargetsResults
 
