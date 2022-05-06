@@ -33,6 +33,9 @@ if not os.path.exists(NonTargetsResponsesSpatialResults.SAVE_PATH) or REMAKE:
 class NonTargetsResponsesSpatialAnalysis(Quantification):
     """Analysis of responses of nontargets in relation to spatial distances from seizure boundary.
     Fig 6.
+
+    big goal is to use targets binned into proximal, middle or distal.
+
     """
 
     def __init__(self, expobj: Post4ap = None):
@@ -50,20 +53,6 @@ class NonTargetsResponsesSpatialAnalysis(Quantification):
         expobj.save()
 
 
-    # 1) CREATE ANNDATA - create from stims with seizure wavefront, photostim responses, distances of nontargets to sz wavefront as layer, add significant responders infor from baseline and ictal stims analysed,
-    def create_anndata(self, expobj: Post4ap):
-        """
-        create anndata table to store information about nontargets sz invasion spatial from:
-
-        stims with seizure wavefront,
-        photostim responses,
-        distances of nontargets to sz wavefront as layer,
-        add significant responders infor from baseline and ictal stims analysed,
-
-
-        :param expobj:
-        """
-        assert hasattr(expobj, 'NonTargetsSzInvasionSpatial'), 'nontargets sz invasion spatial processing not found for exp obj.'
 
 
 
@@ -74,6 +63,22 @@ if __name__ == '__main__':
 
 
 
+### ARCHIVE
+
+    # # 1) CREATE ANNDATA - create from stims with seizure wavefront, photostim responses, distances of nontargets to sz wavefront as layer, add significant responders infor from baseline and ictal stims analysed,
+    # def create_anndata(self, expobj: Post4ap):
+    #     """
+    #     create anndata table to store information about nontargets sz invasion spatial from:
+    #
+    #     stims with seizure wavefront,
+    #     photostim responses,
+    #     distances of nontargets to sz wavefront as layer,
+    #     add significant responders infor from baseline and ictal stims analysed,
+    #
+    #
+    #     :param expobj:
+    #     """
+    #     assert hasattr(expobj, 'NonTargetsSzInvasionSpatial'), 'nontargets sz invasion spatial processing not found for exp obj.'
 
 
 
