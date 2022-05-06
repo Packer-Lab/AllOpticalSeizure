@@ -504,13 +504,14 @@ class PhotostimResponsesAnalysisNonTargets(PhotostimResponsesQuantificationNonTa
 
     @staticmethod
     def run__summed_responses(rerun=0):
-        @Utils.run_for_loop_across_exps(run_pre4ap_trials=0, run_post4ap_trials=1, allow_rerun=rerun, skip_trials=PhotostimResponsesQuantificationNonTargets.EXCLUDE_TRIALS,)
+        @Utils.run_for_loop_across_exps(run_pre4ap_trials=1, run_post4ap_trials=1, allow_rerun=rerun, skip_trials=PhotostimResponsesQuantificationNonTargets.EXCLUDE_TRIALS,)
                                         # run_trials=PhotostimResponsesQuantificationNonTargets.TEST_TRIALS)
         def _run__summed_responses(**kwargs):
             expobj: Union[alloptical, Post4ap] = kwargs['expobj']
             expobj.PhotostimResponsesNonTargets._calculate__summed_responses(expobj=expobj)
             expobj.PhotostimResponsesNonTargets._calculate__summed_responses_targets(expobj=expobj)
             assert 'summed_response_SLMtargets' in expobj.PhotostimResponsesSLMTargets.adata.var_keys(), 'summed responses SLM targets not saving in adata.var...'
+            assert 'summed_fakestims_response_SLMtargets' in expobj.PhotostimResponsesSLMTargets.adata.var_keys(), 'summed_fakestims_response_SLMtargets not saving in adata.var...'
             expobj.save()
 
         _run__summed_responses()
@@ -606,11 +607,13 @@ class PhotostimResponsesAnalysisNonTargets(PhotostimResponsesQuantificationNonTa
         # pre4ap - baseline
         @Utils.run_for_loop_across_exps(run_pre4ap_trials=True, run_post4ap_trials=False, allow_rerun=0, skip_trials=PhotostimResponsesQuantificationNonTargets.EXCLUDE_TRIALS)
         def collect_summed_responses_baseline(**kwargs):
-            expobj = kwargs['expobj']
+            expobj: alloptical = kwargs['expobj']
+            assert 'summed_response_SLMtargets' in expobj.PhotostimResponsesSLMTargets.adata.var_keys(), 'summed responses SLM targets not saving in adata.var...'
+            assert 'summed_fakestims_response_SLMtargets' in expobj.PhotostimResponsesSLMTargets.adata.var_keys(), 'summed_fakestims_response_SLMtargets not saving in adata.var...'
 
             summed_responses = pd.DataFrame({'exp': [expobj.t_series_name] * expobj.PhotostimResponsesSLMTargets.adata.n_vars,
                                              'targets': expobj.PhotostimResponsesSLMTargets.adata.var['summed_response_SLMtargets'],
-                                             'targets_fakestims': expobj.PhotostimResponsesNonTargets.adata.var['summed_fakestims_response_SLMtargets'],
+                                             'targets_fakestims': expobj.PhotostimResponsesSLMTargets.adata.var['summed_fakestims_response_SLMtargets'],
                                              'non-targets_pos': expobj.PhotostimResponsesNonTargets.adata.var['summed_response_pos_baseline'],
                                              'non-targets_neg': expobj.PhotostimResponsesNonTargets.adata.var['summed_response_neg_baseline'],
                                              'all_non-targets': expobj.PhotostimResponsesNonTargets.adata.var['total_nontargets_responses'],
@@ -693,12 +696,12 @@ class PhotostimResponsesAnalysisNonTargets(PhotostimResponsesQuantificationNonTa
                 lin_reg_scores_baseline = pd.concat([lin_reg_scores_baseline, exp[1]])
 
             summed_responses_baseline.shape
+            print('summed responses baseline shape', summed_responses_baseline.shape)
 
-            results.summed_responses = {'baseline': summed_responses_baseline,
-                                 }
+            results.summed_responses = {'baseline': summed_responses_baseline}
 
-            results.lin_reg_summed_responses = {'baseline': lin_reg_scores_baseline,
-                                 }
+            results.lin_reg_summed_responses = {'baseline': lin_reg_scores_baseline}
+
 
             results.save_results()
 
@@ -706,24 +709,26 @@ class PhotostimResponsesAnalysisNonTargets(PhotostimResponsesQuantificationNonTa
         @Utils.run_for_loop_across_exps(run_pre4ap_trials=False, run_post4ap_trials=True, allow_rerun=1, skip_trials=PhotostimResponsesQuantificationNonTargets.EXCLUDE_TRIALS)
         def collect_summed_responses_interictal(lin_reg_scores, **kwargs):
             "TODO for fakestims - interictal"
-            expobj = kwargs['expobj']
+            expobj: Post4ap = kwargs['expobj']
 
             summed_responses = pd.DataFrame({'exp': [expobj.t_series_name] * sum([expobj.PhotostimResponsesSLMTargets.adata.var['stim_group'] == 'interictal'][0]),
                                              'targets': expobj.PhotostimResponsesSLMTargets.adata.var['summed_response_SLMtargets'][expobj.PhotostimResponsesSLMTargets.adata.var['stim_group'] == 'interictal'],
-                                             'targets_fakestims': expobj.PhotostimResponsesNonTargets.adata.var['summed_fakestims_response_SLMtargets'][expobj.fake_stim_idx_outsz],
                                              'non-targets_pos': expobj.PhotostimResponsesNonTargets.adata.var['summed_response_pos_interictal'][expobj.PhotostimResponsesSLMTargets.adata.var['stim_group'] == 'interictal'],
                                              'non-targets_neg': expobj.PhotostimResponsesNonTargets.adata.var['summed_response_neg_interictal'][expobj.PhotostimResponsesSLMTargets.adata.var['stim_group'] == 'interictal'],
-                                             'all_non-targets': expobj.PhotostimResponsesNonTargets.adata.var['total_nontargets_responses'][expobj.PhotostimResponsesSLMTargets.adata.var['stim_group'] == 'interictal'],
-                                            'all_non-targets_fakestims': expobj.PhotostimResponsesNonTargets.adata.var['total_nontargets_fakestims_responses']
+                                             'all_non-targets': expobj.PhotostimResponsesNonTargets.adata.var['total_nontargets_responses'][expobj.PhotostimResponsesSLMTargets.adata.var['stim_group'] == 'interictal']
                                              })
+
+            summed_responses_fakestims = {'targets_fakestims': expobj.PhotostimResponsesSLMTargets.adata.var['summed_fakestims_response_SLMtargets'][expobj.fake_stim_idx_outsz],
+                                          'all_non-targets_fakestims': expobj.PhotostimResponsesNonTargets.adata.var['total_nontargets_fakestims_responses'][expobj.fake_stim_idx_outsz]
+                                          }
 
 
             # z scoring of all collected responses within condition
             network_summed_activity_zsco = np.round(stats.zscore(summed_responses['all_non-targets'], ddof=1), 3)
             targets_summed_activity_zsco = np.round(stats.zscore(summed_responses['targets'], ddof=1), 3)
 
-            network_fakestims_summed_activity_zsco = np.round(stats.zscore(summed_responses['all_non-targets_fakestims'], ddof=1), 3)
-            targets_fakestims_summed_activity_zsco = np.round(stats.zscore(summed_responses['targets_fakestims'], ddof=1), 3)
+            network_fakestims_summed_activity_zsco = np.round(stats.zscore(summed_responses_fakestims['all_non-targets_fakestims'], ddof=1), 3)
+            targets_fakestims_summed_activity_zsco = np.round(stats.zscore(summed_responses_fakestims['targets_fakestims'], ddof=1), 3)
 
 
             # z scoring to mean and std of BASELINE group of same experiment
@@ -738,8 +743,8 @@ class PhotostimResponsesAnalysisNonTargets(PhotostimResponsesQuantificationNonTa
             network_summed_activity_zsco = np.round([( x - float(lin_reg_scores.loc[pre4ap_match_id, 'mean_non-targets'])) / float(lin_reg_scores.loc[pre4ap_match_id, 'std_non-targets']) for x in list(summed_responses['all_non-targets'])], 3)
             targets_summed_activity_zsco = np.round([( x - float(lin_reg_scores.loc[pre4ap_match_id, 'mean_targets'])) / float(lin_reg_scores.loc[pre4ap_match_id, 'std_targets']) for x in list(summed_responses['targets'])], 3)
 
-            network_fakestims_summed_activity_zsco = np.round([( x - float(lin_reg_scores.loc[pre4ap_match_id, 'mean_non-targets'])) / float(lin_reg_scores.loc[pre4ap_match_id, 'std_non-targets']) for x in list(summed_responses['all_non-targets_fakestims'])], 3)
-            targets_fakestims_summed_activity_zsco = np.round([( x - float(lin_reg_scores.loc[pre4ap_match_id, 'mean_targets'])) / float(lin_reg_scores.loc[pre4ap_match_id, 'std_targets']) for x in list(summed_responses['targets_fakestims'])], 3)
+            network_fakestims_summed_activity_zsco = np.round([( x - float(lin_reg_scores.loc[pre4ap_match_id, 'mean_non-targets'])) / float(lin_reg_scores.loc[pre4ap_match_id, 'std_non-targets']) for x in list(summed_responses_fakestims['all_non-targets_fakestims'])], 3)
+            targets_fakestims_summed_activity_zsco = np.round([( x - float(lin_reg_scores.loc[pre4ap_match_id, 'mean_targets'])) / float(lin_reg_scores.loc[pre4ap_match_id, 'std_targets']) for x in list(summed_responses_fakestims['targets_fakestims'])], 3)
 
             # ------ exclude datapoints whose targets_summed_activity are >5 z score points (or < -5):
             include_idx = [idx for idx, zscore in enumerate(targets_summed_activity_zsco) if -5 < zscore < 5]
@@ -748,8 +753,13 @@ class PhotostimResponsesAnalysisNonTargets(PhotostimResponsesQuantificationNonTa
             targets_summed_activity_zsco = np.array([targets_summed_activity_zsco[i] for i in include_idx])
             network_summed_activity_zsco = np.array([network_summed_activity_zsco[i] for i in include_idx])
 
-            targets_fakestims_summed_activity_zsco = np.array([targets_fakestims_summed_activity_zsco[i] for i in include_idx])
-            network_fakestims_summed_activity_zsco = np.array([network_fakestims_summed_activity_zsco[i] for i in include_idx])
+
+            include_idx_fakestims = [idx for idx, zscore in enumerate(targets_fakestims_summed_activity_zsco) if -5 < zscore < 5]
+            if len(include_idx_fakestims) < len(targets_fakestims_summed_activity_zsco):
+                print(f'**** excluding {len(targets_fakestims_summed_activity_zsco) - len(include_idx_fakestims)} fake stims from exp: {expobj.t_series_name} ****')
+
+            targets_fakestims_summed_activity_zsco = np.array([targets_fakestims_summed_activity_zsco[i] for i in include_idx_fakestims])
+            network_fakestims_summed_activity_zsco = np.array([network_fakestims_summed_activity_zsco[i] for i in include_idx_fakestims])
 
             # calculating linear regression metrics between summed targets and summed total network for each experiment
             slope, intercept, r_value, p_value, std_err = stats.linregress(x=targets_summed_activity_zsco,
@@ -758,16 +768,18 @@ class PhotostimResponsesAnalysisNonTargets(PhotostimResponsesQuantificationNonTa
 
             slope, intercept, r_value, p_value, std_err = stats.linregress(x=targets_fakestims_summed_activity_zsco,
                                                                            y=network_fakestims_summed_activity_zsco)
-            regression_y_fakestims = slope * targets_summed_activity_zsco + intercept
+            regression_y_fakestims = slope * targets_fakestims_summed_activity_zsco + intercept
 
             summed_responses_zscore = pd.DataFrame({'exp': [expobj.t_series_name] * len(regression_y),
                                                     'targets_summed_zscored': targets_summed_activity_zsco,
                                                     'all_non-targets_zscored': network_summed_activity_zsco,
                                                     'all_non-targets_score_regression': regression_y})
 
-            summed_responses_zscore['targets_fakestims_summed_zscored'] = targets_fakestims_summed_activity_zsco
-            summed_responses_zscore['all_non-targets_fakestims_zscored'] = network_fakestims_summed_activity_zsco
-            summed_responses_zscore['all_non-targets_fakestims_score_regression'] = regression_y_fakestims
+
+            summed_responses_fakestims_zscore = pd.DataFrame({})
+            summed_responses_fakestims_zscore['targets_fakestims_summed_zscored'] = targets_fakestims_summed_activity_zsco
+            summed_responses_fakestims_zscore['all_non-targets_fakestims_zscored'] = network_fakestims_summed_activity_zsco
+            summed_responses_fakestims_zscore['all_non-targets_fakestims_score_regression'] = regression_y_fakestims
 
 
             lin_reg_scores = pd.DataFrame({
@@ -778,7 +790,7 @@ class PhotostimResponsesAnalysisNonTargets(PhotostimResponsesQuantificationNonTa
                 'p_value': p_value
             }, index=[expobj.t_series_name])
 
-            return summed_responses_zscore, lin_reg_scores
+            return summed_responses_zscore, summed_responses_fakestims_zscore, lin_reg_scores
             # return expobj.PhotostimResponsesNonTargets.adata.var['summed_response_pos_interictal'], expobj.PhotostimResponsesSLMTargets.adata.var['summed_response_SLMtargets']
 
         func_collector_interictal = collect_summed_responses_interictal(lin_reg_scores=results.lin_reg_summed_responses['baseline'])
@@ -788,13 +800,21 @@ class PhotostimResponsesAnalysisNonTargets(PhotostimResponsesQuantificationNonTa
 
         summed_responses_interictal_zscore = pd.DataFrame({'exp': [], 'targets_summed_zscored': [], 'all_non-targets_zscored': [], 'all_non-targets_score_regression': [],
                                                            'targets_fakestims_summed_zscored': [], 'all_non-targets_fakestims_zscored': [], 'all_non-targets_fakestims_score_regression': []})
+
+        summed_responses_fakestims_interictal_zscore = pd.DataFrame({})
+        summed_responses_fakestims_interictal_zscore['targets_fakestims_summed_zscored'] = []
+        summed_responses_fakestims_interictal_zscore['all_non-targets_fakestims_zscored'] = []
+        summed_responses_fakestims_interictal_zscore['all_non-targets_fakestims_score_regression'] = []
+
         lin_reg_scores_interictal = pd.DataFrame({'exp': [], 'slope': [], 'intercept': [], 'r_value': [], 'p_value': []})
 
         for exp in func_collector_interictal:
             summed_responses_interictal_zscore = pd.concat([summed_responses_interictal_zscore, exp[0]])
-            lin_reg_scores_interictal = pd.concat([lin_reg_scores_interictal, exp[1]])
+            summed_responses_fakestims_interictal_zscore = pd.concat([summed_responses_fakestims_interictal_zscore, exp[1]])
+            lin_reg_scores_interictal = pd.concat([lin_reg_scores_interictal, exp[2]])
 
-        print(summed_responses_interictal_zscore.shape)
+        print('summed responses interictal zscore shape', summed_responses_interictal_zscore.shape)
+        print('summed responses fakestims interictal zscore shape', summed_responses_fakestims_interictal_zscore.shape)
 
         results.summed_responses['interictal'] = summed_responses_interictal_zscore
         results.lin_reg_summed_responses['interictal'] = lin_reg_scores_interictal

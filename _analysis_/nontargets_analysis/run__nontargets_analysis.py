@@ -20,7 +20,7 @@ from _utils_.io import import_expobj
 
 # %% collecting all summed nontargets photostim and fakestim responses vs. total targets photostim and fakestim responses
 main = PhotostimResponsesAnalysisNonTargets
-# main.run__summed_responses(rerun=1)
+main.run__summed_responses(rerun=0)
 
 results: PhotostimResponsesNonTargetsResults = PhotostimResponsesNonTargetsResults.load()
 main.collect__zscored_summed_activity_vs_targets_activity(results=results)
