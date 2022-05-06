@@ -44,6 +44,10 @@ class CustomUnpicklerAttributeError(pickle.Unpickler):
             print(f'\t for: FakeStimsQuantification')
             from _analysis_.nontargets_analysis._ClassPhotostimResponseQuantificationNonTargets import FakeStimsQuantification
             return FakeStimsQuantification
+        elif name == '_analysis_._ClassPhotostimResponsesAnalysisNonTargets':
+            print(f'\t for: _analysis_._ClassPhotostimResponsesAnalysisNonTargets')
+            from _analysis_.nontargets_analysis import _ClassPhotostimResponsesAnalysisNonTargets
+            return _ClassPhotostimResponsesAnalysisNonTargets
         elif name == 'PhotostimResponsesAnalysisNonTargets':
             print(f'\t for: PhotostimResponsesAnalysisNonTargets')
             from _analysis_.nontargets_analysis._ClassPhotostimResponsesAnalysisNonTargets import PhotostimResponsesAnalysisNonTargets
@@ -114,6 +118,18 @@ class CustomUnpicklerModuleNotFoundError(pickle.Unpickler):
 
         elif module == '_analysis_._ClassTargetsSzOnsetTime':
             renamed_module = "_analysis_._ClassTargetsPhotostimResponsesInterictal"
+
+        elif module == '_analysis_._ClassPhotostimResponsesAnalysisNonTargets':
+            renamed_module = "_analysis_.nontargets_analysis._ClassPhotostimResponsesAnalysisNonTargets"
+
+        elif module == '_analysis_._ClassPhotostimResponseQuantificationNonTargets':
+            renamed_module = "_analysis_.nontargets_analysis._ClassPhotostimResponseQuantificationNonTargets"
+
+        elif module == '_analysis_._ClassNonTargetsSzInvasionSpatial':
+            renamed_module = "_analysis_.nontargets_analysis._ClassNonTargetsSzInvasionSpatial"
+
+        elif module == '_analysis_._ClassNonTargetsResponsesSpatial':
+            renamed_module = "_analysis_.nontargets_analysis._ClassNonTargetsResponsesSpatial"
 
         else:
             renamed_module = module

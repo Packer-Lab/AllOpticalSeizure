@@ -41,7 +41,7 @@ class NonTargetsResponsesSpatialAnalysis(Quantification):
     @staticmethod
     @Utils.run_for_loop_across_exps(run_pre4ap_trials=0,
                                     run_post4ap_trials=1,
-                                    allow_rerun=0,
+                                    allow_rerun=1,
                                     skip_trials=PhotostimResponsesQuantificationNonTargets.EXCLUDE_TRIALS,)
                                     # run_trials=PhotostimResponsesQuantificationNonTargets.TEST_TRIALS)
     def run__initPhotostimResponsesAnalysisNonTargets(**kwargs):
@@ -64,6 +64,8 @@ class NonTargetsResponsesSpatialAnalysis(Quantification):
         :param expobj:
         """
         assert hasattr(expobj, 'NonTargetsSzInvasionSpatial'), 'nontargets sz invasion spatial processing not found for exp obj.'
+
+
 
 
 if __name__ == '__main__':

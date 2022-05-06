@@ -72,6 +72,15 @@ class NonTargetsSzInvasionSpatial(Quantification):
         expobj.NonTargetsSzInvasionSpatial = NonTargetsSzInvasionSpatial(expobj=expobj)
         expobj.save()
 
+    @staticmethod
+    @Utils.run_for_loop_across_exps(run_pre4ap_trials=False, run_post4ap_trials=True, allow_rerun=1, skip_trials=EXCLUDE_TRIALS)
+    def run__methods(**kwargs):
+        expobj: Union[alloptical, Post4ap] = kwargs['expobj']
+        expobj.NonTargetsSzInvasionSpatial._add_nontargets_proximal_distal_sz_anndata()
+        expobj.save()
+
+
+
     def __repr__(self):
         return f"NonTargetsSzInvasionSpatial <-- Quantification Analysis submodule for expobj <{self.expobj_id}>"
 
@@ -165,7 +174,6 @@ class NonTargetsSzInvasionSpatial(Quantification):
         return photostim_responses_adata
 
 
-
     def _add_nontargets_sz_boundary_anndata(self):
         """add layer to anndata table that splits nontarget cell in or out of sz boundary.
         1: outside of sz boundary
@@ -180,8 +188,26 @@ class NonTargetsSzInvasionSpatial(Quantification):
 
         self.adata.add_layer(layer_name='in/out sz', data=arr)
 
+    def _add_nontargets_proximal_distal_sz_anndata(self):
+        """
+        Add layer to anndata of matrix that contains classification of targets as proximal (<100um), middle (100um < x < 200um) distal (>200um) to sz distance.
+
+        """
+
+        arr = np.full_like(self.adata.X, np.nan, dtype='<U10')
+
+        arr[self.adata.X < 0] = 'insz'
+        arr[self.adata.X > 200] = 'distal'
+        arr[np.where((self.adata.X < 100) & (self.adata.X > 0), True, False)] = 'proximal'
+        arr[np.where((self.adata.X < 200) & (self.adata.X > 100), True, False)] = 'middle'
+
+        self.adata.add_layer(layer_name='outsz location', data=arr)
+
+
+
+
 if __name__ == '__main__':
     # NonTargetsSzInvasionSpatial.run__classify_nontargets_szboundary()
-    NonTargetsSzInvasionSpatial.run__NonTargetsSzInvasionSpatial()
-
+    # NonTargetsSzInvasionSpatial.run__NonTargetsSzInvasionSpatial()
+    NonTargetsSzInvasionSpatial.run__methods()
 
