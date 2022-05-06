@@ -75,10 +75,10 @@ class CustomUnpicklerAttributeError(pickle.Unpickler):
         #     return TargetsPhotostimResponsesInterictalResults
         elif name == 'TargetsSzInvasionSpatial':
             print(f'\t for: TargetsSzInvasionSpatial')
-            from _analysis_._ClassTargetsSzInvasionSpatial import TargetsSzInvasionSpatial
-            return TargetsSzInvasionSpatial
-        elif name == 'TargetsSzInvasionSpatial_codereview':
-            print(f'\t for: TargetsSzInvasionSpatial_codereview')
+        #     from _analysis_._ClassTargetsSzInvasionSpatial import TargetsSzInvasionSpatial
+        #     return TargetsSzInvasionSpatial
+        # elif name == 'TargetsSzInvasionSpatial_codereview':
+        #     print(f'\t for: TargetsSzInvasionSpatial_codereview')
             from _analysis_._ClassTargetsSzInvasionSpatial_codereview import TargetsSzInvasionSpatial_codereview
             return TargetsSzInvasionSpatial_codereview
         elif name == 'ExpSeizureAnalysis':
@@ -113,8 +113,8 @@ class CustomUnpicklerModuleNotFoundError(pickle.Unpickler):
         elif module == '_sz_processing.ClassTargetsSzInvasionTemporal':
             renamed_module = "_analysis_._ClassTargetsSzInvasionTemporal"
 
-        elif module == '_ClassTargetsSzInvasionSpatial':
-            renamed_module = "_analysis_._ClassTargetsSzInvasionSpatial"
+        elif module == '_analysis_._ClassTargetsSzInvasionSpatial':
+            renamed_module = "_analysis_._ClassTargetsSzInvasionSpatial_codereview"
 
         elif module == '_analysis_._ClassTargetsSzOnsetTime':
             renamed_module = "_analysis_._ClassTargetsPhotostimResponsesInterictal"

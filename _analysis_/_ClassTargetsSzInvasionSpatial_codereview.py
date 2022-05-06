@@ -19,9 +19,9 @@ SAVE_LOC = "/home/pshah/mnt/qnap/Analysis/analysis_export/analysis_quantificatio
 
 
 """
-TODO all code:
-- double check plot - is the result real lol
-
+TODO:
+- classify targets during sz as proximal or distal to sz wavefront
+- shuffle distances of targets and replot distance vs. responses as a control comparison.
     
 """
 
@@ -41,7 +41,7 @@ class TargetsSzInvasionSpatial_codereview(SLMTargets):
     def __repr__(self):
         return f"TargetsSzInvasionSpatial <-- Quantification Analysis submodule codereview for expobj <{self.expobj_id}>"
 
-    # %% 1.0) calculate/collect min distance to seizure and responses at each distance ###############################
+    # 1.0) calculate/collect min distance to seizure and responses at each distance ###############################
 
     def _create_anndata(self, expobj: Post4ap, distance_to_sz_array):
         """
@@ -104,7 +104,7 @@ class TargetsSzInvasionSpatial_codereview(SLMTargets):
 
         expobj: Post4ap = kwargs['expobj']
         expobj.sz_locations_stims() if not hasattr(expobj, 'stimsSzLocations') else None
-        distance_to_sz_df = expobj.calcMinDistanceToSz_newer(show_debug_plot=False) if not hasattr(expobj, 'distance_to_sz') or force_redo else None  ## <<-- TODO main code line to code review and confirm. try to confirm correct calculation of distances using some plots??
+        distance_to_sz_df = expobj.calcMinDistanceToSz_newer(analyse_cells='SLM Targets', show_debug_plot=False) if not hasattr(expobj, 'distance_to_sz') or force_redo else None  ## <<-- TODO main code line to code review and confirm. try to confirm correct calculation of distances using some plots??
         # expobj.save()
 
         # distance_to_sz_arr = np.array(distance_to_sz_df)
@@ -114,6 +114,38 @@ class TargetsSzInvasionSpatial_codereview(SLMTargets):
         expobj.TargetsSzInvasionSpatial_codereview._create_anndata(expobj=expobj, distance_to_sz_array=distance_to_sz_arr)
         expobj.save()
 
+
+    def add_sz_distance_um_layer(self, expobj: Post4ap):
+        arr = self.adata.X
+        newarr = np.round(arr / expobj.pix_sz_x, 2)
+        self.adata.add_layer(layer_name='distance to sz (um)', data=newarr)
+
+    @staticmethod
+    @Utils.run_for_loop_across_exps(run_pre4ap_trials=False, run_post4ap_trials=True, allow_rerun=0)
+    def run__add_sz_distance_um_layer(**kwargs):
+        expobj: Post4ap = kwargs['expobj']
+        expobj.TargetsSzInvasionSpatial_codereview.add_sz_distance_um_layer(expobj=expobj)
+        expobj.save()
+
+
+    def class_targets_proximal_distal(self):
+        """
+        Add layer to anndata of matrix that contains classification of targets as proximal (<100um), middle (100um < x < 200um) distal (>200um) to sz distance.
+
+        """
+
+        print(self.adata.layers.keys())
+
+        distances = self.adata.layers['distance to sz (um)']
+        newarr = np.full_like(distances, np.nan, dtype='<U10')
+
+
+        newarr[distances < 0] = 'insz'
+        newarr[distances > 200] = 'distal'
+        newarr[np.where((distances < 100) & (distances > 0), True, False)] = 'proximal'
+        newarr[np.where((distances < 200) & (distances > 100), True, False)] = 'middle'
+
+        self.adata.add_layer(layer_name='outsz location', data=newarr)
 
 
     @staticmethod
@@ -176,7 +208,7 @@ class TargetsSzInvasionSpatial_codereview(SLMTargets):
                 #     print('break here!! debug if - else loop if erroring out..')
 
                 # distance_to_sz = expobj.distance_to_sz['SLM Targets'].loc[target, stim]
-                distance_to_sz = self.adata.X[target, idx]
+                distance_to_sz = self.adata.X[target, idx]  # distance in pixels
 
                 if response_type == 'dFF':
                     # response = expobj.responses_SLMtargets_tracedFF.loc[target, idx]
@@ -208,7 +240,7 @@ class TargetsSzInvasionSpatial_codereview(SLMTargets):
                                                                                                         response_type=TargetsSzInvasionSpatial_codereview.response_type)
         expobj.save()
 
-    ###### 1.1) PLOT - collect and plot targets responses for stims vs. distance #######################################
+    # 1.1) PLOT - collect and plot targets responses for stims vs. distance #######################################
     @staticmethod
     @Utils.run_for_loop_across_exps(run_pre4ap_trials=False, run_post4ap_trials=True, set_cache=0)
     def plot_responses_vs_distance_to_seizure_SLMTargets(response_type=response_type, **kwargs):
@@ -271,7 +303,7 @@ class TargetsSzInvasionSpatial_codereview(SLMTargets):
         fig.tight_layout(pad=1.1)
         fig.show()
 
-    ###### 2.0) binning and plotting density plot, and smoothing data across the distance to seizure axis, when comparing to responses
+    # 2.0) binning and plotting density plot, and smoothing data across the distance to seizure axis, when comparing to responses
     @staticmethod
     @Utils.run_for_loop_across_exps(run_pre4ap_trials=False, run_post4ap_trials=True, allow_rerun=0)
     def retrieve__responses_vs_distance_to_seizure(response_type, positive_distances_only=False,
@@ -324,7 +356,7 @@ class TargetsSzInvasionSpatial_codereview(SLMTargets):
 
         return data_expobj
 
-    ###### 2.1) PLOT - binning and plotting density plot, and smoothing data across the distance to seizure axis, when comparing to responses - represent the distances in percentile space
+    # 2.1) PLOT - binning and plotting density plot, and smoothing data across the distance to seizure axis, when comparing to responses - represent the distances in percentile space
     @staticmethod
     def convert__responses_szdistances_percentile_space(input_data):
         """
@@ -451,7 +483,7 @@ class TargetsSzInvasionSpatial_codereview(SLMTargets):
         plt.show()
 
 
-    # %% 3) distnace vs. photostim responses - no percentile normalization of distances
+    # 3) distnace vs. photostim responses - no percentile normalization of distances
     @staticmethod
     def collect__binned__distance_v_responses():
         """collect distance vs. respnses for distance bins"""
@@ -587,23 +619,30 @@ def run__collect_responses_vs_distance_to_seizure_SLMTargets(**kwargs):
     expobj.TargetsSzInvasionSpatial_codereview.collect__responses_vs_distance_to_seizure_SLMTargets(expobj=expobj, response_type=TargetsSzInvasionSpatial_codereview.response_type)
     expobj.save()
 
+@Utils.run_for_loop_across_exps(run_pre4ap_trials=0, run_post4ap_trials=1, allow_rerun=0)
+def run__class_targets_proximal_distal(**kwargs):
+    expobj = kwargs['expobj']
+    expobj.TargetsSzInvasionSpatial_codereview.class_targets_proximal_distal()
+    expobj.save()
 
 if __name__ == '__main__':
     main = TargetsSzInvasionSpatial_codereview
     results = TargetsSzInvasionSpatialResults_codereview.load()
 
-    'Running code pipeline for just one experiment all the way thru.'
+    'Running updated code pipeline for just one experiment all the way thru.'
     # run__initTargetsSzInvasionSpatial()  # <- code review done
-
+    #
     # main.run__add__min_distance_to_seizure()  # <- code review done
-
+    #
     # main.run__collect_responses_vs_distance_to_seizure_SLMTargets()  # <- code review done
 
+    main.run__add_sz_distance_um_layer()
 
+    run__class_targets_proximal_distal()
 
-    main.plot_responses_vs_distance_to_seizure_SLMTargets()
+    # main.plot_responses_vs_distance_to_seizure_SLMTargets()
 
-    main.plot_collection_response_distance()
+    # main.plot_collection_response_distance()
 
     # results.responses_vs_distance_to_seizure = main.retrieve__responses_vs_distance_to_seizure(response_type=main.response_type, positive_distances_only=False, plot=False)  # <- code review done
 
@@ -613,17 +652,17 @@ if __name__ == '__main__':
     #     results.scale_percentile_distances = main.convert__responses_szdistances_percentile_space(input_data=results.responses_vs_distance_to_seizure)  # <- code review done
     # results.save_results()
 
-    # not sure why there are nans in the .distances_to_sz_sorted and .percentiles and .data_all[:, 0], but need to remove them....
-    nan_list = np.isnan(list(results.data_all[:, 0]))
-    results.data_all = results.data_all[~nan_list, :]
-    nan_indexes = np.where(np.isnan(list(results.percentiles)))[0]
-    results.percentiles = [val for i, val in enumerate(results.percentiles) if i not in nan_indexes]
-    results.responses_sorted = [val for i, val in enumerate(results.responses_sorted) if i not in nan_indexes]
-    results.distances_to_sz_sorted = [val for i, val in enumerate(results.distances_to_sz_sorted) if i not in nan_indexes]
-
-    main.plot_density_responses_szdistances(response_type=results.response_type, data_all=results.data_all,
-                                            distances_to_sz_sorted=results.distances_to_sz_sorted, scale_percentile_distances=results.scale_percentile_distances)
-
-    main.plot_lineplot_responses_pctszdistances(results.percentiles, results.responses_sorted, response_type=results.response_type,
-                                                scale_percentile_distances=results.scale_percentile_distances)
+    # # not sure why there are nans in the .distances_to_sz_sorted and .percentiles and .data_all[:, 0], but need to remove them....
+    # nan_list = np.isnan(list(results.data_all[:, 0]))
+    # results.data_all = results.data_all[~nan_list, :]
+    # nan_indexes = np.where(np.isnan(list(results.percentiles)))[0]
+    # results.percentiles = [val for i, val in enumerate(results.percentiles) if i not in nan_indexes]
+    # results.responses_sorted = [val for i, val in enumerate(results.responses_sorted) if i not in nan_indexes]
+    # results.distances_to_sz_sorted = [val for i, val in enumerate(results.distances_to_sz_sorted) if i not in nan_indexes]
+    #
+    # main.plot_density_responses_szdistances(response_type=results.response_type, data_all=results.data_all,
+    #                                         distances_to_sz_sorted=results.distances_to_sz_sorted, scale_percentile_distances=results.scale_percentile_distances)
+    #
+    # main.plot_lineplot_responses_pctszdistances(results.percentiles, results.responses_sorted, response_type=results.response_type,
+    #                                             scale_percentile_distances=results.scale_percentile_distances)
 

@@ -7,8 +7,6 @@ sys.path.extend(['/home/pshah/Documents/code/AllOpticalSeizure', '/home/pshah/Do
 
 import _alloptical_utils as Utils
 
-from _analysis_._ClassTargetsSzInvasionSpatial import TargetsSzInvasionSpatial
-
 results: TargetsSzInvasionSpatialResults_codereview = TargetsSzInvasionSpatialResults_codereview.load()
 
 # Results__TargetsSzInvasionSpatial = TargetsSzInvasionSpatialResults.load()
@@ -24,14 +22,15 @@ SAVE_LOC = "/home/pshah/mnt/qnap/Analysis/analysis_export/analysis_quantificatio
 @Utils.run_for_loop_across_exps(run_pre4ap_trials=0, run_post4ap_trials=1, allow_rerun=0)
 def run__initTargetsSzInvasionSpatial(**kwargs):
     expobj: Post4ap = kwargs['expobj']
-    expobj.TargetsSzInvasionSpatial = TargetsSzInvasionSpatial(expobj=expobj)
+    expobj.TargetsSzInvasionSpatial = main(expobj=expobj)
     expobj.save()
 
 @Utils.run_for_loop_across_exps(run_pre4ap_trials=0, run_post4ap_trials=1, allow_rerun=1)
 def run__collect_responses_vs_distance_to_seizure_SLMTargets(**kwargs):
     expobj = kwargs['expobj']
-    expobj.TargetsSzInvasionSpatial.collect__responses_vs_distance_to_seizure_SLMTargets(expobj=expobj, response_type=TargetsSzInvasionSpatial.response_type)
+    expobj.TargetsSzInvasionSpatial.collect__responses_vs_distance_to_seizure_SLMTargets(expobj=expobj, response_type=main.response_type)
     expobj.save()
+
 
 
 # %%
@@ -78,21 +77,11 @@ if __name__ == '__main__':
     # results.binned__distance_vs_photostimresponses = {'bin_width_um': bin_width, 'distance_bins': distances, 'num_points_in_bin': num,
     # 'avg_photostim_response_in_bin': avg_responses, '95conf_int': conf_int}
     # results.save_results()
-    main.plot__responses_v_distance_no_normalization(results=results)
+    # main.plot__responses_v_distance_no_normalization(results=results)
 
 
+    # run class targets proximal distal
 
-
-
-
-
-
-
-
-
-
-# todo refactor code into the results class here.
-# todo run similar plot for temporal sz invasion analysis.
 
 
 
