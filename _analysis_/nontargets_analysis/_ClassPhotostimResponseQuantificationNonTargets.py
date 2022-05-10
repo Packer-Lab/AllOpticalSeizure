@@ -24,7 +24,7 @@ from _utils_._anndata import AnnotatedData2
 SAVE_LOC = "/home/pshah/mnt/qnap/Analysis/analysis_export/analysis_quantification_classes/"
 
 
-# %% ###### NON TARGETS analysis + plottings
+# %%  ###### NON TARGETS analysis + plottings
 
 class PhotostimResponsesNonTargetsResults(Results):
     SAVE_PATH = SAVE_LOC + 'Results__PhotostimResponsesNonTargets.pkl'
@@ -39,6 +39,9 @@ class PhotostimResponsesNonTargetsResults(Results):
         self.avg_responders_magnitude = None  #: average response magnitude, for pairedmatched experiments between baseline pre4ap and interictal
         self.sig_units_baseline = {}  #: dictionary of sig responder units for each baseline exp trial
         self.sig_units_interictal = {}  #: dictionary of sig responder units for the interictal condition
+
+    def __repr__(self):
+        return f"PhotostimResponsesNonTargetsResults <- Results Analysis Object"
 
 
 REMAKE = False
@@ -158,7 +161,7 @@ class PhotostimResponsesQuantificationNonTargets(Quantification):
             expobj.save()
         self.collect__sig_responders_responses_type1(expobj=expobj)
         self.collect__sig_responders_responses_type2(expobj=expobj, results=results)
-        self.create_anndata(expobj=expobj)  # <- still need to test!
+        self.create_anndata(expobj=expobj)
 
         self.fakestims: FakeStimsQuantification = FakeStimsQuantification(expobj=expobj)
         self.fakestims_allopticalAnalysisNontargets(expobj=expobj)
@@ -171,9 +174,9 @@ class PhotostimResponsesQuantificationNonTargets(Quantification):
                                     # run_trials=TEST_TRIALS)
     def run__methods(**kwargs):
         expobj: Union[alloptical, Post4ap] = kwargs['expobj']
-        expobj._findTargetedS2pROIs(plot=False)
+        # expobj._findTargetedS2pROIs(plot=False)
+        expobj.PhotostimResponsesNonTargets.create_anndata(expobj=expobj)
 
-        # expobj.PhotostimResponsesNonTargets._allopticalAnalysisNontargets(expobj=expobj, results=results)
         # collect traces of statistically significant followers:
         # expobj.PhotostimResponsesNonTargets.collect__sig_responders_responses_type1(expobj=expobj)
         # expobj.PhotostimResponsesNonTargets.collect__sig_responders_responses_type2(expobj=expobj, results=results)
@@ -281,7 +284,7 @@ class PhotostimResponsesQuantificationNonTargets(Quantification):
                                                                                                                       post_stim_response_frames_window=self.post_stim_response_frames_window)
 
             if not self.diff_responses.shape == pre4ap.PhotostimResponsesNonTargets.diff_responses.shape:
-                print('debug why not!!!!')
+                raise ValueError('misshaped responses shapes between pre4ap and post4ap!!!!')
 
             self.dff_stimtraces = expobj.dff_traces_nontargets
             self.dfstdF_stimtraces = expobj.dfstdF_traces_nontargets  #: all stim timed trace snippets for all nontargets, shape: # cells x # stims x # frames of trace snippet
@@ -332,6 +335,16 @@ class PhotostimResponsesQuantificationNonTargets(Quantification):
             expobj.metainfo['animal prep.'], expobj.metainfo['trial']))
         print(
             '-------------------------------------------------------------------------------------------------------------\n\n')
+
+    @staticmethod
+    @Utils.run_for_loop_across_exps(run_pre4ap_trials=1, run_post4ap_trials=1, allow_rerun=1, skip_trials=EXCLUDE_TRIALS,)
+                                    # run_trials=TEST_TRIALS)
+    def run__allopticalAnalysisNontargets(results, **kwargs):
+        expobj: Union[alloptical, Post4ap] = kwargs['expobj']
+
+        expobj.PhotostimResponsesNonTargets._allopticalAnalysisNontargets(expobj=expobj, results=results)
+
+        expobj.save()
 
     def fakestims_allopticalAnalysisNontargets(self, expobj: Union[alloptical, Post4ap]):
         # COLLECTING FAKESTIM TRACES RESPONSES FOR NONTARGETS
@@ -461,8 +474,19 @@ class PhotostimResponsesQuantificationNonTargets(Quantification):
     def create_anndata(self, expobj: Union[alloptical, Post4ap]):
         """
         Creates annotated data (see anndata library for more information on AnnotatedData) object based around the photostim resposnes of all non-target ROIs.
-
+        cells are confirmed to be matched across pre4ap and post4ap.
         """
+
+        from _exp_metainfo_.exp_metainfo import AllOpticalExpsToAnalyze
+        matched_id = AllOpticalExpsToAnalyze.find_matched_trial(pre4ap_trial_name=self.expobj_id) if 'pre' in self.expobj_exptype else AllOpticalExpsToAnalyze.find_matched_trial(post4ap_trial_name=self.expobj_id)
+        matchedtrial: alloptical = Utils.import_expobj(exp_prep=matched_id)
+        cells_analysis = np.unique(matchedtrial.s2p_nontargets_analysis + expobj.s2p_nontargets_analysis)
+        cells_exlude = np.unique(matchedtrial.s2p_nontargets_exclude + expobj.s2p_nontargets_exclude)
+
+        # set up main dataframe
+        cells_idx = [cell for cell in expobj.cell_id if (cell in cells_analysis) and (cell not in cells_exlude)]
+        responses_arr = self.diff_responses[cells_idx, :]
+
 
         # SETUP THE OBSERVATIONS (CELLS) ANNOTATIONS TO USE IN anndata
         # build dataframe for obs_meta from SLM targets information
@@ -470,10 +494,11 @@ class PhotostimResponsesQuantificationNonTargets(Quantification):
 
         obs_meta = pd.DataFrame(
             columns=['original_index', 'footprint', 'mrs', 'mrs0', 'compact', 'med', 'npix', 'radius',
-                     'aspect_ratio', 'npix_norm', 'skew', 'std'], index=range(len(expobj.s2p_nontargets_analysis)))
+                     'aspect_ratio', 'npix_norm', 'skew', 'std'], index=range(len(cells_analysis)))
         for i, idx in enumerate(obs_meta.index):
-                for __column in obs_meta:
-                    obs_meta.loc[i, __column] = expobj.stat[i][__column]
+                if idx not in cells_exlude:
+                    for __column in obs_meta:
+                        obs_meta.loc[i, __column] = expobj.stat[i][__column]
 
         # add statistically significant responder
         if 'pre' in self.expobj_exptype:
@@ -521,8 +546,8 @@ class PhotostimResponsesQuantificationNonTargets(Quantification):
         obs_m = {'ypix': [],
                  'xpix': []}
         for col in [*obs_m]:
-            for i, idx in enumerate(expobj.s2p_nontargets_analysis):
-                if idx not in expobj.s2p_nontargets_exclude:
+            for i, idx in enumerate(cells_analysis):
+                if idx not in cells_exlude:
                     obs_m[col].append(expobj.stat[i][col])
             obs_m[col] = np.asarray(obs_m[col])
 
@@ -553,7 +578,7 @@ class PhotostimResponsesQuantificationNonTargets(Quantification):
                 else:
                     var_meta.loc['wvfront in sz', fr_idx] = False
                     var_meta.loc['seizure location', fr_idx] = None
-                var_meta.loc['stim_group', fr_idx] = 'ictal' if fr_idx in expobj.stims_in_sz else 'interictal'
+                var_meta.loc['stim_group', fr_idx] = 'interictal' if expobj.stim_start_frames[int(fr_idx)] in expobj.stims_out_sz else 'ictal'
             var_meta.loc['stim_start_frame', fr_idx] = stim_frame
             var_meta.loc['im_time_secs', fr_idx] = stim_frame / expobj.fps
 
@@ -563,7 +588,7 @@ class PhotostimResponsesQuantificationNonTargets(Quantification):
                        'PhotostimResponsesSLMTargets'), 'no photostim responses found to use to create anndata base.'
         print(f"\t\----- CREATING annotated data object using AnnData:")
         # create anndata object
-        photostim_responses_adata = AnnotatedData2(X=self.diff_responses, obs=obs_meta, var=var_meta.T, obsm=obs_m,
+        photostim_responses_adata = AnnotatedData2(X=responses_arr, obs=obs_meta, var=var_meta.T, obsm=obs_m,
                                                    data_label='nontargets dFF responses')
 
         print(f"Created: {photostim_responses_adata}")
@@ -1104,9 +1129,9 @@ if __name__ == '__main__':
     main = PhotostimResponsesQuantificationNonTargets
     results: PhotostimResponsesNonTargetsResults = PhotostimResponsesNonTargetsResults.load()
 
-
+    main.run__allopticalAnalysisNontargets(results=results)
+    # main.run__methods()
     # running fake stims alloptical analysis for non targets here currently: (apr 28 2022)
-    main.run__methods()
     # main.run__fakestims_processing()
     # main.run__z_score_responses()
 
@@ -1115,7 +1140,7 @@ if __name__ == '__main__':
 
     # PhotostimResponsesAnalysisNonTargets.plot__exps_summed_nontargets_vs_summed_targets
 
-    # main.run__create_anndata()
+    main.run__create_anndata(rerun=1)
 
     # main.run__fix_anndata()
 

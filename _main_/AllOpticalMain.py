@@ -1882,10 +1882,8 @@ class alloptical(TwoPhotonImaging):
         print('----------------------------------------------------------------')
 
         # make trial arrays from dff data shape: [cells x stims x frames]
-        if stims != 'all':
-            expobj._makeNontargetsStimTracesArray(stim_frames=stims, normalize_to=normalize_to, save=False, plot=True)
-        else:
-            expobj._makeNontargetsStimTracesArray(stim_frames=expobj.stim_start_frames, normalize_to=normalize_to, save=False, plot=True)
+        if stims != 'all': expobj._makeNontargetsStimTracesArray(stim_frames=stims, normalize_to=normalize_to, save=False, plot=True)
+        else: expobj._makeNontargetsStimTracesArray(stim_frames=expobj.stim_start_frames, normalize_to=normalize_to, save=False, plot=True)
 
         # create parameters, slices, and subsets for making pre-stim and post-stim arrays to use in stats comparison
         # test_period = expobj.pre_stim_response_window_msec / 1000  # sec
