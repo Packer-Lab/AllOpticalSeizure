@@ -25,6 +25,61 @@ import tifffile as tf
 import _alloptical_utils as Utils
 
 
+# %% investigating why/if? there are different # of s2p nontargets between MATCHED pre4ap and post4ap trials
+
+pre4aptrial = 'RL108 t-009'
+pre4ap: alloptical = Utils.import_expobj(exp_prep=pre4aptrial)
+
+post4aptrial = AllOpticalExpsToAnalyze.find_matched_trial(pre4ap_trial_name=pre4aptrial)
+post4ap: Post4ap = Utils.import_expobj(exp_prep=post4aptrial)
+
+
+
+## look at .s2p_nontargets, .good_cells
+
+
+len(pre4ap.good_cells)
+len(post4ap.good_cells)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+print('pause here!')
 
 
 # %% decide which exp trial from RL109 to keep - pick the one with the strongest targets and nontargets photostim responses

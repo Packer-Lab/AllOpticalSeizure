@@ -125,6 +125,9 @@ class CustomUnpicklerModuleNotFoundError(pickle.Unpickler):
         elif module == '_analysis_._ClassPhotostimResponseQuantificationNonTargets':
             renamed_module = "_analysis_.nontargets_analysis._ClassPhotostimResponseQuantificationNonTargets"
 
+        elif module == '_ClassPhotostimResponseQuantificationNonTargets':
+            renamed_module = "_analysis_.nontargets_analysis._ClassPhotostimResponseQuantificationNonTargets"
+
         elif module == '_analysis_._ClassNonTargetsSzInvasionSpatial':
             renamed_module = "_analysis_.nontargets_analysis._ClassNonTargetsSzInvasionSpatial"
 

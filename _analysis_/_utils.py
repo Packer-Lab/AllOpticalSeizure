@@ -17,6 +17,18 @@ class CustomUnpicklerAttributeError(pickle.Unpickler):
 
         return super().find_class(module, name)
 
+class CustomUnpicklerModuleNotFoundError(pickle.Unpickler):
+    def find_class(self, module, name):
+        if module == '_analysis_.ClassPhotostimResponseQuantificationSLMtargets':
+            renamed_module = "_analysis_._ClassPhotostimResponseQuantificationSLMtargets"
+
+        elif module == '_analysis_._ClassPhotostimResponseQuantificationNonTargets':
+            renamed_module = "_analysis_.nontargets_analysis._ClassPhotostimResponseQuantificationNonTargets"
+
+        else:
+            renamed_module = module
+
+        return super().find_class(renamed_module, name)
 
 class Quantification:
     """generic parent for Quantification subclasses """
@@ -107,6 +119,8 @@ class Results:
             return load_pkl(cls.SAVE_PATH)
         except AttributeError:
             CustomUnpicklerAttributeError(open(cls.SAVE_PATH, 'rb')).load()
+        except ModuleNotFoundError:
+            CustomUnpicklerModuleNotFoundError(open(cls.SAVE_PATH, 'rb')).load()
 
     # @property
     # def expobj_id(self):

@@ -123,7 +123,7 @@ class AnnotatedData2(ad.AnnData):
 
 
 
-    def add_observation(self, obs_name: str, values: list):
+    def add_observation(self, obs_name: str, values: Union[list, pd.Series, np.ndarray]):
         """adds values to the observations of an anndata object, under the key obs_name"""
         assert len(values) == self.obs.shape[0], f"# of values to add doesn't match # of observations in anndata"
         if type(values) != list:

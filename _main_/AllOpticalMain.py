@@ -977,8 +977,7 @@ class alloptical(TwoPhotonImaging):
         print(f"Number of exclude cells: {self.n_exclude_cells}")
 
         # define non targets from suite2p ROIs (exclude cells in the SLM targets exclusion - .s2p_cells_exclude)
-        self.s2p_nontargets = [cell for cell in self.good_cells if
-                               cell not in self.s2p_cells_exclude]  ## exclusion of cells that are classified as s2p_cell_targets
+        self.s2p_nontargets = [cell for cell in self.cell_id if cell not in self.s2p_cells_exclude]  ## exclusion of cells that are classified as s2p_cell_targets
 
         print(f"Number of good, s2p non_targets: {len(self.s2p_nontargets)}")
         self.save()

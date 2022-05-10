@@ -133,7 +133,7 @@ class PhotostimResponsesQuantificationNonTargets(Quantification):
 
     REPRESENTATIVE_TRIALS = ['PS07 t-007', 'PS07 t-011']
     TEST_TRIALS = [
-                    # 'RL108 t-009'
+                    'RL108 t-009',
                    'RL108 t-013'
                     ]
 
@@ -167,10 +167,12 @@ class PhotostimResponsesQuantificationNonTargets(Quantification):
 
 
     @staticmethod
-    @Utils.run_for_loop_across_exps(run_pre4ap_trials=0, run_post4ap_trials=0, allow_rerun=1, skip_trials=EXCLUDE_TRIALS,
-                                    run_trials=TEST_TRIALS)
+    @Utils.run_for_loop_across_exps(run_pre4ap_trials=1, run_post4ap_trials=1, allow_rerun=1, skip_trials=EXCLUDE_TRIALS,)
+                                    # run_trials=TEST_TRIALS)
     def run__methods(**kwargs):
         expobj: Union[alloptical, Post4ap] = kwargs['expobj']
+        expobj._findTargetedS2pROIs(plot=False)
+
         # expobj.PhotostimResponsesNonTargets._allopticalAnalysisNontargets(expobj=expobj, results=results)
         # collect traces of statistically significant followers:
         # expobj.PhotostimResponsesNonTargets.collect__sig_responders_responses_type1(expobj=expobj)
@@ -266,10 +268,21 @@ class PhotostimResponsesQuantificationNonTargets(Quantification):
 
         elif 'post' in expobj.exptype:
             expobj: Post4ap = expobj
+
+            from _exp_metainfo_.exp_metainfo import AllOpticalExpsToAnalyze
+            pre4aptrial = AllOpticalExpsToAnalyze.find_matched_trial(post4ap_trial_name=self.expobj_id)
+            pre4ap: alloptical = Utils.import_expobj(exp_prep=pre4aptrial)
+
+
+
             # all stims
             self.diff_responses, self.wilcoxons, self.sig_units, self.responders = expobj._trialProcessing_nontargets(normalize_to='pre-stim', stims = 'all', fdr_alpha=self.nontargets_sig_fdr_alpha,
                                                                                                                       pre_stim_fr=self.pre_stim_fr, pre_stim_response_frames_window=self.pre_stim_response_frames_window,
                                                                                                                       post_stim_response_frames_window=self.post_stim_response_frames_window)
+
+            if not self.diff_responses.shape == pre4ap.PhotostimResponsesNonTargets.diff_responses.shape:
+                print('debug why not!!!!')
+
             self.dff_stimtraces = expobj.dff_traces_nontargets
             self.dfstdF_stimtraces = expobj.dfstdF_traces_nontargets  #: all stim timed trace snippets for all nontargets, shape: # cells x # stims x # frames of trace snippet
 
@@ -598,6 +611,48 @@ class PhotostimResponsesQuantificationNonTargets(Quantification):
         print(f"\- adding fakestims responses to anndata array.")
         fakestim_responses = self.fakestims.diff_responses_array
         self.adata.add_layer(layer_name='nontargets fakestim_responses', data=fakestim_responses)
+
+    def z_score_responses(self):
+        if 'pre' in self.expobj_exptype or 'post' in self.expobj_exptype:
+
+            # z score photostim responses
+            zscored = stats.zscore(self.adata.X, ddof=1, axis=1)
+            self.adata.add_layer(layer_name='nontargets responses z scored', data=zscored)
+
+            # add mean and std for each target as a pre4ap mean and pre4ap std obs annotation
+            means = np.mean(self.adata.X, axis=1)
+            stds = np.std(self.adata.X, axis=1, ddof=1)
+
+            self.adata.add_observation(obs_name='mean response', values=means)
+            self.adata.add_observation(obs_name='std response', values=stds)
+
+
+        if 'post' in self.expobj_exptype:
+            # zscore to pre-4ap matched mean and std stats for each nontarget
+            from _exp_metainfo_.exp_metainfo import AllOpticalExpsToAnalyze
+            pre4aptrial = AllOpticalExpsToAnalyze.find_matched_trial(post4ap_trial_name=self.expobj_id)
+            pre4ap: alloptical = Utils.import_expobj(exp_prep=pre4aptrial)
+
+            zscores = np.empty_like(self.adata.X)
+            for i, cell in enumerate(self.adata.obs['original_index']):
+                premean = pre4ap.PhotostimResponsesNonTargets.adata.obs['mean response'][i]
+                prestd = pre4ap.PhotostimResponsesNonTargets.adata.obs['std response'][i]
+
+                zscores[i, :] = [(self.adata.X[i, stim_idx] - premean) / prestd for stim_idx in range(self.adata.n_vars)]
+
+            self.adata.add_layer(layer_name='nontargets responses z scored (to baseline)', data=zscores)
+
+
+    @staticmethod
+    @Utils.run_for_loop_across_exps(run_pre4ap_trials=0, run_post4ap_trials=1, allow_rerun=1, skip_trials=EXCLUDE_TRIALS)
+    def run__z_score_responses(**kwargs):
+        expobj: Union[alloptical, Post4ap] = kwargs['expobj']
+        # expobj.PhotostimResponsesNonTargets.adata.del_observation(obs_name='std responses') if 'std responses' in expobj.PhotostimResponsesNonTargets.adata.obs_keys() else None
+
+        expobj.PhotostimResponsesNonTargets.z_score_responses()
+        expobj.save()
+
+
 
 
     # 2) COLLECT pos/neg sig. responders traces and responses
@@ -1051,8 +1106,9 @@ if __name__ == '__main__':
 
 
     # running fake stims alloptical analysis for non targets here currently: (apr 28 2022)
-    # main.run__methods()
-    main.run__fakestims_processing()
+    main.run__methods()
+    # main.run__fakestims_processing()
+    # main.run__z_score_responses()
 
     # from _analysis_._ClassPhotostimResponsesAnalysisNonTargets import PhotostimResponsesAnalysisNonTargets
     # PhotostimResponsesAnalysisNonTargets.run__plot_sig_responders_traces(plot_baseline_responders=False)
