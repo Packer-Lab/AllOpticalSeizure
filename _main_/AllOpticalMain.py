@@ -1813,6 +1813,8 @@ class alloptical(TwoPhotonImaging):
             plt.plot(np.mean(expobj.dfstdF_traces_nontargets[cell], axis=0), color='black')
             plt.show()
 
+        return expobj.s2p_nontargets_analysis
+
     @staticmethod
     def _runWilcoxonsTest(array1, array2):
 
@@ -1864,8 +1866,8 @@ class alloptical(TwoPhotonImaging):
 
         return sig_units
 
-    def _trialProcessing_nontargets(expobj, pre_stim_fr, pre_stim_response_frames_window, post_stim_response_frames_window, normalize_to='pre-stim', stims: Union[list, str] = 'all',
-                                    fdr_alpha=0.20):
+    def _trialProcessing_nontargets(expobj, pre_stim_fr, pre_stim_response_frames_window, post_stim_response_frames_window,
+                                    normalize_to='pre-stim', stims: Union[list, str] = 'all', fdr_alpha=0.20, plot=True):
         """
         Uses dfstdf traces for individual cells and photostim trials, calculate the mean amplitudes of response and
         statistical significance across all trials for all cells
@@ -1878,12 +1880,16 @@ class alloptical(TwoPhotonImaging):
         """
 
         print('\n----------------------------------------------------------------')
-        print('running trial Processing for nontargets ')
+        print(f'running trial Processing for nontargets [{expobj.t_series_name}]')
         print('----------------------------------------------------------------')
 
         # make trial arrays from dff data shape: [cells x stims x frames]
-        if stims != 'all': expobj._makeNontargetsStimTracesArray(stim_frames=stims, normalize_to=normalize_to, save=False, plot=True)
-        else: expobj._makeNontargetsStimTracesArray(stim_frames=expobj.stim_start_frames, normalize_to=normalize_to, save=False, plot=True)
+        if stims == 'all':
+            cells_analyzed = expobj._makeNontargetsStimTracesArray(stim_frames=expobj.stim_start_frames, normalize_to=normalize_to, save=False, plot=False)
+        else:
+            cells_analyzed = expobj._makeNontargetsStimTracesArray(stim_frames=stims, normalize_to=normalize_to, save=False, plot=False)
+
+        assert len(cells_analyzed) > 0
 
         # create parameters, slices, and subsets for making pre-stim and post-stim arrays to use in stats comparison
         # test_period = expobj.pre_stim_response_window_msec / 1000  # sec
@@ -1895,9 +1901,9 @@ class alloptical(TwoPhotonImaging):
         # mean pre and post stimulus (within post-stim response window) flu trace values for all cells, all trials
         # analysis_array = expobj.dff_traces_nontargets  # NOTE: USING dFF TRACES
         analysis_array = expobj.dfstdF_traces_nontargets  # NOTE: USING dF/stdF TRACES
-        expobj.pre_array = np.mean(analysis_array[:, :, expobj.pre_stim_frames_test],
+        pre_array = np.mean(analysis_array[:, :, expobj.pre_stim_frames_test],
                                    axis=1)  # [cells x prestim frames] (avg'd taken over all stims)
-        expobj.post_array = np.mean(analysis_array[:, :, expobj.post_stim_frames_test],
+        post_array = np.mean(analysis_array[:, :, expobj.post_stim_frames_test],
                                     axis=1)  # [cells x poststim frames] (avg'd taken over all stims)
 
         # measure avg response value for each trial, each cell --> return array with 2 axes; response_magnitude_per_stim (avg'd taken over response window): [cells x stims]
@@ -1907,97 +1913,99 @@ class alloptical(TwoPhotonImaging):
         #     responses = a.mean(axis=1)
         #     expobj.post_array_responses.append(responses)
 
-        expobj.post_array_responses = np.mean(analysis_array[:, :, expobj.post_stim_frames_test], axis=2)  #: response post- stim for all cells, stims: [cells x stims]
-        expobj.pre_array_responses = np.mean(analysis_array[:, :, expobj.pre_stim_frames_test], axis=2)  #: response post- stim for all cells, stims: [cells x stims]
-        diff_responses_array = expobj.post_array_responses - expobj.pre_array_responses
+        post_array_responses = np.mean(analysis_array[:, :, expobj.post_stim_frames_test], axis=2)  #: response post- stim for all cells, stims: [cells x stims]
+        pre_array_responses = np.mean(analysis_array[:, :, expobj.pre_stim_frames_test], axis=2)  #: response post- stim for all cells, stims: [cells x stims]
+        diff_responses_array = post_array_responses - pre_array_responses
 
         # expobj.post_array_responses = np.mean(expobj.pre_array, axis=1)  #: response post- stim for all cells, stims: [cells x stims]
         # expobj.pre_array_responses = np.mean(expobj.post_array, axis=1)  #: response post- stim for all cells, stims: [cells x stims]
-        expobj.wilcoxons = expobj._runWilcoxonsTest(array1=expobj.pre_array, array2=expobj.post_array)  #: wilcoxon  value across all cells: len = # cells
+        wilcoxons = expobj._runWilcoxonsTest(array1=pre_array, array2=post_array)  #: wilcoxon  value across all cells: len = # cells
 
 
         # fdr_alpa = 0.20
-        sig_units = expobj._sigTestAvgResponse_nontargets(p_vals=expobj.wilcoxons, alpha=fdr_alpha)
-        sig_responders = [cell for idx, cell in enumerate(expobj.s2p_nontargets_analysis) if sig_units[idx]]
+        assert len(cells_analyzed) == len(wilcoxons)
+        sig_units = expobj._sigTestAvgResponse_nontargets(p_vals=wilcoxons, alpha=fdr_alpha)
+        sig_responders = [cell for idx, cell in enumerate(cells_analyzed) if sig_units[idx]]
 
         # expobj.save() if save else None
 
-        avg_post = np.mean(expobj.post_array_responses, axis=1)
-        avg_pre = np.mean(expobj.pre_array_responses, axis=1)
+        avg_post = np.mean(post_array_responses, axis=1)
+        avg_pre = np.mean(pre_array_responses, axis=1)
 
         # BUNCH OF PLOT TO TEST HOW RESPONSES ARE BEING STATISTICALLY FILTERED:
-        fig, axs = plt.subplots(figsize=(8,8), nrows=2, ncols=2)
-        # pplot.plot_bar_with_points(data=[avg_pre, avg_post], bar=False, points=True, paired=True, colors=['blue', 'green'], alpha=0.04,
-        #                            x_tick_labels=['prearray', 'postarray'])
-        # pplot.plot_bar_with_points(data=[avg_post], bar=False, points=True, colors=['blue'], alpha=0.04, x_tick_labels=['postarray'])
-        # # comparing post - pre responses directly:
-        # traces_ = []
-        # for cell in range(expobj.pre_array.shape[0]):
-        #     if avg_post[cell] > avg_pre[cell]:
-        #         plt.plot(expobj.dfstdF_traces_nontargets_avg[cell])
-        #         traces_.append(expobj.dfstdF_traces_nontargets_avg[cell])
-        # plt.plot(np.mean(traces_, axis=0), color='black')
-        # plt.suptitle('post - pre: positive')
-        # print(f'Number of pos post-pre cells: {len(traces_)}')
-        # plt.show()
-        #
-        # # comparing post - pre responses directly:
-        # traces_ = []
-        # for cell in range(expobj.pre_array.shape[0]):
-        #     if avg_post[cell] < avg_pre[cell]:
-        #         plt.plot(expobj.dfstdF_traces_nontargets_avg[cell])
-        #         traces_.append(expobj.dfstdF_traces_nontargets_avg[cell])
-        # plt.plot(np.mean(traces_, axis=0), color='black')
-        # plt.suptitle('post - pre: negative')
-        # print(f'Number of neg post-pre cells: {len(traces_)}')
-        # plt.show()
-        # using the results of the wilcoxon test for comparison:
-        traces_ = []
-        for cell in range(expobj.pre_array.shape[0]):
-            if expobj.wilcoxons[cell] < 0.05:
-                if avg_post[cell] > avg_pre[cell]:
-                    axs[0,0].plot(expobj.dfstdF_traces_nontargets_avg[cell])
-                    traces_.append(expobj.dfstdF_traces_nontargets_avg[cell])
-        axs[0,0].plot(np.mean(traces_, axis=0), color='black')
-        axs[0,0].set_title(f'wilcoxon: {len(traces_)} positive')
-        print(f'Number of pos wilcoxon cells: {len(traces_)}')
-        # plt.show()
-        # using the results of the wilcoxon test for comparison:
-        traces_ = []
-        for cell in range(expobj.pre_array.shape[0]):
-            if expobj.wilcoxons[cell] < 0.05:
-                if avg_post[cell] < avg_pre[cell]:
-                    axs[0,1].plot(expobj.dfstdF_traces_nontargets_avg[cell])
-                    traces_.append(expobj.dfstdF_traces_nontargets_avg[cell])
-        axs[0,1].plot(np.mean(traces_, axis=0), color='black')
-        axs[0,1].set_title(f'wilcoxon: {len(traces_)} negative')
-        print(f'Number of neg wilcoxon cells: {len(traces_)}')
-        # plt.show()
-        # using the results of the wilcoxon test + FDR correction for comparison:
-        traces_ = []
-        for cell in range(expobj.pre_array.shape[0]):
-            if sig_units[cell]:
-                if avg_post[cell] > avg_pre[cell]:
-                    axs[1,0].plot(expobj.dfstdF_traces_nontargets_avg[cell])
-                    traces_.append(expobj.dfstdF_traces_nontargets_avg[cell])
-        axs[1,0].plot(np.mean(traces_, axis=0), color='black')
-        axs[1,0].set_title(f'wilcoxon + {fdr_alpha} FDR: {len(traces_)} positive')
-        print(f'Number of pos wilcoxon + FDR cells: {len(traces_)}')
-        # plt.show()
-        # using the results of the wilcoxon test + FDR correction for comparison:
-        traces_ = []
-        for cell in range(expobj.pre_array.shape[0]):
-            if sig_units[cell]:
-                if avg_post[cell] < avg_pre[cell]:
-                    axs[1,1].plot(expobj.dfstdF_traces_nontargets_avg[cell])
-                    traces_.append(expobj.dfstdF_traces_nontargets_avg[cell])
-        axs[1,1].plot(np.mean(traces_, axis=0), color='black')
-        axs[1,1].set_title(f'wilcoxon + {fdr_alpha} FDR: {len(traces_)} negative')
-        print(f'Number of neg wilcoxon + FDR cells: {len(traces_)}')
-        fig.suptitle(f"{expobj.t_series_name}")
-        fig.show()
+        if plot:
+            fig, axs = plt.subplots(figsize=(8,8), nrows=2, ncols=2)
+            # pplot.plot_bar_with_points(data=[avg_pre, avg_post], bar=False, points=True, paired=True, colors=['blue', 'green'], alpha=0.04,
+            #                            x_tick_labels=['prearray', 'postarray'])
+            # pplot.plot_bar_with_points(data=[avg_post], bar=False, points=True, colors=['blue'], alpha=0.04, x_tick_labels=['postarray'])
+            # # comparing post - pre responses directly:
+            # traces_ = []
+            # for cell in range(expobj.pre_array.shape[0]):
+            #     if avg_post[cell] > avg_pre[cell]:
+            #         plt.plot(expobj.dfstdF_traces_nontargets_avg[cell])
+            #         traces_.append(expobj.dfstdF_traces_nontargets_avg[cell])
+            # plt.plot(np.mean(traces_, axis=0), color='black')
+            # plt.suptitle('post - pre: positive')
+            # print(f'Number of pos post-pre cells: {len(traces_)}')
+            # plt.show()
+            #
+            # # comparing post - pre responses directly:
+            # traces_ = []
+            # for cell in range(expobj.pre_array.shape[0]):
+            #     if avg_post[cell] < avg_pre[cell]:
+            #         plt.plot(expobj.dfstdF_traces_nontargets_avg[cell])
+            #         traces_.append(expobj.dfstdF_traces_nontargets_avg[cell])
+            # plt.plot(np.mean(traces_, axis=0), color='black')
+            # plt.suptitle('post - pre: negative')
+            # print(f'Number of neg post-pre cells: {len(traces_)}')
+            # plt.show()
+            # using the results of the wilcoxon test for comparison:
+            traces_ = []
+            for cell in range(pre_array.shape[0]):
+                if wilcoxons[cell] < 0.05:
+                    if avg_post[cell] > avg_pre[cell]:
+                        axs[0,0].plot(expobj.dfstdF_traces_nontargets_avg[cell])
+                        traces_.append(expobj.dfstdF_traces_nontargets_avg[cell])
+            axs[0,0].plot(np.mean(traces_, axis=0), color='black')
+            axs[0,0].set_title(f'wilcoxon: {len(traces_)} positive')
+            print(f'Number of pos wilcoxon cells: {len(traces_)}')
+            # plt.show()
+            # using the results of the wilcoxon test for comparison:
+            traces_ = []
+            for cell in range(pre_array.shape[0]):
+                if wilcoxons[cell] < 0.05:
+                    if avg_post[cell] < avg_pre[cell]:
+                        axs[0,1].plot(expobj.dfstdF_traces_nontargets_avg[cell])
+                        traces_.append(expobj.dfstdF_traces_nontargets_avg[cell])
+            axs[0,1].plot(np.mean(traces_, axis=0), color='black')
+            axs[0,1].set_title(f'wilcoxon: {len(traces_)} negative')
+            print(f'Number of neg wilcoxon cells: {len(traces_)}')
+            # plt.show()
+            # using the results of the wilcoxon test + FDR correction for comparison:
+            traces_ = []
+            for cell in range(pre_array.shape[0]):
+                if sig_units[cell]:
+                    if avg_post[cell] > avg_pre[cell]:
+                        axs[1,0].plot(expobj.dfstdF_traces_nontargets_avg[cell])
+                        traces_.append(expobj.dfstdF_traces_nontargets_avg[cell])
+            axs[1,0].plot(np.mean(traces_, axis=0), color='black')
+            axs[1,0].set_title(f'wilcoxon + {fdr_alpha} FDR: {len(traces_)} positive')
+            print(f'Number of pos wilcoxon + FDR cells: {len(traces_)}')
+            # plt.show()
+            # using the results of the wilcoxon test + FDR correction for comparison:
+            traces_ = []
+            for cell in range(pre_array.shape[0]):
+                if sig_units[cell]:
+                    if avg_post[cell] < avg_pre[cell]:
+                        axs[1,1].plot(expobj.dfstdF_traces_nontargets_avg[cell])
+                        traces_.append(expobj.dfstdF_traces_nontargets_avg[cell])
+            axs[1,1].plot(np.mean(traces_, axis=0), color='black')
+            axs[1,1].set_title(f'wilcoxon + {fdr_alpha} FDR: {len(traces_)} negative')
+            print(f'Number of neg wilcoxon + FDR cells: {len(traces_)}')
+            fig.suptitle(f"{expobj.t_series_name}")
+            fig.show()
 
-        return diff_responses_array, expobj.wilcoxons, sig_units, sig_responders
+        return diff_responses_array, wilcoxons, sig_units, sig_responders
 
 
     # used for creating tiffs that remove artifacts from alloptical experiments with photostim artifacts

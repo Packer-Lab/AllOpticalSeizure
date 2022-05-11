@@ -170,20 +170,20 @@ class PhotostimResponsesQuantificationNonTargets(Quantification):
 
 
     @staticmethod
-    @Utils.run_for_loop_across_exps(run_pre4ap_trials=1, run_post4ap_trials=1, allow_rerun=1, skip_trials=EXCLUDE_TRIALS,)
-                                    # run_trials=TEST_TRIALS)
-    def run__methods(**kwargs):
+    @Utils.run_for_loop_across_exps(run_pre4ap_trials=0, run_post4ap_trials=0, allow_rerun=1, skip_trials=EXCLUDE_TRIALS,
+                                    run_trials=TEST_TRIALS)
+    def run__methods(results, **kwargs):
         expobj: Union[alloptical, Post4ap] = kwargs['expobj']
         # expobj._findTargetedS2pROIs(plot=False)
-        expobj.PhotostimResponsesNonTargets.create_anndata(expobj=expobj)
-
+        # expobj.PhotostimResponsesNonTargets._allopticalAnalysisNontargets(expobj=expobj, results=results)
+        # expobj.PhotostimResponsesNonTargets.create_anndata(expobj=expobj)
         # collect traces of statistically significant followers:
         # expobj.PhotostimResponsesNonTargets.collect__sig_responders_responses_type1(expobj=expobj)
         # expobj.PhotostimResponsesNonTargets.collect__sig_responders_responses_type2(expobj=expobj, results=results)
         expobj.save()
 
     @staticmethod
-    @Utils.run_for_loop_across_exps(run_pre4ap_trials=0, run_post4ap_trials=1, allow_rerun=1, skip_trials=EXCLUDE_TRIALS,)
+    @Utils.run_for_loop_across_exps(run_pre4ap_trials=1, run_post4ap_trials=1, allow_rerun=1, skip_trials=EXCLUDE_TRIALS,)
                                     # run_trials=TEST_TRIALS)
     def run__fakestims_processing(**kwargs):
         expobj: alloptical = kwargs['expobj']
@@ -254,7 +254,8 @@ class PhotostimResponsesQuantificationNonTargets(Quantification):
             # todo, deprecate use of self.sig_units in favor of self.responders (do it slowly as you come across each bit of code)
             self.diff_responses, self.wilcoxons, self.sig_units, self.responders = expobj._trialProcessing_nontargets(normalize_to='pre-stim', stims = 'all', fdr_alpha=self.nontargets_sig_fdr_alpha,
                                                                                                                       pre_stim_fr=self.pre_stim_fr, pre_stim_response_frames_window=self.pre_stim_response_frames_window,
-                                                                                                                      post_stim_response_frames_window=self.post_stim_response_frames_window)
+                                                                                                                      post_stim_response_frames_window=self.post_stim_response_frames_window,
+                                                                                                                      plot=False)
             # self.sig_units = expobj._sigTestAvgResponse_nontargets(p_vals=self.wilcoxons, alpha=0.1, save=False)  #: array of bool describing statistical significance of responder
 
             # save statisticaly significant units for baseline condition to results object.
@@ -272,30 +273,31 @@ class PhotostimResponsesQuantificationNonTargets(Quantification):
         elif 'post' in expobj.exptype:
             expobj: Post4ap = expobj
 
-            from _exp_metainfo_.exp_metainfo import AllOpticalExpsToAnalyze
-            pre4aptrial = AllOpticalExpsToAnalyze.find_matched_trial(post4ap_trial_name=self.expobj_id)
-            pre4ap: alloptical = Utils.import_expobj(exp_prep=pre4aptrial)
+            # from _exp_metainfo_.exp_metainfo import AllOpticalExpsToAnalyze
+            # pre4aptrial = AllOpticalExpsToAnalyze.find_matched_trial(post4ap_trial_name=self.expobj_id)
+            # pre4ap: alloptical = Utils.import_expobj(exp_prep=pre4aptrial)
 
 
 
             # all stims
-            self.diff_responses, self.wilcoxons, self.sig_units, self.responders = expobj._trialProcessing_nontargets(normalize_to='pre-stim', stims = 'all', fdr_alpha=self.nontargets_sig_fdr_alpha,
-                                                                                                                      pre_stim_fr=self.pre_stim_fr, pre_stim_response_frames_window=self.pre_stim_response_frames_window,
-                                                                                                                      post_stim_response_frames_window=self.post_stim_response_frames_window)
-
-            if not self.diff_responses.shape == pre4ap.PhotostimResponsesNonTargets.diff_responses.shape:
-                raise ValueError('misshaped responses shapes between pre4ap and post4ap!!!!')
+            self.diff_responses, self.wilcoxons, self.sig_units, \
+                self.responders = expobj._trialProcessing_nontargets(normalize_to='pre-stim', stims = 'all', fdr_alpha=self.nontargets_sig_fdr_alpha,
+                                                                     pre_stim_fr=self.pre_stim_fr, pre_stim_response_frames_window=self.pre_stim_response_frames_window,
+                                                                     post_stim_response_frames_window=self.post_stim_response_frames_window,
+                                                                     plot=False)
 
             self.dff_stimtraces = expobj.dff_traces_nontargets
             self.dfstdF_stimtraces = expobj.dfstdF_traces_nontargets  #: all stim timed trace snippets for all nontargets, shape: # cells x # stims x # frames of trace snippet
 
             # interictal stims only
-            self.diff_responses_interictal, self.wilcoxons_interictal, self.sig_units_interictal, self.responders_interictal = expobj._trialProcessing_nontargets(normalize_to='pre-stim',
-                                                                                                                                      stims=expobj.stims_out_sz, fdr_alpha=self.nontargets_sig_fdr_alpha,
-                                                                                                                                                                  pre_stim_fr=self.pre_stim_fr,
-                                                                                                                                                                  pre_stim_response_frames_window=self.pre_stim_response_frames_window,
-                                                                                                                                                                  post_stim_response_frames_window=self.post_stim_response_frames_window
-                                                                                                                                                                  )
+            self.diff_responses_interictal, self.wilcoxons_interictal, self.sig_units_interictal, \
+                self.responders_interictal = expobj._trialProcessing_nontargets(normalize_to='pre-stim', stims=expobj.stims_out_sz,
+                                                                                fdr_alpha=self.nontargets_sig_fdr_alpha,
+                                                                                pre_stim_fr=self.pre_stim_fr,
+                                                                                pre_stim_response_frames_window=self.pre_stim_response_frames_window,
+                                                                                post_stim_response_frames_window=self.post_stim_response_frames_window,
+                                                                                plot=False)
+
 
             # save statisticaly significant units for baseline condition to results object.
             results.sig_units_interictal[expobj.t_series_name] = {}
@@ -313,12 +315,10 @@ class PhotostimResponsesQuantificationNonTargets(Quantification):
 
 
             # ICTAL stims only
-            self.diff_responses_ictal, self.wilcoxons_ictal, self.sig_units_ictal, self.responders_ictal = expobj._trialProcessing_nontargets(normalize_to='pre-stim',
-                                                                                                                       stims=expobj.stims_in_sz, fdr_alpha=0.25,
-                                                                                                                                      pre_stim_fr=self.pre_stim_fr,
-                                                                                                                                              pre_stim_response_frames_window=self.pre_stim_response_frames_window,
-                                                                                                                                              post_stim_response_frames_window=self.post_stim_response_frames_window
-                                                                                                                                              )
+            self.diff_responses_ictal, self.wilcoxons_ictal, self.sig_units_ictal, self.responders_ictal = expobj._trialProcessing_nontargets(normalize_to='pre-stim', stims=expobj.stims_in_sz, fdr_alpha=0.25,
+                                                                           pre_stim_fr=self.pre_stim_fr, pre_stim_response_frames_window=self.pre_stim_response_frames_window,
+                                                                           post_stim_response_frames_window=self.post_stim_response_frames_window,
+                                                                                                                                              plot=False)
 
             self.dff_stimtraces_ictal = expobj.dff_traces_nontargets  #: all stim timed trace snippets for all nontargets, shape: # cells x # stims x # frames of trace snippet
             self.dfstdF_stimtraces_ictal = expobj.dfstdF_traces_nontargets  #: all stim timed trace snippets for all nontargets, shape: # cells x # stims x # frames of trace snippet
@@ -480,13 +480,23 @@ class PhotostimResponsesQuantificationNonTargets(Quantification):
         from _exp_metainfo_.exp_metainfo import AllOpticalExpsToAnalyze
         matched_id = AllOpticalExpsToAnalyze.find_matched_trial(pre4ap_trial_name=self.expobj_id) if 'pre' in self.expobj_exptype else AllOpticalExpsToAnalyze.find_matched_trial(post4ap_trial_name=self.expobj_id)
         matchedtrial: alloptical = Utils.import_expobj(exp_prep=matched_id)
-        cells_analysis = np.unique(matchedtrial.s2p_nontargets_analysis + expobj.s2p_nontargets_analysis)
-        cells_exlude = np.unique(matchedtrial.s2p_nontargets_exclude + expobj.s2p_nontargets_exclude)
+
+        if 'pre' in self.expobj_exptype:
+            matchedtrial: Post4ap
+            cells_analysis = [cell for cell in expobj.s2p_nontargets_analysis if cell in matchedtrial.s2p_nontargets_analysis_ictal]
+            cells_exclude = [cell for cell in expobj.s2p_nontargets_exclude if cell in matchedtrial.s2p_nontargets_analysis_ictal]
+            cells = [cell for cell in cells_analysis if cell not in cells_exclude]
+        elif 'post' in self.expobj_exptype:
+            matchedtrial: alloptical
+            expobj: Post4ap
+            cells_analysis = [cell for cell in expobj.s2p_nontargets_analysis_ictal if cell in matchedtrial.s2p_nontargets_analysis]
+            cells = [cell for cell in cells_analysis if cell not in matchedtrial.s2p_nontargets_exclude]
+        else:
+            raise ValueError('pre nor post expobj.')
 
         # set up main dataframe
-        cells_idx = [cell for cell in expobj.cell_id if (cell in cells_analysis) and (cell not in cells_exlude)]
+        cells_idx = [idx for idx, cell in enumerate(expobj.s2p_nontargets_analysis) if cell in cells]
         responses_arr = self.diff_responses[cells_idx, :]
-
 
         # SETUP THE OBSERVATIONS (CELLS) ANNOTATIONS TO USE IN anndata
         # build dataframe for obs_meta from SLM targets information
@@ -494,61 +504,74 @@ class PhotostimResponsesQuantificationNonTargets(Quantification):
 
         obs_meta = pd.DataFrame(
             columns=['original_index', 'footprint', 'mrs', 'mrs0', 'compact', 'med', 'npix', 'radius',
-                     'aspect_ratio', 'npix_norm', 'skew', 'std'], index=range(len(cells_analysis)))
-        for i, idx in enumerate(obs_meta.index):
-                if idx not in cells_exlude:
-                    for __column in obs_meta:
-                        obs_meta.loc[i, __column] = expobj.stat[i][__column]
-
-        # add statistically significant responder
-        if 'pre' in self.expobj_exptype:
-            obs_meta['responder_baseline'] = self.sig_units
-
-            obs_meta['positive_responder_baseline'] = [False for i in obs_meta.index]
-            for idx, val in enumerate(obs_meta.index):
-                if idx in self.pos_sig_responders:
-                    obs_meta.loc[idx, 'positive_responder_baseline'] = True
-
-            obs_meta['negative_responder_baseline'] = [False for i in obs_meta.index]
-            for idx, val in enumerate(obs_meta.index):
-                if idx in self.neg_sig_responders:
-                    obs_meta.loc[idx, 'negative_responder_baseline'] = True
-
-
-        elif 'post' in self.expobj_exptype:
-            obs_meta['responder_interictal'] = self.sig_units_interictal
-            obs_meta['responder_ictal'] = self.sig_units_ictal
-
-            # interictal
-            obs_meta['positive_responder_interictal'] = [False for i in obs_meta.index]
-            for idx, val in enumerate(obs_meta.index):
-                if idx in self.pos_sig_responders_interictal:
-                    obs_meta.loc[idx, 'positive_responder_interictal'] = True
-
-            obs_meta['negative_responder_interictal'] = [False for i in obs_meta.index]
-            for idx, val in enumerate(obs_meta.index):
-                if idx in self.neg_sig_responders_interictal:
-                    obs_meta.loc[idx, 'negative_responder_interictal'] = True
-
-            # ictal
-            obs_meta['positive_responder_ictal'] = [False for i in obs_meta.index]
-            for idx, val in enumerate(obs_meta.index):
-                if idx in self.pos_sig_responders_ictal:
-                    obs_meta.loc[idx, 'positive_responder_ictal'] = True
-
-            obs_meta['negative_responder_ictal'] = [False for i in obs_meta.index]
-            for idx, val in enumerate(obs_meta.index):
-                if idx in self.neg_sig_responders_ictal:
-                    obs_meta.loc[idx, 'negative_responder_ictal'] = True
+                     'aspect_ratio', 'npix_norm', 'skew', 'std'], index=range(len(cells)))
+        for i, cell in enumerate(cells):
+            idx = expobj.cell_id.index(cell)
+            for __column in obs_meta:
+                obs_meta.loc[i, __column] = expobj.stat[idx][__column]
+            
+        # # add statistically significant responder --- this is gonna take a bunch of work to figure out..... and probably not worth time at this moment [05/11/'22]
+        # if 'pre' in self.expobj_exptype:
+        #
+        #     sig_cells = [expobj.s2p_nontargets_analysis[idx] for idx, val in enumerate(self.sig_units) if val == True]
+        #
+        #     obs_meta['responder_baseline'] = self.sig_units[cells_idx]
+        #
+        #     obs_meta['positive_responder_baseline'] = [False for i in obs_meta.index]
+        #     for idx, cell in enumerate(sig_cells):
+        #         if (idx in self.pos_sig_responders_idx) and (cell in cells):
+        #             idx_new = cells.index(cell)
+        #             obs_meta.loc[idx_new, 'positive_responder_baseline'] = True
+        #
+        #
+        #     obs_meta['negative_responder_baseline'] = [False for i in obs_meta.index]
+        #     for idx, cell in enumerate(sig_cells):
+        #         if (idx in self.pos_sig_responders_idx) and (cell in cells):
+        #             idx_new = cells.index(cell)
+        #             obs_meta.loc[idx_new, 'negative_responder_baseline'] = True
+        #
+        #
+        # elif 'post' in self.expobj_exptype:
+        #     sig_cells = [expobj.s2p_nontargets_analysis_ictal[idx] for idx, val in enumerate(self.sig_units) if val == True]
+        #
+        #     obs_meta['responder_interictal'] = self.sig_units_interictal[cells_idx]
+        #     obs_meta['responder_ictal'] = self.sig_units_ictal[cells_idx]
+        #
+        #     # interictal
+        #
+        #     obs_meta['positive_responder_interictal'] = [False for i in obs_meta.index]
+        #     for idx, cell in enumerate(sig_cells):
+        #         if (idx in self.pos_sig_responders_interictal) and (cell in cells):
+        #             idx_new = cells.index(cell)
+        #             obs_meta.loc[idx_new, 'positive_responder_interictal'] = True
+        #
+        #     obs_meta['negative_responder_interictal'] = [False for i in obs_meta.index]
+        #     for idx, cell in enumerate(sig_cells):
+        #         if (idx in self.pos_sig_responders_interictal) and (cell in cells):
+        #             idx_new = cells.index(cell)
+        #             obs_meta.loc[idx_new, 'negative_responder_interictal'] = True
+        #
+        #     # ictal
+        #     obs_meta['positive_responder_ictal'] = [False for i in obs_meta.index]
+        #     for idx, cell in enumerate(sig_cells):
+        #         if (idx in self.pos_sig_responders_ictal) and (cell in cells):
+        #             idx_new = cells.index(cell)
+        #             obs_meta.loc[idx_new, 'positive_responder_ictal'] = True
+        #
+        #     obs_meta['negative_responder_ictal'] = [False for i in obs_meta.index]
+        #     for idx, cell in enumerate(sig_cells):
+        #         if (idx in self.pos_sig_responders_ictal) and (cell in cells):
+        #             idx_new = cells.index(cell)
+        #             obs_meta.loc[idx_new, 'negative_responder_ictal'] = True
 
 
         # build numpy array for multidimensional obs metadata
         obs_m = {'ypix': [],
                  'xpix': []}
         for col in [*obs_m]:
-            for i, idx in enumerate(cells_analysis):
-                if idx not in cells_exlude:
-                    obs_m[col].append(expobj.stat[i][col])
+            for i, cell in enumerate(cells):
+                idx = expobj.cell_id.index(cell)
+                obs_m[col].append(expobj.stat[idx][col])
             obs_m[col] = np.asarray(obs_m[col])
 
 
@@ -669,7 +692,7 @@ class PhotostimResponsesQuantificationNonTargets(Quantification):
 
 
     @staticmethod
-    @Utils.run_for_loop_across_exps(run_pre4ap_trials=0, run_post4ap_trials=1, allow_rerun=1, skip_trials=EXCLUDE_TRIALS)
+    @Utils.run_for_loop_across_exps(run_pre4ap_trials=1, run_post4ap_trials=1, allow_rerun=1, skip_trials=EXCLUDE_TRIALS)
     def run__z_score_responses(**kwargs):
         expobj: Union[alloptical, Post4ap] = kwargs['expobj']
         # expobj.PhotostimResponsesNonTargets.adata.del_observation(obs_name='std responses') if 'std responses' in expobj.PhotostimResponsesNonTargets.adata.obs_keys() else None
@@ -679,9 +702,7 @@ class PhotostimResponsesQuantificationNonTargets(Quantification):
 
 
 
-
     # 2) COLLECT pos/neg sig. responders traces and responses
-
     @property
     def pos_sig_responders_idx(self):
         return np.where(np.nanmean(self.diff_responses[self.sig_units, :], axis=1) > 0)[0]
@@ -1129,10 +1150,12 @@ if __name__ == '__main__':
     main = PhotostimResponsesQuantificationNonTargets
     results: PhotostimResponsesNonTargetsResults = PhotostimResponsesNonTargetsResults.load()
 
-    main.run__allopticalAnalysisNontargets(results=results)
-    # main.run__methods()
+    # main.run__allopticalAnalysisNontargets(results=results)
+    # main.run__create_anndata(rerun=1)
+
+    # main.run__methods(results=results)
     # running fake stims alloptical analysis for non targets here currently: (apr 28 2022)
-    # main.run__fakestims_processing()
+    main.run__fakestims_processing()
     # main.run__z_score_responses()
 
     # from _analysis_._ClassPhotostimResponsesAnalysisNonTargets import PhotostimResponsesAnalysisNonTargets
@@ -1140,7 +1163,6 @@ if __name__ == '__main__':
 
     # PhotostimResponsesAnalysisNonTargets.plot__exps_summed_nontargets_vs_summed_targets
 
-    main.run__create_anndata(rerun=1)
 
     # main.run__fix_anndata()
 
