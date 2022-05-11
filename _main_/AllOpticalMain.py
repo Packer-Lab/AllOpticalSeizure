@@ -1633,6 +1633,9 @@ class alloptical(TwoPhotonImaging):
         """
         print('\n\- Collecting peri-stim traces [AllOpticalMain version] ...')
 
+        # method only for pre4ap trials
+        assert 'pre' in expobj.exptype, 'wrong experiment type for this method. '
+
         # set stim frames to analyse
         if stim_frames is None or stim_frames == 'all':
             stim_timings = expobj.stim_start_frames
@@ -1655,7 +1658,6 @@ class alloptical(TwoPhotonImaging):
 
 
 
-        assert 'pre' in expobj.exptype
         cells_to_analyse = expobj.s2p_nontargets
 
 
