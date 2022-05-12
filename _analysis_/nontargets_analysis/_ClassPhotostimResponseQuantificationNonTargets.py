@@ -134,7 +134,7 @@ class PhotostimResponsesQuantificationNonTargets(Quantification):
 
     REPRESENTATIVE_TRIALS = ['PS07 t-007', 'PS07 t-011']
     TEST_TRIALS = [
-        'RL108 t-009',
+        # 'RL108 t-009',
         'RL108 t-013'
     ]
 

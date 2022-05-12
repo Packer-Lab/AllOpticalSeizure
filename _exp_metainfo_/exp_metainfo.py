@@ -11,9 +11,11 @@ import funcsforprajay.funcs as pj
 import numpy as np
 import pandas as pd
 
+SAVE_LOC = "/home/pshah/mnt/qnap/Analysis/analysis_export/analysis_quantification_classes/"
 EXPMETA_path = '/home/pshah/mnt/qnap/Analysis/allopticalseizuresexpmeta.pkl'
 CSV_PATH_ao = '/home/pshah/mnt/qnap/Analysis/allopticalexpmeta.csv'
 CSV_PATH_1p = '/home/pshah/mnt/qnap/Analysis/onephotonexpmeta.csv'
+
 
 # UTILS
 def import_meta_from_csv(csv_path=CSV_PATH_ao):
