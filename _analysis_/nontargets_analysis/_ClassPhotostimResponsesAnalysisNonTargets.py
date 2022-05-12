@@ -24,10 +24,8 @@ from funcsforprajay import plotting as pplot
 # %% ###### NON TARGETS analysis + plottings
 
 
-REMAKE = False
-if not os.path.exists(PhotostimResponsesNonTargetsResults.SAVE_PATH) or REMAKE:
-    results = PhotostimResponsesNonTargetsResults()
-    results.save_results()
+
+results: PhotostimResponsesNonTargetsResults = PhotostimResponsesNonTargetsResults.load()
 
 
 ######
@@ -67,10 +65,8 @@ class PhotostimResponsesAnalysisNonTargets(PhotostimResponsesQuantificationNonTa
         super().__init__(expobj=expobj, results=results)
 
     @staticmethod
-    @Utils.run_for_loop_across_exps(run_pre4ap_trials=1,
-                                    run_post4ap_trials=1,
-                                    allow_rerun=0,
-                                    skip_trials=PhotostimResponsesQuantificationNonTargets.EXCLUDE_TRIALS, )
+    @Utils.run_for_loop_across_exps(run_pre4ap_trials=1, run_post4ap_trials=1,
+                                    allow_rerun=0, skip_trials=PhotostimResponsesQuantificationNonTargets.EXCLUDE_TRIALS, )
     # run_trials=PhotostimResponsesQuantificationNonTargets.TEST_TRIALS)
     def run__initPhotostimResponsesAnalysisNonTargets(**kwargs):
         expobj: Union[alloptical, Post4ap] = kwargs['expobj']
@@ -126,6 +122,8 @@ class PhotostimResponsesAnalysisNonTargets(PhotostimResponsesQuantificationNonTa
         """
         Plot avg peri-stim traces of input +ve and -ve responders traces.
 
+        :param title:
+        :param fake_avg_traces:
         :param expobj:
         :param pos_avg_traces:
         :param neg_avg_traces:
@@ -139,10 +137,8 @@ class PhotostimResponsesAnalysisNonTargets(PhotostimResponsesQuantificationNonTa
 
         same_plot = True
 
-        if not same_plot:
-            fig, axs = plt.subplots(figsize=(4, 6), nrows=2, ncols=1)
-        else:
-            fig, axs = plt.subplots(figsize=(5, 5))
+        if not same_plot: fig, axs = plt.subplots(figsize=(4, 6), nrows=2, ncols=1)
+        else: fig, axs = plt.subplots(figsize=(5, 5))
 
         if len(pos_avg_traces[0]) > 0:
             ax = axs if same_plot else axs[0]
@@ -154,8 +150,7 @@ class PhotostimResponsesAnalysisNonTargets(PhotostimResponsesQuantificationNonTa
                                     pre_stim_sec=PhotostimAnalysisSlmTargets._pre_stim_sec,
                                     show=False, fontsize='small', figsize=(4, 4),
                                     xlabel='Time (secs)', ylabel='Avg. Stim. Response (dF/stdF)')
-        else:
-            print(f"**** {expobj.t_series_name} has no statistically significant positive responders.")
+        else: print(f"**** {expobj.t_series_name} has no statistically significant positive responders.")
         if len(neg_avg_traces[0]) > 0:
             ax = axs if same_plot else axs[1]
             plot_periphotostim_avg2(dataset=neg_avg_traces, fps=expobj.fps,
@@ -166,8 +161,7 @@ class PhotostimResponsesAnalysisNonTargets(PhotostimResponsesQuantificationNonTa
                                     pre_stim_sec=PhotostimAnalysisSlmTargets._pre_stim_sec,
                                     show=False, fontsize='small', figsize=(4, 4),
                                     xlabel='Time (secs)', ylabel='Avg. Stim. Response (dF/stdF)')
-        else:
-            print(f"**** {expobj.t_series_name} has no statistically significant negative responders.")
+        else: print(f"**** {expobj.t_series_name} has no statistically significant negative responders.")
 
         if len(fake_avg_traces[0]) > 0:
             ax = axs if same_plot else None
@@ -241,8 +235,7 @@ class PhotostimResponsesAnalysisNonTargets(PhotostimResponsesQuantificationNonTa
 
     # 2.2) PLOT -- BAR PLOT OF AVG MAGNITUDE OF RESPONSE
     @staticmethod
-    def collect__avg_magnitude_response(results: PhotostimResponsesNonTargetsResults,
-                                        collect_baseline_responders=False):
+    def collect__avg_magnitude_response(results: PhotostimResponsesNonTargetsResults, collect_baseline_responders=False):
         """plot bar plot of avg magnitude of statistically significant responders across baseline and interictal, split up by positive and negative responders"""
 
         @Utils.run_for_loop_across_exps(run_pre4ap_trials=1, run_post4ap_trials=0, set_cache=0,
@@ -468,13 +461,13 @@ class PhotostimResponsesAnalysisNonTargets(PhotostimResponsesQuantificationNonTa
     def _calculate__summed_responses(self, expobj: Union[alloptical, Post4ap]):
         """calculate total responses of significantly responding nontargets."""
         if 'pre' in self.expobj_exptype:
-            __positive_responders_responses = self.adata.X[self.adata.obs['positive_responder_baseline']]
-            summed_response_positive_baseline = list(np.sum(__positive_responders_responses,
-                                                            axis=0))  #: summed response across all positive responders at each photostim trial
+            # __positive_responders_responses = self.adata.X[self.adata.obs['positive_responder_baseline']] - leaving out for now.... there's a bunch of background work that needs to be done to figure this out with matching cells between pre4ap...post4ap...
+            # summed_response_positive_baseline = list(np.sum(__positive_responders_responses,
+            #                                                 axis=0))  #: summed response across all positive responders at each photostim trial
 
-            __negative_responders_responses = self.adata.X[self.adata.obs['negative_responder_baseline']]
-            summed_response_negative_baseline = list(np.sum(__negative_responders_responses,
-                                                            axis=0))  #: summed response across all negative responders at each photostim trial
+            # __negative_responders_responses = self.adata.X[self.adata.obs['negative_responder_baseline']] - leaving out for now.... there's a bunch of background work that needs to be done to figure this out with matching cells between pre4ap...post4ap...
+            # summed_response_negative_baseline = list(np.sum(__negative_responders_responses,
+            #                                                 axis=0))  #: summed response across all negative responders at each photostim trial
 
             network_summed_activity = list(
                 np.sum(self.adata.X, axis=0))  #: summed responses across all nontargets at each photostim trial
@@ -484,8 +477,8 @@ class PhotostimResponsesAnalysisNonTargets(PhotostimResponsesQuantificationNonTa
                                                             axis=0))  #: summed responses across all nontargets at each photostim trial
 
             # add as var to anndata
-            self.adata.add_variable(var_name='summed_response_pos_baseline', values=summed_response_positive_baseline)
-            self.adata.add_variable(var_name='summed_response_neg_baseline', values=summed_response_negative_baseline)
+            # self.adata.add_variable(var_name='summed_response_pos_baseline', values=summed_response_positive_baseline)
+            # self.adata.add_variable(var_name='summed_response_neg_baseline', values=summed_response_negative_baseline)
             self.adata.add_variable(var_name='total_nontargets_responses', values=network_summed_activity)
             self.adata.add_variable(var_name='total_nontargets_fakestims_responses',
                                     values=fakestims_network_summed_activity)
@@ -498,26 +491,26 @@ class PhotostimResponsesAnalysisNonTargets(PhotostimResponsesQuantificationNonTa
                                                             axis=0))  #: summed responses across all nontargets at each photostim trial
 
             # interictal
-            __positive_responders_responses = self.adata.X[self.adata.obs['positive_responder_interictal']]
-            summed_response_positive_interictal = list(np.sum(__positive_responders_responses,
-                                                              axis=0))  #: summed response across all positive responders at each photostim trial
-
-            __negative_responders_responses = self.adata.X[self.adata.obs['negative_responder_interictal']]
-            summed_response_negative_interictal = list(np.sum(__negative_responders_responses,
-                                                              axis=0))  #: summed response across all negative responders at each photostim trial
+            # __positive_responders_responses = self.adata.X[self.adata.obs['positive_responder_interictal']] - leaving out for now.... there's a bunch of background work that needs to be done to figure this out with matching cells between pre4ap...post4ap...
+            # summed_response_positive_interictal = list(np.sum(__positive_responders_responses,
+            #                                                   axis=0))  #: summed response across all positive responders at each photostim trial
+            #
+            # __negative_responders_responses = self.adata.X[self.adata.obs['negative_responder_interictal']] - leaving out for now.... there's a bunch of background work that needs to be done to figure this out with matching cells between pre4ap...post4ap...
+            # summed_response_negative_interictal = list(np.sum(__negative_responders_responses,
+            #                                                   axis=0))  #: summed response across all negative responders at each photostim trial
 
             fakestims_network_summed_activity_interictal = list(
                 np.sum(self.adata.layers['nontargets fakestim_responses'][:, expobj.stim_idx_outsz],
                        axis=0))  #: summed responses across all nontargets at each photostim trial
 
             # ictal
-            __positive_responders_responses = self.adata.X[self.adata.obs['positive_responder_ictal']]
-            summed_response_positive_ictal = list(np.sum(__positive_responders_responses,
-                                                         axis=0))  #: summed response across all positive responders at each photostim trial
-
-            __negative_responders_responses = self.adata.X[self.adata.obs['negative_responder_ictal']]
-            summed_response_negative_ictal = list(np.sum(__negative_responders_responses,
-                                                         axis=0))  #: summed response across all negative responders at each photostim trial
+            # __positive_responders_responses = self.adata.X[self.adata.obs['positive_responder_ictal']] - leaving out for now.... there's a bunch of background work that needs to be done to figure this out with matching cells between pre4ap...post4ap...
+            # summed_response_positive_ictal = list(np.sum(__positive_responders_responses,
+            #                                              axis=0))  #: summed response across all positive responders at each photostim trial
+            #
+            # __negative_responders_responses = self.adata.X[self.adata.obs['negative_responder_ictal']] - leaving out for now.... there's a bunch of background work that needs to be done to figure this out with matching cells between pre4ap...post4ap...
+            # summed_response_negative_ictal = list(np.sum(__negative_responders_responses,
+            #                                              axis=0))  #: summed response across all negative responders at each photostim trial
 
             fakestims_network_summed_activity_ictal = list(
                 np.sum(self.adata.layers['nontargets fakestim_responses'][:, expobj.stim_idx_insz],
@@ -528,13 +521,13 @@ class PhotostimResponsesAnalysisNonTargets(PhotostimResponsesQuantificationNonTa
             self.adata.add_variable(var_name='total_nontargets_fakestims_responses',
                                     values=fakestims_network_summed_activity)
 
-            self.adata.add_variable(var_name='summed_response_pos_interictal',
-                                    values=summed_response_positive_interictal)
-            self.adata.add_variable(var_name='summed_response_neg_interictal',
-                                    values=summed_response_negative_interictal)
+            # self.adata.add_variable(var_name='summed_response_pos_interictal',
+            #                         values=summed_response_positive_interictal)
+            # self.adata.add_variable(var_name='summed_response_neg_interictal',
+            #                         values=summed_response_negative_interictal)
 
-            self.adata.add_variable(var_name='summed_response_pos_ictal', values=summed_response_positive_ictal)
-            self.adata.add_variable(var_name='summed_response_neg_ictal', values=summed_response_negative_ictal)
+            # self.adata.add_variable(var_name='summed_response_pos_ictal', values=summed_response_positive_ictal)
+            # self.adata.add_variable(var_name='summed_response_neg_ictal', values=summed_response_negative_ictal)
 
     def _calculate__summed_responses_targets(self, expobj: Union[alloptical, Post4ap]):
         """calculate total summed dFF responses of SLM targets of experiments to compare with summed responses of nontargets."""
@@ -685,8 +678,8 @@ class PhotostimResponsesAnalysisNonTargets(PhotostimResponsesQuantificationNonTa
                 {'exp': [expobj.t_series_name] * expobj.PhotostimResponsesSLMTargets.adata.n_vars,
                  'targets': expobj.PhotostimResponsesSLMTargets.adata.var['summed_response_SLMtargets'],
                  # 'targets_fakestims': expobj.PhotostimResponsesSLMTargets.adata.var['summed_fakestims_response_SLMtargets'],
-                 'non-targets_pos': expobj.PhotostimResponsesNonTargets.adata.var['summed_response_pos_baseline'],
-                 'non-targets_neg': expobj.PhotostimResponsesNonTargets.adata.var['summed_response_neg_baseline'],
+                 # 'non-targets_pos': expobj.PhotostimResponsesNonTargets.adata.var['summed_response_pos_baseline'],
+                 # 'non-targets_neg': expobj.PhotostimResponsesNonTargets.adata.var['summed_response_neg_baseline'],
                  'all_non-targets': expobj.PhotostimResponsesNonTargets.adata.var['total_nontargets_responses'],
                  # 'all_non-targets_fakestims': expobj.PhotostimResponsesNonTargets.adata.var['total_nontargets_fakestims_responses']
                  })
@@ -805,14 +798,11 @@ class PhotostimResponsesAnalysisNonTargets(PhotostimResponsesQuantificationNonTa
                                                  'summed_response_SLMtargets'][
                                                  expobj.PhotostimResponsesSLMTargets.adata.var[
                                                      'stim_group'] == 'interictal'],
-                                             'non-targets_pos': expobj.PhotostimResponsesNonTargets.adata.var[
-                                                 'summed_response_pos_interictal'][
-                                                 expobj.PhotostimResponsesSLMTargets.adata.var[
-                                                     'stim_group'] == 'interictal'],
-                                             'non-targets_neg': expobj.PhotostimResponsesNonTargets.adata.var[
-                                                 'summed_response_neg_interictal'][
-                                                 expobj.PhotostimResponsesSLMTargets.adata.var[
-                                                     'stim_group'] == 'interictal'],
+                                             # 'non-targets_pos': expobj.PhotostimResponsesNonTargets.adata.var['summed_response_pos_interictal'][expobj.PhotostimResponsesSLMTargets.adata.var['stim_group'] == 'interictal'],
+                                             # 'non-targets_neg': expobj.PhotostimResponsesNonTargets.adata.var[
+                                             #     'summed_response_neg_interictal'][
+                                             #     expobj.PhotostimResponsesSLMTargets.adata.var[
+                                             #         'stim_group'] == 'interictal'],
                                              'all_non-targets': expobj.PhotostimResponsesNonTargets.adata.var[
                                                  'total_nontargets_responses'][
                                                  expobj.PhotostimResponsesSLMTargets.adata.var[
@@ -1109,31 +1099,17 @@ if __name__ == '__main__':
     # expobj: alloptical = Utils.import_expobj(exp_prep='RL108 t-009')
     # expobj: Post4ap = Utils.import_expobj(exp_prep='RL108 t-013')
 
-    main = PhotostimResponsesAnalysisNonTargets
-    results: PhotostimResponsesNonTargetsResults = PhotostimResponsesNonTargetsResults.load()
 
-    # main.run__initPhotostimResponsesAnalysisNonTargets()
 
-    # main.run__plot_sig_responders_traces(plot_baseline_responders=True)
-    # main.run__plot_sig_responders_traces(plot_baseline_responders=False)
-    # main.run__create_anndata()
-    # main.run__classify_and_measure_nontargets_szboundary(force_redo=False)
 
-    # 2) basic plotting of responders baseline, interictal, and ictal
-    # main.collect__avg_magnitude_response(results=results, collect_baseline_responders=True)
-    # results: PhotostimResponsesNonTargetsResults = PhotostimResponsesNonTargetsResults.load()
-    # main.plot__avg_magnitude_response(results=results, plot_baseline_responders=True)
 
-    # main.collect__avg_magnitude_response(results=results, collect_baseline_responders=False)
-    # results: PhotostimResponsesNonTargetsResults = PhotostimResponsesNonTargetsResults.load()
-    main.plot__avg_magnitude_response(results=results,
-                                      plot_baseline_responders=False)  # < - there is one experiment that doesn't have any responders i think....
 
-    # main.collect__avg_num_response(results=results)
-    main.plot__avg_num_responders(results=results)
 
-    #
-    #
-    # 3) calculate summed responses and plot against evoked targets' activity
-    # main.run__summed_responses(rerun=0)
-    main.plot__summed_activity_vs_targets_activity(results=results)
+
+
+
+
+
+
+
+    pass

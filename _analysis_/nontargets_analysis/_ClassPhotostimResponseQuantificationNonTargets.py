@@ -31,8 +31,8 @@ class PhotostimResponsesNonTargetsResults(Results):
     def __init__(self):
         super().__init__()
 
-        self.summed_responses = None  #: dictionary of baseline and interictal summed responses of targets and nontargets across experiments
-        self.lin_reg_summed_responses = None  #: dictionary of baseline and interictal linear regression metrics for relating total targets responses and nontargets responses across experiments
+        self.summed_responses = {}  #: dictionary of baseline and interictal summed responses of targets and nontargets across experiments
+        self.lin_reg_summed_responses = {}  #: dictionary of baseline and interictal linear regression metrics for relating total targets responses and nontargets responses across experiments
         self.avg_responders_num = None  #: average num responders, for pairedmatched experiments between baseline pre4ap and interictal
         self.avg_baseline_responders_magnitude = None  #: average response magnitude, for pairedmatched experiments between baseline pre4ap and interictal - collected for cell ids that were sig responders in baseline
         self.avg_responders_magnitude = None  #: average response magnitude, for pairedmatched experiments between baseline pre4ap and interictal
