@@ -95,36 +95,36 @@ def calculate__summed_responses_targets(expobj: Post4ap):
 
     return targets_responses
 
-def __collect__summed_activity_vs_targets_activity(results: PhotostimResponsesNonTargetsResults):
+
+
+def __collect__summed_activity_vs_targets_activity__(results: PhotostimResponsesNonTargetsResults):
     """collect summed zscored activity of nontargets proximal and distal to sz wavefront"""
 
     # post4ap - interictal #############################################################################################
     @Utils.run_for_loop_across_exps(run_pre4ap_trials=False, run_post4ap_trials=True, allow_rerun=0,
                                     skip_trials=PhotostimResponsesQuantificationNonTargets.EXCLUDE_TRIALS)
-    def collect_summed_responses_interictal(lin_reg_scores, lin_reg_scores_fakestims, **kwargs):
+    def collect_summed_responses_ictal(**kwargs):
         """collect z scored (to baseline) summed responses for photostim nontargets, split by proximal and distal groups"""
         expobj: Post4ap = kwargs['expobj']
 
-        summed_responses = pd.DataFrame({'exp': [expobj.t_series_name] * sum(
-            [expobj.PhotostimResponsesSLMTargets.adata.var['stim_group'] == 'ictal'][0]),
-                                         'targets': expobj.PhotostimResponsesSLMTargets.adata.var['summed_response_SLMtargets'][expobj.PhotostimResponsesSLMTargets.adata.var['stim_group'] == 'ictal'],
+        summed_responses_proximal = pd.DataFrame({'exp': [expobj.t_series_name] * sum([expobj.PhotostimResponsesSLMTargets.adata.var['stim_group'] == 'ictal'][0]),
+                                         'proximal targets': expobj.PhotostimResponsesSLMTargets.adata.var['targets - proximal - total z score'][expobj.PhotostimResponsesSLMTargets.adata.var['stim_group'] == 'ictal'],
                                          'proximal non-targets': expobj.PhotostimResponsesNonTargets.adata.var['nontargets - proximal - mean z score'][expobj.PhotostimResponsesSLMTargets.adata.var['stim_group'] == 'ictal'],
+                                         })
+
+        summed_responses_distal = pd.DataFrame({'exp': [expobj.t_series_name] * sum([expobj.PhotostimResponsesSLMTargets.adata.var['stim_group'] == 'ictal'][0]),
+                                         'distal targets': expobj.PhotostimResponsesSLMTargets.adata.var['targets - distal - total z score'][expobj.PhotostimResponsesSLMTargets.adata.var['stim_group'] == 'ictal'],
                                          'distal non-targets': expobj.PhotostimResponsesNonTargets.adata.var['nontargets - distal - mean z score'][expobj.PhotostimResponsesSLMTargets.adata.var['stim_group'] == 'ictal']
                                          })
 
 
         # calculating linear regression metrics between summed targets and summed total network for each experiment
-        # photostims
-        slope, intercept, r_value, p_value, std_err = stats.linregress(x=targets_summed_activity_zsco,
-                                                                       y=network_summed_activity_zsco)
-        regression_y = slope * targets_summed_activity_zsco + intercept
+        # proximal cells
+        slope, intercept, r_value, p_value, std_err = stats.linregress(x=summed_responses_proximal['proximal targets'],
+                                                                       y=summed_responses_proximal['proximal non-targets'])
+        regression_y = slope * summed_responses_proximal['proximal targets'] + intercept
 
-        summed_responses_zscore = pd.DataFrame({'exp': [expobj.t_series_name] * len(regression_y),
-                                                'targets_summed_zscored': targets_summed_activity_zsco,
-                                                'all_non-targets_zscored': network_summed_activity_zsco,
-                                                'all_non-targets_score_regression': regression_y})
-
-        lin_reg_scores = pd.DataFrame({
+        lin_reg_scores_proximal = pd.DataFrame({
             'exp': expobj.t_series_name,
             'slope': slope,
             'intercept': intercept,
@@ -132,19 +132,12 @@ def __collect__summed_activity_vs_targets_activity(results: PhotostimResponsesNo
             'p_value': p_value
         }, index=[expobj.t_series_name])
 
-        # fakestims
-        slope, intercept, r_value, p_value, std_err = stats.linregress(x=targets_fakestims_summed_activity_zsco,
-                                                                       y=network_fakestims_summed_activity_zsco)
-        regression_y_fakestims = slope * targets_fakestims_summed_activity_zsco + intercept
+        # distal cells
+        slope, intercept, r_value, p_value, std_err = stats.linregress(x=summed_responses_distal['distal targets'],
+                                                                       y=summed_responses_distal['distal non-targets'])
+        regression_y = slope * summed_responses_distal['distal targets'] + intercept
 
-        summed_responses_fakestims_zscore = pd.DataFrame({})
-        summed_responses_fakestims_zscore[
-            'targets_fakestims_summed_zscored'] = targets_fakestims_summed_activity_zsco
-        summed_responses_fakestims_zscore[
-            'all_non-targets_fakestims_zscored'] = network_fakestims_summed_activity_zsco
-        summed_responses_fakestims_zscore['all_non-targets_fakestims_score_regression'] = regression_y_fakestims
-
-        lin_reg_scores_fakestims = pd.DataFrame({
+        lin_reg_scores_distal = pd.DataFrame({
             'exp': expobj.t_series_name,
             'slope': slope,
             'intercept': intercept,
@@ -152,56 +145,188 @@ def __collect__summed_activity_vs_targets_activity(results: PhotostimResponsesNo
             'p_value': p_value
         }, index=[expobj.t_series_name])
 
-        return summed_responses_zscore, summed_responses_fakestims_zscore, lin_reg_scores, lin_reg_scores_fakestims
-        # return expobj.PhotostimResponsesNonTargets.adata.var['summed_response_pos_interictal'], expobj.PhotostimResponsesSLMTargets.adata.var['summed_response_SLMtargets']
 
-    func_collector_interictal = collect_summed_responses_interictal(
-        lin_reg_scores=results.lin_reg_summed_responses['baseline'],
-        lin_reg_scores_fakestims=results.lin_reg_summed_responses['baseline - fakestims'])
 
-    if func_collector_interictal is not None:
+        return summed_responses_proximal, summed_responses_distal, lin_reg_scores_proximal, lin_reg_scores_distal
 
-        # summed_responses_interictal = pd.DataFrame({'exp': [], 'targets': [], 'non-targets_pos': [], 'non-targets_neg': [], 'all_non-targets': [],
-        #                                           'targets_summed_zscored': [], 'all_non-targets_zscored': [], 'all_non-targets_score_regression': []})
+    func_collector_ictal = collect_summed_responses_ictal()
 
-        summed_responses_interictal_zscore = pd.DataFrame({'exp': [],
-                                                           'targets_summed_zscored': [],
-                                                           'all_non-targets_zscored': [],
-                                                           'all_non-targets_score_regression': [], })
-        # 'targets_fakestims_summed_zscored': [], 'all_non-targets_fakestims_zscored': [], 'all_non-targets_fakestims_score_regression': []})
+    if func_collector_ictal is not None:
 
-        summed_responses_fakestims_interictal_zscore = pd.DataFrame({})
-        summed_responses_fakestims_interictal_zscore['targets_fakestims_summed_zscored'] = []
-        summed_responses_fakestims_interictal_zscore['all_non-targets_fakestims_zscored'] = []
-        summed_responses_fakestims_interictal_zscore['all_non-targets_fakestims_score_regression'] = []
+        summed_responses_proximal = pd.DataFrame({'exp': [],
+                                               'proximal targets': [],
+                                               'proximal nontargets': []})
 
-        lin_reg_scores_interictal = pd.DataFrame(
+        summed_responses_distal = pd.DataFrame({'exp': [],
+                                               'distal targets': [],
+                                               'distal nontargets': []})
+
+        lin_reg_scores_proximal = pd.DataFrame(
             {'exp': [], 'slope': [], 'intercept': [], 'r_value': [], 'p_value': []})
-        lin_reg_scores_fakestims_interictal = pd.DataFrame(
+        lin_reg_scores_distal = pd.DataFrame(
             {'exp': [], 'slope': [], 'intercept': [], 'r_value': [], 'p_value': []})
 
-        for exp in func_collector_interictal:
-            summed_responses_interictal_zscore = pd.concat([summed_responses_interictal_zscore, exp[0]])
-            summed_responses_fakestims_interictal_zscore = pd.concat(
-                [summed_responses_fakestims_interictal_zscore, exp[1]])
-            lin_reg_scores_interictal = pd.concat([lin_reg_scores_interictal, exp[2]])
-            lin_reg_scores_fakestims_interictal = pd.concat([lin_reg_scores_fakestims_interictal, exp[3]])
+        for res in func_collector_ictal:
+            summed_responses_proximal = pd.concat([summed_responses_proximal, res[0]])
+            summed_responses_distal = pd.concat([summed_responses_distal, res[1]])
+            lin_reg_scores_proximal = pd.concat([lin_reg_scores_proximal, res[2]])
+            lin_reg_scores_distal = pd.concat([lin_reg_scores_distal, res[3]])
 
-        print('summed responses interictal zscore shape', summed_responses_interictal_zscore.shape)
-        print('summed responses fakestims interictal zscore shape',
-              summed_responses_fakestims_interictal_zscore.shape)
+        print('summed responses proximal shape', summed_responses_proximal.shape)
+        print('summed responses distal shape', summed_responses_distal.shape)
 
-        results.summed_responses['interictal'] = summed_responses_interictal_zscore
-        results.summed_responses['interictal - fakestims'] = summed_responses_fakestims_interictal_zscore
-        results.lin_reg_summed_responses['interictal'] = lin_reg_scores_interictal
-        results.lin_reg_summed_responses['interictal - fakestims'] = lin_reg_scores_fakestims_interictal
+        results.summed_responses['ictal - proximal'] = summed_responses_proximal
+        results.summed_responses['ictal - distal'] = summed_responses_distal
+        results.lin_reg_summed_responses['ictal - proximal'] = lin_reg_scores_proximal
+        results.lin_reg_summed_responses['ictal - distal'] = lin_reg_scores_distal
         results.save_results()
+
+
+def __plot__ictal_nontargets_vs_targets_activity__(results: PhotostimResponsesNonTargetsResults):
+    """scatter plot of stim trials comparing summed activity of targets (originally zscored to baseline) and mean activity of nontargets (original zscored to baseline).
+    - split by proximal and distal locations.
+    """
+    # make plots
+
+    # SCATTER PLOT OF DATAPOINTS
+    fig, axs = plt.subplots(nrows=2, ncols=1, figsize=(10, 6))
+
+    # BASELINE CONDITION
+
+    # photostims
+    slope, intercept, r_value, p_value, std_err = stats.linregress(
+        x=results.summed_responses['baseline']['targets_summed_zscored'],
+        y=results.summed_responses['baseline']['all_non-targets_zscored'])
+    regression_y = slope * results.summed_responses['baseline']['targets_summed_zscored'] + intercept
+    fig, axs[0] = pplot.make_general_scatter(
+        x_list=[results.summed_responses['baseline']['targets_summed_zscored']],
+        y_data=[results.summed_responses['baseline']['all_non-targets_zscored']], fig=fig, ax=axs[0],
+        s=50, facecolors=['white'], edgecolors=['blue'], lw=1, alpha=0.5,
+        x_labels=['total targets activity'], y_labels=['total network activity'],
+        legend_labels=[
+            f'baseline - photostims - $R^2$: {r_value ** 2:.2e}, p = {p_value ** 2:.2e}, $m$ = {slope:.2e}'],
+        show=False)
+    axs[0].plot(results.summed_responses['baseline']['targets_summed_zscored'], regression_y, color='blue', lw=2)
+
+    # add fakestims
+    slope, intercept, r_value, p_value, std_err = stats.linregress(
+        x=results.summed_responses['baseline - fakestims']['targets_fakestims_summed_zscored'],
+        y=results.summed_responses['baseline - fakestims']['all_non-targets_fakestims_zscored'])
+    regression_y = slope * results.summed_responses['baseline - fakestims'][
+        'targets_fakestims_summed_zscored'] + intercept
+
+    pplot.make_general_scatter(
+        x_list=[results.summed_responses['baseline - fakestims']['targets_fakestims_summed_zscored']],
+        y_data=[results.summed_responses['baseline - fakestims']['all_non-targets_fakestims_zscored']],
+        fig=fig, ax=axs[0],
+        s=50, facecolors=['white'], edgecolors=['black'], lw=1, alpha=0.5,
+        x_labels=['total targets'], y_labels=['total network activity'],
+        legend_labels=[
+            f'baseline - fakestims - $R^2$: {r_value ** 2:.2e}, p = {p_value ** 2:.2e}, $m$ = {slope:.2e}'],
+        show=False)
+    axs[0].plot(results.summed_responses['baseline - fakestims']['targets_fakestims_summed_zscored'], regression_y,
+                color='gray', lw=2)
+
+    # INTERICTAL CONDITION
+    # TEST AND DEVELOP AND DEBU BELOW VERY NEXT!!!
+    # photostims
+    slope, intercept, r_value, p_value, std_err = stats.linregress(
+        x=results.summed_responses['interictal']['targets_summed_zscored'],
+        y=results.summed_responses['interictal']['all_non-targets_zscored'])
+
+    regression_y = slope * results.summed_responses['interictal']['targets_summed_zscored'] + intercept
+
+    pplot.make_general_scatter(x_list=[results.summed_responses['interictal']['targets_summed_zscored']],
+                               y_data=[results.summed_responses['interictal']['all_non-targets_zscored']], s=50,
+                               facecolors=['white'],
+                               edgecolors=['green'], lw=1, alpha=0.5, x_labels=['total targets activity'],
+                               y_labels=['total network activity'], fig=fig, ax=axs[1],
+                               legend_labels=[
+                                   f'interictal - photostims - $R^2$: {r_value ** 2:.2e}, p = {p_value ** 2:.2e}, $m$ = {slope:.2e}'],
+                               show=False)
+
+    axs[1].plot(results.summed_responses['interictal']['targets_summed_zscored'], regression_y, color='forestgreen',
+                lw=2)
+
+    # fakestims
+    # add fakestims
+    slope, intercept, r_value, p_value, std_err = stats.linregress(
+        x=results.summed_responses['interictal - fakestims']['targets_fakestims_summed_zscored'],
+        y=results.summed_responses['interictal - fakestims']['all_non-targets_fakestims_zscored'])
+    regression_y = slope * results.summed_responses['interictal - fakestims'][
+        'targets_fakestims_summed_zscored'] + intercept
+
+    pplot.make_general_scatter(
+        x_list=[results.summed_responses['interictal - fakestims']['targets_fakestims_summed_zscored']],
+        y_data=[results.summed_responses['interictal - fakestims']['all_non-targets_fakestims_zscored']],
+        fig=fig, ax=axs[1],
+        s=50, facecolors=['white'], edgecolors=['black'], lw=1, alpha=0.5,
+        x_labels=['total targets'], y_labels=['total network activity'],
+        legend_labels=[
+            f'interictal - fakestims - $R^2$: {r_value ** 2:.2e}, p = {p_value ** 2:.2e}, $m$ = {slope:.2e}'],
+        show=False)
+    axs[1].plot(results.summed_responses['interictal - fakestims']['targets_fakestims_summed_zscored'],
+                regression_y, color='gray', lw=2)
+
+    # PLOTTING OPTIONS
+    axs[0].grid(True)
+    axs[1].grid(True)
+    axs[0].set_ylim([-15, 15])
+    axs[1].set_ylim([-15, 15])
+    axs[0].set_xlim([-7, 7])
+    axs[1].set_xlim([-7, 7])
+    fig.suptitle('Total z-scored (to baseline) responses for all trials, all exps', wrap=True)
+    fig.tight_layout(pad=0.6)
+    fig.show()
+
+    # BAR PLOT OF PEARSON'S R CORR VALUES BETWEEN BASELINE AND INTERICTAL
+    pplot.plot_bar_with_points(data=[[i ** 2 for i in results.lin_reg_summed_responses['baseline']['r_value']],
+                                     [i ** 2 for i in
+                                      results.lin_reg_summed_responses['baseline - fakestims']['r_value']],
+                                     [i ** 2 for i in results.lin_reg_summed_responses['interictal']['r_value']],
+                                     [i ** 2 for i in
+                                      results.lin_reg_summed_responses['interictal - fakestims']['r_value']]],
+                               paired=True, bar=False, colors=['blue', 'gray', 'green', 'gray'], edgecolor='black',
+                               lw=1,
+                               x_tick_labels=['Base', 'Base-fake', 'Inter', 'Inter-fake'], ylims=[0, 1],
+                               y_label='$R^2$', title='$R^2$ value per experiment')
+
+    pplot.plot_bar_with_points(data=[[i for i in results.lin_reg_summed_responses['baseline']['slope']],
+                                     [i for i in results.lin_reg_summed_responses['baseline - fakestims']['slope']],
+                                     [i for i in results.lin_reg_summed_responses['interictal']['slope']],
+                                     [i for i in
+                                      results.lin_reg_summed_responses['interictal - fakestims']['slope']]],
+                               paired=True, bar=False, colors=['blue', 'gray', 'green', 'gray'], edgecolor='black',
+                               lw=1,
+                               x_tick_labels=['Base', 'Base-fake', 'Inter', 'Inter-fake'], ylims=[0, 1.7],
+                               y_label='$slope$', title='slope value per experiment')
+
+    pplot.plot_bar_with_points(data=[
+        [(val ** 2) / results.lin_reg_summed_responses['baseline - fakestims']['r_value'][i] for i, val in
+         enumerate(results.lin_reg_summed_responses['baseline']['r_value'])],
+        [(val ** 2) / results.lin_reg_summed_responses['interictal - fakestims']['r_value'][i] for i, val in
+         enumerate(results.lin_reg_summed_responses['interictal']['r_value'])]],
+        paired=True, bar=False, colors=['blue', 'green'], edgecolor='black', lw=1,
+        x_tick_labels=['Base', 'Inter'], ylims=[0, 1.5], y_label='photostim/fakestims $R^2$',
+        title='ratio of $R^2$ per experiment')
+
+    pplot.plot_bar_with_points(data=[
+        [val / results.lin_reg_summed_responses['baseline - fakestims']['slope'][i] for i, val in
+         enumerate(results.lin_reg_summed_responses['baseline']['slope'])],
+        [val / results.lin_reg_summed_responses['interictal - fakestims']['slope'][i] for i, val in
+         enumerate(results.lin_reg_summed_responses['interictal']['slope'])]],
+        paired=True, bar=False, colors=['blue', 'green'], edgecolor='black', lw=1,
+        x_tick_labels=['Base', 'Inter'], ylims=[0, 4.5], y_label='photostim/fakestims $m$',
+        title='ratio of $m$ per experiment')
+
+
+    pass
 
 
 # %%
 
-@Utils.run_for_loop_across_exps(run_pre4ap_trials=0, run_post4ap_trials=0, allow_rerun=1, skip_trials=PhotostimResponsesQuantificationNonTargets.EXCLUDE_TRIALS,
-                                run_trials=PhotostimResponsesQuantificationNonTargets.TEST_TRIALS)
+@Utils.run_for_loop_across_exps(run_pre4ap_trials=0, run_post4ap_trials=1, allow_rerun=1, skip_trials=PhotostimResponsesQuantificationNonTargets.EXCLUDE_TRIALS,)
+                                # run_trials=PhotostimResponsesQuantificationNonTargets.TEST_TRIALS)
 def run__ictal_nontargets_responses_processing(**kwargs):
     expobj: Post4ap = kwargs['expobj']
     expobj.PhotostimResponsesNonTargets = calculate__summed_responses_nontargets(expobj=kwargs['expobj'])

@@ -968,7 +968,7 @@ class PhotostimResponsesAnalysisNonTargets(PhotostimResponsesQuantificationNonTa
 
     @staticmethod
     def plot__summed_activity_vs_targets_activity(results: PhotostimResponsesNonTargetsResults):
-
+        """scatter plot of stim trials comparing zscored summed activity of targets and zscored summed activity of nontargets. during baseline and interictal. includes fakestims trial as well."""
         # make plots
 
         # SCATTER PLOT OF DATAPOINTS
