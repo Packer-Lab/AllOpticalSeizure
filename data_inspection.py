@@ -1,9 +1,12 @@
 ### various bits of code that is useful for data inspection
 
 import sys
+
+from _exp_metainfo_.exp_metainfo import import_resultsobj
+from _utils_.io import import_expobj
+
 sys.path.append('/home/pshah/Documents/code/PackerLab_pycharm/')
 sys.path.append('/home/pshah/Documents/code/')
-import alloptical_utils_pj as aoutils
 from _utils_ import alloptical_plotting as aoplot
 
 import numpy as np
@@ -11,12 +14,12 @@ import matplotlib.pyplot as plt
 
 # # import results superobject that will collect analyses from various individual experiments
 results_object_path = '/home/pshah/mnt/qnap/Analysis/alloptical_results_superobject.pkl'
-allopticalResults = aoutils.import_resultsobj(pkl_path=results_object_path)
+allopticalResults = import_resultsobj(pkl_path=results_object_path)
 
 
 # %% IMPORT expobj
 # expobj, experiment = aoutils.import_expobj(aoresults_map_id='pre h.0')
-expobj = aoutils.import_expobj(prep='RL109', trial='t-017')
+expobj = import_expobj(prep='RL109', trial='t-017')
 fig, axs = plt.subplots(2, 1, figsize=(20, 6))
 fig, ax = aoplot.plotMeanRawFluTrace(expobj=expobj, stim_span_color=None, x_axis='frames', fig=fig, ax=axs[0], show=False)
 fig, ax = aoplot.plotLfpSignal(expobj=expobj, stim_span_color='', x_axis='time', fig=fig, ax=axs[1], show=False)

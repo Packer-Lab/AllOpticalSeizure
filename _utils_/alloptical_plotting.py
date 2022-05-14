@@ -1034,15 +1034,16 @@ def plot_traces_heatmap(expobj, arr, vmin=None, vmax=None, stim_on = None, stim_
 
     mesh1 = ax.pcolormesh(arr, cmap=cmap)
     mesh1.set_clim(vmin, vmax)
+    if cbar is True:
+        pass
+    else:
+        cbar.remove()
 
     if xlims is not None:
         ax.set_xlim(xlims)
     if vmin is not None:
         cbar = fig.colorbar(mesh1, boundaries=np.linspace(vmin, vmax, 1000), ticks=[vmin, 0, vmax])
-        if cbar is True:
-            pass
-        else:
-            cbar.remove()
+
     if stim_on and stim_off:  # draw vertical dashed lines for stim period
         # plt.vlines(x=stim_on, ymin=0, ymax=len(arr), colors='black')
         # plt.vlines(x=stim_off, ymin=0, ymax=len(arr))

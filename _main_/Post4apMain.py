@@ -136,6 +136,11 @@ class Post4ap(alloptical):
     def numSeizures(self):
         return len(self.seizure_lfp_onsets) - (len(self.seizure_lfp_onsets) - len(self.seizure_lfp_offsets))
 
+    def seizures(self):
+        print(f'num seizures: {self.numSeizures}')
+        print(f'seizure start frames: {self.seizure_lfp_onsets}')
+        print(f'seizure offset frames: {self.seizure_lfp_offsets}')
+
     @property
     def stim_idx_outsz(self):
         return [idx for idx, stim in enumerate(self.stim_start_frames) if stim in self.stims_out_sz]

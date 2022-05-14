@@ -26,26 +26,42 @@ expobj = aoutils.import_expobj(aoresults_map_id='post a.0')  # PLACEHOLDER IMPOR
 # PLOT HEATMAP of SEIZURE EVENTS
 """
 
-def plotHeatMapSzAllCells(expobj: Post4ap, sz_num: int = 2):
+def plotHeatMapSzAllCells(expobj: Post4ap, sz_num: int):
 
-    sz_onset, sz_offset = expobj.stims_bf_sz[sz_num], expobj.stims_af_sz[sz_num+1]
+    sz_onset, sz_offset = expobj.seizure_lfp_onsets[sz_num], expobj.seizure_lfp_offsets[sz_num]
 
     # -- approach of dFF normalize to the mean of the Flu data 2 seconds before the seizure
-    pre_sz = 2*int(expobj.fps)
-    sz_flu = expobj.raw[[expobj.cell_id.index(cell) for cell in expobj.good_cells], sz_onset - pre_sz: sz_offset]
-    sz_flu_smooth = np.array([pj.smoothen_signal(signal, w=5) for signal in sz_flu])  # grouped average of the raw signal
-    x_norm = np.array([pj.dff(flu[pre_sz:], np.mean(flu[:pre_sz])) * 100 for flu in sz_flu_smooth])
+    pre_sz = 3*int(expobj.fps)
+    post_sz = 4*int(expobj.fps)
+
+    frame_start = int(sz_onset - pre_sz)
+    frame_end = int(sz_offset + post_sz)
+
+    sz_flu = expobj.raw[[expobj.cell_id.index(cell) for cell in expobj.good_cells], frame_start: frame_end]
+    sz_flu_smooth = np.array([pj.smoothen_signal(signal, w=5) for signal in sz_flu])  # grouped average smoothing of the raw signal
+    # x_norm = np.array([pj.dff(flu[pre_sz:], np.mean(flu[:pre_sz])) * 100 for flu in sz_flu_smooth])
+    x_norm = sz_flu_smooth
 
     stims = [(stim - sz_onset) for stim in expobj.stim_start_frames if sz_onset <= stim < sz_offset]
     stims_off = [(stim + expobj.stim_duration_frames - 1) for stim in stims]
 
-    x_bf = expobj.stim_start_times[expobj.stim_start_frames.index(expobj.stims_bf_sz[sz_num])]
-    x_af = expobj.stim_start_times[expobj.stim_start_frames.index(expobj.stims_af_sz[sz_num+1])]
+    # x_bf = expobj.stim_start_times[expobj.stim_start_frames.index(expobj.stims_bf_sz[sz_num])]
+    # x_af = expobj.stim_start_times[expobj.stim_start_frames.index(expobj.stims_af_sz[sz_num+1])]
 
-    lfp_signal = expobj.lfp_signal[x_bf:x_af]
+    paq_start = expobj.frame_clock_actual[frame_start]
+    paq_end = expobj.frame_clock_actual[frame_end]
 
-    # -- ordering cells based on their order of reaching top 5% signal threshold
-    x_95 = [np.percentile(trace, 95) for trace in x_norm]
+    lfp_signal = expobj.lfp_signal[paq_start: paq_end]
+
+    # # test cropping
+    # fig, axs = plt.subplots(nrows=2, figsize = (6,6))
+    # axs[0].plot(expobj.meanRawFluTrace[frame_start: frame_end], c='forestgreen', zorder=1)
+    # axs[1].plot(expobj.lfp_signal[paq_start: paq_end])
+    # fig.show()
+    # # test cropping
+
+    # -- ordering cells based on their order of reaching top 60% signal threshold
+    x_95 = [np.percentile(trace, 75) for trace in x_norm]
 
     x_peak = [np.min(np.where(x_norm[i] > x_95[i])) for i in range(len(x_norm))]
     new_order = np.argsort(x_peak)
@@ -64,26 +80,28 @@ def plotHeatMapSzAllCells(expobj: Post4ap, sz_num: int = 2):
     # fig.tight_layout(pad=0.2)
     # fig.show()
 
+
     # just the bottom half cells that seems to show more of an order
-    fig, ax= plt.subplots(figsize=(5,3))
-    x_ordered = x_norm[new_order[250:]]
-    fig, ax = aoplot.plot_traces_heatmap(expobj=expobj, arr=x_ordered, stim_on=stims, stim_off=stims_off, cmap='jet',
-                               title=('%s - seizure %s - sz flu smooth - %s to %s' % (expobj.t_series_name, sz_num, sz_onset, sz_offset)),
-                               xlims=None, vmin=100, vmax=500, fig=fig, ax=ax, show=False, x_label='Time (secs)')
+    fig, ax = plt.subplots(figsize=(5, 3))
+    x_ordered = x_norm[new_order[:]]
+    fig, ax = aoplot.plot_traces_heatmap(expobj=expobj, arr=x_ordered, cmap='afmhot', cbar=True,
+                                         title=f'{expobj.t_series_name} - seizure {sz_num} - sz flu smooth',
+                                         xlims=None, vmin=100, vmax=500, fig=fig, ax=ax, show=False, x_label='Time (secs)')
     ax2 = ax.twinx()
     x_c = np.linspace(0, x_ordered.shape[1] - 1, len(lfp_signal))
     # ax2.plot(x_c, kwargs['lfp_signal'] * 50 + arr.shape[0] - 100, c='black')
-    ax2.plot(x_c, lfp_signal, c='white', lw=0.5)
+    ax2.plot(x_c, lfp_signal, c='white', lw=0.35)
 
     x_labels = [item for item in ax.get_xticks()]
     y_labels = [-5, -4]
     ax2.set_yticks(y_labels)
-    ax2.set_ylabel('LFP (mV)')
-    ax2.set_ylim([-5, 5])
+    ax2.set_yticklabels([])
+    # ax2.set_ylabel('LFP (mV)')
+    ax2.set_ylim([-5, 7])
     fig.tight_layout(pad=0.2)
     fig.show()
 
-
+    print('done plotting.')
     # # PLOT cell location with cmap based on their order of reaching top 5% signal during sz event
     # cell_ids_ordered = list(np.array(expobj.cell_id)[new_order])
     # aoplot.plot_cells_loc(expobj, cells=cell_ids_ordered, show_s2p_targets=False, color_float_list=list(range(len(cell_ids_ordered))),
