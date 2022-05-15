@@ -173,3 +173,9 @@ def fourDplot_SzWavefront(expobj: Post4ap):
     ax.set_zlabel('x axis')
     fig.tight_layout()
     fig.show()
+
+
+# %% 3) plotting of
+
+
+

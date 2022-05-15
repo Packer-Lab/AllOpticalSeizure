@@ -133,6 +133,26 @@ class Post4ap(alloptical):
         return repr(f"({information}) TwoPhotonImaging.alloptical.Post4ap experimental data object, last saved: {lastmod}")
 
     @property
+    def frames_photostim_ex(self):
+        "imaging frames adjusted for exclusion of photostim duration frames"
+        fov_signal_frames = [frame for frame in range(self.n_frames) if frame not in self.photostim_frames]  # - exclude photostim frames
+        return fov_signal_frames
+
+    @property
+    def seizure_frames_photostim_ex(self):
+        "seizure frames adjusted for exclusion of photostim duration frames"
+        seizure_frames_adjusted = []
+        for frame in self.seizure_frames:
+            if frame in self.frames_photostim_ex:
+
+                sub_ = len(np.where(frame > self.frames_photostim_ex)[0])
+                seizure_frames_adjusted.append((frame - sub_))
+
+        return seizure_frames_adjusted
+
+
+
+    @property
     def numSeizures(self):
         return len(self.seizure_lfp_onsets) - (len(self.seizure_lfp_onsets) - len(self.seizure_lfp_offsets))
 
