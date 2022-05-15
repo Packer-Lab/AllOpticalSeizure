@@ -3973,6 +3973,41 @@ class OnePhotonStim(TwoPhotonImaging):
         return repr(f"({information}) TwoPhotonImaging.OnePhotonStim experimental data object, last saved: {lastmod}")
 
     @property
+    def date(self):
+        return self.metainfo['date']
+
+    @property
+    def prep(self):
+        return self.metainfo['animal prep.']
+
+    @property
+    def trial(self):
+        return self.metainfo['trial']
+
+    @property
+    def exptype(self):
+        return self.metainfo['exptype']
+
+    @property
+    def t_series_name(self):
+        return f'{self.metainfo["animal prep."]} {self.metainfo["trial"]}'
+
+    @property
+    def tiff_path_dir(self):
+        return self.tiff_path[:[(s.start(), s.end()) for s in re.finditer('/', self.tiff_path)][-1][
+            0]]  # this is the directory where the Bruker xml files associated with the 2p imaging TIFF are located
+
+    @property
+    def pkl_path(self):
+        """specify path in Analysis folder to save pkl object"""
+        self._pkl_path = f"{self.analysis_save_path}{self.metainfo['date']}_{self.metainfo['trial']}.pkl"
+        return self._pkl_path
+
+    @pkl_path.setter
+    def pkl_path(self, path: str):
+        self._pkl_path = path
+
+    @property
     def pre_stim(self):
         return 1  # seconds
 

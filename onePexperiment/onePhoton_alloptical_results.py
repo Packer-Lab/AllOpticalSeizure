@@ -158,7 +158,7 @@ counter = 0; write_full_text=True
 for pkl_path in onePresults.mean_stim_responses['pkl_list']:
     if list(onePresults.mean_stim_responses.loc[onePresults.mean_stim_responses['pkl_list'] == pkl_path, 'pre-4ap response'])[0] != '-':
 
-        expobj, experiment = aoutils.import_expobj(pkl_path=pkl_path, verbose=False)
+        expobj = aoutils.import_expobj(pkl_path=pkl_path, verbose=False)
         ax = axs[counter//ncols, counter % ncols]
 
         fig, ax = aoplot.plot_lfp_1pstim_avg_trace(expobj, x_axis='time', individual_traces=False, pre_stim=0.25, post_stim=0.75, optoloopback=True, show=False, fig=fig, ax=ax,
@@ -180,7 +180,7 @@ fig, axs = plt.subplots(nrows=nrows, ncols=ncols, figsize=(ncols * 5, nrows * 5)
 counter = 0; write_full_text=True
 for pkl_path in onePresults.mean_stim_responses['pkl_list']:
     if list(onePresults.mean_stim_responses.loc[onePresults.mean_stim_responses['pkl_list'] == pkl_path, 'post-4ap response (outside sz)'])[0] != '-':
-        expobj, experiment = aoutils.import_expobj(pkl_path=pkl_path)
+        expobj = aoutils.import_expobj(pkl_path=pkl_path)
         ax = axs[counter//ncols, counter % ncols]
 
         title = 'Avg. trace - stims out of sz -'
@@ -205,7 +205,7 @@ fig, axs = plt.subplots(nrows=nrows, ncols=ncols, figsize=(ncols * 5, nrows * 5)
 counter = 0; write_full_text = True
 for pkl_path in onePresults.mean_stim_responses['pkl_list']:
     if list(onePresults.mean_stim_responses.loc[onePresults.mean_stim_responses['pkl_list'] == pkl_path, 'post-4ap response (during sz)'])[0] != '-':
-        expobj, experiment = aoutils.import_expobj(pkl_path=pkl_path, verbose=False)
+        expobj = aoutils.import_expobj(pkl_path=pkl_path, verbose=False)
         ax = axs[counter//ncols, counter % ncols]
 
         title = 'Avg. trace - stims in sz -'

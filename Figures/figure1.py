@@ -63,7 +63,10 @@ ax.set_xlim([3000, 6500])
 fig.show()
 
 
-# %% 3.1) calulating speed from 25% to 75%
+# %% 3.1) calulating time to first 50% of max of first derivative
+
+
+# %% 3.2) calculating the first in sz stim frame with wavefront
 
 
 

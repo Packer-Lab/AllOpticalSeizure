@@ -17,6 +17,7 @@ from _main_.TwoPhotonImagingMain import TwoPhotonImaging
 from _main_.AllOpticalMain import alloptical
 from _main_.Post4apMain import Post4ap
 
+from alloptical_utils_pj import OnePhotonStim
 from typing import List, Union
 
 from funcsforprajay.wrappers import print_start_end_plot, plot_piping_decorator
@@ -1368,16 +1369,12 @@ def plot_flu_1pstim_avg_trace(expobj, title='Average trace of stims', individual
                               y_axis: str = 'raw', quantify: bool = False, stims_to_analyze: list = None, write_full_text: bool = True,
                               fig=None, ax=None, **kwargs):
 
-    if 'shrink_text' in kwargs.keys():
-        shrink_text = 1 / kwargs['shrink_text']
-    else:
-        shrink_text = 1
+    shrink_text = 1 if not 'shrink_text' in kwargs else 1 / kwargs['shrink_text']
 
     pre_stim = 1  # seconds
     post_stim = 4  # seconds
 
-    if stims_to_analyze is None:
-        stims_to_analyze = expobj.stim_start_frames
+    if stims_to_analyze is None: stims_to_analyze = expobj.stim_start_frames
     flu_list = [expobj.meanRawFluTrace[stim - int(pre_stim * expobj.fps): stim + int(post_stim * expobj.fps)] for stim in stims_to_analyze]
     # convert to dFF normalized to pre-stim F
     if y_axis == 'dff':  # otherwise default param is raw Flu
@@ -1464,6 +1461,11 @@ def plot_flu_1pstim_avg_trace(expobj, title='Average trace of stims', individual
     else:
         ax.set_ylim([-0.5, 1.0])
 
+    ax.spines['top'].set_visible(False)
+    ax.spines['right'].set_visible(False)
+    ax.spines['bottom'].set_visible(True)
+    ax.spines['left'].set_visible(False)
+
     fig.tight_layout(pad=1.3)
 
     if quantify:
@@ -1472,19 +1474,9 @@ def plot_flu_1pstim_avg_trace(expobj, title='Average trace of stims', individual
 
 @print_start_end_plot
 @plot_piping_decorator(figsize=(4,5))
-def plot_lfp_1pstim_avg_trace(expobj, title='Average LFP peri- stims', individual_traces=False, x_axis='time', pre_stim=1.0, post_stim=5.0,
+def plot_lfp_1pstim_avg_trace(expobj: OnePhotonStim, title='Average LFP peri- stims', individual_traces=False, x_axis='time', pre_stim=1.0, post_stim=5.0,
                               optoloopback: bool = False, stims_to_analyze: list = None, shrink_text: int = 1, write_full_text: bool = False,
                               fig=None, ax=None, **kwargs):
-    # fig, ax = plt.subplots()
-    # if there is a fig and ax provided in the function call then use those, otherwise start anew
-    # if 'fig' in kwargs.keys():
-    #     fig = kwargs['fig']
-    #     ax = kwargs['ax']
-    # else:
-    #     if 'figsize' in kwargs.keys():
-    #         fig, ax = plt.subplots(figsize=kwargs['figsize'])
-    #     else:
-    #         fig, ax = plt.subplots()
 
     stim_duration = int(np.mean([expobj.stim_end_times[idx] - expobj.stim_start_times[idx] for idx in range(len(expobj.stim_start_times))]) + 0.01*expobj.paq_rate)
     pre_stim = pre_stim  # seconds
@@ -1492,12 +1484,8 @@ def plot_lfp_1pstim_avg_trace(expobj, title='Average LFP peri- stims', individua
 
 
     if stims_to_analyze is None:
-        # stims_to_analyze_paq = expobj.stim_start_times
         stims_to_analyze = expobj.stim_start_frames
 
-    # else:
-    # stims_to_analyze_paq = [(expobj.frame_clock_actual[stim] - expobj.frame_start_time_actual) for stim in stims_to_analyze]
-    # stims_to_analyze_paq = [expobj.frame_clock_actual[frame] for frame in stims_to_analyze]
     stims_to_analyze_paq = [expobj.stim_start_times[expobj.stim_start_frames.index(stim_frame)] for stim_frame in stims_to_analyze]
 
     x = [expobj.lfp_signal[stim - int(pre_stim * expobj.paq_rate): stim + int(post_stim * expobj.paq_rate)] for stim in stims_to_analyze_paq]
@@ -1554,16 +1542,15 @@ def plot_lfp_1pstim_avg_trace(expobj, title='Average LFP peri- stims', individua
              in expobj.stim_start_times]
         y_avg = np.mean(x, axis=0)
         ax2.plot(y_avg, color='royalblue', zorder=3, linewidth=1.75)
-        if write_full_text:
-            ax2.text(0.98, 0.12, 'Widefield LED TTL',
-                     transform=ax.transAxes, fontweight='bold', horizontalalignment='right',
-                     color='royalblue', fontsize=10*shrink_text)
+        # if write_full_text:
+        #     ax2.text(0.98, 0.12, 'Widefield LED TTL',
+        #              transform=ax.transAxes, fontweight='bold', horizontalalignment='right',
+        #              color='royalblue', fontsize=10*shrink_text)
         # ax2.set_ylabel('Widefield LED TTL', color='royalblue', fontweight='bold')
         ax2.yaxis.set_tick_params(right=False,
                                   labelright=False)
         ax2.set_ylim([-3, 30])
         ax2.margins(0)
-
 
 
     if x_axis == 'time':
@@ -1580,15 +1567,22 @@ def plot_lfp_1pstim_avg_trace(expobj, title='Average LFP peri- stims', individua
         ax.set_xlabel('paq clock')
     ax.set_ylabel('Voltage')
 
-    # add title
-    ax.set_title(
-        '%s %s %s %s' % (title, expobj.metainfo['exptype'], expobj.metainfo['animal prep.'], expobj.metainfo['trial']),
-    fontsize=10*shrink_text, wrap=True)
+    ax.spines['top'].set_visible(False)
+    ax.spines['right'].set_visible(False)
+    ax.spines['bottom'].set_visible(True)
+    ax.spines['left'].set_visible(False)
+    ax2.spines['top'].set_visible(False)
+    ax2.spines['right'].set_visible(False)
+    ax2.spines['bottom'].set_visible(True)
+    ax2.spines['left'].set_visible(False)
 
-    ax.text(0.98, 0.97, '%s %s' % (expobj.metainfo['animal prep.'], expobj.metainfo['trial']),
-            verticalalignment='top', horizontalalignment='right',
-            transform=ax.transAxes, fontweight='bold',
-            color='black', fontsize=10 * shrink_text)
+    # add title
+    ax.set_title(f'{title} {expobj.t_series_name}', fontsize=10*shrink_text, wrap=True)
+
+    # ax.text(0.98, 0.97, '%s %s' % (expobj.metainfo['animal prep.'], expobj.metainfo['trial']),
+    #         verticalalignment='top', horizontalalignment='right',
+    #         transform=ax.transAxes, fontweight='bold',
+    #         color='black', fontsize=10 * shrink_text)
 
     fig.tight_layout(pad=1.3)
 
