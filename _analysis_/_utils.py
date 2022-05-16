@@ -17,6 +17,7 @@ class CustomUnpicklerAttributeError(pickle.Unpickler):
 
         return super().find_class(module, name)
 
+
 class CustomUnpicklerModuleNotFoundError(pickle.Unpickler):
     def find_class(self, module, name):
         if module == '_analysis_.ClassPhotostimResponseQuantificationSLMtargets':
@@ -30,13 +31,14 @@ class CustomUnpicklerModuleNotFoundError(pickle.Unpickler):
 
         return super().find_class(renamed_module, name)
 
+
 class Quantification:
     """generic parent for Quantification subclasses """
 
     save_path: str = None
     _pre_stim_sec = 1
     _post_stim_sec = 3
-    pre_stim_response_window_msec = 500 # msec
+    pre_stim_response_window_msec = 500  # msec
     post_stim_response_window_msec = 500  # msec
 
     def __init__(self, expobj: alloptical):
@@ -61,8 +63,15 @@ class Quantification:
     def expobj_exptype(self):
         return self._metainfo['exptype']
 
-
     # analysis properties
+    @property
+    def pre_stim_sec(self):
+        return self._pre_stim_sec
+
+    @property
+    def post_stim_sec(self):
+        return self._post_stim_sec
+
     @property
     def pre_stim_fr(self):
         return int(self._pre_stim_sec * self._fps)  # length of pre stim trace collected (in frames)
@@ -73,11 +82,13 @@ class Quantification:
 
     @property
     def pre_stim_response_frames_window(self):
-        return int(self._fps * self.pre_stim_response_window_msec / 1000)  # length of the pre stim response test window (in frames)
+        return int(
+            self._fps * self.pre_stim_response_window_msec / 1000)  # length of the pre stim response test window (in frames)
 
     @property
     def post_stim_response_frames_window(self):
-        return int(self._fps * self.post_stim_response_window_msec / 1000)  # length of the post stim response test window (in frames)
+        return int(
+            self._fps * self.post_stim_response_window_msec / 1000)  # length of the post stim response test window (in frames)
 
 
 class Results:
@@ -129,5 +140,3 @@ class Results:
     # @property
     # def expobj_exptype(self):
     #     return self._metainfo['exptype']
-
-

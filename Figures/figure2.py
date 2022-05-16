@@ -1,4 +1,6 @@
 import matplotlib as plt
+import numpy as np
+
 import _utils_.alloptical_plotting as aoplot
 
 # import onePstim superobject that will collect analyses from various individual experiments
@@ -23,6 +25,10 @@ aoplot.plotLfpSignal(expobj, x_axis='time', figsize=(5,3), linewidth=0.5, downsa
 expobj = import_expobj(prep='PS11', trial='t-012', date=date)  # post4ap trial
 aoplot.plotLfpSignal(expobj, x_axis='time', figsize=(5/100*150,3), linewidth=0.5, downsample=True, sz_markings=False, color='black',
                      ylims=[0,5], xlims=[10*expobj.paq_rate, 160*expobj.paq_rate])
+
+
+# %% B') Avg Flu signal with optogenetic stims
+
 
 
 # %% C) avg LFP trace 1p stim plots
@@ -60,9 +66,20 @@ aoplot.plot_lfp_1pstim_avg_trace(post4ap, x_axis='time', individual_traces=False
                                  title='Ictal')
 
 
-# %% 1) Radial plot of Mean FOV with theta of
+# %% 1) Radial plot of Mean FOV for photostimulation trials, with period equal to that of photostimulation timing period
 
-
+# theta = (2 * np.pi) * (timepoints / interphotostim_interval)
+#
+# fig, ax = plt.subplots(subplot_kw={'projection': 'polar'})
+# ax.plot(meanFOV, theta)
+# ax.set_rmax(1)
+# ax.set_rticks([0.5, 1, 1.5, 2])  # Less radial ticks
+# ax.set_rlabel_position(-22.5)  # Move radial labels away from plotted line
+# ax.grid(True)
+#
+# ax.set_title("A line plot on a polar axis", va='bottom')
+# plt.show()
+#
 
 
 
