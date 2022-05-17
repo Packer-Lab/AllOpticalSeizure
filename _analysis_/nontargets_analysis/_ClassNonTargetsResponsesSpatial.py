@@ -34,7 +34,9 @@ class NonTargetsResponsesSpatialAnalysis(Quantification):
     """Analysis of responses of nontargets in relation to spatial distances from seizure boundary.
     Fig 6.
 
-    big goal is to use targets binned into proximal, middle or distal.
+    - big goal is to use cells binned into proximal, middle or distal.
+
+    [ ] quantification of cells' distance to nearest target.
 
     """
 

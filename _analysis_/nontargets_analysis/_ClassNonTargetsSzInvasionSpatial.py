@@ -1,5 +1,7 @@
 import sys
 
+from funcsforprajay.funcs import calc_distance_2points
+
 sys.path.extend(['/home/pshah/Documents/code/AllOpticalSeizure', '/home/pshah/Documents/code/AllOpticalSeizure'])
 
 import os
@@ -8,7 +10,6 @@ from typing import Union, List
 import numpy as np
 import pandas as pd
 from scipy import stats
-
 
 import _alloptical_utils as Utils
 from _analysis_._utils import Quantification, Results
@@ -20,6 +21,7 @@ from funcsforprajay import plotting as pplot
 from _utils_._anndata import AnnotatedData2
 
 SAVE_LOC = "/home/pshah/mnt/qnap/Analysis/analysis_export/analysis_quantification_classes/"
+
 
 # %% ###### NON TARGETS analysis + plottings
 
@@ -34,11 +36,11 @@ class NonTargetsSzInvasionSpatialResults(Results):
         self.avg_responders_num = None  #: average num responders, for pairedmatched experiments between baseline pre4ap and interictal
         self.avg_responders_magnitude = None  #: average response magnitude, for pairedmatched experiments between baseline pre4ap and interictal
 
+
 REMAKE = False
 if not os.path.exists(NonTargetsSzInvasionSpatialResults.SAVE_PATH) or REMAKE:
     results = NonTargetsSzInvasionSpatialResults()
     results.save_results()
-
 
 
 class NonTargetsSzInvasionSpatial(Quantification):
@@ -60,26 +62,27 @@ class NonTargetsSzInvasionSpatial(Quantification):
         self._classify_nontargets_szboundary(expobj=expobj, force_redo=False)
         # expobj.save()
         distance_to_sz_um = self._calc_min_distance_sz_nontargets(expobj=expobj)
-        self.adata: AnnotatedData2 = self.create_anndata(expobj=expobj, distance_to_sz=distance_to_sz_um) #: anndata table to hold data about distances to seizure boundary for nontargets
+        self.adata: AnnotatedData2 = self.create_anndata(expobj=expobj,
+                                                         distance_to_sz=distance_to_sz_um)  #: anndata table to hold data about distances to seizure boundary for nontargets
         self._add_nontargets_sz_boundary_anndata()
         print(f'\- ADDING NEW NonTargetsSzInvasionSpatial MODULE to expobj: {expobj.t_series_name}')
 
-
     @staticmethod
-    @Utils.run_for_loop_across_exps(run_pre4ap_trials=False, run_post4ap_trials=True, allow_rerun=1, skip_trials=EXCLUDE_TRIALS)
+    @Utils.run_for_loop_across_exps(run_pre4ap_trials=False, run_post4ap_trials=True, allow_rerun=1,
+                                    skip_trials=EXCLUDE_TRIALS)
     def run__NonTargetsSzInvasionSpatial(**kwargs):
         expobj: Union[alloptical, Post4ap] = kwargs['expobj']
         expobj.NonTargetsSzInvasionSpatial = NonTargetsSzInvasionSpatial(expobj=expobj)
         expobj.save()
 
     @staticmethod
-    @Utils.run_for_loop_across_exps(run_pre4ap_trials=False, run_post4ap_trials=True, allow_rerun=1, skip_trials=EXCLUDE_TRIALS)
+    @Utils.run_for_loop_across_exps(run_pre4ap_trials=False, run_post4ap_trials=True, allow_rerun=1,
+                                    skip_trials=EXCLUDE_TRIALS)
     def run__methods(**kwargs):
         expobj: Union[alloptical, Post4ap] = kwargs['expobj']
-        expobj.NonTargetsSzInvasionSpatial._add_nontargets_proximal_distal_sz_anndata()
+        distances_um = expobj.NonTargetsSzInvasionSpatial._calculate_distance_to_target(expobj=expobj)
+        expobj.NonTargetsSzInvasionSpatial._add_nontargets_distance_to_targets_anndata(distances_um)
         expobj.save()
-
-
 
     def __repr__(self):
         return f"NonTargetsSzInvasionSpatial <-- Quantification Analysis submodule for expobj <{self.expobj_id}>"
@@ -102,7 +105,6 @@ class NonTargetsSzInvasionSpatial(Quantification):
         expobj.NonTargetsSzInvasionSpatial._classify_nontargets_szboundary(expobj=expobj, force_redo=True)
         expobj.save()
 
-
     def _calc_min_distance_sz_nontargets(self, expobj: Post4ap):
         assert hasattr(expobj.ExpSeizure, 'nontargets_szboundary_stim')
 
@@ -111,7 +113,6 @@ class NonTargetsSzInvasionSpatial(Quantification):
         assert distance_to_sz_df.shape == expobj.PhotostimResponsesNonTargets.adata.shape
 
         return distance_to_sz_df / expobj.pix_sz_x
-
 
     # 1) CREATE ANNDATA - using distance to sz dataframe collected above ###############################################
     def create_anndata(self, expobj: Union[alloptical, Post4ap], distance_to_sz):
@@ -132,7 +133,6 @@ class NonTargetsSzInvasionSpatial(Quantification):
             for __column in obs_meta:
                 obs_meta.loc[idx, __column] = _stat[__column]
 
-
         # build numpy array for multidimensional obs metadata
         obs_m = {'ypix': [],
                  'xpix': []}
@@ -142,9 +142,9 @@ class NonTargetsSzInvasionSpatial(Quantification):
                     obs_m[col].append(expobj.stat[i][col])
             obs_m[col] = np.asarray(obs_m[col])
 
-
-        var_meta = pd.DataFrame(index=['stim_group', 'im_time_secs', 'stim_start_frame', 'wvfront in sz', 'seizure location'],
-                                columns=range(len(expobj.stim_start_frames)))
+        var_meta = pd.DataFrame(
+            index=['stim_group', 'im_time_secs', 'stim_start_frame', 'wvfront in sz', 'seizure location'],
+            columns=range(len(expobj.stim_start_frames)))
         for fr_idx, stim_frame in enumerate(expobj.stim_start_frames):
             if 'pre' in expobj.exptype:
                 var_meta.loc['wvfront in sz', fr_idx] = None
@@ -162,17 +162,16 @@ class NonTargetsSzInvasionSpatial(Quantification):
             var_meta.loc['stim_start_frame', fr_idx] = stim_frame
             var_meta.loc['im_time_secs', fr_idx] = stim_frame / expobj.fps
 
-
         # SET PRIMARY DATA
         print(f"\t\----- CREATING annotated data object using AnnData:")
         # create anndata object
         distance_to_sz.index = distance_to_sz.index.astype(str)
         distance_to_sz.columns = var_meta.columns
-        photostim_responses_adata = AnnotatedData2(X=distance_to_sz, obs=obs_meta, var=var_meta.T, obsm=obs_m, data_label='distance to sz (um)')
+        photostim_responses_adata = AnnotatedData2(X=distance_to_sz, obs=obs_meta, var=var_meta.T, obsm=obs_m,
+                                                   data_label='distance to sz (um)')
 
         print(f"Created: {photostim_responses_adata}")
         return photostim_responses_adata
-
 
     def _add_nontargets_sz_boundary_anndata(self):
         """add layer to anndata table that splits nontarget cell in or out of sz boundary.
@@ -203,11 +202,30 @@ class NonTargetsSzInvasionSpatial(Quantification):
 
         self.adata.add_layer(layer_name='outsz location', data=arr)
 
+    ## CALCULATING DISTANCE TO NEAREST TARGET  #########################################################################
+    def _add_nontargets_distance_to_targets_anndata(self, distances):
+        self.adata.add_observation(obs_name='distance to nearest target (um)', values=distances)
 
+    def _calculate_distance_to_target(self, expobj: alloptical):
+        target_coords = expobj.PhotostimResponsesSLMTargets.adata.obs['SLM target coord']
+
+        distances = []
+        for cell in self.adata.obs['med']:
+            _all_distances = []
+            cell_x = cell[1]
+            cell_y = cell[0]
+            for target in list(target_coords):
+                distance = calc_distance_2points((cell_x, cell_y), target)
+                _all_distances.append(distance)
+
+            distances.append(np.min(_all_distances))
+
+        distances_um = np.asarray([x / (1 / expobj.pix_sz_x) for x in distances])
+
+        return np.round(distances_um, 3)
 
 
 if __name__ == '__main__':
     # NonTargetsSzInvasionSpatial.run__classify_nontargets_szboundary()
     # NonTargetsSzInvasionSpatial.run__NonTargetsSzInvasionSpatial()
     NonTargetsSzInvasionSpatial.run__methods()
-
