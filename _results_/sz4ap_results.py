@@ -10,6 +10,8 @@ from skimage.transform import resize
 from _main_.Post4apMain import Post4ap
 
 # import results superobject that will collect analyses from various individual experiments
+from _utils_.io import import_expobj
+
 results_object_path = '/home/pshah/mnt/qnap/Analysis/alloptical_results_superobject.pkl'
 allopticalResults = aoutils.import_resultsobj(pkl_path=results_object_path)
 
@@ -17,7 +19,7 @@ save_path_prefix = '/home/pshah/mnt/qnap/Analysis/Results_figs/Nontargets_respon
 os.makedirs(save_path_prefix) if not os.path.exists(save_path_prefix) else None
 
 
-expobj = aoutils.import_expobj(aoresults_map_id='post a.0')  # PLACEHOLDER IMPORT OF EXPOBJ TO MAKE THE CODE WORK
+# expobj = import_expobj(aoresults_map_id='post a.0')  # PLACEHOLDER IMPORT OF EXPOBJ TO MAKE THE CODE WORK
 
 # %% 1) SEIZURE WAVEFRONT PLOTTING AND ANALYSIS
 """################################# SEIZURE EVENTS PLOTTING ##############################################################

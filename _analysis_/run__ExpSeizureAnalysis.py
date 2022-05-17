@@ -1,12 +1,10 @@
 import sys
 
-from _utils_.io import import_expobj
-
 sys.path.extend(['/home/pshah/Documents/code/AllOpticalSeizure', '/home/pshah/Documents/code/AllOpticalSeizure'])
 
 import _alloptical_utils as Utils
 
-from _analysis_._ClassExpSeizureAnalysis import ExpSeizureAnalysis as main
+from _analysis_.sz_analysis._ClassExpSeizureAnalysis import ExpSeizureAnalysis as main
 from _main_.Post4apMain import Post4ap
 
 # expobj = import_expobj(exp_prep='RL108 t-009')

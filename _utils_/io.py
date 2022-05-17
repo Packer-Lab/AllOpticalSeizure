@@ -67,7 +67,7 @@ class CustomUnpicklerAttributeError(pickle.Unpickler):
             return TargetsPhotostimResponsesInterictal
         elif name == 'Suite2pROIsSz':
             print(f'\t for: Suite2pROIsSz')
-            from _analysis_._ClassSuite2pROIsSzAnalysis import Suite2pROIsSz
+            from _analysis_.sz_analysis._ClassSuite2pROIsSzAnalysis import Suite2pROIsSz
             return Suite2pROIsSz
         # elif name == 'TargetsPhotostimResponsesInterictalResults':
         #     print(f'\t for: TargetsPhotostimResponsesInterictalResults')
@@ -83,7 +83,7 @@ class CustomUnpicklerAttributeError(pickle.Unpickler):
             return TargetsSzInvasionSpatial_codereview
         elif name == 'ExpSeizureAnalysis':
             print(f'\t for: ExpSeizureAnalysis')
-            from _analysis_._ClassExpSeizureAnalysis import ExpSeizureAnalysis
+            from _analysis_.sz_analysis._ClassExpSeizureAnalysis import ExpSeizureAnalysis
             return ExpSeizureAnalysis
         elif name == 'AnnotatedData':
             print(f'\t for: AnnotatedData')
@@ -109,6 +109,12 @@ class CustomUnpicklerModuleNotFoundError(pickle.Unpickler):
     def find_class(self, module, name):
         if module == '_analysis_.ClassPhotostimResponseQuantificationSLMtargets':
             renamed_module = "_analysis_._ClassPhotostimResponseQuantificationSLMtargets"
+
+        elif module == '_analysis_._ClassExpSeizureAnalysis':
+            renamed_module = "_analysis_.sz_analysis._ClassExpSeizureAnalysis"
+
+        elif module == '_analysis_._ClassSuite2pROIsSzAnalysis':
+            renamed_module = "_analysis_.sz_analysis._ClassSuite2pROIsSzAnalysis"
 
         elif module == '_sz_processing.ClassTargetsSzInvasionTemporal':
             renamed_module = "_analysis_._ClassTargetsSzInvasionTemporal"

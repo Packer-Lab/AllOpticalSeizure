@@ -3,6 +3,7 @@ import sys
 
 from funcsforprajay.funcs import smoothen_signal
 
+from _analysis_.sz_analysis._ClassSuite2pROIsSzAnalysis import Suite2pROIsSz, Suite2pROIsSzResults
 from _results_.sz4ap_results import plotHeatMapSzAllCells
 
 sys.path.extend(['/home/pshah/Documents/code/AllOpticalSeizure', '/home/pshah/Documents/code/AllOpticalSeizure'])
@@ -16,6 +17,62 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 from _main_.Post4apMain import Post4ap
+
+# %% E) DECONVOLVED SPIKE RATE ANALYSIS
+
+Suite2pROIsSzResults = Suite2pROIsSzResults.load()
+
+#  collect spk rates
+Suite2pROIsSz.collect__avg_spk_rate(Suite2pROIsSzResults=Suite2pROIsSzResults)
+
+
+# %% averaged results as a bar chart
+
+# todo add statistical test for this bar chart!
+Suite2pROIsSz.plot__avg_spk_rate(Suite2pROIsSzResults.avg_spk_rate['baseline'],
+                                 Suite2pROIsSzResults.avg_spk_rate['interictal'])
+
+
+
+# %% invidual results as a cum sum plot
+Suite2pROIsSzResults = Suite2pROIsSzResults.load()
+
+# evaluate the histogram
+fig, ax = plt.subplots(figsize=(2.4, 4))
+
+# baseline experiments
+for pre4ap_exp in Suite2pROIsSzResults.neural_activity_rate['baseline']:
+    # test plot cumsum plot
+    values, base = np.histogram(pre4ap_exp, bins=100)
+
+    # evaluate the cumulative function
+    cumulative = np.cumsum(values) / len(pre4ap_exp)
+
+    # plot the cumulative function
+    ax.plot(base[:-1], cumulative, c='cornflowerblue', alpha=0.7, lw=2)
+
+# baseline experiments
+for interictal_exp in Suite2pROIsSzResults.neural_activity_rate['interictal']:
+    # test plot cumsum plot
+    values, base = np.histogram(interictal_exp, bins=100)
+
+    # evaluate the cumulative function
+    cumulative = np.cumsum(values) / len(interictal_exp)
+
+    # plot the cumulative function
+    ax.plot(base[:-1], cumulative, c='forestgreen', alpha=0.7, lw=2)
+
+ax.set_xlim([0, 150])
+ax.set_xlabel('deconvolved neural activity rate')
+ax.spines['right'].set_visible(False)
+ax.spines['top'].set_visible(False)
+
+fig.tight_layout(pad=1.3)
+
+fig.show()
+
+
+
 
 # %% 3) plotting and or calculating time to sz invasion and speed of sz propagation across FOV (um^2 / sec)
 #   - speed of propagation = rate of sz area recruitment per unit of time
@@ -32,17 +89,16 @@ for x in expobj.seizure_frames:
 axs.set_xlim([int(150 * expobj.fps), int(260 * expobj.fps)])
 fig.show()
 
-
 # %%
 
-fov_signal_frames = [frame for frame in range(expobj.n_frames) if frame not in expobj.photostim_frames]  # - exclude photostim frames
+fov_signal_frames = [frame for frame in range(expobj.n_frames) if
+                     frame not in expobj.photostim_frames]  # - exclude photostim frames
 
 seizure_frames_adjusted = []
 for frame in expobj.seizure_frames:
     if frame in fov_signal_frames:
         sub_ = len(np.where(frame > expobj.photostim_frames)[0])
         seizure_frames_adjusted.append((frame - sub_))
-
 
 fov_signal = [expobj.meanRawFluTrace[fr] for fr in expobj.frames_photostim_ex]
 smoothed_fov = smoothen_signal(fov_signal, w=int(expobj.fps * 1))
@@ -62,13 +118,10 @@ for x in seizure_frames_adjusted:
 ax.set_xlim([3000, 6500])
 fig.show()
 
-
 # %% 3.1) calulating time to first 50% of max of first derivative
 
 
 # %% 3.2) calculating the first in sz stim frame with wavefront
-
-
 
 
 # %% 1) suite2p cells gcamp imaging for seizures, with simultaneous LFP recording
@@ -99,10 +152,4 @@ plotHeatMapSzAllCells(expobj=expobj, sz_num=4)
 # /Users/prajayshah/data/oxford-data-to-process/2021-01-31/2021-01-31_s-007/2021-01-31_s-007_Cycle00001_Ch2_000001.ome.tif
 
 
-
-
 # %% how many seizure propagate vs. remain stationary in the FOV
-
-
-
-

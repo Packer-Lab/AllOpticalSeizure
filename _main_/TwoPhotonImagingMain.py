@@ -29,7 +29,7 @@ class TwoPhotonImaging:
 
         print('\n***** CREATING NEW TwoPhotonImaging with the following metainfo: ', metainfo)
 
-        from _analysis_._ClassSuite2pROIsSzAnalysis import Suite2pROIsSz
+        from _analysis_.sz_analysis._ClassSuite2pROIsSzAnalysis import Suite2pROIsSz
         self.Suite2pROIsSz: Suite2pROIsSz = None  # analysis of suite2p processed data
 
 

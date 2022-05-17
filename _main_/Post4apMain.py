@@ -35,7 +35,7 @@ class Post4ap(alloptical):
         self.TargetsSzInvasionSpatial_codereview: TargetsSzInvasionSpatial_codereview = None  # SLM targets spatial distance to sz wavefront vs. photostim responses analysis object
         from _analysis_._ClassTargetsSzInvasionTemporal import TargetsSzInvasionTemporal
         self.TargetsSzInvasionTemporal = TargetsSzInvasionTemporal(expobj=self)
-        from _analysis_._ClassExpSeizureAnalysis import ExpSeizureAnalysis
+        from _analysis_.sz_analysis._ClassExpSeizureAnalysis import ExpSeizureAnalysis
         self.ExpSeizure = ExpSeizureAnalysis(expobj=self)
         self.not_flip_stims = []  # specify here the stims where the flip=False leads to incorrect assignment, just here as a placeholder though until i fully transfer this attr down to the ExpSeizure submodule.
 
