@@ -168,12 +168,13 @@ class Suite2pROIsSz(Quantification):
             # Gaussian filter smoothing of spks data
             from scipy.ndimage import gaussian_filter
             spks_smooth_ = np.asarray([gaussian_filter(a, sigma=frames2sigma(frames=int(expobj.fps))) for a in
-                                       spks_per_sec])  # TODO this is Matthias's suggested metric for calculating sigma, need to confirm
+                                       expobj.Suite2pROIsSz.adata.layers['s2p_spks']])  # TODO this is Matthias's suggested metric for calculating sigma, need to confirm
 
-            # rebinning of spks data
-            bin = 4 if int(expobj.fps) == 15 else 8
-            spks_smooth_binned = rebin(spks_smooth_, (spks_smooth_.shape[0], int(spks_smooth_.shape[1] / bin)))
+            # # rebinning of spks data
+            # bin = 4 if int(expobj.fps) == 15 else 8
+            # spks_smooth_binned = rebin(spks_smooth_, (spks_smooth_.shape[0], int(spks_smooth_.shape[1] / 4)))
 
+            spks_smooth_binned = spks_smooth_  # no binning
             from sklearn.metrics import auc
             area = [auc(np.arange(len(spks_smooth_binned[i])), spks_smooth_binned[i])
                     for i in range(len(spks_smooth_binned))]
@@ -208,12 +209,13 @@ class Suite2pROIsSz(Quantification):
             # Gaussian filter smoothing of spks data
             from scipy.ndimage import gaussian_filter
             spks_smooth_ = np.asarray([gaussian_filter(a, sigma=frames2sigma(frames=int(expobj.fps))) for a in
-                                       interictal_spks_per_sec])  # TODO this is Matthias's suggested metric for calculating sigma, need to confirm
+                                       expobj.Suite2pROIsSz.adata.layers['s2p_spks'][:, interictal_idx]])  # TODO this is Matthias's suggested metric for calculating sigma, need to confirm
 
-            # rebinning of spks data
-            bin = 4 if int(expobj.fps) == 15 else 8
-            spks_smooth_binned = rebin(spks_smooth_, (spks_smooth_.shape[0], int(spks_smooth_.shape[1] / bin)))
+            # # rebinning of spks data
+            # bin = 4 if int(expobj.fps) == 15 else 8
+            # spks_smooth_binned = rebin(spks_smooth_, (spks_smooth_.shape[0], int(spks_smooth_.shape[1] / 4)))
 
+            spks_smooth_binned = spks_smooth_  # no binning
             from sklearn.metrics import auc
             area = [auc(np.arange(len(spks_smooth_binned[i])), spks_smooth_binned[i])
                     for i in range(len(spks_smooth_binned))]
@@ -237,12 +239,13 @@ class Suite2pROIsSz(Quantification):
             # Gaussian filter smoothing of spks data
             from scipy.ndimage import gaussian_filter
             spks_smooth_ = np.asarray([gaussian_filter(a, sigma=frames2sigma(frames=int(expobj.fps))) for a in
-                                       ictal_spks_per_sec])  # TODO this is Matthias's suggested metric for calculating sigma, need to confirm
+                                       expobj.Suite2pROIsSz.adata.layers['s2p_spks'][:, ictal]])  # TODO this is Matthias's suggested metric for calculating sigma, need to confirm
 
-            # rebinning of spks data
-            bin = 4 if int(expobj.fps) == 15 else 8
-            spks_smooth_binned = rebin(spks_smooth_, (spks_smooth_.shape[0], int(spks_smooth_.shape[1] / bin)))
+            # # rebinning of spks data
+            # bin = 4 if int(expobj.fps) == 15 else 8
+            # spks_smooth_binned = rebin(spks_smooth_, (spks_smooth_.shape[0], int(spks_smooth_.shape[1] / 4)))
 
+            spks_smooth_binned = spks_smooth_  # no binning
             from sklearn.metrics import auc
             area = [auc(np.arange(len(spks_smooth_binned[i])), spks_smooth_binned[i])
                     for i in range(len(spks_smooth_binned))]

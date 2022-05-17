@@ -235,7 +235,7 @@ def _getPVStateShard(path, key):
 
     return value, description, index
 
-pixelSize, _, index = _getPVStateShard('/home/pshah/mnt/qnap/Data/2020-12-18/2020-12-18_s-003/2020-12-18_s-003.xml', 'micronsPerPixel')
+pixelSize, _, index = _getPVStateShard('/home/pshah/mnt/qnap/Data/2021-01-11/2021-01-11_s-003/2021-01-11_s-003.xml', 'micronsPerPixel')
 for pixelSize, index in zip(pixelSize, index):
     if index == 'XAxis':
         pix_sz_x = float(pixelSize)

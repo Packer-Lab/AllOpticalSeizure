@@ -20,57 +20,63 @@ from _main_.Post4apMain import Post4ap
 
 # %% E) DECONVOLVED SPIKE RATE ANALYSIS
 
-Suite2pROIsSzResults = Suite2pROIsSzResults.load()
+results = Suite2pROIsSzResults.load()
 
 #  collect spk rates
-Suite2pROIsSz.collect__avg_spk_rate(Suite2pROIsSzResults=Suite2pROIsSzResults)
+Suite2pROIsSz.collect__avg_spk_rate(Suite2pROIsSzResults=results)
 
 
 # %% averaged results as a bar chart
 
+results = Suite2pROIsSzResults.load()
+
 # todo add statistical test for this bar chart!
-Suite2pROIsSz.plot__avg_spk_rate(Suite2pROIsSzResults.avg_spk_rate['baseline'],
-                                 Suite2pROIsSzResults.avg_spk_rate['interictal'])
+Suite2pROIsSz.plot__avg_spk_rate(results.avg_spk_rate['baseline'],
+                                 results.avg_spk_rate['interictal'])
 
 
 
 # %% invidual results as a cum sum plot
-Suite2pROIsSzResults = Suite2pROIsSzResults.load()
 
 # evaluate the histogram
-fig, ax = plt.subplots(figsize=(2.4, 4))
-
+fig, ax = plt.subplots(figsize=(2.2, 3.5))
+f, ax2 = plt.subplots(figsize=(5, 5))
 # baseline experiments
-for pre4ap_exp in Suite2pROIsSzResults.neural_activity_rate['baseline']:
+for pre4ap_exp in results.neural_activity_rate['baseline']:
     # test plot cumsum plot
     values, base = np.histogram(pre4ap_exp, bins=100)
+
+    ax2.hist(pre4ap_exp, density=True, histtype='stepfilled', alpha=0.3, bins=100, color='cornflowerblue')
 
     # evaluate the cumulative function
     cumulative = np.cumsum(values) / len(pre4ap_exp)
 
     # plot the cumulative function
-    ax.plot(base[:-1], cumulative, c='cornflowerblue', alpha=0.7, lw=2)
+    ax.plot(base[:-1], cumulative, c='cornflowerblue', alpha=0.5, lw=3)
 
 # baseline experiments
-for interictal_exp in Suite2pROIsSzResults.neural_activity_rate['interictal']:
+for interictal_exp in results.neural_activity_rate['interictal']:
     # test plot cumsum plot
     values, base = np.histogram(interictal_exp, bins=100)
+
+    ax2.hist(interictal_exp, density=True, histtype='stepfilled', alpha=0.3, bins=100, color='forestgreen')
 
     # evaluate the cumulative function
     cumulative = np.cumsum(values) / len(interictal_exp)
 
     # plot the cumulative function
-    ax.plot(base[:-1], cumulative, c='forestgreen', alpha=0.7, lw=2)
+    ax.plot(base[:-1], cumulative, c='forestgreen', alpha=0.5, lw=3)
 
-ax.set_xlim([0, 150])
-ax.set_xlabel('deconvolved neural activity rate')
+ax.set_xlim([0, 200])
+ax2.set_xlim([0, 200])
+ax.set_xlabel('neural activity rate')
 ax.spines['right'].set_visible(False)
 ax.spines['top'].set_visible(False)
 
 fig.tight_layout(pad=1.3)
 
 fig.show()
-
+# f.show()
 
 
 
