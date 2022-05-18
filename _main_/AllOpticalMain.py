@@ -126,6 +126,9 @@ class alloptical(TwoPhotonImaging):
         print('\ninitialized alloptical expobj of exptype and trial: \n', self.metainfo)
 
         ## initialize ANALYSES CLASSES
+        from _analysis_.nontargets_analysis._ClassNonTargetsResponsesSpatial import NonTargetsResponsesSpatialAnalysis
+        self.NonTargetsResponsesSpatial: NonTargetsResponsesSpatialAnalysis = NonTargetsResponsesSpatialAnalysis(expobj=self)
+
         from _analysis_._ClassPhotostimAnalysisSlmTargets import PhotostimAnalysisSlmTargets
         self.PhotostimAnalysisSlmTargets: PhotostimAnalysisSlmTargets = None
 

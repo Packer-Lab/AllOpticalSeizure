@@ -76,8 +76,7 @@ class NonTargetsSzInvasionSpatial(Quantification):
         expobj.save()
 
     @staticmethod
-    @Utils.run_for_loop_across_exps(run_pre4ap_trials=True, run_post4ap_trials=True, allow_rerun=1,
-                                    skip_trials=EXCLUDE_TRIALS)
+    @Utils.run_for_loop_across_exps(run_pre4ap_trials=False, run_post4ap_trials=True, allow_rerun=1, skip_trials=EXCLUDE_TRIALS)
     def run__methods(**kwargs):
         expobj: Union[alloptical, Post4ap] = kwargs['expobj']
         distances_um = expobj.NonTargetsSzInvasionSpatial._calculate_distance_to_target(expobj=expobj)
@@ -202,29 +201,6 @@ class NonTargetsSzInvasionSpatial(Quantification):
 
         self.adata.add_layer(layer_name='outsz location', data=arr)
 
-    ## CALCULATING DISTANCE TO NEAREST TARGET  #########################################################################
-    @staticmethod
-    def _add_nontargets_distance_to_targets_anndata(adata: AnnotatedData2, distances):
-        adata.add_observation(obs_name='distance to nearest target (um)', values=distances)
-
-    @staticmethod
-    def _calculate_distance_to_target(expobj: Union[alloptical, Post4ap]):
-        target_coords = expobj.PhotostimResponsesSLMTargets.adata.obs['SLM target coord']
-
-        distances = []
-        for cell in expobj.PhotostimResponsesNonTargets.adata.obs['med']:
-            _all_distances = []
-            cell_x = cell[1]
-            cell_y = cell[0]
-            for target in list(target_coords):
-                distance = calc_distance_2points((cell_x, cell_y), target)
-                _all_distances.append(distance)
-
-            distances.append(np.min(_all_distances))
-
-        distances_um = np.asarray([x / (1 / expobj.pix_sz_x) for x in distances])
-
-        return np.round(distances_um, 3)
 
 
 if __name__ == '__main__':
