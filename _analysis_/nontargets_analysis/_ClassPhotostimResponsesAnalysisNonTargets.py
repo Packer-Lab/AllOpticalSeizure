@@ -25,7 +25,7 @@ from funcsforprajay import plotting as pplot
 
 
 
-results: PhotostimResponsesNonTargetsResults = PhotostimResponsesNonTargetsResults.load()
+# results: PhotostimResponsesNonTargetsResults = PhotostimResponsesNonTargetsResults.load()
 
 
 ######
@@ -61,7 +61,7 @@ class PhotostimResponsesAnalysisNonTargets(PhotostimResponsesQuantificationNonTa
 
     """
 
-    def __init__(self, expobj: Union[alloptical, Post4ap]):
+    def __init__(self, expobj: Union[alloptical, Post4ap], results: PhotostimResponsesNonTargetsResults):
         super().__init__(expobj=expobj, results=results)
 
     @staticmethod

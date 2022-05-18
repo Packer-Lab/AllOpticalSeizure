@@ -38,6 +38,7 @@ class PhotostimResponsesNonTargetsResults(Results):
         self.avg_responders_magnitude = None  #: average response magnitude, for pairedmatched experiments between baseline pre4ap and interictal
         self.sig_units_baseline = {}  #: dictionary of sig responder units for each baseline exp trial
         self.sig_units_interictal = {}  #: dictionary of sig responder units for the interictal condition
+        self.responses: pd.DataFrame = pd.DataFrame({})  #: dataframe of containing individual cell responses, distance to target, distance to sz
 
     def __repr__(self):
         return f"PhotostimResponsesNonTargetsResults <- Results Analysis Object"

@@ -1,17 +1,133 @@
 import os
+import sys
+import seaborn as sns
+import matplotlib.pyplot as plt
 
 from _analysis_.nontargets_analysis._ClassPhotostimResponseQuantificationNonTargets import \
     PhotostimResponsesNonTargetsResults
 from _analysis_.nontargets_analysis._ClassPhotostimResponsesAnalysisNonTargets import PhotostimResponsesAnalysisNonTargets
 
-REMAKE = False
+import pandas as pd
+import numpy as np
+
+from _main_.AllOpticalMain import alloptical
+
+REMAKE = True
 if not os.path.exists(PhotostimResponsesNonTargetsResults.SAVE_PATH) or REMAKE:
     results = PhotostimResponsesNonTargetsResults()
     results.save_results()
 
+import _alloptical_utils as Utils
+
 main = PhotostimResponsesAnalysisNonTargets
 
 results: PhotostimResponsesNonTargetsResults = PhotostimResponsesNonTargetsResults.load()
+
+
+
+# %% 5) RESPONSES of nontargets VS. DISTANCE TO NEAREST TARGET AND DISTANCE TO SZ WAVEFRONT
+"""
+Objectives:
+[ ] - scatter plot of nontargets responses (z scored (to baseline)) vs., distance to nearest targets and distance to sz wavefront
+[ ] - binned 2D histogram of nontargets responses (z scored (to baseline)) vs., distance to nearest targets and distance to sz wavefront
+
+"""
+
+def collect_data_(results: PhotostimResponsesNonTargetsResults):
+    df = pd.DataFrame(columns=['expID_cell', 'stim_idx', 'stim_group', 'z score response', 'distance target', 'distance sz'])
+
+    @Utils.run_for_loop_across_exps(run_pre4ap_trials=True, set_cache=0)
+    def _collect_responses_distancetarget_distancesz(**kwrags):
+        expobj: alloptical = kwrags['expobj']
+        # exp_df_ = pd.DataFrame(columns=['expID_cell', 'stim_idx','z score response', 'distance target', 'distance sz'])
+
+        # find overlapping cells across processed dataset - actually not sure why there isn't 100% overlap but c'st la vie
+
+        collect_df = []
+        for i, cell in enumerate(expobj.PhotostimResponsesNonTargets.adata.obs['original_index']):
+            for stim_idx in np.where(expobj.PhotostimResponsesNonTargets.adata.var['stim_group'] == 'baseline')[0]:
+
+                _cell_df = pd.DataFrame({'expID_cell': f'{expobj.t_series_name}_{cell}',
+                                         'stim_idx': stim_idx,
+                                         'stim_group': 'baseline',
+                                         'z score response': expobj.PhotostimResponsesNonTargets.adata.layers['nontargets responses z scored (to baseline)'][i, stim_idx],
+                                         'distance target': expobj.NonTargetsSzInvasionSpatial.adata.obs['distance to nearest target (um)'][int(_spatial_idx)],
+                                         'distance sz': np.nan,
+                                         }, index=[f'{expobj.t_series_name}_{cell}'])
+
+                collect_df.append(_cell_df)
+
+        exp_df_ = pd.concat(collect_df)
+
+        # todo test out code,... for collecting
+
+        return exp_df_
+
+    func_collector = _collect_responses_distancetarget_distancesz()
+    for exp_df in func_collector:
+        df = pd.concat([df, exp_df])
+
+
+    @Utils.run_for_loop_across_exps(run_post4ap_trials=True, set_cache=0)
+    def _collect_responses_distancetarget_distancesz(**kwrags):
+        expobj: Post4ap = kwrags['expobj']
+        # exp_df_ = pd.DataFrame(columns=['expID_cell', 'stim_idx','z score response', 'distance target', 'distance sz'])
+
+        # find overlapping cells across processed dataset - actually not sure why there isn't 100% overlap but c'st la vie
+        _responses_idx = [idx for idx, cell in enumerate(tuple(expobj.PhotostimResponsesNonTargets.adata.obs['original_index'])) if cell in tuple(expobj.NonTargetsSzInvasionSpatial.adata.obs['original_index'])]
+        # _spatial_idx = [idx for idx, cell in enumerate(tuple(expobj.NonTargetsSzInvasionSpatial.adata.obs['original_index'])) if cell in tuple(expobj.PhotostimResponsesNonTargets.adata.obs['original_index'])]
+
+        assert tuple(expobj.PhotostimResponsesNonTargets.adata.var_names) == tuple(expobj.NonTargetsSzInvasionSpatial.adata.var_names), 'mismatching stim indexes in photostim nontargets responses and distance to sz measured for cells'
+
+        collect_df = []
+        for i in _responses_idx:
+            for stim_idx in np.where(expobj.PhotostimResponsesNonTargets.adata.var['stim_group'] == 'ictal')[0]:
+                cell = expobj.PhotostimResponsesNonTargets.adata.obs['original_index'][i]
+
+                # _spatial_idx = expobj.NonTargetsSzInvasionSpatial.adata.obs['original_index'][expobj.NonTargetsSzInvasionSpatial.adata.obs['original_index'] == cell].index[0]
+                _spatial_idx = list(expobj.NonTargetsSzInvasionSpatial.adata.obs['original_index']).index(cell)
+
+                if not np.isnan(expobj.NonTargetsSzInvasionSpatial.adata.X[int(_spatial_idx), stim_idx]) and expobj.NonTargetsSzInvasionSpatial.adata.X[int(_spatial_idx), stim_idx] > 0:
+
+                    _cell_df = pd.DataFrame({'expID_cell': f'{expobj.t_series_name}_{cell}',
+                                             'stim_idx': stim_idx,
+                                             'z score response': expobj.PhotostimResponsesNonTargets.adata.layers['nontargets responses z scored (to baseline)'][i, stim_idx],
+                                             'distance target': expobj.NonTargetsSzInvasionSpatial.adata.obs['distance to nearest target (um)'][int(_spatial_idx)],
+                                             'distance sz': expobj.NonTargetsSzInvasionSpatial.adata.X[int(_spatial_idx), stim_idx]
+                                             }, index=[f'{expobj.t_series_name}_{cell}'])
+
+                    collect_df.append(_cell_df)
+
+        exp_df_ = pd.concat(collect_df)
+
+        # todo test out code,... for collecting
+
+        return exp_df_
+
+    func_collector = _collect_responses_distancetarget_distancesz()
+    for exp_df in func_collector:
+        df = pd.concat([df, exp_df])
+
+    results.responses = df
+    results.save_results()
+
+collect_data_(results=results)
+
+
+sys.exit()
+
+# %%
+
+results.responses[-5:]
+
+fig, ax = plt.subplots(figsize=(4, 4))
+sns.scatterplot(data=results.responses, x="distance target", y="distance sz", hue='z score response', ax=ax)
+fig.show()
+
+
+sns.pairplot(data = results.responses, vars=['distance sz', 'distance target', 'z score response'])
+fig.show()
+
 
 
 # %% run processing/analysis/plotting:
@@ -55,12 +171,9 @@ main.collect__zscored_summed_activity_vs_targets_activity(results=results)
 
 # %% 4) ANALYSIS OF TOTAL EVOKED RESPONSES OF NONTARGETS DURING ICTAL PHASE #################################################################
 """
-
-Current objectives:
-- [ ]  scatter plot: total responses of targets in proximal vs. mean z scored (to baseline) responses in proximal
-- [ ]  scatter plot: total responses of targets in distal vs. mean z scored (to baseline) responses of nontargets in distal
-
-
+objectives:
+- scatter plot: total responses of targets in proximal vs. mean z scored (to baseline) responses in proximal
+- scatter plot: total responses of targets in distal vs. mean z scored (to baseline) responses of nontargets in distal
 """
 
 
