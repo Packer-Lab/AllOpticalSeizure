@@ -22,10 +22,38 @@ results: PhotostimResponsesNonTargetsResults = PhotostimResponsesNonTargetsResul
 
 ############################## run processing/analysis/plotting: #######################################################
 
+
+# %% 5) RESPONSES of nontargets VS. DISTANCE TO NEAREST TARGET AND DISTANCE TO SZ WAVEFRONT
+"""
+Objectives:
+[ ] - scatter plot of nontargets responses (z scored (to baseline)) vs., distance to nearest targets and distance to sz wavefront
+[ ] - binned 2D histogram of nontargets responses (z scored (to baseline)) vs., distance to nearest targets and distance to sz wavefront
+
+"""
+
+# run processing:
+results.collect_nontargets_stim_responses()
+
+# plot hist distribution of distances to target
+baseline_responses = results.responses.iloc[results.pre4ap_idxs]
+
+
+# num occurrences at each distance - split by trial types
+fig, ax = plt.subplots(figsize = (5,5))
+distances = []
+for exp in np.unique(baseline_responses['expID']):
+    _distances = list(baseline_responses[baseline_responses['expID'] == exp]['distance target'])
+    distances.append(_distances)
+ax.hist(distances, 40, density=True, histtype='bar', stacked=True)
+ax.set_title('density of measurements by individual experiments')
+ax.set_xlabel('distance to target (um)')
+fig.show()
+
+
 # %% 5.2) binning responses relative to distance from targets, then average the responses across binned distances
 
 # run as a results method function
-results.binned_distances_vs_responses(measurement='photostim response')
+results.binned_distances_vs_responses(measurement='new influence response')
 
 # baseline_responses = results.responses.iloc[results.pre4ap_idxs]
 #
@@ -75,45 +103,21 @@ results.binned_distances_vs_responses(measurement='photostim response')
 
 # %% make plot of average responses +/- std across space bins
 
-measurement = 'influence response'
+measurement = 'photostim response'
 distances = results.binned_distance_vs_responses[measurement]['distances']
 avg_binned_responses = results.binned_distance_vs_responses[measurement]['avg binned responses']
 std_binned_responses = results.binned_distance_vs_responses[measurement]['std binned responses']
 
-fig, ax = plt.subplots(figsize = (8, 4))
+fig, ax = plt.subplots(figsize = (5, 3))
 ax.fill_between(x=list(distances), y1=list(avg_binned_responses + std_binned_responses), y2=list(avg_binned_responses - std_binned_responses), alpha=0.1)
 ax.plot(distances, avg_binned_responses)
 ax.set_title(f"{measurement} vs. distance to target (um)")
-ax.set_xlim([0, 300])
+ax.axhline(y=0, ls='--')
+ax.set_xlim([0, 400])
 fig.show()
 
 
 
-# %% 5) RESPONSES of nontargets VS. DISTANCE TO NEAREST TARGET AND DISTANCE TO SZ WAVEFRONT
-"""
-Objectives:
-[ ] - scatter plot of nontargets responses (z scored (to baseline)) vs., distance to nearest targets and distance to sz wavefront
-[ ] - binned 2D histogram of nontargets responses (z scored (to baseline)) vs., distance to nearest targets and distance to sz wavefront
-
-"""
-
-# run processing:
-# results.collect_nontargets_stim_responses()
-
-# plot hist distribution of distances to target
-baseline_responses = results.responses.iloc[results.pre4ap_idxs]
-
-
-# num occurrences at each distance - split by trial types
-fig, ax = plt.subplots(figsize = (5,5))
-distances = []
-for exp in np.unique(baseline_responses['expID']):
-    _distances = list(baseline_responses[baseline_responses['expID'] == exp]['distance target'])
-    distances.append(_distances)
-ax.hist(distances, 40, density=True, histtype='bar', stacked=True)
-ax.set_title('density of measurements by individual experiments')
-ax.set_xlabel('distance to target (um)')
-fig.show()
 
 
 
@@ -192,7 +196,8 @@ fig.show()
 # PhotostimResponsesAnalysisNonTargets.run__plot_sig_responders_traces(plot_baseline_responders=False)
 
 # %% 3) collecting all summed nontargets photostim and fakestim responses vs. total targets photostim and fakestim responses
-main.run__summed_responses(rerun=0)
+main.run__summed_responses(rerun=1)
+
 
 # %% 3.1) plotting exps total nontargets photostim (and fakestim) responses vs. total targets photostim (and fakestim) responses
 

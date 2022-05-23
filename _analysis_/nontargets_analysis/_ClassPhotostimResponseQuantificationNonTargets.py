@@ -70,7 +70,7 @@ class PhotostimResponsesNonTargetsResults(Results):
         """collecting responses of nontargets relative to various variables (see dataframe below)."""
         df = pd.DataFrame(
             columns=['expID', 'expID_cell', 'stim_idx', 'stim_group', 'photostim response', 'z score response',
-                     'distance target', 'distance sz',
+                     'distance target', 'distance sz', 'influence response', 'new influence response', 'fakestim response',
                      'sz distance group'])
 
         # PRE 4AP TRIALS
@@ -84,10 +84,13 @@ class PhotostimResponsesNonTargetsResults(Results):
             photostim_response = expobj.PhotostimResponsesNonTargets.adata.X
             fakestim_response = expobj.PhotostimResponsesNonTargets.adata.layers['nontargets fakestim_responses']
             distance_targets = expobj.PhotostimResponsesNonTargets.adata.obs['distance to nearest target (um)']
+            mean_nontargets_responses = expobj.PhotostimResponsesNonTargets.adata.var['mean_nontargets_responses']
+            std_nontargets_responses = expobj.PhotostimResponsesNonTargets.adata.var['std_nontargets_responses']
 
 
 
-            ## influence metric type analysis of nontargets response:
+            ## Chettih - influence metric type analysis of nontargets response:
+            print('\-calculating Chettih style influence....')
             influence = np.zeros_like(photostim_response)
             for i, cell_i in enumerate(expobj.PhotostimResponsesNonTargets.adata.obs.index):
                 cell_i = int(cell_i)
@@ -96,7 +99,20 @@ class PhotostimResponsesNonTargetsResults(Results):
                 influence[i, :] = inf_norm
 
 
+            ## a new influence metric analysis of nontargets response - that leverages the widescale changes in variability:
+            print('\-calculating new z score style influence response....')
+            new_influence = np.zeros_like(photostim_response)
+            for i, cell_i in enumerate(expobj.PhotostimResponsesNonTargets.adata.obs.index):
+                cell_i = int(cell_i)
+
+                new_inf = (expobj.PhotostimResponsesNonTargets.adata.X[i, :] - mean_nontargets_responses) / std_nontargets_responses
+                inf_norm = new_inf / np.std(new_inf, ddof=1)  # not sure yet if i need to be normalizing to the total variability of this or not???
+                new_influence[i, :] = new_inf
+
+
+
             collect_df = []
+            print('\-collecting datapoints....')
             for i, cell in enumerate(expobj.PhotostimResponsesNonTargets.adata.obs['original_index']):
                 for stim_idx in np.where(expobj.PhotostimResponsesNonTargets.adata.var['stim_group'] == 'baseline')[0]:
                     _cell_df = pd.DataFrame({
@@ -108,9 +124,10 @@ class PhotostimResponsesNonTargetsResults(Results):
                         'fakestim response': fakestim_response[i, stim_idx],
                         'z score response': z_scored_response[i, stim_idx],
                         'influence response': influence[i, stim_idx],
+                        'new influence response': influence[i, stim_idx],
                         'distance target': distance_targets[int(i)],
-                        'distance sz': np.nan,
-                        'sz distance group': '',
+                        'distance sz': None,
+                        'sz distance group': None,
                     }, index=[expobj.t_series_name])
 
                     collect_df.append(_cell_df)
@@ -189,7 +206,7 @@ class PhotostimResponsesNonTargetsResults(Results):
         # results.save_results()
 
 
-    def binned_distances_vs_responses(results, measurement = 'influence response'):
+    def binned_distances_vs_responses(results, measurement = 'photostim response'):
         """
 
         use the specified response measurement argument.
@@ -249,11 +266,9 @@ class PhotostimResponsesNonTargetsResults(Results):
             results.binned_distance_vs_responses = {}
 
 
-        results.binned_distance_vs_responses[
-            measurement: {'distances': distances,
+        results.binned_distance_vs_responses[measurement] = {'distances': distances,
                           'avg binned responses': avg_binned_responses,
                           'std binned responses': std_binned_responses}
-        ]
 
 
         results.save_results()
@@ -1438,7 +1453,6 @@ if __name__ == '__main__':
 
     # expobj = Utils.import_expobj(exp_prep='RL108 t-009')
 
-    results.collect_nontargets_stim_responses()
 
 # ARCHIVE
 def fig_non_targets_responses(expobj, plot_subset: bool = True, save_fig_suffix=None):

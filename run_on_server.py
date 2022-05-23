@@ -27,9 +27,11 @@ main = PhotostimResponsesAnalysisNonTargets
 
 results: PhotostimResponsesNonTargetsResults = PhotostimResponsesNonTargetsResults.load()
 
+results.collect_nontargets_stim_responses()
 
-results.binned_distances_vs_responses(measurement='influence response')
-results.binned_distances_vs_responses(measurement='photostim response')
+results.binned_distances_vs_responses(measurement='new influence response')
+# results.binned_distances_vs_responses(measurement='influence response')
+# results.binned_distances_vs_responses(measurement='photostim response')
 
 
 
