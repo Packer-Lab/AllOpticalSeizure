@@ -4,24 +4,38 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 
 from _analysis_.nontargets_analysis._ClassPhotostimResponseQuantificationNonTargets import \
-    PhotostimResponsesNonTargetsResults
-from _analysis_.nontargets_analysis._ClassPhotostimResponsesAnalysisNonTargets import PhotostimResponsesAnalysisNonTargets
+    PhotostimResponsesNonTargetsResults, PhotostimResponsesQuantificationNonTargets
+from _analysis_.nontargets_analysis._ClassPhotostimResponsesAnalysisNonTargets import \
+    PhotostimResponsesAnalysisNonTargets
+import funcsforprajay.plotting as pplot
 
 import pandas as pd
 import numpy as np
 
 from _main_.AllOpticalMain import alloptical
 
-REMAKE = True
-if not os.path.exists(PhotostimResponsesNonTargetsResults.SAVE_PATH) or REMAKE:
-    results = PhotostimResponsesNonTargetsResults()
-    results.save_results()
-
 import _alloptical_utils as Utils
 
 main = PhotostimResponsesAnalysisNonTargets
 
 results: PhotostimResponsesNonTargetsResults = PhotostimResponsesNonTargetsResults.load()
+
+############################## run processing/analysis/plotting: #######################################################
+
+# %% 5.2) binning responses relative to distance from targets
+
+baseline_responses = results.responses.iloc[results.pre4ap_idxs]
+
+# binning across distance to target:
+
+# re-sort by distance to target
+baseline_responses = baseline_responses.sort_values(by=['distance target'])
+
+# binning distances - 20um bins
+baseline_responses['distance target binned'] = (baseline_responses['distance target'] // 20) * 20
+
+# make plot of average responses + std across space bins
+
 
 
 
@@ -33,104 +47,61 @@ Objectives:
 
 """
 
-def collect_data_(results: PhotostimResponsesNonTargetsResults):
-    df = pd.DataFrame(columns=['expID_cell', 'stim_idx', 'stim_group', 'z score response', 'distance target', 'distance sz'])
+results.collect_nontargets_stim_responses()
 
-    @Utils.run_for_loop_across_exps(run_pre4ap_trials=True, set_cache=0)
-    def _collect_responses_distancetarget_distancesz(**kwrags):
-        expobj: alloptical = kwrags['expobj']
-        # exp_df_ = pd.DataFrame(columns=['expID_cell', 'stim_idx','z score response', 'distance target', 'distance sz'])
+# plot hist distribution of distances to target
+baseline_responses = results.responses.iloc[results.pre4ap_idxs]
+pplot.plot_hist_density(data=[baseline_responses['distance target']], fill_color = ['blue'], show_fit=False, density=False)
 
-        # find overlapping cells across processed dataset - actually not sure why there isn't 100% overlap but c'st la vie
+# %% 5.1) plotting scatter plots of responses
 
-        collect_df = []
-        for i, cell in enumerate(expobj.PhotostimResponsesNonTargets.adata.obs['original_index']):
-            for stim_idx in np.where(expobj.PhotostimResponsesNonTargets.adata.var['stim_group'] == 'baseline')[0]:
-
-                _cell_df = pd.DataFrame({'expID_cell': f'{expobj.t_series_name}_{cell}',
-                                         'stim_idx': stim_idx,
-                                         'stim_group': 'baseline',
-                                         'z score response': expobj.PhotostimResponsesNonTargets.adata.layers['nontargets responses z scored (to baseline)'][i, stim_idx],
-                                         'distance target': expobj.NonTargetsSzInvasionSpatial.adata.obs['distance to nearest target (um)'][int(_spatial_idx)],
-                                         'distance sz': np.nan,
-                                         }, index=[f'{expobj.t_series_name}_{cell}'])
-
-                collect_df.append(_cell_df)
-
-        exp_df_ = pd.concat(collect_df)
-
-        # todo test out code,... for collecting
-
-        return exp_df_
-
-    func_collector = _collect_responses_distancetarget_distancesz()
-    for exp_df in func_collector:
-        df = pd.concat([df, exp_df])
+# fig, ax = plt.subplots(figsize=(4, 4))
+# sns.scatterplot(data=results.responses, x="distance target", y="distance sz", hue='z score response', ax=ax, hue_norm=(-6, 6),
+#                 legend='brief')
+# fig.show()
 
 
-    @Utils.run_for_loop_across_exps(run_post4ap_trials=True, set_cache=0)
-    def _collect_responses_distancetarget_distancesz(**kwrags):
-        expobj: Post4ap = kwrags['expobj']
-        # exp_df_ = pd.DataFrame(columns=['expID_cell', 'stim_idx','z score response', 'distance target', 'distance sz'])
-
-        # find overlapping cells across processed dataset - actually not sure why there isn't 100% overlap but c'st la vie
-        _responses_idx = [idx for idx, cell in enumerate(tuple(expobj.PhotostimResponsesNonTargets.adata.obs['original_index'])) if cell in tuple(expobj.NonTargetsSzInvasionSpatial.adata.obs['original_index'])]
-        # _spatial_idx = [idx for idx, cell in enumerate(tuple(expobj.NonTargetsSzInvasionSpatial.adata.obs['original_index'])) if cell in tuple(expobj.PhotostimResponsesNonTargets.adata.obs['original_index'])]
-
-        assert tuple(expobj.PhotostimResponsesNonTargets.adata.var_names) == tuple(expobj.NonTargetsSzInvasionSpatial.adata.var_names), 'mismatching stim indexes in photostim nontargets responses and distance to sz measured for cells'
-
-        collect_df = []
-        for i in _responses_idx:
-            for stim_idx in np.where(expobj.PhotostimResponsesNonTargets.adata.var['stim_group'] == 'ictal')[0]:
-                cell = expobj.PhotostimResponsesNonTargets.adata.obs['original_index'][i]
-
-                # _spatial_idx = expobj.NonTargetsSzInvasionSpatial.adata.obs['original_index'][expobj.NonTargetsSzInvasionSpatial.adata.obs['original_index'] == cell].index[0]
-                _spatial_idx = list(expobj.NonTargetsSzInvasionSpatial.adata.obs['original_index']).index(cell)
-
-                if not np.isnan(expobj.NonTargetsSzInvasionSpatial.adata.X[int(_spatial_idx), stim_idx]) and expobj.NonTargetsSzInvasionSpatial.adata.X[int(_spatial_idx), stim_idx] > 0:
-
-                    _cell_df = pd.DataFrame({'expID_cell': f'{expobj.t_series_name}_{cell}',
-                                             'stim_idx': stim_idx,
-                                             'z score response': expobj.PhotostimResponsesNonTargets.adata.layers['nontargets responses z scored (to baseline)'][i, stim_idx],
-                                             'distance target': expobj.NonTargetsSzInvasionSpatial.adata.obs['distance to nearest target (um)'][int(_spatial_idx)],
-                                             'distance sz': expobj.NonTargetsSzInvasionSpatial.adata.X[int(_spatial_idx), stim_idx]
-                                             }, index=[f'{expobj.t_series_name}_{cell}'])
-
-                    collect_df.append(_cell_df)
-
-        exp_df_ = pd.concat(collect_df)
-
-        # todo test out code,... for collecting
-
-        return exp_df_
-
-    func_collector = _collect_responses_distancetarget_distancesz()
-    for exp_df in func_collector:
-        df = pd.concat([df, exp_df])
-
-    results.responses = df
-    results.save_results()
-
-collect_data_(results=results)
 
 
-sys.exit()
-
-# %%
-
-results.responses[-5:]
 
 fig, ax = plt.subplots(figsize=(4, 4))
-sns.scatterplot(data=results.responses, x="distance target", y="distance sz", hue='z score response', ax=ax)
+ax.scatter(results.responses["distance target"][results.post4ap_idxs], results.responses["distance sz"][results.post4ap_idxs], color='gray', alpha=0.01,
+           s=5)
+ax.set_title('distance to target vs. distance to sz - ictal')
+fig.tight_layout(pad=1.3)
 fig.show()
 
 
-sns.pairplot(data = results.responses, vars=['distance sz', 'distance target', 'z score response'])
+fig, ax = plt.subplots(figsize=(4, 4))
+ax.scatter(results.responses["distance target"][results.pre4ap_idxs], results.responses["z score response"][results.pre4ap_idxs], color='red', alpha=0.01,
+           s=5)
+ax.set_title('distance to target vs. z score response - baseline')
+fig.tight_layout(pad=1.3)
+fig.show()
+
+
+fig, ax = plt.subplots(figsize=(4, 4))
+ax.scatter(results.responses["distance target"][results.post4ap_idxs], results.responses["z score response"][results.post4ap_idxs], color='red', alpha=0.01,
+           s=5)
+ax.set_title('distance to target vs. z score response - ictal')
+fig.tight_layout(pad=1.3)
+fig.show()
+
+
+fig, ax = plt.subplots(figsize=(4, 4))
+ax.scatter(results.responses["distance sz"][results.post4ap_idxs], results.responses["z score response"][results.post4ap_idxs], color='orange', alpha=0.01,
+           s=5)
+fig.tight_layout(pad=1.3)
+ax.set_title('distance sz vs. distance to target - ictal')
 fig.show()
 
 
 
-# %% run processing/analysis/plotting:
+# %% 5.1.1) trying paired plot with seaborn -- takes too long to run actually
+
+sns.pairplot(data=results.responses, vars=['distance sz', 'distance target', 'z score response'])
+fig.show()
+
 
 # %% 0) processing alloptical photostim and fakestim responses
 
@@ -176,11 +147,12 @@ objectives:
 - scatter plot: total responses of targets in distal vs. mean z scored (to baseline) responses of nontargets in distal
 """
 
-
 import sys
+
 sys.path.extend(['/home/pshah/Documents/code/AllOpticalSeizure', '/home/pshah/Documents/code/AllOpticalSeizure'])
 
-from _analysis_.nontargets_analysis._ClassPhotostimResponseQuantificationNonTargets import PhotostimResponsesNonTargetsResults, \
+from _analysis_.nontargets_analysis._ClassPhotostimResponseQuantificationNonTargets import \
+    PhotostimResponsesNonTargetsResults, \
     PhotostimResponsesQuantificationNonTargets
 
 import numpy as np
@@ -192,6 +164,7 @@ from matplotlib import pyplot as plt
 import _alloptical_utils as Utils
 from _main_.Post4apMain import Post4ap
 from funcsforprajay import plotting as pplot
+
 
 # 4.0) collect nontargets activity - split up proximal vs. distal
 def calculate__mean_responses_nontargets(expobj: Post4ap):
@@ -205,26 +178,35 @@ def calculate__mean_responses_nontargets(expobj: Post4ap):
     # proximal nontargets
     nontargets_mean_zscore = [np.nan for i in range(nontargets_responses.adata.n_vars)]
     for stim_idx in np.where(nontargets_responses.adata.var['stim_group'] == 'ictal')[0]:
-        cells_ = expobj.NonTargetsSzInvasionSpatial.adata.obs['original_index'][expobj.NonTargetsSzInvasionSpatial.adata.layers['outsz location'][:, stim_idx] == 'proximal']
+        cells_ = expobj.NonTargetsSzInvasionSpatial.adata.obs['original_index'][
+            expobj.NonTargetsSzInvasionSpatial.adata.layers['outsz location'][:, stim_idx] == 'proximal']
         if len(cells_) > 0:
-            proximal_idx = [idx for idx, cell in enumerate(nontargets_responses.adata.obs['original_index']) if cell in list(cells_)]
-            nontargets_mean_zscore[stim_idx] = np.nanmean(nontargets_responses.adata.layers['nontargets responses z scored (to baseline)'][proximal_idx, stim_idx], axis=0)
+            proximal_idx = [idx for idx, cell in enumerate(nontargets_responses.adata.obs['original_index']) if
+                            cell in list(cells_)]
+            nontargets_mean_zscore[stim_idx] = np.nanmean(
+                nontargets_responses.adata.layers['nontargets responses z scored (to baseline)'][
+                    proximal_idx, stim_idx], axis=0)
 
-    nontargets_responses.adata.add_variable(var_name='nontargets - proximal - mean z score', values=nontargets_mean_zscore)
-
+    nontargets_responses.adata.add_variable(var_name='nontargets - proximal - mean z score',
+                                            values=nontargets_mean_zscore)
 
     # distal nontargets
     nontargets_mean_zscore = [np.nan for i in range(nontargets_responses.adata.n_vars)]
     for stim_idx in np.where(nontargets_responses.adata.var['stim_group'] == 'ictal')[0]:
-        cells_ = expobj.NonTargetsSzInvasionSpatial.adata.obs['original_index'][expobj.NonTargetsSzInvasionSpatial.adata.layers['outsz location'][:, stim_idx] == 'distal']
+        cells_ = expobj.NonTargetsSzInvasionSpatial.adata.obs['original_index'][
+            expobj.NonTargetsSzInvasionSpatial.adata.layers['outsz location'][:, stim_idx] == 'distal']
         if len(cells_) > 0:
-            distal_idx = [idx for idx, cell in enumerate(nontargets_responses.adata.obs['original_index']) if cell in list(cells_)]
-            nontargets_mean_zscore[stim_idx] = np.nanmean(nontargets_responses.adata.layers['nontargets responses z scored (to baseline)'][distal_idx, stim_idx], axis=0)
+            distal_idx = [idx for idx, cell in enumerate(nontargets_responses.adata.obs['original_index']) if
+                          cell in list(cells_)]
+            nontargets_mean_zscore[stim_idx] = np.nanmean(
+                nontargets_responses.adata.layers['nontargets responses z scored (to baseline)'][distal_idx, stim_idx],
+                axis=0)
 
     nontargets_responses.adata.add_variable(var_name='nontargets - distal - mean z score',
                                             values=nontargets_mean_zscore)
 
     return nontargets_responses
+
 
 # 4.0.1) collect targets activity - split up proximal vs. distal mean right now
 def calculate__summed_responses_targets(expobj: Post4ap):
@@ -237,24 +219,28 @@ def calculate__summed_responses_targets(expobj: Post4ap):
     # proximal targets
     targets_summed_zscore = [np.nan for i in range(targets_responses.adata.n_vars)]
     for stim_idx in np.where(targets_responses.adata.var['stim_group'] == 'ictal')[0]:
-        cells_ = expobj.TargetsSzInvasionSpatial_codereview.adata.obs.index[expobj.TargetsSzInvasionSpatial_codereview.adata.layers['outsz location'][:, stim_idx] == 'proximal']
+        cells_ = expobj.TargetsSzInvasionSpatial_codereview.adata.obs.index[
+            expobj.TargetsSzInvasionSpatial_codereview.adata.layers['outsz location'][:, stim_idx] == 'proximal']
         if len(cells_) > 0:
-            proximal_idx = [int(idx) for idx, cell in enumerate(expobj.TargetsSzInvasionSpatial_codereview.adata.obs.index) if cell in list(cells_)]
+            proximal_idx = [int(idx) for idx, cell in
+                            enumerate(expobj.TargetsSzInvasionSpatial_codereview.adata.obs.index) if
+                            cell in list(cells_)]
             targets_summed_zscore[stim_idx] = np.nanmean(targets_responses.adata.X[proximal_idx, stim_idx], axis=0)
-        
+
         # troubleshooting: where is the sum targets = 0 for certain stims coming from?
         if np.round(targets_summed_zscore[stim_idx], 1) == 0.0:
             print('break here')
 
     targets_responses.adata.add_variable(var_name='targets - proximal - total z score', values=targets_summed_zscore)
 
-
     # distal targets
     targets_summed_zscore = [np.nan for i in range(targets_responses.adata.n_vars)]
     for stim_idx in np.where(targets_responses.adata.var['stim_group'] == 'ictal')[0]:
-        cells_ = expobj.TargetsSzInvasionSpatial_codereview.adata.obs.index[expobj.TargetsSzInvasionSpatial_codereview.adata.layers['outsz location'][:, stim_idx] == 'distal']
+        cells_ = expobj.TargetsSzInvasionSpatial_codereview.adata.obs.index[
+            expobj.TargetsSzInvasionSpatial_codereview.adata.layers['outsz location'][:, stim_idx] == 'distal']
         if len(cells_) > 0:
-            distal_idx = [int(idx) for idx, cell in enumerate(expobj.TargetsSzInvasionSpatial_codereview.adata.obs.index) if cell in list(cells_)]
+            distal_idx = [int(idx) for idx, cell in
+                          enumerate(expobj.TargetsSzInvasionSpatial_codereview.adata.obs.index) if cell in list(cells_)]
             targets_summed_zscore[stim_idx] = np.nanmean(targets_responses.adata.X[distal_idx, stim_idx], axis=0)
 
     targets_responses.adata.add_variable(var_name='targets - distal - total z score', values=targets_summed_zscore)
@@ -263,7 +249,7 @@ def calculate__summed_responses_targets(expobj: Post4ap):
 
 
 # 4.1) collect results of targets and non targets activity across all exps - split up proximal vs. distal
-def collect__mean_nontargets_activity_vs_targets_activity(results: PhotostimResponsesNonTargetsResults, rerun = 1):
+def collect__mean_nontargets_activity_vs_targets_activity(results: PhotostimResponsesNonTargetsResults, rerun=1):
     """collect mean zscored activity of nontargets proximal and distal to sz wavefront, and also total targets activity"""
 
     # post4ap - interictal #############################################################################################
@@ -273,16 +259,29 @@ def collect__mean_nontargets_activity_vs_targets_activity(results: PhotostimResp
         """collect z scored (to baseline) summed responses for photostim nontargets, split by proximal and distal groups"""
         expobj: Post4ap = kwargs['expobj']
 
-        summed_responses_proximal = pd.DataFrame({'exp': [expobj.t_series_name] * sum([expobj.PhotostimResponsesSLMTargets.adata.var['stim_group'] == 'ictal'][0]),
-                                         'targets': expobj.PhotostimResponsesSLMTargets.adata.var['targets - proximal - total z score'][expobj.PhotostimResponsesSLMTargets.adata.var['stim_group'] == 'ictal'],
-                                         'non-targets': expobj.PhotostimResponsesNonTargets.adata.var['nontargets - proximal - mean z score'][expobj.PhotostimResponsesSLMTargets.adata.var['stim_group'] == 'ictal'],
-                                         })
+        summed_responses_proximal = pd.DataFrame({'exp': [expobj.t_series_name] * sum(
+            [expobj.PhotostimResponsesSLMTargets.adata.var['stim_group'] == 'ictal'][0]),
+                                                  'targets': expobj.PhotostimResponsesSLMTargets.adata.var[
+                                                      'targets - proximal - total z score'][
+                                                      expobj.PhotostimResponsesSLMTargets.adata.var[
+                                                          'stim_group'] == 'ictal'],
+                                                  'non-targets': expobj.PhotostimResponsesNonTargets.adata.var[
+                                                      'nontargets - proximal - mean z score'][
+                                                      expobj.PhotostimResponsesSLMTargets.adata.var[
+                                                          'stim_group'] == 'ictal'],
+                                                  })
 
-        summed_responses_distal = pd.DataFrame({'exp': [expobj.t_series_name] * sum([expobj.PhotostimResponsesSLMTargets.adata.var['stim_group'] == 'ictal'][0]),
-                                         'targets': expobj.PhotostimResponsesSLMTargets.adata.var['targets - distal - total z score'][expobj.PhotostimResponsesSLMTargets.adata.var['stim_group'] == 'ictal'],
-                                         'non-targets': expobj.PhotostimResponsesNonTargets.adata.var['nontargets - distal - mean z score'][expobj.PhotostimResponsesSLMTargets.adata.var['stim_group'] == 'ictal']
-                                         })
-
+        summed_responses_distal = pd.DataFrame({'exp': [expobj.t_series_name] * sum(
+            [expobj.PhotostimResponsesSLMTargets.adata.var['stim_group'] == 'ictal'][0]),
+                                                'targets': expobj.PhotostimResponsesSLMTargets.adata.var[
+                                                    'targets - distal - total z score'][
+                                                    expobj.PhotostimResponsesSLMTargets.adata.var[
+                                                        'stim_group'] == 'ictal'],
+                                                'non-targets': expobj.PhotostimResponsesNonTargets.adata.var[
+                                                    'nontargets - distal - mean z score'][
+                                                    expobj.PhotostimResponsesSLMTargets.adata.var[
+                                                        'stim_group'] == 'ictal']
+                                                })
 
         # calculating linear regression metrics between summed targets and summed total network for each experiment
         # proximal cells
@@ -310,8 +309,6 @@ def collect__mean_nontargets_activity_vs_targets_activity(results: PhotostimResp
             'r_value': r_value,
             'p_value': p_value
         }, index=[expobj.t_series_name])
-
-
 
         return summed_responses_proximal, summed_responses_distal, lin_reg_scores_proximal, lin_reg_scores_distal
 
@@ -343,6 +340,7 @@ def collect__mean_nontargets_activity_vs_targets_activity(results: PhotostimResp
         results.lin_reg_summed_responses['ictal - distal'] = lin_reg_scores_distal
         results.save_results()
 
+
 # 4.1.1) plot results of targets and non targets activity across all exps - split up proximal vs. distal
 def plot__ictal_nontargets_vs_targets_activity(results: PhotostimResponsesNonTargetsResults):
     """scatter plot of stim trials comparing summed activity of targets (originally zscored to baseline) and mean activity of non-targets (original zscored to baseline).
@@ -365,9 +363,9 @@ def plot__ictal_nontargets_vs_targets_activity(results: PhotostimResponsesNonTar
             # print('debug here...')
             pass
 
-
-    slope, intercept, r_value, p_value, std_err = stats.linregress(x=results.summed_responses['ictal - proximal']['targets'][non_nan_idxs],
-                                                                   y=results.summed_responses['ictal - proximal']['non-targets'][non_nan_idxs])
+    slope, intercept, r_value, p_value, std_err = stats.linregress(
+        x=results.summed_responses['ictal - proximal']['targets'][non_nan_idxs],
+        y=results.summed_responses['ictal - proximal']['non-targets'][non_nan_idxs])
     regression_y = slope * results.summed_responses['ictal - proximal']['targets'][non_nan_idxs] + intercept
     fig, axs[0] = pplot.make_general_scatter(
         x_list=[results.summed_responses['ictal - proximal']['targets'][non_nan_idxs]],
@@ -376,7 +374,8 @@ def plot__ictal_nontargets_vs_targets_activity(results: PhotostimResponsesNonTar
         x_labels=['mean targets activity (z scored)'], y_labels=['mean non-targets activity (z scored)'],
         legend_labels=[f'proximal cells - $R^2$: {r_value ** 2:.2e}, p = {p_value ** 2:.2e}, $m$ = {slope:.2e}'],
         show=False)
-    axs[0].plot(results.summed_responses['ictal - proximal']['targets'][non_nan_idxs], regression_y, color='royalblue', lw=2)
+    axs[0].plot(results.summed_responses['ictal - proximal']['targets'][non_nan_idxs], regression_y, color='royalblue',
+                lw=2)
 
     # DISTAL CELLS
 
@@ -390,7 +389,6 @@ def plot__ictal_nontargets_vs_targets_activity(results: PhotostimResponsesNonTar
             # print('debug here...')
             pass
 
-
     slope, intercept, r_value, p_value, std_err = stats.linregress(
         x=results.summed_responses['ictal - distal']['targets'][non_nan_idxs],
         y=results.summed_responses['ictal - distal']['non-targets'][non_nan_idxs])
@@ -399,12 +397,15 @@ def plot__ictal_nontargets_vs_targets_activity(results: PhotostimResponsesNonTar
 
     pplot.make_general_scatter(x_list=[results.summed_responses['ictal - distal']['targets'][non_nan_idxs]],
                                y_data=[results.summed_responses['ictal - distal']['non-targets'][non_nan_idxs]], s=50,
-                               facecolors=['white'], edgecolors=['green'], lw=1, alpha=0.5, x_labels=['mean targets activity (zscored)'],
+                               facecolors=['white'], edgecolors=['green'], lw=1, alpha=0.5,
+                               x_labels=['mean targets activity (zscored)'],
                                y_labels=['mean non-targets activity (z scored)'], fig=fig, ax=axs[1],
-                               legend_labels=[f'distal cells - $R^2$: {r_value ** 2:.2e}, p = {p_value ** 2:.2e}, $m$ = {slope:.2e}'],
+                               legend_labels=[
+                                   f'distal cells - $R^2$: {r_value ** 2:.2e}, p = {p_value ** 2:.2e}, $m$ = {slope:.2e}'],
                                show=False)
 
-    axs[1].plot(results.summed_responses['ictal - distal']['targets'][non_nan_idxs], regression_y, color='forestgreen', lw=2)
+    axs[1].plot(results.summed_responses['ictal - distal']['targets'][non_nan_idxs], regression_y, color='forestgreen',
+                lw=2)
 
     # PLOTTING OPTIONS
     axs[0].grid(True)
@@ -418,13 +419,14 @@ def plot__ictal_nontargets_vs_targets_activity(results: PhotostimResponsesNonTar
     fig.show()
 
 
-
 # %%
 
 results: PhotostimResponsesNonTargetsResults = PhotostimResponsesNonTargetsResults.load()
 
-@Utils.run_for_loop_across_exps(run_pre4ap_trials=0, run_post4ap_trials=1, allow_rerun=0, skip_trials=PhotostimResponsesQuantificationNonTargets.EXCLUDE_TRIALS,)
-                                # run_trials=PhotostimResponsesQuantificationNonTargets.TEST_TRIALS)
+
+@Utils.run_for_loop_across_exps(run_pre4ap_trials=0, run_post4ap_trials=1, allow_rerun=0,
+                                skip_trials=PhotostimResponsesQuantificationNonTargets.EXCLUDE_TRIALS, )
+# run_trials=PhotostimResponsesQuantificationNonTargets.TEST_TRIALS)
 def run__ictal_nontargets_responses_processing(**kwargs):
     expobj: Post4ap = kwargs['expobj']
     expobj.PhotostimResponsesNonTargets = calculate__mean_responses_nontargets(expobj=kwargs['expobj'])
@@ -438,6 +440,4 @@ collect__mean_nontargets_activity_vs_targets_activity(results=results, rerun=1)
 
 plot__ictal_nontargets_vs_targets_activity(results=results)
 
-
 # %%
-

@@ -52,8 +52,8 @@ class NonTargetsResponsesSpatialAnalysis(Quantification):
     @staticmethod
     @Utils.run_for_loop_across_exps(run_pre4ap_trials=1,
                                     run_post4ap_trials=1,
-                                    allow_rerun=1,
-                                    skip_trials=PhotostimResponsesQuantificationNonTargets.EXCLUDE_TRIALS, )
+                                    allow_rerun=0,
+                                    skip_trials=PhotostimResponsesQuantificationNonTargets.EXCLUDE_TRIALS,)
     # run_trials=PhotostimResponsesQuantificationNonTargets.TEST_TRIALS)
     def run__initPhotostimResponsesAnalysisNonTargets(**kwargs):
         expobj: Union[alloptical, Post4ap] = kwargs['expobj']
@@ -66,7 +66,7 @@ class NonTargetsResponsesSpatialAnalysis(Quantification):
     def run__methods(**kwargs):
         expobj: Union[alloptical, Post4ap] = kwargs['expobj']
         distances_um = expobj.NonTargetsResponsesSpatial._calculate_distance_to_target(expobj=expobj)
-        expobj.NonTargetsSzInvasionSpatial._add_nontargets_distance_to_targets_anndata(
+        expobj.NonTargetsResponsesSpatial._add_nontargets_distance_to_targets_anndata(
             expobj.PhotostimResponsesNonTargets.adata, distances_um)
         expobj.save()
 

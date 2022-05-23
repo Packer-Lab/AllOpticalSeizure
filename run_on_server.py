@@ -11,18 +11,27 @@
 """
 
 # IMPORT MODULES AND TRIAL expobj OBJECT
-import sys;
+import sys
 
+from _analysis_.nontargets_analysis._ClassPhotostimResponseQuantificationNonTargets import \
+    PhotostimResponsesNonTargetsResults
+from _analysis_.nontargets_analysis._ClassPhotostimResponsesAnalysisNonTargets import \
+    PhotostimResponsesAnalysisNonTargets
+from _analysis_.nontargets_analysis.run__nontargets_analysis import collect_data_
 
 print('Python %s on %s' % (sys.version, sys.platform))
 sys.path.extend(['/home/pshah/Documents/code/AllOpticalSeizure', '/home/pshah/Documents/code/AllOpticalSeizure'])
 sys.path.append('/home/pshah/Documents/code/PackerLab_pycharm/')
 sys.path.append('/home/pshah/Documents/code/')
 
+main = PhotostimResponsesAnalysisNonTargets
 
-from _analysis_._ClassPhotostimResponseQuantificationSLMtargets import PhotostimResponsesQuantificationSLMtargets as main
+results: PhotostimResponsesNonTargetsResults = PhotostimResponsesNonTargetsResults.load()
 
-main.run__targets_annulus_prestim_Flu()
+
+results.collect_nontargets_stim_responses()
+
+
 
 
 

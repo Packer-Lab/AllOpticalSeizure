@@ -43,6 +43,125 @@ class PhotostimResponsesNonTargetsResults(Results):
     def __repr__(self):
         return f"PhotostimResponsesNonTargetsResults <- Results Analysis Object"
 
+    @property
+    def pre4ap_idxs(self):
+        # pre4ap
+        idxs = np.where(self.responses['stim_group'] == 'baseline')[0]
+        idxs_2 = np.where(self.responses['distance target'][idxs] < 300)[0]
+        return idxs_2
+
+    @property
+    def post4ap_idxs(self):
+        # ictal
+        idx = np.where(self.responses['stim_group'] != 'baseline')[0]
+        idxs_2 = np.where(self.responses['distance target'][idx] < 300)[0]
+        return idxs_2
+
+    def collect_nontargets_stim_responses(results):
+        """collecting responses of nontargets relative to various variables (see dataframe below)."""
+        df = pd.DataFrame(
+            columns=['expID_cell', 'stim_idx', 'stim_group', 'photostim response', 'z score response',
+                     'distance target', 'distance sz',
+                     'sz distance group'])
+
+        # PRE 4AP TRIALS
+        @Utils.run_for_loop_across_exps(run_pre4ap_trials=True, set_cache=0,
+                                        skip_trials=PhotostimResponsesQuantificationNonTargets.EXCLUDE_TRIALS)
+        def _collect_responses_distancetarget(**kwargs):
+            expobj: alloptical = kwargs['expobj']
+            # exp_df_ = pd.DataFrame(columns=['expID_cell', 'stim_idx','z score response', 'distance target', 'distance sz'])
+
+            z_scored_response = expobj.PhotostimResponsesNonTargets.adata.layers['nontargets responses z scored']
+            photostim_response = expobj.PhotostimResponsesNonTargets.adata.X
+            distance_targets = expobj.PhotostimResponsesNonTargets.adata.obs['distance to nearest target (um)']
+
+            collect_df = []
+            for i, cell in enumerate(expobj.PhotostimResponsesNonTargets.adata.obs['original_index']):
+                for stim_idx in np.where(expobj.PhotostimResponsesNonTargets.adata.var['stim_group'] == 'baseline')[0]:
+                    _cell_df = pd.DataFrame({'expID_cell': f'{expobj.t_series_name}_{cell}',
+                                             'stim_idx': stim_idx,
+                                             'stim_group': 'baseline',
+                                             'photostim response': photostim_response[i, stim_idx],
+                                             'z score response': z_scored_response[i, stim_idx],
+                                             'distance target': distance_targets[int(i)],
+                                             'distance sz': np.nan,
+                                             'sz distance group': '',
+                                             }, index=['baseline'])
+
+                    collect_df.append(_cell_df)
+
+            exp_df_ = pd.concat(collect_df)
+
+            return exp_df_
+
+        func_collector = _collect_responses_distancetarget()
+        for exp_df in func_collector:
+            df = pd.concat([df, exp_df])
+
+        results.responses = df
+        results.save_results()
+
+        # POST 4AP TRIALS
+        @Utils.run_for_loop_across_exps(run_post4ap_trials=True, set_cache=0,
+                                        skip_trials=PhotostimResponsesQuantificationNonTargets.EXCLUDE_TRIALS)
+        def _collect_responses_distancetarget_distancesz(**kwrags):
+            expobj: Post4ap = kwrags['expobj']
+            # exp_df_ = pd.DataFrame(columns=['expID_cell', 'stim_idx', 'z score response', 'distance target', 'distance sz'])
+
+            # find overlapping cells across processed dataset - actually not sure why there isn't 100% overlap but c'st la vie
+            _responses_idx = [idx for idx, cell in
+                              enumerate(tuple(expobj.PhotostimResponsesNonTargets.adata.obs['original_index'])) if
+                              cell in tuple(expobj.NonTargetsSzInvasionSpatial.adata.obs['original_index'])]
+            # _spatial_idx = [idx for idx, cell in enumerate(tuple(expobj.NonTargetsSzInvasionSpatial.adata.obs['original_index'])) if cell in tuple(expobj.PhotostimResponsesNonTargets.adata.obs['original_index'])]
+
+            assert tuple(expobj.PhotostimResponsesNonTargets.adata.var_names) == tuple(
+                expobj.NonTargetsSzInvasionSpatial.adata.var_names), 'mismatching stim indexes in photostim nontargets responses and distance to sz measured for cells'
+
+            z_scored_response = expobj.PhotostimResponsesNonTargets.adata.layers[
+                'nontargets responses z scored (to baseline)']
+            photostim_response = expobj.PhotostimResponsesNonTargets.adata.X
+            sz_distance_groups = expobj.NonTargetsSzInvasionSpatial.adata.layers['outsz location']
+
+            collect_df = []
+            for i in _responses_idx:
+                for stim_idx in np.where(expobj.PhotostimResponsesNonTargets.adata.var['stim_group'] == 'ictal')[0]:
+                    cell = expobj.PhotostimResponsesNonTargets.adata.obs['original_index'][i]
+
+                    # _spatial_idx = expobj.NonTargetsSzInvasionSpatial.adata.obs['original_index'][expobj.NonTargetsSzInvasionSpatial.adata.obs['original_index'] == cell].index[0]
+                    _sz_idx = list(expobj.NonTargetsSzInvasionSpatial.adata.obs['original_index']).index(cell)
+                    _target_distance_idx = list(expobj.PhotostimResponsesNonTargets.adata.obs['original_index']).index(
+                        cell)
+
+                    if not np.isnan(expobj.NonTargetsSzInvasionSpatial.adata.X[int(_sz_idx), stim_idx]) and \
+                            expobj.NonTargetsSzInvasionSpatial.adata.X[int(_sz_idx), stim_idx] > 0:
+                        _cell_df = pd.DataFrame({'expID_cell': f'{expobj.t_series_name}_{cell}',
+                                                 'stim_idx': stim_idx,
+                                                 'stim_group':
+                                                     expobj.PhotostimResponsesNonTargets.adata.var['stim_group'][
+                                                         stim_idx],
+                                                 'photostim response': photostim_response[i, stim_idx],
+                                                 'z score response': z_scored_response[i, stim_idx],
+                                                 'distance target': expobj.PhotostimResponsesNonTargets.adata.obs[
+                                                     'distance to nearest target (um)'][int(_target_distance_idx)],
+                                                 'distance sz': expobj.NonTargetsSzInvasionSpatial.adata.X[
+                                                     int(_sz_idx), stim_idx],
+                                                 'sz distance group': sz_distance_groups[int(_sz_idx), stim_idx]
+                                                 }, index=[
+                            expobj.PhotostimResponsesNonTargets.adata.var['stim_group'][stim_idx]])
+
+                        collect_df.append(_cell_df)
+
+            exp_df_ = pd.concat(collect_df)
+
+            return exp_df_
+
+        func_collector = _collect_responses_distancetarget_distancesz()
+        for exp_df in func_collector:
+            df = pd.concat([df, exp_df])
+
+        results.responses = df
+        results.save_results()
+
 
 REMAKE = False
 if not os.path.exists(PhotostimResponsesNonTargetsResults.SAVE_PATH) or REMAKE:
@@ -139,7 +258,7 @@ class PhotostimResponsesQuantificationNonTargets(Quantification):
         'RL108 t-013'
     ]
 
-    def __init__(self, results, expobj: Union[alloptical, Post4ap]):
+    def __init__(self, results: PhotostimResponsesNonTargetsResults, expobj: Union[alloptical, Post4ap]):
         super().__init__(expobj)
 
         # self = expobj.PhotostimResponsesNonTargets  # temp during testing, can remove when running all experiments.
