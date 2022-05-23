@@ -22,20 +22,70 @@ results: PhotostimResponsesNonTargetsResults = PhotostimResponsesNonTargetsResul
 
 ############################## run processing/analysis/plotting: #######################################################
 
-# %% 5.2) binning responses relative to distance from targets
+# %% 5.2) binning responses relative to distance from targets, then average the responses across binned distances
 
-baseline_responses = results.responses.iloc[results.pre4ap_idxs]
+# run as a results method function
+results.binned_distances_vs_responses(measurement='photostim response')
 
-# binning across distance to target:
+# baseline_responses = results.responses.iloc[results.pre4ap_idxs]
+#
+# # binning across distance to target:
+#
+# # re-sort by distance to target
+# baseline_responses = baseline_responses.sort_values(by=['distance target'])
+#
+# # binning distances - 20um bins
+# baseline_responses['distance target binned'] = (baseline_responses['distance target'] // 20) * 20
 
-# re-sort by distance to target
-baseline_responses = baseline_responses.sort_values(by=['distance target'])
+# 5.2.1)
+# average across distance bins
+# measurement = 'influence response'
+# distances = np.unique(baseline_responses['distance target binned'])
+# avg_binned_responses = []
+# std_binned_responses = []
+# for bin in distances:
+#     _idxs = np.where(baseline_responses['distance target binned'] == bin)
+#
+#     # average across all stims for each cell
+#     cells_ = np.unique(baseline_responses.iloc[_idxs]['expID_cell'])
+#     averages_cells = []
+#     for cell in cells_:
+#         _jdxs = np.where(baseline_responses.iloc[_idxs]['expID_cell'] == cell)[0]
+#         mean_cell_distance_response = np.mean(baseline_responses.iloc[_idxs].iloc[_jdxs][measurement])
+#         averages_cells.append(mean_cell_distance_response)
+#
+#     # avg_response = np.mean(baseline_responses[measurement].iloc[_idxs])
+#     # std_response = np.std(baseline_responses[measurement].iloc[_idxs], ddof=1)
+#
+#     avg_response = np.mean(averages_cells)
+#     std_response = np.std(averages_cells, ddof=1)
+#
+#     avg_binned_responses.append(avg_response)
+#     std_binned_responses.append(std_response)
+# avg_binned_responses = np.asarray(avg_binned_responses)
+# std_binned_responses = np.asarray(std_binned_responses)
+#
+# results.binned_distance_vs_responses = {
+#     'distances': distances,
+#     'avg responses': avg_binned_responses,
+#     'std responses': std_binned_responses
+# }
+#
+# results.save_results()
 
-# binning distances - 20um bins
-baseline_responses['distance target binned'] = (baseline_responses['distance target'] // 20) * 20
+# %% make plot of average responses +/- std across space bins
 
-# make plot of average responses + std across space bins
+measurement = 'influence response'
+distances = results.binned_distance_vs_responses[measurement]['distances']
+avg_binned_responses = results.binned_distance_vs_responses[measurement]['avg binned responses']
+std_binned_responses = results.binned_distance_vs_responses[measurement]['std binned responses']
 
+fig, ax = plt.subplots(figsize = (8, 4))
+ax.fill_between(x=list(distances), y1=list(avg_binned_responses + std_binned_responses), y2=list(avg_binned_responses - std_binned_responses), alpha=0.1)
+ax.plot(distances, avg_binned_responses)
+ax.set_title(f"{measurement} vs. distance to target (um)")
+ax.set_xlim([0, 300])
+fig.show()
 
 
 
@@ -47,11 +97,25 @@ Objectives:
 
 """
 
-results.collect_nontargets_stim_responses()
+# run processing:
+# results.collect_nontargets_stim_responses()
 
 # plot hist distribution of distances to target
 baseline_responses = results.responses.iloc[results.pre4ap_idxs]
-pplot.plot_hist_density(data=[baseline_responses['distance target']], fill_color = ['blue'], show_fit=False, density=False)
+
+
+# num occurrences at each distance - split by trial types
+fig, ax = plt.subplots(figsize = (5,5))
+distances = []
+for exp in np.unique(baseline_responses['expID']):
+    _distances = list(baseline_responses[baseline_responses['expID'] == exp]['distance target'])
+    distances.append(_distances)
+ax.hist(distances, 40, density=True, histtype='bar', stacked=True)
+ax.set_title('density of measurements by individual experiments')
+ax.set_xlabel('distance to target (um)')
+fig.show()
+
+
 
 # %% 5.1) plotting scatter plots of responses
 
