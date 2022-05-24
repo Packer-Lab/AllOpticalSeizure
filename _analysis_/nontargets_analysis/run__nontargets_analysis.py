@@ -3,15 +3,16 @@ import sys
 import seaborn as sns
 import matplotlib.pyplot as plt
 
-from _analysis_.nontargets_analysis._ClassPhotostimResponseQuantificationNonTargets import \
-    PhotostimResponsesNonTargetsResults, PhotostimResponsesQuantificationNonTargets
+
 from _analysis_.nontargets_analysis._ClassPhotostimResponsesAnalysisNonTargets import \
     PhotostimResponsesAnalysisNonTargets
 import funcsforprajay.plotting as pplot
+import funcsforprajay.funcs as pj
 
 import pandas as pd
 import numpy as np
 
+from _analysis_.nontargets_analysis._ClassResultsNontargetPhotostim import PhotostimResponsesNonTargetsResults
 from _main_.AllOpticalMain import alloptical
 
 import _alloptical_utils as Utils
@@ -21,6 +22,134 @@ main = PhotostimResponsesAnalysisNonTargets
 results: PhotostimResponsesNonTargetsResults = PhotostimResponsesNonTargetsResults.load()
 
 ############################## run processing/analysis/plotting: #######################################################
+
+# %% 5.2.2) make plot of average responses +/- std across space bins - interictal
+
+measurement = 'new influence response'
+
+fig, ax = plt.subplots(figsize = (4, 4))
+
+ax.axhline(y=0, ls='--', color='black', lw=1)
+ax.axvline(x=20, ls='--', color='black', lw=1)
+
+# binned shuffled distances vs. responses
+distances = results.binned_distance_vs_responses_shuffled_interictal[measurement]['distances']
+avg_binned_responses = results.binned_distance_vs_responses_shuffled_interictal[measurement]['avg binned responses']
+std_binned_responses = results.binned_distance_vs_responses_shuffled_interictal[measurement]['std binned responses']
+ax.fill_between(x=list(distances), y1=list(avg_binned_responses + std_binned_responses), y2=list(avg_binned_responses - std_binned_responses), alpha=0.1, color='orange')
+ax.plot(distances, avg_binned_responses, lw=3, color='orange')
+
+
+# binned distances vs responses
+distances = results.binned_distance_vs_responses_interictal[measurement]['distances']
+avg_binned_responses = results.binned_distance_vs_responses_interictal[measurement]['avg binned responses']
+std_binned_responses = results.binned_distance_vs_responses_interictal[measurement]['std binned responses']
+ax.fill_between(x=list(distances), y1=list(avg_binned_responses + std_binned_responses), y2=list(avg_binned_responses - std_binned_responses), alpha=0.1, color='royalblue')
+ax.plot(distances, avg_binned_responses, lw=3, color='royalblue')
+
+
+
+ax.set_title(f"{measurement} vs. distance to target - interictal", wrap=True)
+ax.set_xlim([0, 600])
+pj.lineplot_frame_options(fig=fig, ax=ax, x_label='distance to target (um)', y_label='influence of photostim')
+fig.tight_layout()
+
+fig.show()
+
+# %% 5.2) binning responses relative to distance from targets, then average the responses across binned distances
+
+# run as a results method function
+# results.binned_distances_vs_responses(measurement='new influence response')
+results.binned_distances_vs_responses_interictal(measurement='new influence response')
+
+
+# %% 5.2.1) make plot of average responses +/- std across space bins - baseline
+
+measurement = 'new influence response'
+
+fig, ax = plt.subplots(figsize = (4, 4))
+
+ax.axhline(y=0, ls='--', color='black', lw=1)
+ax.axvline(x=20, ls='--', color='black', lw=1)
+
+# binned shuffled distances vs. responses
+distances = results.binned_distance_vs_responses_shuffled[measurement]['distances']
+avg_binned_responses = results.binned_distance_vs_responses_shuffled[measurement]['avg binned responses']
+std_binned_responses = results.binned_distance_vs_responses_shuffled[measurement]['std binned responses']
+ax.fill_between(x=list(distances), y1=list(avg_binned_responses + std_binned_responses), y2=list(avg_binned_responses - std_binned_responses), alpha=0.1, color='orange')
+ax.plot(distances, avg_binned_responses, lw=3, color='orange')
+
+
+# binned distances vs responses
+distances = results.binned_distance_vs_responses[measurement]['distances']
+avg_binned_responses = results.binned_distance_vs_responses[measurement]['avg binned responses']
+std_binned_responses = results.binned_distance_vs_responses[measurement]['std binned responses']
+ax.fill_between(x=list(distances), y1=list(avg_binned_responses + std_binned_responses), y2=list(avg_binned_responses - std_binned_responses), alpha=0.1, color='royalblue')
+ax.plot(distances, avg_binned_responses, lw=3, color='royalblue')
+
+
+
+ax.set_title(f"{measurement} vs. distance to target (um)", wrap=True)
+ax.set_xlim([0, 600])
+pj.lineplot_frame_options(fig=fig, ax=ax, x_label='distance to target (um)', y_label='influence of photostim')
+fig.tight_layout()
+
+fig.show()
+
+
+
+
+
+
+
+# %% 5.1) plotting scatter plots of responses - BASELINE
+
+# fig, ax = plt.subplots(figsize=(4, 4))
+# sns.scatterplot(data=results.responses, x="distance target", y="distance sz", hue='z score response', ax=ax, hue_norm=(-6, 6),
+#                 legend='brief')
+# fig.show()
+
+
+
+
+
+fig, ax = plt.subplots(figsize=(4, 4))
+ax.scatter(results.baseline_responses["distance target"][results.post4ap_idxs], results.baseline_responses["distance sz"][results.post4ap_idxs], color='gray', alpha=0.01,
+           s=5)
+ax.set_title('distance to target vs. distance to sz - ictal')
+fig.tight_layout(pad=1.3)
+fig.show()
+
+
+fig, ax = plt.subplots(figsize=(4, 4))
+ax.scatter(results.baseline_responses["distance target"][results.pre4ap_idxs], results.baseline_responses["z score response"][results.pre4ap_idxs], color='red', alpha=0.01,
+           s=5)
+ax.set_title('distance to target vs. z score response - baseline')
+fig.tight_layout(pad=1.3)
+fig.show()
+
+
+fig, ax = plt.subplots(figsize=(4, 4))
+ax.scatter(results.baseline_responses["distance target"][results.post4ap_idxs], results.baseline_responses["z score response"][results.post4ap_idxs], color='red', alpha=0.01,
+           s=5)
+ax.set_title('distance to target vs. z score response - ictal')
+fig.tight_layout(pad=1.3)
+fig.show()
+
+
+fig, ax = plt.subplots(figsize=(4, 4))
+ax.scatter(results.baseline_responses["distance sz"][results.post4ap_idxs], results.baseline_responses["z score response"][results.post4ap_idxs], color='orange', alpha=0.01,
+           s=5)
+fig.tight_layout(pad=1.3)
+ax.set_title('distance sz vs. distance to target - ictal')
+fig.show()
+
+
+
+# %% 5.1.1) trying paired plot with seaborn -- takes too long to run actually
+
+sns.pairplot(data=results.baseline_responses, vars=['distance sz', 'distance target', 'z score response'])
+fig.show()
 
 
 # %% 5) RESPONSES of nontargets VS. DISTANCE TO NEAREST TARGET AND DISTANCE TO SZ WAVEFRONT
@@ -35,7 +164,7 @@ Objectives:
 results.collect_nontargets_stim_responses()
 
 # plot hist distribution of distances to target
-baseline_responses = results.responses.iloc[results.pre4ap_idxs]
+baseline_responses = results.baseline_responses.iloc[results.pre4ap_idxs]
 
 
 # num occurrences at each distance - split by trial types
@@ -48,128 +177,6 @@ ax.hist(distances, 40, density=True, histtype='bar', stacked=True)
 ax.set_title('density of measurements by individual experiments')
 ax.set_xlabel('distance to target (um)')
 fig.show()
-
-
-# %% 5.2) binning responses relative to distance from targets, then average the responses across binned distances
-
-# run as a results method function
-results.binned_distances_vs_responses(measurement='new influence response')
-
-# baseline_responses = results.responses.iloc[results.pre4ap_idxs]
-#
-# # binning across distance to target:
-#
-# # re-sort by distance to target
-# baseline_responses = baseline_responses.sort_values(by=['distance target'])
-#
-# # binning distances - 20um bins
-# baseline_responses['distance target binned'] = (baseline_responses['distance target'] // 20) * 20
-
-# 5.2.1)
-# average across distance bins
-# measurement = 'influence response'
-# distances = np.unique(baseline_responses['distance target binned'])
-# avg_binned_responses = []
-# std_binned_responses = []
-# for bin in distances:
-#     _idxs = np.where(baseline_responses['distance target binned'] == bin)
-#
-#     # average across all stims for each cell
-#     cells_ = np.unique(baseline_responses.iloc[_idxs]['expID_cell'])
-#     averages_cells = []
-#     for cell in cells_:
-#         _jdxs = np.where(baseline_responses.iloc[_idxs]['expID_cell'] == cell)[0]
-#         mean_cell_distance_response = np.mean(baseline_responses.iloc[_idxs].iloc[_jdxs][measurement])
-#         averages_cells.append(mean_cell_distance_response)
-#
-#     # avg_response = np.mean(baseline_responses[measurement].iloc[_idxs])
-#     # std_response = np.std(baseline_responses[measurement].iloc[_idxs], ddof=1)
-#
-#     avg_response = np.mean(averages_cells)
-#     std_response = np.std(averages_cells, ddof=1)
-#
-#     avg_binned_responses.append(avg_response)
-#     std_binned_responses.append(std_response)
-# avg_binned_responses = np.asarray(avg_binned_responses)
-# std_binned_responses = np.asarray(std_binned_responses)
-#
-# results.binned_distance_vs_responses = {
-#     'distances': distances,
-#     'avg responses': avg_binned_responses,
-#     'std responses': std_binned_responses
-# }
-#
-# results.save_results()
-
-# %% make plot of average responses +/- std across space bins
-
-measurement = 'photostim response'
-distances = results.binned_distance_vs_responses[measurement]['distances']
-avg_binned_responses = results.binned_distance_vs_responses[measurement]['avg binned responses']
-std_binned_responses = results.binned_distance_vs_responses[measurement]['std binned responses']
-
-fig, ax = plt.subplots(figsize = (5, 3))
-ax.fill_between(x=list(distances), y1=list(avg_binned_responses + std_binned_responses), y2=list(avg_binned_responses - std_binned_responses), alpha=0.1)
-ax.plot(distances, avg_binned_responses)
-ax.set_title(f"{measurement} vs. distance to target (um)")
-ax.axhline(y=0, ls='--')
-ax.set_xlim([0, 400])
-fig.show()
-
-
-
-
-
-
-# %% 5.1) plotting scatter plots of responses
-
-# fig, ax = plt.subplots(figsize=(4, 4))
-# sns.scatterplot(data=results.responses, x="distance target", y="distance sz", hue='z score response', ax=ax, hue_norm=(-6, 6),
-#                 legend='brief')
-# fig.show()
-
-
-
-
-
-fig, ax = plt.subplots(figsize=(4, 4))
-ax.scatter(results.responses["distance target"][results.post4ap_idxs], results.responses["distance sz"][results.post4ap_idxs], color='gray', alpha=0.01,
-           s=5)
-ax.set_title('distance to target vs. distance to sz - ictal')
-fig.tight_layout(pad=1.3)
-fig.show()
-
-
-fig, ax = plt.subplots(figsize=(4, 4))
-ax.scatter(results.responses["distance target"][results.pre4ap_idxs], results.responses["z score response"][results.pre4ap_idxs], color='red', alpha=0.01,
-           s=5)
-ax.set_title('distance to target vs. z score response - baseline')
-fig.tight_layout(pad=1.3)
-fig.show()
-
-
-fig, ax = plt.subplots(figsize=(4, 4))
-ax.scatter(results.responses["distance target"][results.post4ap_idxs], results.responses["z score response"][results.post4ap_idxs], color='red', alpha=0.01,
-           s=5)
-ax.set_title('distance to target vs. z score response - ictal')
-fig.tight_layout(pad=1.3)
-fig.show()
-
-
-fig, ax = plt.subplots(figsize=(4, 4))
-ax.scatter(results.responses["distance sz"][results.post4ap_idxs], results.responses["z score response"][results.post4ap_idxs], color='orange', alpha=0.01,
-           s=5)
-fig.tight_layout(pad=1.3)
-ax.set_title('distance sz vs. distance to target - ictal')
-fig.show()
-
-
-
-# %% 5.1.1) trying paired plot with seaborn -- takes too long to run actually
-
-sns.pairplot(data=results.responses, vars=['distance sz', 'distance target', 'z score response'])
-fig.show()
-
 
 # %% 0) processing alloptical photostim and fakestim responses
 

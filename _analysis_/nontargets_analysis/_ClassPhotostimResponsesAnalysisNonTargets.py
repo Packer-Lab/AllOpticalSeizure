@@ -1,8 +1,6 @@
 import sys
 
-from _analysis_.nontargets_analysis._ClassPhotostimResponseQuantificationNonTargets import \
-    PhotostimResponsesNonTargetsResults, \
-    PhotostimResponsesQuantificationNonTargets, FakeStimsQuantification
+from _analysis_.nontargets_analysis._ClassPhotostimResponseQuantificationNonTargets import PhotostimResponsesQuantificationNonTargets, FakeStimsQuantification
 from _exp_metainfo_.exp_metainfo import SAVE_LOC
 
 sys.path.extend(['/home/pshah/Documents/code/AllOpticalSeizure', '/home/pshah/Documents/code/AllOpticalSeizure'])
@@ -61,7 +59,9 @@ class PhotostimResponsesAnalysisNonTargets(PhotostimResponsesQuantificationNonTa
 
     """
 
-    def __init__(self, expobj: Union[alloptical, Post4ap], results: PhotostimResponsesNonTargetsResults):
+    def __init__(self, expobj: Union[alloptical, Post4ap], results):
+        from _analysis_.nontargets_analysis._ClassResultsNontargetPhotostim import PhotostimResponsesNonTargetsResults
+        results: PhotostimResponsesNonTargetsResults
         super().__init__(expobj=expobj, results=results)
 
     @staticmethod
@@ -235,8 +235,10 @@ class PhotostimResponsesAnalysisNonTargets(PhotostimResponsesQuantificationNonTa
 
     # 2.2) PLOT -- BAR PLOT OF AVG MAGNITUDE OF RESPONSE
     @staticmethod
-    def collect__avg_magnitude_response(results: PhotostimResponsesNonTargetsResults, collect_baseline_responders=False):
+    def collect__avg_magnitude_response(results, collect_baseline_responders=False):
         """plot bar plot of avg magnitude of statistically significant responders across baseline and interictal, split up by positive and negative responders"""
+        from _analysis_.nontargets_analysis._ClassResultsNontargetPhotostim import PhotostimResponsesNonTargetsResults
+        results: PhotostimResponsesNonTargetsResults
 
         @Utils.run_for_loop_across_exps(run_pre4ap_trials=1, run_post4ap_trials=0, set_cache=0,
                                         skip_trials=PhotostimResponsesQuantificationNonTargets.EXCLUDE_TRIALS)
@@ -335,12 +337,14 @@ class PhotostimResponsesAnalysisNonTargets(PhotostimResponsesQuantificationNonTa
         results.save_results()
 
     @staticmethod
-    def plot__avg_magnitude_response(results: PhotostimResponsesNonTargetsResults, plot_baseline_responders=False):
+    def plot__avg_magnitude_response(results, plot_baseline_responders=False):
         """plot bar plot of avg magnitude of statistically significant responders across baseline and interictal, split up by positive and negative responders
         :param results:
         :param plot_baseline_responders: if True, for post-4ap exp, use the baseline responders' avgtraces magnitude for interictal and ictal groups
 
         """
+        from _analysis_.nontargets_analysis._ClassResultsNontargetPhotostim import PhotostimResponsesNonTargetsResults
+        results: PhotostimResponsesNonTargetsResults
 
         if plot_baseline_responders:
             results_to_plot = results.avg_baseline_responders_magnitude
@@ -363,9 +367,12 @@ class PhotostimResponsesAnalysisNonTargets(PhotostimResponsesQuantificationNonTa
 
     # 2.3) PLOT -- BAR PLOT OF AVG TOTAL NUMBER OF POS. AND NEG RESPONSIVE CELLS
     @staticmethod
-    def collect__avg_num_response(results: PhotostimResponsesNonTargetsResults):
+    def collect__avg_num_response(results):
         """
         collect: avg num of statistically significant responders across baseline and interictal, split up by positive and negative responders"""
+
+        from _analysis_.nontargets_analysis._ClassResultsNontargetPhotostim import PhotostimResponsesNonTargetsResults
+        results: PhotostimResponsesNonTargetsResults
 
         @Utils.run_for_loop_across_exps(run_pre4ap_trials=1, run_post4ap_trials=0, set_cache=0,
                                         skip_trials=PhotostimResponsesQuantificationNonTargets.EXCLUDE_TRIALS)
@@ -440,8 +447,11 @@ class PhotostimResponsesAnalysisNonTargets(PhotostimResponsesQuantificationNonTa
         results.save_results()
 
     @staticmethod
-    def plot__avg_num_responders(results: PhotostimResponsesNonTargetsResults):
+    def plot__avg_num_responders(results):
         """plot bar plot of avg number of statistically significant responders across baseline and interictal, split up by positive and negative responders"""
+        from _analysis_.nontargets_analysis._ClassResultsNontargetPhotostim import PhotostimResponsesNonTargetsResults
+        results: PhotostimResponsesNonTargetsResults
+
         pplot.plot_bar_with_points(
             data=[results.avg_responders_num['baseline_positive'], results.avg_responders_num['interictal_positive'],
                   results.avg_responders_num['ictal_positive']],
@@ -566,9 +576,9 @@ class PhotostimResponsesAnalysisNonTargets(PhotostimResponsesQuantificationNonTa
             # summed_response_negative_interictal = list(np.sum(__negative_responders_responses,
             #                                                   axis=0))  #: summed response across all negative responders at each photostim trial
 
-            fakestims_network_mean_activity_interictal = list(
-                np.mean(self.adata.layers['nontargets fakestim_responses'][:, expobj.stim_idx_outsz],
-                       axis=0))  #: summed responses across all nontargets at each photostim trial
+            # fakestims_network_mean_activity_interictal = list(
+            #     np.mean(self.adata.layers['nontargets fakestim_responses'][:, expobj.stim_idx_outsz],
+            #            axis=0))  #: summed responses across all nontargets at each photostim trial
 
             # ictal
             # __positive_responders_responses = self.adata.X[self.adata.obs['positive_responder_ictal']] - leaving out for now.... there's a bunch of background work that needs to be done to figure this out with matching cells between pre4ap...post4ap...
@@ -579,9 +589,9 @@ class PhotostimResponsesAnalysisNonTargets(PhotostimResponsesQuantificationNonTa
             # summed_response_negative_ictal = list(np.sum(__negative_responders_responses,
             #                                              axis=0))  #: summed response across all negative responders at each photostim trial
 
-            fakestims_network_mean_activity_ictal = list(
-                np.mean(self.adata.layers['nontargets fakestim_responses'][:, expobj.stim_idx_insz],
-                       axis=0))  #: summed responses across all nontargets at each photostim trial
+            # fakestims_network_mean_activity_ictal = list(
+            #     np.mean(self.adata.layers['nontargets fakestim_responses'][:, expobj.stim_idx_insz],
+            #            axis=0))  #: summed responses across all nontargets at each photostim trial
 
             # add as var to anndata
             self.adata.add_variable(var_name='mean_nontargets_responses', values=network_mean_activity)
@@ -628,7 +638,7 @@ class PhotostimResponsesAnalysisNonTargets(PhotostimResponsesQuantificationNonTa
 
     @staticmethod
     def run__summed_responses(rerun=0):
-        @Utils.run_for_loop_across_exps(run_pre4ap_trials=1, run_post4ap_trials=0, allow_rerun=rerun,
+        @Utils.run_for_loop_across_exps(run_pre4ap_trials=0, run_post4ap_trials=1, allow_rerun=rerun,
                                         skip_trials=PhotostimResponsesQuantificationNonTargets.EXCLUDE_TRIALS, )
         # run_trials=PhotostimResponsesQuantificationNonTargets.TEST_TRIALS)
         def _run__summed_responses(**kwargs):
@@ -736,7 +746,9 @@ class PhotostimResponsesAnalysisNonTargets(PhotostimResponsesQuantificationNonTa
 
     # 3.2) plot - scatter plot of total evoked activity on trial vs. total activity of SLM targets on same trial - split up based on groups - z scored - all trials
     @staticmethod
-    def collect__zscored_summed_activity_vs_targets_activity(results: PhotostimResponsesNonTargetsResults):
+    def collect__zscored_summed_activity_vs_targets_activity(results):
+        from _analysis_.nontargets_analysis._ClassResultsNontargetPhotostim import PhotostimResponsesNonTargetsResults
+        results: PhotostimResponsesNonTargetsResults
 
         # pre4ap - baseline
         @Utils.run_for_loop_across_exps(run_pre4ap_trials=True, run_post4ap_trials=False, allow_rerun=0,
@@ -1029,8 +1041,11 @@ class PhotostimResponsesAnalysisNonTargets(PhotostimResponsesQuantificationNonTa
             results.save_results()
 
     @staticmethod
-    def plot__summed_activity_vs_targets_activity(results: PhotostimResponsesNonTargetsResults):
+    def plot__summed_activity_vs_targets_activity(results):
         """scatter plot of stim trials comparing zscored summed activity of targets and zscored summed activity of nontargets. during baseline and interictal. includes fakestims trial as well."""
+        from _analysis_.nontargets_analysis._ClassResultsNontargetPhotostim import PhotostimResponsesNonTargetsResults
+        results: PhotostimResponsesNonTargetsResults
+
         # make plots
 
         # SCATTER PLOT OF DATAPOINTS

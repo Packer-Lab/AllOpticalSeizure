@@ -25,259 +25,6 @@ SAVE_LOC = "/home/pshah/mnt/qnap/Analysis/analysis_export/analysis_quantificatio
 
 # %%  ###### NON TARGETS analysis + plottings
 
-class PhotostimResponsesNonTargetsResults(Results):
-    SAVE_PATH = SAVE_LOC + 'Results__PhotostimResponsesNonTargets.pkl'
-
-    def __init__(self):
-        super().__init__()
-
-        self.summed_responses = {}  #: dictionary of baseline and interictal summed responses of targets and nontargets across experiments
-        self.lin_reg_summed_responses = {}  #: dictionary of baseline and interictal linear regression metrics for relating total targets responses and nontargets responses across experiments
-        self.avg_responders_num = None  #: average num responders, for pairedmatched experiments between baseline pre4ap and interictal
-        self.avg_baseline_responders_magnitude = None  #: average response magnitude, for pairedmatched experiments between baseline pre4ap and interictal - collected for cell ids that were sig responders in baseline
-        self.avg_responders_magnitude = None  #: average response magnitude, for pairedmatched experiments between baseline pre4ap and interictal
-        self.sig_units_baseline = {}  #: dictionary of sig responder units for each baseline exp trial
-        self.sig_units_interictal = {}  #: dictionary of sig responder units for the interictal condition
-        self.responses: pd.DataFrame = pd.DataFrame(
-            {})  #: dataframe of containing individual cell responses, distance to target, distance to sz
-        self.binned_distance_vs_responses: dict = {}
-
-    def __repr__(self):
-        return f"PhotostimResponsesNonTargetsResults <- Results Analysis Object"
-
-    @property
-    def pre4ap_idxs(self):
-        # pre4ap
-        idxs = np.where(self.responses['stim_group'] == 'baseline')[0]
-        # idxs_2 = np.where(self.responses['distance target'][idxs] < 300)[0]
-        return idxs
-
-    @property
-    def pre4ap300(self):
-        # pre4ap
-        idxs = np.where(self.responses['stim_group'] == 'baseline')[0]
-        idxs_2 = np.where(self.responses['distance target'][idxs] < 300)[0]
-        return idxs_2
-
-    @property
-    def post4ap_idxs(self):
-        # ictal
-        idx = np.where(self.responses['stim_group'] != 'baseline')[0]
-        idxs_2 = np.where(self.responses['distance target'][idx] < 300)[0]
-        return idxs_2
-
-    def collect_nontargets_stim_responses(results):
-        """collecting responses of nontargets relative to various variables (see dataframe below)."""
-        df = pd.DataFrame(
-            columns=['expID', 'expID_cell', 'stim_idx', 'stim_group', 'photostim response', 'z score response',
-                     'distance target', 'distance sz', 'influence response', 'new influence response', 'fakestim response',
-                     'sz distance group'])
-
-        # PRE 4AP TRIALS
-        @Utils.run_for_loop_across_exps(run_pre4ap_trials=True, set_cache=0,
-                                        skip_trials=PhotostimResponsesQuantificationNonTargets.EXCLUDE_TRIALS)
-        def _collect_responses_distancetarget(**kwargs):
-            expobj: alloptical = kwargs['expobj']
-            # exp_df_ = pd.DataFrame(columns=['expID_cell', 'stim_idx','z score response', 'distance target', 'distance sz'])
-
-            z_scored_response = expobj.PhotostimResponsesNonTargets.adata.layers['nontargets responses z scored']
-            photostim_response = expobj.PhotostimResponsesNonTargets.adata.X
-            fakestim_response = expobj.PhotostimResponsesNonTargets.adata.layers['nontargets fakestim_responses']
-            distance_targets = expobj.PhotostimResponsesNonTargets.adata.obs['distance to nearest target (um)']
-            mean_nontargets_responses = expobj.PhotostimResponsesNonTargets.adata.var['mean_nontargets_responses']
-            std_nontargets_responses = expobj.PhotostimResponsesNonTargets.adata.var['std_nontargets_responses']
-
-
-
-            ## Chettih - influence metric type analysis of nontargets response:
-            print('\-calculating Chettih style influence....')
-            influence = np.zeros_like(photostim_response)
-            for i, cell_i in enumerate(expobj.PhotostimResponsesNonTargets.adata.obs.index):
-                cell_i = int(cell_i)
-                mean_inf = expobj.PhotostimResponsesNonTargets.adata.X[i, :] - np.mean(fakestim_response[i, :])
-                inf_norm = mean_inf / np.std(mean_inf, ddof=1)
-                influence[i, :] = inf_norm
-
-
-            ## a new influence metric analysis of nontargets response - that leverages the widescale changes in variability:
-            print('\-calculating new z score style influence response....')
-            new_influence = np.zeros_like(photostim_response)
-            for i, cell_i in enumerate(expobj.PhotostimResponsesNonTargets.adata.obs.index):
-                cell_i = int(cell_i)
-
-                new_inf = (expobj.PhotostimResponsesNonTargets.adata.X[i, :] - mean_nontargets_responses) / std_nontargets_responses
-                inf_norm = new_inf / np.std(new_inf, ddof=1)  # not sure yet if i need to be normalizing to the total variability of this or not???
-                new_influence[i, :] = new_inf
-
-
-
-            collect_df = []
-            print('\-collecting datapoints....')
-            for i, cell in enumerate(expobj.PhotostimResponsesNonTargets.adata.obs['original_index']):
-                for stim_idx in np.where(expobj.PhotostimResponsesNonTargets.adata.var['stim_group'] == 'baseline')[0]:
-                    _cell_df = pd.DataFrame({
-                        'expID': f'{expobj.t_series_name}',
-                        'expID_cell': f'{expobj.t_series_name}_{cell}',
-                        'stim_idx': stim_idx,
-                        'stim_group': 'baseline',
-                        'photostim response': photostim_response[i, stim_idx],
-                        'fakestim response': fakestim_response[i, stim_idx],
-                        'z score response': z_scored_response[i, stim_idx],
-                        'influence response': influence[i, stim_idx],
-                        'new influence response': influence[i, stim_idx],
-                        'distance target': distance_targets[int(i)],
-                        'distance sz': None,
-                        'sz distance group': None,
-                    }, index=[expobj.t_series_name])
-
-                    collect_df.append(_cell_df)
-
-            exp_df_ = pd.concat(collect_df)
-
-            return exp_df_
-
-        func_collector = _collect_responses_distancetarget()
-        for exp_df in func_collector:
-            df = pd.concat([df, exp_df])
-
-        results.responses = df
-        results.save_results()
-
-        # POST 4AP TRIALS
-        @Utils.run_for_loop_across_exps(run_post4ap_trials=True, set_cache=0,
-                                        skip_trials=PhotostimResponsesQuantificationNonTargets.EXCLUDE_TRIALS)
-        def _collect_responses_distancetarget_distancesz(**kwrags):
-            expobj: Post4ap = kwrags['expobj']
-            # exp_df_ = pd.DataFrame(columns=['expID_cell', 'stim_idx', 'z score response', 'distance target', 'distance sz'])
-
-            # find overlapping cells across processed dataset - actually not sure why there isn't 100% overlap but c'st la vie
-            _responses_idx = [idx for idx, cell in
-                              enumerate(tuple(expobj.PhotostimResponsesNonTargets.adata.obs['original_index'])) if
-                              cell in tuple(expobj.NonTargetsSzInvasionSpatial.adata.obs['original_index'])]
-            # _spatial_idx = [idx for idx, cell in enumerate(tuple(expobj.NonTargetsSzInvasionSpatial.adata.obs['original_index'])) if cell in tuple(expobj.PhotostimResponsesNonTargets.adata.obs['original_index'])]
-
-            assert tuple(expobj.PhotostimResponsesNonTargets.adata.var_names) == tuple(
-                expobj.NonTargetsSzInvasionSpatial.adata.var_names), 'mismatching stim indexes in photostim nontargets responses and distance to sz measured for cells'
-
-            z_scored_response = expobj.PhotostimResponsesNonTargets.adata.layers[
-                'nontargets responses z scored (to baseline)']
-            photostim_response = expobj.PhotostimResponsesNonTargets.adata.X
-            sz_distance_groups = expobj.NonTargetsSzInvasionSpatial.adata.layers['outsz location']
-
-            collect_df = []
-            for i in _responses_idx:
-                for stim_idx in np.where(expobj.PhotostimResponsesNonTargets.adata.var['stim_group'] == 'ictal')[0]:
-                    cell = expobj.PhotostimResponsesNonTargets.adata.obs['original_index'][i]
-
-                    # _spatial_idx = expobj.NonTargetsSzInvasionSpatial.adata.obs['original_index'][expobj.NonTargetsSzInvasionSpatial.adata.obs['original_index'] == cell].index[0]
-                    _sz_idx = list(expobj.NonTargetsSzInvasionSpatial.adata.obs['original_index']).index(cell)
-                    _target_distance_idx = list(expobj.PhotostimResponsesNonTargets.adata.obs['original_index']).index(
-                        cell)
-
-                    if not np.isnan(expobj.NonTargetsSzInvasionSpatial.adata.X[int(_sz_idx), stim_idx]) and \
-                            expobj.NonTargetsSzInvasionSpatial.adata.X[int(_sz_idx), stim_idx] > 0:
-                        _cell_df = pd.DataFrame({
-                            'expID': f'{expobj.t_series_name}',
-                            'expID_cell': f'{expobj.t_series_name}_{cell}',
-                            'stim_idx': stim_idx,
-                            'stim_group':
-                                expobj.PhotostimResponsesNonTargets.adata.var['stim_group'][
-                                    stim_idx],
-                            'photostim response': photostim_response[i, stim_idx],
-                            'z score response': z_scored_response[i, stim_idx],
-                            'distance target': expobj.PhotostimResponsesNonTargets.adata.obs[
-                                'distance to nearest target (um)'][int(_target_distance_idx)],
-                            'distance sz': expobj.NonTargetsSzInvasionSpatial.adata.X[
-                                int(_sz_idx), stim_idx],
-                            'sz distance group': sz_distance_groups[int(_sz_idx), stim_idx]
-                        }, index=[expobj.t_series_name])
-
-                        collect_df.append(_cell_df)
-
-            exp_df_ = pd.concat(collect_df)
-
-            return exp_df_
-
-        # func_collector = _collect_responses_distancetarget_distancesz()
-        # for exp_df in func_collector:
-        #     df = pd.concat([df, exp_df])
-        #
-        # results.responses = df
-        # results.save_results()
-
-
-    def binned_distances_vs_responses(results, measurement = 'photostim response'):
-        """
-
-        use the specified response measurement argument.
-        - bin the dataframe across distance
-        - for each distance bin:
-            - for each nontarget cell:
-                - calculate average measurement response across all stims
-            - collect average and std measurement response across all cells in current distance bin
-
-        :param measurement:
-        :return:
-        """
-
-        # CURRENT SETUP FOR BASELINE RESPONSES ONLY!! ************
-        baseline_responses = results.responses.iloc[results.pre4ap_idxs]
-
-        # binning across distance to target:
-
-        # re-sort by distance to target
-        baseline_responses = baseline_responses.sort_values(by=['distance target'])
-
-        # binning distances - 20um bins
-        baseline_responses['distance target binned'] = (baseline_responses['distance target'] // 20) * 20
-
-        # average across distance bins
-        # measurement = 'influence response'
-        assert measurement in baseline_responses.columns, f'measurement not found in responses df columns:\n\t {baseline_responses.columns}'
-        print(f'\- processing measurement: {measurement}')
-        distances = np.unique(baseline_responses['distance target binned'])
-        avg_binned_responses = []
-        std_binned_responses = []
-        for bin in distances:
-            print(f'\t\- processing distance bin: {bin}')
-            _idxs = np.where(baseline_responses['distance target binned'] == bin)
-
-            # average across all stims for each cell
-            cells_ = np.unique(baseline_responses.iloc[_idxs]['expID_cell'])
-            averages_cells = []
-            for cell in cells_:
-                _jdxs = np.where(baseline_responses.iloc[_idxs]['expID_cell'] == cell)[0]
-                mean_cell_distance_response = np.mean(baseline_responses.iloc[_idxs].iloc[_jdxs][measurement])
-                averages_cells.append(mean_cell_distance_response)
-
-            # avg_response = np.mean(baseline_responses[measurement].iloc[_idxs])
-            # std_response = np.std(baseline_responses[measurement].iloc[_idxs], ddof=1)
-
-            avg_response = np.mean(averages_cells)
-            std_response = np.std(averages_cells, ddof=1)
-
-            avg_binned_responses.append(avg_response)
-            std_binned_responses.append(std_response)
-        avg_binned_responses = np.asarray(avg_binned_responses)
-        std_binned_responses = np.asarray(std_binned_responses)
-
-
-        if not results.binned_distance_vs_responses:
-            results.binned_distance_vs_responses = {}
-
-
-        results.binned_distance_vs_responses[measurement] = {'distances': distances,
-                          'avg binned responses': avg_binned_responses,
-                          'std binned responses': std_binned_responses}
-
-
-        results.save_results()
-
-
-REMAKE = False
-if not os.path.exists(PhotostimResponsesNonTargetsResults.SAVE_PATH) or REMAKE:
-    results = PhotostimResponsesNonTargetsResults()
-    results.save_results()
 
 
 ######
@@ -365,16 +112,19 @@ class PhotostimResponsesQuantificationNonTargets(Quantification):
 
     REPRESENTATIVE_TRIALS = ['PS07 t-007', 'PS07 t-011']
     TEST_TRIALS = [
-        # 'RL108 t-009',
+        'RL108 t-009',
         'RL108 t-013'
     ]
+    PRE4AP_TEST = 'RL108 t-009'
+    POST4AP_TEST = 'RL108 t-013'
 
-    def __init__(self, results: PhotostimResponsesNonTargetsResults, expobj: Union[alloptical, Post4ap]):
+    def __init__(self, results, expobj: Union[alloptical, Post4ap]):
         super().__init__(expobj)
 
         # self = expobj.PhotostimResponsesNonTargets  # temp during testing, can remove when running all experiments.
         # if self.responders is None:  # temp during testing, can remove when running all experiments.
-
+        from _analysis_.nontargets_analysis._ClassResultsNontargetPhotostim import PhotostimResponsesNonTargetsResults
+        results: PhotostimResponsesNonTargetsResults
         self.diff_responses = None  #: subtraction of stim responses post array with stim responses pre array (direct diff. of post-stim - pre-stim value for each nontarget across all stims)
         self.wilcoxons = None
         self.sig_units = None
@@ -478,8 +228,10 @@ class PhotostimResponsesQuantificationNonTargets(Quantification):
 
     # 0) PRIMARY ANALYSIS OF NON-TARGETS IN ALL OPTICAL EXPERIMENTS.
 
-    def _allopticalAnalysisNontargets(self, expobj: Union[alloptical, Post4ap],
-                                      results: PhotostimResponsesNonTargetsResults):
+    def _allopticalAnalysisNontargets(self, expobj: Union[alloptical, Post4ap], results):
+        from _analysis_.nontargets_analysis._ClassResultsNontargetPhotostim import PhotostimResponsesNonTargetsResults
+        results: PhotostimResponsesNonTargetsResults
+
         if 'pre' in expobj.exptype:
             # todo, deprecate use of self.sig_units in favor of self.responders (do it slowly as you come across each bit of code)
             self.diff_responses, self.wilcoxons, self.sig_units, self.responders = expobj._trialProcessing_nontargets(
@@ -1191,14 +943,14 @@ class PhotostimResponsesQuantificationNonTargets(Quantification):
             self.post4ap_num_pos_ictal = self.post4ap_possig_responders_avgtraces_ictal.shape[0]
             self.post4ap_num_neg_ictal = self.post4ap_negsig_responders_avgtraces_ictal.shape[0]
 
-    def collect__sig_responders_responses_type2(self, expobj: Union[alloptical, Post4ap],
-                                                results: PhotostimResponsesNonTargetsResults):
+    def collect__sig_responders_responses_type2(self, expobj: Union[alloptical, Post4ap], results):
         """
         Collect responses traces of statistically significant positive and negative photostimulation timed followers. Also collect response magnitude of all pos. and neg. responders for all stims.
 
         type 2: collect across conditions, but using responders that are statistically significant in baseline.
         """
-
+        from _analysis_.nontargets_analysis._ClassResultsNontargetPhotostim import PhotostimResponsesNonTargetsResults
+        results: PhotostimResponsesNonTargetsResults
         # todo troubleshoot RL109 t018 post4ap (not an issue for pre4ap) issue with the pre-stim part of the average trace not existing on the plot (goes straight into the zero'd photostim part...)
 
         print(f"\--- Collecting sig. responders responses (type2) ")
@@ -1432,6 +1184,7 @@ class PhotostimResponsesQuantificationNonTargets(Quantification):
 # %%
 if __name__ == '__main__':
     # expobj: Post4ap = Utils.import_expobj(exp_prep='RL108 t-013')
+    from _analysis_.nontargets_analysis._ClassResultsNontargetPhotostim import PhotostimResponsesNonTargetsResults
 
     main = PhotostimResponsesQuantificationNonTargets
     results: PhotostimResponsesNonTargetsResults = PhotostimResponsesNonTargetsResults.load()
