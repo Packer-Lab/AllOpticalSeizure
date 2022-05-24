@@ -22,6 +22,41 @@ main = PhotostimResponsesAnalysisNonTargets
 results: PhotostimResponsesNonTargetsResults = PhotostimResponsesNonTargetsResults.load()
 
 ############################## run processing/analysis/plotting: #######################################################
+# %% 5) RESPONSES of nontargets VS. DISTANCE TO NEAREST TARGET AND DISTANCE TO SZ WAVEFRONT
+"""
+Objectives:
+[ ] - scatter plot of nontargets responses (z scored (to baseline)) vs., distance to nearest targets and distance to sz wavefront
+[ ] - binned 2D histogram of nontargets responses (z scored (to baseline)) vs., distance to nearest targets and distance to sz wavefront
+
+"""
+
+# 5.0) run processing + create dataframe of nontargets responses across stim groups and distances to targets:
+results.collect_nontargets_stim_responses(run_post4ap=True)
+
+# 5.2) binning responses relative to distance from targets, then average the responses across binned distances
+
+# run as a results method function
+# results.binned_distances_vs_responses(measurement='new influence response')
+results.binned_distances_vs_responses_interictal(measurement='new influence response')
+
+# %% 5.0) plotting
+# plot hist distribution of distances to target
+baseline_responses = results.baseline_responses.iloc[results.pre4ap_idxs]
+
+
+# num occurrences at each distance - split by trial types
+fig, ax = plt.subplots(figsize = (5,5))
+distances = []
+for exp in np.unique(baseline_responses['expID']):
+    _distances = list(baseline_responses[baseline_responses['expID'] == exp]['distance target'])
+    distances.append(_distances)
+ax.hist(distances, 40, density=True, histtype='bar', stacked=True)
+ax.set_title('density of measurements by individual experiments')
+ax.set_xlabel('distance to target (um)')
+fig.show()
+
+
+
 
 # %% 5.2.2) make plot of average responses +/- std across space bins - interictal
 
@@ -55,12 +90,6 @@ pj.lineplot_frame_options(fig=fig, ax=ax, x_label='distance to target (um)', y_l
 fig.tight_layout()
 
 fig.show()
-
-# %% 5.2) binning responses relative to distance from targets, then average the responses across binned distances
-
-# run as a results method function
-# results.binned_distances_vs_responses(measurement='new influence response')
-results.binned_distances_vs_responses_interictal(measurement='new influence response')
 
 
 # %% 5.2.1) make plot of average responses +/- std across space bins - baseline
@@ -152,31 +181,7 @@ sns.pairplot(data=results.baseline_responses, vars=['distance sz', 'distance tar
 fig.show()
 
 
-# %% 5) RESPONSES of nontargets VS. DISTANCE TO NEAREST TARGET AND DISTANCE TO SZ WAVEFRONT
-"""
-Objectives:
-[ ] - scatter plot of nontargets responses (z scored (to baseline)) vs., distance to nearest targets and distance to sz wavefront
-[ ] - binned 2D histogram of nontargets responses (z scored (to baseline)) vs., distance to nearest targets and distance to sz wavefront
 
-"""
-
-# run processing:
-results.collect_nontargets_stim_responses()
-
-# plot hist distribution of distances to target
-baseline_responses = results.baseline_responses.iloc[results.pre4ap_idxs]
-
-
-# num occurrences at each distance - split by trial types
-fig, ax = plt.subplots(figsize = (5,5))
-distances = []
-for exp in np.unique(baseline_responses['expID']):
-    _distances = list(baseline_responses[baseline_responses['expID'] == exp]['distance target'])
-    distances.append(_distances)
-ax.hist(distances, 40, density=True, histtype='bar', stacked=True)
-ax.set_title('density of measurements by individual experiments')
-ax.set_xlabel('distance to target (um)')
-fig.show()
 
 # %% 0) processing alloptical photostim and fakestim responses
 

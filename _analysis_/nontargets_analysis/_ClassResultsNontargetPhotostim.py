@@ -1,5 +1,7 @@
 import sys
 
+from _exp_metainfo_.exp_metainfo import AllOpticalExpsToAnalyze
+
 sys.path.extend(['/home/pshah/Documents/code/AllOpticalSeizure', '/home/pshah/Documents/code/AllOpticalSeizure'])
 
 import os
@@ -70,7 +72,7 @@ class PhotostimResponsesNonTargetsResults(Results):
         # idxs_2 = np.where(self.interictal_responses['distance target'][idx] < 300)[0]
         return idx
 
-    def collect_nontargets_stim_responses(results):
+    def collect_nontargets_stim_responses(results, run_pre4ap=False, run_post4ap=False):
         """collecting responses of nontargets relative to various variables (see dataframe below)."""
         from _analysis_.nontargets_analysis._ClassPhotostimResponseQuantificationNonTargets import \
             PhotostimResponsesQuantificationNonTargets
@@ -81,7 +83,7 @@ class PhotostimResponsesNonTargetsResults(Results):
                      'fakestim response',
                      'sz distance group'])
 
-        # PRE 4AP TRIALS
+        # PRE 4AP TRIALS ############################################################################################
         @Utils.run_for_loop_across_exps(run_pre4ap_trials=True, set_cache=0,
                                         skip_trials=PhotostimResponsesQuantificationNonTargets.EXCLUDE_TRIALS)
         def _collect_responses_distancetarget(**kwargs):
@@ -141,14 +143,15 @@ class PhotostimResponsesNonTargetsResults(Results):
 
             return exp_df_
 
-        # func_collector = _collect_responses_distancetarget()
-        # for exp_df in func_collector:
-        #     df = pd.concat([df, exp_df])
-        #
-        # results.baseline_responses = df
-        # results.save_results()
+        if run_pre4ap:
+            func_collector = _collect_responses_distancetarget()
+            for exp_df in func_collector:
+                df = pd.concat([df, exp_df])
 
-        # POST 4AP TRIALS - interictal todo need to run collecting new influence response
+            results.baseline_responses = df
+            results.save_results()
+
+        # POST 4AP TRIALS - interictal todo need to run collecting new influence response ############################################################################################
         @Utils.run_for_loop_across_exps(run_post4ap_trials=True, set_cache=0,
                                         skip_trials=PhotostimResponsesQuantificationNonTargets.EXCLUDE_TRIALS)
         def _collect_responses_distancetarget_distancesz_interictal(**kwrags):
@@ -169,9 +172,26 @@ class PhotostimResponsesNonTargetsResults(Results):
 
             z_scored_response = expobj.PhotostimResponsesNonTargets.adata.layers['nontargets responses z scored (to baseline)']
             photostim_response = expobj.PhotostimResponsesNonTargets.adata.X
+            fakestim_response = expobj.PhotostimResponsesNonTargets.adata.layers['nontargets fakestim_responses']
+            distance_targets = expobj.PhotostimResponsesNonTargets.adata.obs['distance to nearest target (um)']
             sz_distance_groups = expobj.NonTargetsSzInvasionSpatial.adata.layers['outsz location']
             mean_nontargets_responses = expobj.PhotostimResponsesNonTargets.adata.var['mean_nontargets_responses']
             std_nontargets_responses = expobj.PhotostimResponsesNonTargets.adata.var['std_nontargets_responses']
+
+
+            ## Chettih - influence metric type analysis of nontargets response:
+            #   - for interictal, the Chettih "control site" stim is going to be the baseline mean response of the cell...
+            print('\-calculating Chettih style influence....')
+            pre4ap_trial = AllOpticalExpsToAnalyze.find_matched_trial(post4ap_trial_name=expobj.t_series_name)
+            pre4ap_trial: alloptical = Utils.import_expobj(exp_prep=pre4ap_trial)
+            assert tuple(expobj.PhotostimResponsesNonTargets.adata.obs_names) == tuple(pre4ap_trial.PhotostimResponsesNonTargets.adata.obs_names), 'mismatch of post4ap (current trial) and matched pre4ap trials adata nontarget responses cells...'
+            influence = np.zeros_like(photostim_response)
+            for i, cell_i in enumerate(expobj.PhotostimResponsesNonTargets.adata.obs.index):
+
+                cell_i = int(cell_i)
+                mean_inf = expobj.PhotostimResponsesNonTargets.adata.X[i, :] - np.mean(pre4ap_trial.PhotostimResponsesNonTargets.adata.X[i, :])
+                inf_norm = mean_inf / np.std(mean_inf, ddof=1)
+                influence[i, :] = inf_norm
 
 
             ## a new influence metric analysis of nontargets response - that leverages the widescale changes in variability:
@@ -197,57 +217,42 @@ class PhotostimResponsesNonTargetsResults(Results):
                     _target_distance_idx = list(expobj.PhotostimResponsesNonTargets.adata.obs['original_index']).index(
                         cell)
 
-                    if not np.isnan(expobj.NonTargetsSzInvasionSpatial.adata.X[int(_sz_idx), stim_idx]) and \
-                            expobj.NonTargetsSzInvasionSpatial.adata.X[int(_sz_idx), stim_idx] > 0:
-                        _cell_df = pd.DataFrame({
-                            'expID': f'{expobj.t_series_name}',
-                            'expID_cell': f'{expobj.t_series_name}_{cell}',
-                            'stim_idx': stim_idx,
-                            'stim_group':
-                                expobj.PhotostimResponsesNonTargets.adata.var['stim_group'][
-                                    stim_idx],
-                            'photostim response': photostim_response[i, stim_idx],
-                            'z score response': z_scored_response[i, stim_idx],
-                            'distance target': expobj.PhotostimResponsesNonTargets.adata.obs[
-                                'distance to nearest target (um)'][int(_target_distance_idx)],
-                            'distance sz': expobj.NonTargetsSzInvasionSpatial.adata.X[
-                                int(_sz_idx), stim_idx],
-                            'sz distance group': sz_distance_groups[int(_sz_idx), stim_idx]
-                        }, index=[expobj.t_series_name])
+                    assert expobj.PhotostimResponsesNonTargets.adata.var['stim_group'][stim_idx] == 'interictal', 'incorrect stim group for stim index.'
+                    _cell_df = pd.DataFrame({
+                        'expID': f'{expobj.t_series_name}',
+                        'expID_cell': f'{expobj.t_series_name}_{cell}',
+                        'stim_idx': stim_idx,
+                        'stim_group':
+                            expobj.PhotostimResponsesNonTargets.adata.var['stim_group'][
+                                stim_idx],
 
-                        collect_df.append(_cell_df)
+                        'photostim response': photostim_response[i, stim_idx],
+                        'fakestim response': fakestim_response[i, stim_idx],
+                        'z score response': z_scored_response[i, stim_idx],
+                        'influence response': influence[i, stim_idx],
+                        'new influence response': new_influence[i, stim_idx],
 
-                    elif expobj.PhotostimResponsesNonTargets.adata.var['stim_group'][stim_idx] == 'interictal':
-                        _cell_df = pd.DataFrame({
-                            'expID': f'{expobj.t_series_name}',
-                            'expID_cell': f'{expobj.t_series_name}_{cell}',
-                            'stim_idx': stim_idx,
-                            'stim_group':
-                                expobj.PhotostimResponsesNonTargets.adata.var['stim_group'][
-                                    stim_idx],
-                            'photostim response': photostim_response[i, stim_idx],
-                            'z score response': z_scored_response[i, stim_idx],
-                            'distance target': expobj.PhotostimResponsesNonTargets.adata.obs[
-                                'distance to nearest target (um)'][int(_target_distance_idx)],
-                            'distance sz': expobj.NonTargetsSzInvasionSpatial.adata.X[
-                                int(_sz_idx), stim_idx],
-                            'sz distance group': sz_distance_groups[int(_sz_idx), stim_idx]
-                        }, index=[expobj.t_series_name])
+                        'distance target': distance_targets[int(_target_distance_idx)],
+                        'distance sz': expobj.NonTargetsSzInvasionSpatial.adata.X[
+                            int(_sz_idx), stim_idx],
+                        'sz distance group': sz_distance_groups[int(_sz_idx), stim_idx]
+                    }, index=[expobj.t_series_name])
 
-                        collect_df.append(_cell_df)
+                    collect_df.append(_cell_df)
 
             exp_df_ = pd.concat(collect_df)
 
             return exp_df_
 
-        func_collector = _collect_responses_distancetarget_distancesz_interictal()
-        for exp_df in func_collector:
-            df = pd.concat([df, exp_df])
+        if run_post4ap:
+            func_collector = _collect_responses_distancetarget_distancesz_interictal()
+            for exp_df in func_collector:
+                df = pd.concat([df, exp_df])
 
-        results.interictal_responses = df
-        results.save_results()
+            results.interictal_responses = df
+            results.save_results()
 
-        # POST 4AP TRIALS - ictal (split up by proximal and distal to sz) todo need to run collecting new influence response
+        # POST 4AP TRIALS - ictal (split up by proximal and distal to sz) todo need to run collecting new influence response ############################################################################################
         @Utils.run_for_loop_across_exps(run_post4ap_trials=True, set_cache=0,
                                         skip_trials=PhotostimResponsesQuantificationNonTargets.EXCLUDE_TRIALS)
         def _collect_responses_distancetarget_distancesz_ictal(**kwrags):
@@ -345,12 +350,14 @@ class PhotostimResponsesNonTargetsResults(Results):
 
             return exp_df_
 
-        func_collector = _collect_responses_distancetarget_distancesz()
-        for exp_df in func_collector:
-            df = pd.concat([df, exp_df])
-
-        results.interictal_responses = df
-        results.save_results()
+        if run_post4ap:
+            # func_collector = _collect_responses_distancetarget_distancesz_ictal()
+            # for exp_df in func_collector:
+            #     df = pd.concat([df, exp_df])
+            #
+            # results.interictal_responses = df
+            # results.save_results()
+            pass
 
     def binned_distances_vs_responses_baseline(results, measurement='photostim response'):
         """
@@ -368,6 +375,8 @@ class PhotostimResponsesNonTargetsResults(Results):
 
         # CURRENT SETUP FOR BASELINE RESPONSES ONLY!! ************
         baseline_responses = results.baseline_responses.iloc[results.pre4ap_idxs]
+        assert measurement in baseline_responses.columns, f'measurement not found in responses df columns:\n\t {baseline_responses.columns}'
+        print(f'\- processing measurement: {measurement}')
 
         baseline_responses['shuffled distance'] = 0.0
 
@@ -391,13 +400,11 @@ class PhotostimResponsesNonTargetsResults(Results):
 
         baseline_responses = baseline_responses.sort_values(by=['shuffled distance'])
 
-        # binning distances - 20um bins
+        # binning distances - 10um bins
         baseline_responses['shuffled distance binned'] = (baseline_responses['shuffled distance'] // 10) * 10
 
         # average across distance bins
         # measurement = 'influence response'
-        assert measurement in baseline_responses.columns, f'measurement not found in responses df columns:\n\t {baseline_responses.columns}'
-        print(f'\- processing measurement: {measurement}')
         distances = np.unique(baseline_responses['shuffled distance binned'])
         avg_binned_responses = []
         std_binned_responses = []
@@ -518,7 +525,7 @@ class PhotostimResponsesNonTargetsResults(Results):
 
         interictal_responses = interictal_responses.sort_values(by=['shuffled distance'])
 
-        # binning distances - 20um bins
+        # binning distances - 10um bins
         interictal_responses['shuffled distance binned'] = (interictal_responses['shuffled distance'] // 10) * 10
 
         # average across distance bins
@@ -613,3 +620,7 @@ REMAKE = False
 if not os.path.exists(PhotostimResponsesNonTargetsResults.SAVE_PATH) or REMAKE:
     results = PhotostimResponsesNonTargetsResults()
     results.save_results()
+
+if __name__ == '__main__':
+    results = PhotostimResponsesNonTargetsResults.load()
+

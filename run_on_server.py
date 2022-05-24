@@ -13,10 +13,9 @@
 # IMPORT MODULES AND TRIAL expobj OBJECT
 import sys
 
-from _analysis_.nontargets_analysis._ClassPhotostimResponseQuantificationNonTargets import \
-    PhotostimResponsesNonTargetsResults
 from _analysis_.nontargets_analysis._ClassPhotostimResponsesAnalysisNonTargets import \
     PhotostimResponsesAnalysisNonTargets
+from _analysis_.nontargets_analysis._ClassResultsNontargetPhotostim import PhotostimResponsesNonTargetsResults
 
 print('Python %s on %s' % (sys.version, sys.platform))
 sys.path.extend(['/home/pshah/Documents/code/AllOpticalSeizure', '/home/pshah/Documents/code/AllOpticalSeizure'])
@@ -27,14 +26,15 @@ main = PhotostimResponsesAnalysisNonTargets
 
 results: PhotostimResponsesNonTargetsResults = PhotostimResponsesNonTargetsResults.load()
 
-# results.collect_nontargets_stim_responses()
 
-results.binned_distances_vs_responses_interictal(measurement='new influence response')
+# results.collect_nontargets_stim_responses(run_pre4ap=True, run_post4ap=False)
 # results.binned_distances_vs_responses_baseline(measurement='new influence response')
 # results.binned_distances_vs_responses(measurement='influence response')
 # results.binned_distances_vs_responses(measurement='photostim response')
 
 
+results.collect_nontargets_stim_responses(run_pre4ap=False, run_post4ap=True)
+results.binned_distances_vs_responses_interictal(measurement='new influence response')
 
 
 
