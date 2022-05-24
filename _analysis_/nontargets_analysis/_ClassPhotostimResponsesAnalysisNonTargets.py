@@ -560,11 +560,11 @@ class PhotostimResponsesAnalysisNonTargets(PhotostimResponsesQuantificationNonTa
             self.adata.add_variable(var_name='mean_nontargets_fakestims_responses', values=fakestims_network_mean_activity)
 
         elif 'post' in self.expobj_exptype:
-            network_mean_activity = list(np.sum(self.adata.X, axis=0))
+            network_mean_activity = list(np.mean(self.adata.X, axis=0))
             network_std_activity = list(np.std(self.adata.X, axis=0, ddof=1))
 
             assert 'nontargets fakestim_responses' in self.adata.layers, 'nontargets fakestim_responses not found in adata layers'
-            fakestims_network_mean_activity = list(np.sum(self.adata.layers['nontargets fakestim_responses'],
+            fakestims_network_mean_activity = list(np.mean(self.adata.layers['nontargets fakestim_responses'],
                                                             axis=0))  #: summed responses across all nontargets at each photostim trial
 
             # interictal

@@ -138,8 +138,7 @@ class alloptical(TwoPhotonImaging):
 
         from _analysis_.nontargets_analysis._ClassPhotostimResponseQuantificationNonTargets import \
             PhotostimResponsesQuantificationNonTargets
-        from _analysis_.nontargets_analysis._ClassPhotostimResponseQuantificationNonTargets import \
-            PhotostimResponsesNonTargetsResults
+        from _analysis_.nontargets_analysis._ClassResultsNontargetPhotostim import PhotostimResponsesNonTargetsResults
         results = PhotostimResponsesNonTargetsResults.load()
         self.PhotostimResponsesNonTargets: PhotostimResponsesQuantificationNonTargets = \
             PhotostimResponsesQuantificationNonTargets(expobj=self, results=results)
