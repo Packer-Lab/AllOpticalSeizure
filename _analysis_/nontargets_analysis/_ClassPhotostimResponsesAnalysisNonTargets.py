@@ -560,14 +560,22 @@ class PhotostimResponsesAnalysisNonTargets(PhotostimResponsesQuantificationNonTa
             self.adata.add_variable(var_name='mean_nontargets_fakestims_responses', values=fakestims_network_mean_activity)
 
         elif 'post' in self.expobj_exptype:
-            network_mean_activity = list(np.mean(self.adata.X, axis=0))
-            network_std_activity = list(np.std(self.adata.X, axis=0, ddof=1))
 
-            assert 'nontargets fakestim_responses' in self.adata.layers, 'nontargets fakestim_responses not found in adata layers'
-            fakestims_network_mean_activity = list(np.mean(self.adata.layers['nontargets fakestim_responses'],
-                                                            axis=0))  #: summed responses across all nontargets at each photostim trial
+            # all stims, all cells  ####################################################################################
+            # network_mean_activity = list(np.mean(self.adata.X, axis=0))
+            # network_std_activity = list(np.std(self.adata.X, axis=0, ddof=1))
+            #
+            # assert 'nontargets fakestim_responses' in self.adata.layers, 'nontargets fakestim_responses not found in adata layers'
+            # fakestims_network_mean_activity = list(np.mean(self.adata.layers['nontargets fakestim_responses'],
+            #                                                 axis=0))  #: summed responses across all nontargets at each photostim trial
+            #
+            # # add as var to anndata
+            # self.adata.add_variable(var_name='mean_nontargets_responses', values=network_mean_activity)
+            # self.adata.add_variable(var_name='std_nontargets_responses', values=network_std_activity)
+            # self.adata.add_variable(var_name='mean_nontargets_fakestims_responses',
+            #                         values=fakestims_network_mean_activity)
 
-            # interictal
+            # interictal ####################################################################################
             # __positive_responders_responses = self.adata.X[self.adata.obs['positive_responder_interictal']] - leaving out for now.... there's a bunch of background work that needs to be done to figure this out with matching cells between pre4ap...post4ap...
             # summed_response_positive_interictal = list(np.sum(__positive_responders_responses,
             #                                                   axis=0))  #: summed response across all positive responders at each photostim trial
@@ -593,11 +601,37 @@ class PhotostimResponsesAnalysisNonTargets(PhotostimResponsesQuantificationNonTa
             #     np.mean(self.adata.layers['nontargets fakestim_responses'][:, expobj.stim_idx_insz],
             #            axis=0))  #: summed responses across all nontargets at each photostim trial
 
-            # add as var to anndata
-            self.adata.add_variable(var_name='mean_nontargets_responses', values=network_mean_activity)
-            self.adata.add_variable(var_name='std_nontargets_responses', values=network_std_activity)
-            self.adata.add_variable(var_name='mean_nontargets_fakestims_responses',
-                                    values=fakestims_network_mean_activity)
+
+            # ICTAL - NONTARGET OUTSZ MEASUREMENTS #####################################################################
+            outsz_mean_activity_stims = [None for i in range(self.adata.n_vars)]
+            outsz_std_activity_stims = [None for i in range(self.adata.n_vars)]
+
+            _cells_analyse = [cell for idx, cell in
+                              enumerate(tuple(expobj.PhotostimResponsesNonTargets.adata.obs['original_index'])) if
+                              cell in tuple(expobj.NonTargetsSzInvasionSpatial.adata.obs['original_index'])]
+            _idx_analyse = [idx for idx, cell in
+                              enumerate(tuple(expobj.PhotostimResponsesNonTargets.adata.obs['original_index'])) if
+                              cell in tuple(expobj.NonTargetsSzInvasionSpatial.adata.obs['original_index'])]
+
+
+            for i, stimidx in enumerate(expobj.stim_idx_insz):
+                print(f'processing stim: {stimidx},  {len(expobj.stim_idx_insz)} total stims...')
+                _outsz_cell_response = []
+                for cell in _cells_analyse:
+                    __idx = tuple(expobj.PhotostimResponsesNonTargets.adata.obs['original_index']).index(cell)
+                    __jdx = tuple(expobj.NonTargetsSzInvasionSpatial.adata.obs['original_index']).index(cell)
+                    if expobj.NonTargetsSzInvasionSpatial.adata.layers['in/out sz'][__jdx, stimidx] == 1:
+                        response = expobj.PhotostimResponsesNonTargets.adata.X[__idx, stimidx]
+                        _outsz_cell_response.append(response)
+                if len(_outsz_cell_response) > 0:
+                    outsz_mean_activity_stims[stimidx] = np.nanmean(_outsz_cell_response)
+                    outsz_std_activity_stims[stimidx] = np.nanstd(_outsz_cell_response, ddof=1)
+
+            self.adata.add_variable(var_name='mean_nontargets_responses - outsz', values=outsz_mean_activity_stims)
+            self.adata.add_variable(var_name='std_nontargets_responses - outsz', values=outsz_std_activity_stims)
+
+
+
 
             # self.adata.add_variable(var_name='summed_response_pos_interictal',
             #                         values=summed_response_positive_interictal)

@@ -27,20 +27,31 @@ main = PhotostimResponsesAnalysisNonTargets
 results: PhotostimResponsesNonTargetsResults = PhotostimResponsesNonTargetsResults.load()
 
 # %% 3) collecting all summed nontargets photostim and fakestim responses vs. total targets photostim and fakestim responses
-main.run__summed_responses(rerun=1)
+# main.run__summed_responses(rerun=1)
 
 # %% 5) responses vs distances
 
+# BASELINE
 # results.collect_nontargets_stim_responses(run_pre4ap=True, run_post4ap=False)
 # results.binned_distances_vs_responses_baseline(measurement='new influence response')
-# results.binned_distances_vs_responses(measurement='influence response')
-# results.binned_distances_vs_responses(measurement='photostim response')
+# results.binned_distances_vs_responses_baseline(measurement='influence response')
+# results.binned_distances_vs_responses_baseline(measurement='photostim response')
 
 
-results.collect_nontargets_stim_responses(run_pre4ap=False, run_post4ap=True)
-results.binned_distances_vs_responses_interictal(measurement='new influence response')
-results.binned_distances_vs_responses_interictal(measurement='influence response')
-results.binned_distances_vs_responses_interictal(measurement='photostim response')
+
+# INTERICTAL
+# results.collect_nontargets_stim_responses(run_pre4ap=False, run_post4ap=True)
+# results.binned_distances_vs_responses_interictal(measurement='new influence response')
+# results.binned_distances_vs_responses_interictal(measurement='influence response')
+# results.binned_distances_vs_responses_interictal(measurement='photostim response')
+
+
+
+# ICTAL
+# results.collect_nontargets_stim_responses(run_pre4ap=False, run_post4ap=False, run_post4ap_ictal=True)
+results.binned_distances_vs_responses_ictal(measurement='photostim response')
+# results.binned_distances_vs_responses_ictal(measurement='new influence response')
+# results.binned_distances_vs_responses_ictal(measurement='influence response')
 
 
 
