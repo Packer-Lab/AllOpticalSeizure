@@ -23,15 +23,9 @@ results: PhotostimResponsesNonTargetsResults = PhotostimResponsesNonTargetsResul
 
 ############################## run processing/analysis/plotting: #######################################################
 
-# %% 3) collecting all summed nontargets photostim and fakestim responses vs. total targets photostim and fakestim responses
-main.run__summed_responses(rerun=1)
-
-# 5.0) run processing + create dataframe of nontargets responses across stim groups and distances to targets:
-results.collect_nontargets_stim_responses(run_post4ap=True)
-
 # %% 5.2.2) PLOTTING of average responses +/- std across space bins - interictal
 
-measurement = 'photostim response'
+measurement = 'new influence response'
 
 fig, ax = plt.subplots(figsize = (4, 4))
 
@@ -43,7 +37,7 @@ distances = results.binned_distance_vs_responses_shuffled_interictal[measurement
 avg_binned_responses = results.binned_distance_vs_responses_shuffled_interictal[measurement]['avg binned responses']
 std_binned_responses = results.binned_distance_vs_responses_shuffled_interictal[measurement]['std binned responses']
 ax.fill_between(x=list(distances), y1=list(avg_binned_responses + std_binned_responses), y2=list(avg_binned_responses - std_binned_responses), alpha=0.1, color='orange')
-ax.plot(distances, avg_binned_responses, lw=3, color='e18741')
+ax.plot(distances, avg_binned_responses, lw=3, color='#e18741')
 
 
 # binned distances vs responses
@@ -51,12 +45,13 @@ distances = results.binned_distance_vs_responses_interictal[measurement]['distan
 avg_binned_responses = results.binned_distance_vs_responses_interictal[measurement]['avg binned responses']
 std_binned_responses = results.binned_distance_vs_responses_interictal[measurement]['std binned responses']
 ax.fill_between(x=list(distances), y1=list(avg_binned_responses + std_binned_responses), y2=list(avg_binned_responses - std_binned_responses), alpha=0.1, color='royalblue')
-ax.plot(distances, avg_binned_responses, lw=3, color='7f41e1')
+ax.plot(distances, avg_binned_responses, lw=3, color='#7f41e1')
 
 
 
 ax.set_title(f"INTERICTAL {measurement} vs. distance to target", wrap=True)
 ax.set_xlim([0, 600])
+ax.set_ylim([-0.4, 0.7])
 pj.lineplot_frame_options(fig=fig, ax=ax, x_label='distance to target (um)', y_label='influence of photostim')
 fig.tight_layout()
 
@@ -91,6 +86,7 @@ ax.plot(distances, avg_binned_responses, lw=3, color='#4169e1')
 
 ax.set_title(f"BASELINE {measurement} vs. distance to target (um)", wrap=True)
 ax.set_xlim([0, 600])
+ax.set_ylim([-0.4, 0.7])
 pj.lineplot_frame_options(fig=fig, ax=ax, x_label='distance to target (um)', y_label='influence of photostim')
 fig.tight_layout()
 
@@ -105,6 +101,10 @@ Objectives:
 [ ] - binned 2D histogram of nontargets responses (z scored (to baseline)) vs., distance to nearest targets and distance to sz wavefront
 
 """
+
+# 5.0) run processing + create dataframe of nontargets responses across stim groups and distances to targets:
+results.collect_nontargets_stim_responses(run_post4ap=True)
+
 
 
 
@@ -207,6 +207,8 @@ fig.show()
 # %% 2) plotting alloptical and fakestim responses
 # PhotostimResponsesAnalysisNonTargets.run__plot_sig_responders_traces(plot_baseline_responders=False)
 
+# %% 3) collecting all summed nontargets photostim and fakestim responses vs. total targets photostim and fakestim responses
+main.run__summed_responses(rerun=1)
 
 
 
