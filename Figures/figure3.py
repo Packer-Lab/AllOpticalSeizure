@@ -2,6 +2,7 @@ import numpy as np
 from matplotlib import pyplot as plt
 
 from _alloptical_utils import run_for_loop_across_exps
+from _analysis_._ClassPhotostimAnalysisSlmTargets import plot__avg_photostim_dff_allexps
 from _main_.AllOpticalMain import alloptical
 from _main_.Post4apMain import Post4ap
 from _utils_.io import import_expobj
@@ -86,6 +87,7 @@ pplot.plot_bar_with_points(data=[baseline_responses, interictal_responses, ictal
 
 
 # %% C) GRAND AVERAGE PLOT OF TARGETS AND NONTARGETS
+plot__avg_photostim_dff_allexps()
 
 # 1.1) plot the first sz frame for each seizure from each expprep, label with the time delay to sz invasion
 @run_for_loop_across_exps(run_pre4ap_trials=True, run_post4ap_trials=False, allow_rerun=True)

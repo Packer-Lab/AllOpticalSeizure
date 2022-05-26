@@ -326,8 +326,12 @@ class PhotostimResponsesNonTargetsResults(Results):
                             'stim_idx': stim_idx,
                             'stim_group':
                                 expobj.PhotostimResponsesNonTargets.adata.var['stim_group'][stim_idx],
+
                             'photostim response': photostim_response[i, stim_idx],
                             'z score response': z_scored_response[i, stim_idx],
+                            'influence response': influence[i, stim_idx],
+                            'new influence response': new_influence[i, stim_idx],
+
                             'distance target': distance_targets[int(_target_distance_idx)],
                             'distance sz': expobj.NonTargetsSzInvasionSpatial.adata.X[
                                 int(_sz_idx), stim_idx],
@@ -345,6 +349,8 @@ class PhotostimResponsesNonTargetsResults(Results):
             func_collector = _collect_responses_distancetarget_distancesz_ictal()
             for exp_df in func_collector:
                 df = pd.concat([df, exp_df])
+
+            assert round(np.nansum(df['new influence response'])) != 0, 'nans broooooo in new influence response....'
 
             results.ictal_responses = df
             results.save_results()
@@ -671,8 +677,9 @@ class PhotostimResponsesNonTargetsResults(Results):
         distances = np.unique(ictal_responses['shuffled distance binned'])
         avg_binned_responses = []
         std_binned_responses = []
+        distances_with_responses = []
         for bin in distances:
-            print(f'\t\- processing distance bin: {bin}')
+            print(f'\t\- processing SHUFFLED DISTAL distance bin: {bin}')
             _idxs = np.where((ictal_responses['shuffled distance binned'] == bin) & (ictal_responses['sz distance group'] == 'distal'))[0]
 
             # average across all stims for each cell
@@ -691,13 +698,18 @@ class PhotostimResponsesNonTargetsResults(Results):
 
                 avg_binned_responses.append(avg_response)
                 std_binned_responses.append(std_response)
+                distances_with_responses.append(bin)
+            else:
+                print(f'\t\t\- no responses for SHUFFLED distance bin {bin}')
+
+
         avg_binned_responses = np.asarray(avg_binned_responses)
         std_binned_responses = np.asarray(std_binned_responses)
 
         if not hasattr(results, 'binned_distance_vs_responses_shuffled_distal'):
             results.binned_distance_vs_responses_shuffled_distal = {}
 
-        results.binned_distance_vs_responses_shuffled_distal[measurement] = {'distances': distances,
+        results.binned_distance_vs_responses_shuffled_distal[measurement] = {'distances': distances_with_responses,
                                                                                  'avg binned responses': avg_binned_responses,
                                                                                  'std binned responses': std_binned_responses}
 
@@ -707,8 +719,9 @@ class PhotostimResponsesNonTargetsResults(Results):
         distances = np.unique(ictal_responses['shuffled distance binned'])
         avg_binned_responses = []
         std_binned_responses = []
+        distances_with_responses = []
         for bin in distances:
-            print(f'\t\- processing distance bin: {bin}')
+            print(f'\t\- processing SHUFFLED PROXIMAL distance bin: {bin}')
             _idxs = np.where((ictal_responses['shuffled distance binned'] == bin) & (ictal_responses['sz distance group'] == 'proximal'))[0]
 
             # average across all stims for each cell
@@ -727,13 +740,17 @@ class PhotostimResponsesNonTargetsResults(Results):
 
                 avg_binned_responses.append(avg_response)
                 std_binned_responses.append(std_response)
+                distances_with_responses.append(bin)
+            else:
+                print(f'\t\t\- no responses for SHUFFLED distance bin {bin}')
+
         avg_binned_responses = np.asarray(avg_binned_responses)
         std_binned_responses = np.asarray(std_binned_responses)
 
         if not hasattr(results, 'binned_distance_vs_responses_shuffled_proximal'):
             results.binned_distance_vs_responses_shuffled_proximal = {}
 
-        results.binned_distance_vs_responses_shuffled_proximal[measurement] = {'distances': distances,
+        results.binned_distance_vs_responses_shuffled_proximal[measurement] = {'distances': distances_with_responses,
                                                                                  'avg binned responses': avg_binned_responses,
                                                                                  'std binned responses': std_binned_responses}
 
@@ -755,9 +772,11 @@ class PhotostimResponsesNonTargetsResults(Results):
         distances = np.unique(ictal_responses['distance target binned'])
         avg_binned_responses = []
         std_binned_responses = []
+        distances_with_responses = []
+
         for bin in distances:
-            print(f'\t\- processing distance bin: {bin}')
-            _idxs = np.where((ictal_responses['shuffled distance binned'] == bin) & (ictal_responses['sz distance group'] == 'distal'))[0]
+            print(f'\t\- processing DISTAL distance bin: {bin}')
+            _idxs = np.where((ictal_responses['distance target binned'] == bin) & (ictal_responses['sz distance group'] == 'distal'))[0]
 
             # average across all stims for each cell
             cells_ = np.unique(ictal_responses.iloc[_idxs]['expID_cell'])
@@ -767,15 +786,16 @@ class PhotostimResponsesNonTargetsResults(Results):
                 mean_cell_distance_response = np.nanmean(tuple(ictal_responses.iloc[_idxs].iloc[_jdxs][measurement]))
                 averages_cells.append(mean_cell_distance_response)
 
-            # avg_response = np.nanmean(interictal_responses[measurement].iloc[_idxs])
-            # std_response = np.nanstd(interictal_responses[measurement].iloc[_idxs], ddof=1)
-
             if len(averages_cells) > 0:
                 avg_response = np.nanmean(averages_cells)
                 std_response = np.nanstd(averages_cells, ddof=1)
 
                 avg_binned_responses.append(avg_response)
                 std_binned_responses.append(std_response)
+                distances_with_responses.append(bin)
+            else:
+                print(f'\t\t\- no responses for distance bin {bin}')
+
 
         avg_binned_responses = np.asarray(avg_binned_responses)
         std_binned_responses = np.asarray(std_binned_responses)
@@ -783,7 +803,7 @@ class PhotostimResponsesNonTargetsResults(Results):
         if not hasattr(results, 'binned_distance_vs_responses_distal'):
             results.binned_distance_vs_responses_distal = {}
 
-        results.binned_distance_vs_responses_distal[measurement] = {'distances': distances,
+        results.binned_distance_vs_responses_distal[measurement] = {'distances': distances_with_responses,
                                                                         'avg binned responses': avg_binned_responses,
                                                                         'std binned responses': std_binned_responses}
 
@@ -796,9 +816,11 @@ class PhotostimResponsesNonTargetsResults(Results):
         distances = np.unique(ictal_responses['distance target binned'])
         avg_binned_responses = []
         std_binned_responses = []
+        distances_with_responses = []
+
         for bin in distances:
-            print(f'\t\- processing distance bin: {bin}')
-            _idxs = np.where((ictal_responses['shuffled distance binned'] == bin) & (ictal_responses['sz distance group'] == 'proximal'))[0]
+            print(f'\t\- processing PROXIMAL distance bin: {bin}')
+            _idxs = np.where((ictal_responses['distance target binned'] == bin) & (ictal_responses['sz distance group'] == 'proximal'))[0]
 
             # average across all stims for each cell
             cells_ = np.unique(ictal_responses.iloc[_idxs]['expID_cell'])
@@ -817,6 +839,10 @@ class PhotostimResponsesNonTargetsResults(Results):
 
                 avg_binned_responses.append(avg_response)
                 std_binned_responses.append(std_response)
+                distances_with_responses.append(bin)
+            else:
+                print(f'\t\t\- no responses for distance bin {bin}')
+
 
         avg_binned_responses = np.asarray(avg_binned_responses)
         std_binned_responses = np.asarray(std_binned_responses)
@@ -824,7 +850,7 @@ class PhotostimResponsesNonTargetsResults(Results):
         if not hasattr(results, 'binned_distance_vs_responses_proximal'):
             results.binned_distance_vs_responses_proximal = {}
 
-        results.binned_distance_vs_responses_proximal[measurement] = {'distances': distances,
+        results.binned_distance_vs_responses_proximal[measurement] = {'distances': distances_with_responses,
                                                                         'avg binned responses': avg_binned_responses,
                                                                         'std binned responses': std_binned_responses}
 

@@ -23,13 +23,75 @@ results: PhotostimResponsesNonTargetsResults = PhotostimResponsesNonTargetsResul
 
 ############################## run processing/analysis/plotting: #######################################################
 
+# %% 5.2.4) PLOTTING of average responses +/- std across space bins - ICTAL - DISTAL
 
-# %% 5.2) binning responses relative to distance from targets, then average the responses across binned distances
+measurements = ('photostim response', 'influence response', 'new influence response')
 
-# run as a results method function
-# results.binned_distances_vs_responses(measurement='new influence response')
-# results.binned_distances_vs_responses_interictal(measurement='new influence response')
-results.binned_distances_vs_responses_ictal(measurement='photostim response')
+fig, axs = plt.subplots(figsize = (12, 4), ncols=3, nrows=1)
+for idx, measurement in enumerate(measurements):
+    ax = axs[idx]
+    ax.axhline(y=0, ls='--', color='black', lw=1)
+    ax.axvline(x=20, ls='--', color='black', lw=1)
+
+    # binned shuffled distances vs. responses
+    distances = results.binned_distance_vs_responses_shuffled_distal[measurement]['distances']
+    avg_binned_responses = results.binned_distance_vs_responses_shuffled_distal[measurement]['avg binned responses']
+    std_binned_responses = results.binned_distance_vs_responses_shuffled_distal[measurement]['std binned responses']
+    ax.fill_between(x=list(distances), y1=list(avg_binned_responses + std_binned_responses), y2=list(avg_binned_responses - std_binned_responses), alpha=0.1, color='orange')
+    ax.plot(distances, avg_binned_responses, lw=3, color='#e18741')
+
+
+    # binned distances vs responses
+    distances = results.binned_distance_vs_responses_distal[measurement]['distances']
+    avg_binned_responses = results.binned_distance_vs_responses_distal[measurement]['avg binned responses']
+    std_binned_responses = results.binned_distance_vs_responses_distal[measurement]['std binned responses']
+    ax.fill_between(x=list(distances), y1=list(avg_binned_responses + std_binned_responses), y2=list(avg_binned_responses - std_binned_responses), alpha=0.1, color='royalblue')
+    ax.plot(distances, avg_binned_responses, lw=3, color='#e14154')
+
+
+
+    ax.set_title(f"{measurement}", wrap=True)
+    ax.set_xlim([0, 600])
+    ax.set_ylim([-0.4, 0.7])
+    pj.lineplot_frame_options(fig=fig, ax=ax, x_label='distance to target (um)', y_label=measurement)
+fig.suptitle('ICTAL - DISTAL TO SZ')
+fig.tight_layout()
+fig.show()
+
+# %% 5.2.3) PLOTTING of average responses +/- std across space bins - ICTAL - PROXIMAL
+
+measurements = ('photostim response', 'influence response', 'new influence response')
+
+fig, axs = plt.subplots(figsize = (12, 4), ncols=3, nrows=1)
+for idx, measurement in enumerate(measurements):
+    ax = axs[idx]
+    ax.axhline(y=0, ls='--', color='black', lw=1)
+    ax.axvline(x=20, ls='--', color='black', lw=1)
+
+    # binned shuffled distances vs. responses
+    distances = results.binned_distance_vs_responses_shuffled_proximal[measurement]['distances']
+    avg_binned_responses = results.binned_distance_vs_responses_shuffled_proximal[measurement]['avg binned responses']
+    std_binned_responses = results.binned_distance_vs_responses_shuffled_proximal[measurement]['std binned responses']
+    ax.fill_between(x=list(distances), y1=list(avg_binned_responses + std_binned_responses), y2=list(avg_binned_responses - std_binned_responses), alpha=0.1, color='orange')
+    ax.plot(distances, avg_binned_responses, lw=3, color='#e18741')
+
+
+    # binned distances vs responses
+    distances = results.binned_distance_vs_responses_proximal[measurement]['distances']
+    avg_binned_responses = results.binned_distance_vs_responses_proximal[measurement]['avg binned responses']
+    std_binned_responses = results.binned_distance_vs_responses_proximal[measurement]['std binned responses']
+    ax.fill_between(x=list(distances), y1=list(avg_binned_responses + std_binned_responses), y2=list(avg_binned_responses - std_binned_responses), alpha=0.1, color='royalblue')
+    ax.plot(distances, avg_binned_responses, lw=3, color='#ce41e1')
+
+
+
+    ax.set_title(f"{measurement}", wrap=True)
+    ax.set_xlim([0, 600])
+    ax.set_ylim([-0.4, 0.7])
+    pj.lineplot_frame_options(fig=fig, ax=ax, x_label='distance to target (um)', y_label=measurement)
+fig.suptitle('ICTAL - PROXIMAL TO SZ')
+fig.tight_layout()
+fig.show()
 
 
 
@@ -118,8 +180,18 @@ Objectives:
 
 
 
-# 5.0) run processing + create dataframe of nontargets responses across stim groups and distances to targets:
+# %% 5.0) run processing + create dataframe of nontargets responses across stim groups and distances to targets:
 results.collect_nontargets_stim_responses(run_post4ap_ictal=True)
+
+
+# %% 5.2) binning responses relative to distance from targets, then average the responses across binned distances
+
+# run as a results method function
+# results.binned_distances_vs_responses(measurement='new influence response')
+# results.binned_distances_vs_responses_interictal(measurement='new influence response')
+results.binned_distances_vs_responses_ictal(measurement='new influence response')
+
+
 
 
 
@@ -246,9 +318,7 @@ import sys
 
 sys.path.extend(['/home/pshah/Documents/code/AllOpticalSeizure', '/home/pshah/Documents/code/AllOpticalSeizure'])
 
-from _analysis_.nontargets_analysis._ClassPhotostimResponseQuantificationNonTargets import \
-    PhotostimResponsesNonTargetsResults, \
-    PhotostimResponsesQuantificationNonTargets
+from _analysis_.nontargets_analysis._ClassPhotostimResponseQuantificationNonTargets import PhotostimResponsesQuantificationNonTargets
 
 import numpy as np
 import pandas as pd

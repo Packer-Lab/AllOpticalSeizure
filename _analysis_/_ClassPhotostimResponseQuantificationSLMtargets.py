@@ -48,6 +48,8 @@ class PhotostimResponsesSLMtargetsResults(Results):
         self.expavg_pre_stim_targets_annulus_F = None
         self.expavg_pre_stim_targets_annulus_results_ictal = None
 
+        self.variance_photostimresponse = {}
+
 
 REMAKE = False
 if not os.path.exists(PhotostimResponsesSLMtargetsResults.SAVE_PATH) or REMAKE:

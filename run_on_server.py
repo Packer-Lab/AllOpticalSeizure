@@ -48,10 +48,10 @@ results: PhotostimResponsesNonTargetsResults = PhotostimResponsesNonTargetsResul
 
 
 # ICTAL
-# results.collect_nontargets_stim_responses(run_pre4ap=False, run_post4ap=False, run_post4ap_ictal=True)
+results.collect_nontargets_stim_responses(run_pre4ap=False, run_post4ap=False, run_post4ap_ictal=True)
 results.binned_distances_vs_responses_ictal(measurement='photostim response')
-# results.binned_distances_vs_responses_ictal(measurement='new influence response')
-# results.binned_distances_vs_responses_ictal(measurement='influence response')
+results.binned_distances_vs_responses_ictal(measurement='new influence response')
+results.binned_distances_vs_responses_ictal(measurement='influence response')
 
 
 

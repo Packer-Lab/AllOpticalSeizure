@@ -7,7 +7,8 @@ import pandas as pd
 from matplotlib import pyplot as plt
 
 import _alloptical_utils as Utils
-from _analysis_._ClassPhotostimResponseQuantificationSLMtargets import PhotostimResponsesQuantificationSLMtargets
+from _analysis_._ClassPhotostimResponseQuantificationSLMtargets import PhotostimResponsesQuantificationSLMtargets, \
+    PhotostimResponsesSLMtargetsResults
 from _analysis_._utils import Quantification, Results
 from _exp_metainfo_.exp_metainfo import AllOpticalExpsToAnalyze
 from _main_.AllOpticalMain import alloptical
@@ -20,6 +21,7 @@ from _utils_.io import import_expobj
 
 SAVE_LOC = "/home/pshah/mnt/qnap/Analysis/analysis_export/analysis_quantification_classes/"
 
+results = PhotostimResponsesSLMtargetsResults.load()
 
 # COLLECTING PHOTOSTIM TIMED DATA, PROCESSING AND ANALYSIS FOR SLM TARGETS TRACES
 
@@ -225,53 +227,60 @@ class PhotostimAnalysisSlmTargets(Quantification):
         std_vars = []
         for target in self.adata.obs.index:
             target = int(target)
-            std_var = np.std(self.adata.X[target, stims], ddof=1)
+            std_var = np.var(self.adata.X[target, stims] / 100, ddof=1)  # dFF (not % dFF)
             std_vars.append(std_var)
         return std_vars
 
     @staticmethod
-    def plot__variability():
+    def plot__variability(rerun=False, **kwargs):
     # 1) plotting mean photostim response magnitude across experiments and experimental groups
         """create plot of mean photostim responses magnitudes for all three exp groups"""
 
-        @Utils.run_for_loop_across_exps(run_pre4ap_trials=True, run_post4ap_trials=False, set_cache=False,
-                                        allow_rerun=1)
-        def pre4apexps_collect_photostim_stdvars(**kwargs):
-            expobj: alloptical = kwargs['expobj']
-            if 'pre' in expobj.exptype:
-                # all stims
-                photostim_stdvars = expobj.PhotostimAnalysisSlmTargets.calculate_variability(stims='all')
-                return np.mean(photostim_stdvars)
+        if rerun or not hasattr(results, 'variance_photostimresponse'):
+            results.variance_photostimresponse = {}
 
-        photostim_stdvars_baseline = pre4apexps_collect_photostim_stdvars()
+            @Utils.run_for_loop_across_exps(run_pre4ap_trials=True, run_post4ap_trials=False, set_cache=False,
+                                            allow_rerun=1)
+            def pre4apexps_collect_photostim_stdvars(**kwargs):
+                expobj: alloptical = kwargs['expobj']
+                if 'pre' in expobj.exptype:
+                    # all stims
+                    photostim_stdvars = expobj.PhotostimAnalysisSlmTargets.calculate_variability(stims='all')
+                    return np.mean(photostim_stdvars)
 
-        @Utils.run_for_loop_across_exps(run_pre4ap_trials=False, run_post4ap_trials=True, set_cache=False,
-                                        allow_rerun=1)
-        def post4apexps_collect_photostim_stdvars(**kwargs):
-            expobj: Post4ap = kwargs['expobj']
-            if 'post' in expobj.exptype:
-                # interictal stims
-                mean_photostim_stdvars_interictal = expobj.PhotostimAnalysisSlmTargets.calculate_variability(stims=expobj.stim_idx_outsz)
+            photostim_stdvars_baseline = pre4apexps_collect_photostim_stdvars()
+            results.variance_photostimresponse['baseline'] = photostim_stdvars_baseline
 
-                # ictal stims
-                mean_photostim_stdvars_ictal = expobj.PhotostimAnalysisSlmTargets.calculate_variability(stims=expobj.stim_idx_insz)
+            @Utils.run_for_loop_across_exps(run_pre4ap_trials=False, run_post4ap_trials=True, set_cache=False,
+                                            allow_rerun=1)
+            def post4apexps_collect_photostim_stdvars(**kwargs):
+                expobj: Post4ap = kwargs['expobj']
+                if 'post' in expobj.exptype:
+                    # interictal stims
+                    mean_photostim_stdvars_interictal = expobj.PhotostimAnalysisSlmTargets.calculate_variability(stims=expobj.stim_idx_outsz)
 
-                return np.mean(mean_photostim_stdvars_interictal), np.mean(mean_photostim_stdvars_ictal)
+                    # ictal stims
+                    mean_photostim_stdvars_ictal = expobj.PhotostimAnalysisSlmTargets.calculate_variability(stims=expobj.stim_idx_insz)
 
-        func_collector = post4apexps_collect_photostim_stdvars()
+                    return np.mean(mean_photostim_stdvars_interictal), np.mean(mean_photostim_stdvars_ictal)
 
-        if len(func_collector) > 0:
-            photostim_stdvars_interictal, photostim_stdvars_ictal = np.asarray(func_collector)[:,
-                                                                                  0], np.asarray(
-                func_collector)[:, 1]
+            func_collector = post4apexps_collect_photostim_stdvars()
 
-            pplot.plot_bar_with_points(
-                data=[photostim_stdvars_baseline, photostim_stdvars_interictal,
-                      photostim_stdvars_ictal],
-                x_tick_labels=['baseline', 'interictal', 'ictal'], bar=False, colors=['blue', 'green', 'purple'],
-                expand_size_x=0.4, title='Average stnd dev.', y_label='standard dev. (% dFF)')
+            # if len(func_collector) > 0:
+            photostim_stdvars_interictal, photostim_stdvars_ictal = np.asarray(func_collector)[:, 0], np.asarray(func_collector)[:, 1]
 
-            return photostim_stdvars_baseline, photostim_stdvars_interictal, photostim_stdvars_ictal
+            results.variance_photostimresponse['interictal'] = photostim_stdvars_interictal
+            results.variance_photostimresponse['ictal'] = photostim_stdvars_ictal
+
+            results.save_results()
+
+        pplot.plot_bar_with_points(
+            data=[results.variance_photostimresponse['baseline'], results.variance_photostimresponse['interictal']],
+            x_tick_labels=['Baseline', 'Interictal'], bar=True, colors=['gray', 'green'], alpha=0.8,
+            expand_size_x=0.4, title='Average variance', y_label='Variance (% dFF)^2', ylims=[0, 1], shrink_text=0.8,
+            **kwargs)
+
+        # return photostim_stdvars_baseline, photostim_stdvars_interictal, photostim_stdvars_ictal
 
     @staticmethod
     def plot__schematic_variability_measurement():
@@ -281,6 +290,7 @@ class PhotostimAnalysisSlmTargets(Quantification):
         fig, ax = plt.subplots(figsize=[2, 2])
         total_x = []
         total_y = []
+        ax.axvspan(-1.6, -0.75, alpha=0.35, color='hotpink')
         for i in amplitudes:
             x = []
             y = []
@@ -316,51 +326,51 @@ class PhotostimAnalysisSlmTargets(Quantification):
 
         ax.plot(np.mean(total_x, axis=0), np.mean(total_y, axis=0), lw=2, color='black')
         # ax.fill_between(np.mean(total_x, axis=0), mean-std, mean+std, color='gray')
-
+        fig.tight_layout(pad=0.2)
         fig.show()
 
     # 2.2) plot mean magnitude of photostim responses vs. variability of photostim responses
     @staticmethod
-    def plot__mean_response_vs_variability():
+    def plot__mean_response_vs_variability(rerun=False):
         """create plot of mean photostim responses vs. variability for all three exp groups"""
 
         fig, ax = plt.subplots(ncols=3)
 
+        if rerun or not hasattr(results, 'meanresponses_vs_variance'):
+            results.meanresponses_vs_variance = {}
 
-        @Utils.run_for_loop_across_exps(run_pre4ap_trials=True, run_post4ap_trials=False, set_cache=False,
-                                        allow_rerun=1)
-        def pre4apexps_collect_photostim_stdvars(**kwargs):
-            expobj: alloptical = kwargs['expobj']
-            if 'pre' in expobj.exptype:
+            @Utils.run_for_loop_across_exps(run_pre4ap_trials=True, run_post4ap_trials=False, set_cache=False,
+                                            allow_rerun=1)
+            def pre4apexps_collect_photostim_stdvars(**kwargs):
+                expobj: alloptical = kwargs['expobj']
+                assert 'pre' in expobj.exptype
                 # all stims
                 photostim_stdvars = expobj.PhotostimAnalysisSlmTargets.calculate_variability(stims='all')
                 return photostim_stdvars
 
 
-        @Utils.run_for_loop_across_exps(run_pre4ap_trials=True, run_post4ap_trials=False, set_cache=False,
-                                        allow_rerun=1)
-        def pre4apexps_collect_photostim_responses(**kwargs):
-            expobj: alloptical = kwargs['expobj']
-            if 'pre' in expobj.exptype:
+            @Utils.run_for_loop_across_exps(run_pre4ap_trials=True, run_post4ap_trials=False, set_cache=False,
+                                            allow_rerun=1)
+            def pre4apexps_collect_photostim_responses(**kwargs):
+                expobj: alloptical = kwargs['expobj']
+                assert 'pre' in expobj.exptype
                 # all stims
                 mean_photostim_responses = expobj.PhotostimResponsesSLMTargets.collect_photostim_responses_magnitude_avgstims(
                     stims='all')
                 return mean_photostim_responses
 
-        mean_photostim_responses_baseline = pre4apexps_collect_photostim_responses()
-        photostim_stdvars_baseline = pre4apexps_collect_photostim_stdvars()
 
-        pplot.make_general_scatter([pj.flattenOnce(mean_photostim_responses_baseline)],
-                                   [pj.flattenOnce(photostim_stdvars_baseline)], x_labels=['Avg. Photostim Response (% dFF)'],
-                                   y_labels = ['Avg. standard dev. (% dFF)'], ax_titles=['Targets: avg. response vs. variability - baseline'],
-                                   facecolors=['none'], edgecolors=['royalblue'], lw=1.3, figsize=(4,4))
+            mean_photostim_responses_baseline = pre4apexps_collect_photostim_responses()
+            photostim_stdvars_baseline = pre4apexps_collect_photostim_stdvars()
 
+            results.meanresponses_vs_variance['baseline - mean responses'] = mean_photostim_responses_baseline
+            results.meanresponses_vs_variance['baseline - var responses'] = photostim_stdvars_baseline
 
-        @Utils.run_for_loop_across_exps(run_pre4ap_trials=False, run_post4ap_trials=True, set_cache=False,
-                                        allow_rerun=1)
-        def post4apexps_collect_photostim_stdvars(**kwargs):
-            expobj: Post4ap = kwargs['expobj']
-            if 'post' in expobj.exptype:
+            @Utils.run_for_loop_across_exps(run_pre4ap_trials=False, run_post4ap_trials=True, set_cache=False,
+                                            allow_rerun=1)
+            def post4apexps_collect_photostim_stdvars(**kwargs):
+                expobj: Post4ap = kwargs['expobj']
+                assert 'post' in expobj.exptype
                 # interictal stims
                 mean_photostim_stdvars_interictal = expobj.PhotostimAnalysisSlmTargets.calculate_variability(stims=expobj.stim_idx_outsz)
 
@@ -369,13 +379,13 @@ class PhotostimAnalysisSlmTargets(Quantification):
 
                 return mean_photostim_stdvars_interictal, mean_photostim_stdvars_ictal
 
-        func_collector_std = post4apexps_collect_photostim_stdvars()
+            func_collector_std = post4apexps_collect_photostim_stdvars()
 
-        @Utils.run_for_loop_across_exps(run_pre4ap_trials=False, run_post4ap_trials=True, set_cache=False,
-                                        allow_rerun=1)
-        def post4apexps_collect_photostim_responses(**kwargs):
-            expobj: Post4ap = kwargs['expobj']
-            if 'post' in expobj.exptype:
+            @Utils.run_for_loop_across_exps(run_pre4ap_trials=False, run_post4ap_trials=True, set_cache=False,
+                                            allow_rerun=1)
+            def post4apexps_collect_photostim_responses(**kwargs):
+                expobj: Post4ap = kwargs['expobj']
+                assert 'post' in expobj.exptype
                 # interictal stims
                 mean_photostim_responses_interictal = expobj.PhotostimResponsesSLMTargets.collect_photostim_responses_magnitude_avgstims(
                     stims=expobj.stim_idx_outsz)
@@ -386,24 +396,52 @@ class PhotostimAnalysisSlmTargets(Quantification):
 
                 return mean_photostim_responses_interictal, mean_photostim_responses_ictal
 
-        func_collector_responses = post4apexps_collect_photostim_responses()
+            func_collector_responses = post4apexps_collect_photostim_responses()
 
-        mean_photostim_responses_interictal, mean_photostim_responses_ictal = np.asarray(func_collector_responses)[:,
-                                                                              0], np.asarray(func_collector_responses)[:, 1]
+            mean_photostim_responses_interictal, mean_photostim_responses_ictal = np.asarray(func_collector_responses)[:,
+                                                                                  0], np.asarray(func_collector_responses)[:, 1]
 
-        photostim_stdvars_interictal, photostim_stdvars_ictal = np.asarray(func_collector_std)[:,
-                                                                              0], np.asarray(func_collector_std)[:, 1]
+            photostim_stdvars_interictal, photostim_stdvars_ictal = np.asarray(func_collector_std)[:,
+                                                                    0], np.asarray(func_collector_std)[:, 1]
 
-        pplot.make_general_scatter([pj.flattenOnce(mean_photostim_responses_interictal)],
-                                   [pj.flattenOnce(photostim_stdvars_interictal)], x_labels=['Avg. Photostim Response (% dFF)'],
-                                   y_labels = ['Avg. standard dev. (%dFF)'], ax_titles=['Targets: avg. response vs. variability - interictal'],
-                                   facecolors=['none'], edgecolors=['seagreen'], lw=1.3, figsize=(4,4))
+            results.meanresponses_vs_variance['interictal - mean responses'] = mean_photostim_responses_interictal
+            results.meanresponses_vs_variance['interictal - var responses'] = photostim_stdvars_interictal
+
+            results.meanresponses_vs_variance['ictal - mean responses'] = mean_photostim_responses_ictal
+            results.meanresponses_vs_variance['ictal - var responses'] = photostim_stdvars_ictal
+
+            results.save_results()
 
 
-        pplot.make_general_scatter([pj.flattenOnce(mean_photostim_responses_ictal)],
-                                   [pj.flattenOnce(photostim_stdvars_ictal)], x_labels=['Avg. Photostim Response (% dFF)'],
-                                   y_labels = ['Avg. standard dev. (% dFF)'], ax_titles=['Targets: avg. response vs. variability - ictal'],
-                                   facecolors=['none'], edgecolors=['mediumorchid'], lw=1.3, figsize=(4,4))
+        # make plot
+        pplot.make_general_scatter([pj.flattenOnce(results.meanresponses_vs_variance['baseline - mean responses'])],
+                                   [pj.flattenOnce(results.meanresponses_vs_variance['baseline - var responses'])],
+                                   x_labels=['Avg. Photostim Response (% dFF)'], y_labels = ['Variance (dFF^2)'], ax_titles=['Targets: avg. response vs. variability - baseline'],
+                                   facecolors=['gray'], lw=1.3, figsize=(4,4), xlim=[-30, 130], ylim=[-0.1, 3.2], alpha=0.1)
+
+
+
+        pplot.make_general_scatter([pj.flattenOnce(results.meanresponses_vs_variance['interictal - mean responses'])],
+                                   [pj.flattenOnce(results.meanresponses_vs_variance['interictal - var responses'])],
+                                   x_labels=['Avg. Photostim Response (% dFF)'], y_labels = ['Variance (dFF^2)'], ax_titles=['Targets: avg. response vs. variability - interictal'],
+                                   facecolors=['forestgreen'], lw=1.3, figsize=(4,4), xlim=[-30, 130], ylim=[-0.1, 3.2], alpha=0.1)
+
+
+
+
+        pplot.make_general_scatter([pj.flattenOnce(results.meanresponses_vs_variance['interictal - mean responses']), pj.flattenOnce(results.meanresponses_vs_variance['baseline - mean responses'])],
+                                   [pj.flattenOnce(results.meanresponses_vs_variance['interictal - var responses']), pj.flattenOnce(results.meanresponses_vs_variance['baseline - var responses'])],
+                                   x_labels=['Avg. Photostim Response (% dFF)'], y_labels = ['Variance (% dFF)^2'], ax_titles=['Targets: avg. response vs. variability - interictal'],
+                                   facecolors=['forestgreen', 'royalblue'], lw=1.3, figsize=(4,4), xlim=[-30, 130], ylim=[-10, 32000], alpha=0.1)
+
+
+
+
+        # pplot.make_general_scatter([pj.flattenOnce(results.meanresponses_vs_variance['ictal - mean responses'])],
+        #                            [pj.flattenOnce(results.meanresponses_vs_variance['ictal - var responses'])],
+        #                            x_labels=['Avg. Photostim Response (% dFF)'],
+        #                            y_labels = ['Avg. standard dev. (% dFF)'], ax_titles=['Targets: avg. response vs. variability - ictal'],
+        #                            facecolors=['none'], edgecolors=['mediumorchid'], lw=1.3, figsize=(4,4))
 
 
 
@@ -560,9 +598,9 @@ if __name__ == '__main__':
     main.run__add_fps()
 
     # RUNNING PLOTS:
-    # main.plot_postage_stamps_photostim_traces()
-    # main.plot__variability()
-    # main.plot__mean_response_vs_variability()
+    main.plot_postage_stamps_photostim_traces()
+    main.plot__variability()
+    main.plot__mean_response_vs_variability()
     plot__avg_photostim_dff_allexps()
 
 
