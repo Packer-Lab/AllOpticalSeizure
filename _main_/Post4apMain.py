@@ -169,6 +169,38 @@ class Post4ap(alloptical):
     def stim_idx_insz(self):
         return [idx for idx, stim in enumerate(self.stim_start_frames) if stim in self.stims_in_sz]
 
+    @property
+    def preictal_stim_idx(self):
+        sz_onset_times = self.seizure_lfp_onsets
+        preictal_stims = []
+        for sz_onset in sz_onset_times:
+            if sz_onset > 0:
+                for stim in self.stims_out_sz:
+                    if (sz_onset - int(30 * self.fps)) < stim < sz_onset:
+                        preictal_stims.append(self.stim_start_frames.index(stim))
+        return preictal_stims
+
+    @property
+    def postictal_stim_idx(self):
+        sz_offset_times = self.seizure_lfp_offsets
+        postictal_stims = []
+        for sz_offset in sz_offset_times:
+            if sz_offset < self.n_frames:
+                for stim in self.stims_out_sz:
+                    if (sz_offset - int(30 * self.fps)) < stim < sz_offset:
+                        postictal_stims.append(self.stim_start_frames.index(stim))
+        return postictal_stims
+
+
+    @property
+    def veryinterictal_stim_idx(self):
+        """stim indexes that are neither preictal or postictal..."""
+        preictal_stims = tuple(self.preictal_stim_idx)
+        postictal_stims = tuple(self.postictal_stim_idx)
+        veryinterictal_stim_idx = [idx for idx in self.stims_idx if ((idx not in preictal_stims) and (idx not in postictal_stims))]
+
+        return veryinterictal_stim_idx
+    
     # @property
     # def fake_stims_outsz(self):
     #     """fake stim frames - all stims out of sz imaging frames"""

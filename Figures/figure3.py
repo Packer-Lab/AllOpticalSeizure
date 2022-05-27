@@ -10,6 +10,9 @@ from funcsforprajay import plotting as pplot
 
 import xml.etree.ElementTree as ET
 
+# %% B)
+
+
 
 
 # %% D) BAR PLOT OF AVG PHOTOSTIMULATION FOV RAW FLU ACROSS CONDITIONS
@@ -38,7 +41,7 @@ interictal_prestimf = collect_avg_prestimf_interictal()
 ictal_prestimf = collect_avg_prestimf_ictal()
 
 
-# %%
+# %% pre stim F across conditions
 
 pplot.plot_bar_with_points(data=[baseline_prestimf, interictal_prestimf, ictal_prestimf],
                            bar = False, title='avg prestim F - targets',
@@ -50,7 +53,6 @@ pplot.plot_bar_with_points(data=[baseline_prestimf, interictal_prestimf, ictal_p
 
 # %% E) BAR PLOT OF AVG PHOTOSTIMULATION RESPONSE OF TARGETS ACROSS CONDITIONS
 
-# 1.1) plot the first sz frame for each seizure from each expprep, label with the time delay to sz invasion
 @run_for_loop_across_exps(run_pre4ap_trials=True, run_post4ap_trials=False, allow_rerun=1)
 def collect_avg_photostim_response_baseline(**kwargs):
     expobj: alloptical = kwargs['expobj']

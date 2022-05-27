@@ -92,12 +92,12 @@ if __name__ == '__main__':
 
     procedure__classifying_sz_boundary()
 
-    # main.FOVszInvasionTime()
-    # main.plot__sz_incidence()
-    # main.plot__sz_lengths()
+    main.FOVszInvasionTime()
+    main.plot__sz_incidence()
+    main.plot__sz_lengths()
     #
-    # main.calc__szInvasionTime()
-    # main.plot__sz_invasion()
+    main.calc__szInvasionTime()
+    main.plot__sz_invasion()
     pass
 
 

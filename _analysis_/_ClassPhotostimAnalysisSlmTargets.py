@@ -443,6 +443,94 @@ class PhotostimAnalysisSlmTargets(Quantification):
         #                            y_labels = ['Avg. standard dev. (% dFF)'], ax_titles=['Targets: avg. response vs. variability - ictal'],
         #                            facecolors=['none'], edgecolors=['mediumorchid'], lw=1.3, figsize=(4,4))
 
+    # 3) interictal responses split by precital, very interictal, post ictal
+    @staticmethod
+    def collect__interictal_responses_split(rerun=0, RESULTS = results):
+        data_label = 'z scored to baseline'
+
+        @Utils.run_for_loop_across_exps(run_post4ap_trials=True, allow_rerun=1)
+        def collect_avg_photostim_response_preictal(**kwargs):
+            expobj: Post4ap = kwargs['expobj']
+
+            sz_onset_times = expobj.seizure_lfp_onsets
+            preictal_stims = []
+            for sz_onset in sz_onset_times:
+                if sz_onset > 0:
+                    for stim in expobj.stims_out_sz:
+                        if (sz_onset - int(30 * expobj.fps)) < stim < sz_onset:
+                            preictal_stims.append(expobj.stim_start_frames.index(stim))
+
+            # print(preictal_stims)
+
+            # take mean of response across preictal stims
+            dff_responses = expobj.PhotostimResponsesSLMTargets.adata.X
+            z_scored_responses = expobj.PhotostimResponsesSLMTargets.adata.layers[
+                'dFF (zscored)']  # z scored to baseline responses
+
+            if data_label == 'z scored to baseline':
+                data_ = z_scored_responses
+            else:
+                data_ = dff_responses
+
+            if len(expobj.preictal_stim_idx) > 0:
+                avg_response = np.mean(data_[:, expobj.preictal_stim_idx], axis=1)
+                return np.mean(avg_response)
+
+        @Utils.run_for_loop_across_exps(run_post4ap_trials=True, allow_rerun=1)
+        def collect_avg_photostim_response_postictal(**kwargs):
+            expobj: Post4ap = kwargs['expobj']
+
+            # sz_offset_times = expobj.seizure_lfp_offsets
+            # postictal_stims = []
+            # for sz_offset in sz_offset_times:
+            #     if sz_offset < expobj.n_frames:
+            #         for stim in expobj.stims_out_sz:
+            #             if (sz_offset - int(30 * expobj.fps)) < stim < sz_offset:
+            #                 postictal_stims.append(expobj.stim_start_frames.index(stim))
+
+            # take mean of response across preictal stims
+            dff_responses = expobj.PhotostimResponsesSLMTargets.adata.X
+            z_scored_responses = expobj.PhotostimResponsesSLMTargets.adata.layers[
+                'dFF (zscored)']  # z scored to baseline responses
+
+            if data_label == 'z scored to baseline':
+                data_ = z_scored_responses
+            else:
+                data_ = dff_responses
+
+            if len(expobj.postictal_stim_idx) > 0:
+                avg_response = np.mean(data_[:, expobj.postictal_stim_idx], axis=1)
+                return np.mean(avg_response)
+            else:
+                print(f'****** WARNING: no postictal stims for {expobj.t_series_name} ****** ')
+
+        @Utils.run_for_loop_across_exps(run_post4ap_trials=True, allow_rerun=1)
+        def collect_avg_photostim_response_very_interictal(**kwargs):
+            expobj: Post4ap = kwargs['expobj']
+
+            # take mean of response across preictal stims
+            dff_responses = expobj.PhotostimResponsesSLMTargets.adata.X
+            z_scored_responses = expobj.PhotostimResponsesSLMTargets.adata.layers[
+                'dFF (zscored)']  # z scored to baseline responses
+
+            if data_label == 'z scored to baseline':
+                data_ = z_scored_responses
+            else:
+                data_ = dff_responses
+
+            if len(expobj.veryinterictal_stim_idx) > 0:
+                avg_response = np.mean(data_[:, expobj.veryinterictal_stim_idx], axis=1)
+                return np.mean(avg_response)
+            else:
+                print(f'****** WARNING: no postictal stims for {expobj.t_series_name} ****** ')
+
+        if not hasattr(RESULTS, 'interictal_responses') or rerun:
+            RESULTS.interictal_responses = {}
+            RESULTS.interictal_responses['data_label'] = data_label
+            RESULTS.interictal_responses['preictal_responses'] = collect_avg_photostim_response_preictal()
+            RESULTS.interictal_responses['postictal_responses'] = collect_avg_photostim_response_postictal()
+            RESULTS.interictal_responses['very_interictal_responses'] = collect_avg_photostim_response_very_interictal()
+            RESULTS.save_results()
 
 
 

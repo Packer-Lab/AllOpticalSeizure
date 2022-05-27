@@ -18,7 +18,21 @@ import matplotlib.pyplot as plt
 
 from _main_.Post4apMain import Post4ap
 
-# %% E) DECONVOLVED SPIKE RATE ANALYSIS
+# %% E) seizure stats
+
+from _analysis_.sz_analysis._ClassExpSeizureAnalysis import ExpSeizureAnalysis as main
+
+# main.FOVszInvasionTime()
+main.calc__szInvasionTime()
+# main.plot__sz_invasion()
+
+
+main.plot__sz_incidence()
+main.plot__sz_lengths()
+
+
+
+# %% F) DECONVOLVED SPIKE RATE ANALYSIS
 
 results = Suite2pROIsSzResults.load()
 

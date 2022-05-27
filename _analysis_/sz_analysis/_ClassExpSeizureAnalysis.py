@@ -1,6 +1,8 @@
 # NOTE: ALOT OF THIS CODE IS PRIMARILY COPIED AND REFACTORED OVER FROM alloptical_sz_processing IN AN EFFORT TO class-ify THE ANALYSIS OF THE SZ PROCESSING. COPIED OVER BITS ARE ARCHIVED UNDER THAT ORIGINAL SCRIPT.
 import sys
 
+from funcsforprajay.plotting.plotting import plot_bar_with_points
+
 sys.path.extend(['/home/pshah/Documents/code/AllOpticalSeizure', '/home/pshah/Documents/code/AllOpticalSeizure'])
 
 import numpy as np
@@ -16,7 +18,8 @@ from _analysis_._utils import Quantification
 from _exp_metainfo_.exp_metainfo import AllOpticalExpsToAnalyze, ExpMetainfo
 from _main_.Post4apMain import Post4ap
 from _main_.TwoPhotonImagingMain import TwoPhotonImaging
-from _utils_.alloptical_plotting import multi_plot_subplots, get_ax_for_multi_plot, plot_SLMtargets_Locs, plotMeanRawFluTrace, plot_lfp_stims
+from _utils_.alloptical_plotting import multi_plot_subplots, get_ax_for_multi_plot, plot_SLMtargets_Locs, \
+    plotMeanRawFluTrace, plot_lfp_stims
 
 SAVE_LOC = "/home/pshah/mnt/qnap/Analysis/analysis_export/analysis_quantification_classes/"
 
@@ -25,21 +28,24 @@ SAVE_PATH_PREFIX = '/home/pshah/mnt/qnap/Analysis/Procesing_figs/sz_processing_b
 import _utils_.io as io_
 
 
-
 # %%
 class ExpSeizureAnalysis(Quantification):
     """Processing/analysis of seizures overall for photostimulation experiments. Including analysis of seizure individual timed photostim trials."""
-    
+
     save_path = SAVE_LOC + 'Quant__ExpSeizureAnalysis.pkl'
 
     def __init__(self, expobj: Post4ap, not_flip_stims=None):
         super().__init__(expobj)
         print(f'\t\- ADDING NEW ExpSeizureAnalysis MODULE to expobj: {expobj.t_series_name}')
         if not_flip_stims is None:
-            self.not_flip_stims: list = expobj.not_flip_stims if hasattr(expobj, 'not_flip_stims') else []  #: this is the main attr that stores information about whether a stim needs its sz boundary classification flipped or not
-        else: self.not_flip_stims: list = not_flip_stims
-        self.slmtargets_szboundary_stim = expobj.slmtargets_szboundary_stim if hasattr(expobj, 'slmtargets_szboundary_stim') else {}  #: stims for slm targets
-        self.nontargets_szboundary_stim = expobj.s2prois_szboundary_stim if hasattr(expobj, 'nontargets_szboundary_stim') else {}
+            self.not_flip_stims: list = expobj.not_flip_stims if hasattr(expobj,
+                                                                         'not_flip_stims') else []  #: this is the main attr that stores information about whether a stim needs its sz boundary classification flipped or not
+        else:
+            self.not_flip_stims: list = not_flip_stims
+        self.slmtargets_szboundary_stim = expobj.slmtargets_szboundary_stim if hasattr(expobj,
+                                                                                       'slmtargets_szboundary_stim') else {}  #: stims for slm targets
+        self.nontargets_szboundary_stim = expobj.s2prois_szboundary_stim if hasattr(expobj,
+                                                                                    'nontargets_szboundary_stim') else {}
 
     def __repr__(self):
         return f"ExpSeizureAnalysis <-- Quantification Analysis submodule for expobj <{self.expobj_id}>"
@@ -48,8 +54,8 @@ class ExpSeizureAnalysis(Quantification):
     # plotting of LFP trace
     @staticmethod
     def plot__photostim_timings_lfp(exp_prep, **kwargs):
-        expobj = io_.import_expobj(exp_prep = exp_prep)
-        aoplot.plot_lfp_stims(expobj, x_axis = 'Time (secs)', sz_markings = False, legend = False,
+        expobj = io_.import_expobj(exp_prep=exp_prep)
+        aoplot.plot_lfp_stims(expobj, x_axis='Time (secs)', sz_markings=False, legend=False,
                               **kwargs)
 
     @staticmethod
@@ -174,7 +180,8 @@ class ExpSeizureAnalysis(Quantification):
         for i in range(expobj.numSeizures):
             sz_stim_frames.append(list(expobj.stimsSzLocations[expobj.stimsSzLocations['sz_num'] == i].index))
 
-        assert expobj.stims_in_sz[1:] == pj.flattenOnce(sz_stim_frames), 'not all ictal stims accounted for in list of stim frames to classify.'
+        assert expobj.stims_in_sz[1:] == pj.flattenOnce(
+            sz_stim_frames), 'not all ictal stims accounted for in list of stim frames to classify.'
 
         for sz_num, stims_of_interest in enumerate(sz_stim_frames):
             print('\n|-', stims_of_interest)
@@ -200,13 +207,18 @@ class ExpSeizureAnalysis(Quantification):
                 try:
                     if cells == 'slm targets':
                         # CLASSIFY SLM TARGETS ACROSS SZ BOUNDARIES
-                        in_sz, out_sz, fig, ax = expobj.classify_slmtargets_sz_bound(stim=stim, to_plot=True, title=str(stim),
-                                                                                     text=str(stim), flip=flip, fig=fig, ax=ax)
-                        self.slmtargets_szboundary_stim[stim] = in_sz  # for each stim, there will be a ls of cells that will be classified as in seizure or out of seizure
+                        in_sz, out_sz, fig, ax = expobj.classify_slmtargets_sz_bound(stim=stim, to_plot=True,
+                                                                                     title=str(stim),
+                                                                                     text=str(stim), flip=flip, fig=fig,
+                                                                                     ax=ax)
+                        self.slmtargets_szboundary_stim[
+                            stim] = in_sz  # for each stim, there will be a ls of cells that will be classified as in seizure or out of seizure
                     elif cells == 'nontargets':
                         ## CLASSIFY NONTARGETS ACROSS SZ BOUNDARIES
-                        in_sz, out_sz, fig, ax = expobj.classify_cells_sz_bound(stim=stim, to_plot=True, title=str(stim),
-                                                                                text=str(stim), flip=flip, fig=fig, ax=ax)
+                        in_sz, out_sz, fig, ax = expobj.classify_cells_sz_bound(stim=stim, to_plot=True,
+                                                                                title=str(stim),
+                                                                                text=str(stim), flip=flip, fig=fig,
+                                                                                ax=ax)
                         self.nontargets_szboundary_stim[stim] = in_sz
                     # axs[counter // ncols, counter % ncols] = ax
                 except KeyError:
@@ -246,7 +258,7 @@ class ExpSeizureAnalysis(Quantification):
         # -- FIRST manually draw boundary on the image in ImageJ and save results as CSV to analysis folder under boundary_csv
 
         # expobj.avg_stim_images(stim_timings=expobj.stims_in_sz, peri_frames=50, to_plot=True, save_img=True)
-        expobj.sz_locations_stims() #if not hasattr(expobj, 'stimsSzLocations') else None
+        expobj.sz_locations_stims()  # if not hasattr(expobj, 'stimsSzLocations') else None
 
         ######## - all stims in sz are classified, with individual sz events labelled
         # expobj.ExpSeizure.classify_sz_boundaries_all_stims(expobj=expobj, cells='slm targets')
@@ -255,7 +267,6 @@ class ExpSeizureAnalysis(Quantification):
         self.classify_sz_boundaries_all_stims(expobj=expobj, cells=cells)
 
         expobj.save()
-
 
     # flip of stim boundaries manually
     @staticmethod
@@ -269,11 +280,11 @@ class ExpSeizureAnalysis(Quantification):
 
         # 180 330 481 631 782 932 1083 1233 1384 1835 1986 2136 2287 2438 2588 3040 3190 3491  # temp stims to flip for PS04 t-018
         if stims is None:
-            input_string = input("Enter a string of stims to flip (ensure to separate each stim frame # by exactly one space: ")
+            input_string = input(
+                "Enter a string of stims to flip (ensure to separate each stim frame # by exactly one space: ")
             add_stims = input_string.split()
         else:
             add_stims = stims
-
 
         for stim in add_stims:
             assert int(stim) in expobj.stim_start_frames, f'stim {stim} not found as a stim start frame for {expobj}'
@@ -298,19 +309,20 @@ class ExpSeizureAnalysis(Quantification):
         """
 
         if stims is None:
-            input_string = input(f"Enter list of stims to remove from expobj.ExpSeizure.not_flip_stims for {expobj.t_series_name} (ensure to separate each stim frame # by exactly one space: ")
+            input_string = input(
+                f"Enter list of stims to remove from expobj.ExpSeizure.not_flip_stims for {expobj.t_series_name} (ensure to separate each stim frame # by exactly one space: ")
             remove_stims = input_string.split()
         else:
             remove_stims = stims
 
-        expobj.ExpSeizure.not_flip_stims = [stim for stim in expobj.ExpSeizure.not_flip_stims if stim not in remove_stims]
+        expobj.ExpSeizure.not_flip_stims = [stim for stim in expobj.ExpSeizure.not_flip_stims if
+                                            stim not in remove_stims]
 
         for stim in remove_stims:
             if stim in expobj.ExpSeizure.not_flip_stims:
                 print(f'not found to remove: {stim}')
             else:
                 print(f'removed: {stim}')
-
 
         # for x in remove_stims:
         #     if x in expobj.ExpSeizure.not_flip_stims:
@@ -439,8 +451,6 @@ class ExpSeizureAnalysis(Quantification):
     #     expobj.save()
     #     print('end end end.')
 
-
-
     # 4.1) counting seizure incidence across all imaging trials
     @staticmethod
     def count_sz_incidence_2p_trials():
@@ -486,17 +496,21 @@ class ExpSeizureAnalysis(Quantification):
 
     @classmethod
     def plot__sz_incidence(cls):
-        pj.plot_bar_with_points(data=[cls.twop_trials_sz_incidence, cls.onep_trials_sz_incidence],
-                                x_tick_labels=['2p stim', '1p stim'],
-                                colors=['purple', 'green'], y_label='sz incidence (events/min)',
-                                title='rate of seizures during exp', expand_size_x=0.4, expand_size_y=1, ylims=[0, 1],
-                                shrink_text=0.8)
+        # pj.plot_bar_with_points(data=[cls.twop_trials_sz_incidence, cls.onep_trials_sz_incidence],
+        #                         x_tick_labels=['2p stim', '1p stim'],
+        #                         colors=['purple', 'green'], y_label='sz incidence (events/min)',
+        #                         title='rate of seizures during exp', expand_size_x=0.4, expand_size_y=1, ylims=[0, 1],
+        #                         shrink_text=0.8)
 
-        pj.plot_bar_with_points(data=[cls.twop_trials_sz_incidence + cls.onep_trials_sz_incidence],
-                                x_tick_labels=['Experiments'],
-                                colors=['#2E3074'], y_label='Seizure incidence (events/min)', alpha=0.7, bar=False,
-                                title='rate of seizures during exp', expand_size_x=0.7, expand_size_y=1, ylims=[0, 1],
-                                shrink_text=0.8)
+        fig, ax = plt.subplots(figsize = (1.8, 3))
+        plot_bar_with_points(data=[cls.twop_trials_sz_incidence + cls.onep_trials_sz_incidence],
+                             x_tick_labels=['Experiments'], colors=['black'], y_label='Seizure incidence (events/min)',
+                             alpha=0.7, bar=False, title='rate of seizures during exp', expand_size_x=2, expand_size_y=1, ylims=[0, 1],
+                             fig=fig, ax=ax, show=False, shrink_text=0.8)
+        ax.spines['bottom'].set_visible(False)
+        ax.set_xticks([])
+        fig.tight_layout(pad=2)
+        fig.show()
 
     # 4.2) measure seizure LENGTHS across all imaging trials (including any spont imaging you might have)
 
@@ -531,7 +545,6 @@ class ExpSeizureAnalysis(Quantification):
 
                         print('Avg. seizure length (secs) for %s, %s, %s: ' % (prep, trial, expobj.metainfo['exptype']),
                               np.round(expobj.avg_sz_len, 2))
-
                 else:
                     n_seizures = 0
                     print('no sz events for %s, %s, %s ' % (prep, trial, expobj.metainfo['exptype']))
@@ -569,18 +582,22 @@ class ExpSeizureAnalysis(Quantification):
 
     @classmethod
     def plot__sz_lengths(cls):
-        pj.plot_bar_with_points(data=[cls.twop_trials_sz_lengths, cls.onep_trials_sz_lengths],
-                                x_tick_labels=['2p stim', '1p stim'],
-                                colors=['purple', 'green'], y_label='seizure length (secs)',
-                                title='Avg. length of sz', expand_size_x=0.4, expand_size_y=1, ylims=[0, 120],
-                                title_pad=15,
-                                shrink_text=0.8)
-
-        pj.plot_bar_with_points(data=[cls.twop_trials_sz_lengths + cls.onep_trials_sz_lengths],
-                                x_tick_labels=['Experiments'],
-                                colors=['green'], y_label='Seizure length (secs)', alpha=0.7, bar=False,
+        # pj.plot_bar_with_points(data=[cls.twop_trials_sz_lengths, cls.onep_trials_sz_lengths],
+        #                         x_tick_labels=['2p stim', '1p stim'],
+        #                         colors=['purple', 'green'], y_label='seizure length (secs)',
+        #                         title='Avg. length of sz', expand_size_x=0.4, expand_size_y=1, ylims=[0, 120],
+        #                         title_pad=15,
+        #                         shrink_text=0.8)
+        fig, ax = plt.subplots(figsize=(1.8,3))
+        plot_bar_with_points(data=[cls.twop_trials_sz_lengths + cls.onep_trials_sz_lengths],
+                                x_tick_labels=['Experiments'], fig=fig, ax=ax, show=False,
+                                colors=['black'], y_label='Seizure length (secs)', alpha=0.7, bar=False,
                                 title='Avg sz length', expand_size_x=0.7, expand_size_y=1, ylims=[0, 120],
                                 shrink_text=0.8)
+        ax.spines['bottom'].set_visible(False)
+        ax.set_xticks([])
+        fig.tight_layout(pad=2)
+        fig.show()
 
     # 6.0-dc) ANALYSIS: calculate time delay between LFP onset of seizures and imaging FOV invasion for each seizure for each experiment
     # -- this section has been moved to _ClassExpSeizureAnalysis .22/02/20 -- this copy here is now archived
@@ -705,6 +722,7 @@ class ExpSeizureAnalysis(Quantification):
         axs[2].plot(lags, correlated)
         f.show()
 
+
 # %%
 if __name__ == '__main__':
     # DATA INSPECTION
@@ -715,9 +733,10 @@ if __name__ == '__main__':
 
     print(expobj.ExpSeizure.not_flip_stims)
     ExpSeizureAnalysis.enter_stims_to_flip(expobj=expobj, stims=[14916])
+
+
     # ExpSeizureAnalysis.remove_stims_to_flip(expobj=expobj, stims=[14916])
     # RL109 t-018 not flip stims entry: 2386 2534 2683 7891 8040 8189 8338 8486 8635 8784 8933 9082 9230 9379 9528 9677 9826 9974 10123 10272 10421 10570
-
 
     @Utils.run_for_loop_across_exps(run_pre4ap_trials=False, run_post4ap_trials=False, allow_rerun=True,
                                     run_trials=['RL109 t-018', 'PS07 t-011', 'PS06 t-013', 'PS11 t-011'])
@@ -726,6 +745,5 @@ if __name__ == '__main__':
         expobj.ExpSeizure.not_flip_stims = expobj.not_flip_stims
         print(expobj.ExpSeizure.not_flip_stims)
         expobj.save()
-
 
     # __fix__not_flip_stims_expseizure_class()

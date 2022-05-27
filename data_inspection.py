@@ -57,3 +57,6 @@ for cell in expobj.s2p_nontargets:
            np.round(np.std(expobj.raw[cell_idx], ddof=1), 2)))
 
 
+# %% downsampling of imaging tiff
+
+

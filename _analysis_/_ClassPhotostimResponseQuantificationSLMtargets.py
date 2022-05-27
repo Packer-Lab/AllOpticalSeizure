@@ -50,6 +50,11 @@ class PhotostimResponsesSLMtargetsResults(Results):
 
         self.variance_photostimresponse = {}
 
+        self.interictal_responses = {'data_label': '',
+            'very_interictal_responses': [],
+            'preictal_responses': [],
+                                     'postictal_responses': []}  #: responses during interictal split by preictal and postictal
+
 
 REMAKE = False
 if not os.path.exists(PhotostimResponsesSLMtargetsResults.SAVE_PATH) or REMAKE:
@@ -1044,37 +1049,62 @@ class PhotostimResponsesQuantificationSLMtargets(Quantification):
         dataplot_frame_options()
 
         # fig, axs = plt.subplots(figsize=(15, 5), nrows=1, ncols=3)
-        fig, axs = plt.subplots(figsize=(20, 10), nrows=2, ncols=4)
+        fig, axs = plt.subplots(figsize=(20, 5), nrows=1, ncols=4)
         # axs = [axs]
         print(f'\nCreating plot `photostim_responses_vs_prestim_targets_annulus_flu`\n')
 
         alpha = 0.1
         size = 30
 
-        sns.kdeplot(x=RESULTS['baseline_targets_annulus'], y=RESULTS['baseline_targets_responses'],
-                    color='cornflowerblue', ax=axs[0, 0], alpha=0.4, fill=True)
-        sns.kdeplot(x=RESULTS['interic_targets_annulus'], y=RESULTS['interic_targets_responses'], color='forestgreen',
-                    fill=True, ax=axs[0, 1], alpha=0.4)
-        sns.kdeplot(x=RESULTS['out_sz_targets_annulus'], y=RESULTS['out_sz_targets_responses'], color='orange',
-                    ax=axs[0, 2], alpha=0.4, fill=True)
-        sns.kdeplot(x=RESULTS['in_sz_targets_annulus'], y=RESULTS['in_sz_targets_responses'], color='red', ax=axs[0, 3],
-                    alpha=0.4, fill=True)
+        # sns.kdeplot(x=RESULTS['baseline_targets_annulus'], y=RESULTS['baseline_targets_responses'],
+        #             color='cornflowerblue', ax=axs[0, 0], alpha=0.4, fill=True)
+        # sns.kdeplot(x=RESULTS['interic_targets_annulus'], y=RESULTS['interic_targets_responses'], color='forestgreen',
+        #             fill=True, ax=axs[0, 1], alpha=0.4)
+        # sns.kdeplot(x=RESULTS['out_sz_targets_annulus'], y=RESULTS['out_sz_targets_responses'], color='orange',
+        #             ax=axs[0, 2], alpha=0.4, fill=True)
+        # sns.kdeplot(x=RESULTS['in_sz_targets_annulus'], y=RESULTS['in_sz_targets_responses'], color='red', ax=axs[0, 3],
+        #             alpha=0.4, fill=True)
 
-        axs[1, 0].scatter(RESULTS['baseline_targets_annulus'], RESULTS['baseline_targets_responses'],
+        axs[0].scatter(RESULTS['baseline_targets_annulus'], RESULTS['baseline_targets_responses'],
                           facecolor='cornflowerblue', alpha=alpha, s=size, label='baseline')
-        axs[1, 1].scatter(RESULTS['interic_targets_annulus'], RESULTS['interic_targets_responses'],
+        axs[1].scatter(RESULTS['interic_targets_annulus'], RESULTS['interic_targets_responses'],
                           facecolor='forestgreen', alpha=alpha, s=size, label='interic')
-        axs[1, 2].scatter(RESULTS['out_sz_targets_annulus'], RESULTS['out_sz_targets_responses'], facecolor='orange',
+        axs[2].scatter(RESULTS['out_sz_targets_annulus'], RESULTS['out_sz_targets_responses'], facecolor='orange',
                           alpha=alpha, s=size, label='out_sz')
-        axs[1, 3].scatter(RESULTS['in_sz_targets_annulus'], RESULTS['in_sz_targets_responses'], facecolor='red',
+        axs[3].scatter(RESULTS['in_sz_targets_annulus'], RESULTS['in_sz_targets_responses'], facecolor='red',
                           alpha=alpha, s=size, label='in_sz')
+
+        axs[0].errorbar(np.mean(RESULTS['baseline_targets_annulus']), 
+                        np.mean(RESULTS['baseline_targets_responses']), 
+                        xerr=np.std(RESULTS['baseline_targets_annulus'], ddof=1), 
+                        yerr=np.std(RESULTS['baseline_targets_responses']), 
+                        fmt='o', color='black',
+                    ecolor='gray', elinewidth=5, capsize=2)
+        axs[1].errorbar(np.mean(RESULTS['interic_targets_annulus']), 
+                        np.mean(RESULTS['interic_targets_responses']),
+                        xerr=np.std(RESULTS['interic_targets_annulus'], ddof=1), 
+                        yerr=np.std(RESULTS['interic_targets_responses']), 
+                        fmt='o', color='black',
+                    ecolor='gray', elinewidth=5, capsize=2)
+        axs[2].errorbar(np.mean(RESULTS['out_sz_targets_annulus']), 
+                        np.mean(RESULTS['out_sz_targets_responses']), 
+                        xerr=np.std(RESULTS['out_sz_targets_annulus'], ddof=1), 
+                        yerr=np.std(RESULTS['out_sz_targets_responses']), 
+                        fmt='o', color='black',
+                    ecolor='gray', elinewidth=5, capsize=2)
+        axs[3].errorbar(np.mean(RESULTS['in_sz_targets_annulus']), 
+                        np.mean(RESULTS['in_sz_targets_responses']), 
+                        xerr=np.std(RESULTS['in_sz_targets_annulus'], ddof=1), 
+                        yerr=np.std(RESULTS['in_sz_targets_responses']), 
+                        fmt='o', color='black',
+                    ecolor='gray', elinewidth=5, capsize=2)
 
         # plt.show()
 
         # complete plot
         titles = ['baseline', 'interictal', 'ictal - out sz', 'ictal - in sz']
-        [axs[0, i].set_title(titles[i], wrap=True) for i in range(axs.shape[1])]
-        [axs[1, i].set_title(titles[i], wrap=True) for i in range(axs.shape[1])]
+        # [axs[0, i].set_title(titles[i], wrap=True) for i in range(axs.shape[1])]
+        [axs[i].set_title(titles[i], wrap=True) for i in range(axs.shape[0])]
 
         # # create custom legend
         # handles, labels = ax.get_legend_handles_labels()
@@ -1093,10 +1123,10 @@ class PhotostimResponsesQuantificationSLMtargets(Quantification):
         # labels_custom = ['baseline', 'interictal', 'ictal', 'in sz', 'out sz']
 
         # use log scale for x axis
-        axs = pj.flattenOnce(axs)
+        # axs = pj.flattenOnce(axs)
         [axs[i].set_xscale('log') for i in range(len(axs))]
-        [axs[i].set_ylim([-100, 100]) for i in range(len(axs))]
-        [axs[i].set_xlim([10 ** 1, 10 ** 3]) for i in range(len(axs))]
+        [axs[i].set_ylim([-200, 200]) for i in range(len(axs))]
+        [axs[i].set_xlim([10 ** 1, 10 ** 3.5]) for i in range(len(axs))]
 
         # ax.legend(handles_, labels_, loc='center left', bbox_to_anchor=(1.04, 0.5))
         [axs[i].set_xlabel('pre-stim annulus Flu') for i in range(len(axs))]
@@ -1149,8 +1179,8 @@ if __name__ == '__main__':
     # RESULTS.pre_stim_targets_annulus_vs_targets_responses_results = retrieve__photostim_responses_vs_prestim_targets_annulus_flu()
     # RESULTS.save_results()
     # retrieve__photostim_responses_vs_prestim_targets_annulus_flu()
-    # plot__photostim_responses_vs_prestim_targets_annulus_flu(RESULTS)
-    # plot__targets_annulus_prestim_Flu_all_points(RESULTS)
+    PhotostimResponsesQuantificationSLMtargets.plot__photostim_responses_vs_prestim_targets_annulus_flu(RESULTS)
+    PhotostimResponsesQuantificationSLMtargets.plot__targets_annulus_prestim_Flu_all_points(RESULTS)
 
     pass
 

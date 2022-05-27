@@ -207,8 +207,8 @@ distances = []
 for exp in np.unique(baseline_responses['expID']):
     _distances = list(baseline_responses[baseline_responses['expID'] == exp]['distance target'])
     distances.append(_distances)
-ax.hist(distances, 40, density=True, histtype='bar', stacked=True)
-ax.set_title('density of measurements by individual experiments')
+ax.hist(distances, 40, density=False, histtype='bar', stacked=True)
+ax.set_title('number of measurements by individual experiments')
 ax.set_xlabel('distance to target (um)')
 fig.show()
 
