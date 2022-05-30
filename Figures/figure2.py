@@ -6,9 +6,33 @@ import _utils_.alloptical_plotting as aoplot
 # import onePstim superobject that will collect analyses from various individual experiments
 from _exp_metainfo_.exp_metainfo import import_resultsobj, ExpMetainfo
 from _utils_.io import import_expobj
+from onePexperiment.OnePhotonStimAnalysis_main import OnePhotonStimAnalysisFuncs
 
 results_object_path = '/home/pshah/mnt/qnap/Analysis/onePstim_results_superobject.pkl'
 onePresults = import_resultsobj(pkl_path=results_object_path)
+
+date = '2021-01-24'
+
+expobj = import_expobj(prep='PS11', trial='t-012', date=date)  # post4ap trial
+
+# %% 1) Radial plot of Mean FOV for photostimulation trials, with period equal to that of photostimulation timing period
+
+exp_sz_occurrence = OnePhotonStimAnalysisFuncs.collectSzOccurrenceRelativeStim()
+
+bin_width = int(0.5 * expobj.fps)
+period = len(np.arange(0, (expobj.stim_interval_fr / bin_width))[:-1])
+theta = (2 * np.pi) * np.arange(0, (expobj.stim_interval_fr / bin_width))[:-1] / period
+
+fig, ax = plt.subplots(subplot_kw={'projection': 'polar'})
+for exp in exp_sz_occurrence:
+    plot = exp
+    ax.bar(theta, plot, width=(2 * np.pi) / period , bottom=0.0, alpha=0.5)
+    # ax.set_rmax(1.1)
+    # ax.set_rticks([0.5, 1])  # Less radial ticks
+    ax.set_rlabel_position(-22.5)  # Move radial labels away from plotted line
+    ax.grid(True)
+    ax.set_title("sz occurrence", va='bottom')
+fig.show()
 
 
 # %% B) LFP signal with optogenetic stims
@@ -66,20 +90,7 @@ aoplot.plot_lfp_1pstim_avg_trace(post4ap, x_axis='time', individual_traces=False
                                  title='Ictal')
 
 
-# %% 1) Radial plot of Mean FOV for photostimulation trials, with period equal to that of photostimulation timing period
 
-# theta = (2 * np.pi) * (timepoints / interphotostim_interval)
-#
-# fig, ax = plt.subplots(subplot_kw={'projection': 'polar'})
-# ax.plot(meanFOV, theta)
-# ax.set_rmax(1)
-# ax.set_rticks([0.5, 1, 1.5, 2])  # Less radial ticks
-# ax.set_rlabel_position(-22.5)  # Move radial labels away from plotted line
-# ax.grid(True)
-#
-# ax.set_title("A line plot on a polar axis", va='bottom')
-# plt.show()
-#
 
 
 

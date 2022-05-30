@@ -9,28 +9,16 @@ from _main_.AllOpticalMain import alloptical
 from _main_.Post4apMain import Post4ap
 
 main = PhotostimAnalysisSlmTargets
+RESULTS = PhotostimResponsesSLMtargetsResults.load()
 
 # %% RUNNING PLOTS:
 
-# %% xx) plotting interictal photostim responses split by pre-ictal and post-ictal
-
-RESULTS = PhotostimResponsesSLMtargetsResults.load()
-
-fig, ax = plot_bar_with_points(data=[
-    RESULTS.interictal_responses['preictal_responses'],
-    RESULTS.interictal_responses['very_interictal_responses'],
-    RESULTS.interictal_responses['postictal_responses']
-                                     ],
-    bar=False, title='photostim responses - targets', x_tick_labels=['pre-ictal', 'very interictal', 'post-ictal'],
-    colors=['lightseagreen', 'gold', 'lightcoral'], figsize=(4, 4), y_label=RESULTS.interictal_responses['data_label'], show=False, ylims=[-0.5, 0.5], alpha=1)
-fig.tight_layout(pad=0.2)
-fig.show()
 
 # %% A) schematic of variability of photostimulation responses
 
 # main.plot__schematic_variability_measurement()
 
-# main.plot__variability(figsize=[3, 5], rerun=False)
+main.plot__variability(figsize=[3, 5], rerun=False)
 
 # %% B) plot mean response vs. variability for baseline + interictal
 
@@ -42,7 +30,6 @@ fig.show()
 
 # %% D) plotting target annulus vs photostim responses
 
-RESULTS = PhotostimResponsesSLMtargetsResults.load()
 
 PhotostimResponsesQuantificationSLMtargets.plot__photostim_responses_vs_prestim_targets_annulus_flu(RESULTS)
 
@@ -50,5 +37,18 @@ PhotostimResponsesQuantificationSLMtargets.plot__photostim_responses_vs_prestim_
 
 
 
+# %% xx) plotting interictal photostim responses split by pre-ictal and post-ictal
+
+# main.collect__interictal_responses_split()
+
+fig, ax = plot_bar_with_points(data=[
+    RESULTS.interictal_responses['preictal_responses'],
+    RESULTS.interictal_responses['very_interictal_responses'],
+    RESULTS.interictal_responses['postictal_responses']
+                                     ],
+    bar=False, title='photostim responses - targets', x_tick_labels=['pre-ictal', 'very interictal', 'post-ictal'],
+    colors=['lightseagreen', 'gold', 'lightcoral'], figsize=(4, 4), y_label=RESULTS.interictal_responses['data_label'], show=False, ylims=[-0.5, 0.5], alpha=1)
+fig.tight_layout(pad=0.2)
+fig.show()
 
 

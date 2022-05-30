@@ -341,3 +341,45 @@ class OnePhotonStimAnalysisFuncs(OnePhotonStim):
         return _collectTimeToSzOnset()
 
 
+    @staticmethod
+    def collectSzOccurrenceRelativeStim():
+
+        @OnePhotonStim.runOverExperiments(run_pre4ap_trials=False, run_post4ap_trials=True, ignore_cache=True)
+        def __function(**kwargs):
+            expobj: OnePhotonStim = kwargs['expobj']
+
+            if expobj.t_series_name == 'PS16 t-009':
+                print('break here and investigate further where this exp"s seizures are occuring relative to precise timing of stims.')
+                # from _utils_.alloptical_plotting import plotLfpSignal
+                # plotLfpSignal(expobj, x_axis='time', figsize=(30, 3), linewidth=0.5, downsample=True,
+                #                      sz_markings=True, color='black')
+
+            print(f'{expobj.t_series_name}: {np.sum(expobj.sz_occurrence_stim_intervals2)}')
+
+
+            return expobj.sz_occurrence_stim_intervals
+
+        func_collector = __function()
+
+
+        # for i in func_collector:
+        #     print(f'')
+        #     print(i.shape)
+
+
+
+
+        # sz_occurence_relative = [func_collector[0]]
+        # for sz_occurrence in func_collector[1:]:
+        #     sz_occurence_relative += sz_occurrence
+
+        # return sz_occurence_relative / len(func_collector)
+        return func_collector
+
+        # bin_width = int(0.5 * expobj.fps)
+        # period = len(np.arange(0, (expobj.stim_interval_fr / bin_width))[:-1])
+        # theta = (2 * np.pi) * np.arange(0, (expobj.stim_interval_fr / bin_width))[:-1] / period
+        # plot = expobj.sz_occurrence_stim_intervals
+
+
+

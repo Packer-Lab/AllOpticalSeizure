@@ -95,6 +95,10 @@ class CustomUnpicklerAttributeError(pickle.Unpickler):
             print(f'\t for: AnnotatedData')
             from _utils_._anndata import AnnotatedData2
             return AnnotatedData2
+        elif name == 'OnePhotonStim':
+            print(f'\t for: OnePhotonStim')
+            from onePexperiment.OnePhotonStimMain import OnePhotonStim
+            return OnePhotonStim
         elif name == 'alloptical':
             print(f'\t for: alloptical')
             from _main_.AllOpticalMain import alloptical
@@ -304,9 +308,8 @@ def import_expobj(aoresults_map_id: str = None, trial: str = None, prep: str = N
                 expobj = CustomUnpicklerModuleNotFoundError(open(pkl_path, 'rb')).load()
 
     ### roping in some extraneous processing steps if there's expobj's that haven't completed for them
-
     try:
-        fps = expobj.fps
+        _fps = expobj.fps
     except AttributeError:
         expobj._parsePVMetadata()
         expobj.save()
@@ -336,6 +339,51 @@ def import_expobj(aoresults_map_id: str = None, trial: str = None, prep: str = N
 
     return expobj
 
+
+def import_1pexobj(prep=None, trial=None, date=None, pkl_path=None, verbose=False, load_backup_path=None):
+    # if need to load from backup path!
+    if load_backup_path:
+        pkl_path = load_backup_path
+        print(f"**** loading from backup path! ****")
+
+    if pkl_path is None:
+        if date is None:
+            try:
+                from onePexperiment.OnePhotonStimMain import onePresults
+                date = onePresults.mean_stim_responses.loc[(onePresults.mean_stim_responses.Prep == f"{prep}") & (
+                            onePresults.mean_stim_responses.Trial == f'{trial}'), 'pkl_list'].values[0][30:40]
+            except ValueError:
+                raise ValueError('not able to find date in allopticalResults.metainfo')
+        pkl_path = f"/home/pshah/mnt/qnap/Analysis/{date}/{prep}/{date}_{trial}/{date}_{trial}.pkl"
+
+    if not os.path.exists(pkl_path):
+        raise Exception('pkl path NOT found: ' + pkl_path)
+    with open(pkl_path, 'rb') as f:
+        print(f'\- Loading {pkl_path}', end='\r')
+        try:
+            expobj = pickle.load(f)
+            if expobj.analysis_save_path != f"/home/pshah/mnt/qnap/Analysis/{date}/{prep}/{date}_{trial}/":
+                expobj.analysis_save_path = f"/home/pshah/mnt/qnap/Analysis/{date}/{prep}/{date}_{trial}/"
+                expobj.save_pkl(pkl_path=expobj.pkl_path)
+        except pickle.UnpicklingError:
+            raise pickle.UnpicklingError(f"\n** FAILED IMPORT OF * {prep} {trial} * from {pkl_path}\n")
+        except AttributeError:
+            print(f"WARNING: needing to try using CustomUnpicklerAttributeError!")
+            expobj = CustomUnpicklerAttributeError(open(pkl_path, 'rb')).load()
+
+        experiment = f"{expobj.t_series_name} {expobj.metainfo['exptype']} {expobj.metainfo['comments']}"
+        print(f'|- Loaded {expobj.t_series_name} {expobj.metainfo["exptype"]}')
+        print(f'|- Loaded {experiment}') if verbose else None
+
+
+    ### roping in some extraneous processing steps if there's expobj's that haven't completed for them
+    try:
+        _fps = expobj.fps
+    except AttributeError:
+        expobj._parsePVMetadata()
+        expobj.save()
+
+    return expobj, experiment
 
 
 

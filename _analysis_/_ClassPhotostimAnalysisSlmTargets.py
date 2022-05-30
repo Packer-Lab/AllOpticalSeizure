@@ -232,7 +232,7 @@ class PhotostimAnalysisSlmTargets(Quantification):
         return std_vars
 
     @staticmethod
-    def plot__variability(rerun=False, **kwargs):
+    def plot__variability(rerun=False, fig_save_name='baseline-interictal_variability_of_photostim_responses.svg', **kwargs):
     # 1) plotting mean photostim response magnitude across experiments and experimental groups
         """create plot of mean photostim responses magnitudes for all three exp groups"""
 
@@ -274,13 +274,16 @@ class PhotostimAnalysisSlmTargets(Quantification):
 
             results.save_results()
 
-        pplot.plot_bar_with_points(
+        fig, ax = pplot.plot_bar_with_points(
             data=[results.variance_photostimresponse['baseline'], results.variance_photostimresponse['interictal']],
-            x_tick_labels=['Baseline', 'Interictal'], bar=True, colors=['gray', 'green'], alpha=0.8,
-            expand_size_x=0.4, title='Average variance', y_label='Variance (% dFF)^2', ylims=[0, 1], shrink_text=0.8,
+            x_tick_labels=['Baseline', 'Interictal'], bar=True, colors=['gray', 'green'], alpha=0.8, show=False,
+            expand_size_x=0.4, title='Average variance', y_label='Variance (% dFF)^2', ylims=[0, 1], shrink_text=0.9,
             **kwargs)
+        fig.tight_layout(pad=1)
+        fig.show()
+        Utils.save_figure(fig, save_path_suffix=f"{fig_save_name}") if fig_save_name else None
 
-        # return photostim_stdvars_baseline, photostim_stdvars_interictal, photostim_stdvars_ictal
+    # return photostim_stdvars_baseline, photostim_stdvars_interictal, photostim_stdvars_ictal
 
     @staticmethod
     def plot__schematic_variability_measurement():

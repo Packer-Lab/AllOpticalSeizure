@@ -16,8 +16,8 @@ import tifffile as tf
 from _main_.TwoPhotonImagingMain import TwoPhotonImaging
 from _main_.AllOpticalMain import alloptical
 from _main_.Post4apMain import Post4ap
+from onePexperiment.OnePhotonStimMain import OnePhotonStim
 
-from alloptical_utils_pj import OnePhotonStim
 from typing import List, Union
 
 from funcsforprajay.wrappers import print_start_end_plot, plot_piping_decorator

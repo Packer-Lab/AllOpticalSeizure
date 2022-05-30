@@ -259,7 +259,7 @@ def save_figure(fig, save_path_suffix: str = None, save_path_full: str = None):
         ## SET DEFAULT FIGURE SAVE DIRECTORY
         today_date = datetime.today().strftime('%Y-%m-%d')
         save_path_prefix = f"/home/pshah/mnt/qnap/Analysis/Results_figs/{today_date}/"
-        save_path_suffix += '.png' if 'png' not in save_path_suffix else ''
+        save_path_suffix += '.png' if ('png' not in save_path_suffix) and ('svg' not in save_path_suffix) else ''
         save_path_full = save_path_prefix + save_path_suffix
     else:
         ValueError('not able to determine where to save figure to!')

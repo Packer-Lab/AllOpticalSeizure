@@ -3913,7 +3913,7 @@ class Post4ap_(alloptical_):
         self.save() if save else None
 
 
-class OnePhotonStim(TwoPhotonImaging):
+class OnePhotonStim_(TwoPhotonImaging):
     compatible_responses_process = ['pre-stim dFF', 'post - pre']
 
     def __init__(self, data_path_base, date, animal_prep, trial, metainfo, analysis_save_path_base: str = None):

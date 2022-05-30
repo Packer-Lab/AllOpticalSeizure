@@ -1,21 +1,38 @@
 #%% DATA ANALYSIS FOR ONE-P PHOTOSTIM EXPERIMENTS - trying to mirror this code with the jupyter notebook for one P stim analysis
 import os
 
+import numpy as np
 from matplotlib import pyplot as plt
+from matplotlib import cm
 
-import alloptical_utils_pj as aoutils
+# import alloptical_utils_pj as aoutils
 from _utils_ import alloptical_plotting as aoplot
+from _utils_.io import import_expobj
 from onePexperiment.OnePhotonStimAnalysis_main import OnePhotonStimAnalysisFuncs
 
-from onePexperiment.OnePhotonStimMain import OnePhotonStimPlots as onepplots
+from onePexperiment.OnePhotonStimMain import OnePhotonStimPlots as onepplots, OnePhotonStim
 
-#  ###### IMPORT pkl file containing data in form of expobj
-trial = 't-019'
-prep = 'PS11'
+# #  ###### IMPORT pkl file containing data in form of expobj
+# trial = 't-008'
+# prep = 'PS17'
+# date = '2021-01-24'
+# pkl_path = "/home/pshah/mnt/qnap/Analysis/%s/%s/%s_%s/%s_%s.pkl" % (date, prep, date, trial, date, trial)
+# if os.path.exists(pkl_path):
+#     expobj, experiment = aoutils.import_expobj(pkl_path=pkl_path)
+
 date = '2021-01-24'
-pkl_path = "/home/pshah/mnt/qnap/Analysis/%s/%s/%s_%s/%s_%s.pkl" % (date, prep, date, trial, date, trial)
-if os.path.exists(pkl_path):
-    expobj, experiment = aoutils.import_expobj(pkl_path=pkl_path)
+# pre4ap
+# expobj: OnePhotonStim = import_expobj(prep='PS11', trial='t-009', date=date)  # pre4ap trial
+# aoplot.plotLfpSignal(expobj, x_axis='time', figsize=(5,3), linewidth=0.5, downsample=True, sz_markings=False, color='black',
+#                      ylims=[-4,1], xlims=[110*expobj.paq_rate, 210*expobj.paq_rate])
+
+expobj = import_expobj(prep='PS11', trial='t-012', date=date)  # post4ap trial
+# aoplot.plotLfpSignal(expobj, x_axis='time', figsize=(5,3), linewidth=0.5, downsample=True, sz_markings=False, color='black')
+# aoplot.plotMeanRawFluTrace(expobj, stim_span_color='white', x_axis='Time')
+
+# print(expobj.fov_trace_shutter_blanked_dff_pre_norm)
+
+self = expobj
 
 
 # %% 2.1) PLOT - time to seizure onset vs. pre-stim Flu
@@ -64,7 +81,7 @@ aoplot.plot_lfp_stims(expobj, x_axis='Time', figsize=(10,2), ylims=[-1,5])
 # %%
 date = '2021-01-24'
 
-expobj, _ = aoutils.import_expobj(prep='PS11', trial='t-009', date=date)  # pre4ap trial
+expobj = import_expobj(prep='PS11', trial='t-009', date=date)  # pre4ap trial
 aoplot.plotLfpSignal(expobj, x_axis='time', figsize=(5,3), linewidth=0.5, downsample=True, sz_markings=False, color='black',
                      ylims=[-4,1], xlims=[110*expobj.paq_rate, 210*expobj.paq_rate])
 
@@ -76,7 +93,7 @@ if 'pre' in expobj.metainfo['exptype']:
                                      optoloopback=True, figsize=(3.1, 3), shrink_text=0.8, stims_to_analyze=expobj.stim_start_frames,
                                      title='Avg. run_pre4ap_trials stims LFP')
 
-expobj, _ = aoutils.import_expobj(prep='PS11', trial='t-012', date=date)  # post4ap trial
+expobj = import_expobj(prep='PS11', trial='t-012', date=date)  # post4ap trial
 aoplot.plotLfpSignal(expobj, x_axis='time', figsize=(5/100*150,3), linewidth=0.5, downsample=True, sz_markings=False, color='black',
                      ylims=[0,5], xlims=[10*expobj.paq_rate, 160*expobj.paq_rate])
 
@@ -147,4 +164,164 @@ fig.show()
 OnePhotonStimAnalysisFuncs.collectTimeToSzOnset(ignore_cache=False)
 
 
+
+
+# %% 3.0) radial plot of photostim Flu response binned by 1sec post stimulation, where 0 = photostim time
+
+exp_sz_occurrence = OnePhotonStimAnalysisFuncs.collectSzOccurrenceRelativeStim()
+
+bin_width = int(0.5 * expobj.fps)
+period = len(np.arange(0, (expobj.stim_interval_fr / bin_width))[:-1])
+theta = (2 * np.pi) * np.arange(0, (expobj.stim_interval_fr / bin_width))[:-1] / period
+
+fig, ax = plt.subplots(subplot_kw={'projection': 'polar'})
+for exp in exp_sz_occurrence:
+    plot = exp
+    ax.bar(theta, plot, width=(2 * np.pi) / period , bottom=0.0, alpha=0.5)
+    # ax.set_rmax(1.1)
+    # ax.set_rticks([0.5, 1])  # Less radial ticks
+    ax.set_rlabel_position(-22.5)  # Move radial labels away from plotted line
+    ax.grid(True)
+    ax.set_title("sz occurrence", va='bottom')
+fig.show()
+
+
+# %% developing code below....
+
+# plot the meanRawFluTrace (maybe dFF normalize later too) along the radial axis...
+# self = expobj
+
+frames_lengths = np.arange(0 - self.shutter_interval_fr, (self.stim_start_frames[-1] - self.stim_start_frames[0] + self.stim_interval_fr - self.shutter_interval_fr))  #: frame indexes zero'd at the first photostim frame
+# frames_lengths = np.arange(0, (self.stim_start_frames[-1] - self.stim_start_frames[0] + self.stim_interval_fr))  #: frame indexes zero'd at the first photostim frame
+theta = (2 * np.pi) * (frames_lengths / self.stim_interval_fr)
+
+print((frames_lengths/self.stim_interval_fr)[:100])
+print(len(expobj.experiment_frames))
+
+print(expobj.sz_occurrence_stim_intervals)
+# fig, ax = plt.subplots(figsize = (5, 5))
+# ax.plot(frames_lengths, expobj.fov_trace_shutter_blanked_dff[expobj.experiment_frames])
+# fig.show()
+
+# time_length = np.arange(0, ((self.stim_start_frames[-1] / self.fps) + self.stim_interval), 1 / self.fps)
+# time_length = np.linspace(0, ((self.stim_start_frames[-1] / self.fps) + self.stim_interval), len(self.experiment_frames))
+
+
+
+# %% linear plot
+fig, ax = plt.subplots(figsize = (10,3))
+# ax.scatter(theta, expobj.fov_trace_shutter_blanked_dff[expobj.experiment_frames], c=theta)
+ax.plot(theta, expobj.sz_liklihood_fr[expobj.experiment_frames], color='red')
+fig.show()
+
+
+# %% radial plot
+fig, ax = plt.subplots(subplot_kw={'projection': 'polar'})
+ax.plot(theta, expobj.sz_liklihood_fr[expobj.experiment_frames], alpha=0.8)
+ax.set_rmax(1.1)
+ax.set_rticks([0.5, 1])  # Less radial ticks
+ax.set_rlabel_position(-22.5)  # Move radial labels away from plotted line
+ax.grid(True)
+ax.set_title("fov_trace_shutter_blanked", va='bottom')
+fig.show()
+
+
+
+# %% plotting sz occurrence
+
+bin_width = int(0.5 * self.fps)
+period = len(np.arange(0, (self.stim_interval_fr / bin_width))[:-1])
+theta = (2 * np.pi) * np.arange(0, (self.stim_interval_fr / bin_width))[:-1] / period
+plot = expobj.sz_occurrence_stim_intervals
+
+fig, ax = plt.subplots(subplot_kw={'projection': 'polar'})
+# ax.plot(theta, plot, alpha=0.8)
+ax.bar(theta, plot, width=(2 * np.pi) / period , bottom=0.0, alpha=0.5)
+ax.set_rmax(1.1)
+ax.set_rticks([0.5, 1])  # Less radial ticks
+ax.set_rlabel_position(-22.5)  # Move radial labels away from plotted line
+ax.grid(True)
+ax.set_title("sz occurrence", va='bottom')
+fig.show()
+
+
+
+# %% plot
+plt.plot(expobj.meanRawFluTrace[expobj.interictal_fr])
+plt.show()
+
+
+# %% normalizing stim plots
+
+slic = [self.shutter_start_frames[0][0] - self.stim_interval_fr,
+        (self.shutter_start_frames[0][-1] + self.stim_interval_fr)]
+if slic[0] < 0: slic[0] = self.shutter_start_frames[0][0]
+new_trace = self.fov_trace_shutter_blanked[slic[0]: slic[1]]
+
+norm_mean = np.mean(self.meanRawFluTrace[self.interictal_fr])
+
+for i, fr in enumerate(self.shutter_start_frames[0]):
+    pre_slice = [fr - self.stim_interval_fr, fr]
+    if pre_slice[0] < 0: pre_slice[0] = 0
+    pre_mean = np.mean(self.fov_trace_shutter_blanked[pre_slice[0]: pre_slice[1]])
+    new_trace[fr - self.stim_interval_fr: fr + self.stim_interval_fr] -= norm_mean
+    # new_trace[fr - self.stim_interval_fr: fr + self.stim_interval_fr] /= pre_mean
+
+plt.figure(figsize=(30, 3))
+plt.plot(new_trace)
+plt.show()
+
+
+
+
+
+
+
+
+# %% trial plotting
+frames_lengths = np.arange(0 - self.shutter_interval_fr, (self.stim_start_frames[-1] - self.stim_start_frames[0] + self.stim_interval_fr - self.shutter_interval_fr))  #: frame indexes zero'd at the first photostim frame
+# frames_lengths = np.arange(0, (self.stim_start_frames[-1] - self.stim_start_frames[0] + self.stim_interval_fr))  #: frame indexes zero'd at the first photostim frame
+theta = (2 * np.pi) * (frames_lengths / self.stim_interval_fr)
+
+
+fake_signal = np.array([0] * len(frames_lengths), dtype='float')
+for i, num in enumerate(np.round(frames_lengths,1)):
+    # if round(num % self.stim_interval_fr, 1) == int(self.stim_interval_fr / 2):
+    if round(num % self.stim_interval_fr, 1) == 0:
+        fake_signal[i] = 5
+    if round(num % self.stim_interval_fr, 1) == 0.5 * self.stim_interval_fr:
+        fake_signal[i] = np.random.randint(0, 5, 1)
+
+fig, ax = plt.subplots(figsize=(30, 2))
+ax.plot(frames_lengths, fake_signal)
+fig.show()
+
+
+theta = (2 * np.pi) * (frames_lengths / self.stim_interval_fr)
+
+
+# %% polar plot with bars!
+fig, ax = plt.subplots(subplot_kw={'projection': 'polar'})
+ax.bar(theta, fake_signal, width=(2 * np.pi) * (0.5 / self.stim_interval), bottom=0.0, alpha=0.5)
+# ax.plot(theta, fake_signal)
+ax.set_rmax(5)
+ax.set_rticks([0.5, 1, 1.5, 2])  # Less radial ticks
+ax.set_rlabel_position(-22.5)  # Move radial labels away from plotted line
+ax.grid(True)
+ax.set_title("fake signal", va='bottom')
+plt.show()
+
+# %%
+fake_signal = np.arange(0, 1, 0.01)
+theta = 2 * np.pi * fake_signal
+
+fig, ax = plt.subplots(subplot_kw={'projection': 'polar'})
+ax.plot(theta, fake_signal)
+ax.set_rmax(3)
+ax.set_rticks([0.5, 1, 1.5, 2])  # Less radial ticks
+ax.set_rlabel_position(-22.5)  # Move radial labels away from plotted line
+ax.grid(True)
+
+ax.set_title("A line plot on a polar axis", va='bottom')
+plt.show()
 

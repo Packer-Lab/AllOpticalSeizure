@@ -3,7 +3,7 @@ import os
 import pickle
 import sys
 
-
+from _utils_.io import import_expobj, import_1pexobj
 from alloptical_utils_pj import import_resultsobj
 import _alloptical_utils as Utils
 
@@ -19,6 +19,7 @@ from _utils_ import alloptical_plotting as aoplot
 from _main_.TwoPhotonImagingMain import TwoPhotonImaging
 
 # %% main code
+
 class OnePhotonStim(TwoPhotonImaging):
 
     compatible_responses_process = ['pre-stim dFF', 'post - pre']
@@ -80,7 +81,7 @@ class OnePhotonStim(TwoPhotonImaging):
                         if run is True:
                             prep = exp_prep[:-6]
                             trial = exp_prep[-5:]
-                            expobj, _ = OnePhotonStim.import_1pexobj(prep=prep, trial=trial, verbose=False)
+                            expobj, _ = import_1pexobj(prep=prep, trial=trial, verbose=False)
 
                             if not supress_print: Utils.working_on(expobj)
                             res_ = func(expobj=expobj, **kwargs)
@@ -113,7 +114,8 @@ class OnePhotonStim(TwoPhotonImaging):
                                 if run is True:
                                     prep = exp_prep[:-6]
                                     trial = exp_prep[-5:]
-                                    expobj, _ = OnePhotonStim.import_1pexobj(prep=prep, trial=trial, verbose=False)
+                                    # expobj, _ = OnePhotonStim.import_1pexobj(prep=prep, trial=trial, verbose=False)
+                                    expobj, _ = import_1pexobj(prep=prep, trial=trial, verbose=False)
 
                                     if not supress_print: Utils.working_on(expobj)
                                     res_ = func(expobj=expobj, **kwargs)
@@ -148,7 +150,8 @@ class OnePhotonStim(TwoPhotonImaging):
                                 if run is True:
                                     prep = exp_prep[:-6]
                                     trial = exp_prep[-5:]
-                                    expobj, _ = OnePhotonStim.import_1pexobj(prep=prep, trial=trial, verbose=False)
+                                    # expobj, _ = OnePhotonStim.import_1pexobj(prep=prep, trial=trial, verbose=False)
+                                    expobj, _ = import_1pexobj(prep=prep, trial=trial, verbose=False)
 
                                     if not supress_print: Utils.working_on(expobj)
                                     res_ = func(expobj=expobj, **kwargs)
@@ -241,6 +244,10 @@ class OnePhotonStim(TwoPhotonImaging):
                     expobj.save_pkl(pkl_path=expobj.pkl_path)
             except pickle.UnpicklingError:
                 raise pickle.UnpicklingError(f"\n** FAILED IMPORT OF * {prep} {trial} * from {pkl_path}\n")
+            except AttributeError:
+                print(f"WARNING: needing to try using CustomUnpicklerAttributeError!")
+                    # expobj = CustomUnpicklerAttributeError(open(pkl_path, 'rb')).load()
+
             experiment = f"{expobj.t_series_name} {expobj.metainfo['exptype']} {expobj.metainfo['comments']}"
             print(f'|- Loaded {expobj.t_series_name} {expobj.metainfo["exptype"]}')
             print(f'|- Loaded {experiment}') if verbose else None
@@ -258,6 +265,168 @@ class OnePhotonStim(TwoPhotonImaging):
     @property
     def response_len(self):
         return 0.5  # post-stim response period in sec
+
+    @property
+    def experiment_time(self):
+        """total timepoints collected for experiment (timed from first stim to the end of last stim + stim interval)"""
+        time_length = np.arange(0, ((self.stim_start_frames[-1] / self.fps) + self.stim_interval), 1 / self.fps)
+        return time_length
+
+    @property
+    def experiment_frames(self):
+        """total framepoints collected for experiment (timed from first stim to the end of last stim + stim interval)"""
+        # time_length = np.arange(0, ((self.stim_start_frames[-1] / self.fps) + self.stim_interval), 1 / self.fps)
+        experiment_frames = np.arange(self.stim_start_frames[0], self.stim_start_frames[-1] + self.stim_interval_fr)
+        return experiment_frames
+
+    @property
+    def stim_interval_fr(self):
+        intervals = [(self.stim_start_frames[i + 1]) - (self.stim_start_frames[i]) for i, _ in enumerate(self.stim_start_frames[:-1])]
+        return round(float(np.median([interval for interval in intervals if interval < 200])))  # filtering for stim intervals below 200fr apart only, because >200 will be multiple stim trials protocols
+
+
+    @property
+    def stim_interval(self):
+        intervals = [(self.stim_start_times[i + 1]/self.paq_rate) - (self.stim_start_times[i]/self.paq_rate) for i, _ in enumerate(self.stim_start_times[:-1])]
+        return round(float(np.mean(intervals)), 1)
+
+    @property
+    def shutter_interval_fr(self):
+        intervals = [(self.shutter_end_frames[0][i]) - (self.shutter_start_frames[0][i]) for i, _ in enumerate(self.shutter_start_frames)]
+        return round(float(np.mean(intervals)))
+
+    @property
+    def baseline_fr(self):
+        assert 'pre' in self.exptype, 'wrong exptype for this stim condition'
+        return np.array([fr for fr in range(self.n_frames)])
+
+    @property
+    def interictal_fr(self):
+        assert 'post' in self.exptype, 'wrong exptype for this stim condition'
+        return np.array([fr for fr in range(self.n_frames) if fr in self.seizure_frames])
+
+
+    @property
+    def sz_liklihood_fr(self):
+        """occurence of a seizure relative to imaging frame times binned by 0.5msec."""
+        sz_prob = [0] * self.n_frames
+        bin_width = int(0.5 * self.fps)
+        frame_binned = np.arange(0, self.n_frames, bin_width)
+        for idx, fr in enumerate(frame_binned[:-1]):
+            slic = (fr, frame_binned[idx + 1])
+            sz_s = [1 for sz_start in self.seizure_lfp_onsets if sz_start in range(slic[0], slic[1])]
+            total_sz = np.sum(sz_s) if len(sz_s) > 0 else 0
+            sz_prob[slic[0]: slic[1]] = [total_sz] * (slic[1] - slic[0])
+
+        return np.asarray(sz_prob)
+
+
+
+    @property
+    def sz_occurrence_stim_intervals(self):
+
+        bin_width = int(0.5 * self.fps)
+        sz_prob = np.asarray([0] * int(self.stim_interval_fr / bin_width))
+
+        for idx, start in enumerate(self.stim_start_frames[:-1]):
+            frame_binned = np.arange(start, start + self.stim_interval_fr, bin_width)
+            _sz_prob = np.asarray([0] * int(self.stim_interval_fr / bin_width))
+
+            for jdx, fr in enumerate(frame_binned[:-1]):
+                # slic = (fr, frame_binned[jdx + 1])
+                sz_s = [1 for sz_start in self.seizure_lfp_onsets if sz_start in range(fr, frame_binned[jdx + 1])]
+                total_sz = np.sum(sz_s) if len(sz_s) > 0 else 0
+                _sz_prob[jdx] = total_sz
+
+            sz_prob += _sz_prob
+
+
+        return np.asarray(sz_prob)
+
+    @property
+    def sz_occurrence_stim_intervals2(self):
+
+        bin_width = int(1 * self.fps)  # 1 second bin is needed because the manual timing of sz onset is uncertain at best...
+        sz_prob = np.asarray([0] * int(self.stim_interval_fr / bin_width))
+
+
+        for i, stim in enumerate(self.stim_start_frames[:-1]):
+            frame_binned = np.arange(stim, stim + self.stim_interval_fr, bin_width)
+            _sz_prob = np.asarray([0] * int(self.stim_interval_fr / bin_width))
+
+            for jdx, fr in enumerate(frame_binned[:-1]):
+                low_fr = fr - bin_width
+                high_fr = fr + bin_width
+                sz_s = [1 for sz_start in self.seizure_lfp_onsets if sz_start in range(low_fr, high_fr)]
+                total_sz = np.sum(sz_s) if len(sz_s) > 0 else 0
+                _sz_prob[jdx] = total_sz
+            sz_prob += _sz_prob
+
+        return np.asarray(sz_prob)
+
+
+
+
+    # @property -- really hard to get done.... not messing with this right now...
+    # def fov_trace_shutter_blanked_dff_pre_norm(self):
+    #     """mean FOV flu trace, but with the shutter frames blanked to 0."""
+    #     # new_trace = [-100] * len(self.fov_trace_shutter_blanked)
+    #     slic = [self.shutter_start_frames[0][0] - self.stim_interval_fr, (self.shutter_start_frames[0][-1] + self.stim_interval_fr)]
+    #     if slic[0] < 0: slic[0] = self.shutter_start_frames[0][0]
+    #     new_trace = self.fov_trace_shutter_blanked[slic[0]: slic[1]]
+    #
+    #     norm_mean = np.mean(self.meanRawFluTrace[self.interictal_fr])
+    #
+    #     for i, fr in enumerate(self.shutter_start_frames[0]):
+    #         pre_slice = [fr - self.stim_interval_fr, fr]
+    #         if pre_slice[0] < 0: pre_slice[0] = 0
+    #         pre_mean = np.mean(self.fov_trace_shutter_blanked[pre_slice[0]: pre_slice[1]])
+    #         new_trace[fr - self.stim_interval_fr: fr + self.stim_interval_fr] -= norm_mean
+    #         # new_trace[fr - self.stim_interval_fr: fr + self.stim_interval_fr] /= pre_mean
+    #
+    #     plt.figure(figsize=(30,3))
+    #     plt.plot(new_trace)
+    #     plt.show()
+    #
+    #     return new_trace
+
+    @property
+    def fov_trace_shutter_blanked_dff(self):
+        """mean FOV flu trace, but with the shutter frames blanked to 0."""
+        # new_trace = [np.mean(self.meanRawFluTrace)] * len(self.meanRawFluTrace)
+        new_trace = (self.fov_trace_shutter_blanked - np.mean(self.meanRawFluTrace)) / np.mean(self.meanRawFluTrace)
+
+        # plt.figure(figsize=(30,3))
+        # plt.plot(new_trace)
+        # plt.show()
+
+        return new_trace
+
+    @property
+    def fov_trace_shutter_blanked(self):
+        """mean FOV flu trace, but with the shutter frames blanked to 0."""
+        # new_trace = [np.mean(self.meanRawFluTrace)] * len(self.meanRawFluTrace)
+        new_trace = self.meanRawFluTrace
+
+        for i, fr in enumerate(self.shutter_frames[0]):
+            new_trace[fr] = 0
+            new_trace[fr - 1] = 0
+            new_trace[fr + 1] = 0
+            # new_trace[fr + 3] = np.mean(self.meanRawFluTrace)
+            # new_trace[fr + 4] = np.mean(self.meanRawFluTrace)
+            # new_trace[fr + 5] = np.mean(self.meanRawFluTrace)
+
+        # plt.figure(figsize=(30,3))
+        # plt.plot(self.meanRawFluTrace)
+        # plt.show()
+
+        # for i, flu in enumerate(self.meanRawFluTrace):
+        #     if i in self.shutter_frames[0]:
+        #         pass
+        #     else:
+        #         new_trace[i] = flu
+        return new_trace
+
 
     def paqProcessing(self, **kwargs):
 
