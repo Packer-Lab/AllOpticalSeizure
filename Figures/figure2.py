@@ -13,9 +13,9 @@ from onePexperiment.OnePhotonStimMain import OnePhotonStim
 results_object_path = '/home/pshah/mnt/qnap/Analysis/onePstim_results_superobject.pkl'
 onePresults = import_resultsobj(pkl_path=results_object_path)
 
-# date = '2021-01-24'
+date = '2021-01-24'
 
-# expobj = import_expobj(prep='PS11', trial='t-012', date=date)  # post4ap trial
+expobj = import_expobj(prep='PS11', trial='t-012', date=date)  # post4ap trial
 
 
 # %% B) LFP signal with optogenetic stims
@@ -188,8 +188,8 @@ exp_sz_occurrence = OnePhotonStimAnalysisFuncs.collectSzOccurrenceRelativeStim()
 
 # make plot
 bin_width = int(1 * expobj.fps)
-period = len(np.arange(0, (expobj.stim_interval_fr / bin_width))) - 1
-theta = (2 * np.pi) * np.arange(0, (expobj.stim_interval_fr / bin_width))[:-1] / period
+period = len(np.arange(0, (expobj.stim_interval_fr / bin_width)))
+theta = (2 * np.pi) * np.arange(0, (expobj.stim_interval_fr / bin_width)) / period
 
 fig, ax = plt.subplots(subplot_kw={'projection': 'polar'}, dpi=600)
 for exp, values in exp_sz_occurrence.items():
@@ -200,6 +200,6 @@ ax.set_rmax(1.1)
 ax.set_rlabel_position(-35.5)  # Move radial labels away from plotted line
 ax.grid(True)
 ax.set_xticks((2 * np.pi) * np.arange(0, (expobj.stim_interval_fr / bin_width)) / period)
-ax.set_title("sz probability occurrence (binned every 10s)", va='bottom')
+ax.set_title("sz probability occurrence (binned every 1s)", va='bottom')
 ax.spines['polar'].set_visible(False)
 fig.show()
