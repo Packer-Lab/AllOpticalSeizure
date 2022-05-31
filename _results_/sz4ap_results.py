@@ -84,22 +84,43 @@ def plotHeatMapSzAllCells(expobj: Post4ap, sz_num: int):
 
 
     # just the bottom half cells that seems to show more of an order
-    fig, ax = plt.subplots(figsize=(5, 3))
+    fig, ax = plt.subplots(figsize=(5, 3), dpi=400)
     x_ordered = x_norm[new_order[:]]
     fig, ax = aoplot.plot_traces_heatmap(expobj=expobj, arr=x_ordered, cmap='afmhot', cbar=True,
                                          title=f'{expobj.t_series_name} - seizure {sz_num} - sz flu smooth',
                                          xlims=None, vmin=100, vmax=500, fig=fig, ax=ax, show=False, x_label='Time (secs)')
-    ax2 = ax.twinx()
     x_c = np.linspace(0, x_ordered.shape[1] - 1, len(lfp_signal))
-    # ax2.plot(x_c, kwargs['lfp_signal'] * 50 + arr.shape[0] - 100, c='black')
-    ax2.plot(x_c, lfp_signal, c='white', lw=0.35)
-
     x_labels = [item for item in ax.get_xticks()]
     y_labels = [-5, -4]
-    ax2.set_yticks(y_labels)
-    ax2.set_yticklabels([])
     # ax2.set_ylabel('LFP (mV)')
-    ax2.set_ylim([-5, 7])
+    ax.spines['top'].set_visible(False)
+    ax.spines['bottom'].set_visible(False)
+    ax.spines['left'].set_visible(False)
+    ax.spines['right'].set_visible(False)
+
+    fig.tight_layout(pad=0.2)
+    fig.show()
+
+
+    fig, ax = plt.subplots(figsize=(5, 1.7), dpi=300)
+    # x_ordered = x_norm[new_order[:]]
+    # fig, ax = aoplot.plot_traces_heatmap(expobj=expobj, arr=x_ordered, cmap='afmhot', cbar=True,
+    #                                      title=f'{expobj.t_series_name} - seizure {sz_num} - sz flu smooth',
+    #                                      xlims=None, vmin=100, vmax=500, fig=fig, ax=ax, show=False, x_label='Time (secs)')
+    x_c = np.linspace(0, x_ordered.shape[1] - 1, len(lfp_signal))
+    # ax2.plot(x_c, kwargs['lfp_signal'] * 50 + arr.shape[0] - 100, c='black')
+    ax.plot(x_c, lfp_signal, c='black', lw=0.35)
+    x_labels = [item for item in ax.get_xticks()]
+    y_labels = [-5, -4]
+    ax.margins(0)
+    ax.set_yticks(y_labels)
+    ax.set_yticklabels(y_labels)
+    # ax2.set_ylabel('LFP (mV)')
+    ax.set_ylim([-5, 7])
+    ax.spines['top'].set_visible(False)
+    ax.spines['bottom'].set_visible(False)
+    ax.spines['left'].set_visible(False)
+    ax.spines['right'].set_visible(False)
     fig.tight_layout(pad=0.2)
     fig.show()
 

@@ -502,11 +502,11 @@ class ExpSeizureAnalysis(Quantification):
         #                         title='rate of seizures during exp', expand_size_x=0.4, expand_size_y=1, ylims=[0, 1],
         #                         shrink_text=0.8)
 
-        fig, ax = plt.subplots(figsize = (1.8, 3))
+        fig, ax = plt.subplots(figsize = (1.8, 3), dpi=300)
         plot_bar_with_points(data=[cls.twop_trials_sz_incidence + cls.onep_trials_sz_incidence],
-                             x_tick_labels=['Experiments'], colors=['black'], y_label='Seizure incidence (events/min)',
-                             alpha=0.7, bar=False, title='rate of seizures during exp', expand_size_x=2, expand_size_y=1, ylims=[0, 1],
-                             fig=fig, ax=ax, show=False, shrink_text=0.8)
+                             x_tick_labels=['Experiments'], colors=['coral'], y_label='Seizure incidence (events/min)',
+                             alpha=1, bar=False, title='rate of seizures during exp', expand_size_x=2, expand_size_y=1, ylims=[0, 1],
+                             fig=fig, ax=ax, show=False, shrink_text=0.8, lw=1)
         ax.spines['bottom'].set_visible(False)
         ax.set_xticks([])
         fig.tight_layout(pad=2)
@@ -588,10 +588,10 @@ class ExpSeizureAnalysis(Quantification):
         #                         title='Avg. length of sz', expand_size_x=0.4, expand_size_y=1, ylims=[0, 120],
         #                         title_pad=15,
         #                         shrink_text=0.8)
-        fig, ax = plt.subplots(figsize=(1.8,3))
+        fig, ax = plt.subplots(figsize=(1.8,3), dpi=300)
         plot_bar_with_points(data=[cls.twop_trials_sz_lengths + cls.onep_trials_sz_lengths],
                                 x_tick_labels=['Experiments'], fig=fig, ax=ax, show=False,
-                                colors=['black'], y_label='Seizure length (secs)', alpha=0.7, bar=False,
+                                colors=['coral'], y_label='Seizure length (secs)', alpha=1, bar=False, lw=1,
                                 title='Avg sz length', expand_size_x=0.7, expand_size_y=1, ylims=[0, 120],
                                 shrink_text=0.8)
         ax.spines['bottom'].set_visible(False)

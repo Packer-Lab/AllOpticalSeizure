@@ -42,7 +42,7 @@ class OnePhotonStim(TwoPhotonImaging):
         'PS07 t-015',
         'PS11 t-012',
         'PS11 t-017',
-        # 'PS11 t-019',
+        # 'PS11 t-019',  #: not a proper 1p stim exp trial...(protocol not run fully..)
         'PS18 t-009',
         'PS09 t-011',
         'PS09 t-013',
@@ -345,7 +345,7 @@ class OnePhotonStim(TwoPhotonImaging):
 
     @property
     def sz_occurrence_stim_intervals2(self):
-
+        """returns the fraction of total sz recorded across current trial at a certain bin relative to interval between one photon stims."""
         bin_width = int(1 * self.fps)  # 1 second bin is needed because the manual timing of sz onset is uncertain at best...
         sz_prob = np.asarray([0] * int(self.stim_interval_fr / bin_width))
 
@@ -357,12 +357,15 @@ class OnePhotonStim(TwoPhotonImaging):
             for jdx, fr in enumerate(frame_binned[:-1]):
                 low_fr = fr - bin_width
                 high_fr = fr + bin_width
-                sz_s = [1 for sz_start in self.seizure_lfp_onsets if sz_start in range(low_fr, high_fr)]
-                total_sz = np.sum(sz_s) if len(sz_s) > 0 else 0
-                _sz_prob[jdx] = total_sz
-            sz_prob += _sz_prob
+                # sz_s = [1 for sz_start in self.seizure_lfp_onsets if sz_start in range(low_fr, high_fr)]
+                # total_sz = np.sum(sz_s) if len(sz_s) > 0 else 0
+                for sz_start in self.seizure_lfp_onsets:
+                    if sz_start in range(low_fr, high_fr):
+                        sz_prob[jdx] += 1
 
-        return np.asarray(sz_prob)
+            # sz_prob += _sz_prob
+
+        return np.asarray(sz_prob / len([i for i in self.seizure_lfp_onsets if i < self.stim_start_frames[-1]]))
 
 
 

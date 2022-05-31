@@ -18,12 +18,36 @@ import matplotlib.pyplot as plt
 
 from _main_.Post4apMain import Post4ap
 
+
+
+# %% D) suite2p cells gcamp imaging for seizures, with simultaneous LFP recording
+
+expobj: Post4ap = import_expobj(exp_prep='RL108 t-013')
+
+# fig, axs = plt.subplots(2, 1, figsize=(6, 6))
+# fig, axs[0] = aoplot.plotMeanRawFluTrace(expobj=expobj, stim_span_color=None, x_axis='time', fig=fig, ax=axs[0], show=False)
+# fig, axs[1] = aoplot.plotLfpSignal(expobj=expobj, stim_span_color='', x_axis='time', fig=fig, ax=axs[1], show=False)
+# axs[0].set_xlim([400 * expobj.fps, 470 * expobj.fps])
+# axs[1].set_xlim([400 * expobj.paq_rate, 470 * expobj.paq_rate])
+# fig.show()
+
+# plot heatmap of raw neuropil corrected s2p signal from s2p cells
+time = (400, 460)
+frames = (time[0] * expobj.fps, time[1] * expobj.fps)
+paq = (time[0] * expobj.paq_rate, time[1] * expobj.paq_rate)
+
+plotHeatMapSzAllCells(expobj=expobj, sz_num=4)
+
+# plotting recruitment of cells across space.
+#   - measuring recruitment of each cell as 60% of maximum signal (after smoothing the signal)
+
+
 # %% E) seizure stats
 
 from _analysis_.sz_analysis._ClassExpSeizureAnalysis import ExpSeizureAnalysis as main
 
 # main.FOVszInvasionTime()
-main.calc__szInvasionTime()
+# main.calc__szInvasionTime()
 # main.plot__sz_invasion()
 
 
@@ -53,7 +77,7 @@ Suite2pROIsSz.plot__avg_spk_rate(results.avg_spk_rate['baseline'],
 # %% invidual results as a cum sum plot
 
 # evaluate the histogram
-fig, ax = plt.subplots(figsize=(2.2, 3.5))
+fig, ax = plt.subplots(figsize=(2.2, 3.5), dpi=300)
 f, ax2 = plt.subplots(figsize=(5, 5))
 # baseline experiments
 for pre4ap_exp in results.neural_activity_rate['baseline']:
@@ -143,27 +167,6 @@ fig.show()
 
 # %% 3.2) calculating the first in sz stim frame with wavefront
 
-
-# %% 1) suite2p cells gcamp imaging for seizures, with simultaneous LFP recording
-
-expobj: Post4ap = import_expobj(exp_prep='RL108 t-013')
-
-# fig, axs = plt.subplots(2, 1, figsize=(6, 6))
-# fig, axs[0] = aoplot.plotMeanRawFluTrace(expobj=expobj, stim_span_color=None, x_axis='time', fig=fig, ax=axs[0], show=False)
-# fig, axs[1] = aoplot.plotLfpSignal(expobj=expobj, stim_span_color='', x_axis='time', fig=fig, ax=axs[1], show=False)
-# axs[0].set_xlim([400 * expobj.fps, 470 * expobj.fps])
-# axs[1].set_xlim([400 * expobj.paq_rate, 470 * expobj.paq_rate])
-# fig.show()
-
-# plot heatmap of raw neuropil corrected s2p signal from s2p cells
-time = (400, 460)
-frames = (time[0] * expobj.fps, time[1] * expobj.fps)
-paq = (time[0] * expobj.paq_rate, time[1] * expobj.paq_rate)
-
-plotHeatMapSzAllCells(expobj=expobj, sz_num=4)
-
-# plotting recruitment of cells across space.
-#   - measuring recruitment of each cell as 60% of maximum signal (after smoothing the signal)
 
 
 # %% 2) red channel image of 4ap injection

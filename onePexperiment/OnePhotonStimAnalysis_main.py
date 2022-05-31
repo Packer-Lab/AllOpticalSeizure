@@ -348,7 +348,7 @@ class OnePhotonStimAnalysisFuncs(OnePhotonStim):
         def __function(**kwargs):
             expobj: OnePhotonStim = kwargs['expobj']
 
-            if expobj.t_series_name == 'PS16 t-009':
+            if expobj.t_series_name == 'PS16 t-009' or expobj.t_series_name == 'PS07 t-015':
                 print('break here and investigate further where this exp"s seizures are occuring relative to precise timing of stims.')
                 # from _utils_.alloptical_plotting import plotLfpSignal
                 # plotLfpSignal(expobj, x_axis='time', figsize=(30, 3), linewidth=0.5, downsample=True,
@@ -357,24 +357,34 @@ class OnePhotonStimAnalysisFuncs(OnePhotonStim):
             print(f'{expobj.t_series_name}: {np.sum(expobj.sz_occurrence_stim_intervals2)}')
 
 
-            return expobj.sz_occurrence_stim_intervals
+            return (expobj.t_series_name, expobj.sz_occurrence_stim_intervals2)
 
         func_collector = __function()
 
 
-        # for i in func_collector:
-        #     print(f'')
-        #     print(i.shape)
+        unique_exps = np.unique([exp[:4] for exp in OnePhotonStim.oneP_post4ap_exp_list])
+        results = {}
+        for i in unique_exps:
+            results[i] = None
 
+        for exp_sz_prob in func_collector:
+            exp = exp_sz_prob[0][:4]
 
+            if results[exp] is None:
+                results[exp] = exp_sz_prob[1]
+            else:
+                results[exp] = np.mean(np.vstack([results[exp], exp_sz_prob[1]]), axis=0)
 
+            # print(f'')
+            # print(exp_sz_prob.shape)
 
+        print(results)
         # sz_occurence_relative = [func_collector[0]]
         # for sz_occurrence in func_collector[1:]:
         #     sz_occurence_relative += sz_occurrence
 
         # return sz_occurence_relative / len(func_collector)
-        return func_collector
+        return results
 
         # bin_width = int(0.5 * expobj.fps)
         # period = len(np.arange(0, (expobj.stim_interval_fr / bin_width))[:-1])

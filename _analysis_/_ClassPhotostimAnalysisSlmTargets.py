@@ -276,7 +276,7 @@ class PhotostimAnalysisSlmTargets(Quantification):
 
         fig, ax = pplot.plot_bar_with_points(
             data=[results.variance_photostimresponse['baseline'], results.variance_photostimresponse['interictal']],
-            x_tick_labels=['Baseline', 'Interictal'], bar=True, colors=['gray', 'green'], alpha=0.8, show=False,
+            x_tick_labels=['Baseline', 'Interictal'], bar=True, colors=['gray', 'green'], alpha=1, show=False,
             expand_size_x=0.4, title='Average variance', y_label='Variance (% dFF)^2', ylims=[0, 1], shrink_text=0.9,
             **kwargs)
         fig.tight_layout(pad=1)
@@ -290,7 +290,7 @@ class PhotostimAnalysisSlmTargets(Quantification):
         """plot for schematic of calculating variability"""
         amplitudes = np.random.rand(50)
 
-        fig, ax = plt.subplots(figsize=[2, 2])
+        fig, ax = plt.subplots(figsize=[2, 2], dpi=300)
         total_x = []
         total_y = []
         ax.axvspan(-1.6, -0.75, alpha=0.35, color='hotpink')

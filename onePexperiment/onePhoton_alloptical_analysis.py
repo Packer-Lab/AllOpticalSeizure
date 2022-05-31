@@ -7,7 +7,7 @@ from matplotlib import cm
 
 # import alloptical_utils_pj as aoutils
 from _utils_ import alloptical_plotting as aoplot
-from _utils_.io import import_expobj
+from _utils_.io import import_expobj, import_1pexobj
 from onePexperiment.OnePhotonStimAnalysis_main import OnePhotonStimAnalysisFuncs
 
 from onePexperiment.OnePhotonStimMain import OnePhotonStimPlots as onepplots, OnePhotonStim
@@ -26,13 +26,15 @@ date = '2021-01-24'
 # aoplot.plotLfpSignal(expobj, x_axis='time', figsize=(5,3), linewidth=0.5, downsample=True, sz_markings=False, color='black',
 #                      ylims=[-4,1], xlims=[110*expobj.paq_rate, 210*expobj.paq_rate])
 
-expobj = import_expobj(prep='PS11', trial='t-012', date=date)  # post4ap trial
-# aoplot.plotLfpSignal(expobj, x_axis='time', figsize=(5,3), linewidth=0.5, downsample=True, sz_markings=False, color='black')
-# aoplot.plotMeanRawFluTrace(expobj, stim_span_color='white', x_axis='Time')
+# post4ap trial
+expobj, _ = import_1pexobj(prep='PS07', trial='t-012', verbose=False)
+aoplot.plotLfpSignal(expobj, x_axis='time', figsize=(15,3), linewidth=0.5, downsample=True, sz_markings=True, color='black')
+aoplot.plotMeanRawFluTrace(expobj, stim_span_color='white', x_axis='Time')
+
 
 # print(expobj.fov_trace_shutter_blanked_dff_pre_norm)
 
-self = expobj
+# self = expobj
 
 
 # %% 2.1) PLOT - time to seizure onset vs. pre-stim Flu
