@@ -27,7 +27,7 @@ results: PhotostimResponsesNonTargetsResults = PhotostimResponsesNonTargetsResul
 
 measurements = ('photostim response', 'influence response', 'new influence response')
 
-fig, axs = plt.subplots(figsize = (12, 4), ncols=3, nrows=1)
+fig, axs = plt.subplots(figsize = (12, 4), ncols=3, nrows=1, dpi=300)
 for idx, measurement in enumerate(measurements):
     ax = axs[idx]
 
@@ -37,19 +37,17 @@ for idx, measurement in enumerate(measurements):
     # binned shuffled distances vs. responses
     distances = results.binned_distance_vs_responses_shuffled[measurement]['distances']
     avg_binned_responses = results.binned_distance_vs_responses_shuffled[measurement]['avg binned responses']
-    std_binned_responses = results.binned_distance_vs_responses_shuffled[measurement]['std binned responses']
-    ax.fill_between(x=list(distances), y1=list(avg_binned_responses + std_binned_responses), y2=list(avg_binned_responses - std_binned_responses), alpha=0.1, color='orange')
-    ax.plot(distances, avg_binned_responses, lw=3, color='#e18741')
+    sem_binned_responses = results.binned_distance_vs_responses_shuffled[measurement]['sem binned responses']
+    ax.fill_between(x=list(distances), y1=list(avg_binned_responses + sem_binned_responses), y2=list(avg_binned_responses - sem_binned_responses), alpha=0.1, color='orange')
+    ax.plot(distances, avg_binned_responses, lw=1, color='#e18741')
 
 
     # binned distances vs responses
     distances = results.binned_distance_vs_responses[measurement]['distances']
     avg_binned_responses = results.binned_distance_vs_responses[measurement]['avg binned responses']
-    std_binned_responses = results.binned_distance_vs_responses[measurement]['std binned responses']
-    ax.fill_between(x=list(distances), y1=list(avg_binned_responses + std_binned_responses), y2=list(avg_binned_responses - std_binned_responses), alpha=0.1, color='royalblue')
-    ax.plot(distances, avg_binned_responses, lw=3, color='#4169e1')
-
-
+    sem_binned_responses = results.binned_distance_vs_responses[measurement]['sem binned responses']
+    ax.fill_between(x=list(distances), y1=list(avg_binned_responses + sem_binned_responses), y2=list(avg_binned_responses - sem_binned_responses), alpha=0.1, color='royalblue')
+    ax.plot(distances, avg_binned_responses, lw=1, color='#4169e1')
 
     ax.set_title(f"{measurement}", wrap=True)
     ax.set_xlim([0, 600])
@@ -64,7 +62,7 @@ fig.show()
 
 measurements = ('photostim response', 'influence response', 'new influence response')
 
-fig, axs = plt.subplots(figsize = (12, 4), ncols=3, nrows=1)
+fig, axs = plt.subplots(figsize = (12, 4), ncols=3, nrows=1, dpi=300)
 for idx, measurement in enumerate(measurements):
     ax = axs[idx]
     ax.axhline(y=0, ls='--', color='black', lw=1)
@@ -73,17 +71,17 @@ for idx, measurement in enumerate(measurements):
     # binned shuffled distances vs. responses
     distances = results.binned_distance_vs_responses_shuffled_interictal[measurement]['distances']
     avg_binned_responses = results.binned_distance_vs_responses_shuffled_interictal[measurement]['avg binned responses']
-    std_binned_responses = results.binned_distance_vs_responses_shuffled_interictal[measurement]['std binned responses']
-    ax.fill_between(x=list(distances), y1=list(avg_binned_responses + std_binned_responses), y2=list(avg_binned_responses - std_binned_responses), alpha=0.1, color='orange')
-    ax.plot(distances, avg_binned_responses, lw=3, color='#e18741')
+    sem_binned_responses = results.binned_distance_vs_responses_shuffled_interictal[measurement]['sem binned responses']
+    ax.fill_between(x=list(distances), y1=list(avg_binned_responses + sem_binned_responses), y2=list(avg_binned_responses - sem_binned_responses), alpha=0.1, color='orange')
+    ax.plot(distances, avg_binned_responses, lw=1, color='#e18741')
 
 
     # binned distances vs responses
     distances = results.binned_distance_vs_responses_interictal[measurement]['distances']
     avg_binned_responses = results.binned_distance_vs_responses_interictal[measurement]['avg binned responses']
-    std_binned_responses = results.binned_distance_vs_responses_interictal[measurement]['std binned responses']
-    ax.fill_between(x=list(distances), y1=list(avg_binned_responses + std_binned_responses), y2=list(avg_binned_responses - std_binned_responses), alpha=0.1, color='royalblue')
-    ax.plot(distances, avg_binned_responses, lw=3, color='#7f41e1')
+    sem_binned_responses = results.binned_distance_vs_responses_interictal[measurement]['sem binned responses']
+    ax.fill_between(x=list(distances), y1=list(avg_binned_responses + sem_binned_responses), y2=list(avg_binned_responses - sem_binned_responses), alpha=0.1, color='royalblue')
+    ax.plot(distances, avg_binned_responses, lw=1, color='#7f41e1')
 
 
 
@@ -101,7 +99,7 @@ fig.show()
 
 measurements = ('photostim response', 'influence response', 'new influence response')
 
-fig, axs = plt.subplots(figsize = (12, 4), ncols=3, nrows=1)
+fig, axs = plt.subplots(figsize = (12, 4), ncols=3, nrows=1, dpi=300)
 for idx, measurement in enumerate(measurements):
     ax = axs[idx]
     ax.axhline(y=0, ls='--', color='black', lw=1)
@@ -110,17 +108,17 @@ for idx, measurement in enumerate(measurements):
     # binned shuffled distances vs. responses
     distances = results.binned_distance_vs_responses_shuffled_distal[measurement]['distances']
     avg_binned_responses = results.binned_distance_vs_responses_shuffled_distal[measurement]['avg binned responses']
-    std_binned_responses = results.binned_distance_vs_responses_shuffled_distal[measurement]['std binned responses']
-    ax.fill_between(x=list(distances), y1=list(avg_binned_responses + std_binned_responses), y2=list(avg_binned_responses - std_binned_responses), alpha=0.1, color='orange')
-    ax.plot(distances, avg_binned_responses, lw=3, color='#e18741')
+    sem_binned_responses = results.binned_distance_vs_responses_shuffled_distal[measurement]['sem binned responses']
+    ax.fill_between(x=list(distances), y1=list(avg_binned_responses + sem_binned_responses), y2=list(avg_binned_responses - sem_binned_responses), alpha=0.1, color='orange')
+    ax.plot(distances, avg_binned_responses, lw=1, color='#e18741')
 
 
     # binned distances vs responses
     distances = results.binned_distance_vs_responses_distal[measurement]['distances']
     avg_binned_responses = results.binned_distance_vs_responses_distal[measurement]['avg binned responses']
-    std_binned_responses = results.binned_distance_vs_responses_distal[measurement]['std binned responses']
-    ax.fill_between(x=list(distances), y1=list(avg_binned_responses + std_binned_responses), y2=list(avg_binned_responses - std_binned_responses), alpha=0.1, color='royalblue')
-    ax.plot(distances, avg_binned_responses, lw=3, color='#e14154')
+    sem_binned_responses = results.binned_distance_vs_responses_distal[measurement]['sem binned responses']
+    ax.fill_between(x=list(distances), y1=list(avg_binned_responses + sem_binned_responses), y2=list(avg_binned_responses - sem_binned_responses), alpha=0.1, color='royalblue')
+    ax.plot(distances, avg_binned_responses, lw=1, color='#e14154')
 
 
 
@@ -136,7 +134,7 @@ fig.show()
 
 measurements = ('photostim response', 'influence response', 'new influence response')
 
-fig, axs = plt.subplots(figsize = (12, 4), ncols=3, nrows=1)
+fig, axs = plt.subplots(figsize = (12, 4), ncols=3, nrows=1, dpi=300)
 for idx, measurement in enumerate(measurements):
     ax = axs[idx]
     ax.axhline(y=0, ls='--', color='black', lw=1)
@@ -145,17 +143,17 @@ for idx, measurement in enumerate(measurements):
     # binned shuffled distances vs. responses
     distances = results.binned_distance_vs_responses_shuffled_proximal[measurement]['distances']
     avg_binned_responses = results.binned_distance_vs_responses_shuffled_proximal[measurement]['avg binned responses']
-    std_binned_responses = results.binned_distance_vs_responses_shuffled_proximal[measurement]['std binned responses']
-    ax.fill_between(x=list(distances), y1=list(avg_binned_responses + std_binned_responses), y2=list(avg_binned_responses - std_binned_responses), alpha=0.1, color='orange')
-    ax.plot(distances, avg_binned_responses, lw=3, color='#e18741')
+    sem_binned_responses = results.binned_distance_vs_responses_shuffled_proximal[measurement]['sem binned responses']
+    ax.fill_between(x=list(distances), y1=list(avg_binned_responses + sem_binned_responses), y2=list(avg_binned_responses - sem_binned_responses), alpha=0.1, color='orange')
+    ax.plot(distances, avg_binned_responses, lw=1, color='#e18741')
 
 
     # binned distances vs responses
     distances = results.binned_distance_vs_responses_proximal[measurement]['distances']
     avg_binned_responses = results.binned_distance_vs_responses_proximal[measurement]['avg binned responses']
-    std_binned_responses = results.binned_distance_vs_responses_proximal[measurement]['std binned responses']
-    ax.fill_between(x=list(distances), y1=list(avg_binned_responses + std_binned_responses), y2=list(avg_binned_responses - std_binned_responses), alpha=0.1, color='royalblue')
-    ax.plot(distances, avg_binned_responses, lw=3, color='#ce41e1')
+    sem_binned_responses = results.binned_distance_vs_responses_proximal[measurement]['sem binned responses']
+    ax.fill_between(x=list(distances), y1=list(avg_binned_responses + sem_binned_responses), y2=list(avg_binned_responses - sem_binned_responses), alpha=0.1, color='royalblue')
+    ax.plot(distances, avg_binned_responses, lw=1, color='#ce41e1')
 
 
 

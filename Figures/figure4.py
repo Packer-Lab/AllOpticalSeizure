@@ -17,7 +17,7 @@ RESULTS = PhotostimResponsesSLMtargetsResults.load()
 # %% A) schematic of variability of photostimulation responses
 
 # main.plot__schematic_variability_measurement()
-# main.plot__variability(figsize=[3, 5], rerun=False)
+main.plot__variability(figsize=[3, 5], rerun=False)
 
 
 # %% B) plot mean response vs. variability for baseline + interictal

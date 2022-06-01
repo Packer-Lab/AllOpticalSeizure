@@ -569,7 +569,7 @@ class PhotostimResponsesNonTargetsResults(Results):
 
         results.binned_distance_vs_responses_shuffled_interictal[measurement] = {'distances': distances,
                                                                                  'avg binned responses': avg_binned_responses,
-                                                                                 'std binned responses': sem_binned_responses}
+                                                                                 'sem binned responses': sem_binned_responses}
 
         results.save_results()
 
