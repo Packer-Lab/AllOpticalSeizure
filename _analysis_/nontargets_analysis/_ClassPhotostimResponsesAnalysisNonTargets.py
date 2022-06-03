@@ -670,6 +670,7 @@ class PhotostimResponsesAnalysisNonTargets(PhotostimResponsesQuantificationNonTa
 
         expobj.save()
 
+
     @staticmethod
     def run__summed_responses(rerun=0):
         @Utils.run_for_loop_across_exps(run_pre4ap_trials=0, run_post4ap_trials=1, allow_rerun=rerun,
@@ -780,12 +781,12 @@ class PhotostimResponsesAnalysisNonTargets(PhotostimResponsesQuantificationNonTa
 
     # 3.2) plot - scatter plot of total evoked activity on trial vs. total activity of SLM targets on same trial - split up based on groups - z scored - all trials
     @staticmethod
-    def collect__zscored_summed_activity_vs_targets_activity(results):
+    def collect__zscored_summed_activity_vs_targets_activity(results, rerun=1):
         from _analysis_.nontargets_analysis._ClassResultsNontargetPhotostim import PhotostimResponsesNonTargetsResults
         results: PhotostimResponsesNonTargetsResults
 
         # pre4ap - baseline
-        @Utils.run_for_loop_across_exps(run_pre4ap_trials=True, run_post4ap_trials=False, allow_rerun=0,
+        @Utils.run_for_loop_across_exps(run_pre4ap_trials=True, run_post4ap_trials=False, allow_rerun=rerun,
                                         skip_trials=PhotostimResponsesQuantificationNonTargets.EXCLUDE_TRIALS)
         def collect_summed_responses_baseline(**kwargs):
             expobj: alloptical = kwargs['expobj']
@@ -904,7 +905,7 @@ class PhotostimResponsesAnalysisNonTargets(PhotostimResponsesQuantificationNonTa
             results.save_results()
 
         # post4ap - interictal ####################################################################################################################################################################################################
-        @Utils.run_for_loop_across_exps(run_pre4ap_trials=False, run_post4ap_trials=True, allow_rerun=0,
+        @Utils.run_for_loop_across_exps(run_pre4ap_trials=False, run_post4ap_trials=True, allow_rerun=rerun,
                                         skip_trials=PhotostimResponsesQuantificationNonTargets.EXCLUDE_TRIALS)
         def collect_summed_responses_interictal(lin_reg_scores, lin_reg_scores_fakestims, **kwargs):
             """collect z scored (to baseline) summed responses for fakestims - interictal. Exclude z scores > 5 or < -5"""
@@ -1083,7 +1084,7 @@ class PhotostimResponsesAnalysisNonTargets(PhotostimResponsesQuantificationNonTa
         # make plots
 
         # SCATTER PLOT OF DATAPOINTS
-        fig, axs = plt.subplots(nrows=2, ncols=1, figsize=(10, 6))
+        fig, axs = plt.subplots(nrows=2, ncols=1, figsize=(10, 7), dpi=500)
 
         # BASELINE CONDITION
 
@@ -1095,7 +1096,7 @@ class PhotostimResponsesAnalysisNonTargets(PhotostimResponsesQuantificationNonTa
         fig, axs[0] = pplot.make_general_scatter(
             x_list=[results.summed_responses['baseline']['targets_summed_zscored']],
             y_data=[results.summed_responses['baseline']['all_non-targets_zscored']], fig=fig, ax=axs[0],
-            s=50, facecolors=['white'], edgecolors=['blue'], lw=1, alpha=0.5,
+            s=5, facecolors=['white'], edgecolors=['blue'], lw=1, alpha=1,
             x_labels=['total targets activity'], y_labels=['total network activity'],
             legend_labels=[
                 f'baseline - photostims - $R^2$: {r_value ** 2:.2e}, p = {p_value ** 2:.2e}, $m$ = {slope:.2e}'],
@@ -1113,7 +1114,7 @@ class PhotostimResponsesAnalysisNonTargets(PhotostimResponsesQuantificationNonTa
             x_list=[results.summed_responses['baseline - fakestims']['targets_fakestims_summed_zscored']],
             y_data=[results.summed_responses['baseline - fakestims']['all_non-targets_fakestims_zscored']],
             fig=fig, ax=axs[0],
-            s=50, facecolors=['white'], edgecolors=['black'], lw=1, alpha=0.5,
+            s=5, facecolors=['white'], edgecolors=['black'], lw=1, alpha=1,
             x_labels=['total targets'], y_labels=['total network activity'],
             legend_labels=[
                 f'baseline - fakestims - $R^2$: {r_value ** 2:.2e}, p = {p_value ** 2:.2e}, $m$ = {slope:.2e}'],
@@ -1131,9 +1132,9 @@ class PhotostimResponsesAnalysisNonTargets(PhotostimResponsesQuantificationNonTa
         regression_y = slope * results.summed_responses['interictal']['targets_summed_zscored'] + intercept
 
         pplot.make_general_scatter(x_list=[results.summed_responses['interictal']['targets_summed_zscored']],
-                                   y_data=[results.summed_responses['interictal']['all_non-targets_zscored']], s=50,
+                                   y_data=[results.summed_responses['interictal']['all_non-targets_zscored']], s=5,
                                    facecolors=['white'],
-                                   edgecolors=['green'], lw=1, alpha=0.5, x_labels=['total targets activity'],
+                                   edgecolors=['green'], lw=1, alpha=1, x_labels=['total targets activity'],
                                    y_labels=['total network activity'], fig=fig, ax=axs[1],
                                    legend_labels=[
                                        f'interictal - photostims - $R^2$: {r_value ** 2:.2e}, p = {p_value ** 2:.2e}, $m$ = {slope:.2e}'],
@@ -1154,7 +1155,7 @@ class PhotostimResponsesAnalysisNonTargets(PhotostimResponsesQuantificationNonTa
             x_list=[results.summed_responses['interictal - fakestims']['targets_fakestims_summed_zscored']],
             y_data=[results.summed_responses['interictal - fakestims']['all_non-targets_fakestims_zscored']],
             fig=fig, ax=axs[1],
-            s=50, facecolors=['white'], edgecolors=['black'], lw=1, alpha=0.5,
+            s=5, facecolors=['white'], edgecolors=['black'], lw=1, alpha=1,
             x_labels=['total targets'], y_labels=['total network activity'],
             legend_labels=[
                 f'interictal - fakestims - $R^2$: {r_value ** 2:.2e}, p = {p_value ** 2:.2e}, $m$ = {slope:.2e}'],
@@ -1163,8 +1164,8 @@ class PhotostimResponsesAnalysisNonTargets(PhotostimResponsesQuantificationNonTa
                     regression_y, color='gray', lw=2)
 
         # PLOTTING OPTIONS
-        axs[0].grid(True)
-        axs[1].grid(True)
+        # axs[0].grid(True)
+        # axs[1].grid(True)
         axs[0].set_ylim([-15, 15])
         axs[1].set_ylim([-15, 15])
         axs[0].set_xlim([-7, 7])
@@ -1180,8 +1181,8 @@ class PhotostimResponsesAnalysisNonTargets(PhotostimResponsesQuantificationNonTa
                                          [i ** 2 for i in results.lin_reg_summed_responses['interictal']['r_value']],
                                          [i ** 2 for i in
                                           results.lin_reg_summed_responses['interictal - fakestims']['r_value']]],
-                                   paired=True, bar=False, colors=['blue', 'gray', 'green', 'gray'], edgecolor='black',
-                                   lw=1,
+                                   paired=True, bar=False, colors=['royalblue', 'skyblue', 'seagreen', 'lightgreen'], edgecolor='black',
+                                   lw=1, s=30, alpha=1,
                                    x_tick_labels=['Base', 'Base-fake', 'Inter', 'Inter-fake'], ylims=[0, 1],
                                    y_label='$R^2$', title='$R^2$ value per experiment')
 
@@ -1190,8 +1191,8 @@ class PhotostimResponsesAnalysisNonTargets(PhotostimResponsesQuantificationNonTa
                                          [i for i in results.lin_reg_summed_responses['interictal']['slope']],
                                          [i for i in
                                           results.lin_reg_summed_responses['interictal - fakestims']['slope']]],
-                                   paired=True, bar=False, colors=['blue', 'gray', 'green', 'gray'], edgecolor='black',
-                                   lw=1,
+                                   paired=True, bar=False, colors=['royalblue', 'skyblue', 'seagreen', 'lightgreen'], edgecolor='black',
+                                   lw=1, s=50, alpha=1,
                                    x_tick_labels=['Base', 'Base-fake', 'Inter', 'Inter-fake'], ylims=[0, 1.7],
                                    y_label='$slope$', title='slope value per experiment')
 
@@ -1200,7 +1201,7 @@ class PhotostimResponsesAnalysisNonTargets(PhotostimResponsesQuantificationNonTa
              enumerate(results.lin_reg_summed_responses['baseline']['r_value'])],
             [(val ** 2) / results.lin_reg_summed_responses['interictal - fakestims']['r_value'][i] for i, val in
              enumerate(results.lin_reg_summed_responses['interictal']['r_value'])]],
-                                   paired=True, bar=False, colors=['blue', 'green'], edgecolor='black', lw=1,
+                                   paired=True, bar=False, colors=['royalblue', 'seagreen'], edgecolor='black', lw=1, s=50, alpha=1,
                                    x_tick_labels=['Base', 'Inter'], ylims=[0, 1.5], y_label='photostim/fakestims $R^2$',
                                    title='ratio of $R^2$ per experiment')
 
@@ -1209,7 +1210,7 @@ class PhotostimResponsesAnalysisNonTargets(PhotostimResponsesQuantificationNonTa
              enumerate(results.lin_reg_summed_responses['baseline']['slope'])],
             [val / results.lin_reg_summed_responses['interictal - fakestims']['slope'][i] for i, val in
              enumerate(results.lin_reg_summed_responses['interictal']['slope'])]],
-                                   paired=True, bar=False, colors=['blue', 'green'], edgecolor='black', lw=1,
+                                   paired=True, bar=False, colors=['royalblue', 'seagreen'], edgecolor='black', lw=1, s=50,alpha=1,
                                    x_tick_labels=['Base', 'Inter'], ylims=[0, 4.5], y_label='photostim/fakestims $m$',
                                    title='ratio of $m$ per experiment')
 

@@ -409,6 +409,7 @@ class PhotostimResponsesNonTargetsResults(Results):
         distances = np.unique(baseline_responses['shuffled distance binned'])
         avg_binned_responses = []
         sem_binned_responses = []
+        distance_response = {}
         for bin in distances:
             print(f'\t\- processing distance bin: {bin}')
             _idxs = np.where(baseline_responses['shuffled distance binned'] == bin)
@@ -429,6 +430,8 @@ class PhotostimResponsesNonTargetsResults(Results):
 
             avg_binned_responses.append(avg_response)
             sem_binned_responses.append(sem_response)
+            distance_response[bin] = averages_cells
+
         avg_binned_responses = np.asarray(avg_binned_responses)
         sem_binned_responses = np.asarray(sem_binned_responses)
 
@@ -437,7 +440,9 @@ class PhotostimResponsesNonTargetsResults(Results):
 
         results.binned_distance_vs_responses_shuffled[measurement] = {'distances': distances,
                                                                       'avg binned responses': avg_binned_responses,
-                                                                      'sem binned responses': sem_binned_responses}
+                                                                      'sem binned responses': sem_binned_responses,
+                                                                      'distance responses': distance_response
+                                                                      }
 
         results.save_results()
 
@@ -455,6 +460,7 @@ class PhotostimResponsesNonTargetsResults(Results):
         distances = np.unique(baseline_responses['distance target binned'])
         avg_binned_responses = []
         sem_binned_responses = []
+        distance_response = {}
         for bin in distances:
             print(f'\t\- processing distance bin: {bin}')
             _idxs = np.where(baseline_responses['distance target binned'] == bin)
@@ -475,6 +481,8 @@ class PhotostimResponsesNonTargetsResults(Results):
 
             avg_binned_responses.append(avg_response)
             sem_binned_responses.append(sem_response)
+            distance_response[bin] = averages_cells
+
         avg_binned_responses = np.asarray(avg_binned_responses)
         sem_binned_responses = np.asarray(sem_binned_responses)
 
@@ -483,7 +491,9 @@ class PhotostimResponsesNonTargetsResults(Results):
 
         results.binned_distance_vs_responses[measurement] = {'distances': distances,
                                                              'avg binned responses': avg_binned_responses,
-                                                             'sem binned responses': sem_binned_responses}
+                                                             'sem binned responses': sem_binned_responses,
+                                                             'distance responses': distance_response
+                                                             }
 
         results.save_results()
 
@@ -541,6 +551,7 @@ class PhotostimResponsesNonTargetsResults(Results):
         distances = np.unique(interictal_responses['shuffled distance binned'])
         avg_binned_responses = []
         sem_binned_responses = []
+        distance_response = {}
         for bin in distances:
             print(f'\t\- processing distance bin: {bin}')
             _idxs = np.where(interictal_responses['shuffled distance binned'] == bin)
@@ -561,6 +572,8 @@ class PhotostimResponsesNonTargetsResults(Results):
 
                 avg_binned_responses.append(avg_response)
                 sem_binned_responses.append(sem_response)
+                distance_response[bin] = averages_cells
+
         avg_binned_responses = np.asarray(avg_binned_responses)
         sem_binned_responses = np.asarray(sem_binned_responses)
 
@@ -569,7 +582,9 @@ class PhotostimResponsesNonTargetsResults(Results):
 
         results.binned_distance_vs_responses_shuffled_interictal[measurement] = {'distances': distances,
                                                                                  'avg binned responses': avg_binned_responses,
-                                                                                 'sem binned responses': sem_binned_responses}
+                                                                                 'sem binned responses': sem_binned_responses,
+                                                                                 'distance responses': distance_response
+                                                                                 }
 
         results.save_results()
 
@@ -587,6 +602,7 @@ class PhotostimResponsesNonTargetsResults(Results):
         distances = np.unique(interictal_responses['distance target binned'])
         avg_binned_responses = []
         sem_binned_responses = []
+        distance_response = {}
         for bin in distances:
             print(f'\t\- processing distance bin: {bin}')
             _idxs = np.where(interictal_responses['distance target binned'] == bin)
@@ -608,6 +624,7 @@ class PhotostimResponsesNonTargetsResults(Results):
 
                 avg_binned_responses.append(avg_response)
                 sem_binned_responses.append(sem_response)
+                distance_response[bin] = averages_cells
 
         avg_binned_responses = np.asarray(avg_binned_responses)
         sem_binned_responses = np.asarray(sem_binned_responses)
@@ -617,7 +634,9 @@ class PhotostimResponsesNonTargetsResults(Results):
 
         results.binned_distance_vs_responses_interictal[measurement] = {'distances': distances,
                                                                         'avg binned responses': avg_binned_responses,
-                                                                        'sem binned responses': sem_binned_responses}
+                                                                        'sem binned responses': sem_binned_responses,
+                                                                        'distance responses': distance_response
+                                                                        }
 
         results.save_results()
 
@@ -677,6 +696,7 @@ class PhotostimResponsesNonTargetsResults(Results):
         avg_binned_responses = []
         sem_binned_responses = []
         distances_with_responses = []
+        distance_response = {}
         for bin in distances:
             print(f'\t\- processing SHUFFLED DISTAL distance bin: {bin}')
             _idxs = np.where((ictal_responses['shuffled distance binned'] == bin) & (ictal_responses['sz distance group'] == 'distal'))[0]
@@ -696,6 +716,8 @@ class PhotostimResponsesNonTargetsResults(Results):
                 avg_binned_responses.append(avg_response)
                 sem_binned_responses.append(sem_response)
                 distances_with_responses.append(bin)
+                distance_response[bin] = averages_cells
+
             else:
                 print(f'\t\t\- no responses for SHUFFLED distance bin {bin}')
 
@@ -708,7 +730,9 @@ class PhotostimResponsesNonTargetsResults(Results):
 
         results.binned_distance_vs_responses_shuffled_distal[measurement] = {'distances': distances_with_responses,
                                                                                  'avg binned responses': avg_binned_responses,
-                                                                                 'sem binned responses': sem_binned_responses}
+                                                                                 'sem binned responses': sem_binned_responses,
+                                                                             'distance responses': distance_response
+                                                                             }
 
         results.save_results()
 
@@ -717,6 +741,7 @@ class PhotostimResponsesNonTargetsResults(Results):
         avg_binned_responses = []
         sem_binned_responses = []
         distances_with_responses = []
+        distance_response = {}
         for bin in distances:
             print(f'\t\- processing SHUFFLED PROXIMAL distance bin: {bin}')
             _idxs = np.where((ictal_responses['shuffled distance binned'] == bin) & (ictal_responses['sz distance group'] == 'proximal'))[0]
@@ -738,6 +763,8 @@ class PhotostimResponsesNonTargetsResults(Results):
                 avg_binned_responses.append(avg_response)
                 sem_binned_responses.append(sem_response)
                 distances_with_responses.append(bin)
+                distance_response[bin] = averages_cells
+
             else:
                 print(f'\t\t\- no responses for SHUFFLED distance bin {bin}')
 
@@ -749,7 +776,9 @@ class PhotostimResponsesNonTargetsResults(Results):
 
         results.binned_distance_vs_responses_shuffled_proximal[measurement] = {'distances': distances_with_responses,
                                                                                  'avg binned responses': avg_binned_responses,
-                                                                                 'sem binned responses': sem_binned_responses}
+                                                                                 'sem binned responses': sem_binned_responses,
+                                                                               'distance responses': distance_response
+                                                                               }
 
         results.save_results()
 
@@ -770,7 +799,7 @@ class PhotostimResponsesNonTargetsResults(Results):
         avg_binned_responses = []
         sem_binned_responses = []
         distances_with_responses = []
-
+        distance_response = {}
         for bin in distances:
             print(f'\t\- processing DISTAL distance bin: {bin}')
             _idxs = np.where((ictal_responses['distance target binned'] == bin) & (ictal_responses['sz distance group'] == 'distal'))[0]
@@ -790,6 +819,8 @@ class PhotostimResponsesNonTargetsResults(Results):
                 avg_binned_responses.append(avg_response)
                 sem_binned_responses.append(sem_response)
                 distances_with_responses.append(bin)
+                distance_response[bin] = averages_cells
+
             else:
                 print(f'\t\t\- no responses for distance bin {bin}')
 
@@ -802,7 +833,9 @@ class PhotostimResponsesNonTargetsResults(Results):
 
         results.binned_distance_vs_responses_distal[measurement] = {'distances': distances_with_responses,
                                                                         'avg binned responses': avg_binned_responses,
-                                                                        'sem binned responses': sem_binned_responses}
+                                                                        'sem binned responses': sem_binned_responses,
+                                                                    'distance responses': distance_response
+                                                                    }
 
         results.save_results()
 
@@ -814,7 +847,7 @@ class PhotostimResponsesNonTargetsResults(Results):
         avg_binned_responses = []
         sem_binned_responses = []
         distances_with_responses = []
-
+        distance_response = {}
         for bin in distances:
             print(f'\t\- processing PROXIMAL distance bin: {bin}')
             _idxs = np.where((ictal_responses['distance target binned'] == bin) & (ictal_responses['sz distance group'] == 'proximal'))[0]
@@ -837,6 +870,8 @@ class PhotostimResponsesNonTargetsResults(Results):
                 avg_binned_responses.append(avg_response)
                 sem_binned_responses.append(sem_response)
                 distances_with_responses.append(bin)
+                distance_response[bin] = averages_cells
+
             else:
                 print(f'\t\t\- no responses for distance bin {bin}')
 
@@ -849,7 +884,9 @@ class PhotostimResponsesNonTargetsResults(Results):
 
         results.binned_distance_vs_responses_proximal[measurement] = {'distances': distances_with_responses,
                                                                         'avg binned responses': avg_binned_responses,
-                                                                        'sem binned responses': sem_binned_responses}
+                                                                        'sem binned responses': sem_binned_responses,
+                                                                      'distance responses': distance_response
+                                                                      }
 
         results.save_results()
 

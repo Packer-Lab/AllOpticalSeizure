@@ -1432,3 +1432,29 @@ class Post4ap(alloptical):
             plt.show()
 
         return cells
+
+    @property
+    def sz_occurrence_stim_intervals2(self):
+        """returns the fraction of total sz recorded across current trial at a certain bin relative to interval between one photon stims."""
+        bin_width = int(1 * self.fps) if self.fps == 15 else  int(0.5 * self.fps)
+        sz_prob = np.asarray([0] * 10)
+
+
+        for i, stim in enumerate(self.stim_start_frames[:-1]):
+            frame_binned = np.arange(stim, stim + self.stim_interval_fr, bin_width)
+            _sz_prob = np.asarray([0] * int(self.stim_interval_fr / bin_width))
+
+            for jdx, fr in enumerate(frame_binned[:-1]):
+                low_fr = fr - bin_width
+                high_fr = fr + bin_width
+                # sz_s = [1 for sz_start in self.seizure_lfp_onsets if sz_start in range(low_fr, high_fr)]
+                # total_sz = np.sum(sz_s) if len(sz_s) > 0 else 0
+                for sz_start in self.seizure_lfp_onsets:
+                    if sz_start in range(low_fr, high_fr):
+                        sz_prob[jdx] += 1
+
+            # sz_prob += _sz_prob
+
+        return np.asarray(sz_prob / len([i for i in self.seizure_lfp_onsets if i < self.stim_start_frames[-1]]))
+
+

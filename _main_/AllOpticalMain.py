@@ -181,6 +181,11 @@ class alloptical(TwoPhotonImaging):
         """number of SLM targets in expobj trial"""
         return len(self.target_coords_all)
 
+    @property
+    def stim_interval_fr(self):
+        intervals = [(self.stim_start_frames[i + 1]) - (self.stim_start_frames[i]) for i, _ in enumerate(self.stim_start_frames[:-1])]
+        return round(float(np.median([interval for interval in intervals if interval < int(20 * self.fps)])))
+
 
     def collect_traces_from_targets(self, force_redo: bool = False, save: bool = True):
 

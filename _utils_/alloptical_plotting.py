@@ -16,14 +16,44 @@ import tifffile as tf
 from _main_.TwoPhotonImagingMain import TwoPhotonImaging
 from _main_.AllOpticalMain import alloptical
 from _main_.Post4apMain import Post4ap
-from onePexperiment.OnePhotonStimMain import OnePhotonStim
 
 from typing import List, Union
 
 from funcsforprajay.wrappers import print_start_end_plot, plot_piping_decorator
 
 
+
+
 # %% plotting utils
+def plot_settings():
+    figure = {
+        'dpi'       : 500,        ## figure dots per inch
+    }
+    axes = {
+        'titlesize' : 'small',    ## fontsize of the axes title
+        'spines.right': False,
+        'spines.top': False,
+        }
+
+    xticks = {
+        'labelsize' : 'large',         ## fontsize of the tick labels
+        'bottom': True
+    }
+
+    yticks = {
+        'labelsize' : 'large',         ## fontsize of the tick labels
+        'left': True,
+    }
+
+    font = {'family' : 'sans-serif',
+            #'weight' : 'bold',
+            'size'   : 12}
+
+    plt.rc('font', **font)        # controls default text sizes
+    plt.rc('axes', **axes)        # fontsize of the axes title
+    plt.rc('xtick', **xticks)      # fontsize of the tick labels
+    plt.rc('ytick', **yticks)      # fontsize of the tick labels
+
 
 def add_scalebar(expobj: TwoPhotonImaging, ax: mpl.axes.Axes, scale_bar_um: float = 100, **kwargs):
     """add scalebar to the image being plotted on the a single matplotlib.axes.Axes object using the TwoPhotonImaging object information.
@@ -1474,7 +1504,7 @@ def plot_flu_1pstim_avg_trace(expobj, title='Average trace of stims', individual
 
 @print_start_end_plot
 @plot_piping_decorator(figsize=(4,5))
-def plot_lfp_1pstim_avg_trace(expobj: OnePhotonStim, title='Average LFP peri- stims', individual_traces=False, x_axis='time', pre_stim=1.0, post_stim=5.0,
+def plot_lfp_1pstim_avg_trace(expobj, title='Average LFP peri- stims', individual_traces=False, x_axis='time', pre_stim=1.0, post_stim=5.0,
                               optoloopback: bool = False, stims_to_analyze: list = None, shrink_text: int = 1, write_full_text: bool = False,
                               fig=None, ax=None, **kwargs):
 

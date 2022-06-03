@@ -321,7 +321,7 @@ class TwoPhotonImaging:
     def fps(self):
         # frame_period = float(self._getPVStateShard(self.xml_path, 'framePeriod')[0])
         # return (1 / frame_period)
-        return self.__fps
+        return int(self.__fps)
 
     @property
     def laser_power(self):

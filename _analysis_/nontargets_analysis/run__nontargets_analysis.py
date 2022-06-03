@@ -3,6 +3,7 @@ import sys
 import seaborn as sns
 import matplotlib.pyplot as plt
 
+from scipy import stats
 
 from _analysis_.nontargets_analysis._ClassPhotostimResponsesAnalysisNonTargets import \
     PhotostimResponsesAnalysisNonTargets
@@ -15,15 +16,206 @@ import numpy as np
 from _analysis_.nontargets_analysis._ClassResultsNontargetPhotostim import PhotostimResponsesNonTargetsResults
 from _main_.AllOpticalMain import alloptical
 
+import statsmodels.api as sm
+from statsmodels.formula.api import ols
+
 import _alloptical_utils as Utils
 
 main = PhotostimResponsesAnalysisNonTargets
 
 results: PhotostimResponsesNonTargetsResults = PhotostimResponsesNonTargetsResults.load()
 
+
 ############################## run processing/analysis/plotting: #######################################################
 
+# %% 5.2.1/2-1) RUNNING STATS COMPARING SIGNIFICANCE OF DISTANCE
+
+distance_lims = [19, 400]  # limit of analysis
+
+# run stats: one way ANOVA:
+distance_response = results.binned_distance_vs_responses_shuffled_interictal['new influence response']['distance responses']
+# run stats analysis on limited distances: ONE-WAY ANOVA:
+args = []
+for distance, responses in distance_response.items():
+    if distance_lims[0] < distance < distance_lims[1]:
+        args.append(responses)
+# stats.f_oneway(*args)
+
+# %% build longform table for TWO-WAY ANOVA - baseline vs. interictal
+
+distance_responses_df = pd.DataFrame({
+    'group': [],
+    'distance': [],
+    'response': []
+})
+
+distance_response = results.binned_distance_vs_responses['new influence response']['distance responses']
+
+# distance_responses_df = []
+for distance, responses in distance_response.items():
+    if distance_lims[0] < distance < distance_lims[1]:
+        for response in responses:
+            _df = pd.DataFrame({
+                'group': 'baseline',
+                'distance': distance,
+                'response': response
+            },  index=[f"baseline_{distance}"])
+            distance_responses_df = pd.concat([distance_responses_df, _df])
+
+
+distance_response = results.binned_distance_vs_responses_interictal['new influence response']['distance responses']
+
+for distance, responses in distance_response.items():
+    if distance_lims[0] < distance < distance_lims[1]:
+        for response in responses:
+            _df = pd.DataFrame({
+                'group': 'interictal',
+                'distance': distance,
+                'response': response
+            },  index=[f"interictal_{distance}"])
+            distance_responses_df = pd.concat([distance_responses_df, _df])
+
+
+
+# perform TWO WAY ANOVA
+
+model = ols('response ~ C(group) + C(distance) + C(group):C(distance)', data=distance_responses_df).fit()
+sm.stats.anova_lm(model, typ=2)
+
+# 5.2) PLOTTING of average responses +/- sem across distance to targets bins - baseline + interictal
+
+measurement = 'new influence response'
+fig, ax = plt.subplots(figsize = (4, 4), dpi=300)
+
+ax.axhline(y=0, ls='--', color='gray', lw=1)
+ax.axvline(x=20, ls='--', color='gray', lw=1)
+
+# BASELINE- distances vs. responses
+distances = results.binned_distance_vs_responses[measurement]['distances']
+distances_lim_idx = [idx for idx, distance in enumerate(distances) if distance_lims[0] < distance < distance_lims[1]]
+distances = distances[distances_lim_idx]
+avg_binned_responses = results.binned_distance_vs_responses[measurement]['avg binned responses'][distances_lim_idx]
+sem_binned_responses = results.binned_distance_vs_responses[measurement]['sem binned responses'][distances_lim_idx]
+ax.fill_between(x=list(distances), y1=list(avg_binned_responses + sem_binned_responses), y2=list(avg_binned_responses - sem_binned_responses), alpha=0.1, color='#4169e1')
+ax.plot(distances, avg_binned_responses, lw=1, color='#4169e1')
+
+
+# binned distances vs responses
+distances = results.binned_distance_vs_responses_interictal[measurement]['distances']
+distances_lim_idx = [idx for idx, distance in enumerate(distances) if distance_lims[0] < distance < distance_lims[1]]
+distances = distances[distances_lim_idx]
+avg_binned_responses = results.binned_distance_vs_responses_interictal[measurement]['avg binned responses'][distances_lim_idx]
+sem_binned_responses = results.binned_distance_vs_responses_interictal[measurement]['sem binned responses'][distances_lim_idx]
+ax.fill_between(x=list(distances), y1=list(avg_binned_responses + sem_binned_responses), y2=list(avg_binned_responses - sem_binned_responses), alpha=0.1, color='#7f41e1')
+ax.plot(distances, avg_binned_responses, lw=1, color='#7f41e1')
+
+ax.set_title(f"{measurement}", wrap=True)
+ax.set_xlim([0, 400])
+ax.set_ylim([-0.175, 0.25])
+pj.lineplot_frame_options(fig=fig, ax=ax, x_label='distance to target (um)', y_label=measurement)
+
+fig.suptitle('BASELINE + INTERICTAL')
+fig.tight_layout()
+fig.show()
+
+# %% 5.2.3/4-1) RUNNING STATS COMPARING SIGNIFICANCE OF DISTANCE, DISTAL + PROXIMAL
+
+distance_lims = [19, 400]  # limit of analysis
+measurement = 'new influence response'
+
+# run stats: one way ANOVA:
+# distance_response = results.binned_distance_vs_responses_proximal['new influence response']['distance responses']
+distance_response = results.binned_distance_vs_responses_distal[measurement]['distance responses']
+# run stats analysis on limited distances: ONE-WAY ANOVA:
+args = []
+for distance, responses in distance_response.items():
+    if distance_lims[0] < distance < distance_lims[1]:
+        args.append(responses)
+stats.f_oneway(*args)
+
+# %% build longform table for TWO-WAY ANOVA - DISTAL VS. PROXIMAL
+
+distance_responses_df = pd.DataFrame({
+    'group': [],
+    'distance': [],
+    'response': []
+})
+
+distance_response = results.binned_distance_vs_responses_distal[measurement]['distance responses']
+
+# distance_responses_df = []
+for distance, responses in distance_response.items():
+    if distance_lims[0] < distance < distance_lims[1]:
+        for response in responses:
+            _df = pd.DataFrame({
+                'group': 'distal',
+                'distance': distance,
+                'response': response
+            },  index=[f"baseline_{distance}"])
+            distance_responses_df = pd.concat([distance_responses_df, _df])
+
+
+distance_response = results.binned_distance_vs_responses_proximal[measurement]['distance responses']
+
+for distance, responses in distance_response.items():
+    if distance_lims[0] < distance < distance_lims[1]:
+        for response in responses:
+            _df = pd.DataFrame({
+                'group': 'proximal',
+                'distance': distance,
+                'response': response
+            },  index=[f"interictal_{distance}"])
+            distance_responses_df = pd.concat([distance_responses_df, _df])
+
+
+
+# %% perform TWO WAY ANOVA - DISTAL VS. PROXIMAL VS. DISTANCE
+
+model = ols('response ~ C(group) + C(distance) + C(group):C(distance)', data=distance_responses_df).fit()
+sm.stats.anova_lm(model, typ=2)
+
+# %% 5.2) PLOTTING of average responses +/- sem across distance to targets bins - DISTAL + PROXIMAL
+
+fig, ax = plt.subplots(figsize = (4, 4), dpi=300)
+
+ax.axhline(y=0, ls='--', color='gray', lw=1)
+ax.axvline(x=20, ls='--', color='gray', lw=1)
+
+# PROXIMAL- distances vs. responses
+distances = np.asarray(results.binned_distance_vs_responses_proximal[measurement]['distances'])
+distances_lim_idx = [idx for idx, distance in enumerate(distances) if distance_lims[0] < distance < distance_lims[1]]
+distances = distances[distances_lim_idx]
+avg_binned_responses = results.binned_distance_vs_responses_proximal[measurement]['avg binned responses'][distances_lim_idx]
+sem_binned_responses = results.binned_distance_vs_responses_proximal[measurement]['sem binned responses'][distances_lim_idx]
+ax.fill_between(x=list(distances), y1=list(avg_binned_responses + sem_binned_responses), y2=list(avg_binned_responses - sem_binned_responses), alpha=0.1, color='#e14154')
+ax.plot(distances, avg_binned_responses, lw=1, color='#e14154', label='proximal')
+
+
+# DISTAL- binned distances vs responses
+distances = np.asarray(results.binned_distance_vs_responses_distal[measurement]['distances'])
+distances_lim_idx = [idx for idx, distance in enumerate(distances) if distance_lims[0] < distance < distance_lims[1]]
+distances = distances[distances_lim_idx]
+avg_binned_responses = results.binned_distance_vs_responses_distal[measurement]['avg binned responses'][distances_lim_idx]
+sem_binned_responses = results.binned_distance_vs_responses_distal[measurement]['sem binned responses'][distances_lim_idx]
+ax.fill_between(x=list(distances), y1=list(avg_binned_responses + sem_binned_responses), y2=list(avg_binned_responses - sem_binned_responses), alpha=0.1, color='#ce41e1')
+ax.plot(distances, avg_binned_responses, lw=1, color='#ce41e1', label='distal')
+
+ax.legend(loc='lower right')
+ax.set_title(f"{measurement}", wrap=True)
+ax.set_xlim([0, 400])
+ax.set_ylim([-0.3, 0.4])
+pj.lineplot_frame_options(fig=fig, ax=ax, x_label='distance to target (um)', y_label=measurement)
+
+fig.suptitle('DISTAL + PROXIMAL')
+fig.tight_layout()
+fig.show()
+
+
+
 # %% 5.2.1) PLOTTING of average responses +/- std across space bins - baseline
+
+distance_lims = [19, 400]  # limit of analysis
+
 
 measurements = ('photostim response', 'influence response', 'new influence response')
 
@@ -36,8 +228,10 @@ for idx, measurement in enumerate(measurements):
 
     # binned shuffled distances vs. responses
     distances = results.binned_distance_vs_responses_shuffled[measurement]['distances']
-    avg_binned_responses = results.binned_distance_vs_responses_shuffled[measurement]['avg binned responses']
-    sem_binned_responses = results.binned_distance_vs_responses_shuffled[measurement]['sem binned responses']
+    distances_lim_idx = [idx for idx, distance in enumerate(distances) if distance_lims[0] < distance < distance_lims[1]]
+    distances = distances[distances_lim_idx]
+    avg_binned_responses = results.binned_distance_vs_responses_shuffled[measurement]['avg binned responses'][distances_lim_idx]
+    sem_binned_responses = results.binned_distance_vs_responses_shuffled[measurement]['sem binned responses'][distances_lim_idx]
     ax.fill_between(x=list(distances), y1=list(avg_binned_responses + sem_binned_responses), y2=list(avg_binned_responses - sem_binned_responses), alpha=0.1, color='orange')
     ax.plot(distances, avg_binned_responses, lw=1, color='#e18741')
 

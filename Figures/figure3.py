@@ -4,6 +4,7 @@ from scipy import stats
 
 from _alloptical_utils import run_for_loop_across_exps
 from _analysis_._ClassPhotostimAnalysisSlmTargets import plot__avg_photostim_dff_allexps
+from _analysis_.sz_analysis._ClassExpSeizureAnalysis import ExpSeizureAnalysis
 from _main_.AllOpticalMain import alloptical
 from _main_.Post4apMain import Post4ap
 from _utils_.io import import_expobj
@@ -12,7 +13,39 @@ from funcsforprajay import plotting as pplot
 import xml.etree.ElementTree as ET
 
 
-# %% C) GRAND AVERAGE PLOT OF TARGETS AND NONTARGETS
+expobj: Post4ap = import_expobj(exp_prep='PS06 t-013')
+
+# %% F) Radial plot of Mean FOV for photostimulation trials, with period equal to that of photostimulation timing period
+
+# run data analysis
+exp_sz_occurrence = ExpSeizureAnalysis.collectSzOccurrenceRelativeStim()
+
+# %%
+for exp, values in exp_sz_occurrence.items():
+    print(values.shape)
+
+
+# make plot
+bin_width = int(1 * expobj.fps) if expobj.fps == 15 else int(0.5 * expobj.fps)
+# period = len(np.arange(0, (expobj.stim_interval_fr / bin_width)))
+period = 10
+theta = (2 * np.pi) * np.arange(0, (expobj.stim_interval_fr / bin_width)) / period
+
+fig, ax = plt.subplots(subplot_kw={'projection': 'polar'}, dpi=300)
+for exp, values in exp_sz_occurrence.items():
+    plot = values
+    ax.bar(theta, plot, width=(2 * np.pi) / period, bottom=0.0, alpha=0.5)
+ax.set_rmax(1.1)
+# ax.set_rticks([1])  # Less radial ticks
+ax.set_rlabel_position(-35.5)  # Move radial labels away from plotted line
+ax.grid(True)
+ax.set_xticks((2 * np.pi) * np.arange(0, (expobj.stim_interval_fr / bin_width)) / period)
+ax.set_title("sz probability occurrence (binned every 1s)", va='bottom')
+ax.spines['polar'].set_visible(False)
+fig.show()
+
+
+# %% C) GRAND AVERAGE PLOT OF TARGETS
 # plot__avg_photostim_dff_allexps()
 
 # %% C) baseline
