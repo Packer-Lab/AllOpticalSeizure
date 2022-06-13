@@ -1076,7 +1076,7 @@ class PhotostimResponsesAnalysisNonTargets(PhotostimResponsesQuantificationNonTa
             results.save_results()
 
     @staticmethod
-    def plot__summed_activity_vs_targets_activity(results):
+    def plot__summed_activity_vs_targets_activity(results, **kwargs):
         """scatter plot of stim trials comparing zscored summed activity of targets and zscored summed activity of nontargets. during baseline and interictal. includes fakestims trial as well."""
         from _analysis_.nontargets_analysis._ClassResultsNontargetPhotostim import PhotostimResponsesNonTargetsResults
         results: PhotostimResponsesNonTargetsResults
@@ -1172,7 +1172,10 @@ class PhotostimResponsesAnalysisNonTargets(PhotostimResponsesQuantificationNonTa
         axs[1].set_xlim([-7, 7])
         fig.suptitle('Total z-scored (to baseline) responses for all trials, all exps', wrap=True)
         fig.tight_layout(pad=0.6)
-        fig.show()
+        # fig.show()
+
+        SAVE_FOLDER = kwargs['SAVE_FOLDER']
+        # Utils.save_figure(fig=fig, save_path_full=f'{SAVE_FOLDER}/total_targets_vs_total_nontargets_photostim_fakestim_baseline_interictal.png')
 
         # BAR PLOT OF PEARSON'S R CORR VALUES BETWEEN BASELINE AND INTERICTAL
         pplot.plot_bar_with_points(data=[[i ** 2 for i in results.lin_reg_summed_responses['baseline']['r_value']],
@@ -1182,7 +1185,7 @@ class PhotostimResponsesAnalysisNonTargets(PhotostimResponsesQuantificationNonTa
                                          [i ** 2 for i in
                                           results.lin_reg_summed_responses['interictal - fakestims']['r_value']]],
                                    paired=True, bar=False, colors=['royalblue', 'skyblue', 'seagreen', 'lightgreen'], edgecolor='black',
-                                   lw=1, s=30, alpha=1,
+                                   lw=1, s=30, alpha=1, shrink_text=1.5,
                                    x_tick_labels=['Base', 'Base-fake', 'Inter', 'Inter-fake'], ylims=[0, 1],
                                    y_label='$R^2$', title='$R^2$ value per experiment')
 
@@ -1192,27 +1195,35 @@ class PhotostimResponsesAnalysisNonTargets(PhotostimResponsesQuantificationNonTa
                                          [i for i in
                                           results.lin_reg_summed_responses['interictal - fakestims']['slope']]],
                                    paired=True, bar=False, colors=['royalblue', 'skyblue', 'seagreen', 'lightgreen'], edgecolor='black',
-                                   lw=1, s=50, alpha=1,
+                                   lw=1, s=50, alpha=1, shrink_text=1.5,
                                    x_tick_labels=['Base', 'Base-fake', 'Inter', 'Inter-fake'], ylims=[0, 1.7],
                                    y_label='$slope$', title='slope value per experiment')
 
-        pplot.plot_bar_with_points(data=[
+        fig, ax = pplot.plot_bar_with_points(data=[
             [(val ** 2) / results.lin_reg_summed_responses['baseline - fakestims']['r_value'][i] for i, val in
              enumerate(results.lin_reg_summed_responses['baseline']['r_value'])],
             [(val ** 2) / results.lin_reg_summed_responses['interictal - fakestims']['r_value'][i] for i, val in
              enumerate(results.lin_reg_summed_responses['interictal']['r_value'])]],
-                                   paired=True, bar=False, colors=['royalblue', 'seagreen'], edgecolor='black', lw=1, s=50, alpha=1,
-                                   x_tick_labels=['Base', 'Inter'], ylims=[0, 1.5], y_label='photostim/fakestims $R^2$',
-                                   title='ratio of $R^2$ per experiment')
+                                   paired=True, bar=False, colors=['royalblue', 'seagreen'], edgecolor='black', lw=1, s=50, alpha=1, shrink_text=1.5,
+                                   x_tick_labels=['Base', 'Inter'], ylims=[0, 1.5], y_label='photostim/fakestims $R^2$', y_ticklabels=[0, 0.5, 1.0, 1.5],
+                                   title='ratio of $R^2$ per experiment', show=False)
+        ax.spines['bottom'].set_visible(False)
+        fig.tight_layout(pad=0.5)
+        # fig.show()
+        Utils.save_figure(fig=fig, save_path_full=f'{SAVE_FOLDER}/targets_nontargets_r2_ratio_photostim_fakestim.png')
 
-        pplot.plot_bar_with_points(data=[
+        fig, ax = pplot.plot_bar_with_points(data=[
             [val / results.lin_reg_summed_responses['baseline - fakestims']['slope'][i] for i, val in
              enumerate(results.lin_reg_summed_responses['baseline']['slope'])],
             [val / results.lin_reg_summed_responses['interictal - fakestims']['slope'][i] for i, val in
              enumerate(results.lin_reg_summed_responses['interictal']['slope'])]],
-                                   paired=True, bar=False, colors=['royalblue', 'seagreen'], edgecolor='black', lw=1, s=50,alpha=1,
-                                   x_tick_labels=['Base', 'Inter'], ylims=[0, 4.5], y_label='photostim/fakestims $m$',
-                                   title='ratio of $m$ per experiment')
+                                   paired=True, bar=False, colors=['royalblue', 'seagreen'], edgecolor='black', lw=1, s=50, alpha=1, shrink_text=1.5,
+                                   x_tick_labels=['Base', 'Inter'], ylims=[0, 5], y_label='photostim/fakestims $m$',
+                                   title='ratio of $m$ per experiment', show=False)
+        ax.spines['bottom'].set_visible(False)
+        fig.tight_layout(pad=0.5)
+        # fig.show()
+        Utils.save_figure(fig=fig, save_path_full=f'{SAVE_FOLDER}/targets_nontargets_slope_ratio_photostim_fakestim.png')
 
         pass
 

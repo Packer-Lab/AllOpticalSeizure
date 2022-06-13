@@ -54,6 +54,15 @@ def plot_settings():
     plt.rc('xtick', **xticks)      # fontsize of the tick labels
     plt.rc('ytick', **yticks)      # fontsize of the tick labels
 
+    import matplotlib as mpl
+
+    mpl.rcParams.update({
+        'xtick.bottom': True,
+        'ytick.left': True,
+        'figure.subplot.wspace': .01,
+        'figure.subplot.hspace': .01,
+    })
+
 
 def add_scalebar(expobj: TwoPhotonImaging, ax: mpl.axes.Axes, scale_bar_um: float = 100, **kwargs):
     """add scalebar to the image being plotted on the a single matplotlib.axes.Axes object using the TwoPhotonImaging object information.

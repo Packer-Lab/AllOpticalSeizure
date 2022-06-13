@@ -18,13 +18,16 @@ main = PhotostimResponsesAnalysisNonTargets
 
 results: PhotostimResponsesNonTargetsResults = PhotostimResponsesNonTargetsResults.load()
 
+# SAVE_FOLDER = f'/home/pshah/mnt/qnap/Analysis/figure-items'
+SAVE_FOLDER = f'/home/pshah/Documents/code/AllOpticalSeizure/figure-items'
+
 
 # %% B) total z scored responses of targets vs. total z scored responses of nontargets - photostim vs. sham stim
 
 # main.collect__zscored_summed_activity_vs_targets_activity(results=results)
 
 # B + B') ratio of regression lines between baseline and interictal stims - photostim + fakestim
-main.plot__summed_activity_vs_targets_activity(results=results)
+main.plot__summed_activity_vs_targets_activity(results=results, SAVE_FOLDER=SAVE_FOLDER)
 
 
 # %% A) # num targets at each distance - split by individual experiments
