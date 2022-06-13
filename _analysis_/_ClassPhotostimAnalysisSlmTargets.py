@@ -5,6 +5,7 @@ import numpy as np
 import os
 import pandas as pd
 from matplotlib import pyplot as plt
+from scipy.stats import variation, mannwhitneyu
 
 import _alloptical_utils as Utils
 from _analysis_._ClassPhotostimResponseQuantificationSLMtargets import PhotostimResponsesQuantificationSLMtargets, \
@@ -17,9 +18,11 @@ from funcsforprajay import plotting as pplot
 import funcsforprajay.funcs as pj
 
 from _utils_._anndata import AnnotatedData2
+from _utils_.alloptical_plotting import plot_settings
 from _utils_.io import import_expobj
 
 SAVE_LOC = "/home/pshah/mnt/qnap/Analysis/analysis_export/analysis_quantification_classes/"
+SAVE_FIG = "/home/pshah/Documents/figures/alloptical-photostim-responses-traces/"
 
 results = PhotostimResponsesSLMtargetsResults.load()
 
@@ -282,22 +285,36 @@ class PhotostimAnalysisSlmTargets(Quantification):
         else:
             raise ValueError('must provide to_plot as either `dFF` or `delta dF`')
 
-        nrows = expobj.n_targets_total // 4
-        if expobj.n_targets_total % 4 > 0:
+        # choose 10 random cells from each dataset
+        choice = np.random.choice(a=np.arange(0, trace_snippets.shape[0]), size=10, replace=False)
+
+        total_plot = len(choice)
+        # total_plot = expobj.n_targets_total
+
+
+        # nrows = expobj.n_targets_total // 4
+        ncols = 10
+        nrows = total_plot // ncols
+        if total_plot % ncols > 0 or total_plot % ncols == 0:
             nrows += 1
-        ncols = 4
         fig, axs = plt.subplots(nrows=nrows, ncols=ncols, figsize=(ncols*1.2, nrows*1.75),
-                                constrained_layout=True, dpi=200)
+                                constrained_layout=True, dpi=600)
         counter = 0
         axs[0, 0].set_xlabel('Time (secs)')
         axs[0, 0].set_ylabel(y_label)
 
-        for cell in range(trace_snippets.shape[0]):
-            a = counter // 4
-            b = counter % 4
+        import matplotlib as mpl
+        cmap = plt.cm.get_cmap('viridis')
+        # for cell in range(trace_snippets.shape[0]):  # for plotting all cells
+        for cell in choice:  # for plotting only randomly chosen cells
+            a = counter // ncols
+            b = counter % ncols
             alpha = 1 * (stimsuccessrates[cell] / 100)
             responses_ = responses[cell]
-            print(f'plotting target #{counter}, CV: {np.std(responses_)/np.mean(responses_):.3f}\n')
+
+            cv = np.std(responses_, ddof=1)/np.mean(responses_)
+
+            print(f'plotting target #{counter}, CV: {cv:.3f}\n')
 
             x_range = np.linspace(0, len(trace_snippets[cell][0]) / expobj.fps, len(trace_snippets[cell][0]))
 
@@ -306,9 +323,12 @@ class PhotostimAnalysisSlmTargets(Quantification):
             x = simple_beeswarm(responses_)
             # transform x
             x_new = [(i + 1) / 2 * (x_range[-1]) for i in x]
-            axs[a,b].scatter(x_new, responses_, s=10, alpha=0.4, color='yellowgreen', zorder=1)
+            # axs[a,b].scatter(x_new, responses_, s=10, alpha=0.4, color='yellowgreen', zorder=1)
+            sc = axs[a,b].scatter(x_new, responses_, s=10, alpha=0.4, c=[cv]*len(responses_), zorder=1, cmap='viridis',
+                                  vmin=0, vmax=3)
             axs[a,b].set_xlim([-1.5, x_range[-1] + 1.5])
-
+            cbar = plt.colorbar(sc)
+            cbar.remove()
 
             ax = axs[a, b].twiny()
             avg = np.nanmean(trace_snippets[cell], axis=0)
@@ -318,96 +338,134 @@ class PhotostimAnalysisSlmTargets(Quantification):
 
             ax.set_ylim([-50,200])
             # axs[a, b].set_ylim([-0.2 * 100, 2.0 * 100])
-            axs[a, b].text(0.98, 0.97, f"CV: {np.std(responses_)/np.mean(responses_):.3f}",
-                           verticalalignment='top', horizontalalignment='right',
-                           transform=axs[a, b].transAxes, fontweight='bold', fontsize=8,
-                           color='black')
+            # axs[a, b].text(0.98, 0.97, f"{cv:.1f}",
+            #                verticalalignment='top', horizontalalignment='right',
+            #                transform=axs[a, b].transAxes, fontweight='bold', fontsize=8,
+            #                color='black')
             axs[a, b].margins(0)
-
             axs[a, b].spines['top'].set_visible(False)
             axs[a, b].spines['right'].set_visible(False)
             axs[a, b].spines['bottom'].set_visible(False)
             axs[a, b].spines['left'].set_visible(False)
+            axs[a, b].set_xticks([])
+            ax.set_xticks([])
             ax.spines['top'].set_visible(False)
             ax.spines['right'].set_visible(False)
             ax.spines['bottom'].set_visible(False)
             ax.spines['left'].set_visible(False)
             # axs[a, b].axvspan(expobj.pre_stim / expobj.fps, (expobj.pre_stim + expobj.stim_duration_frames) / expobj.fps, color='mistyrose',
             #                   zorder=0)
-
-
             counter += 1
         fig.suptitle(f"{expobj.metainfo['animal prep.']} {expobj.metainfo['trial']} - {len(trace_snippets)} targets",
                      y = 0.995)
-        # fig.savefig('/home/pshah/mnt/qnap/Analysis/%s/%s/results/%s_%s_individual targets dFF.png' % (date, j[:-6], date, j))
         fig.tight_layout(pad=0.2)
         fig.show()
+        save_path_full = f'{SAVE_FIG}/photostim-variation-individual-targets-dFF-{expobj.t_series_name}-{expobj.exptype}.png'
+        os.makedirs(os.path.dirname(save_path_full), exist_ok=True)
+        fig.savefig(save_path_full)
+
+        cmap = plt.cm.get_cmap(cmap)
+        colors = cmap(np.arange(cmap.N))
+        fig, ax = plt.subplots(figsize=(6, 1), dpi=600)
+        ax.imshow([colors], extent=[0, 10, 0, 1])
+        fig.tight_layout(pad=0.4)
+        fig.show()
+        save_path_full = f'{SAVE_FIG}/photostim-variation-individual-targets-dFF-colorbar.png'
+        os.makedirs(os.path.dirname(save_path_full), exist_ok=True)
+        fig.savefig(save_path_full)
+
 
     # 2) calculating mean variability across targets:
     def calculate_variability(self, stims):
-        "TODO calculate coefficient of variation"
-        """calculate variance (ddof = 1) of photostim repsonses across trials for each inidividual target."""
+        """calculate coefficient of variation of photostim repsonses across trials for each inidividual target."""
 
         assert hasattr(self, 'adata'), 'cannot find .adata'
         if not stims or stims == 'all': stims = slice(0, self.adata.n_vars)
 
-        print('calculating variability of photostim responses.')
+        print('calculating coefficient of variation of photostim responses.')
 
-        std_vars = []
-        for target in self.adata.obs.index:
-            target = int(target)
-            std_var = np.var(self.adata.X[target, stims] / 100, ddof=1)  # dFF (not % dFF)
-            std_vars.append(std_var)
-        return std_vars
+        # cv = variation(self.adata.X[:, stims], axis=1)
+
+        cv = np.nanstd(self.adata.X[:, stims] , ddof=1, axis=1) / np.nanmean(self.adata.X[:, stims] , axis=1)
+
+        # cv = []
+        # for target in self.adata.obs.index:
+        #     target = int(target)
+        #     cv_ = variation(self.adata.X[target, stims] / 100)  # dFF (not % dFF)
+        #     # std_var = np.var(self.adata.X[target, stims] / 100, ddof=1)  # dFF (not % dFF)
+        #     cv.append(cv_)
+
+        return cv
 
     @staticmethod
     def plot__variability(rerun=False, fig_save_name='baseline-interictal_variability_of_photostim_responses.svg', **kwargs):
     # 1) plotting mean photostim response magnitude across experiments and experimental groups
-        """create plot of mean photostim responses magnitudes for all three exp groups"""
+        """create plot of mean photostim responses' COEFFICIENT OF VARIATION for all exp groups"""
 
         if rerun or not hasattr(results, 'variance_photostimresponse'):
             results.variance_photostimresponse = {}
 
             @Utils.run_for_loop_across_exps(run_pre4ap_trials=True, run_post4ap_trials=False, set_cache=False,
                                             allow_rerun=1)
-            def pre4apexps_collect_photostim_stdvars(**kwargs):
+            def pre4apexps_collect_photostim_variation(**kwargs):
                 expobj: alloptical = kwargs['expobj']
                 if 'pre' in expobj.exptype:
                     # all stims
-                    photostim_stdvars = expobj.PhotostimAnalysisSlmTargets.calculate_variability(stims='all')
-                    return np.mean(photostim_stdvars)
+                    photostim_responses_cv = expobj.PhotostimAnalysisSlmTargets.calculate_variability(stims='all')
+                    median_cv_baseline = np.median(photostim_responses_cv)
+                    print(f'median baseline CV:', median_cv_baseline)
 
-            photostim_stdvars_baseline = pre4apexps_collect_photostim_stdvars()
-            results.variance_photostimresponse['baseline'] = photostim_stdvars_baseline
+                    return np.abs(median_cv_baseline)
+
+            photostim_variation_baseline = pre4apexps_collect_photostim_variation()
+            results.variance_photostimresponse['baseline'] = photostim_variation_baseline
 
             @Utils.run_for_loop_across_exps(run_pre4ap_trials=False, run_post4ap_trials=True, set_cache=False,
                                             allow_rerun=1)
-            def post4apexps_collect_photostim_stdvars(**kwargs):
+            def post4apexps_collect_photostim_variation(**kwargs):
                 expobj: Post4ap = kwargs['expobj']
                 if 'post' in expobj.exptype:
                     # interictal stims
-                    mean_photostim_stdvars_interictal = expobj.PhotostimAnalysisSlmTargets.calculate_variability(stims=expobj.stim_idx_outsz)
+                    photostim_responses_cv_interictal = expobj.PhotostimAnalysisSlmTargets.calculate_variability(stims=expobj.stim_idx_outsz)
+                    median_cv_interictal = np.median(photostim_responses_cv_interictal)
+                    print(f'median interictal CV:', median_cv_interictal)
 
                     # ictal stims
-                    mean_photostim_stdvars_ictal = expobj.PhotostimAnalysisSlmTargets.calculate_variability(stims=expobj.stim_idx_insz)
+                    photostim_responses_cv_ictal = expobj.PhotostimAnalysisSlmTargets.calculate_variability(stims=expobj.stim_idx_insz)
+                    median_cv_ictal = np.median(photostim_responses_cv_ictal)
+                    print(f'median ictal CV:', median_cv_ictal)
 
-                    return np.mean(mean_photostim_stdvars_interictal), np.mean(mean_photostim_stdvars_ictal)
+                    return np.abs(median_cv_interictal), np.abs(median_cv_ictal)
 
-            func_collector = post4apexps_collect_photostim_stdvars()
+            func_collector = post4apexps_collect_photostim_variation()
 
             # if len(func_collector) > 0:
-            photostim_stdvars_interictal, photostim_stdvars_ictal = np.asarray(func_collector)[:, 0], np.asarray(func_collector)[:, 1]
+            photostim_variation_interictal, photostim_variation_ictal = np.asarray(func_collector)[:, 0], np.asarray(func_collector)[:, 1]
 
-            results.variance_photostimresponse['interictal'] = photostim_stdvars_interictal
-            results.variance_photostimresponse['ictal'] = photostim_stdvars_ictal
+            results.variance_photostimresponse['interictal'] = photostim_variation_interictal
+            results.variance_photostimresponse['ictal'] = photostim_variation_ictal
 
             results.save_results()
+
+        # fig, ax = pplot.plot_bar_with_points(
+        #     data=[results.variance_photostimresponse['baseline'], results.variance_photostimresponse['interictal']],
+        #     x_tick_labels=['Baseline', 'Interictal'], bar=True, colors=['gray', 'green'], alpha=1, show=False,
+        #     expand_size_x=0.4, title='Average CV', y_label='Coefficient of Variation (CV)', ylims=[0, 50], shrink_text=0.9,
+        #     **kwargs)
+        # fig.tight_layout(pad=1)
+        # fig.show()
+        # Utils.save_figure(fig, save_path_suffix=f"{fig_save_name}") if fig_save_name else None
+        plot_settings()
+
+        res = mannwhitneyu(results.variance_photostimresponse['baseline'], results.variance_photostimresponse['interictal'])
+        print(res)
 
         fig, ax = pplot.plot_bar_with_points(
             data=[results.variance_photostimresponse['baseline'], results.variance_photostimresponse['interictal']],
             x_tick_labels=['Baseline', 'Interictal'], bar=True, colors=['gray', 'green'], alpha=1, show=False,
-            expand_size_x=0.4, title='Average variance', y_label='Variance (% dFF)^2', ylims=[0, 1], shrink_text=0.9,
-            **kwargs)
+            expand_size_x=0.4, title='Average CV', y_label='Coefficient of Variation (CV)', shrink_text=0.9,
+            s=40, bar_alpha=0.2, ylims=[0, 7.5], **kwargs)
+        ax.text(x=ax.get_xlim()[0] + 0.2,y=ax.get_ylim()[-1], s=f"MWU p-val: {res[1]:0.1e}", fontsize='xx-small')
         fig.tight_layout(pad=1)
         fig.show()
         Utils.save_figure(fig, save_path_suffix=f"{fig_save_name}") if fig_save_name else None

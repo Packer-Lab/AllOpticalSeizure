@@ -17,6 +17,8 @@ RESULTS = PhotostimResponsesSLMtargetsResults.load()
 # %% A) schematic of variability of photostimulation responses
 
 # main.plot__schematic_variability_measurement()
+
+main.plot_variability_photostim_traces_by_targets()
 main.plot__variability(figsize=[3, 5], rerun=False)
 
 
