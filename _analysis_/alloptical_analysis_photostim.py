@@ -582,7 +582,7 @@ aoplot.plot_periphotostim_avg(arr=arr, expobj=expobj, pre_stim_sec=0.5, post_sti
 # %% SUITE2P ROIS - PHOTOSTIM TARGETS - PLOT ENTIRE TRIAL - individual ROIs plotted individually entire Flu trace
 
 to_plot = expobj.dff_SLMTargets
-aoplot.plot_photostim_traces_overlap(array=to_plot, expobj=expobj, y_lims=[0, 5000], title=(experiment + '-'))
+aoplot.plot_photostim_traces_stacked(array=to_plot, expobj=expobj, y_lims=[0, 5000], title=(experiment + '-'))
 
 aoplot.plot_photostim_traces(array=to_plot, expobj=expobj, x_label='Frames', y_label='dFF Flu',
                              title='%s %s - dFF SLM Targets' % (expobj.metainfo['animal prep.'], expobj.metainfo['trial']))
@@ -610,7 +610,7 @@ to_plot = np.asarray([(np.convolve(trace, np.ones(w), 'valid') / w) for trace in
 aoplot.plot_photostim_traces(array=to_plot, expobj=expobj, x_label='Frames',
                              y_label='dFF Flu', title=experiment)
 
-aoplot.plot_photostim_traces_overlap(array=expobj.dff_SLMTargets, expobj=expobj, x_axis='Time (secs.)',
+aoplot.plot_photostim_traces_stacked(array=expobj.dff_SLMTargets, expobj=expobj, x_axis='Time (secs.)',
                                      title='%s - dFF Flu photostims' % experiment, figsize=(2*20, 2*len(to_plot)*0.15))
 
 # len_ = len(array)

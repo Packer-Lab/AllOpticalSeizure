@@ -73,11 +73,11 @@ if __name__ == '__main__':
     #                                                                 scale_percentile_distances=Results__TargetsSzInvasionSpatial.scale_percentile_distances)
 
     # collect distance vs. respnses for distance bins
-    # bin_width, distances, num, avg_responses, conf_int =  main.collect__binned__distance_v_responses()
-    # results.binned__distance_vs_photostimresponses = {'bin_width_um': bin_width, 'distance_bins': distances, 'num_points_in_bin': num,
-    # 'avg_photostim_response_in_bin': avg_responses, '95conf_int': conf_int}
-    # results.save_results()
-    # main.plot__responses_v_distance_no_normalization(results=results)
+    bin_width, distances, num, avg_responses, conf_int =  main.collect__binned__distance_v_responses()
+    results.binned__distance_vs_photostimresponses = {'bin_width_um': bin_width, 'distance_bins': distances, 'num_points_in_bin': num,
+    'avg_photostim_response_in_bin': avg_responses, '95conf_int': conf_int}
+    results.save_results()
+    main.plot__responses_v_distance_no_normalization(results=results)
 
 
     # run class targets proximal distal

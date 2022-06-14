@@ -1,4 +1,7 @@
+import os
+
 import numpy as np
+from funcsforprajay.wrappers import plot_piping_decorator
 from matplotlib import pyplot as plt
 from scipy import stats
 
@@ -13,7 +16,101 @@ from funcsforprajay import plotting as pplot
 import xml.etree.ElementTree as ET
 
 
-expobj: Post4ap = import_expobj(exp_prep='PS06 t-013')
+expobj: Post4ap = import_expobj(exp_prep='RL108 t-009')
+SAVE_FIG = "/home/pshah/Documents/figures/alloptical-photostim-responses-traces/"
+
+# %% B) individual Ca+ traces for pre4ap + post4ap - with corresponding LFP trace
+
+@plot_piping_decorator(figsize=(10,6))
+def plot_photostim_traces_stacked(array, expobj, exclude_id=[], y_spacing_factor=1, title='',
+                                  x_axis='Time (seconds)', save_fig=None, **kwargs):
+    '''
+    :param array:
+    :param expobj:
+    :param spacing: a multiplication factor that will be used when setting the spacing between each trace in the final plot
+    :param title:
+    :param y_min:
+    :param y_max:
+    :param x_label:
+    :param save_fig:
+    :output: matplotlib plot
+    '''
+    # make rolling average for these plots
+    # w = 30
+    # array = np.asarray([(np.convolve(trace, np.ones(w), 'valid') / w) for trace in array])
+
+    len_ = len(array)
+
+    if 'fig' in kwargs.keys():
+        fig = kwargs['fig']
+        ax = kwargs['ax']
+    else:
+        if 'figsize' in kwargs.keys():
+            fig, ax = plt.subplots(figsize=kwargs['figsize'])
+        else:
+            fig, ax = plt.subplots(figsize=[20, 10])
+
+    for i in range(len_):
+        if i not in exclude_id:
+            if 'linewidth' in kwargs.keys():
+                linewidth=kwargs['linewidth']
+            else:
+                linewidth=1
+            ax.plot(array[i] + i * 40 * y_spacing_factor, linewidth=linewidth)
+    for j in expobj.stim_start_frames:
+        if j <= array.shape[1]:
+            ax.axvline(x=j, c='gray', alpha=0.3)
+
+    ax.set_xlim([0, expobj.n_frames-3000])
+
+    ax.margins(0)
+    # change x axis ticks to seconds
+    if 'Time' in x_axis or 'time' in x_axis:
+        # change x axis ticks to every 30 seconds
+        labels = list(range(0, int(expobj.n_frames // expobj.fps), 30))
+        ax.set_xticks(ticks=[(label * expobj.fps) for label in labels])
+        ax.set_xticklabels(labels)
+        ax.set_xlabel('Time (secs)')
+
+        # labels = [item for item in ax.get_xticks()]
+        # for item in labels:
+        #     labels[labels.index(item)] = int(round(item / expobj.fps))
+        # ax.set_xticklabels(labels)
+        # ax.set_xlabel('Time (secs.)')
+
+    ax.spines['top'].set_visible(False)
+    ax.spines['right'].set_visible(False)
+    ax.spines['left'].set_visible(False)
+    ax.set_xlabel(x_axis)
+
+    if 'y_lim' in kwargs.keys():
+        ax.set_ylim(kwargs['y_lim'])
+    else:
+        y_max = np.mean(array[-1] + len_ * 40 * y_spacing_factor) + 3 * np.mean(array[-1])
+        ax.set_ylim(0, y_max)
+
+    ax.set_title((title + ' - %s' % len_ + ' cells'), horizontalalignment='center', verticalalignment='top', pad=20,
+                 fontsize=10, wrap=True)
+
+    # # finalize plot, set title, and show or return axes
+    # if 'fig' in kwargs.keys():
+    #     ax.set_title((title + ' - %s' % len_ + ' cells'), horizontalalignment='center', verticalalignment='top', pad=20,
+    #                  fontsize=10, wrap=True)
+    #     # ax.title.set_text((title + ' - %s' % len_ + ' cells'), wrap=True)
+    #     return fig, ax
+    # else:
+    #     ax.set_title((title + ' - %s' % len_ + ' cells'), horizontalalignment='center', verticalalignment='top', pad=20,
+    #                  fontsize=10, wrap=True)
+    # if 'show' in kwargs.keys():
+    #     if kwargs['show'] is True:
+    #         fig.show()
+    #     else:
+    #         pass
+    # else:
+    #     fig.show()
+
+
+
 
 # %% F) Radial plot of Mean FOV for photostimulation trials, with period equal to that of photostimulation timing period
 
@@ -45,8 +142,7 @@ ax.spines['polar'].set_visible(False)
 fig.show()
 
 
-# %% C) GRAND AVERAGE PLOT OF TARGETS
-# plot__avg_photostim_dff_allexps()
+
 
 # %% C) baseline
 # collect avg traces across all exps
@@ -123,35 +219,6 @@ for results in func_collector:
 
 time_arr = func_collector[0][2]
 
-# %% C) baseline - make figure
-fig, ax = plt.subplots(figsize=(3, 4), dpi=300)
-# photostims - targets
-avg_ = np.mean(targets_average_traces_baseline, axis=0)
-sem_ = stats.sem(targets_average_traces_baseline, axis=0, ddof=1, nan_policy='omit')
-ax.plot(time_arr, avg_, color='black', lw=1)
-ax.fill_between(x=time_arr, y1=avg_ + sem_, y2=avg_ - sem_, alpha=0.5, zorder=2, color='lightgreen')
-
-# # fakestims - targets
-# avg_ = np.mean(fakestim_targets_average_traces, axis=0)
-# std_ = np.std(fakestim_targets_average_traces, axis=0, ddof=1)
-# ax.plot(time_arr, avg_, color='black', lw=1.5)
-# ax.fill_between(x=time_arr, y1=avg_ + std_, y2=avg_ - std_, alpha=0.3, zorder=2, color='gray')
-
-# span over stim frames
-stim_ = np.where(sem_ == 0)[0]
-ax.axvspan(time_arr[stim_[0]-1], time_arr[stim_[-1] + 2], color='hotpink', zorder = 5)
-ax.spines['top'].set_visible(False)
-ax.spines['right'].set_visible(False)
-ax.spines['bottom'].set_visible(True)
-ax.spines['left'].set_visible(False)
-ax.set_ylim([-1.5, 40])
-ax.set_ylabel('dFF')
-ax.set_xlabel('Time (secs) rel. to stim')
-ax.set_title('grand average all cells, all exps - baseline', wrap=True, fontsize='small')
-fig.tight_layout(pad=1)
-fig.show()
-
-
 # %% C) interictal
 # collect avg traces across all exps
 @run_for_loop_across_exps(run_pre4ap_trials=False, run_post4ap_trials=True, allow_rerun=True)
@@ -226,35 +293,6 @@ for results in func_collector:
         fakestim_targets_average_traces.append(trace)
 
 time_arr = func_collector[0][2]
-
-# %% C) interictal - make figure
-fig, ax = plt.subplots(figsize=(3, 4), dpi=300)
-# photostims - targets
-avg_ = np.mean(targets_average_traces_interictal, axis=0)
-sem_ = stats.sem(targets_average_traces_interictal, axis=0, ddof=1, nan_policy='omit')
-ax.plot(time_arr, avg_, color='black', lw=1)
-ax.fill_between(x=time_arr, y1=avg_ + sem_, y2=avg_ - sem_, alpha=0.5, zorder=2, color='lightgreen')
-
-# # fakestims - targets
-# avg_ = np.mean(fakestim_targets_average_traces, axis=0)
-# std_ = np.std(fakestim_targets_average_traces, axis=0, ddof=1)
-# ax.plot(time_arr, avg_, color='black', lw=1.5)
-# ax.fill_between(x=time_arr, y1=avg_ + std_, y2=avg_ - std_, alpha=0.3, zorder=2, color='gray')
-
-# span over stim frames
-stim_ = np.where(sem_ == 0)[0]
-ax.axvspan(time_arr[stim_[0]-1], time_arr[stim_[-1] + 2], color='hotpink', zorder = 5)
-ax.spines['top'].set_visible(False)
-ax.spines['right'].set_visible(False)
-ax.spines['bottom'].set_visible(True)
-ax.spines['left'].set_visible(False)
-ax.set_ylim([-1.5, 40])
-ax.set_ylabel('dFF')
-ax.set_xlabel('Time (secs) rel. to stim')
-ax.set_title('grand average all cells, all exps - interictal stims', wrap=True, fontsize='small')
-fig.tight_layout(pad=1)
-fig.show()
-
 
 # %% C) ictal stims
 # collect avg traces across all exps
@@ -331,7 +369,69 @@ for results in func_collector:
 
 time_arr = func_collector[0][2]
 
-# %% C) ictal stims - make figure
+# %% -- C -- ) baseline - make figure
+fig, ax = plt.subplots(figsize=(3, 4), dpi=300)
+# photostims - targets
+avg_ = np.mean(targets_average_traces_baseline, axis=0)
+sem_ = stats.sem(targets_average_traces_baseline, axis=0, ddof=1, nan_policy='omit')
+ax.plot(time_arr, avg_, color='black', lw=1)
+ax.fill_between(x=time_arr, y1=avg_ + sem_, y2=avg_ - sem_, alpha=0.5, zorder=2, color='lightgreen')
+
+# # fakestims - targets
+# avg_ = np.mean(fakestim_targets_average_traces, axis=0)
+# std_ = np.std(fakestim_targets_average_traces, axis=0, ddof=1)
+# ax.plot(time_arr, avg_, color='black', lw=1.5)
+# ax.fill_between(x=time_arr, y1=avg_ + std_, y2=avg_ - std_, alpha=0.3, zorder=2, color='gray')
+
+# span over stim frames
+stim_ = np.where(sem_ == 0)[0]
+ax.axvspan(time_arr[stim_[0]-1], time_arr[stim_[-1] + 2], color='hotpink', zorder = 5)
+ax.spines['top'].set_visible(False)
+ax.spines['right'].set_visible(False)
+ax.spines['bottom'].set_visible(True)
+ax.spines['left'].set_visible(False)
+ax.set_ylim([-1.5, 40])
+ax.set_ylabel('dFF')
+ax.set_xlabel('Time (secs) rel. to stim')
+ax.set_title('grand average all cells, all exps - baseline', wrap=True, fontsize='small')
+fig.tight_layout(pad=1)
+fig.show()
+
+
+
+
+# %% -- C -- ) interictal - make figure
+fig, ax = plt.subplots(figsize=(3, 4), dpi=300)
+# photostims - targets
+avg_ = np.mean(targets_average_traces_interictal, axis=0)
+sem_ = stats.sem(targets_average_traces_interictal, axis=0, ddof=1, nan_policy='omit')
+ax.plot(time_arr, avg_, color='black', lw=1)
+ax.fill_between(x=time_arr, y1=avg_ + sem_, y2=avg_ - sem_, alpha=0.5, zorder=2, color='lightgreen')
+
+# # fakestims - targets
+# avg_ = np.mean(fakestim_targets_average_traces, axis=0)
+# std_ = np.std(fakestim_targets_average_traces, axis=0, ddof=1)
+# ax.plot(time_arr, avg_, color='black', lw=1.5)
+# ax.fill_between(x=time_arr, y1=avg_ + std_, y2=avg_ - std_, alpha=0.3, zorder=2, color='gray')
+
+# span over stim frames
+stim_ = np.where(sem_ == 0)[0]
+ax.axvspan(time_arr[stim_[0]-1], time_arr[stim_[-1] + 2], color='hotpink', zorder = 5)
+ax.spines['top'].set_visible(False)
+ax.spines['right'].set_visible(False)
+ax.spines['bottom'].set_visible(True)
+ax.spines['left'].set_visible(False)
+ax.set_ylim([-1.5, 40])
+ax.set_ylabel('dFF')
+ax.set_xlabel('Time (secs) rel. to stim')
+ax.set_title('grand average all cells, all exps - interictal stims', wrap=True, fontsize='small')
+fig.tight_layout(pad=1)
+fig.show()
+
+
+
+
+# %% -- C --) ictal stims - make figure
 fig, ax = plt.subplots(figsize=(3, 4), dpi=300)
 # photostims - targets
 avg_ = np.mean(targets_average_traces_ictal, axis=0)
@@ -398,7 +498,10 @@ ax.set_xlabel('Time (secs) rel. to stim')
 ax.set_title('grand average all cells, all exps - baseline', wrap=True, fontsize='small')
 fig.tight_layout(pad=1)
 fig.show()
-
+# fig.savefig('alloptical_targets_grand_avg_photostim_responses_allconditions.svg')
+save_path_full = f'{SAVE_FIG}/alloptical_targets_grand_avg_photostim_responses_allconditions.svg'
+os.makedirs(os.path.dirname(save_path_full), exist_ok=True)
+fig.savefig(save_path_full)
 
 
 # %% B) alloptical traces
@@ -470,12 +573,17 @@ baseline_responses = collect_avg_photostim_response_baseline()
 interictal_responses = collect_avg_photostim_response_interictal()
 ictal_responses = collect_avg_photostim_response_ictal()
 
-# %%
+save_path_full = f'{SAVE_FIG}/alloptical_avg_photoresponses_allexps.svg'
+os.makedirs(os.path.dirname(save_path_full), exist_ok=True)
+
 pplot.plot_bar_with_points(data=[baseline_responses, interictal_responses, ictal_responses],
                            bar = False, title='avg photostim responses - targets',
                            x_tick_labels=['Baseline', 'Interictal', 'Ictal'],
                            colors=['royalblue', 'mediumseagreen', 'blueviolet'], figsize=(4,4), y_label='dFF',
-                           s=100, alpha=1, ylims=[-19, 90])
+                           s=35, alpha=1, ylims=[-19, 90], savepath=save_path_full)
+
+# fig.savefig(save_path_full)
+
 
 # %% A) getting num pixels for scale bar
 

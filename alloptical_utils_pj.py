@@ -5445,7 +5445,7 @@ def slm_targets_responses(expobj, experiment, trial, y_spacing_factor=2, figsize
     ax0 = aoplot.plot_lfp_stims(expobj, fig=fig, ax=ax0, show=False, x_axis='Time (secs.)')
 
     ax1 = fig.add_subplot(gs[1:3, :])
-    aoplot.plot_photostim_traces_overlap(array=expobj.dFF_SLMTargets, expobj=expobj, x_axis='Time (secs.)',
+    aoplot.plot_photostim_traces_stacked(array=expobj.dFF_SLMTargets, expobj=expobj, x_axis='Time (secs.)',
                                          y_spacing_factor=y_spacing_factor, fig=fig, ax=ax1, show=False,
                                          title='%s - dFF Flu photostims' % experiment,
                                          linewidth=linewidth_overlap_traces,

@@ -109,7 +109,7 @@ class PhotostimAnalysisSlmTargets(Quantification):
     @staticmethod
     @Utils.run_for_loop_across_exps(run_pre4ap_trials=True, run_post4ap_trials=True, allow_rerun=0)
     def run__init(**kwargs):
-        expobj = kwargs['expobj']
+        expobj: alloptical = kwargs['expobj']
         expobj.PhotostimAnalysisSlmTargets = PhotostimAnalysisSlmTargets(expobj=expobj)
         expobj.save()
 
@@ -178,36 +178,76 @@ class PhotostimAnalysisSlmTargets(Quantification):
         self.adata = photostim_responses_adata
 
     @staticmethod
-    def collect_all_targets_all_exps():
-        @Utils.run_for_loop_across_exps(run_pre4ap_trials=True, allow_rerun=1)
+    def collect_all_targets_all_exps(run_pre4ap_trials=0, run_post4ap_trials=True):
+        @Utils.run_for_loop_across_exps(run_pre4ap_trials=run_pre4ap_trials, allow_rerun=1)
         def baseline_targets_responses(**kwargs):
             expobj = kwargs['expobj']
-            return expobj.PhotostimAnalysisSlmTargets.adata.X, expobj.t_series_name
+            if np.nanmean(expobj.PhotostimAnalysisSlmTargets.adata.X) > 10:
+            # print(np.nanmean(expobj.PhotostimAnalysisSlmTargets.adata.X))
+                return expobj.PhotostimAnalysisSlmTargets.adata.X, expobj.t_series_name
+        if run_pre4ap_trials:
+            func_collector = baseline_targets_responses()
+            responses, expids = np.asarray(func_collector)[:, 0].tolist(), np.asarray(func_collector)[:, 1]
 
-        func_collector = baseline_targets_responses()
-        responses, expids = np.asarray(func_collector)[:, 0].tolist(), np.asarray(func_collector)[:, 1]
+            num_targets = 0
+            num_stims = 100
+            for response in responses:
+                num_targets += response.shape[0]
+                if response.shape[1] > num_stims:
+                    num_stims = response.shape[1]
 
-        num_targets = 0
-        num_stims = 100
-        for response in responses:
-            num_targets += response.shape[0]
-            if response.shape[1] > num_stims:
-                num_stims = response.shape[1]
+            all_responses = np.empty(shape=(num_targets, num_stims))
+            all_responses[:] = np.NaN
+            all_exps = []
+            num_targets = 0
+            for response, expid in zip(responses, expids):
+                targets = response.shape[0]
+                stims = response.shape[1]
+                all_responses[num_targets: num_targets + targets, :stims] = response
+                all_exps.extend([expid]*targets)
+                num_targets += targets
 
-        all_responses = np.empty(shape=(num_targets, num_stims))
-        all_responses[:] = np.NaN
-        all_exps = []
-        num_targets = 0
-        for response, expid in zip(responses, expids):
-            targets = response.shape[0]
-            stims = response.shape[1]
-            all_responses[num_targets: num_targets + targets, :stims] = response
-            all_exps.extend([expid]*targets)
-            num_targets += targets
+            baseline_adata = AnnotatedData2(all_responses, obs ={'exp': all_exps}, var={'stim_idx': range(all_responses.shape[1])})
+            results.baseline_adata = baseline_adata
+            results.save_results()
 
-        baseline_adata = AnnotatedData2(all_responses, obs ={'exp': all_exps}, var={'stim_idx': range(all_responses.shape[1])})
-        results.baseline_adata = baseline_adata
-        results.save_results()
+
+        @Utils.run_for_loop_across_exps(run_post4ap_trials=run_post4ap_trials, allow_rerun=1)
+        def interictal_targets_responses(**kwargs):
+            expobj: Post4ap = kwargs['expobj']
+            stims = expobj.stim_idx_outsz
+            pre4ap = AllOpticalExpsToAnalyze.find_matched_trial(post4ap_trial_name=expobj.t_series_name)
+            pre4ap_expobj: alloptical = import_expobj(exp_prep=pre4ap)
+
+            if pre4ap_expobj.t_series_name in tuple(results.baseline_adata.obs['exp']):
+                # print(np.mean(expobj.PhotostimResponsesSLMTargets.adata.layers['dFF (zscored)'][:, stims]))
+                return expobj.PhotostimResponsesSLMTargets.adata.layers['dFF (zscored)'][:, stims], expobj.t_series_name
+
+        if run_post4ap_trials:
+            func_collector = interictal_targets_responses()
+            responses, expids = np.asarray(func_collector)[:, 0].tolist(), np.asarray(func_collector)[:, 1]
+
+            num_targets = 0
+            num_stims = 100
+            for response in responses:
+                num_targets += response.shape[0]
+                if response.shape[1] > num_stims:
+                    num_stims = response.shape[1]
+
+            all_responses = np.empty(shape=(num_targets, num_stims))
+            all_responses[:] = np.NaN
+            all_exps = []
+            num_targets = 0
+            for response, expid in zip(responses, expids):
+                targets = response.shape[0]
+                stims = response.shape[1]
+                all_responses[num_targets: num_targets + targets, :stims] = response
+                all_exps.extend([expid]*targets)
+                num_targets += targets
+
+            interictal_adata = AnnotatedData2(all_responses, obs ={'exp': all_exps}, var={'stim_idx': range(all_responses.shape[1])}, data_label='z scored (to baseline)')
+            results.interictal_adata = interictal_adata
+            results.save_results()
 
 
 
@@ -412,20 +452,95 @@ class PhotostimAnalysisSlmTargets(Quantification):
     # 8) correlation matrix of photostimulation targets
     @staticmethod
     def correlation_matrix_all_targets():
-        responses = results.baseline_adata
-        z_scored_responses = stats.zscore(responses, axis=1)
+        results = PhotostimResponsesSLMtargetsResults.load()
+
+        # BASELINE
+        responses = results.baseline_adata.X
+        z_scored_responses = stats.zscore(responses, axis=1)  # z scoring of targets responses to their own distribution
 
         # correlation of targets
-        fig, ax = plt.subplots(figsize=(3,3), dpi=300)
+        fig, ax = plt.subplots(figsize=(3,3), dpi=400)
         targets_corr_mat = np.corrcoef(z_scored_responses)
         mesh = ax.imshow(targets_corr_mat, cmap='bwr')
         mesh.set_clim(-1, 1)
         cbar = fig.colorbar(mesh, boundaries=np.linspace(-0.5, 0.5, 1000), ticks=[-0.5, 0, 0.5], fraction=0.045)
-        fig.suptitle(f'correlatin across - targets')
+
+        # add lines for exps:
+        colors = pj.make_random_color_array(len(np.unique(results.baseline_adata.obs['exp'])))
+        for i, exp in enumerate(np.unique(results.baseline_adata.obs['exp'])):
+            sameexp = np.where(results.baseline_adata.obs['exp'] == exp)[0]
+            ax.plot(sameexp, [-10] * len(sameexp), lw=2, color = colors[i], solid_capstyle = 'projecting')
+            # plt.plot(sameexp, [-10] * len(sameexp), lw=2, color = colors[i], solid_capstyle = 'projecting')
+        # plt.show()
+
+        ax.spines['bottom'].set_visible(False)
+        ax.spines['right'].set_visible(False)
+        ax.spines['left'].set_visible(False)
+        ax.spines['top'].set_visible(False)
+        fig.suptitle(f'baseline - correlation across - targets', wrap=True)
         fig.tight_layout(pad=0.5)
         fig.show()
+        save_path_full = f'{SAVE_FIG}/correlation_matrix_all_targets_all_exps_baseline.png'
+        os.makedirs(os.path.dirname(save_path_full), exist_ok=True)
+        fig.savefig(save_path_full)
 
 
+
+        # correlation of stims
+        fig, ax = plt.subplots(figsize=(3,3), dpi=400)
+        stim_corr_mat = np.corrcoef(z_scored_responses.T)
+        mesh = ax.imshow(stim_corr_mat, cmap='bwr')
+        mesh.set_clim(-1, 1)
+        cbar = fig.colorbar(mesh, boundaries=np.linspace(-0.5, 0.5, 1000), ticks=[-0.5, 0, 0.5], fraction=0.045)
+        fig.suptitle(f'baseline - correlation across - stims', wrap=True)
+        fig.tight_layout(pad=0.5)
+        fig.show()
+        save_path_full = f'{SAVE_FIG}/correlation_matrix_all_stims_all_exps_baseline.png'
+        os.makedirs(os.path.dirname(save_path_full), exist_ok=True)
+        fig.savefig(save_path_full)
+
+
+        # INTERICTAL
+        z_scored_responses = results.interictal_adata.X
+        z_scored_responses = pd.DataFrame(z_scored_responses).iloc[:, :43]
+        # z_scored_responses = stats.zscore(responses, axis=1)  # z scoring of targets responses to their own distribution
+
+        # correlation of targets
+        fig, ax = plt.subplots(figsize=(3,3), dpi=400)
+        targets_corr_mat = np.corrcoef(z_scored_responses)
+        # targets_corr_mat = z_scored_responses.T.corr()
+        mesh = ax.imshow(targets_corr_mat, cmap='bwr')
+        mesh.set_clim(-1, 1)
+        cbar = fig.colorbar(mesh, boundaries=np.linspace(-0.5, 0.5, 1000), ticks=[-0.5, 0, 0.5], fraction=0.045)
+
+        # add lines for exps:
+        for i, exp in enumerate(np.unique(results.baseline_adata.obs['exp'])):
+            sameexp = np.where(results.baseline_adata.obs['exp'] == exp)[0]
+            ax.plot(sameexp, [-10] * len(sameexp), lw=2, color = colors[i], solid_capstyle = 'projecting')
+        ax.spines['bottom'].set_visible(False)
+        ax.spines['right'].set_visible(False)
+        ax.spines['left'].set_visible(False)
+        ax.spines['top'].set_visible(False)
+
+        fig.suptitle(f'interictal - correlation across - targets', wrap=True)
+        fig.tight_layout(pad=0.5)
+        fig.show()
+        save_path_full = f'{SAVE_FIG}/correlation_matrix_all_targets_all_exps_interictal.png'
+        os.makedirs(os.path.dirname(save_path_full), exist_ok=True)
+        fig.savefig(save_path_full)
+
+        # correlation of stims
+        fig, ax = plt.subplots(figsize=(3,3), dpi=400)
+        stim_corr_mat = np.corrcoef(z_scored_responses.T)
+        mesh = ax.imshow(stim_corr_mat, cmap='bwr')
+        mesh.set_clim(-1, 1)
+        cbar = fig.colorbar(mesh, boundaries=np.linspace(-0.5, 0.5, 1000), ticks=[-0.5, 0, 0.5], fraction=0.045)
+        fig.suptitle(f'interictal - correlation across - stims', wrap=True)
+        fig.tight_layout(pad=0.5)
+        fig.show()
+        save_path_full = f'{SAVE_FIG}/correlation_matrix_all_stims_all_exps_interictal.png'
+        os.makedirs(os.path.dirname(save_path_full), exist_ok=True)
+        fig.savefig(save_path_full)
 
     @staticmethod
     @Utils.run_for_loop_across_exps(run_trials=[AllOpticalExpsToAnalyze.pre_4ap_trials[0][0], AllOpticalExpsToAnalyze.post_4ap_trials[0][0]], allow_rerun=1)
@@ -492,6 +607,59 @@ class PhotostimAnalysisSlmTargets(Quantification):
 
         print(pca.singular_values_)
 
+    @staticmethod
+    def pca_responses_all_targets():
+        results = PhotostimResponsesSLMtargetsResults.load()
+        responses = results.baseline_adata.X
+        z_scored_responses = stats.zscore(responses, axis=1)
+        exps = results.baseline_adata.obs['exp']
+
+        mean_responses = np.nanmean(responses, axis=1)
+        variation_responses = variation(responses, axis=1)
+
+        nanx = np.sum(np.isnan(z_scored_responses), axis=1)
+
+        n_comp = 10
+        pca = PCA(n_components=n_comp)
+        pca_responses = pca.fit_transform(z_scored_responses.T)
+
+        # clustering
+        n_clusters = 3
+        kmeans = KMeans(n_clusters=n_clusters, random_state=0).fit(z_scored_responses)
+        kmeans.labels_
+
+        # plot PCA transformed responses
+        fig, ax = plt.subplots(figsize=(5, 4))
+        ax.scatter(pca_responses[:, 0], pca_responses[:, 1], s=50, color='green', edgecolor='yellowgreen', linewidth=3)
+
+        # sc = ax.scatter(pca_responses[:, 0], pca_responses[:, 1], s=50, c=kmeans.labels_, cmap=plt.cm.get_cmap('viridis', n_clusters))
+        # fig.colorbar(sc, ticks=range(1), label ='kmeans clusters')
+
+        # for exp in np.unique(exps):
+        #     targets = np.where(exps == exp)
+        #     sc = ax.scatter(pca_responses[targets, 0], pca_responses[targets, 1], s=50, label=exp)
+        # ax.legend()
+
+        # sc = ax.scatter(pca_responses[:, 0], pca_responses[:, 1], s=50, c=variation_responses, cmap=plt.cm.get_cmap('viridis', 10), vmin=0, vmax=3)
+        # fig.colorbar(sc, ticks=range(10), label ='variation responses')
+
+        # sc = ax.scatter(pca_responses[:, 0], pca_responses[:, 1], s=50, c=mean_responses, cmap='viridis', vmin= 0, vmax=100)
+        # fig.colorbar(sc, label='mean responses')
+
+        fig.tight_layout(pad=1)
+        fig.show()
+
+
+
+        # plot skree plot for explained variance
+        fig, ax = plt.subplots(figsize=(3, 2))
+        ax.plot(range(1, 1 + n_comp), pca.explained_variance_ratio_)
+        fig.tight_layout(pad=1)
+        fig.show()
+
+        print(pca.explained_variance_ratio_)
+
+        print(pca.singular_values_)
 
     # 2) calculating mean variability across targets:
     def calculate_variability(self, stims):
@@ -982,23 +1150,30 @@ def plot__avg_photostim_dff_allexps():
                 assert len(x_scale) == len(dff_trace), 'x axis scale is too short or too long.'
                 axs[1].plot(x_scale, dff_trace, color='green')
 
-
-
-
     fig.show()
+
+    save_path_full = f'{SAVE_FIG}/alloptical_avg_photoresponses_allexps.svg'
+    os.makedirs(os.path.dirname(save_path_full), exist_ok=True)
+    fig.savefig(save_path_full)
+
 
 
 if __name__ == '__main__':
     main = PhotostimAnalysisSlmTargets
-    # main.run__init()
+    main.run__init()
     # main.run__add_fps()
 
     # RUNNING PLOTS:
     # main.plot_postage_stamps_photostim_traces()
     # main.plot_variability_photostim_traces_by_targets()
+
     # main.correlation_matrix_responses()
+    # main.pca_responses()
+
+
     main.collect_all_targets_all_exps()
     main.correlation_matrix_all_targets()
+    main.pca_responses_all_targets()
     # main.plot__variability()
     # main.plot__mean_response_vs_variability()
     # plot__avg_photostim_dff_allexps()

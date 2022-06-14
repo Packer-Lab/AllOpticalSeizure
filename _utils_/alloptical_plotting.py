@@ -511,7 +511,7 @@ def plot_photostim_traces(array, expobj, title='', y_min=None, y_max=None, x_lab
 
 
 @plot_piping_decorator(figsize=(10,6))
-def plot_photostim_traces_overlap(array, expobj, exclude_id=[], y_spacing_factor=1, title='',
+def plot_photostim_traces_stacked(array, expobj, exclude_id=[], y_spacing_factor=1, title='',
                                   x_axis='Time (seconds)', save_fig=None, fig=None, ax=None, **kwargs):
     '''
     :param array:

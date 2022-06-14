@@ -1,3 +1,5 @@
+import os
+
 import numpy as np
 from funcsforprajay.plotting.plotting import plot_bar_with_points
 
@@ -27,9 +29,9 @@ main.plot__variability(figsize=[3, 5], rerun=False)
 main.plot__mean_response_vs_variability(rerun=0)
 
 
-# %% C) seizure boundary classification throughout propagation
+# %% C) seizure boundary classification throughout propagation ---> now a supplemental figure with fig 5
 
-## todo add new code...
+## todo move and add new code...
 
 
 # %% D) plotting target annulus vs photostim responses
@@ -55,4 +57,7 @@ fig, ax = plot_bar_with_points(data=[
 fig.tight_layout(pad=0.2)
 fig.show()
 
+# %% E) correlation matrix of all targets, all stims, all exps - baseline vs. interictal
+
+main.correlation_matrix_all_targets()
 

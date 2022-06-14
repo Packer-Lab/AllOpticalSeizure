@@ -55,6 +55,8 @@ class PhotostimResponsesSLMtargetsResults(Results):
             'preictal_responses': [],
                                      'postictal_responses': []}  #: responses during interictal split by preictal and postictal
 
+        self.baseline_adata: AnnotatedData2 = None      #: baseline dFF repsonses all targets, all exps, all stims
+        self.interictal_adata: AnnotatedData2 = None    #: interictal dFF repsonses all targets, all exps, all stims
 
 REMAKE = False
 if not os.path.exists(PhotostimResponsesSLMtargetsResults.SAVE_PATH) or REMAKE:

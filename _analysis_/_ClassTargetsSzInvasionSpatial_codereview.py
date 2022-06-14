@@ -17,6 +17,7 @@ from _main_.Post4apMain import Post4ap
 import _utils_.alloptical_plotting as aoplot
 SAVE_LOC = "/home/pshah/mnt/qnap/Analysis/analysis_export/analysis_quantification_classes/"
 
+SAVE_FIG = "/home/pshah/Documents/figures/alloptical-photostim-responses-sz-distance/"
 
 """
 TODO:
@@ -427,7 +428,8 @@ class TargetsSzInvasionSpatial_codereview(SLMTargets):
 
 
     @staticmethod
-    def plot_density_responses_szdistances(response_type, data_all, distances_to_sz_sorted, scale_percentile_distances):
+    def plot_density_responses_szdistances(response_type, data_all, distances_to_sz_sorted, scale_percentile_distances,
+                                           save_path_full=None):
 
 
 
@@ -437,7 +439,7 @@ class TargetsSzInvasionSpatial_codereview(SLMTargets):
         # bins_num = int((max(distances_to_sz) - min(distances_to_sz)) / bin_size)
         bins_num = [100, 500]
 
-        fig, ax = plt.subplots(figsize=(6, 3))
+        fig, ax = plt.subplots(figsize=(6, 3), dpi=600)
         pj.plot_hist2d(data=data_all, bins=bins_num, y_label=response_type, figsize=(6, 3),
                        x_label='distance to seizure (%tile space)',
                        title=f"2d density plot, all exps, 50%tile = {np.percentile(distances_to_sz_sorted, 50)}um",
@@ -450,11 +452,13 @@ class TargetsSzInvasionSpatial_codereview(SLMTargets):
         ax.set_xlabel('distance to seizure (um)')
 
         fig.show()
+        Utils.save_figure(fig, save_path_full=save_path_full) if save_path_full is not None else None
+        Utils.save_figure(fig, save_path_full=save_path_full[:-4] + '.svg') if save_path_full is not None else None
 
     # plotting line plot for all datapoints for responses vs. distance to seizure
     @staticmethod
     def plot_lineplot_responses_pctszdistances(percentiles, responses_sorted, response_type,
-                                               scale_percentile_distances):
+                                               scale_percentile_distances, save_path_full=None):
         percentiles_binned = np.round(percentiles)
 
         bin = 10
@@ -480,7 +484,10 @@ class TargetsSzInvasionSpatial_codereview(SLMTargets):
         ax.set_xlabel('distance to seizure (um)')
 
         fig.tight_layout(pad=2)
-        plt.show()
+        fig.show()
+        Utils.save_figure(fig, save_path_full=save_path_full) if save_path_full is not None else None
+        Utils.save_figure(fig, save_path_full=save_path_full[:-4] + '.svg') if save_path_full is not None else None
+
 
 
     # 3) distnace vs. photostim responses - no percentile normalization of distances
@@ -530,7 +537,7 @@ class TargetsSzInvasionSpatial_codereview(SLMTargets):
 
 
     @staticmethod
-    def plot__responses_v_distance_no_normalization(results):
+    def plot__responses_v_distance_no_normalization(results, save_path_full=None):
         """plotting of binned responses over distance as a step function, with heatmap showing # of datapoints"""
         # distances_bins = results.binned__distance_vs_photostimresponses['distance_bins']
         distances = results.binned__distance_vs_photostimresponses['distance_bins']
@@ -542,7 +549,7 @@ class TargetsSzInvasionSpatial_codereview(SLMTargets):
         conf_int_values_neg = pj.flattenOnce([[val, val] for val in conf_int[1:, 0]])
         conf_int_values_pos = pj.flattenOnce([[val, val] for val in conf_int[1:, 1]])
 
-        fig, axs = plt.subplots(figsize=(6, 5), nrows=2, ncols=1)
+        fig, axs = plt.subplots(figsize=(6, 5), nrows=2, ncols=1, dpi=300)
         # ax.plot(distances[:-1], avg_responses, c='cornflowerblue', zorder=1)
         ax = axs[0]
         ax2 = axs[1]
@@ -551,20 +558,25 @@ class TargetsSzInvasionSpatial_codereview(SLMTargets):
         ax.fill_between(x=conf_int_distances, y1=conf_int_values_neg, y2=conf_int_values_pos, color='lightgray',
                         zorder=0)
         # ax.scatter(distances[:-1], avg_responses, c='orange', zorder=4)
-        ax.set_ylim([-0.5, 0.8])
+        ax.set_ylim([-0.5, 1])
         ax.set_title(
             f'photostim responses vs. distance to sz wavefront (binned every {results.binned__distance_vs_photostimresponses["bin_width_um"]}um)',
             wrap=True)
         ax.set_xlabel('distance to sz wavefront (um)')
         ax.set_ylabel(TargetsSzInvasionSpatial_codereview.response_type)
         ax.margins(0)
+        ax.axhline(0, ls='--', lw=0.8)
 
         pixels = [np.array(num2)] * 10
-        ax2.imshow(pixels, cmap='Greys', vmin=-5, vmax=150, aspect=0.1)
+        ax2.imshow(pixels, cmap='Greys', vmin=-5, vmax=100, aspect=0.05)
+        ax2.set_xticks([])
+        ax2.set_yticks([])
         # ax.show()
 
         fig.tight_layout(pad=1)
         fig.show()
+        Utils.save_figure(fig, save_path_full=save_path_full) if save_path_full is not None else None
+        Utils.save_figure(fig, save_path_full=save_path_full[:-4] + '.svg') if save_path_full is not None else None
 
 
 # %% RESULTS SAVING CLASS
@@ -636,9 +648,9 @@ if __name__ == '__main__':
     #
     # main.run__collect_responses_vs_distance_to_seizure_SLMTargets()  # <- code review done
 
-    main.run__add_sz_distance_um_layer()
+    # main.run__add_sz_distance_um_layer()
 
-    run__class_targets_proximal_distal()
+    # run__class_targets_proximal_distal()
 
     # main.plot_responses_vs_distance_to_seizure_SLMTargets()
 
@@ -660,9 +672,10 @@ if __name__ == '__main__':
     # results.responses_sorted = [val for i, val in enumerate(results.responses_sorted) if i not in nan_indexes]
     # results.distances_to_sz_sorted = [val for i, val in enumerate(results.distances_to_sz_sorted) if i not in nan_indexes]
     #
-    # main.plot_density_responses_szdistances(response_type=results.response_type, data_all=results.data_all,
-    #                                         distances_to_sz_sorted=results.distances_to_sz_sorted, scale_percentile_distances=results.scale_percentile_distances)
+    main.plot_density_responses_szdistances(response_type=results.response_type, data_all=results.data_all,
+                                            distances_to_sz_sorted=results.distances_to_sz_sorted, scale_percentile_distances=results.scale_percentile_distances,
+                                            save_path_full=f'{SAVE_FIG}')
     #
-    # main.plot_lineplot_responses_pctszdistances(results.percentiles, results.responses_sorted, response_type=results.response_type,
-    #                                             scale_percentile_distances=results.scale_percentile_distances)
+    main.plot_lineplot_responses_pctszdistances(results.percentiles, results.responses_sorted, response_type=results.response_type,
+                                                scale_percentile_distances=results.scale_percentile_distances)
 
