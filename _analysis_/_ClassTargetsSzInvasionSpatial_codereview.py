@@ -33,7 +33,8 @@ class SLMTargets(Quantification):
 
 run_trials=['RL108 t-013']
 class TargetsSzInvasionSpatial_codereview(SLMTargets):
-    response_type = 'dFF (zscored) (interictal)'
+    # response_type = 'dFF (zscored) (interictal)'
+    response_type = 'dFF (zscored) (baseline)'
 
     def __init__(self, expobj: Post4ap):
         super().__init__(expobj)
@@ -214,7 +215,7 @@ class TargetsSzInvasionSpatial_codereview(SLMTargets):
                 if response_type == 'dFF':
                     # response = expobj.responses_SLMtargets_tracedFF.loc[target, idx]
                     response = pd.DataFrame(expobj.PhotostimResponsesSLMTargets.X).loc[target, idx]
-                elif response_type == 'dFF (zscored)' or response_type == 'dFF (zscored) (interictal)':
+                elif response_type == 'dFF (zscored)' or response_type == 'dFF (zscored) (interictal)' or response_type == 'dFF (zscored) (baseline)':
                     response = z_scored.loc[target, idx]  # z - scoring of SLM targets responses:
                 else:
                     raise ValueError(
@@ -492,7 +493,7 @@ class TargetsSzInvasionSpatial_codereview(SLMTargets):
 
     # 3) distnace vs. photostim responses - no percentile normalization of distances
     @staticmethod
-    def collect__binned__distance_v_responses():
+    def collect__binned__distance_v_responses(results):
         """collect distance vs. respnses for distance bins"""
         bin_width = 20  # um
         bins = np.arange(0, 500, bin_width)  # 0 --> 500 um, split in XXum bins
@@ -504,9 +505,6 @@ class TargetsSzInvasionSpatial_codereview(SLMTargets):
         def add_dist_responses(bins, num, y, responses, **kwargs):
             expobj = kwargs['expobj']
             szinvspatial = expobj.TargetsSzInvasionSpatial_codereview
-
-            # print(num)
-            # print(y)
 
             for _, row in szinvspatial.responses_vs_distance_to_seizure_SLMTargets.iterrows():
                 dist = row['distance_to_sz_um']
@@ -533,11 +531,17 @@ class TargetsSzInvasionSpatial_codereview(SLMTargets):
             [stats.t.interval(alpha=0.95, df=len(responses_) - 1, loc=np.mean(responses_), scale=stats.sem(responses_))
              for responses_ in responses])
 
-        return bin_width, distances, num, avg_responses, conf_int
+        results.binned__distance_vs_photostimresponses = {'bin_width_um': bin_width, 'distance_bins': distances,
+                                                          'num_points_in_bin': num,
+                                                          'avg_photostim_response_in_bin': avg_responses,
+                                                          '95conf_int': conf_int}
+        results.save_results()
+
+        # return bin_width, distances, num, avg_responses, conf_int
 
 
     @staticmethod
-    def plot__responses_v_distance_no_normalization(results, save_path_full=None):
+    def plot__responses_v_distance_no_normalization(results, save_path_full=None, **kwargs):
         """plotting of binned responses over distance as a step function, with heatmap showing # of datapoints"""
         # distances_bins = results.binned__distance_vs_photostimresponses['distance_bins']
         distances = results.binned__distance_vs_photostimresponses['distance_bins']
@@ -549,16 +553,18 @@ class TargetsSzInvasionSpatial_codereview(SLMTargets):
         conf_int_values_neg = pj.flattenOnce([[val, val] for val in conf_int[1:, 0]])
         conf_int_values_pos = pj.flattenOnce([[val, val] for val in conf_int[1:, 1]])
 
-        fig, axs = plt.subplots(figsize=(6, 5), nrows=2, ncols=1, dpi=300)
+
+        fig, axs = (kwargs['fig'], kwargs['axes']) if 'fig' in kwargs or 'axes' in kwargs else plt.subplots(figsize=(6, 5), nrows=2, ncols=1, dpi=300)
+
         # ax.plot(distances[:-1], avg_responses, c='cornflowerblue', zorder=1)
-        ax = axs[0]
-        ax2 = axs[1]
+        ax = axs[0][0] if 'fig' in kwargs or 'axes' in kwargs  else axs[0]
+        ax2 = axs[1][0] if 'fig' in kwargs or 'axes' in kwargs  else axs[1]
         ax.step(distances, avg_responses, c='cornflowerblue', zorder=2)
         # ax.fill_between(x=(distances-0)[:-1], y1=conf_int[:-1, 0], y2=conf_int[:-1, 1], color='lightgray', zorder=0)
         ax.fill_between(x=conf_int_distances, y1=conf_int_values_neg, y2=conf_int_values_pos, color='lightgray',
                         zorder=0)
         # ax.scatter(distances[:-1], avg_responses, c='orange', zorder=4)
-        ax.set_ylim([-0.5, 1])
+        ax.set_ylim([-2, 2])
         ax.set_title(
             f'photostim responses vs. distance to sz wavefront (binned every {results.binned__distance_vs_photostimresponses["bin_width_um"]}um)',
             wrap=True)
@@ -569,14 +575,14 @@ class TargetsSzInvasionSpatial_codereview(SLMTargets):
 
         pixels = [np.array(num2)] * 10
         ax2.imshow(pixels, cmap='Greys', vmin=-5, vmax=100, aspect=0.05)
-        ax2.set_xticks([])
-        ax2.set_yticks([])
-        # ax.show()
+        # ax2.set_xticks([])
+        # ax2.set_yticks([])
+        ax2.axis('off')
 
-        fig.tight_layout(pad=1)
-        fig.show()
-        Utils.save_figure(fig, save_path_full=save_path_full) if save_path_full is not None else None
-        Utils.save_figure(fig, save_path_full=save_path_full[:-4] + '.svg') if save_path_full is not None else None
+        if not 'fig' in kwargs and not 'axes' in kwargs:        # fig.tight_layout(pad=1)
+            fig.show()
+            # Utils.save_figure(fig, save_path_full=save_path_full) if save_path_full is not None else None
+            # Utils.save_figure(fig, save_path_full=save_path_full[:-4] + '.svg') if save_path_full is not None else None
 
 
 # %% RESULTS SAVING CLASS
@@ -648,6 +654,14 @@ if __name__ == '__main__':
     #
     # main.run__collect_responses_vs_distance_to_seizure_SLMTargets()  # <- code review done
 
+    # collect distance vs. respnses for distance bins
+    # bin_width, distances, num, avg_responses, conf_int =  main.collect__binned__distance_v_responses()
+    # results.binned__distance_vs_photostimresponses = {'bin_width_um': bin_width, 'distance_bins': distances, 'num_points_in_bin': num,
+    # 'avg_photostim_response_in_bin': avg_responses, '95conf_int': conf_int}
+    # results.save_results()
+
+    main.plot__responses_v_distance_no_normalization(results=results)
+
     # main.run__add_sz_distance_um_layer()
 
     # run__class_targets_proximal_distal()
@@ -672,10 +686,11 @@ if __name__ == '__main__':
     # results.responses_sorted = [val for i, val in enumerate(results.responses_sorted) if i not in nan_indexes]
     # results.distances_to_sz_sorted = [val for i, val in enumerate(results.distances_to_sz_sorted) if i not in nan_indexes]
     #
-    main.plot_density_responses_szdistances(response_type=results.response_type, data_all=results.data_all,
-                                            distances_to_sz_sorted=results.distances_to_sz_sorted, scale_percentile_distances=results.scale_percentile_distances,
-                                            save_path_full=f'{SAVE_FIG}')
+    # main.plot_density_responses_szdistances(response_type=results.response_type, data_all=results.data_all,
+    #                                         distances_to_sz_sorted=results.distances_to_sz_sorted, scale_percentile_distances=results.scale_percentile_distances,
+    #                                         save_path_full=f'{SAVE_FIG}')
     #
-    main.plot_lineplot_responses_pctszdistances(results.percentiles, results.responses_sorted, response_type=results.response_type,
-                                                scale_percentile_distances=results.scale_percentile_distances)
+    # main.plot_lineplot_responses_pctszdistances(results.percentiles, results.responses_sorted, response_type=results.response_type,
+    #                                             scale_percentile_distances=results.scale_percentile_distances)
+    main.plot__responses_v_distance_no_normalization(results=results, save_path_full=f'{SAVE_FIG}/responses_sz_distance_binned_line_plot.png')
 

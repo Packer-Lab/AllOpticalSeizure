@@ -36,7 +36,7 @@ def run__collect_responses_vs_distance_to_seizure_SLMTargets(**kwargs):
 # %%
 if __name__ == '__main__':
     """
-    rerunning pipeline on mar 12/13 2022 - need to confirm that the results seem real - looking too good to be real lol.
+    done: rerunning pipeline on mar 12/13 2022 - need to confirm that the results seem real - looking too good to be real lol.
     - first trying to rerun with no trials skipped explicitly. 
     
     """
@@ -45,7 +45,7 @@ if __name__ == '__main__':
     # Results__TargetsSzInvasionSpatial.no_slmtargets_szboundary_stim = TargetsSzInvasionSpatial.run_calculating_min_distance_to_seizure()
     # Results__TargetsSzInvasionSpatial.save_results()
     #
-    # TargetsSzInvasionSpatial.run__collect_responses_vs_distance_to_seizure_SLMTargets()
+    run__collect_responses_vs_distance_to_seizure_SLMTargets()
 
     # sys.exit()
 
@@ -77,7 +77,7 @@ if __name__ == '__main__':
     results.binned__distance_vs_photostimresponses = {'bin_width_um': bin_width, 'distance_bins': distances, 'num_points_in_bin': num,
     'avg_photostim_response_in_bin': avg_responses, '95conf_int': conf_int}
     results.save_results()
-    main.plot__responses_v_distance_no_normalization(results=results)
+    # main.plot__responses_v_distance_no_normalization(results=results)
 
 
     # run class targets proximal distal

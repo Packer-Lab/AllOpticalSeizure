@@ -41,7 +41,7 @@ class Post4ap(alloptical):
 
         alloptical.__init__(self, paths, metainfo, stimtype)
         self.time_del_szinv_stims: pd.DataFrame = pd.DataFrame()  # df containing delay to sz invasion for each target for each stim frame (dim: n_targets x n_stims)
-        # self.mean_targets_szinvasion_trace: dict = {}  # dictionary containing mean Raw Flu trace around sz invasion time of each target (as well as other info as keyed into dict)  # refactored this to a class instance attr under TargetsSzInvasionTemporal
+        self.mean_targets_szinvasion_trace: dict = {}  # dictionary containing mean Raw Flu trace around sz invasion time of each target (as well as other info as keyed into dict)  # refactored this to a class instance attr under TargetsSzInvasionTemporal
         print('\ninitialized Post4ap expobj of exptype and trial: %s, %s, %s' % (self.metainfo['exptype'],
                                                                                  self.metainfo['trial'],
                                                                                  self.metainfo['date']))

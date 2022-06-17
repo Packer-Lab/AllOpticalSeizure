@@ -8,12 +8,14 @@ from matplotlib import pyplot as plt
 
 import _alloptical_utils as Utils
 from _analysis_._utils import Quantification, Results
+from _exp_metainfo_.exp_metainfo import AllOpticalExpsToAnalyze
 from _main_.AllOpticalMain import alloptical
 from _main_.Post4apMain import Post4ap
 from funcsforprajay import plotting as pplot
 import funcsforprajay.funcs as pj
 
 from _utils_._anndata import AnnotatedData2
+from _utils_.io import import_expobj
 
 SAVE_LOC = "/home/pshah/mnt/qnap/Analysis/analysis_export/analysis_quantification_classes/"
 
@@ -508,6 +510,31 @@ class PhotostimResponsesQuantificationSLMtargets(Quantification):
 
         # add zscored data to anndata storage
         self.adata.add_layer(layer_name='dFF (zscored)', data=np.asarray(df))
+
+    def z_score_photostim_responses_baseline(self):
+        """
+        z scoring of photostimulation response across all stims for each target.
+
+        """
+        print(f"\t\- zscoring photostim responses (to baseline scores) across all stims in expobj trial")
+
+        df = pd.DataFrame(index=self.adata.obs.index, columns=self.adata.var.index)
+        pre4ap = AllOpticalExpsToAnalyze.find_matched_trial(post4ap_trial_name=self.expobj_id)
+        pre_exp: alloptical = import_expobj(exp_prep=pre4ap)
+
+        _slice_ = [int(idx) for idx in self.adata.var.index]  # (slice using all stims)
+
+        for target in self.adata.obs.index:
+            # z-scoring of SLM targets responses:
+            _mean_ = pre_exp.PhotostimResponsesSLMTargets.adata.X[int(target), _slice_].mean()
+            _std_ = pre_exp.PhotostimResponsesSLMTargets.adata.X[int(target), _slice_].std(ddof=1)
+
+            __responses = self.adata.X[int(target), :]
+            z_scored_stim_response = (__responses - _mean_) / _std_
+            df.loc[target, :] = z_scored_stim_response
+
+        # add zscored data to anndata storage
+        self.adata.add_layer(layer_name='dFF (zscored) (baseline)', data=np.asarray(df))
 
     def z_score_photostim_responses_interictal(self):
         """

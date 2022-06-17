@@ -129,11 +129,12 @@ def full_plot_mean_responses_magnitudes():
 
 # r.2) z scoring
 
-@Utils.run_for_loop_across_exps(run_pre4ap_trials=0, run_post4ap_trials=1, allow_rerun=0, run_trials=['PS11 t-011'])
-def run__z_score_photostim_responses_and_interictalzscores(**kwargs):
+@Utils.run_for_loop_across_exps(run_pre4ap_trials=0, run_post4ap_trials=1, allow_rerun=1)
+def run__z_score_photostim_responses(**kwargs):
     expobj: alloptical = kwargs['expobj']
-    expobj.PhotostimResponsesSLMTargets.z_score_photostim_responses()
-    expobj.PhotostimResponsesSLMTargets.z_score_photostim_responses_interictal()
+    # expobj.PhotostimResponsesSLMTargets.z_score_photostim_responses()
+    # expobj.PhotostimResponsesSLMTargets.z_score_photostim_responses_interictal()
+    expobj.PhotostimResponsesSLMTargets.z_score_photostim_responses_baseline()
     expobj.save()
 
 
@@ -315,7 +316,7 @@ if __name__ == '__main__':
 
 
     "Create and plot zscored photostim responses."
-    # run__z_score_photostim_responses_and_interictalzscores()
+    run__z_score_photostim_responses()
     # main.allexps_plot_photostim_responses_magnitude_zscored()
     #
     #
@@ -326,16 +327,16 @@ if __name__ == '__main__':
     # results.mean_photostim_responses_baseline_zscored, results.mean_photostim_responses_interictal_zscored, results.mean_photostim_responses_ictal_zscored = full_plot_mean_responses_magnitudes_zscored()
     # # make plot
     # # plot zscored responses
-    data = full_plot_mean_responses_magnitudes_zscored()
-    pplot.plot_bar_with_points(
-        data=data,
-        x_tick_labels=['baseline', 'interictal', 'ictal'], bar=False, colors=['navy', 'green', 'purple'],
-        expand_size_x=0.4, title='Average Photostim responses (zscored to baseline?)', y_label='dFF (zscored)')
+    # data = full_plot_mean_responses_magnitudes_zscored()
+    # pplot.plot_bar_with_points(
+    #     data=data,
+    #     x_tick_labels=['baseline', 'interictal', 'ictal'], bar=False, colors=['navy', 'green', 'purple'],
+    #     expand_size_x=0.4, title='Average Photostim responses (zscored to baseline?)', y_label='dFF (zscored)')
 
-    pplot.plot_hist_density(data=data, mean_line=False, figsize=[4, 5], title='photostim responses (zscored)',
-                            show_legend=True, num_bins=35, line_colors=['navy', 'green', 'purple'],
-                            fill_color=['lightgray', 'lightgray', 'lightgray'], alpha=0.2, show_bins=True,
-                            legend_labels=['baseline', 'interictal', 'ictal'])
+    # pplot.plot_hist_density(data=data, mean_line=False, figsize=[4, 5], title='photostim responses (zscored)',
+    #                         show_legend=True, num_bins=35, line_colors=['navy', 'green', 'purple'],
+    #                         fill_color=['lightgray', 'lightgray', 'lightgray'], alpha=0.2, show_bins=True,
+    #                         legend_labels=['baseline', 'interictal', 'ictal'])
     # results.save_results()
     #
     #
@@ -343,9 +344,9 @@ if __name__ == '__main__':
     "Measuring photostim responses in relation to pre-stim mean FOV Flu"
     # results.pre_stim_FOV_flu = main.collect__prestim_FOV_Flu()
     # results.save_results()
-    plot__prestim_FOV_Flu(results)
+    # plot__prestim_FOV_Flu(results)
     # main.run__collect_photostim_responses_magnitude_avgtargets()
-    plot__photostim_responses_vs_prestim_FOV_flu()
+    # plot__photostim_responses_vs_prestim_FOV_flu()
 
 
 
@@ -357,15 +358,15 @@ if __name__ == '__main__':
     # results.expavg_pre_stim_targets_annulus_results_ictal = main.retrieve__targets_annlus_prestim_Flu_duringsz()
     # results.save_results()
 
-    main.plot__targets_annulus_prestim_Flu(results)
-    main.plot__targets_annulus_prestim_Flu_outszvsinsz(results)
+    # main.plot__targets_annulus_prestim_Flu(results)
+    # main.plot__targets_annulus_prestim_Flu_outszvsinsz(results)
     #
-    main.plot__targets_annulus_prestim_Flu_combined(results)
+    # main.plot__targets_annulus_prestim_Flu_combined(results)
     #
     # results.pre_stim_targets_annulus_vs_targets_responses_results = main.retrieve__photostim_responses_vs_prestim_targets_annulus_flu()
     # results.save_results()
-    main.plot__photostim_responses_vs_prestim_targets_annulus_flu(results)
-    main.plot__targets_annulus_prestim_Flu_all_points(results)
+    # main.plot__photostim_responses_vs_prestim_targets_annulus_flu(results)
+    # main.plot__targets_annulus_prestim_Flu_all_points(results)
 
 
 

@@ -124,11 +124,11 @@ def run_check_collect_time_delay_sz_stims(**kwargs):
     expobj.TargetsSzInvasionTemporal.plot_num_pos_neg_szinvasion_stims(**kwargs)
 
 ## 1.2) plot mean of seizure invasion Flu traces from all targets for each experiment ##############################
-def plot__targets_sz_invasion_meantraces():
-    fig, ax = plt.subplots(figsize=[3, 5])
+def plot__targets_sz_invasion_meantraces(**kwargs):
+    fig, ax = (kwargs['fig'], kwargs['ax']) if 'fig' in kwargs or 'ax' in kwargs else plt.subplots(figsize=[5, 5])
 
-    @Utils.run_for_loop_across_exps(run_pre4ap_trials=False, run_post4ap_trials=1, set_cache=False, skip_trials=main.EXCLUDE_TRIAL)
-    def plot_targets_sz_invasion_meantraces(**kwargs):
+    @Utils.run_for_loop_across_exps(run_pre4ap_trials=False, run_post4ap_trials=1, set_cache=False, skip_trials=main.EXCLUDE_TRIAL, allow_rerun=True)
+    def plot_targets_sz_invasion_meantraces(fig, ax, **kwargs):
         expobj: Post4ap = kwargs['expobj']
 
         fov_mean_trace, to_plot, pre, post = expobj.TargetsSzInvasionTemporal.mean_targets_szinvasion_trace[
@@ -157,15 +157,16 @@ def plot__targets_sz_invasion_meantraces():
         # xticks_loc = [xtick*expobj.fps for xtick in [0, pre, pre+post]]
         ax.set_xticks(xticks)
         ax.set_xticklabels(xticks)
-        ax.set_xlabel('Time (secs) to sz invasion')
-        ax.set_ylabel('Flu change (norm.)')
         # ax.set_xlim([np.min(xticks_loc), np.max(xticks_loc)])
         # ax.set_title(f"{expobj.t_series_name}")
 
-    plot_targets_sz_invasion_meantraces()
-    fig.suptitle('avg Flu at sz invasion', wrap=True, y=0.96)
-    fig.tight_layout(pad=2)
-    fig.show()
+    plot_targets_sz_invasion_meantraces(fig=fig, ax=ax)
+    ax.set_xlabel('Time (secs)', wrap=True)  #: Time (secs) to sz invasion
+    ax.set_ylabel('Flu change (norm.)')
+    if not 'fig' in kwargs and not 'ax' in kwargs:
+        fig.suptitle('avg Flu at sz invasion', wrap=True, y=0.96)
+        fig.tight_layout(pad=2)
+        fig.show()
 
 # run_check_collect_time_delay_sz_stims()
 
@@ -412,7 +413,7 @@ if __name__ == '__main__':
     #
     # run__collect_targets_sz_invasion_traces()
     #
-    # # plot__targets_sz_invasion_meantraces()
+    plot__targets_sz_invasion_meantraces()
     #
     #
     # # RUNNING BELOW FOR QUANTIFICATION OF PHOTOSTIM RESPONSES VS. TIME DELAY TO SZ INVASION CURRENTLY

@@ -217,8 +217,8 @@ def save_pkl(obj, save_path: str = None):
         with open(obj.pkl_path, 'wb') as f:
             pickle.dump(obj, f)
         print(f"\- expobj saved to {obj.pkl_path} -- ")
-    except:
-        raise IOError(f'failed to save pkl object to: {obj.pkl_path}')
+    except Exception as exception:
+        raise exception(f'failed to save pkl object to: {obj.pkl_path}')
     os.makedirs(pj.return_parent_dir(obj.backup_pkl), exist_ok=True)
     with open(obj.backup_pkl, 'wb') as f:
         pickle.dump(obj, f)

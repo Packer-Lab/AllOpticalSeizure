@@ -1,6 +1,6 @@
 import sys
 
-from Figures.figure7 import z_score_response_proximal_distal, influence_response_proximal_and_distal
+from Figures.figure7_plots import z_score_response_proximal_distal, influence_response_proximal_and_distal
 from _analysis_._ClassPhotostimAnalysisSlmTargets import PhotostimAnalysisSlmTargets
 from _utils_.rfv_funcs import make_fig_layout, show_test_figure_layout, add_label_axes
 
@@ -19,6 +19,7 @@ from _analysis_.nontargets_analysis._ClassResultsNontargetPhotostim import Photo
 import _alloptical_utils as Utils
 from _utils_.alloptical_plotting import plot_settings
 
+plot_settings()
 
 SAVE_FOLDER = f'/home/pshah/mnt/qnap/Analysis/figure-items'
 
@@ -28,7 +29,6 @@ results: PhotostimResponsesNonTargetsResults = PhotostimResponsesNonTargetsResul
 
 distance_lims = [19, 400]  # limit of analysis
 
-plot_settings()
 
 # %% SETUP
 ## Set general plotting parameters
@@ -55,7 +55,7 @@ layout = {
                 'bound': (0.40, 0.80, 0.90, 0.95),
              'wspace': 0.8}
 }
-fig, axes, grid = rfv.make_fig_layout(layout=layout, dpi=100)
+fig, axes, grid = rfv.make_fig_layout(layout=layout, dpi=500)
 
 
 # rfv.show_test_figure_layout(fig, axes=axes)  # test what layout looks like quickly, but can also skip and moveon to plotting data.
@@ -75,10 +75,10 @@ ax=axes['main-left'][0]
 rfv.add_label_axes(s='A', ax=ax, x_adjust=x_adj)
 
 ax=axes['main-right'][0]
-rfv.add_label_axes(s='B', ax=ax, x_adjust=x_adj)
+rfv.add_label_axes(s='B', ax=ax, x_adjust=x_adj + 0.02)
 
 ax=axes['main-right'][1]
-rfv.add_label_axes(s="B'", ax=ax, x_adjust=x_adj)
+rfv.add_label_axes(s="B'", ax=ax, x_adjust=x_adj + 0.02)
 
 
 fig.show()
