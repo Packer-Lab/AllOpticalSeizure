@@ -1283,7 +1283,7 @@ def plotMeanRawFluTrace(expobj, stim_span_color='white', stim_lines: bool = True
 # plots the raw trace for the Flu mean of the FOV
 @print_start_end_plot
 @plot_piping_decorator(figsize=(10,3))
-def plotLfpSignal(expobj, stim_span_color='powderblue', downsample: bool = True, stim_lines: bool = True, sz_markings: bool = False,
+def plotLfpSignal(expobj: TwoPhotonImaging, stim_span_color='powderblue', downsample: bool = True, stim_lines: bool = True, sz_markings: bool = False,
                   title='LFP trace', x_axis='time', hide_xlabel=False, fig=None, ax=None, **kwargs):
     """make plot of LFP with also showing stim locations
     NOTE: ONLY PLOTTING LFP SIGNAL CROPPED TO 2P IMAGING FRAME START AND END TIMES - SO CUTTING OUT THE LFP SIGNAL BEFORE AND AFTER"""
@@ -1300,20 +1300,15 @@ def plotLfpSignal(expobj, stim_span_color='powderblue', downsample: bool = True,
     #     else:
     #         fig, ax = plt.subplots(figsize=[60 * (expobj.stim_start_times[-1] + 1e5 - (expobj.stim_start_times[0] - 1e5)) / 1e7, 3])
 
-    if 'alpha' in kwargs:
-        alpha = kwargs['alpha']
-    else:
-        alpha = 1
+    alpha = 1 if 'alpha' not in kwargs else kwargs['alpha']
 
+    color = 'steelblue' if 'color' not in kwargs else kwargs['color']
     # plot LFP signal
-    if 'color' in kwargs:
-        color = kwargs['color']
-    else:
-        color = 'steelblue'
 
     # option for downsampling of data plot trace
-    x = range(len(expobj.lfp_signal[expobj.frame_start_time_actual: expobj.frame_end_time_actual]))
+    # x = range(len(expobj.lfp_signal[expobj.frame_start_time_actual: expobj.frame_end_time_actual]))
     signal = expobj.lfp_signal[expobj.frame_start_time_actual: expobj.frame_end_time_actual]
+    x = np.linspace(0, (expobj.frame_end_time_actual - expobj.frame_start_time_actual) / expobj.paq_rate, len(signal)) if 'time' in x_axis or 'Time' in x_axis else np.linspace(0, expobj.frame_end_time_actual - expobj.frame_start_time_actual, len(signal))
     if downsample:
         labels = list(range(0, int(len(signal) / expobj.paq_rate * 1), 15))[::2]  # set x ticks at every 30 secs
         down = 1000
@@ -1338,7 +1333,8 @@ def plotLfpSignal(expobj, stim_span_color='powderblue', downsample: bool = True,
     if stim_span_color != '':
         for stim in expobj.stim_start_times:
             stim = (stim - expobj.frame_start_time_actual)
-            ax.axvspan(stim - 8, 1 + stim + expobj.stim_duration_frames / expobj.fps * expobj.paq_rate, color=stim_span_color, zorder=0, alpha=alpha)
+            stim = stim / expobj.paq_rate
+            ax.axvspan(stim, stim + expobj.stim_duration_frames / expobj.fps, color=stim_span_color, zorder=0, alpha=alpha)
     else:
         if stim_lines:
             for line in expobj.stim_start_times:
@@ -1357,7 +1353,8 @@ def plotLfpSignal(expobj, stim_span_color='powderblue', downsample: bool = True,
     labels_ = kwargs['labels'] if 'labels' in [*kwargs] else labels
     labels_ = [int(i) for i in labels_]
     if 'time' in x_axis or 'Time' in x_axis:
-        ax.set_xticks(ticks=[(label * expobj.paq_rate) for label in labels_])
+        # ax.set_xticks(ticks=[(label * expobj.paq_rate) for label in labels_])
+        ax.set_xticks(ticks=[label for label in labels_])
         ax.set_xticklabels(labels_)
         ax.tick_params(axis='both', which='both', length=3)
         if not hide_xlabel:
@@ -1371,7 +1368,7 @@ def plotLfpSignal(expobj, stim_span_color='powderblue', downsample: bool = True,
     #         ax.set_xlabel('Frames')
     else:
         ax.set_xlabel('paq clock')
-    ax.set_ylabel('Voltage')
+    ax.set_ylabel(kwargs['y_label']) if 'y_label' in kwargs else None
     # ax.set_xlim([expobj.frame_start_time_actual, expobj.frame_end_time_actual])  ## this should be limited to the 2p acquisition duration only
 
     # set ylimits:
@@ -1387,7 +1384,7 @@ def plotLfpSignal(expobj, stim_span_color='powderblue', downsample: bool = True,
 
     # add title
     ax.set_title(
-        '%s - %s %s %s' % (title, expobj.metainfo['exptype'], expobj.metainfo['animal prep.'], expobj.metainfo['trial']))
+        '%s - %s %s %s' % (title, expobj.metainfo['exptype'], expobj.metainfo['animal prep.'], expobj.metainfo['trial'])) if title else None
 
     # return None
     # if not 'fig' in kwargs.keys():

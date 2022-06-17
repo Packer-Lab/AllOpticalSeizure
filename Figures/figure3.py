@@ -1,4 +1,5 @@
 import os
+from typing import Union
 
 import numpy as np
 from funcsforprajay.wrappers import plot_piping_decorator
@@ -6,8 +7,9 @@ from matplotlib import pyplot as plt
 from scipy import stats
 
 from _alloptical_utils import run_for_loop_across_exps
-from _analysis_._ClassPhotostimAnalysisSlmTargets import plot__avg_photostim_dff_allexps
+from _analysis_._ClassPhotostimAnalysisSlmTargets import plot__avg_photostim_dff_allexps, PhotostimAnalysisSlmTargets
 from _analysis_.sz_analysis._ClassExpSeizureAnalysis import ExpSeizureAnalysis
+from _exp_metainfo_.exp_metainfo import AllOpticalExpsToAnalyze
 from _main_.AllOpticalMain import alloptical
 from _main_.Post4apMain import Post4ap
 from _utils_.io import import_expobj
@@ -16,101 +18,13 @@ from funcsforprajay import plotting as pplot
 import xml.etree.ElementTree as ET
 
 
-expobj: Post4ap = import_expobj(exp_prep='RL108 t-009')
+# expobj: Union[alloptical, Post4ap] = import_expobj(exp_prep='RL108 t-009')
 SAVE_FIG = "/home/pshah/Documents/figures/alloptical-photostim-responses-traces/"
 
 # %% B) individual Ca+ traces for pre4ap + post4ap - with corresponding LFP trace
+main = PhotostimAnalysisSlmTargets
 
-@plot_piping_decorator(figsize=(10,6))
-def plot_photostim_traces_stacked(array, expobj, exclude_id=[], y_spacing_factor=1, title='',
-                                  x_axis='Time (seconds)', save_fig=None, **kwargs):
-    '''
-    :param array:
-    :param expobj:
-    :param spacing: a multiplication factor that will be used when setting the spacing between each trace in the final plot
-    :param title:
-    :param y_min:
-    :param y_max:
-    :param x_label:
-    :param save_fig:
-    :output: matplotlib plot
-    '''
-    # make rolling average for these plots
-    # w = 30
-    # array = np.asarray([(np.convolve(trace, np.ones(w), 'valid') / w) for trace in array])
-
-    len_ = len(array)
-
-    if 'fig' in kwargs.keys():
-        fig = kwargs['fig']
-        ax = kwargs['ax']
-    else:
-        if 'figsize' in kwargs.keys():
-            fig, ax = plt.subplots(figsize=kwargs['figsize'])
-        else:
-            fig, ax = plt.subplots(figsize=[20, 10])
-
-    for i in range(len_):
-        if i not in exclude_id:
-            if 'linewidth' in kwargs.keys():
-                linewidth=kwargs['linewidth']
-            else:
-                linewidth=1
-            ax.plot(array[i] + i * 40 * y_spacing_factor, linewidth=linewidth)
-    for j in expobj.stim_start_frames:
-        if j <= array.shape[1]:
-            ax.axvline(x=j, c='gray', alpha=0.3)
-
-    ax.set_xlim([0, expobj.n_frames-3000])
-
-    ax.margins(0)
-    # change x axis ticks to seconds
-    if 'Time' in x_axis or 'time' in x_axis:
-        # change x axis ticks to every 30 seconds
-        labels = list(range(0, int(expobj.n_frames // expobj.fps), 30))
-        ax.set_xticks(ticks=[(label * expobj.fps) for label in labels])
-        ax.set_xticklabels(labels)
-        ax.set_xlabel('Time (secs)')
-
-        # labels = [item for item in ax.get_xticks()]
-        # for item in labels:
-        #     labels[labels.index(item)] = int(round(item / expobj.fps))
-        # ax.set_xticklabels(labels)
-        # ax.set_xlabel('Time (secs.)')
-
-    ax.spines['top'].set_visible(False)
-    ax.spines['right'].set_visible(False)
-    ax.spines['left'].set_visible(False)
-    ax.set_xlabel(x_axis)
-
-    if 'y_lim' in kwargs.keys():
-        ax.set_ylim(kwargs['y_lim'])
-    else:
-        y_max = np.mean(array[-1] + len_ * 40 * y_spacing_factor) + 3 * np.mean(array[-1])
-        ax.set_ylim(0, y_max)
-
-    ax.set_title((title + ' - %s' % len_ + ' cells'), horizontalalignment='center', verticalalignment='top', pad=20,
-                 fontsize=10, wrap=True)
-
-    # # finalize plot, set title, and show or return axes
-    # if 'fig' in kwargs.keys():
-    #     ax.set_title((title + ' - %s' % len_ + ' cells'), horizontalalignment='center', verticalalignment='top', pad=20,
-    #                  fontsize=10, wrap=True)
-    #     # ax.title.set_text((title + ' - %s' % len_ + ' cells'), wrap=True)
-    #     return fig, ax
-    # else:
-    #     ax.set_title((title + ' - %s' % len_ + ' cells'), horizontalalignment='center', verticalalignment='top', pad=20,
-    #                  fontsize=10, wrap=True)
-    # if 'show' in kwargs.keys():
-    #     if kwargs['show'] is True:
-    #         fig.show()
-    #     else:
-    #         pass
-    # else:
-    #     fig.show()
-
-
-
+main.plot_photostim_traces_stacked_LFP_pre4ap_post4ap()
 
 # %% F) Radial plot of Mean FOV for photostimulation trials, with period equal to that of photostimulation timing period
 

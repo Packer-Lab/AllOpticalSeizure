@@ -15,26 +15,26 @@ RESULTS = PhotostimResponsesSLMtargetsResults.load()
 
 # %% RUNNING PLOTS:
 
+# %% B) measure of average coefficient of variation of target responses
+main.plot__variability(figsize=[3, 5], rerun=False)
 
 # %% A) schematic of variability of photostimulation responses
 
 # main.plot__schematic_variability_measurement()
 
 main.plot_variability_photostim_traces_by_targets()
-main.plot__variability(figsize=[3, 5], rerun=False)
 
-
-# %% B) plot mean response vs. variability for baseline + interictal
+# %% C) plot mean response vs. variability for baseline + interictal
 
 main.plot__mean_response_vs_variability(rerun=0)
 
 
-# %% C) seizure boundary classification throughout propagation ---> now a supplemental figure with fig 5
+# %% D) seizure boundary classification throughout propagation ---> now a supplemental figure with fig 5
 
 ## todo move and add new code...
 
 
-# %% D) plotting target annulus vs photostim responses
+# %% xxplotting target annulus vs photostim responses --> supplemental now
 
 
 PhotostimResponsesQuantificationSLMtargets.plot__photostim_responses_vs_prestim_targets_annulus_flu(RESULTS)
@@ -43,7 +43,7 @@ PhotostimResponsesQuantificationSLMtargets.plot__photostim_responses_vs_prestim_
 
 
 
-# %% xx) plotting interictal photostim responses split by pre-ictal and post-ictal
+# %% E) plotting interictal photostim responses split by pre-ictal and post-ictal
 
 # main.collect__interictal_responses_split()
 
@@ -57,7 +57,7 @@ fig, ax = plot_bar_with_points(data=[
 fig.tight_layout(pad=0.2)
 fig.show()
 
-# %% E) correlation matrix of all targets, all stims, all exps - baseline vs. interictal
+# %% F) correlation matrix of all targets, all stims, all exps - baseline vs. interictal
 
 main.correlation_matrix_all_targets()
 

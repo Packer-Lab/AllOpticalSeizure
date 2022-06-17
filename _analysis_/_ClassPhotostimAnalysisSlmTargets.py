@@ -1,9 +1,13 @@
+import sys
+
+sys.path.extend(['/home/pshah/Documents/code/reproducible_figures-main'])
 from typing import Union, List, Dict
 
 import seaborn as sns
 import numpy as np
 import os
 import pandas as pd
+from funcsforprajay.wrappers import plot_piping_decorator
 from matplotlib import pyplot as plt
 from scipy.stats import variation, mannwhitneyu, stats
 from sklearn.cluster import KMeans
@@ -20,17 +24,21 @@ from funcsforprajay import plotting as pplot
 import funcsforprajay.funcs as pj
 
 from _utils_._anndata import AnnotatedData2
-from _utils_.alloptical_plotting import plot_settings
+from _utils_.alloptical_plotting import plot_settings, plotLfpSignal
 from _utils_.io import import_expobj
+import rep_fig_vis as rfv
 
 SAVE_LOC = "/home/pshah/mnt/qnap/Analysis/analysis_export/analysis_quantification_classes/"
 SAVE_FIG = "/home/pshah/Documents/figures/alloptical-photostim-responses-traces/"
 
 results = PhotostimResponsesSLMtargetsResults.load()
 
-# COLLECTING PHOTOSTIM TIMED DATA, PROCESSING AND ANALYSIS FOR SLM TARGETS TRACES
+plot_settings()
 
-#!/usr/bin/env python3
+
+# %%
+# COLLECTING PHOTOSTIM TIMED DATA, PROCESSING AND ANALYSIS FOR SLM TARGETS TRACES
+# !/usr/bin/env python3
 def simple_beeswarm(y, nbins=None):
     """
     Returns x coordinates for the points in ``y``, so that plotting ``x`` and
@@ -68,17 +76,19 @@ def simple_beeswarm(y, nbins=None):
             j = len(i) % 2
             i = i[np.argsort(y)]
             a = i[j::2]
-            b = i[j+1::2]
+            b = i[j + 1::2]
             x[a] = (0.5 + j / 3 + np.arange(len(b))) * dx
             x[b] = (0.5 + j / 3 + np.arange(len(b))) * -dx
 
     return x
+
 
 class PhotostimAnalysisSlmTargets(Quantification):
     """general photostim timed processing, analyses for SLM targets"""
 
     save_path = SAVE_LOC + 'PhotostimAnalysisSlmTargets.pkl'
     valid_targets_trace_types = ['trace_dFF', 'raw']
+
     # _pre_stim_sec = 1
     # _post_stim_sec = 3
     # pre_stim_response_window_msec = 500 # msec
@@ -87,24 +97,10 @@ class PhotostimAnalysisSlmTargets(Quantification):
     def __init__(self, expobj: Union[alloptical, Post4ap]):
         super().__init__(expobj)
         print(f'\- ADDING NEW PhotostimAnalysisSlmTargets MODULE to expobj: {expobj.t_series_name}')
-        self.create_anndata(expobj=expobj)
+        self.adata: AnnotatedData2 = self.create_anndata(expobj=expobj)
         # self._fps = expobj.fps
-
-    # @property
-    # def pre_stim_fr(self):
-    #     return int(self._pre_stim_sec * self._fps)  # length of pre stim trace collected (in frames)
-    #
-    # @property
-    # def post_stim_fr(self):
-    #     return int(self._post_stim_sec * self._fps)  # length of post stim trace collected (in frames)
-    #
-    # @property
-    # def pre_stim_response_frames_window(self):
-    #     return int(self._fps * self.pre_stim_response_window_msec / 1000)  # length of the pre stim response test window (in frames)
-    #
-    # @property
-    # def post_stim_response_frames_window(self):
-    #     return int(self._fps * self.post_stim_response_window_msec / 1000)  # length of the post stim response test window (in frames)
+        self.dFF: np.ndarray = expobj.dFF_SLMTargets  #: array of dFF normalized traces for whole trial
+        self.raw: np.ndarray = expobj.raw_SLMTargets  #: array of raw traces for whole trial
 
     @staticmethod
     @Utils.run_for_loop_across_exps(run_pre4ap_trials=True, run_post4ap_trials=True, allow_rerun=0)
@@ -119,7 +115,6 @@ class PhotostimAnalysisSlmTargets(Quantification):
         expobj = kwargs['expobj']
         expobj.PhotostimAnalysisSlmTargets._fps = expobj.fps
         expobj.save()
-
 
     def __repr__(self):
         return f"PhotostimAnalysisSlmTargets <-- Quantification Analysis submodule for expobj <{self.expobj_id}>"
@@ -167,7 +162,8 @@ class PhotostimAnalysisSlmTargets(Quantification):
             var_meta.loc['im_time_secs', fr_idx] = stim_frame / expobj.fps
 
         # SET PRIMARY DATA
-        assert hasattr(expobj, 'PhotostimResponsesSLMTargets'), 'no photostim responses found to use to create anndata base.'
+        assert hasattr(expobj,
+                       'PhotostimResponsesSLMTargets'), 'no photostim responses found to use to create anndata base.'
         print(f"\t\----- CREATING annotated data object using AnnData:")
         # create anndata object
         photostim_responses_adata = AnnotatedData2(X=expobj.PhotostimResponsesSLMTargets.adata.X,
@@ -175,7 +171,7 @@ class PhotostimAnalysisSlmTargets(Quantification):
                                                    data_label=expobj.PhotostimResponsesSLMTargets.adata.data_label)
 
         print(f"Created: {photostim_responses_adata}")
-        self.adata = photostim_responses_adata
+        return photostim_responses_adata
 
     @staticmethod
     def collect_all_targets_all_exps(run_pre4ap_trials=0, run_post4ap_trials=True):
@@ -183,8 +179,9 @@ class PhotostimAnalysisSlmTargets(Quantification):
         def baseline_targets_responses(**kwargs):
             expobj = kwargs['expobj']
             if np.nanmean(expobj.PhotostimAnalysisSlmTargets.adata.X) > 10:
-            # print(np.nanmean(expobj.PhotostimAnalysisSlmTargets.adata.X))
+                # print(np.nanmean(expobj.PhotostimAnalysisSlmTargets.adata.X))
                 return expobj.PhotostimAnalysisSlmTargets.adata.X, expobj.t_series_name
+
         if run_pre4ap_trials:
             func_collector = baseline_targets_responses()
             responses, expids = np.asarray(func_collector)[:, 0].tolist(), np.asarray(func_collector)[:, 1]
@@ -204,13 +201,13 @@ class PhotostimAnalysisSlmTargets(Quantification):
                 targets = response.shape[0]
                 stims = response.shape[1]
                 all_responses[num_targets: num_targets + targets, :stims] = response
-                all_exps.extend([expid]*targets)
+                all_exps.extend([expid] * targets)
                 num_targets += targets
 
-            baseline_adata = AnnotatedData2(all_responses, obs ={'exp': all_exps}, var={'stim_idx': range(all_responses.shape[1])})
+            baseline_adata = AnnotatedData2(all_responses, obs={'exp': all_exps},
+                                            var={'stim_idx': range(all_responses.shape[1])})
             results.baseline_adata = baseline_adata
             results.save_results()
-
 
         @Utils.run_for_loop_across_exps(run_post4ap_trials=run_post4ap_trials, allow_rerun=1)
         def interictal_targets_responses(**kwargs):
@@ -242,21 +239,23 @@ class PhotostimAnalysisSlmTargets(Quantification):
                 targets = response.shape[0]
                 stims = response.shape[1]
                 all_responses[num_targets: num_targets + targets, :stims] = response
-                all_exps.extend([expid]*targets)
+                all_exps.extend([expid] * targets)
                 num_targets += targets
 
-            interictal_adata = AnnotatedData2(all_responses, obs ={'exp': all_exps}, var={'stim_idx': range(all_responses.shape[1])}, data_label='z scored (to baseline)')
+            interictal_adata = AnnotatedData2(all_responses, obs={'exp': all_exps},
+                                              var={'stim_idx': range(all_responses.shape[1])},
+                                              data_label='z scored (to baseline)')
             results.interictal_adata = interictal_adata
             results.save_results()
-
-
 
     # 0) COLLECT ALL PHOTOSTIM TIMED TRACE SNIPPETS --> found under PhotostimResponsesQuantificationSLMtargets class
 
     # 1) plot peri-photostim avg traces for all targets from all exp analyzed to make sure they look alright -- plot as little postage stamps
     @staticmethod
-    @Utils.run_for_loop_across_exps(run_trials=[AllOpticalExpsToAnalyze.pre_4ap_trials[0][0], AllOpticalExpsToAnalyze.post_4ap_trials[0][0]], allow_rerun=1)
-    def plot_postage_stamps_photostim_traces(to_plot='delta dF',**kwargs):
+    @Utils.run_for_loop_across_exps(
+        run_trials=[AllOpticalExpsToAnalyze.pre_4ap_trials[0][0], AllOpticalExpsToAnalyze.post_4ap_trials[0][0]],
+        allow_rerun=1)
+    def plot_postage_stamps_photostim_traces(to_plot='delta dF', **kwargs):
         expobj: Union[alloptical, Post4ap] = kwargs['expobj']
 
         if to_plot == 'delta dF':
@@ -327,22 +326,22 @@ class PhotostimAnalysisSlmTargets(Quantification):
                            transform=axs[a, b].transAxes, fontweight='bold',
                            color='black')
             axs[a, b].margins(0)
-            axs[a, b].axvspan(expobj.pre_stim / expobj.fps, (expobj.pre_stim + expobj.stim_duration_frames) / expobj.fps, color='mistyrose',
+            axs[a, b].axvspan(expobj.pre_stim / expobj.fps,
+                              (expobj.pre_stim + expobj.stim_duration_frames) / expobj.fps, color='mistyrose',
                               zorder=0)
 
             counter += 1
         fig.suptitle(f"{expobj.metainfo['animal prep.']} {expobj.metainfo['trial']} - {len(trace_snippets)} targets",
-                     y = 0.995)
+                     y=0.995)
         # fig.savefig('/home/pshah/mnt/qnap/Analysis/%s/%s/results/%s_%s_individual targets dFF.png' % (date, j[:-6], date, j))
         fig.tight_layout(pad=1.8)
         fig.show()
 
-
     @staticmethod
     @Utils.run_for_loop_across_exps(run_trials=[
         AllOpticalExpsToAnalyze.pre_4ap_trials[0][0],
-                                                AllOpticalExpsToAnalyze.post_4ap_trials[0][0]], allow_rerun=1)
-    def plot_variability_photostim_traces_by_targets(to_plot='dFF',**kwargs):
+        AllOpticalExpsToAnalyze.post_4ap_trials[0][0]], allow_rerun=1)
+    def plot_variability_photostim_traces_by_targets(to_plot='dFF', **kwargs):
         expobj: Union[alloptical, Post4ap] = kwargs['expobj']
 
         if to_plot == 'delta dF':
@@ -366,13 +365,12 @@ class PhotostimAnalysisSlmTargets(Quantification):
         total_plot = len(choice)
         # total_plot = expobj.n_targets_total
 
-
         # nrows = expobj.n_targets_total // 4
         ncols = 10
         nrows = total_plot // ncols
         if total_plot % ncols > 0 or total_plot % ncols == 0:
             nrows += 1
-        fig, axs = plt.subplots(nrows=nrows, ncols=ncols, figsize=(ncols*1.2, nrows*1.75),
+        fig, axs = plt.subplots(nrows=nrows, ncols=ncols, figsize=(ncols * 1.2, nrows * 1.75),
                                 constrained_layout=True, dpi=600)
         counter = 0
         axs[0, 0].set_xlabel('Time (secs)')
@@ -387,31 +385,29 @@ class PhotostimAnalysisSlmTargets(Quantification):
             alpha = 1 * (stimsuccessrates[cell] / 100)
             responses_ = responses[cell]
 
-            cv = np.std(responses_, ddof=1)/np.mean(responses_)
+            cv = np.std(responses_, ddof=1) / np.mean(responses_)
 
             print(f'plotting target #{counter}, CV: {cv:.3f}\n')
 
             x_range = np.linspace(0, len(trace_snippets[cell][0]) / expobj.fps, len(trace_snippets[cell][0]))
-
 
             # ax.scatter(np.random.choice(x_range[20:-20], size=len(responses_)), responses_, s=20, zorder=1, alpha=0.3)
             x = simple_beeswarm(responses_)
             # transform x
             x_new = [(i + 1) / 2 * (x_range[-1]) for i in x]
             # axs[a,b].scatter(x_new, responses_, s=10, alpha=0.4, color='yellowgreen', zorder=1)
-            sc = axs[a,b].scatter(x_new, responses_, s=10, alpha=0.4, c=[cv]*len(responses_), zorder=1, cmap='viridis',
-                                  vmin=0, vmax=3)
-            axs[a,b].set_xlim([-1.5, x_range[-1] + 1.5])
+            sc = axs[a, b].scatter(x_new, responses_, s=10, alpha=0.4, c=[cv] * len(responses_), zorder=1,
+                                   cmap='viridis',
+                                   vmin=0, vmax=3)
+            axs[a, b].set_xlim([-1.5, x_range[-1] + 1.5])
             cbar = plt.colorbar(sc)
             cbar.remove()
 
             ax = axs[a, b].twiny()
             avg = np.nanmean(trace_snippets[cell], axis=0)
-            ax.plot(x_range[:-4], pj.smoothen_signal(avg, 5), color='black', linewidth=2, zorder = 5)
+            ax.plot(x_range[:-4], pj.smoothen_signal(avg, 5), color='black', linewidth=2, zorder=5)
 
-
-
-            ax.set_ylim([-50,200])
+            ax.set_ylim([-50, 200])
             # axs[a, b].set_ylim([-0.2 * 100, 2.0 * 100])
             # axs[a, b].text(0.98, 0.97, f"{cv:.1f}",
             #                verticalalignment='top', horizontalalignment='right',
@@ -432,7 +428,7 @@ class PhotostimAnalysisSlmTargets(Quantification):
             #                   zorder=0)
             counter += 1
         fig.suptitle(f"{expobj.metainfo['animal prep.']} {expobj.metainfo['trial']} - {len(trace_snippets)} targets",
-                     y = 0.995)
+                     y=0.995)
         fig.tight_layout(pad=0.2)
         fig.show()
         save_path_full = f'{SAVE_FIG}/photostim-variation-individual-targets-dFF-{expobj.t_series_name}-{expobj.exptype}.png'
@@ -459,7 +455,7 @@ class PhotostimAnalysisSlmTargets(Quantification):
         z_scored_responses = stats.zscore(responses, axis=1)  # z scoring of targets responses to their own distribution
 
         # correlation of targets
-        fig, ax = plt.subplots(figsize=(3,3), dpi=400)
+        fig, ax = plt.subplots(figsize=(3, 3), dpi=400)
         targets_corr_mat = np.corrcoef(z_scored_responses)
         mesh = ax.imshow(targets_corr_mat, cmap='bwr')
         mesh.set_clim(-1, 1)
@@ -469,7 +465,7 @@ class PhotostimAnalysisSlmTargets(Quantification):
         colors = pj.make_random_color_array(len(np.unique(results.baseline_adata.obs['exp'])))
         for i, exp in enumerate(np.unique(results.baseline_adata.obs['exp'])):
             sameexp = np.where(results.baseline_adata.obs['exp'] == exp)[0]
-            ax.plot(sameexp, [-10] * len(sameexp), lw=2, color = colors[i], solid_capstyle = 'projecting')
+            ax.plot(sameexp, [-10] * len(sameexp), lw=2, color=colors[i], solid_capstyle='projecting')
             # plt.plot(sameexp, [-10] * len(sameexp), lw=2, color = colors[i], solid_capstyle = 'projecting')
         # plt.show()
 
@@ -484,10 +480,8 @@ class PhotostimAnalysisSlmTargets(Quantification):
         os.makedirs(os.path.dirname(save_path_full), exist_ok=True)
         fig.savefig(save_path_full)
 
-
-
         # correlation of stims
-        fig, ax = plt.subplots(figsize=(3,3), dpi=400)
+        fig, ax = plt.subplots(figsize=(3, 3), dpi=400)
         stim_corr_mat = np.corrcoef(z_scored_responses.T)
         mesh = ax.imshow(stim_corr_mat, cmap='bwr')
         mesh.set_clim(-1, 1)
@@ -499,14 +493,13 @@ class PhotostimAnalysisSlmTargets(Quantification):
         os.makedirs(os.path.dirname(save_path_full), exist_ok=True)
         fig.savefig(save_path_full)
 
-
         # INTERICTAL
         z_scored_responses = results.interictal_adata.X
         z_scored_responses = pd.DataFrame(z_scored_responses).iloc[:, :43]
         # z_scored_responses = stats.zscore(responses, axis=1)  # z scoring of targets responses to their own distribution
 
         # correlation of targets
-        fig, ax = plt.subplots(figsize=(3,3), dpi=400)
+        fig, ax = plt.subplots(figsize=(3, 3), dpi=400)
         targets_corr_mat = np.corrcoef(z_scored_responses)
         # targets_corr_mat = z_scored_responses.T.corr()
         mesh = ax.imshow(targets_corr_mat, cmap='bwr')
@@ -516,7 +509,7 @@ class PhotostimAnalysisSlmTargets(Quantification):
         # add lines for exps:
         for i, exp in enumerate(np.unique(results.baseline_adata.obs['exp'])):
             sameexp = np.where(results.baseline_adata.obs['exp'] == exp)[0]
-            ax.plot(sameexp, [-10] * len(sameexp), lw=2, color = colors[i], solid_capstyle = 'projecting')
+            ax.plot(sameexp, [-10] * len(sameexp), lw=2, color=colors[i], solid_capstyle='projecting')
         ax.spines['bottom'].set_visible(False)
         ax.spines['right'].set_visible(False)
         ax.spines['left'].set_visible(False)
@@ -530,7 +523,7 @@ class PhotostimAnalysisSlmTargets(Quantification):
         fig.savefig(save_path_full)
 
         # correlation of stims
-        fig, ax = plt.subplots(figsize=(3,3), dpi=400)
+        fig, ax = plt.subplots(figsize=(3, 3), dpi=400)
         stim_corr_mat = np.corrcoef(z_scored_responses.T)
         mesh = ax.imshow(stim_corr_mat, cmap='bwr')
         mesh.set_clim(-1, 1)
@@ -543,13 +536,15 @@ class PhotostimAnalysisSlmTargets(Quantification):
         fig.savefig(save_path_full)
 
     @staticmethod
-    @Utils.run_for_loop_across_exps(run_trials=[AllOpticalExpsToAnalyze.pre_4ap_trials[0][0], AllOpticalExpsToAnalyze.post_4ap_trials[0][0]], allow_rerun=1)
+    @Utils.run_for_loop_across_exps(
+        run_trials=[AllOpticalExpsToAnalyze.pre_4ap_trials[0][0], AllOpticalExpsToAnalyze.post_4ap_trials[0][0]],
+        allow_rerun=1)
     def correlation_matrix_responses(**kwargs):
         expobj: Union[alloptical, Post4ap] = kwargs['expobj']
         z_scored_responses = stats.zscore(expobj.PhotostimAnalysisSlmTargets.adata.X, axis=1)
 
         # correlation of targets
-        fig, ax = plt.subplots(figsize=(3,3), dpi=300)
+        fig, ax = plt.subplots(figsize=(3, 3), dpi=300)
         targets_corr_mat = np.corrcoef(z_scored_responses)
         mesh = ax.imshow(targets_corr_mat, cmap='bwr')
         mesh.set_clim(-1, 1)
@@ -559,7 +554,7 @@ class PhotostimAnalysisSlmTargets(Quantification):
         fig.show()
 
         # correlation of stims
-        fig, ax = plt.subplots(figsize=(3,3), dpi=300)
+        fig, ax = plt.subplots(figsize=(3, 3), dpi=300)
         stim_corr_mat = np.corrcoef(z_scored_responses.T)
         mesh = ax.imshow(stim_corr_mat, cmap='bwr')
         mesh.set_clim(-1, 1)
@@ -570,7 +565,9 @@ class PhotostimAnalysisSlmTargets(Quantification):
 
     # 8.1) PCA of stims
     @staticmethod
-    @Utils.run_for_loop_across_exps(run_trials=[AllOpticalExpsToAnalyze.pre_4ap_trials[0][0], AllOpticalExpsToAnalyze.post_4ap_trials[0][0]], allow_rerun=1)
+    @Utils.run_for_loop_across_exps(
+        run_trials=[AllOpticalExpsToAnalyze.pre_4ap_trials[0][0], AllOpticalExpsToAnalyze.post_4ap_trials[0][0]],
+        allow_rerun=1)
     def pca_responses(**kwargs):
         expobj: Union[alloptical, Post4ap] = kwargs['expobj']
         z_scored_responses = stats.zscore(expobj.PhotostimAnalysisSlmTargets.adata.X, axis=1)
@@ -590,12 +587,11 @@ class PhotostimAnalysisSlmTargets(Quantification):
         # ax.scatter(pca_responses[:, 0], pca_responses[:, 1], s=50, color='green', edgecolor='yellowgreen', linewidth=3)
         # sc = ax.scatter(pca_responses[:, 0], pca_responses[:, 1], s=50, c=kmeans.labels_, cmap=plt.cm.get_cmap('viridis', 2))
         # fig.colorbar(sc, ticks=range(1), label ='kmeans clusters')
-        sc = ax.scatter(pca_responses[:, 0], pca_responses[:, 1], s=50, c=variation_responses, cmap=plt.cm.get_cmap('viridis', 10), vmin=0, vmax=3)
-        fig.colorbar(sc, ticks=range(10), label ='variation responses')
+        sc = ax.scatter(pca_responses[:, 0], pca_responses[:, 1], s=50, c=variation_responses,
+                        cmap=plt.cm.get_cmap('viridis', 10), vmin=0, vmax=3)
+        fig.colorbar(sc, ticks=range(10), label='variation responses')
         fig.tight_layout(pad=1)
         fig.show()
-
-
 
         # plot skree plot for explained variance
         fig, ax = plt.subplots(figsize=(3, 2))
@@ -649,8 +645,6 @@ class PhotostimAnalysisSlmTargets(Quantification):
         fig.tight_layout(pad=1)
         fig.show()
 
-
-
         # plot skree plot for explained variance
         fig, ax = plt.subplots(figsize=(3, 2))
         ax.plot(range(1, 1 + n_comp), pca.explained_variance_ratio_)
@@ -672,7 +666,7 @@ class PhotostimAnalysisSlmTargets(Quantification):
 
         # cv = variation(self.adata.X[:, stims], axis=1)
 
-        cv = np.nanstd(self.adata.X[:, stims] , ddof=1, axis=1) / np.nanmean(self.adata.X[:, stims] , axis=1)
+        cv = np.nanstd(self.adata.X[:, stims], ddof=1, axis=1) / np.nanmean(self.adata.X[:, stims], axis=1)
 
         # cv = []
         # for target in self.adata.obs.index:
@@ -684,8 +678,9 @@ class PhotostimAnalysisSlmTargets(Quantification):
         return cv
 
     @staticmethod
-    def plot__variability(rerun=False, fig_save_name='baseline-interictal_variability_of_photostim_responses.svg', **kwargs):
-    # 1) plotting mean photostim response magnitude across experiments and experimental groups
+    def plot__variability(rerun=False, fig_save_name='baseline-interictal_variability_of_photostim_responses.svg',
+                          **kwargs):
+        # 1) plotting mean photostim response magnitude across experiments and experimental groups
         """create plot of mean photostim responses' COEFFICIENT OF VARIATION for all exp groups"""
 
         if rerun or not hasattr(results, 'variance_photostimresponse'):
@@ -712,12 +707,14 @@ class PhotostimAnalysisSlmTargets(Quantification):
                 expobj: Post4ap = kwargs['expobj']
                 if 'post' in expobj.exptype:
                     # interictal stims
-                    photostim_responses_cv_interictal = expobj.PhotostimAnalysisSlmTargets.calculate_variability(stims=expobj.stim_idx_outsz)
+                    photostim_responses_cv_interictal = expobj.PhotostimAnalysisSlmTargets.calculate_variability(
+                        stims=expobj.stim_idx_outsz)
                     median_cv_interictal = np.median(photostim_responses_cv_interictal)
                     print(f'median interictal CV:', median_cv_interictal)
 
                     # ictal stims
-                    photostim_responses_cv_ictal = expobj.PhotostimAnalysisSlmTargets.calculate_variability(stims=expobj.stim_idx_insz)
+                    photostim_responses_cv_ictal = expobj.PhotostimAnalysisSlmTargets.calculate_variability(
+                        stims=expobj.stim_idx_insz)
                     median_cv_ictal = np.median(photostim_responses_cv_ictal)
                     print(f'median ictal CV:', median_cv_ictal)
 
@@ -726,7 +723,8 @@ class PhotostimAnalysisSlmTargets(Quantification):
             func_collector = post4apexps_collect_photostim_variation()
 
             # if len(func_collector) > 0:
-            photostim_variation_interictal, photostim_variation_ictal = np.asarray(func_collector)[:, 0], np.asarray(func_collector)[:, 1]
+            photostim_variation_interictal, photostim_variation_ictal = np.asarray(func_collector)[:, 0], np.asarray(
+                func_collector)[:, 1]
 
             results.variance_photostimresponse['interictal'] = photostim_variation_interictal
             results.variance_photostimresponse['ictal'] = photostim_variation_ictal
@@ -743,18 +741,20 @@ class PhotostimAnalysisSlmTargets(Quantification):
         # Utils.save_figure(fig, save_path_suffix=f"{fig_save_name}") if fig_save_name else None
         plot_settings()
 
-        res = mannwhitneyu(results.variance_photostimresponse['baseline'], results.variance_photostimresponse['interictal'])
+        res = mannwhitneyu(results.variance_photostimresponse['baseline'],
+                           results.variance_photostimresponse['interictal'])
         print(res)
 
         fig, ax = pplot.plot_bar_with_points(
             data=[results.variance_photostimresponse['baseline'], results.variance_photostimresponse['interictal']],
             x_tick_labels=['Baseline', 'Interictal'], bar=True, colors=['gray', 'green'], alpha=1, show=False,
             expand_size_x=0.4, title='Average CV', y_label='Coefficient of Variation (CV)', shrink_text=0.9,
+            paired=True,
             s=40, bar_alpha=0.2, ylims=[0, 7.5], **kwargs)
-        ax.text(x=ax.get_xlim()[0] + 0.2,y=ax.get_ylim()[-1], s=f"MWU p-val: {res[1]:0.1e}", fontsize='xx-small')
+        ax.text(x=ax.get_xlim()[0] + 0.2, y=ax.get_ylim()[-1], s=f"MWU p-val: {res[1]:0.1e}", fontsize='xx-small')
         fig.tight_layout(pad=1)
         fig.show()
-        Utils.save_figure(fig, save_path_suffix=f"{fig_save_name}") if fig_save_name else None
+        # Utils.save_figure(fig, save_path_suffix=f"{fig_save_name}") if fig_save_name else None
 
     # return photostim_stdvars_baseline, photostim_stdvars_interictal, photostim_stdvars_ictal
 
@@ -824,7 +824,6 @@ class PhotostimAnalysisSlmTargets(Quantification):
                 photostim_stdvars = expobj.PhotostimAnalysisSlmTargets.calculate_variability(stims='all')
                 return photostim_stdvars
 
-
             @Utils.run_for_loop_across_exps(run_pre4ap_trials=True, run_post4ap_trials=False, set_cache=False,
                                             allow_rerun=1)
             def pre4apexps_collect_photostim_responses(**kwargs):
@@ -834,7 +833,6 @@ class PhotostimAnalysisSlmTargets(Quantification):
                 mean_photostim_responses = expobj.PhotostimResponsesSLMTargets.collect_photostim_responses_magnitude_avgstims(
                     stims='all')
                 return mean_photostim_responses
-
 
             mean_photostim_responses_baseline = pre4apexps_collect_photostim_responses()
             photostim_stdvars_baseline = pre4apexps_collect_photostim_stdvars()
@@ -848,10 +846,12 @@ class PhotostimAnalysisSlmTargets(Quantification):
                 expobj: Post4ap = kwargs['expobj']
                 assert 'post' in expobj.exptype
                 # interictal stims
-                mean_photostim_stdvars_interictal = expobj.PhotostimAnalysisSlmTargets.calculate_variability(stims=expobj.stim_idx_outsz)
+                mean_photostim_stdvars_interictal = expobj.PhotostimAnalysisSlmTargets.calculate_variability(
+                    stims=expobj.stim_idx_outsz)
 
                 # ictal stims
-                mean_photostim_stdvars_ictal = expobj.PhotostimAnalysisSlmTargets.calculate_variability(stims=expobj.stim_idx_insz)
+                mean_photostim_stdvars_ictal = expobj.PhotostimAnalysisSlmTargets.calculate_variability(
+                    stims=expobj.stim_idx_insz)
 
                 return mean_photostim_stdvars_interictal, mean_photostim_stdvars_ictal
 
@@ -874,8 +874,10 @@ class PhotostimAnalysisSlmTargets(Quantification):
 
             func_collector_responses = post4apexps_collect_photostim_responses()
 
-            mean_photostim_responses_interictal, mean_photostim_responses_ictal = np.asarray(func_collector_responses)[:,
-                                                                                  0], np.asarray(func_collector_responses)[:, 1]
+            mean_photostim_responses_interictal, mean_photostim_responses_ictal = np.asarray(func_collector_responses)[
+                                                                                  :,
+                                                                                  0], np.asarray(
+                func_collector_responses)[:, 1]
 
             photostim_stdvars_interictal, photostim_stdvars_ictal = np.asarray(func_collector_std)[:,
                                                                     0], np.asarray(func_collector_std)[:, 1]
@@ -888,30 +890,29 @@ class PhotostimAnalysisSlmTargets(Quantification):
 
             results.save_results()
 
-
         # make plot
         pplot.make_general_scatter([pj.flattenOnce(results.meanresponses_vs_variance['baseline - mean responses'])],
                                    [pj.flattenOnce(results.meanresponses_vs_variance['baseline - var responses'])],
-                                   x_labels=['Avg. Photostim Response (% dFF)'], y_labels = ['Variance (dFF^2)'], ax_titles=['Targets: avg. response vs. variability - baseline'],
-                                   facecolors=['gray'], lw=1.3, figsize=(4,4), xlim=[-30, 130], ylim=[-0.1, 3.2], alpha=0.1)
-
-
+                                   x_labels=['Avg. Photostim Response (% dFF)'], y_labels=['Variance (dFF^2)'],
+                                   ax_titles=['Targets: avg. response vs. variability - baseline'],
+                                   facecolors=['gray'], lw=1.3, figsize=(4, 4), xlim=[-30, 130], ylim=[-0.1, 3.2],
+                                   alpha=0.1)
 
         pplot.make_general_scatter([pj.flattenOnce(results.meanresponses_vs_variance['interictal - mean responses'])],
                                    [pj.flattenOnce(results.meanresponses_vs_variance['interictal - var responses'])],
-                                   x_labels=['Avg. Photostim Response (% dFF)'], y_labels = ['Variance (dFF^2)'], ax_titles=['Targets: avg. response vs. variability - interictal'],
-                                   facecolors=['forestgreen'], lw=1.3, figsize=(4,4), xlim=[-30, 130], ylim=[-0.1, 3.2], alpha=0.1)
+                                   x_labels=['Avg. Photostim Response (% dFF)'], y_labels=['Variance (dFF^2)'],
+                                   ax_titles=['Targets: avg. response vs. variability - interictal'],
+                                   facecolors=['forestgreen'], lw=1.3, figsize=(4, 4), xlim=[-30, 130],
+                                   ylim=[-0.1, 3.2], alpha=0.1)
 
-
-
-
-        pplot.make_general_scatter([pj.flattenOnce(results.meanresponses_vs_variance['interictal - mean responses']), pj.flattenOnce(results.meanresponses_vs_variance['baseline - mean responses'])],
-                                   [pj.flattenOnce(results.meanresponses_vs_variance['interictal - var responses']), pj.flattenOnce(results.meanresponses_vs_variance['baseline - var responses'])],
-                                   x_labels=['Avg. Photostim Response (% dFF)'], y_labels = ['Variance (% dFF)^2'], ax_titles=['Targets: avg. response vs. variability - interictal'],
-                                   facecolors=['forestgreen', 'royalblue'], lw=1.3, figsize=(4,4), xlim=[-30, 130], ylim=[-10, 32000], alpha=0.1)
-
-
-
+        pplot.make_general_scatter([pj.flattenOnce(results.meanresponses_vs_variance['interictal - mean responses']),
+                                    pj.flattenOnce(results.meanresponses_vs_variance['baseline - mean responses'])],
+                                   [pj.flattenOnce(results.meanresponses_vs_variance['interictal - var responses']),
+                                    pj.flattenOnce(results.meanresponses_vs_variance['baseline - var responses'])],
+                                   x_labels=['Avg. Photostim Response (% dFF)'], y_labels=['Variance (% dFF)^2'],
+                                   ax_titles=['Targets: avg. response vs. variability - interictal'],
+                                   facecolors=['forestgreen', 'royalblue'], lw=1.3, figsize=(4, 4), xlim=[-30, 130],
+                                   ylim=[-10, 32000], alpha=0.1)
 
         # pplot.make_general_scatter([pj.flattenOnce(results.meanresponses_vs_variance['ictal - mean responses'])],
         #                            [pj.flattenOnce(results.meanresponses_vs_variance['ictal - var responses'])],
@@ -921,7 +922,7 @@ class PhotostimAnalysisSlmTargets(Quantification):
 
     # 3) interictal responses split by precital, very interictal, post ictal
     @staticmethod
-    def collect__interictal_responses_split(rerun=0, RESULTS = results):
+    def collect__interictal_responses_split(rerun=0, RESULTS=results):
         data_label = 'z scored to baseline'
 
         @Utils.run_for_loop_across_exps(run_post4ap_trials=True, allow_rerun=1)
@@ -1008,7 +1009,194 @@ class PhotostimAnalysisSlmTargets(Quantification):
             RESULTS.interictal_responses['very_interictal_responses'] = collect_avg_photostim_response_very_interictal()
             RESULTS.save_results()
 
+    # 4)
+    @staticmethod
+    def plot_photostim_traces_stacked_LFP_pre4ap_post4ap(cells_to_plot='median20', y_spacing_factor=3, start_crop=None,
+                                                         fig=None, ax_cat=None, **kwargs):
+        """
+        Plotting SLM targets traces with photostimulation timing and cell traces stacked over eachother.
 
+        :param expobj:
+        :param spacing: a multiplication factor that will be used when setting the spacing between each trace in the final plot
+        :param title:
+        :param y_min:
+        :param y_max:
+        :param x_label:
+        :param save_fig:
+        :output: matplotlib plot
+        """
+
+        @plot_piping_decorator(figsize=(10, 6))
+        def plot_photostim_traces_stacked(array, expobj: alloptical, **kwargs):
+            ax = kwargs['ax']
+
+            x_range = np.linspace(0, int(array.shape[1] // expobj.fps), array.shape[1])
+            for i in range(array.shape[0]):
+                if 'linewidth' in kwargs.keys():
+                    linewidth = kwargs['linewidth']
+                else:
+                    linewidth = 1
+                ax.plot(x_range, array[i] - np.mean(array[i][-100:]) + i * 40 * y_spacing_factor, linewidth=linewidth)
+                # ax.axhline(i * 40 * y_spacing_factor, color='hotpink', ls='--')
+
+            for j in (np.asarray(expobj.stim_start_frames) / expobj.fps):
+                if j <= array.shape[1]:
+                    ax.axvline(x=j, c='gray', alpha=0.3, lw=0.5)
+
+            ax.set_xlabel('Time (secs)')
+            ax.spines['top'].set_visible(False)
+            ax.spines['right'].set_visible(False)
+            ax.spines['left'].set_visible(False)
+            # ax.spines['bottom'].set_visible(False)
+
+            ax.margins(0)
+            # change x axis ticks to seconds
+            labels = list(range(0, int(expobj.n_frames // expobj.fps), 30))
+            ax.set_xticks(ticks=labels)
+            ax.set_yticks([])
+
+        # PRE4AP PLOTTING ##################################################################################################################################################################################################################
+        expobj: alloptical = import_expobj(exp_prep='RL109 t-013')
+        start_crop = 10  # int(expobj.stim_start_frames[0] / expobj.fps) - 10
+        end_crop = start_crop + 200
+
+        ax = ax_cat[0][0]
+        ax.axis('off')
+        # ax.spines['left'].set_visible(False)
+        # ax.spines['bottom'].set_visible(False)
+        # ax.set_yticks([])
+        # ax.set_xticks([])
+        # ax.set_xticklabels([])
+        fig, ax = plotLfpSignal(expobj=expobj, figsize=(10, 3), xlims=[start_crop, end_crop], ylims=[-5, 5],
+                                # save_path=f'{SAVE_FIG}/alloptical_Ca_traces_pre4ap_LFP.png',
+                                linewidth=0.1, color='black', title=None,
+                                stim_span_color='lightgray', show=False, ax=ax, fig=fig)
+        ax.axis('off')
+        # ax.spines['left'].set_visible(False)
+        # ax.spines['bottom'].set_visible(False)
+        # ax.set_yticks([])
+        # ax.set_xticks([])
+        # ax.set_xticklabels([])
+        # fig.show()
+        # Utils.save_figure(fig, f'{SAVE_FIG}/alloptical_Ca_traces_pre4ap_LFP.png')
+
+        responses = np.mean(expobj.PhotostimAnalysisSlmTargets.adata.X, axis=1)
+        if cells_to_plot == 'median20':
+            slice_ = np.s_[len(responses) // 2 - 10: len(responses) // 2 + 10]
+            cells_to_plot = tuple(np.argsort(responses)[slice_])
+        elif cells_to_plot == 'all':
+            slice_ = np.s_[0: len(responses) // 2 + 7]
+            cells_to_plot = tuple(np.argsort(responses)[slice_])
+        elif type(cells_to_plot) == tuple:
+            pass
+        else:
+            raise ValueError(
+                'unknown cells to plot option given. provide cells to plot as type:tuple, or `median14` or `all`')
+
+        # fig, ax = plt.subplots(figsize = (10, 6))
+
+        expobj.PhotostimAnalysisSlmTargets.dFF = expobj.dFF_SLMTargets if not hasattr(
+            expobj.PhotostimAnalysisSlmTargets, 'dFF') else expobj.PhotostimAnalysisSlmTargets.dFF
+
+        array = expobj.PhotostimAnalysisSlmTargets.dFF[cells_to_plot, :]
+        # make rolling average for these plots
+        smooth = 0.5  # seconds
+        w = int(smooth * expobj.fps)
+        array = np.asarray([pj.smoothen_signal(trace, w) for trace in array])
+        # array = np.asarray([(np.convolve(trace, np.ones(w), 'valid') / w) for trace in array])
+
+        len_ = len(array)
+
+        fig, ax = plot_photostim_traces_stacked(array, expobj, show=False, ax=ax_cat[1][0], fig=fig, linewidth=0.3)
+
+        # # plot LFP signal
+        # ax2 = ax.twinx()
+        # signal = expobj.lfp_signal[expobj.frame_start_time_actual: expobj.frame_end_time_actual]
+
+        # x_range = np.linspace(0, (expobj.frame_end_time_actual - expobj.frame_start_time_actual) / expobj.paq_rate, len(signal))
+        # ax2.plot(x_range, signal, color='black', lw=0.4)
+        # ax2.set_yticks([])
+        # ax2.spines['left'].set_visible(False)
+        # ax2.set_ylim([np.min(signal) - 40, np.max(signal)])
+
+        ax.spines['left'].set_visible(False)
+        ax.set_xlim([start_crop, end_crop]) if start_crop is not None else None
+        # y_max = np.mean(array[-1] - array[-1] - np.mean(array[-1][-100:]) + -1 * 40 * y_spacing_factor) + 3 * np.mean(array[-1])
+        ymax = ax.get_ylim()[1] + 400
+        ax.set_ylim([-100, ymax])
+        ylim_pre4ap = ax.get_ylim()
+
+        ax.set_xticklabels([tick - start_crop for tick in ax.get_xticks()])
+
+        fig.tight_layout(pad=0.4)
+        # fig.show()
+        # fig.savefig(f'{SAVE_FIG}/alloptical_Ca_traces_pre4ap.png')
+        # fig.savefig(f'{SAVE_FIG}/alloptical_Ca_traces_pre4ap.svg')
+
+        # plotLfpSignal(expobj=expobj, figsize=(10, 3), xlims=[start_crop * expobj.paq_rate, start_crop* expobj.paq_rate + 200 * expobj.paq_rate], ylims=[-6, 5], save_path=f'{SAVE_FIG}/alloptical_Ca_traces_pre4ap_LFP.png')
+
+        # POST 4AP PLOTTING ######################################################################################################################################################
+        expobj: Post4ap = import_expobj(
+            exp_prep=AllOpticalExpsToAnalyze.find_matched_trial(pre4ap_trial_name=expobj.t_series_name))
+        # expobj: Post4ap = import_expobj(exp_prep='RL108 t-011')
+        # expobj: Post4ap = import_expobj(exp_prep='RL109 t-018')
+
+        expobj.PhotostimAnalysisSlmTargets.dFF = expobj.dFF_SLMTargets if not hasattr(
+            expobj.PhotostimAnalysisSlmTargets, 'dFF') else expobj.PhotostimAnalysisSlmTargets.dFF
+        array = expobj.PhotostimAnalysisSlmTargets.dFF[cells_to_plot, :]
+        # array = expobj.dFF_SLMTargets
+        # make rolling average for these plots
+        smooth = 0.5  # seconds
+        w = int(smooth * expobj.fps)
+        array = np.asarray([pj.smoothen_signal(trace, w) for trace in array])
+        # array = np.asarray([(np.convolve(trace, np.ones(w), 'valid') / w) for trace in array])
+
+        fig, ax = plot_photostim_traces_stacked(array, expobj, show=False, ax=ax_cat[1][1], fig=fig, linewidth=0.1)
+
+        # # plot LFP signal
+        # ax2 = ax.twinx()
+        # signal = expobj.lfp_signal[expobj.frame_start_time_actual: expobj.frame_end_time_actual]
+        #
+        # x_range = np.linspace(0, (expobj.frame_end_time_actual - expobj.frame_start_time_actual) / expobj.paq_rate, len(signal))
+        # # signal_shifted = signal + ax.get_ylim()[1] - np.max(signal)
+        # ax2.plot(x_range, signal, color='black', lw=0.4)
+        # ax2.set_yticks([])
+        # ax2.spines['left'].set_visible(False)
+        # ax2.set_ylim([np.min(signal) - 40, np.max(signal)])
+
+        start_crop = 190
+        end_crop = start_crop + 200
+        ax.set_xlim([start_crop, start_crop + 200]) if start_crop is not None else None
+        # ax.set_xlim([0, expobj.n_frames//expobj.fps])
+        # ax.set_xlim([190, 390])
+
+        # y_max = np.mean(array[-1] - array[-1] - np.mean(array[-1][-100:]) + -1 * 40 * y_spacing_factor) + 3 * np.mean(array[-1])
+        ymax = ax.get_ylim()[1]
+        # ax.set_ylim([-100, ymax])
+        ax.set_ylim(ylim_pre4ap)
+        ax.set_xticklabels([tick - start_crop for tick in ax.get_xticks()])
+
+        # fig.tight_layout(pad=0.4)
+        # fig.savefig(f'{SAVE_FIG}/alloptical_Ca_traces_post4ap_pre4apaligned.png')
+        # fig.savefig(f'{SAVE_FIG}/alloptical_Ca_traces_post4ap_pre4apaligned.svg')
+
+        ax = ax_cat[0][1]
+
+        plotLfpSignal(expobj=expobj, figsize=(10, 3), xlims=[start_crop, end_crop], ylims=[-5 + 0.75, 5 + 0.75],
+                      title=None,
+                      # save_path=f'{SAVE_FIG}/alloptical_Ca_traces_post4ap_LFP.png',
+                      color='black', stim_span_color='lightgray', linewidth=0.3, ax=ax, fig=fig, show=False)
+
+        # add scalebar
+        from _utils_.rfv_funcs import add_scale_bar
+        add_scale_bar(ax=ax_cat[0][1], loc=(end_crop + 7, -5 + 0.75), length=(1, 10), bartype='L',
+                      text=('1mV', '10secs'), text_offset=(6, 0.9), fs=5, fig=fig)
+
+        ax.axis('off')
+
+        fig.show()
+
+        return cells_to_plot
 
 
 # 1.1) plot peri-photostim avg traces across all targets for all experiment trials
@@ -1018,7 +1206,8 @@ def plot_peristim_avg_photostims():
     for trial in pj.flattenOnce(AllOpticalExpsToAnalyze.pre_4ap_trials):
         if trial in PhotostimResponsesQuantificationSLMtargets.TEST_TRIALS:
             plot = True
-        else: plot = False
+        else:
+            plot = False
         if plot:
             from _utils_.io import import_expobj
             expobj: alloptical = import_expobj(exp_prep=trial)
@@ -1028,9 +1217,9 @@ def plot_peristim_avg_photostims():
             # aoplot.plot_periphotostim_avg2(dataset=trace_snippets_avg, fps=expobj.fps, pre_stim_sec=expobj.PhotostimAnalysisSlmTargets._pre_stim_sec, title=f'{expobj.t_series_name}')
             from _utils_.alloptical_plotting import plot_periphotostim_avg
             plot_periphotostim_avg(arr=trace_snippets_avg, pre_stim_sec=1.0, post_stim_sec=3.0,
-                                          title=f'{expobj.t_series_name} - pre4ap', expobj=expobj,
-                                          x_label='Time (secs)', y_label='dFF response', fig=fig, ax=axs[0],
-                                          show=False)
+                                   title=f'{expobj.t_series_name} - pre4ap', expobj=expobj,
+                                   x_label='Time (secs)', y_label='dFF response', fig=fig, ax=axs[0],
+                                   show=False)
 
             post4ap_exp = AllOpticalExpsToAnalyze.find_matched_trial(pre4ap_trial_name=expobj.t_series_name)
             print(post4ap_exp)
@@ -1038,9 +1227,10 @@ def plot_peristim_avg_photostims():
             trace_snippets_avg = np.mean(expobj.SLMTargets_tracedFF_stims_dff, axis=1)
             print(trace_snippets_avg.shape[1], '\n')
             plot_periphotostim_avg(arr=trace_snippets_avg, pre_stim_sec=1.0, post_stim_sec=3.0,
-                                          title=f'{expobj.t_series_name} - post4ap', expobj=expobj,
-                                          x_label='Time (secs)', y_label='dFF response', fig=fig, ax=axs[1])
+                                   title=f'{expobj.t_series_name} - post4ap', expobj=expobj,
+                                   x_label='Time (secs)', y_label='dFF response', fig=fig, ax=axs[1])
             fig.show()
+
 
 # 1.1.1) plot peri-fakestim avg traces across all targets for all experiment trials
 def plot_peristim_avg_fakestims():
@@ -1061,9 +1251,9 @@ def plot_peristim_avg_fakestims():
             # aoplot.plot_periphotostim_avg2(dataset=trace_snippets_avg, fps=expobj.fps, pre_stim_sec=expobj.PhotostimAnalysisSlmTargets._pre_stim_sec, title=f'{expobj.t_series_name}')
             from _utils_.alloptical_plotting import plot_periphotostim_avg
             plot_periphotostim_avg(arr=trace_snippets_avg, pre_stim_sec=1.0, post_stim_sec=3.0,
-                                          title=f'{expobj.t_series_name} - pre4ap', expobj=expobj,
-                                          x_label='Time (secs)', y_label='dFF response', fig=fig, ax=axs[0],
-                                          show=False)
+                                   title=f'{expobj.t_series_name} - pre4ap', expobj=expobj,
+                                   x_label='Time (secs)', y_label='dFF response', fig=fig, ax=axs[0],
+                                   show=False)
 
             fig.show()
 
@@ -1076,23 +1266,22 @@ def plot_peristim_avg_fakestims():
         if plot:
             from _utils_.io import import_expobj
             expobj: Post4ap = import_expobj(exp_prep=trial)
-            trace_snippets_avg = np.mean(expobj.fake_SLMTargets_tracedFF_stims_dff[:, expobj.fake_stim_idx_outsz], axis=1)
+            trace_snippets_avg = np.mean(expobj.fake_SLMTargets_tracedFF_stims_dff[:, expobj.fake_stim_idx_outsz],
+                                         axis=1)
             print(trace_snippets_avg.shape[1])
             fig, axs = plt.subplots(nrows=2, ncols=1, figsize=[4, 8])
             # aoplot.plot_periphotostim_avg2(dataset=trace_snippets_avg, fps=expobj.fps, pre_stim_sec=expobj.PhotostimAnalysisSlmTargets._pre_stim_sec, title=f'{expobj.t_series_name}')
             from _utils_.alloptical_plotting import plot_periphotostim_avg
             plot_periphotostim_avg(arr=trace_snippets_avg, pre_stim_sec=1.0, post_stim_sec=3.0,
-                                          title=f'{expobj.t_series_name} - interictal', expobj=expobj,
-                                          x_label='Time (secs)', y_label='dFF response', fig=fig, ax=axs[0],
-                                          show=False)
+                                   title=f'{expobj.t_series_name} - interictal', expobj=expobj,
+                                   x_label='Time (secs)', y_label='dFF response', fig=fig, ax=axs[0],
+                                   show=False)
 
             fig.show()
 
 
-
 # 1.2) plot photostim avg of all targets from each experiment
 def plot__avg_photostim_dff_allexps():
-
     fig, axs = plt.subplots(nrows=2, ncols=1, figsize=[4, 8])
     axs[0].set_ylim([-15, 50])
     axs[1].set_ylim([-15, 50])
@@ -1106,7 +1295,6 @@ def plot__avg_photostim_dff_allexps():
     axs[0].set_title('baseline')
     axs[1].set_title('interictal')
 
-
     for exp in AllOpticalExpsToAnalyze.exp_ids:
         for trial in pj.flattenOnce(AllOpticalExpsToAnalyze.pre_4ap_trials):
             if exp in trial:
@@ -1115,19 +1303,25 @@ def plot__avg_photostim_dff_allexps():
                 trace_snippets_avg = np.mean(expobj.SLMTargets_tracedFF_stims_dffAvg, axis=0)
 
                 pre_stim_slice = np.s_[0: expobj.PhotostimAnalysisSlmTargets.pre_stim_fr]
-                stim_dur_slice = np.s_[expobj.PhotostimAnalysisSlmTargets.pre_stim_fr: expobj.PhotostimAnalysisSlmTargets.pre_stim_fr + int(0.250 * expobj.fps)]
-                post_stim_slice = np.s_[expobj.PhotostimAnalysisSlmTargets.pre_stim_fr + expobj.stim_duration_frames: expobj.PhotostimAnalysisSlmTargets.pre_stim_fr + expobj.stim_duration_frames + expobj.PhotostimAnalysisSlmTargets.post_stim_fr]
+                stim_dur_slice = np.s_[
+                                 expobj.PhotostimAnalysisSlmTargets.pre_stim_fr: expobj.PhotostimAnalysisSlmTargets.pre_stim_fr + int(
+                                     0.250 * expobj.fps)]
+                post_stim_slice = np.s_[
+                                  expobj.PhotostimAnalysisSlmTargets.pre_stim_fr + expobj.stim_duration_frames: expobj.PhotostimAnalysisSlmTargets.pre_stim_fr + expobj.stim_duration_frames + expobj.PhotostimAnalysisSlmTargets.post_stim_fr]
 
-                dff_trace = np.concatenate((trace_snippets_avg[pre_stim_slice], np.array([1000] * int(0.250 * expobj.fps)), trace_snippets_avg[post_stim_slice]))
+                dff_trace = np.concatenate((trace_snippets_avg[pre_stim_slice],
+                                            np.array([1000] * int(0.250 * expobj.fps)),
+                                            trace_snippets_avg[post_stim_slice]))
 
-                pre_stim_x = np.linspace(-expobj.PhotostimAnalysisSlmTargets._pre_stim_sec, 0, int(expobj.PhotostimAnalysisSlmTargets._pre_stim_sec * expobj.fps))  # x scale, but in time domain (transformed from frames based on the provided fps)
+                pre_stim_x = np.linspace(-expobj.PhotostimAnalysisSlmTargets._pre_stim_sec, 0,
+                                         int(expobj.PhotostimAnalysisSlmTargets._pre_stim_sec * expobj.fps))  # x scale, but in time domain (transformed from frames based on the provided fps)
                 stim_dur_x = np.linspace(0, 0.250, int(0.250 * expobj.fps))
-                post_stim_x = np.linspace(0.250, 0.250 + expobj.PhotostimAnalysisSlmTargets._post_stim_sec, int(expobj.PhotostimAnalysisSlmTargets._post_stim_sec * expobj.fps))  # x scale, but in time domain (transformed from frames based on the provided fps)
+                post_stim_x = np.linspace(0.250, 0.250 + expobj.PhotostimAnalysisSlmTargets._post_stim_sec,
+                                          int(expobj.PhotostimAnalysisSlmTargets._post_stim_sec * expobj.fps))  # x scale, but in time domain (transformed from frames based on the provided fps)
 
                 x_scale = np.concatenate((pre_stim_x, stim_dur_x, post_stim_x))
                 assert len(x_scale) == len(dff_trace), 'x axis scale is too short or too long.'
                 axs[0].plot(x_scale, dff_trace, color='black')
-
 
                 # post4ap trial
                 post4ap_exp = AllOpticalExpsToAnalyze.find_matched_trial(pre4ap_trial_name=expobj.t_series_name)
@@ -1137,14 +1331,21 @@ def plot__avg_photostim_dff_allexps():
                 trace_snippets_avg = np.mean(expobj.SLMTargets_tracedFF_stims_dffAvg_outsz, axis=0)
 
                 pre_stim_slice = np.s_[0: expobj.PhotostimAnalysisSlmTargets.pre_stim_fr]
-                stim_dur_slice = np.s_[expobj.PhotostimAnalysisSlmTargets.pre_stim_fr: expobj.PhotostimAnalysisSlmTargets.pre_stim_fr + int(0.250 * expobj.fps)]
-                post_stim_slice = np.s_[expobj.PhotostimAnalysisSlmTargets.pre_stim_fr + expobj.stim_duration_frames: expobj.PhotostimAnalysisSlmTargets.pre_stim_fr + expobj.stim_duration_frames + expobj.PhotostimAnalysisSlmTargets.post_stim_fr]
+                stim_dur_slice = np.s_[
+                                 expobj.PhotostimAnalysisSlmTargets.pre_stim_fr: expobj.PhotostimAnalysisSlmTargets.pre_stim_fr + int(
+                                     0.250 * expobj.fps)]
+                post_stim_slice = np.s_[
+                                  expobj.PhotostimAnalysisSlmTargets.pre_stim_fr + expobj.stim_duration_frames: expobj.PhotostimAnalysisSlmTargets.pre_stim_fr + expobj.stim_duration_frames + expobj.PhotostimAnalysisSlmTargets.post_stim_fr]
 
-                dff_trace = np.concatenate((trace_snippets_avg[pre_stim_slice], np.array([1000] * int(0.250 * expobj.fps)), trace_snippets_avg[post_stim_slice]))
+                dff_trace = np.concatenate((trace_snippets_avg[pre_stim_slice],
+                                            np.array([1000] * int(0.250 * expobj.fps)),
+                                            trace_snippets_avg[post_stim_slice]))
 
-                pre_stim_x = np.linspace(-expobj.PhotostimAnalysisSlmTargets._pre_stim_sec, 0, int(expobj.PhotostimAnalysisSlmTargets._pre_stim_sec * expobj.fps))  # x scale, but in time domain (transformed from frames based on the provided fps)
+                pre_stim_x = np.linspace(-expobj.PhotostimAnalysisSlmTargets._pre_stim_sec, 0,
+                                         int(expobj.PhotostimAnalysisSlmTargets._pre_stim_sec * expobj.fps))  # x scale, but in time domain (transformed from frames based on the provided fps)
                 stim_dur_x = np.linspace(0, 0.250, int(0.250 * expobj.fps))
-                post_stim_x = np.linspace(0.250, 0.250 + expobj.PhotostimAnalysisSlmTargets._post_stim_sec, int(expobj.PhotostimAnalysisSlmTargets._post_stim_sec * expobj.fps))  # x scale, but in time domain (transformed from frames based on the provided fps)
+                post_stim_x = np.linspace(0.250, 0.250 + expobj.PhotostimAnalysisSlmTargets._post_stim_sec,
+                                          int(expobj.PhotostimAnalysisSlmTargets._post_stim_sec * expobj.fps))  # x scale, but in time domain (transformed from frames based on the provided fps)
 
                 x_scale = np.concatenate((pre_stim_x, stim_dur_x, post_stim_x))
                 assert len(x_scale) == len(dff_trace), 'x axis scale is too short or too long.'
@@ -1155,7 +1356,6 @@ def plot__avg_photostim_dff_allexps():
     save_path_full = f'{SAVE_FIG}/alloptical_avg_photoresponses_allexps.svg'
     os.makedirs(os.path.dirname(save_path_full), exist_ok=True)
     fig.savefig(save_path_full)
-
 
 
 if __name__ == '__main__':
@@ -1170,7 +1370,6 @@ if __name__ == '__main__':
     # main.correlation_matrix_responses()
     # main.pca_responses()
 
-
     main.collect_all_targets_all_exps()
     main.correlation_matrix_all_targets()
     main.pca_responses_all_targets()
@@ -1178,12 +1377,7 @@ if __name__ == '__main__':
     # main.plot__mean_response_vs_variability()
     # plot__avg_photostim_dff_allexps()
 
-
-
 # expobj = import_expobj(prep='RL108', trial='t-009')
 
 
-
 # %%
-
-
