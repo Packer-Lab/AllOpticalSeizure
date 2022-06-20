@@ -1,5 +1,7 @@
 import sys
 
+from funcsforprajay.plotting.plotting import plot_bar_with_points
+
 sys.path.extend(['/home/pshah/Documents/code/reproducible_figures-main'])
 from typing import Union, List, Dict
 
@@ -8,6 +10,7 @@ import numpy as np
 import os
 import pandas as pd
 from funcsforprajay.wrappers import plot_piping_decorator
+import funcsforprajay.plotting as pplot
 from matplotlib import pyplot as plt
 from scipy.stats import variation, mannwhitneyu, stats
 from sklearn.cluster import KMeans
@@ -338,116 +341,126 @@ class PhotostimAnalysisSlmTargets(Quantification):
         fig.show()
 
     @staticmethod
-    @Utils.run_for_loop_across_exps(run_trials=[
-        AllOpticalExpsToAnalyze.pre_4ap_trials[0][0],
-        AllOpticalExpsToAnalyze.post_4ap_trials[0][0]], allow_rerun=1)
-    def plot_variability_photostim_traces_by_targets(to_plot='dFF', **kwargs):
-        expobj: Union[alloptical, Post4ap] = kwargs['expobj']
+    def plot_variability_photostim_traces_by_targets(axs, fig):
 
-        if to_plot == 'delta dF':
-            responses = expobj.responses_SLMtargets_tracedFF
-            hits = expobj.hits_SLMtargets_tracedFF
-            trace_snippets = expobj.SLMTargets_tracedFF_stims_dff  # TODO confirm that the pre-stim period has mean of 0 for all these traces!
-            stimsuccessrates = expobj.StimSuccessRate_SLMtargets_tracedFF
-            y_label = 'delta dF'
-        elif to_plot == 'dFF':
+
+
+        total_plot = 10
+        ncols = total_plot
+        nrows = total_plot // ncols
+        if total_plot % ncols > 0 or total_plot % ncols == 0:
+            nrows += 1
+        fig, axs = fig, axs if 'fig' is not None or 'axs' is not None else plt.subplots(nrows=nrows, ncols=ncols,
+                                                                                        figsize=(ncols * 1.2, nrows * 1.75),
+                                                                                        constrained_layout=True, dpi=600)
+        # expobj: Union[alloptical, Post4ap] = kwargs['expobj']
+        for row, exp in enumerate(['RL108 t-009', 'RL108 t-013']):
+            expobj: Union[alloptical, Post4ap] = import_expobj(exp_prep=exp)
+
+            # if to_plot == 'delta dF':
+            #     responses = expobj.responses_SLMtargets_tracedFF
+            #     hits = expobj.hits_SLMtargets_tracedFF
+            #     trace_snippets = expobj.SLMTargets_tracedFF_stims_dff  # TODO confirm that the pre-stim period has mean of 0 for all these traces!
+            #     stimsuccessrates = expobj.StimSuccessRate_SLMtargets_tracedFF
+            #     y_label = 'delta dF'
+            # elif to_plot == 'dFF':
             responses = expobj.PhotostimAnalysisSlmTargets.adata.X
             hits = expobj.hits_SLMtargets
             trace_snippets = expobj.SLMTargets_stims_dff
             stimsuccessrates = expobj.StimSuccessRate_SLMtargets
             y_label = '% dFF'
-        else:
-            raise ValueError('must provide to_plot as either `dFF` or `delta dF`')
 
-        # choose 10 random cells from each dataset
-        choice = np.random.choice(a=np.arange(0, trace_snippets.shape[0]), size=10, replace=False)
+            # choose 10 random cells from each dataset
+            choice = np.random.choice(a=np.arange(0, trace_snippets.shape[0]), size=total_plot, replace=False)
 
-        total_plot = len(choice)
-        # total_plot = expobj.n_targets_total
+            axs[row, 0].set_ylabel(y_label)
 
-        # nrows = expobj.n_targets_total // 4
-        ncols = 10
-        nrows = total_plot // ncols
-        if total_plot % ncols > 0 or total_plot % ncols == 0:
-            nrows += 1
-        fig, axs = plt.subplots(nrows=nrows, ncols=ncols, figsize=(ncols * 1.2, nrows * 1.75),
-                                constrained_layout=True, dpi=600)
-        counter = 0
-        axs[0, 0].set_xlabel('Time (secs)')
-        axs[0, 0].set_ylabel(y_label)
+            # for cell in range(trace_snippets.shape[0]):  # for plotting all cells
+            for i, cell in enumerate(choice):  # for plotting only randomly chosen cells
+                a = i
+                b = row
+                alpha = 1 * (stimsuccessrates[cell] / 100)
+                responses_ = responses[cell]
+
+                cv = np.std(responses_, ddof=1) / np.mean(responses_)
+
+                print(f'plotting target #{i}, CV: {cv:.3f}\n')
+
+                x_range = np.linspace(0, len(trace_snippets[cell][0]) / expobj.fps, len(trace_snippets[cell][0]))
+
+                # ax.scatter(np.random.choice(x_range[20:-20], size=len(responses_)), responses_, s=20, zorder=1, alpha=0.3)
+                x = simple_beeswarm(responses_)
+                # transform x
+                x_new = [(i + 1) / 2 * (x_range[-1]) for i in x]
+                # axs[a,b].scatter(x_new, responses_, s=10, alpha=0.4, color='yellowgreen', zorder=1)
+                sc = axs[a, b].scatter(x_new, responses_, s=10, alpha=0.4, c=[cv] * len(responses_), zorder=1,
+                                       cmap='viridis',
+                                       vmin=0, vmax=3)
+                axs[a, b].set_xlim([-1.5, x_range[-1] + 1.5])
+                # cbar = plt.colorbar(sc)
+                # cbar.remove()
+
+                ax = axs[a, b].twiny()
+                avg = np.nanmean(trace_snippets[cell], axis=0)
+                ax.plot(x_range[:-4], pj.smoothen_signal(avg, 5), color='black', linewidth=2, zorder=5)
+
+                ax.set_ylim([-50, 200])
+                # axs[a, b].set_ylim([-0.2 * 100, 2.0 * 100])
+                # axs[a, b].text(0.98, 0.97, f"{cv:.1f}",
+                #                verticalalignment='top', horizontalalignment='right',
+                #                transform=axs[a, b].transAxes, fontweight='bold', fontsize=8,
+                #                color='black')
+                axs[a, b].margins(0)
+                axs[a, b].spines['top'].set_visible(False)
+                axs[a, b].spines['right'].set_visible(False)
+                axs[a, b].spines['bottom'].set_visible(False)
+                axs[a, b].spines['left'].set_visible(False)
+                axs[a, b].set_xticks([])
+                ax.set_xticks([])
+                ax.spines['top'].set_visible(False)
+                ax.spines['right'].set_visible(False)
+                ax.spines['bottom'].set_visible(False)
+                ax.spines['left'].set_visible(False)
+                # axs[a, b].axvspan(expobj.pre_stim / expobj.fps, (expobj.pre_stim + expobj.stim_duration_frames) / expobj.fps, color='mistyrose',
+                #                   zorder=0)
+
+        # fig.suptitle(f"{expobj.metainfo['animal prep.']} {expobj.metainfo['trial']} - {len(trace_snippets)} targets",
+        #              y=0.995)
+        # fig.tight_layout(pad=0.2)
+        # fig.show()
+        # save_path_full = f'{SAVE_FIG}/photostim-variation-individual-targets-dFF-{expobj.t_series_name}-{expobj.exptype}.png'
+        # os.makedirs(os.path.dirname(save_path_full), exist_ok=True)
+        # fig.savefig(save_path_full)
+
+
+        from matplotlib.transforms import Bbox
+        bbox = np.array(axs[-1, -1].get_position())
+        bbox = Bbox.from_extents(bbox[0, 0], bbox[0, 1] - 0.02, bbox[1, 0], bbox[0, 1] + 0.00)
+        # bbox = Bbox.from_extents(0.87, 0.75, 0.95, 0.78)
+        # ax2 = fig.add_subplot(position = bbox)
+        ax_cmap = fig.add_subplot()
+        ax_cmap.set_position(pos=bbox)
+        # fig.show()
 
         import matplotlib as mpl
         cmap = plt.cm.get_cmap('viridis')
-        # for cell in range(trace_snippets.shape[0]):  # for plotting all cells
-        for cell in choice:  # for plotting only randomly chosen cells
-            a = counter // ncols
-            b = counter % ncols
-            alpha = 1 * (stimsuccessrates[cell] / 100)
-            responses_ = responses[cell]
-
-            cv = np.std(responses_, ddof=1) / np.mean(responses_)
-
-            print(f'plotting target #{counter}, CV: {cv:.3f}\n')
-
-            x_range = np.linspace(0, len(trace_snippets[cell][0]) / expobj.fps, len(trace_snippets[cell][0]))
-
-            # ax.scatter(np.random.choice(x_range[20:-20], size=len(responses_)), responses_, s=20, zorder=1, alpha=0.3)
-            x = simple_beeswarm(responses_)
-            # transform x
-            x_new = [(i + 1) / 2 * (x_range[-1]) for i in x]
-            # axs[a,b].scatter(x_new, responses_, s=10, alpha=0.4, color='yellowgreen', zorder=1)
-            sc = axs[a, b].scatter(x_new, responses_, s=10, alpha=0.4, c=[cv] * len(responses_), zorder=1,
-                                   cmap='viridis',
-                                   vmin=0, vmax=3)
-            axs[a, b].set_xlim([-1.5, x_range[-1] + 1.5])
-            cbar = plt.colorbar(sc)
-            cbar.remove()
-
-            ax = axs[a, b].twiny()
-            avg = np.nanmean(trace_snippets[cell], axis=0)
-            ax.plot(x_range[:-4], pj.smoothen_signal(avg, 5), color='black', linewidth=2, zorder=5)
-
-            ax.set_ylim([-50, 200])
-            # axs[a, b].set_ylim([-0.2 * 100, 2.0 * 100])
-            # axs[a, b].text(0.98, 0.97, f"{cv:.1f}",
-            #                verticalalignment='top', horizontalalignment='right',
-            #                transform=axs[a, b].transAxes, fontweight='bold', fontsize=8,
-            #                color='black')
-            axs[a, b].margins(0)
-            axs[a, b].spines['top'].set_visible(False)
-            axs[a, b].spines['right'].set_visible(False)
-            axs[a, b].spines['bottom'].set_visible(False)
-            axs[a, b].spines['left'].set_visible(False)
-            axs[a, b].set_xticks([])
-            ax.set_xticks([])
-            ax.spines['top'].set_visible(False)
-            ax.spines['right'].set_visible(False)
-            ax.spines['bottom'].set_visible(False)
-            ax.spines['left'].set_visible(False)
-            # axs[a, b].axvspan(expobj.pre_stim / expobj.fps, (expobj.pre_stim + expobj.stim_duration_frames) / expobj.fps, color='mistyrose',
-            #                   zorder=0)
-            counter += 1
-        fig.suptitle(f"{expobj.metainfo['animal prep.']} {expobj.metainfo['trial']} - {len(trace_snippets)} targets",
-                     y=0.995)
-        fig.tight_layout(pad=0.2)
-        fig.show()
-        save_path_full = f'{SAVE_FIG}/photostim-variation-individual-targets-dFF-{expobj.t_series_name}-{expobj.exptype}.png'
-        os.makedirs(os.path.dirname(save_path_full), exist_ok=True)
-        fig.savefig(save_path_full)
-
-        cmap = plt.cm.get_cmap(cmap)
+        # cmap = plt.cm.get_cmap(cmap)
         colors = cmap(np.arange(cmap.N))
-        fig, ax = plt.subplots(figsize=(6, 1), dpi=600)
-        ax.imshow([colors], extent=[0, 10, 0, 1])
-        fig.tight_layout(pad=0.4)
-        fig.show()
-        save_path_full = f'{SAVE_FIG}/photostim-variation-individual-targets-dFF-colorbar.png'
-        os.makedirs(os.path.dirname(save_path_full), exist_ok=True)
-        fig.savefig(save_path_full)
+        # fig, ax = plt.subplots(figsize=(6, 1), dpi=600)
+        ax_cmap.imshow([colors], extent=[0, 10, 0, 1])
+        ax_cmap.get_position()
+        ax_cmap.axis('off')
+        # fig.tight_layout(pad=0.4)
+        # fig.show()
+
+        # save_path_full = f'{SAVE_FIG}/photostim-variation-individual-targets-dFF-colorbar.png'
+        # os.makedirs(os.path.dirname(save_path_full), exist_ok=True)
+        # fig.savefig(save_path_full)
 
     # 8) correlation matrix of photostimulation targets
     @staticmethod
-    def correlation_matrix_all_targets():
+    def correlation_matrix_all_targets(fig, axs):
+        # assert axs.shape == (2,2), 'incorrect shape of axs.'
         results = PhotostimResponsesSLMtargetsResults.load()
 
         # BASELINE
@@ -455,11 +468,15 @@ class PhotostimAnalysisSlmTargets(Quantification):
         z_scored_responses = stats.zscore(responses, axis=1)  # z scoring of targets responses to their own distribution
 
         # correlation of targets
-        fig, ax = plt.subplots(figsize=(3, 3), dpi=400)
+        # fig, ax = plt.subplots(figsize=(3, 3), dpi=400)
+        ax = axs[0][0]
+        ax.set_xticks([])
+        ax.set_yticks([])
+        # print(ax.get_position())
         targets_corr_mat = np.corrcoef(z_scored_responses)
         mesh = ax.imshow(targets_corr_mat, cmap='bwr')
         mesh.set_clim(-1, 1)
-        cbar = fig.colorbar(mesh, boundaries=np.linspace(-0.5, 0.5, 1000), ticks=[-0.5, 0, 0.5], fraction=0.045)
+        # cbar = fig.colorbar(mesh, boundaries=np.linspace(-0.5, 0.5, 1000), ticks=[-0.5, 0, 0.5], fraction=0.045)
 
         # add lines for exps:
         colors = pj.make_random_color_array(len(np.unique(results.baseline_adata.obs['exp'])))
@@ -467,31 +484,37 @@ class PhotostimAnalysisSlmTargets(Quantification):
             sameexp = np.where(results.baseline_adata.obs['exp'] == exp)[0]
             ax.plot(sameexp, [-10] * len(sameexp), lw=2, color=colors[i], solid_capstyle='projecting')
             # plt.plot(sameexp, [-10] * len(sameexp), lw=2, color = colors[i], solid_capstyle = 'projecting')
-        # plt.show()
+        ax.axis('off')
+        # print(f"{ax.get_position()}\n")
 
-        ax.spines['bottom'].set_visible(False)
-        ax.spines['right'].set_visible(False)
-        ax.spines['left'].set_visible(False)
-        ax.spines['top'].set_visible(False)
-        fig.suptitle(f'baseline - correlation across - targets', wrap=True)
-        fig.tight_layout(pad=0.5)
-        fig.show()
-        save_path_full = f'{SAVE_FIG}/correlation_matrix_all_targets_all_exps_baseline.png'
-        os.makedirs(os.path.dirname(save_path_full), exist_ok=True)
-        fig.savefig(save_path_full)
+        # fig.suptitle(f'baseline - correlation across - targets', wrap=True)
+        # ax.set_title(f'baseline - correlation across - targets', wrap=True)
+        # fig.tight_layout(pad=0.5)
+        # fig.show()
+        # save_path_full = f'{SAVE_FIG}/correlation_matrix_all_targets_all_exps_baseline.png'
+        # os.makedirs(os.path.dirname(save_path_full), exist_ok=True)
+        # fig.savefig(save_path_full)
 
         # correlation of stims
-        fig, ax = plt.subplots(figsize=(3, 3), dpi=400)
+        # fig, ax = plt.subplots(figsize=(3, 3), dpi=400)
+        ax = axs[1][0]
+        ax.set_xticks([])
+        ax.set_yticks([])
+        # print(ax.get_position())
         stim_corr_mat = np.corrcoef(z_scored_responses.T)
         mesh = ax.imshow(stim_corr_mat, cmap='bwr')
         mesh.set_clim(-1, 1)
-        cbar = fig.colorbar(mesh, boundaries=np.linspace(-0.5, 0.5, 1000), ticks=[-0.5, 0, 0.5], fraction=0.045)
-        fig.suptitle(f'baseline - correlation across - stims', wrap=True)
-        fig.tight_layout(pad=0.5)
-        fig.show()
-        save_path_full = f'{SAVE_FIG}/correlation_matrix_all_stims_all_exps_baseline.png'
-        os.makedirs(os.path.dirname(save_path_full), exist_ok=True)
-        fig.savefig(save_path_full)
+        ax.axis('off')
+        # print(f"{ax.get_position()}\n")
+
+        # cbar = fig.colorbar(mesh, boundaries=np.linspace(-0.5, 0.5, 1000), ticks=[-0.5, 0, 0.5], fraction=0.045)
+        # fig.suptitle(f'baseline - correlation across - stims', wrap=True)
+        # ax.set_title(f'baseline - correlation across - stims', wrap=True)
+        # fig.tight_layout(pad=0.5)
+        # fig.show()
+        # save_path_full = f'{SAVE_FIG}/correlation_matrix_all_stims_all_exps_baseline.png'
+        # os.makedirs(os.path.dirname(save_path_full), exist_ok=True)
+        # fig.savefig(save_path_full)
 
         # INTERICTAL
         z_scored_responses = results.interictal_adata.X
@@ -499,41 +522,194 @@ class PhotostimAnalysisSlmTargets(Quantification):
         # z_scored_responses = stats.zscore(responses, axis=1)  # z scoring of targets responses to their own distribution
 
         # correlation of targets
-        fig, ax = plt.subplots(figsize=(3, 3), dpi=400)
+        # fig, ax = plt.subplots(figsize=(3, 3), dpi=400)
+        ax = axs[0][1]
+        ax.set_xticks([])
+        ax.set_yticks([])
+        # print(ax.get_position())
         targets_corr_mat = np.corrcoef(z_scored_responses)
         # targets_corr_mat = z_scored_responses.T.corr()
         mesh = ax.imshow(targets_corr_mat, cmap='bwr')
         mesh.set_clim(-1, 1)
-        cbar = fig.colorbar(mesh, boundaries=np.linspace(-0.5, 0.5, 1000), ticks=[-0.5, 0, 0.5], fraction=0.045)
+        # cbar = fig.colorbar(mesh, boundaries=np.linspace(-0.5, 0.5, 1000), ticks=[-0.5, 0, 0.5], fraction=0.045)
 
         # add lines for exps:
         for i, exp in enumerate(np.unique(results.baseline_adata.obs['exp'])):
             sameexp = np.where(results.baseline_adata.obs['exp'] == exp)[0]
             ax.plot(sameexp, [-10] * len(sameexp), lw=2, color=colors[i], solid_capstyle='projecting')
-        ax.spines['bottom'].set_visible(False)
-        ax.spines['right'].set_visible(False)
-        ax.spines['left'].set_visible(False)
-        ax.spines['top'].set_visible(False)
+        ax.axis('off')
+        # print(f"{ax.get_position()}\n")
 
-        fig.suptitle(f'interictal - correlation across - targets', wrap=True)
-        fig.tight_layout(pad=0.5)
-        fig.show()
-        save_path_full = f'{SAVE_FIG}/correlation_matrix_all_targets_all_exps_interictal.png'
-        os.makedirs(os.path.dirname(save_path_full), exist_ok=True)
-        fig.savefig(save_path_full)
+        # fig.suptitle(f'interictal - correlation across - targets', wrap=True)
+        # fig.tight_layout(pad=0.5)
+        # fig.show()
+        # save_path_full = f'{SAVE_FIG}/correlation_matrix_all_targets_all_exps_interictal.png'
+        # os.makedirs(os.path.dirname(save_path_full), exist_ok=True)
+        # fig.savefig(save_path_full)
 
         # correlation of stims
-        fig, ax = plt.subplots(figsize=(3, 3), dpi=400)
+        # fig, ax = plt.subplots(figsize=(3, 3), dpi=400)
+        ax = axs[1][1]
+        ax.set_xticks([])
+        ax.set_yticks([])
+        # print(ax.get_position())
         stim_corr_mat = np.corrcoef(z_scored_responses.T)
         mesh = ax.imshow(stim_corr_mat, cmap='bwr')
         mesh.set_clim(-1, 1)
-        cbar = fig.colorbar(mesh, boundaries=np.linspace(-0.5, 0.5, 1000), ticks=[-0.5, 0, 0.5], fraction=0.045)
-        fig.suptitle(f'interictal - correlation across - stims', wrap=True)
-        fig.tight_layout(pad=0.5)
-        fig.show()
-        save_path_full = f'{SAVE_FIG}/correlation_matrix_all_stims_all_exps_interictal.png'
-        os.makedirs(os.path.dirname(save_path_full), exist_ok=True)
-        fig.savefig(save_path_full)
+        ax.axis('off')
+        # print(f"{ax.get_position()}\n")
+
+        # cbar = fig.colorbar(mesh, boundaries=np.linspace(-0.5, 0.5, 1000), ticks=[-0.5, 0, 0.5], fraction=0.045)
+        # fig.suptitle(f'interictal - correlation across - stims', wrap=True)
+        # fig.tight_layout(pad=0.5)
+        # fig.show()
+        # save_path_full = f'{SAVE_FIG}/correlation_matrix_all_stims_all_exps_interictal.png'
+        # os.makedirs(os.path.dirname(save_path_full), exist_ok=True)
+        # fig.savefig(save_path_full)
+        # fig.show()
+
+
+
+        # add colorbar for all axes - located beside the top right correlation matrix plot
+        from matplotlib.transforms import Bbox
+        bbox = np.array(axs[0][1].get_position())
+        bbox = Bbox.from_extents(bbox[1, 0] + 0.02, bbox[0, 1], bbox[1, 0] + 0.03, bbox[1, 1] - 0.01)
+        # bbox = Bbox.from_extents(bbox[1, 0], bbox[0, 0], bbox[0, 1] + 0.00, bbox[0, 1] - 0.02)
+        # ax2 = fig.add_subplot(position = bbox)
+        ax_cmap = fig.add_subplot()
+        ax_cmap.set_position(pos=bbox)
+        fig.colorbar(mesh, cax=ax_cmap)
+        ax_cmap.axis('off')
+        # fig.show()
+        # pass
+        # cmap = plt.cm.get_cmap('bwr')
+        # colors = cmap(np.arange(cmap.N))
+        # # fig, ax = plt.subplots(figsize=(6, 1), dpi=600)
+        # ax_cmap.imshow([colors], extent=[1, 0, 10, 0], aspect='auto')
+        # # ax_cmap.get_position()
+        # ax_cmap.axis('off')
+        # fig.show()
+
+    @staticmethod
+    def correlation_magnitude_exps(fig=None, axs=None, rerun=False):
+
+        # assert axs.shape == (2,2), 'incorrect shape of axs.'
+        results = PhotostimResponsesSLMtargetsResults.load()
+        if rerun or not hasattr(results, 'corr_targets'):
+            results.corr_targets = {}
+
+            # BASELINE  ################################################################################################################################################################################################################################################################################################
+            responses = results.baseline_adata.X
+            z_scored_responses = stats.zscore(responses, axis=1)  # z scoring of targets responses to their own distribution
+
+            # correlation within exp
+            within_exp_corr_baseline = {}
+            for exp in np.unique(results.baseline_adata.obs['exp']):
+                # exp = np.unique(results.baseline_adata.obs['exp'])[0]
+                idx_ = np.where(results.baseline_adata.obs['exp'] == exp)[0]
+                responses_ = z_scored_responses[idx_, :]
+                idx2 = np.triu_indices(len(responses_), k=1)
+                # responses_corr_mat = np.triu_indices(np.corrcoef(responses_), k=1)
+                responses_corr_mat = np.corrcoef(responses_)
+                avg_corr = np.mean(responses_corr_mat[idx2])
+                within_exp_corr_baseline[exp] = avg_corr
+                # zeros = np.zeros_like(responses_corr_mat)
+                # zeros[idx2] = 0.5
+                # plt.imshow(zeros)
+                # plt.show()
+
+            results.corr_targets['within - baseline'] = within_exp_corr_baseline
+
+            # correlation between exp
+            between_exp_corr_baseline = {}
+            for exp in np.unique(results.baseline_adata.obs['exp']):
+                # exp = np.unique(results.baseline_adata.obs['exp'])[0]
+                idx_within = np.where(results.baseline_adata.obs['exp'] == exp)[0]
+                idx_across = np.where(results.baseline_adata.obs['exp'] != exp)[0]
+                responses_within = z_scored_responses[idx_within, :]
+                responses_across = z_scored_responses[idx_across, :]
+                corr_vals_2 = []
+                for target_within in responses_within:
+                    corr_vals_1 = []
+                    for target_across in responses_across:
+                        _corr = np.corrcoef(target_within, target_across)[1,0]
+                        corr_vals_1.append(_corr)
+                    corr_vals_2.append(np.mean(corr_vals_1))
+                between_exp_corr_baseline[exp] = np.mean(corr_vals_2)
+
+            results.corr_targets['between - baseline'] = between_exp_corr_baseline
+
+            # INTERICTAL  ################################################################################################################################################################################################################################################################################################
+            interictal_responses = results.interictal_adata.X
+            z_scored_responses = interictal_responses[:, :43]
+
+            # correlation within exp
+            within_exp_corr_interictal = {}
+            for exp in np.unique(results.interictal_adata.obs['exp']):
+                # exp = np.unique(results.interictal_adata.obs['exp'])[0]
+                idx_ = np.where(results.interictal_adata.obs['exp'] == exp)[0]
+                responses_ = z_scored_responses[idx_, :]
+                idx2 = np.triu_indices(len(responses_), k=1)
+                responses_corr_mat = np.corrcoef(responses_)
+                avg_corr = np.mean(responses_corr_mat[idx2])
+                within_exp_corr_interictal[exp] = avg_corr
+
+            results.corr_targets['within - interictal'] = within_exp_corr_interictal
+
+            # correlation between exp
+            between_exp_corr_interictal = {}
+            for exp in np.unique(results.interictal_adata.obs['exp']):
+                # exp = np.unique(results.interictal_adata.obs['exp'])[0]
+                idx_within = np.where(results.interictal_adata.obs['exp'] == exp)[0]
+                idx_across = np.where(results.interictal_adata.obs['exp'] != exp)[0]
+                responses_within = z_scored_responses[idx_within, :]
+                responses_across = z_scored_responses[idx_across, :]
+                corr_vals_2 = []
+                for target_within in responses_within:
+                    corr_vals_1 = []
+                    for target_across in responses_across:
+                        _corr = np.corrcoef(target_within, target_across)[1,0]
+                        corr_vals_1.append(_corr)
+                    corr_vals_2.append(np.mean(corr_vals_1))
+                between_exp_corr_interictal[exp] = np.mean(corr_vals_2)
+
+            results.corr_targets['between - interictal'] = between_exp_corr_interictal
+
+            results.save_results()
+
+        # MAKE PLOT
+        fig, axs = plt.subplots(ncols=2, nrows=1, figsize = (3,4)) if fig is None and axs is None else (fig, axs)
+        plot_bar_with_points(data=[list(results.corr_targets['within - baseline'].values()), list(results.corr_targets['between - baseline'].values())],
+            bar=False, title='Baseline', x_tick_labels=['within exp', 'across exp'],
+            colors=['gold', 'gray'], figsize=(4, 4), y_label='corr coef (r)', show=False, alpha=1,fig=fig, ax = axs[0], s=25, ylims=[-0.1, 0.80])
+        plot_bar_with_points(data=[list(results.corr_targets['within - interictal'].values()), list(results.corr_targets['between - interictal'].values())],
+            bar=False, title='Interictal', x_tick_labels=['within exp', 'across exp'],
+            colors=['gold', 'gray'], figsize=(4, 4), y_label='', show=False, alpha=1,fig=fig, ax = axs[1], s=25, ylims=[-0.1, 0.80])
+        for ax in axs:
+            ax.set_xticks([])
+        # axs[1].spines['left'].set_visible(False)
+        axs[1].set_yticklabels([])
+
+        # Create the legend
+        from matplotlib.lines import Line2D
+        from matplotlib.transforms import Bbox
+        legend_elements = [Line2D([0], [0], marker='o', color='w', label='within',
+                                  markerfacecolor='gold', markersize=6, markeredgecolor='black'),
+                           Line2D([0], [0], marker='o', color='w', label='across',
+                                  markerfacecolor='gray', markersize=6, markeredgecolor='black')]
+
+        bbox = np.array(axs[1].get_position())
+        bbox = Bbox.from_extents(bbox[1, 0] + 0.02, bbox[1, 1] - 0.02, bbox[1, 0] + 0.06, bbox[1, 1])
+        # bbox = Bbox.from_extents(bbox[1, 0], bbox[0, 0], bbox[0, 1] + 0.00, bbox[0, 1] - 0.02)
+        # ax2 = fig.add_subplot(position = bbox)
+        axlegend = fig.add_subplot()
+        axlegend.set_position(pos=bbox)
+        axlegend.legend(handles=legend_elements, loc='center')
+        axlegend.axis('off')
+        # fig.show()
+        # fig.tight_layout(pad=0.7)
+        # fig.show()
+
 
     @staticmethod
     @Utils.run_for_loop_across_exps(
@@ -551,7 +727,7 @@ class PhotostimAnalysisSlmTargets(Quantification):
         cbar = fig.colorbar(mesh, boundaries=np.linspace(-0.5, 0.5, 1000), ticks=[-0.5, 0, 0.5], fraction=0.045)
         fig.suptitle(f'{expobj.t_series_name} - targets')
         fig.tight_layout(pad=0.5)
-        fig.show()
+        # fig.show()
 
         # correlation of stims
         fig, ax = plt.subplots(figsize=(3, 3), dpi=300)
@@ -561,7 +737,7 @@ class PhotostimAnalysisSlmTargets(Quantification):
         cbar = fig.colorbar(mesh, boundaries=np.linspace(-0.5, 0.5, 1000), ticks=[-0.5, 0, 0.5], fraction=0.045)
         fig.suptitle(f'{expobj.t_series_name} - stims')
         fig.tight_layout(pad=0.5)
-        fig.show()
+        # fig.show()
 
     # 8.1) PCA of stims
     @staticmethod
@@ -739,21 +915,23 @@ class PhotostimAnalysisSlmTargets(Quantification):
         # fig.tight_layout(pad=1)
         # fig.show()
         # Utils.save_figure(fig, save_path_suffix=f"{fig_save_name}") if fig_save_name else None
-        plot_settings()
+        # plot_settings()
 
         res = mannwhitneyu(results.variance_photostimresponse['baseline'],
                            results.variance_photostimresponse['interictal'])
         print(res)
 
-        fig, ax = pplot.plot_bar_with_points(
+        fig, ax = (kwargs['fig'], kwargs['ax']) if 'fig' in kwargs and 'ax' in kwargs else (None, None)
+        # fig.show()
+
+        pplot.plot_bar_with_points(
             data=[results.variance_photostimresponse['baseline'], results.variance_photostimresponse['interictal']],
-            x_tick_labels=['Baseline', 'Interictal'], bar=True, colors=['gray', 'green'], alpha=1, show=False,
+            x_tick_labels=['Baseline', 'Interictal'], bar=True, colors=['gray', 'green'], alpha=1, show=False, fig=fig, ax=ax,
             expand_size_x=0.4, title='Average CV', y_label='Coefficient of Variation (CV)', shrink_text=0.9,
-            paired=True,
-            s=40, bar_alpha=0.2, ylims=[0, 7.5], **kwargs)
+            paired=False, s=40, bar_alpha=0.2, ylims=[0, 7.5])
         ax.text(x=ax.get_xlim()[0] + 0.2, y=ax.get_ylim()[-1], s=f"MWU p-val: {res[1]:0.1e}", fontsize='xx-small')
-        fig.tight_layout(pad=1)
-        fig.show()
+        # fig.tight_layout(pad=1)
+        # fig.show()
         # Utils.save_figure(fig, save_path_suffix=f"{fig_save_name}") if fig_save_name else None
 
     # return photostim_stdvars_baseline, photostim_stdvars_interictal, photostim_stdvars_ictal
@@ -807,10 +985,10 @@ class PhotostimAnalysisSlmTargets(Quantification):
 
     # 2.2) plot mean magnitude of photostim responses vs. variability of photostim responses
     @staticmethod
-    def plot__mean_response_vs_variability(rerun=False):
+    def plot__mean_response_vs_variability(fig=None, axs=None, rerun=False):
         """create plot of mean photostim responses vs. variability for all three exp groups"""
 
-        fig, ax = plt.subplots(ncols=3)
+        fig, axs = plt.subplots(ncols=3) if fig is None and axs is None else (fig, axs)
 
         if rerun or not hasattr(results, 'meanresponses_vs_variance'):
             results.meanresponses_vs_variance = {}
@@ -891,28 +1069,48 @@ class PhotostimAnalysisSlmTargets(Quantification):
             results.save_results()
 
         # make plot
-        pplot.make_general_scatter([pj.flattenOnce(results.meanresponses_vs_variance['baseline - mean responses'])],
-                                   [pj.flattenOnce(results.meanresponses_vs_variance['baseline - var responses'])],
-                                   x_labels=['Avg. Photostim Response (% dFF)'], y_labels=['Variance (dFF^2)'],
-                                   ax_titles=['Targets: avg. response vs. variability - baseline'],
-                                   facecolors=['gray'], lw=1.3, figsize=(4, 4), xlim=[-30, 130], ylim=[-0.1, 3.2],
-                                   alpha=0.1)
 
-        pplot.make_general_scatter([pj.flattenOnce(results.meanresponses_vs_variance['interictal - mean responses'])],
-                                   [pj.flattenOnce(results.meanresponses_vs_variance['interictal - var responses'])],
-                                   x_labels=['Avg. Photostim Response (% dFF)'], y_labels=['Variance (dFF^2)'],
-                                   ax_titles=['Targets: avg. response vs. variability - interictal'],
-                                   facecolors=['forestgreen'], lw=1.3, figsize=(4, 4), xlim=[-30, 130],
-                                   ylim=[-0.1, 3.2], alpha=0.1)
+        axs[0].scatter(pj.flattenOnce(results.meanresponses_vs_variance['baseline - mean responses']), pj.flattenOnce(results.meanresponses_vs_variance['baseline - var responses']),
+                       facecolors='gray', lw=1.3, s=4, alpha=0.1)
+        axs[0].set_xlim([-30, 130])
+        axs[0].set_ylim([-10, 50])
+        axs[0].set_xlabel('Mean responses (%dFF)')
+        axs[0].set_ylabel('CV')
 
-        pplot.make_general_scatter([pj.flattenOnce(results.meanresponses_vs_variance['interictal - mean responses']),
-                                    pj.flattenOnce(results.meanresponses_vs_variance['baseline - mean responses'])],
-                                   [pj.flattenOnce(results.meanresponses_vs_variance['interictal - var responses']),
-                                    pj.flattenOnce(results.meanresponses_vs_variance['baseline - var responses'])],
-                                   x_labels=['Avg. Photostim Response (% dFF)'], y_labels=['Variance (% dFF)^2'],
-                                   ax_titles=['Targets: avg. response vs. variability - interictal'],
-                                   facecolors=['forestgreen', 'royalblue'], lw=1.3, figsize=(4, 4), xlim=[-30, 130],
-                                   ylim=[-10, 32000], alpha=0.1)
+        axs[1].scatter(pj.flattenOnce(results.meanresponses_vs_variance['interictal - mean responses']), pj.flattenOnce(results.meanresponses_vs_variance['interictal - var responses']),
+                       facecolors='forestgreen', lw=1.3, s=4, alpha=0.1)
+        axs[1].set_xlim([-30, 130])
+        axs[1].set_ylim([-10, 50])
+        axs[1].set_xlabel('Mean responses (%dFF)')
+        axs[1].set_ylabel('')
+        axs[1].set_yticklabels([])
+
+        # fig.show()
+
+        # fig, axs[0] = pplot.make_general_scatter([pj.flattenOnce(results.meanresponses_vs_variance['baseline - mean responses'])],
+        #                            [pj.flattenOnce(results.meanresponses_vs_variance['baseline - var responses'])],
+        #                            x_labels=['Avg. Photostim Response (% dFF)'], y_labels=['Variance (dFF^2)'],
+        #                            ax_titles=['Targets: avg. response vs. variability - baseline'],
+        #                            facecolors=['gray'], lw=1.3, xlim=[-30, 130], ylim=[-0.1, 3.2],
+        #                            alpha=0.1, fig=fig, ax=axs[0], show=False)
+
+        # fig, axs[1] = pplot.make_general_scatter([pj.flattenOnce(results.meanresponses_vs_variance['interictal - mean responses'])],
+        #                            [pj.flattenOnce(results.meanresponses_vs_variance['interictal - var responses'])],
+        #                            x_labels=['Avg. Photostim Response (% dFF)'], y_labels=['Variance (dFF^2)'],
+        #                            ax_titles=['Targets: avg. response vs. variability - interictal'],
+        #                            facecolors=['forestgreen'], lw=1.3, xlim=[-30, 130],
+        #                            ylim=[-0.1, 3.2], alpha=0.1, fig=fig, ax=axs[1], show=False)
+
+        pass
+
+        # pplot.make_general_scatter([pj.flattenOnce(results.meanresponses_vs_variance['interictal - mean responses']),
+        #                             pj.flattenOnce(results.meanresponses_vs_variance['baseline - mean responses'])],
+        #                            [pj.flattenOnce(results.meanresponses_vs_variance['interictal - var responses']),
+        #                             pj.flattenOnce(results.meanresponses_vs_variance['baseline - var responses'])],
+        #                            x_labels=['Avg. Photostim Response (% dFF)'], y_labels=['Variance (% dFF)^2'],
+        #                            ax_titles=['Targets: avg. response vs. variability - interictal'],
+        #                            facecolors=['forestgreen', 'royalblue'], lw=1.3, figsize=(4, 4), xlim=[-30, 130],
+        #                            ylim=[-10, 32000], alpha=0.1)
 
         # pplot.make_general_scatter([pj.flattenOnce(results.meanresponses_vs_variance['ictal - mean responses'])],
         #                            [pj.flattenOnce(results.meanresponses_vs_variance['ictal - var responses'])],

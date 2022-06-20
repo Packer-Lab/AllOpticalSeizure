@@ -564,14 +564,14 @@ class TargetsSzInvasionSpatial_codereview(SLMTargets):
         ax.fill_between(x=conf_int_distances, y1=conf_int_values_neg, y2=conf_int_values_pos, color='lightgray',
                         zorder=0)
         # ax.scatter(distances[:-1], avg_responses, c='orange', zorder=4)
-        ax.set_ylim([-2, 2])
+        ax.set_ylim([-1.5, 2.25])
         ax.set_title(
             f'photostim responses vs. distance to sz wavefront (binned every {results.binned__distance_vs_photostimresponses["bin_width_um"]}um)',
             wrap=True)
         ax.set_xlabel('distance to sz wavefront (um)')
         ax.set_ylabel(TargetsSzInvasionSpatial_codereview.response_type)
         ax.margins(0)
-        ax.axhline(0, ls='--', lw=0.8)
+        ax.axhline(0, ls='--', lw=1, color='black')
 
         pixels = [np.array(num2)] * 10
         ax2.imshow(pixels, cmap='Greys', vmin=-5, vmax=100, aspect=0.05)

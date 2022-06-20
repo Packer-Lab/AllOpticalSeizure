@@ -21,7 +21,7 @@ from _utils_.alloptical_plotting import plot_settings
 
 plot_settings()
 
-SAVE_FOLDER = f'/home/pshah/mnt/qnap/Analysis/figure-items'
+SAVE_FOLDER = f'/home/pshah/Documents/figures/alloptical_seizures_draft/'
 
 main = PhotostimResponsesAnalysisNonTargets
 

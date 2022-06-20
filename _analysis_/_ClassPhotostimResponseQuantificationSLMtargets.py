@@ -59,6 +59,8 @@ class PhotostimResponsesSLMtargetsResults(Results):
 
         self.baseline_adata: AnnotatedData2 = None      #: baseline dFF repsonses all targets, all exps, all stims
         self.interictal_adata: AnnotatedData2 = None    #: interictal dFF repsonses all targets, all exps, all stims
+        self.corr_targets: dict = None                  #: correlation coef values of z-scored targets responses compared trial-wise
+
 
 REMAKE = False
 if not os.path.exists(PhotostimResponsesSLMtargetsResults.SAVE_PATH) or REMAKE:

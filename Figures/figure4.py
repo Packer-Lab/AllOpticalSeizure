@@ -15,14 +15,15 @@ RESULTS = PhotostimResponsesSLMtargetsResults.load()
 
 # %% RUNNING PLOTS:
 
-# %% B) measure of average coefficient of variation of target responses
-main.plot__variability(figsize=[3, 5], rerun=False)
-
 # %% A) schematic of variability of photostimulation responses
 
 # main.plot__schematic_variability_measurement()
 
 main.plot_variability_photostim_traces_by_targets()
+
+# %% B) measure of average coefficient of variation of target responses
+main.plot__variability(figsize=[3, 5], rerun=False)
+
 
 # %% C) plot mean response vs. variability for baseline + interictal
 

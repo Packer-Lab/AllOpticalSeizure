@@ -33,7 +33,8 @@ class TargetsSzInvasionTemporal(Quantification):
     #     save_TargetsSzInvasionTemporal[dataname] = data
     #     pj.save_pkl(obj=save_TargetsSzInvasionTemporal, pkl_path=SAVE_PATH)
 
-    photostim_responses_zscore_type = 'dFF (zscored) (interictal)'
+    # photostim_responses_zscore_type = 'dFF (zscored) (interictal)'
+    photostim_responses_zscore_type = 'dFF (zscored) (baseline)'
     plot_szinvasion_trace_params = {'pre_sec': 5,
                                     'post_sec': 10}  #: # of seconds for collecting trace pre and post sz invasion point for each target for each seizure. used for collecting the trace snippets for subsequent plotting.
     EXCLUDE_TRIAL = [
@@ -404,6 +405,7 @@ class TargetsSzInvasionTemporal(Quantification):
             for idxstim, stim in enumerate(stim_ids):
                 sztime = self.time_del_szinv_stims.loc[target, stim]
                 response = expobj.PhotostimResponsesSLMTargets.adata.layers[self.photostim_responses_zscore_type][idx, idxstim]
+                # response = expobj.PhotostimResponsesSLMTargets.adata.X[idx, idxstim]  # temporarlly switching to dFF responses
                 if not np.isnan(sztime):
                     df = pd.concat(
                         [df, pd.DataFrame({'target_id': target, 'stim_id': stim, 'time_to_szinvasion': sztime,
@@ -561,7 +563,7 @@ class TargetsSzInvasionTemporal(Quantification):
 
             temporal = expobj.TargetsSzInvasionTemporal
 
-            temporal.sztime_v_photostimresponses
+            # temporal.sztime_v_photostimresponses
 
             for _, row in temporal.sztime_v_photostimresponses_zscored_df.iterrows():
                 time = row['time_to_szinvasion']
@@ -589,7 +591,14 @@ class TargetsSzInvasionTemporal(Quantification):
             [stats.t.interval(alpha=0.95, df=len(responses_) - 1, loc=np.mean(responses_), scale=stats.sem(responses_))
              for responses_ in responses])
 
-        return bin_width, sztemporalinv, num,  avg_responses, conf_int
+        results.binned__time_vs_photostimresponses = {'bin_width_sec': bin_width, 'sztemporal_bins': sztemporalinv,
+                                                      'num_points_in_bin': num,
+                                                      'avg_photostim_response_in_bin': avg_responses,
+                                                      '95conf_int': conf_int}
+
+        results.save_results()
+
+        # return bin_width, sztemporalinv, num,  avg_responses, conf_int
 
     @staticmethod
     def plot__responses_v_szinvtemporal_no_normalization(results, **kwargs):
@@ -614,7 +623,7 @@ class TargetsSzInvasionTemporal(Quantification):
         ax.fill_between(x=conf_int_sztemporalinv, y1=conf_int_values_neg, y2=conf_int_values_pos, color='lightgray',
                         zorder=0)
         # ax.scatter(sztemporalinv[:-1], avg_responses, c='orange', zorder=4)
-        ax.set_ylim([-2, 2])
+        ax.set_ylim([-2, 2.5])
         ax.invert_xaxis()
         ax.set_title(
             f'photostim responses vs. distance to sz wavefront (binned every {results.binned__time_vs_photostimresponses["bin_width_sec"]}sec)',
@@ -622,16 +631,14 @@ class TargetsSzInvasionTemporal(Quantification):
         ax.set_xlabel('time to sz inv (secs)')
         ax.set_ylabel(TargetsSzInvasionTemporal.photostim_responses_zscore_type)
         ax.margins(0)
-        ax.axhline(0, ls='--', lw=0.8)
+        ax.axhline(0, ls='--', lw=1, color='black')
 
         pixels = [np.array(num2)] * 10
         ax2.imshow(pixels, cmap='Greys', vmin=-5, vmax=100, aspect=0.05)
         ax2.axis('off')
-        # ax2.set_xticks([])
-        # ax2.set_yticks([])
-
-        # fig.tight_layout(pad=1)
-        # fig.show()
+        if not 'fig' in kwargs and not 'axes' in kwargs:
+            fig.tight_layout(pad=1)
+            fig.show()
 
 class TargetsSzInvasionTemporalResults(Results):
     SAVE_PATH = SAVE_LOC + 'Results__TargetsSzInvasionTemporal.pkl'

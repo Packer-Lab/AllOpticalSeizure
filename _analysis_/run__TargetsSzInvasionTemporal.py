@@ -413,23 +413,23 @@ if __name__ == '__main__':
     #
     # run__collect_targets_sz_invasion_traces()
     #
-    plot__targets_sz_invasion_meantraces()
+    # plot__targets_sz_invasion_meantraces()
     #
     #
     # # RUNNING BELOW FOR QUANTIFICATION OF PHOTOSTIM RESPONSES VS. TIME DELAY TO SZ INVASION CURRENTLY
     # # fig, ax = plt.subplots(figsize=[3, 3])
     # # run_check_collect_time_delay_sz_stims(fig=fig, ax=ax)
     # # fig.show()
-    #
-    #
+
     # run__collect_szinvasiontime_vs_photostimresponses()
+
     # # plot__szinvasiontime_vs_photostimresponses()
     # plot__szinvasiontime_vs_photostimresponses_indivexp()
     #
     # # run collecting and plotting zscored photostim responses vs. time delay to sz invasion
     # run__collect_szinvasiontime_vs_photostimresponses_zscored()
-    # run__collect_szinvasiontime_vs_photostimresponses_zscored_df()
-    #
+    run__collect_szinvasiontime_vs_photostimresponses_zscored_df()
+
     # plot__szinvasiontime_vs_photostimresponseszscored()
     #
     # results.data = run__retrieve__responses_vs_time_to_seizure_SLMTargets_plot2ddensity()
@@ -447,13 +447,8 @@ if __name__ == '__main__':
 
 
     # plot average stim response vs. (possibly binned?) time to sz invasion for all targets across all exps
-    # bin_width, sztemporalinv, num, avg_responses, conf_int = main.collect__binned__szinvtime_v_responses()  # binsize = 3 secs
-    # results.binned__time_vs_photostimresponses = {'bin_width_sec': bin_width, 'sztemporal_bins': sztemporalinv,
-    #                                               'num_points_in_bin': num,
-    #                                               'avg_photostim_response_in_bin': avg_responses,
-    #                                               '95conf_int': conf_int}
-    #
-    # results.save_results()
+    main.collect__binned__szinvtime_v_responses()  # binsize = 3 secs
+    results = results.load()
     main.plot__responses_v_szinvtemporal_no_normalization(results=results)
 
     # results.range_of_sz_invasion_time = [-1, -1, -1]

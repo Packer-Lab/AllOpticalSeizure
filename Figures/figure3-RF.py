@@ -1,7 +1,17 @@
+"""
+TODO:
+
+- calculate decay constant of targets' responses across baseline and interictal
+
+"""
+
+# %%
 import sys
 
 from _analysis_._ClassPhotostimAnalysisSlmTargets import PhotostimAnalysisSlmTargets
+from _utils_.alloptical_plotting import plot_settings
 from _utils_.rfv_funcs import make_fig_layout, show_test_figure_layout, add_label_axes
+from alloptical_utils_pj import save_figure
 
 sys.path.extend(['/home/pshah/Documents/code/reproducible_figures-main'])
 
@@ -9,6 +19,10 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.image as mpimg
 import rep_fig_vis as rfv
+
+plot_settings()
+
+SAVE_FOLDER = f'/home/pshah/Documents/figures/alloptical_seizures_draft/'
 
 # %%
 
@@ -157,63 +171,9 @@ for ii in range(n_cat):
 
 
 
-
-
-
-
-
-
-# %%
-## Add content to panels:
-## Top left, let's draw some periodic functions:
-for i_sin in range(6):
-    curr_alpha = 1  # - i_sin / 7
-    curr_colour = colours_misc_dict[i_sin]
-    rfv.plot_sin_one_period(ax=ax_cat[0], phase=i_sin / 10,
-                            alpha=curr_alpha, colour=curr_colour)
-    rfv.plot_normal_distr(ax=ax_cat[1], std_distr=1 + 0.1 * i_sin,
-                          alpha=curr_alpha, colour=curr_colour)
-
-## Add image content
-img = mpimg.imread('drawing-hands.jpg!Large.jpg')  # load image into memroy
-ax_im.imshow(img,
-             interpolation='none')  # generally it's best to disable interpolation (between neighbouring pixels)
-
-## Add brownian motion
-for i_misc in range(n_misc):
-    curr_var = 1 + i_misc
-    rfv.plot_brown_proc(ax_trace=ax_misc[0][i_misc], ax_hist=ax_misc[1][i_misc],
-                        var=curr_var,
-                        colour=colours_misc_dict[i_misc], plot_ylabel=(i_misc == 0))
-
-    ax_misc[0][i_misc].annotate(s=f'Var = {curr_var}', xy=(0.04, 1), va='bottom',
-                                xycoords='axes fraction', c=colours_misc_dict[i_misc])
-for i_row in range(n_misc_rows):
-    rfv.equal_lims_n_axs(ax_list=list(ax_misc[i_row].values()))
-
-fig.align_ylabels(axs=[ax_cat[0], ax_cat[1], ax_misc[0][0], ax_misc[1][0]])
-
-
-
-
-if plot_extra:
-    ## First way of doing text, by plt.text()
-    ax_cat[0].text(s='A', x=-1.29, y=1.25,  # specify coords in data coord system of this ax
-                   fontdict={'weight': 'bold'})
-    ax_cat[0].text(s='C', x=-1.29, y=-5.4,  # specify coords in data coord system of this ax
-                   fontdict={'weight': 'bold'})
-
-    ax_im.text(s='MC Escher, 1948', x=np.mean(list(ax_im.get_xlim())), y=ax_im.get_ylim()[0] + 10,
-               # get ax limits to define coords
-               fontdict={'ha': 'center', 'va': 'top',  # change text alignment to make centering easier
-                         'style': 'italic'})
-
-    ## Alternatively, use annotate to specificy coords in fraction of ax or fig
-    ## (this is actually usually also easier to align panel labels)
-    ax_im.annotate(s='B', xy=(0.578, 0.965), xycoords='figure fraction',
-                   weight='bold')
-    ax_im.annotate(s='Some brownian motion examples', xy=(0.5, 0.39), xycoords='figure fraction',
-                   ha='center', weight='bold')
-
 if save_fig:
-    plt.savefig('Example_rep_fig.pdf', bbox_inches='tight')
+    save_figure(fig=fig, save_path_full=f"{SAVE_FOLDER}/figure3-RF.png")
+    save_figure(fig=fig, save_path_full=f"{SAVE_FOLDER}/figure3-RF.svg")
+
+
+
