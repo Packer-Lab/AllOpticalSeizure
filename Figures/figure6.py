@@ -18,8 +18,7 @@ main = PhotostimResponsesAnalysisNonTargets
 
 results: PhotostimResponsesNonTargetsResults = PhotostimResponsesNonTargetsResults.load()
 
-# SAVE_FOLDER = f'/home/pshah/mnt/qnap/Analysis/figure-items'
-SAVE_FOLDER = f'/home/pshah/Documents/code/AllOpticalSeizure/figure-items'
+SAVE_FOLDER = f'/home/pshah/Documents/figures/alloptical_seizures_draft/'
 
 
 # %% B) total z scored responses of targets vs. total z scored responses of nontargets - photostim vs. sham stim
@@ -92,40 +91,4 @@ for distance, responses in distance_response.items():
 
 model = ols('response ~ C(group) + C(distance) + C(group):C(distance)', data=distance_responses_df).fit()
 sm.stats.anova_lm(model, typ=2)
-
-# %% 5.2) PLOTTING of average responses +/- sem across distance to targets bins - baseline + interictal
-
-measurement = 'new influence response'
-fig, ax = plt.subplots(figsize = (4, 4), dpi=300)
-
-ax.axhline(y=0, ls='--', color='gray', lw=1)
-ax.axvline(x=20, ls='--', color='gray', lw=1)
-
-# BASELINE- distances vs. responses
-distances = results.binned_distance_vs_responses[measurement]['distances']
-distances_lim_idx = [idx for idx, distance in enumerate(distances) if distance_lims[0] < distance < distance_lims[1]]
-distances = distances[distances_lim_idx]
-avg_binned_responses = results.binned_distance_vs_responses[measurement]['avg binned responses'][distances_lim_idx]
-sem_binned_responses = results.binned_distance_vs_responses[measurement]['sem binned responses'][distances_lim_idx]
-ax.fill_between(x=list(distances), y1=list(avg_binned_responses + sem_binned_responses), y2=list(avg_binned_responses - sem_binned_responses), alpha=0.1, color='royalblue')
-ax.plot(distances, avg_binned_responses, lw=1, color='royalblue', label='baseline')
-
-
-# binned distances vs responses
-distances = results.binned_distance_vs_responses_interictal[measurement]['distances']
-distances_lim_idx = [idx for idx, distance in enumerate(distances) if distance_lims[0] < distance < distance_lims[1]]
-distances = distances[distances_lim_idx]
-avg_binned_responses = results.binned_distance_vs_responses_interictal[measurement]['avg binned responses'][distances_lim_idx]
-sem_binned_responses = results.binned_distance_vs_responses_interictal[measurement]['sem binned responses'][distances_lim_idx]
-ax.fill_between(x=list(distances), y1=list(avg_binned_responses + sem_binned_responses), y2=list(avg_binned_responses - sem_binned_responses), alpha=0.1, color='mediumseagreen')
-ax.plot(distances, avg_binned_responses, lw=1, color='mediumseagreen', label='interictal')
-
-ax.set_title(f"{measurement}", wrap=True)
-ax.set_xlim([0, 400])
-ax.set_ylim([-0.175, 0.25])
-pj.lineplot_frame_options(fig=fig, ax=ax, x_label='distance to target (um)', y_label=measurement)
-ax.legend(loc='lower right')
-fig.suptitle('BASELINE + INTERICTAL')
-fig.tight_layout()
-fig.show()
 

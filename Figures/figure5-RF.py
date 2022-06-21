@@ -121,7 +121,7 @@ main_temporal.plot__responses_v_szinvtemporal_no_normalization(results=results_t
                                                                axes=(axes['main-right-bottomhigh'], axes['main-right-bottomlow']), fig=fig)
 
 # %%
-# fig.show()
+fig.show()
 
 
 # %%

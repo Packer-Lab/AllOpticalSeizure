@@ -1076,16 +1076,19 @@ class PhotostimResponsesAnalysisNonTargets(PhotostimResponsesQuantificationNonTa
             results.save_results()
 
     @staticmethod
-    def plot__summed_activity_vs_targets_activity(results, **kwargs):
+    def plot__summed_activity_vs_targets_activity(results, fig=None, axs=None, **kwargs):
         """scatter plot of stim trials comparing zscored summed activity of targets and zscored summed activity of nontargets. during baseline and interictal. includes fakestims trial as well."""
         from _analysis_.nontargets_analysis._ClassResultsNontargetPhotostim import PhotostimResponsesNonTargetsResults
         results: PhotostimResponsesNonTargetsResults
 
         # make plots
-
+        if axs is not None:
+            assert len(axs) == 2
+            axs_ = axs
+        else: raise ValueError('axs arg must be a tuple.')
         # SCATTER PLOT OF DATAPOINTS
-        fig, axs = plt.subplots(nrows=2, ncols=1, figsize=(10, 7), dpi=500)
-
+        fig, axs = plt.subplots(nrows=2, ncols=1, figsize=(10, 7), dpi=500) if fig is None or axs is None else (fig, axs_)
+        axs = axs[0]
         # BASELINE CONDITION
 
         # photostims
@@ -1093,15 +1096,15 @@ class PhotostimResponsesAnalysisNonTargets(PhotostimResponsesQuantificationNonTa
             x=results.summed_responses['baseline']['targets_summed_zscored'],
             y=results.summed_responses['baseline']['all_non-targets_zscored'])
         regression_y = slope * results.summed_responses['baseline']['targets_summed_zscored'] + intercept
-        fig, axs[0] = pplot.make_general_scatter(
-            x_list=[results.summed_responses['baseline']['targets_summed_zscored']],
-            y_data=[results.summed_responses['baseline']['all_non-targets_zscored']], fig=fig, ax=axs[0],
-            s=5, facecolors=['white'], edgecolors=['blue'], lw=1, alpha=1,
-            x_labels=['total targets activity'], y_labels=['total network activity'],
-            legend_labels=[
-                f'baseline - photostims - $R^2$: {r_value ** 2:.2e}, p = {p_value ** 2:.2e}, $m$ = {slope:.2e}'],
-            show=False)
-        axs[0].plot(results.summed_responses['baseline']['targets_summed_zscored'], regression_y, color='blue', lw=2)
+        axs[0].scatter(results.summed_responses['baseline']['targets_summed_zscored'], results.summed_responses['baseline']['all_non-targets_zscored'],
+                       facecolor='white', edgecolor='blue', lw=1, alpha=1, s=5)
+        # pplot.make_general_scatter(
+        #     x_list=[results.summed_responses['baseline']['targets_summed_zscored']],
+        #     y_data=[results.summed_responses['baseline']['all_non-targets_zscored']], fig=fig, ax=axs[0], show=False,
+        #     s=5, facecolors=['white'], edgecolors=['blue'], lw=1, alpha=1,
+        #     x_labels=['total targets activity'], y_labels=['total network activity'])
+        axs[0].plot(results.summed_responses['baseline']['targets_summed_zscored'], regression_y, color='blue', lw=1)
+        # fig.show()
 
         # add fakestims
         slope, intercept, r_value, p_value, std_err = stats.linregress(
@@ -1110,17 +1113,20 @@ class PhotostimResponsesAnalysisNonTargets(PhotostimResponsesQuantificationNonTa
         regression_y = slope * results.summed_responses['baseline - fakestims'][
             'targets_fakestims_summed_zscored'] + intercept
 
-        pplot.make_general_scatter(
-            x_list=[results.summed_responses['baseline - fakestims']['targets_fakestims_summed_zscored']],
-            y_data=[results.summed_responses['baseline - fakestims']['all_non-targets_fakestims_zscored']],
-            fig=fig, ax=axs[0],
-            s=5, facecolors=['white'], edgecolors=['black'], lw=1, alpha=1,
-            x_labels=['total targets'], y_labels=['total network activity'],
-            legend_labels=[
-                f'baseline - fakestims - $R^2$: {r_value ** 2:.2e}, p = {p_value ** 2:.2e}, $m$ = {slope:.2e}'],
-            show=False)
+        axs[0].scatter(results.summed_responses['baseline - fakestims']['targets_fakestims_summed_zscored'], results.summed_responses['baseline - fakestims']['all_non-targets_fakestims_zscored'],
+                       facecolor='white', edgecolor='black', lw=1, alpha=1, s=5)
+
+        # pplot.make_general_scatter(
+        #     x_list=[results.summed_responses['baseline - fakestims']['targets_fakestims_summed_zscored']],
+        #     y_data=[results.summed_responses['baseline - fakestims']['all_non-targets_fakestims_zscored']],
+        #     fig=fig, ax=axs[0],
+        #     s=5, facecolors=['white'], edgecolors=['black'], lw=1, alpha=1,
+        #     x_labels=['total targets'], y_labels=['total network activity'],
+        #     legend_labels=[
+        #         f'baseline - fakestims - $R^2$: {r_value ** 2:.2e}, p = {p_value ** 2:.2e}, $m$ = {slope:.2e}'],
+        #     show=False)
         axs[0].plot(results.summed_responses['baseline - fakestims']['targets_fakestims_summed_zscored'], regression_y,
-                    color='gray', lw=2)
+                    color='gray', lw=1)
 
         # INTERICTAL CONDITION
         # TEST AND DEVELOP AND DEBU BELOW VERY NEXT!!!
@@ -1131,17 +1137,20 @@ class PhotostimResponsesAnalysisNonTargets(PhotostimResponsesQuantificationNonTa
 
         regression_y = slope * results.summed_responses['interictal']['targets_summed_zscored'] + intercept
 
-        pplot.make_general_scatter(x_list=[results.summed_responses['interictal']['targets_summed_zscored']],
-                                   y_data=[results.summed_responses['interictal']['all_non-targets_zscored']], s=5,
-                                   facecolors=['white'],
-                                   edgecolors=['green'], lw=1, alpha=1, x_labels=['total targets activity'],
-                                   y_labels=['total network activity'], fig=fig, ax=axs[1],
-                                   legend_labels=[
-                                       f'interictal - photostims - $R^2$: {r_value ** 2:.2e}, p = {p_value ** 2:.2e}, $m$ = {slope:.2e}'],
-                                   show=False)
+        axs[1].scatter(results.summed_responses['interictal']['targets_summed_zscored'], results.summed_responses['interictal']['all_non-targets_zscored'],
+                       facecolor='white', edgecolor='green', lw=1, alpha=1, s=5)
+
+        # pplot.make_general_scatter(x_list=[results.summed_responses['interictal']['targets_summed_zscored']],
+        #                            y_data=[results.summed_responses['interictal']['all_non-targets_zscored']], s=5,
+        #                            facecolors=['white'],
+        #                            edgecolors=['green'], lw=1, alpha=1, x_labels=['total targets activity'],
+        #                            y_labels=['total network activity'], fig=fig, ax=axs[1],
+        #                            legend_labels=[
+        #                                f'interictal - photostims - $R^2$: {r_value ** 2:.2e}, p = {p_value ** 2:.2e}, $m$ = {slope:.2e}'],
+        #                            show=False)
 
         axs[1].plot(results.summed_responses['interictal']['targets_summed_zscored'], regression_y, color='forestgreen',
-                    lw=2)
+                    lw=1)
 
         # fakestims
         # add fakestims
@@ -1151,17 +1160,20 @@ class PhotostimResponsesAnalysisNonTargets(PhotostimResponsesQuantificationNonTa
         regression_y = slope * results.summed_responses['interictal - fakestims'][
             'targets_fakestims_summed_zscored'] + intercept
 
-        pplot.make_general_scatter(
-            x_list=[results.summed_responses['interictal - fakestims']['targets_fakestims_summed_zscored']],
-            y_data=[results.summed_responses['interictal - fakestims']['all_non-targets_fakestims_zscored']],
-            fig=fig, ax=axs[1],
-            s=5, facecolors=['white'], edgecolors=['black'], lw=1, alpha=1,
-            x_labels=['total targets'], y_labels=['total network activity'],
-            legend_labels=[
-                f'interictal - fakestims - $R^2$: {r_value ** 2:.2e}, p = {p_value ** 2:.2e}, $m$ = {slope:.2e}'],
-            show=False)
+        axs[1].scatter(results.summed_responses['interictal - fakestims']['targets_fakestims_summed_zscored'], results.summed_responses['interictal - fakestims']['all_non-targets_fakestims_zscored'],
+                       facecolor='white', edgecolor='black', lw=1, alpha=1, s=5)
+
+        # pplot.make_general_scatter(
+        #     x_list=[results.summed_responses['interictal - fakestims']['targets_fakestims_summed_zscored']],
+        #     y_data=[results.summed_responses['interictal - fakestims']['all_non-targets_fakestims_zscored']],
+        #     fig=fig, ax=axs[1],
+        #     s=5, facecolors=['white'], edgecolors=['black'], lw=1, alpha=1,
+        #     x_labels=['total targets'], y_labels=['total network activity'],
+        #     legend_labels=[
+        #         f'interictal - fakestims - $R^2$: {r_value ** 2:.2e}, p = {p_value ** 2:.2e}, $m$ = {slope:.2e}'],
+        #     show=False)
         axs[1].plot(results.summed_responses['interictal - fakestims']['targets_fakestims_summed_zscored'],
-                    regression_y, color='gray', lw=2)
+                    regression_y, color='gray', lw=1)
 
         # PLOTTING OPTIONS
         # axs[0].grid(True)
@@ -1170,60 +1182,67 @@ class PhotostimResponsesAnalysisNonTargets(PhotostimResponsesQuantificationNonTa
         axs[1].set_ylim([-15, 15])
         axs[0].set_xlim([-7, 7])
         axs[1].set_xlim([-7, 7])
-        fig.suptitle('Total z-scored (to baseline) responses for all trials, all exps', wrap=True)
-        fig.tight_layout(pad=0.6)
+        # fig.suptitle('Total z-scored (to baseline) responses for all trials, all exps', wrap=True)
+        # fig.tight_layout(pad=0.6)
         # fig.show()
 
         SAVE_FOLDER = kwargs['SAVE_FOLDER']
         # Utils.save_figure(fig=fig, save_path_full=f'{SAVE_FOLDER}/total_targets_vs_total_nontargets_photostim_fakestim_baseline_interictal.png')
 
         # BAR PLOT OF PEARSON'S R CORR VALUES BETWEEN BASELINE AND INTERICTAL
-        pplot.plot_bar_with_points(data=[[i ** 2 for i in results.lin_reg_summed_responses['baseline']['r_value']],
-                                         [i ** 2 for i in
-                                          results.lin_reg_summed_responses['baseline - fakestims']['r_value']],
-                                         [i ** 2 for i in results.lin_reg_summed_responses['interictal']['r_value']],
-                                         [i ** 2 for i in
-                                          results.lin_reg_summed_responses['interictal - fakestims']['r_value']]],
-                                   paired=True, bar=False, colors=['royalblue', 'skyblue', 'seagreen', 'lightgreen'], edgecolor='black',
-                                   lw=1, s=30, alpha=1, shrink_text=1.5,
-                                   x_tick_labels=['Base', 'Base-fake', 'Inter', 'Inter-fake'], ylims=[0, 1],
-                                   y_label='$R^2$', title='$R^2$ value per experiment')
-
-        pplot.plot_bar_with_points(data=[[i for i in results.lin_reg_summed_responses['baseline']['slope']],
-                                         [i for i in results.lin_reg_summed_responses['baseline - fakestims']['slope']],
-                                         [i for i in results.lin_reg_summed_responses['interictal']['slope']],
-                                         [i for i in
-                                          results.lin_reg_summed_responses['interictal - fakestims']['slope']]],
-                                   paired=True, bar=False, colors=['royalblue', 'skyblue', 'seagreen', 'lightgreen'], edgecolor='black',
-                                   lw=1, s=50, alpha=1, shrink_text=1.5,
-                                   x_tick_labels=['Base', 'Base-fake', 'Inter', 'Inter-fake'], ylims=[0, 1.7],
-                                   y_label='$slope$', title='slope value per experiment')
-
+        # ratio bar plots1
+        axs = axs_[1]
         fig, ax = pplot.plot_bar_with_points(data=[
             [(val ** 2) / results.lin_reg_summed_responses['baseline - fakestims']['r_value'][i] for i, val in
              enumerate(results.lin_reg_summed_responses['baseline']['r_value'])],
             [(val ** 2) / results.lin_reg_summed_responses['interictal - fakestims']['r_value'][i] for i, val in
              enumerate(results.lin_reg_summed_responses['interictal']['r_value'])]],
-                                   paired=True, bar=False, colors=['royalblue', 'seagreen'], edgecolor='black', lw=1, s=50, alpha=1, shrink_text=1.5,
+                                   paired=True, bar=False, colors=['royalblue', 'seagreen'], edgecolor='black', lw=1, s=25, alpha=1, shrink_text=0.8,
                                    x_tick_labels=['Base', 'Inter'], ylims=[0, 1.5], y_label='photostim/fakestims $R^2$', y_ticklabels=[0, 0.5, 1.0, 1.5],
-                                   title='ratio of $R^2$ per experiment', show=False)
+                                   # title='ratio of $R^2$ per experiment',
+            fig=fig, ax=axs[0], show=False, capsize=0.7)
         ax.spines['bottom'].set_visible(False)
-        fig.tight_layout(pad=0.5)
+        ax.set_xticks([])
+        # fig.tight_layout(pad=0.5)
         # fig.show()
-        Utils.save_figure(fig=fig, save_path_full=f'{SAVE_FOLDER}/targets_nontargets_r2_ratio_photostim_fakestim.png')
+        # Utils.save_figure(fig=fig, save_path_full=f'{SAVE_FOLDER}/targets_nontargets_r2_ratio_photostim_fakestim.png')
 
         fig, ax = pplot.plot_bar_with_points(data=[
             [val / results.lin_reg_summed_responses['baseline - fakestims']['slope'][i] for i, val in
              enumerate(results.lin_reg_summed_responses['baseline']['slope'])],
             [val / results.lin_reg_summed_responses['interictal - fakestims']['slope'][i] for i, val in
              enumerate(results.lin_reg_summed_responses['interictal']['slope'])]],
-                                   paired=True, bar=False, colors=['royalblue', 'seagreen'], edgecolor='black', lw=1, s=50, alpha=1, shrink_text=1.5,
+                                   paired=True, bar=False, colors=['royalblue', 'seagreen'], edgecolor='black', lw=1, s=25, alpha=1, shrink_text=0.8,
                                    x_tick_labels=['Base', 'Inter'], ylims=[0, 5], y_label='photostim/fakestims $m$',
-                                   title='ratio of $m$ per experiment', show=False)
+                                   # title='ratio of $m$ per experiment',
+            fig=fig, ax=axs[1], show=False, capsize=0.7)
         ax.spines['bottom'].set_visible(False)
-        fig.tight_layout(pad=0.5)
+        ax.set_xticks([])
+        # fig.tight_layout(pad=0.5)
         # fig.show()
-        Utils.save_figure(fig=fig, save_path_full=f'{SAVE_FOLDER}/targets_nontargets_slope_ratio_photostim_fakestim.png')
+        # Utils.save_figure(fig=fig, save_path_full=f'{SAVE_FOLDER}/targets_nontargets_slope_ratio_photostim_fakestim.png')
+
+
+        # pplot.plot_bar_with_points(data=[[i ** 2 for i in results.lin_reg_summed_responses['baseline']['r_value']],
+        #                                  [i ** 2 for i in
+        #                                   results.lin_reg_summed_responses['baseline - fakestims']['r_value']],
+        #                                  [i ** 2 for i in results.lin_reg_summed_responses['interictal']['r_value']],
+        #                                  [i ** 2 for i in
+        #                                   results.lin_reg_summed_responses['interictal - fakestims']['r_value']]],
+        #                            paired=True, bar=False, colors=['royalblue', 'skyblue', 'seagreen', 'lightgreen'], edgecolor='black',
+        #                            lw=1, s=30, alpha=1, shrink_text=1.5,
+        #                            x_tick_labels=['Base', 'Base-fake', 'Inter', 'Inter-fake'], ylims=[0, 1],
+        #                            y_label='$R^2$', title='$R^2$ value per experiment')
+        #
+        # pplot.plot_bar_with_points(data=[[i for i in results.lin_reg_summed_responses['baseline']['slope']],
+        #                                  [i for i in results.lin_reg_summed_responses['baseline - fakestims']['slope']],
+        #                                  [i for i in results.lin_reg_summed_responses['interictal']['slope']],
+        #                                  [i for i in
+        #                                   results.lin_reg_summed_responses['interictal - fakestims']['slope']]],
+        #                            paired=True, bar=False, colors=['royalblue', 'skyblue', 'seagreen', 'lightgreen'], edgecolor='black',
+        #                            lw=1, s=50, alpha=1, shrink_text=1.5,
+        #                            x_tick_labels=['Base', 'Base-fake', 'Inter', 'Inter-fake'], ylims=[0, 1.7],
+        #                            y_label='$slope$', title='slope value per experiment')
 
         pass
 
