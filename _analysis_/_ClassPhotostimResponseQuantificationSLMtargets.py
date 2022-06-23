@@ -34,6 +34,7 @@ class PhotostimResponsesSLMtargetsResults(Results):
 
     def __init__(self):
         super().__init__()
+        self.grand_avg_traces: dict = {}                                        #: mean traces of targets all optical for plotting grand avg plots
         self.pre_stim_targets_annulus_vs_targets_responses_results = None
         self.mean_photostim_responses_baseline: List[float] = [-1]
         self.mean_photostim_responses_interictal: List[float] = [-1]
@@ -43,7 +44,7 @@ class PhotostimResponsesSLMtargetsResults(Results):
         self.mean_photostim_responses_interictal_zscored: List[float] = [-1]
         self.mean_photostim_responses_ictal_zscored: List[float] = [-1]
 
-        self.pre_stim_FOV_flu = None  # averages from pre-stim Flu value for each stim frame for baseline, interictal and ictal groups
+        self.pre_stim_FOV_flu = None                                            # averages from pre-stim Flu value for each stim frame for baseline, interictal and ictal groups
         self.baseline_pre_stim_targets_annulus = None
         self.interictal_pre_stim_targets_annulus = None
         self.ictal_pre_stim_targets_annulus = None
@@ -61,13 +62,309 @@ class PhotostimResponsesSLMtargetsResults(Results):
         self.interictal_adata: AnnotatedData2 = None    #: interictal dFF repsonses all targets, all exps, all stims
         self.corr_targets: dict = None                  #: correlation coef values of z-scored targets responses compared trial-wise
 
+    def collect_grand_avg_alloptical_traces(self, rerun=False):
+
+        if not hasattr(self, 'grand_avg_traces') or rerun:
+            self.grand_avg_traces = {}
+
+            # C) baseline
+            # collect avg traces across all exps
+            @Utils.run_for_loop_across_exps(run_pre4ap_trials=True, run_post4ap_trials=False, allow_rerun=True)
+            def collect_avg_photostim_traces(**kwargs):
+                expobj: alloptical = kwargs['expobj']
+
+                pre_sec = expobj.PhotostimAnalysisSlmTargets.pre_stim_sec
+                post_sec = expobj.PhotostimAnalysisSlmTargets.post_stim_sec
+                pre_fr = expobj.PhotostimAnalysisSlmTargets.pre_stim_fr
+                post_fr = expobj.PhotostimAnalysisSlmTargets.post_stim_fr
+
+                stim_dur = 0.5  # for making adjusted traces below
+
+                ## targets
+                targets_traces = expobj.SLMTargets_stims_dff
+                target_traces_adjusted = []
+                for trace_snippets in targets_traces:
+                    trace = np.mean(trace_snippets, axis=0)
+                    pre_stim_trace = trace[:pre_fr]
+                    post_stim_trace = trace[-post_fr:]
+                    stim_trace = [0] * int(expobj.fps * stim_dur)  # frames
+
+                    new_trace = np.concatenate([pre_stim_trace, stim_trace, post_stim_trace])
+                    if expobj.fps > 20:
+                        new_trace = new_trace[::2][:67]
+
+                    target_traces_adjusted.append(new_trace)
+
+                avg_photostim_trace_targets = np.mean(target_traces_adjusted, axis=0)
+
+                ## fakestims
+                targets_traces = expobj.fake_SLMTargets_tracedFF_stims_dff
+                fakestims_target_traces_adjusted = []
+                for trace_snippets in targets_traces:
+                    trace = np.mean(trace_snippets, axis=0)
+                    pre_stim_trace = trace[:pre_fr]
+                    post_stim_trace = trace[-post_fr:]
+                    stim_trace = [0] * int(expobj.fps * stim_dur)  # frames
+
+                    new_trace = np.concatenate([pre_stim_trace, stim_trace, post_stim_trace])
+                    if expobj.fps > 20:
+                        new_trace = new_trace[::2][:67]
+
+                    fakestims_target_traces_adjusted.append(new_trace)
+
+                avg_fakestim_trace_targets = np.mean(fakestims_target_traces_adjusted, axis=0)
+
+                # make corresponding time array
+                time_arr = np.linspace(-pre_sec, post_sec + stim_dur, len(avg_photostim_trace_targets))
+
+                # # plotting
+                # plt.plot(time_arr, avg_photostim_trace)
+                # plt.show()
+
+                print('length of traces; ', len(time_arr))
+
+                return target_traces_adjusted, fakestims_target_traces_adjusted, time_arr
+
+            func_collector = collect_avg_photostim_traces()
+
+            targets_average_traces_baseline = []
+            fakestim_targets_average_traces = []
+            for results in func_collector:
+                traces = results[0]
+                for trace in traces:
+                    targets_average_traces_baseline.append(trace)
+                traces = results[1]
+                for trace in traces:
+                    fakestim_targets_average_traces.append(trace)
+
+            time_arr = func_collector[0][2]
+
+            self.grand_avg_traces['baseline'] = targets_average_traces_baseline
+
+            # C) interictal
+            # collect avg traces across all exps
+            @Utils.run_for_loop_across_exps(run_pre4ap_trials=False, run_post4ap_trials=True, allow_rerun=True)
+            def collect_avg_photostim_traces_interictal(**kwargs):
+                expobj: Post4ap = kwargs['expobj']
+
+                pre_sec = expobj.PhotostimAnalysisSlmTargets.pre_stim_sec
+                post_sec = expobj.PhotostimAnalysisSlmTargets.post_stim_sec
+                pre_fr = expobj.PhotostimAnalysisSlmTargets.pre_stim_fr
+                post_fr = expobj.PhotostimAnalysisSlmTargets.post_stim_fr
+
+                stim_dur = 0.5  # for making adjusted traces below
+
+                ## targets
+                targets_traces = expobj.SLMTargets_stims_dff[:, expobj.stim_idx_outsz, :]
+                target_traces_adjusted = []
+                for trace_snippets in targets_traces:
+                    trace = np.mean(trace_snippets, axis=0)
+                    pre_stim_trace = trace[:pre_fr]
+                    post_stim_trace = trace[-post_fr:]
+                    stim_trace = [0] * int(expobj.fps * stim_dur)  # frames
+
+                    new_trace = np.concatenate([pre_stim_trace, stim_trace, post_stim_trace])
+                    if expobj.fps > 20:
+                        new_trace = new_trace[::2][:67]
+
+                    target_traces_adjusted.append(new_trace)
+
+                avg_photostim_trace_targets = np.mean(target_traces_adjusted, axis=0)
+
+                ## fakestims
+                targets_traces = expobj.fake_SLMTargets_tracedFF_stims_dff
+                fakestims_target_traces_adjusted = []
+                for trace_snippets in targets_traces:
+                    trace = np.mean(trace_snippets, axis=0)
+                    pre_stim_trace = trace[:pre_fr]
+                    post_stim_trace = trace[-post_fr:]
+                    stim_trace = [0] * int(expobj.fps * stim_dur)  # frames
+
+                    new_trace = np.concatenate([pre_stim_trace, stim_trace, post_stim_trace])
+                    if expobj.fps > 20:
+                        new_trace = new_trace[::2][:67]
+
+                    fakestims_target_traces_adjusted.append(new_trace)
+
+                avg_fakestim_trace_targets = np.mean(fakestims_target_traces_adjusted, axis=0)
+
+                # make corresponding time array
+                time_arr = np.linspace(-pre_sec, post_sec + stim_dur, len(avg_photostim_trace_targets))
+
+                # # plotting
+                # plt.plot(time_arr, avg_photostim_trace)
+                # plt.show()
+
+                print('length of traces; ', len(time_arr))
+
+                return target_traces_adjusted, fakestims_target_traces_adjusted, time_arr
+
+            func_collector = collect_avg_photostim_traces_interictal()
+
+            targets_average_traces_interictal = []
+            fakestim_targets_average_traces = []
+            for results in func_collector:
+                traces = results[0]
+                for trace in traces:
+                    targets_average_traces_interictal.append(trace)
+                traces = results[1]
+                for trace in traces:
+                    fakestim_targets_average_traces.append(trace)
+
+            time_arr = func_collector[0][2]
+
+            self.grand_avg_traces['interictal'] = targets_average_traces_interictal
+
+            # C) ictal stims
+            # collect avg traces across all exps
+            @Utils.run_for_loop_across_exps(run_pre4ap_trials=False, run_post4ap_trials=True, allow_rerun=True)
+            def collect_avg_photostim_traces_ictal(**kwargs):
+                expobj: Post4ap = kwargs['expobj']
+
+                pre_sec = expobj.PhotostimAnalysisSlmTargets.pre_stim_sec
+                post_sec = expobj.PhotostimAnalysisSlmTargets.post_stim_sec
+                pre_fr = expobj.PhotostimAnalysisSlmTargets.pre_stim_fr
+                post_fr = expobj.PhotostimAnalysisSlmTargets.post_stim_fr
+
+                stim_dur = 0.5  # for making adjusted traces below
+
+                ## targets
+                targets_traces = expobj.SLMTargets_stims_dff[:, expobj.stim_idx_insz, :]
+                target_traces_adjusted = []
+                for trace_snippets in targets_traces:
+                    trace = np.mean(trace_snippets, axis=0)
+                    pre_stim_trace = trace[:pre_fr]
+                    post_stim_trace = trace[-post_fr:]
+                    stim_trace = [0] * int(expobj.fps * stim_dur)  # frames
+
+                    new_trace = np.concatenate([pre_stim_trace, stim_trace, post_stim_trace])
+                    if expobj.fps > 20:
+                        new_trace = new_trace[::2][:67]
+
+                    target_traces_adjusted.append(new_trace)
+
+                avg_photostim_trace_targets = np.mean(target_traces_adjusted, axis=0)
+
+                ## fakestims
+                targets_traces = expobj.fake_SLMTargets_tracedFF_stims_dff
+                fakestims_target_traces_adjusted = []
+                for trace_snippets in targets_traces:
+                    trace = np.mean(trace_snippets, axis=0)
+                    pre_stim_trace = trace[:pre_fr]
+                    post_stim_trace = trace[-post_fr:]
+                    stim_trace = [0] * int(expobj.fps * stim_dur)  # frames
+
+                    new_trace = np.concatenate([pre_stim_trace, stim_trace, post_stim_trace])
+                    if expobj.fps > 20:
+                        new_trace = new_trace[::2][:67]
+
+                    fakestims_target_traces_adjusted.append(new_trace)
+
+                avg_fakestim_trace_targets = np.mean(fakestims_target_traces_adjusted, axis=0)
+
+                # make corresponding time array
+                time_arr = np.linspace(-pre_sec, post_sec + stim_dur, len(avg_photostim_trace_targets))
+
+                # # plotting
+                # plt.plot(time_arr, avg_photostim_trace)
+                # plt.show()
+
+                print('length of traces; ', len(time_arr))
+
+                return target_traces_adjusted, fakestims_target_traces_adjusted, time_arr
+
+            func_collector = collect_avg_photostim_traces_ictal()
+
+            targets_average_traces_ictal = []
+            fakestim_targets_average_traces = []
+            for results in func_collector:
+                traces = results[0]
+                for trace in traces:
+                    targets_average_traces_ictal.append(trace)
+                traces = results[1]
+                for trace in traces:
+                    fakestim_targets_average_traces.append(trace)
+
+            time_arr = func_collector[0][2]
+
+            self.grand_avg_traces['ictal'] = targets_average_traces_ictal
+            self.grand_avg_traces['time_arr'] = time_arr
+
+            self.save_results()
+        else: print('---- skipped rerunning collect_grand_avg_alloptical_traces ----')
+
+    def collect_avg_photostim_responses_states(self, rerun=False):
+        """collecta avg photostim responses of targets for each state"""
+        if not hasattr(self, 'avg_photostim_responses') or rerun:
+            self.avg_photostim_responses = {}
+
+            @Utils.run_for_loop_across_exps(run_pre4ap_trials=True, run_post4ap_trials=False, allow_rerun=1)
+            def collect_avg_photostim_response_baseline(**kwargs):
+                expobj: alloptical = kwargs['expobj']
+
+                avg_response = np.mean(expobj.PhotostimResponsesSLMTargets.adata.X, axis=1)
+                return np.mean(avg_response)
+
+            @Utils.run_for_loop_across_exps(run_pre4ap_trials=False, run_post4ap_trials=True, allow_rerun=1)
+            def collect_avg_photostim_response_interictal(**kwargs):
+                expobj: Post4ap = kwargs['expobj']
+
+                interictal_avg_response = np.mean(expobj.PhotostimResponsesSLMTargets.adata.X[:, expobj.stim_idx_outsz],
+                                                  axis=1)
+                return np.mean(interictal_avg_response)
+
+            @Utils.run_for_loop_across_exps(run_pre4ap_trials=False, run_post4ap_trials=True, allow_rerun=1)
+            def collect_avg_photostim_response_ictal(**kwargs):
+                expobj: Post4ap = kwargs['expobj']
+
+                ictal_avg_response = np.mean(expobj.PhotostimResponsesSLMTargets.adata.X[:, expobj.stim_idx_insz], axis=1)
+                return np.mean(ictal_avg_response)
+
+            self.avg_photostim_responses['baseline'] = collect_avg_photostim_response_baseline()
+            self.avg_photostim_responses['interictal'] = collect_avg_photostim_response_interictal()
+            self.avg_photostim_responses['ictal'] = collect_avg_photostim_response_ictal()
+            self.save_results()
+        else: print('---- skipped rerunning collect_avg_photostim_responses_states ----')
+
+    def collect_avg_prestimf_states(self, rerun=False):
+        """collecta avg prestim Flu of targets for each state"""
+        if not hasattr(self, 'avg_prestim_Flu') or rerun:
+            self.avg_prestim_Flu = {}
+
+            @Utils.run_for_loop_across_exps(run_pre4ap_trials=True, run_post4ap_trials=False, allow_rerun=1)
+            def collect_avg_prestimf_baseline(**kwargs):
+                expobj: alloptical = kwargs['expobj']
+                fov_flu = np.mean(expobj.PhotostimResponsesSLMTargets.adata.var['pre_stim_FOV_Flu'])
+                return fov_flu
+
+            @Utils.run_for_loop_across_exps(run_pre4ap_trials=False, run_post4ap_trials=True, allow_rerun=1)
+            def collect_avg_prestimf_interictal(**kwargs):
+                expobj: Post4ap = kwargs['expobj']
+                fov_flu = np.mean(
+                    expobj.PhotostimResponsesSLMTargets.adata.var['pre_stim_FOV_Flu'][expobj.stim_idx_outsz])
+                return fov_flu
+
+            @Utils.run_for_loop_across_exps(run_pre4ap_trials=False, run_post4ap_trials=True, allow_rerun=1)
+            def collect_avg_prestimf_ictal(**kwargs):
+                expobj: Post4ap = kwargs['expobj']
+                fov_flu = np.mean(
+                    expobj.PhotostimResponsesSLMTargets.adata.var['pre_stim_FOV_Flu'][expobj.stim_idx_insz])
+                return fov_flu
+
+            self.avg_prestim_Flu['baseline'] = collect_avg_prestimf_baseline()
+            self.avg_prestim_Flu['interictal'] = collect_avg_prestimf_interictal()
+            self.avg_prestim_Flu['ictal'] = collect_avg_prestimf_ictal()
+            self.save_results()
+        else: print('---- skipped rerunning collect_avg_prestimf_states ----')
+
 
 REMAKE = False
 if not os.path.exists(PhotostimResponsesSLMtargetsResults.SAVE_PATH) or REMAKE:
     RESULTS = PhotostimResponsesSLMtargetsResults()
     RESULTS.save_results()
 else:
-    RESULTS = PhotostimResponsesSLMtargetsResults.load()
+    pass
+    # RESULTS = PhotostimResponsesSLMtargetsResults.load()
 
 
 class PhotostimResponsesQuantificationSLMtargets(Quantification):

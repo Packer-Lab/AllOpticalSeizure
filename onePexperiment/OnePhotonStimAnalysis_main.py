@@ -354,29 +354,29 @@ class OnePhotonStimAnalysisFuncs(OnePhotonStim):
                 # plotLfpSignal(expobj, x_axis='time', figsize=(30, 3), linewidth=0.5, downsample=True,
                 #                      sz_markings=True, color='black')
 
-            print(f'{expobj.t_series_name}: {np.sum(expobj.sz_occurrence_stim_intervals2)}')
+            # print(f'{expobj.t_series_name}: {np.sum(expobj.sz_occurrence_stim_intervals2)}')
 
 
             return (expobj.t_series_name, expobj.sz_occurrence_stim_intervals2)
 
         func_collector = __function()
-
+        print(func_collector)
 
         unique_exps = np.unique([exp[:4] for exp in OnePhotonStim.oneP_post4ap_exp_list])
         results = {}
         for i in unique_exps:
             results[i] = None
 
-        for exp_sz_prob in func_collector:
+        for i, exp_sz_prob in enumerate(func_collector):
             exp = exp_sz_prob[0][:4]
 
             if results[exp] is None:
                 results[exp] = exp_sz_prob[1]
             else:
                 results[exp] = np.mean(np.vstack([results[exp], exp_sz_prob[1]]), axis=0)
+            # array_sz[i] = exp_sz_prob[1]
 
-            # print(f'')
-            # print(exp_sz_prob.shape)
+        sz_occurrence = np.array([list(results.items())[i][1] for i, _ in enumerate(unique_exps)])
 
         print(results)
         # sz_occurence_relative = [func_collector[0]]
@@ -384,7 +384,7 @@ class OnePhotonStimAnalysisFuncs(OnePhotonStim):
         #     sz_occurence_relative += sz_occurrence
 
         # return sz_occurence_relative / len(func_collector)
-        return results
+        return results, sz_occurrence
 
         # bin_width = int(0.5 * expobj.fps)
         # period = len(np.arange(0, (expobj.stim_interval_fr / bin_width))[:-1])

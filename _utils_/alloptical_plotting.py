@@ -1284,21 +1284,13 @@ def plotMeanRawFluTrace(expobj, stim_span_color='white', stim_lines: bool = True
 @print_start_end_plot
 @plot_piping_decorator(figsize=(10,3))
 def plotLfpSignal(expobj: TwoPhotonImaging, stim_span_color='powderblue', downsample: bool = True, stim_lines: bool = True, sz_markings: bool = False,
-                  title='LFP trace', x_axis='time', hide_xlabel=False, fig=None, ax=None, **kwargs):
+                  title='LFP trace', x_axis='time', hide_xlabel=False, **kwargs):
     """make plot of LFP with also showing stim locations
     NOTE: ONLY PLOTTING LFP SIGNAL CROPPED TO 2P IMAGING FRAME START AND END TIMES - SO CUTTING OUT THE LFP SIGNAL BEFORE AND AFTER"""
 
-    print(f"\t \- PLOTTING LFP Signal trace ... ")
+    ax = kwargs['ax']
 
-    # # if there is a fig and ax provided in the function call then use those, otherwise start anew
-    # if 'fig' in kwargs.keys():
-    #     fig = kwargs['fig']
-    #     ax = kwargs['ax']
-    # else:
-    #     if 'figsize' in kwargs.keys():
-    #         fig, ax = plt.subplots(figsize=kwargs['figsize'])
-    #     else:
-    #         fig, ax = plt.subplots(figsize=[60 * (expobj.stim_start_times[-1] + 1e5 - (expobj.stim_start_times[0] - 1e5)) / 1e7, 3])
+    print(f"\t \- PLOTTING LFP Signal trace ... ")
 
     alpha = 1 if 'alpha' not in kwargs else kwargs['alpha']
 
@@ -1330,16 +1322,21 @@ def plotLfpSignal(expobj: TwoPhotonImaging, stim_span_color='powderblue', downsa
 
 
     # plot stims
-    if stim_span_color != '':
-        for stim in expobj.stim_start_times:
-            stim = (stim - expobj.frame_start_time_actual)
-            stim = stim / expobj.paq_rate
-            ax.axvspan(stim, stim + expobj.stim_duration_frames / expobj.fps, color=stim_span_color, zorder=0, alpha=alpha)
-    else:
-        if stim_lines:
-            for line in expobj.stim_start_times:
-                line = (line - expobj.frame_start_time_actual)
-                ax.axvline(x=line+2, color='black', linestyle='--', linewidth=0.6, zorder=0)
+    if 'time' in x_axis or 'Time' in x_axis:
+        stim_counter = 0
+        stims = [expobj.frame_time(i) for i in expobj.stim_start_frames] if 'time' in x_axis or 'Time' in x_axis else (expobj.stim_start_times - expobj.frame_start_time_actual) / expobj.paq_rate
+        if not stim_lines and stim_span_color != '':
+            for stim in stims:
+                ax.axvspan(stim, stim + expobj.stim_duration_frames / expobj.fps, color=stim_span_color, zorder=0, alpha=alpha)
+                stim_counter += 1
+        else:
+            if stim_lines:
+                for stim in stims:
+                    ax.axvline(x=stim, c='gray', alpha=0.3, lw=1)
+                    # ax.axvline(x=line+2, color='black', linestyle='--', linewidth=0.6, zorder=0)
+                    stim_counter += 1
+
+        # print(f'{expobj.t_series_name}, stim counter: {stim_counter}')
 
     # plot seizure onset and offset markings
     if sz_markings:
@@ -1359,13 +1356,7 @@ def plotLfpSignal(expobj: TwoPhotonImaging, stim_span_color='powderblue', downsa
         ax.tick_params(axis='both', which='both', length=3)
         if not hide_xlabel:
             ax.set_xlabel('Time (secs)')
-    # elif 'frame' or "frames" or "Frames" or "Frame" in x_axis:
-    #     x_ticks = range(0, expobj.n_frames, 2000)
-    #     x_clocks = [x_fr*expobj.paq_rate for x_fr in x_ticks]  ## convert to paq clock dimension
-    #     ax.set_xticks(x_clocks)
-    #     ax.set_xticklabels(x_ticks)
-    #     if not hide_xlabel:
-    #         ax.set_xlabel('Frames')
+
     else:
         ax.set_xlabel('paq clock')
     ax.set_ylabel(kwargs['y_label']) if 'y_label' in kwargs else None
@@ -1386,18 +1377,6 @@ def plotLfpSignal(expobj: TwoPhotonImaging, stim_span_color='powderblue', downsa
     ax.set_title(
         '%s - %s %s %s' % (title, expobj.metainfo['exptype'], expobj.metainfo['animal prep.'], expobj.metainfo['trial'])) if title else None
 
-    # return None
-    # if not 'fig' in kwargs.keys():
-    #     ax.set_title(
-    #         '%s - %s %s %s' % (title, expobj.metainfo['exptype'], expobj.metainfo['animal prep.'], expobj.metainfo['trial']))
-    #
-    # # options for showing plot or returning plot
-    # if 'show' in kwargs.keys():
-    #     plt.show() if kwargs['show'] else None
-    # else:
-    #     plt.show()
-
-    # return fig, ax if 'fig' in kwargs.keys() else None
 
 @print_start_end_plot
 @plot_piping_decorator(figsize=(4,5))

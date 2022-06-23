@@ -8,10 +8,23 @@ TODO:
 # %%
 import sys
 
+from funcsforprajay.plotting.plotting import plot_bar_with_points
+from matplotlib.transforms import Bbox
+from scipy import stats
+
+from _alloptical_utils import run_for_loop_across_exps
 from _analysis_._ClassPhotostimAnalysisSlmTargets import PhotostimAnalysisSlmTargets
+from _analysis_._ClassPhotostimResponseQuantificationSLMtargets import PhotostimResponsesSLMtargetsResults
+from _analysis_.sz_analysis._ClassExpSeizureAnalysis import ExpSeizureAnalysis
+from _main_.AllOpticalMain import alloptical
+from _main_.Post4apMain import Post4ap
 from _utils_.alloptical_plotting import plot_settings
-from _utils_.rfv_funcs import make_fig_layout, show_test_figure_layout, add_label_axes
+from _utils_.io import import_expobj
 from alloptical_utils_pj import save_figure
+
+import cairosvg
+from PIL import Image
+from io import BytesIO
 
 sys.path.extend(['/home/pshah/Documents/code/reproducible_figures-main'])
 
@@ -23,6 +36,7 @@ import rep_fig_vis as rfv
 plot_settings()
 
 SAVE_FOLDER = f'/home/pshah/Documents/figures/alloptical_seizures_draft/'
+fig_items = f'/home/pshah/Documents/figures/alloptical_seizures_draft/figure-items/'
 
 # %%
 
@@ -38,142 +52,189 @@ colours_misc_dict = {xx: colour_list[xx] for xx in range(len(colour_list))}
 
 save_fig = True
 
-## For this tutorial, I have made these sequential bools:
-plot_axes = True
-plot_content = True
-plot_extra = True
-
 np.random.seed(2)  # fix seed
-
 
 # %% MAKING LAYOUT:
 
 # panel_shape = ncols x nrows
-# bound = l, t, r, b
-# bound should be = b, t, l, r
+# bound = l, b, r, t
 
 layout = {
-    'topleft': {'panel_shape': (1, 2),
-                'bound': (0.05, 0.95, 0.25, 0.66)},
-    'toprighttop': {'panel_shape': (n_cat, 1),
-                 'bound': (0.35, 0.95, 0.95, 0.86)},
+    'main-left': {'panel_shape': (1, 1),
+                'bound': (0.05, 0.64, 0.30, 0.98)},
+    'toprighttop': {'panel_shape': (2, 1),
+                    'bound': (0.31, 0.86, 0.90, 0.95)},
     'toprightbottom': {'panel_shape': (n_cat, 1),
-               'bound': (0.35, 0.85, 0.95, 0.66)},
-    'bottom': {'panel_shape': (4,1),
-               'bound': (0.05, 0.60, 0.80, 0.50),
-               'wspace': 0.6}
+                       'bound': (0.31, 0.64, 0.90, 0.85)},
+    'bottom': {'panel_shape': (3, 1),
+               'bound': (0.05, 0.40, 0.63, 0.57),
+               'wspace': 0.4}
 }
 
-fig, axes, grid = rfv.make_fig_layout(layout=layout, dpi=100)
+fig, axes, grid = rfv.make_fig_layout(layout=layout, dpi=300)
 
-rfv.naked(axes['topleft'][0])
-rfv.naked(axes['topleft'][1])
-rfv.despine(axes['topleft'][1])
+rfv.naked(axes['main-left'][0])
 
-# rfv.show_test_figure_layout(fig, axes=axes)  # test what layout looks like quickly, but can also skip and moveon to plotting data.
+# rfv.show_test_figure_layout(fig, axes=axes, show=True)  # test what layout looks like quickly, but can also skip and moveon to plotting data.
 
-# %% add plots to axes
+# %% add plots to axes ########################################################################################################################################################################################################################
 
-main = PhotostimAnalysisSlmTargets
-main.plot_photostim_traces_stacked_LFP_pre4ap_post4ap(ax_cat=(axes['toprighttop'], axes['toprightbottom']), fig=fig)
+# F) Radial plot of Mean FOV for photostimulation trials, with period equal to that of photostimulation timing period
+bbox = Bbox.from_extents(0.70, 0.41, 0.85, 0.56)
+_axes = np.empty(shape=(1,1), dtype=object)
+ax = fig.add_subplot(projection = 'polar')
+ax.set_position(pos=bbox)
+rfv.add_label_axes(s='F', ax=ax, y_adjust=0.035)
+# fig.show()
 
-# %% add panel labels
+# fig, ax = plt.subplots(subplot_kw={'projection': 'polar'}, dpi=50, figsize=(4, 4))
 
-ax=axes['topleft'][0]
-rfv.add_label_axes(s='A', ax=ax)
+# run data analysis
+exp_sz_occurrence, total_sz_occurrence = ExpSeizureAnalysis.collectSzOccurrenceRelativeStim()
 
-ax=axes['toprighttop'][0]
-rfv.add_label_axes(s='B', ax=ax)
+expobj: Post4ap = import_expobj(exp_prep='RL109 t-013')
 
-ax=axes['toprightbottom'][0]
-rfv.add_label_axes(s="B'", ax=ax, y_adjust=-0.01)
+# make plot
+bin_width = int(1 * expobj.fps) if expobj.fps == 15 else int(0.5 * expobj.fps)
+# period = len(np.arange(0, (expobj.stim_interval_fr / bin_width)))
+period = 10
+theta = (2 * np.pi) * np.arange(0, (expobj.stim_interval_fr / bin_width)) / period
 
-fig.show()
+# by experiment
+# for exp, values in exp_sz_occurrence.items():
+#     plot = values
+#     ax.bar(theta, plot, width=(2 * np.pi) / period, bottom=0.0, alpha=0.5)
 
-# %%
+# across all seizures
+total_sz = np.sum(np.sum(total_sz_occurrence, axis=0))
+sz_prob = np.sum(total_sz_occurrence, axis=0) / total_sz
 
-## First way of doing text, by plt.text()
-axes['topleft'][0].text(s='A', x=-3.75, y=4.5,  # specify coords in data coord system of this ax
-               fontdict={'weight': 'bold'})
-rfv.show_test_figure_layout(fig, axes=axes)
+ax.bar(theta, sz_prob, width=(2 * np.pi) / period, bottom=0.0, alpha=0.5)
 
-ax_cat[0].text(s='C', x=-1.29, y=-5.4,  # specify coords in data coord system of this ax
-               fontdict={'weight': 'bold'})
-
-ax_im.text(s='MC Escher, 1948', x=np.mean(list(ax_im.get_xlim())), y=ax_im.get_ylim()[0] + 10,  # get ax limits to define coords
-            fontdict={'ha': 'center', 'va': 'top',  # change text alignment to make centering easier
-                      'style': 'italic'})
-
-## Alternatively, use annotate to specificy coords in fraction of ax or fig
-## (this is actually usually also easier to align panel labels)
-ax_im.annotate(s='B', xy=(0.578, 0.965), xycoords='figure fraction',
-               weight='bold')
-ax_im.annotate(s='Some brownian motion examples', xy=(0.5, 0.39), xycoords='figure fraction',
-               ha='center', weight='bold')
-
-
-
-# %% ## Make figure: THIJS VERSION:
-fig = plt.figure(constrained_layout=False,  # False better when customising grids
-                 figsize=(8, 10), dpi=400)  # width x height in inches
-
-## Make grids:
-gs_topleft = fig.add_gridspec(ncols=1, nrows=1,
-                               bottom=0.8, top=0.95, right=0.25,
-                               left=0.05)  # leave a bit of space between grids (eg left here and right in grid above)
-
-gs_toprighttop = fig.add_gridspec(ncols=n_cat, nrows=1,  # number of rows and columns
-                              bottom=0.86, top=0.95, right=0.95, left=0.35,  # set bounds on 4 sides
-                              wspace=0.1, hspace=0.4)  # width and height spacing between plot in this grid
-
-gs_toprightbottom = fig.add_gridspec(ncols=n_cat, nrows=1,  # number of rows and columns
-                              bottom=0.66, top=0.84, right=0.95, left=0.35,  # set bounds on 4 sides
-                              wspace=0.1, hspace=0.4)  # width and height spacing between plot in this grid
-
-
-# gs_bottom = fig.add_gridspec(ncols=n_misc, nrows=n_misc_rows,  # number of rows and columns
-#                              bottom=0.08, top=0.35, right=0.95, left=0.05,  # set bounds on 4 sides
-#                              wspace=0.2, hspace=0.6)  # width and height spacing between plot in this grid
-
-
-## Create axes.
-
-## Add image (top left):
-ax_im = fig.add_subplot(gs_topleft[0])
-rfv.naked(ax_im)
-
-## Add 2 plots to top right bin:
-ax_cat_top = {}
-for ii in range(n_cat):
-    ax_cat_top[ii] = fig.add_subplot(gs_toprighttop[ii])  # create ax by indexing grid object
-    rfv.despine(ax_cat_top[ii])
-
-ax_cat_bottom = {}
-for ii in range(n_cat):
-    ax_cat_bottom[ii] = fig.add_subplot(gs_toprightbottom[ii])  # create ax by indexing grid object
-    rfv.despine(ax_cat_bottom[ii])
-
-# ## Add more plots:
-# ax_misc = {ii: {} for ii in range(n_misc_rows)}
-#
-# for ii in range(n_misc_rows):  # n rows
-#     for jj in range(n_misc):
-#         ax_misc[ii][jj] = fig.add_subplot(gs_bottom[ii, jj])  # 2D indexing because multiple rows & multiple columns
-#         curr_ax = ax_misc[ii][jj]  # easier to type
-#         rfv.despine(curr_ax)
-#         if jj > 0:  # not left column
-#             rfv.remove_yticklabels(curr_ax)
+ax.set_rmax(1.1)
+ax.set_rticks([0.25, 0.5, 0.75, 1])  # Less radial ticks
+ax.set_rlabel_position(-60)  # Move radial labels away from plotted line
+ax.grid(True)
+# ax.set_xticks((2 * np.pi) * np.arange(0, (expobj.stim_interval_fr / bin_width)) / period)
+ax.set_xticks([0, (2 * np.pi) / 4, (2 * np.pi) / 2, (6 * np.pi) / 4])
+ax.set_xticklabels(['0', '', '50', ''])
+# ax.set_title("sz probability occurrence (binned every 1s)", va='bottom')
+ax.spines['polar'].set_visible(False)
 
 # fig.show()
 
 
-# %% add plots to axes
+# %% A) alloptical interrogation + experimental prep
+ax = axes['main-left'][0]
+rfv.add_label_axes(s="A", ax=ax, y_adjust=-0.015)
+#
+sch_path = f'{fig_items}alloptical-interrogation-schematic.png'
+img = mpimg.imread(sch_path)
+ax.imshow(img, interpolation='none')
+# fig.show()
 
+# %% B + B')
+ax = axes['toprighttop'][0]
+rfv.add_label_axes(s='B', ax=ax, y_adjust=-0.01)
+# fig.show()
+
+# ax = axes['toprightbottom'][0]
+# rfv.add_label_axes(s="B'", ax=ax, y_adjust=-0.01)
+
+main = PhotostimAnalysisSlmTargets
+main.plot_photostim_traces_stacked_LFP_pre4ap_post4ap(ax_cat=(axes['toprighttop'], axes['toprightbottom']), fig=fig)
+
+# fig.show()
+
+
+
+# %% D) BAR PLOT OF AVG PHOTOSTIMULATION FOV RAW FLU ACROSS CONDITIONS
+results: PhotostimResponsesSLMtargetsResults = PhotostimResponsesSLMtargetsResults.load()
+
+ax = axes['bottom'][2]
+rfv.add_label_axes(s="D", ax=ax, y_adjust=0, x_adjust=0.1)
+
+results.collect_avg_prestimf_states(rerun=0)
+baseline_prestimf = results.avg_prestim_Flu['baseline']
+interictal_prestimf = results.avg_prestim_Flu['interictal']
+ictal_prestimf = results.avg_prestim_Flu['ictal']
+
+plot_bar_with_points(data=[baseline_prestimf, interictal_prestimf, ictal_prestimf],
+                     bar=False, title='', show=False, fig=fig, ax=ax,
+                     x_tick_labels=['Baseline', 'Interictal', 'Ictal'],
+                     colors=['royalblue', 'mediumseagreen', 'blueviolet'],
+                     y_label='Fluorescence (a.u.)',
+                     ylims=[0, 1900], alpha=1, s=35)
+
+
+# %% C - C') GRAND AVERAGE PHOTOSTIM TRACES AND AVERAGE ACROSS EXPERIMENTS
+
+ax = axes['bottom'][0]
+rfv.add_label_axes(s="C", ax=ax, y_adjust=0.0)
+
+results.collect_grand_avg_alloptical_traces(rerun=0)
+
+# %% C - C') all conditions - grand average photostim average of targets - make figure
+
+# photostims - targets
+avg_ = np.mean(results.grand_avg_traces['baseline'], axis=0)
+sem_ = stats.sem(results.grand_avg_traces['baseline'], axis=0, ddof=1, nan_policy='omit')
+ax.plot(results.grand_avg_traces['time_arr'], avg_, color='royalblue', lw=1)
+ax.fill_between(x=results.grand_avg_traces['time_arr'], y1=avg_ + sem_, y2=avg_ - sem_, alpha=0.3, zorder=2,
+                color='royalblue')
+
+avg_ = np.mean(results.grand_avg_traces['interictal'], axis=0)
+sem_ = stats.sem(results.grand_avg_traces['interictal'], axis=0, ddof=1, nan_policy='omit')
+ax.plot(results.grand_avg_traces['time_arr'], avg_, color='mediumseagreen', lw=1)
+ax.fill_between(x=results.grand_avg_traces['time_arr'], y1=avg_ + sem_, y2=avg_ - sem_, alpha=0.3, zorder=2,
+                color='forestgreen')
+
+avg_ = np.mean(results.grand_avg_traces['ictal'], axis=0)
+sem_ = stats.sem(results.grand_avg_traces['ictal'], axis=0, ddof=1, nan_policy='omit')
+ax.plot(results.grand_avg_traces['time_arr'], avg_, color='blueviolet', lw=1)
+ax.fill_between(x=results.grand_avg_traces['time_arr'], y1=avg_ + sem_, y2=avg_ - sem_, alpha=0.3, zorder=2,
+                color='purple')
+
+# # fakestims - targets
+# avg_ = np.mean(fakestim_targets_average_traces, axis=0)
+# std_ = np.std(fakestim_targets_average_traces, axis=0, ddof=1)
+# ax.plot(time_arr, avg_, color='black', lw=1.5)
+# ax.fill_between(x=time_arr, y1=avg_ + std_, y2=avg_ - std_, alpha=0.3, zorder=2, color='gray')
+
+# span over stim frames
+stim_ = np.where(sem_ == 0)[0]
+ax.axvspan(results.grand_avg_traces['time_arr'][stim_[0] - 1], results.grand_avg_traces['time_arr'][stim_[-1] + 2],
+           color='lightcoral', zorder=5)
+rfv.naked(ax)
+ax.set_ylim([-1.5, 30])
+# ax.set_ylabel('dFF')
+# ax.set_xlabel('Time (secs) rel. to stim')
+# ax.set_title('grand average all cells, all exps - baseline', wrap=True, fontsize='small')
+
+# %% C') BAR PLOT OF AVG PHOTOSTIMULATION RESPONSE OF TARGETS ACROSS CONDITIONS
+
+ax = axes['bottom'][1]
+rfv.add_label_axes(s="C'", ax=ax, y_adjust=0, x_adjust=0.05)
+
+results.collect_avg_photostim_responses_states(rerun=0)
+baseline_responses = results.avg_photostim_responses['baseline']
+interictal_responses = results.avg_photostim_responses['interictal']
+ictal_responses = results.avg_photostim_responses['ictal']
+
+plot_bar_with_points(data=[baseline_responses, interictal_responses, ictal_responses],
+                     bar=False, title='',
+                     x_tick_labels=['Baseline', 'Interictal', 'Ictal'],
+                     colors=['royalblue', 'mediumseagreen', 'blueviolet'], figsize=(4, 4), y_label='dFF',
+                     s=35, alpha=1, ylims=[-19, 90], show=False, fig=fig, ax=ax)
+
+
+# %%
+fig.show()
+
+
+# %% add plots to axes
 
 
 if save_fig:
     save_figure(fig=fig, save_path_full=f"{SAVE_FOLDER}/figure3-RF.png")
     save_figure(fig=fig, save_path_full=f"{SAVE_FOLDER}/figure3-RF.svg")
-
-
-

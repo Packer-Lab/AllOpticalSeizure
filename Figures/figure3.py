@@ -454,7 +454,7 @@ ictal_prestimf = collect_avg_prestimf_ictal()
 pplot.plot_bar_with_points(data=[baseline_prestimf, interictal_prestimf, ictal_prestimf],
                            bar = False, title='avg prestim F - targets',
                            x_tick_labels=['Baseline', 'Interictal', 'Ictal'],
-                           colors=['royalblue', 'mediumseagreen', 'blueviolet'], figsize=(4,4),
+                           colors=['royalblue', 'mediumseagreen', 'blueviolet'], figsize=(4, 4),
                            y_label='Fluorescence (a.u.)',
                            ylims=[0, 2000], alpha=1)
 

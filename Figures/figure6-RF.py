@@ -11,19 +11,11 @@ suppl figure: write up RF code
 # %%
 import sys
 
-import pandas as pd
-
-from _analysis_._ClassTargetsSzInvasionTemporal import TargetsSzInvasionTemporal, TargetsSzInvasionTemporalResults
-from _analysis_.run__TargetsSzInvasionTemporal import plot__targets_sz_invasion_meantraces
-
 sys.path.extend(['/home/pshah/Documents/code/reproducible_figures-main'])
 
 import rep_fig_vis as rfv
-from _utils_.rfv_funcs import make_fig_layout, show_test_figure_layout, add_label_axes
 import alloptical_utils_pj as Utils
 import numpy as np
-import statsmodels.api as sm
-from statsmodels.formula.api import ols
 
 import funcsforprajay.funcs as pj
 

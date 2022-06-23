@@ -143,6 +143,29 @@ class TwoPhotonImaging:
 
         opsEnd = run_s2p(ops=ops, db=db)
 
+    def getXMLFrame(self, path):
+        relativeTime = []
+        fr_index = []
+
+        xml_tree = ET.parse(path)  # parse xml from a path
+        root = xml_tree.getroot()  # make xml tree structure
+
+        pv_sequence = root.find('Sequence')  # find pv state shard element in root
+
+        for elem in pv_sequence:  # for each element in pv state shard, find the value for the specified key
+            if elem.get('relativeTime') != None:
+                relativeTime.append(float(elem.get('relativeTime')))
+                fr_index.append(int(elem.get('index')))
+
+        if not relativeTime:  # if no value found at all, raise exception
+            raise Exception('ERROR: relative time of frames could not be found.')
+
+        assert fr_index[-1] == self.n_frames
+        self.pv_fr_time = relativeTime
+
+    def frame_time(self, frame: int):
+        return self.pv_fr_time[frame]
+
     def _getPVStateShard(self, path, key):
 
         '''

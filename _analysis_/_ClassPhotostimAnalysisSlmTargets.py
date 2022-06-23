@@ -1229,55 +1229,46 @@ class PhotostimAnalysisSlmTargets(Quantification):
             ax = kwargs['ax']
 
             x_range = np.linspace(0, int(array.shape[1] // expobj.fps), array.shape[1])
+            start, end = pj.findClosest(x_range, kwargs['start_crop'])[1], pj.findClosest(x_range, kwargs['end_crop'])[1]
+            x_plot = x_range[start: end]
             for i in range(array.shape[0]):
+                ca_trace_ = array[i] - np.mean(array[i][-100:]) + i * 40 * y_spacing_factor
+                ca_trace = ca_trace_[start: end]
                 if 'linewidth' in kwargs.keys():
                     linewidth = kwargs['linewidth']
                 else:
                     linewidth = 1
-                ax.plot(x_range, array[i] - np.mean(array[i][-100:]) + i * 40 * y_spacing_factor, linewidth=linewidth)
+                ax.plot(x_plot, ca_trace, linewidth=linewidth, clip_on=False)
+
                 # ax.axhline(i * 40 * y_spacing_factor, color='hotpink', ls='--')
 
-            for j in (np.asarray(expobj.stim_start_frames) / expobj.fps):
+            for j in expobj.stim_start_frames:
+                stim_time = expobj.frame_time(j)
                 if j <= array.shape[1]:
-                    ax.axvline(x=j, c='gray', alpha=0.3, lw=0.5)
-
-            ax.set_xlabel('Time (secs)')
-            ax.spines['top'].set_visible(False)
-            ax.spines['right'].set_visible(False)
-            ax.spines['left'].set_visible(False)
-            # ax.spines['bottom'].set_visible(False)
+                    ax.axvline(x=stim_time, c='gray', alpha=0.3, lw=1, zorder=0)
 
             ax.margins(0)
+
+            # ax.set_xlabel('Time (secs)')
+            # ax.spines['top'].set_visible(False)
+            # ax.spines['right'].set_visible(False)
+            # ax.spines['left'].set_visible(False)
+            # ax.spines['bottom'].set_visible(False)
+
+
             # change x axis ticks to seconds
-            labels = list(range(0, int(expobj.n_frames // expobj.fps), 30))
-            ax.set_xticks(ticks=labels)
-            ax.set_yticks([])
+            # labels = list(range(0, int(expobj.n_frames // expobj.fps), 30))
+            # ax.set_xticks(ticks=labels)
+            # ax.set_yticks([])
+            rfv.naked(ax)
+
 
         # PRE4AP PLOTTING ##################################################################################################################################################################################################################
         expobj: alloptical = import_expobj(exp_prep='RL109 t-013')
         start_crop = 10  # int(expobj.stim_start_frames[0] / expobj.fps) - 10
         end_crop = start_crop + 200
 
-        ax = ax_cat[0][0]
-        ax.axis('off')
-        # ax.spines['left'].set_visible(False)
-        # ax.spines['bottom'].set_visible(False)
-        # ax.set_yticks([])
-        # ax.set_xticks([])
-        # ax.set_xticklabels([])
-        fig, ax = plotLfpSignal(expobj=expobj, figsize=(10, 3), xlims=[start_crop, end_crop], ylims=[-5, 5],
-                                # save_path=f'{SAVE_FIG}/alloptical_Ca_traces_pre4ap_LFP.png',
-                                linewidth=0.1, color='black', title=None,
-                                stim_span_color='lightgray', show=False, ax=ax, fig=fig)
-        ax.axis('off')
-        # ax.spines['left'].set_visible(False)
-        # ax.spines['bottom'].set_visible(False)
-        # ax.set_yticks([])
-        # ax.set_xticks([])
-        # ax.set_xticklabels([])
-        # fig.show()
-        # Utils.save_figure(fig, f'{SAVE_FIG}/alloptical_Ca_traces_pre4ap_LFP.png')
-
+        # Stacked Ca traces
         responses = np.mean(expobj.PhotostimAnalysisSlmTargets.adata.X, axis=1)
         if cells_to_plot == 'median20':
             slice_ = np.s_[len(responses) // 2 - 10: len(responses) // 2 + 10]
@@ -1291,8 +1282,6 @@ class PhotostimAnalysisSlmTargets(Quantification):
             raise ValueError(
                 'unknown cells to plot option given. provide cells to plot as type:tuple, or `median14` or `all`')
 
-        # fig, ax = plt.subplots(figsize = (10, 6))
-
         expobj.PhotostimAnalysisSlmTargets.dFF = expobj.dFF_SLMTargets if not hasattr(
             expobj.PhotostimAnalysisSlmTargets, 'dFF') else expobj.PhotostimAnalysisSlmTargets.dFF
 
@@ -1301,22 +1290,8 @@ class PhotostimAnalysisSlmTargets(Quantification):
         smooth = 0.5  # seconds
         w = int(smooth * expobj.fps)
         array = np.asarray([pj.smoothen_signal(trace, w) for trace in array])
-        # array = np.asarray([(np.convolve(trace, np.ones(w), 'valid') / w) for trace in array])
 
-        len_ = len(array)
-
-        fig, ax = plot_photostim_traces_stacked(array, expobj, show=False, ax=ax_cat[1][0], fig=fig, linewidth=0.3)
-
-        # # plot LFP signal
-        # ax2 = ax.twinx()
-        # signal = expobj.lfp_signal[expobj.frame_start_time_actual: expobj.frame_end_time_actual]
-
-        # x_range = np.linspace(0, (expobj.frame_end_time_actual - expobj.frame_start_time_actual) / expobj.paq_rate, len(signal))
-        # ax2.plot(x_range, signal, color='black', lw=0.4)
-        # ax2.set_yticks([])
-        # ax2.spines['left'].set_visible(False)
-        # ax2.set_ylim([np.min(signal) - 40, np.max(signal)])
-
+        fig, ax = plot_photostim_traces_stacked(array, expobj, show=False, ax=ax_cat[1][0], fig=fig, linewidth=0.3, start_crop=start_crop, end_crop = end_crop)
         ax.spines['left'].set_visible(False)
         ax.set_xlim([start_crop, end_crop]) if start_crop is not None else None
         # y_max = np.mean(array[-1] - array[-1] - np.mean(array[-1][-100:]) + -1 * 40 * y_spacing_factor) + 3 * np.mean(array[-1])
@@ -1325,8 +1300,19 @@ class PhotostimAnalysisSlmTargets(Quantification):
         ylim_pre4ap = ax.get_ylim()
 
         ax.set_xticklabels([tick - start_crop for tick in ax.get_xticks()])
+        ax.set_ylabel('Individual targets')
 
-        fig.tight_layout(pad=0.4)
+        # synced LFP signal
+        fig, ax = plotLfpSignal(expobj=expobj, xlims=[start_crop, end_crop], ylims=[-5, 5],
+                                # save_path=f'{SAVE_FIG}/alloptical_Ca_traces_pre4ap_LFP.png',
+                                linewidth=0.3, color='black', title=None,
+                                stim_lines=True, show=False, ax=ax_cat[0][0], fig=fig)
+        rfv.naked(ax)
+
+        # ax.axis('off')
+        ax.set_ylabel('LFP signal')
+
+        # fig.tight_layout(pad=0.4)
         # fig.show()
         # fig.savefig(f'{SAVE_FIG}/alloptical_Ca_traces_pre4ap.png')
         # fig.savefig(f'{SAVE_FIG}/alloptical_Ca_traces_pre4ap.svg')
@@ -1334,6 +1320,7 @@ class PhotostimAnalysisSlmTargets(Quantification):
         # plotLfpSignal(expobj=expobj, figsize=(10, 3), xlims=[start_crop * expobj.paq_rate, start_crop* expobj.paq_rate + 200 * expobj.paq_rate], ylims=[-6, 5], save_path=f'{SAVE_FIG}/alloptical_Ca_traces_pre4ap_LFP.png')
 
         # POST 4AP PLOTTING ######################################################################################################################################################
+        ax = ax_cat[1][1]
         expobj: Post4ap = import_expobj(
             exp_prep=AllOpticalExpsToAnalyze.find_matched_trial(pre4ap_trial_name=expobj.t_series_name))
         # expobj: Post4ap = import_expobj(exp_prep='RL108 t-011')
@@ -1349,7 +1336,11 @@ class PhotostimAnalysisSlmTargets(Quantification):
         array = np.asarray([pj.smoothen_signal(trace, w) for trace in array])
         # array = np.asarray([(np.convolve(trace, np.ones(w), 'valid') / w) for trace in array])
 
-        fig, ax = plot_photostim_traces_stacked(array, expobj, show=False, ax=ax_cat[1][1], fig=fig, linewidth=0.1)
+        start_crop = 190
+        end_crop = start_crop + 200
+
+        fig, ax = plot_photostim_traces_stacked(array, expobj, show=False, ax=ax, fig=fig, linewidth=0.3, start_crop=start_crop, end_crop=end_crop)
+        ax.set_xlim([start_crop, start_crop + 200]) if start_crop is not None else None
 
         # # plot LFP signal
         # ax2 = ax.twinx()
@@ -1362,14 +1353,11 @@ class PhotostimAnalysisSlmTargets(Quantification):
         # ax2.spines['left'].set_visible(False)
         # ax2.set_ylim([np.min(signal) - 40, np.max(signal)])
 
-        start_crop = 190
-        end_crop = start_crop + 200
-        ax.set_xlim([start_crop, start_crop + 200]) if start_crop is not None else None
         # ax.set_xlim([0, expobj.n_frames//expobj.fps])
         # ax.set_xlim([190, 390])
 
         # y_max = np.mean(array[-1] - array[-1] - np.mean(array[-1][-100:]) + -1 * 40 * y_spacing_factor) + 3 * np.mean(array[-1])
-        ymax = ax.get_ylim()[1]
+        # ymax = ax.get_ylim()[1]
         # ax.set_ylim([-100, ymax])
         ax.set_ylim(ylim_pre4ap)
         ax.set_xticklabels([tick - start_crop for tick in ax.get_xticks()])
@@ -1384,15 +1372,17 @@ class PhotostimAnalysisSlmTargets(Quantification):
                       title=None,
                       # save_path=f'{SAVE_FIG}/alloptical_Ca_traces_post4ap_LFP.png',
                       color='black', stim_span_color='lightgray', linewidth=0.3, ax=ax, fig=fig, show=False)
+        ax.axis('off')
 
         # add scalebar
         from _utils_.rfv_funcs import add_scale_bar
-        add_scale_bar(ax=ax_cat[0][1], loc=(end_crop + 7, -5 + 0.75), length=(1, 10), bartype='L',
+        add_scale_bar(ax=ax_cat[0][1], loc=(end_crop + 10, -5 + 0.75), length=(1, 10), bartype='L',
                       text=('1mV', '10secs'), text_offset=(6, 0.9), fs=5, fig=fig)
 
-        ax.axis('off')
+        add_scale_bar(ax=ax_cat[1][1], loc=(end_crop + 10, ylim_pre4ap[0] + 200), length=(100, 10), bartype='L',
+                      text=('1 dFF', '10secs'), text_offset=(6, 110), fs=5, fig=fig)
 
-        fig.show()
+        # fig.show()
 
         return cells_to_plot
 

@@ -1445,8 +1445,8 @@ class Post4ap(alloptical):
             _sz_prob = np.asarray([0] * int(self.stim_interval_fr / bin_width))
 
             for jdx, fr in enumerate(frame_binned[:-1]):
-                low_fr = fr - bin_width
-                high_fr = fr + bin_width
+                low_fr = fr - bin_width // 2
+                high_fr = fr + bin_width // 2
                 # sz_s = [1 for sz_start in self.seizure_lfp_onsets if sz_start in range(low_fr, high_fr)]
                 # total_sz = np.sum(sz_s) if len(sz_s) > 0 else 0
                 for sz_start in self.seizure_lfp_onsets:
@@ -1454,7 +1454,11 @@ class Post4ap(alloptical):
                         sz_prob[jdx] += 1
 
             # sz_prob += _sz_prob
+        print(np.asarray(sz_prob / len([i for i in self.seizure_lfp_onsets if i < self.stim_start_frames[-1]])))
+        # return np.asarray(sz_prob / len([i for i in self.seizure_lfp_onsets if i < self.stim_start_frames[-1]]))
+        return np.asarray(sz_prob)
 
-        return np.asarray(sz_prob / len([i for i in self.seizure_lfp_onsets if i < self.stim_start_frames[-1]]))
+
+
 
 

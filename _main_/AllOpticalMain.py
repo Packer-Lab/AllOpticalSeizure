@@ -448,7 +448,7 @@ class alloptical(TwoPhotonImaging):
 
         print('loading', self.paq_path)
 
-        paq, _ = paq_read(self.paq_path, plot=True)
+        paq, _ = paq_read(self.paq_path, plot=False)
         self.paq_rate = paq['rate']
 
         # find frame times
@@ -456,14 +456,20 @@ class alloptical(TwoPhotonImaging):
         clock_idx = paq['chan_names'].index('frame_clock')
         clock_voltage = paq['data'][clock_idx, :]
 
-        frame_clock = pj.threshold_detect(clock_voltage, 1)
+        frame_clock = pj.threshold_detect(clock_voltage, 1)#[:self.n_frames]
+        frame_diffs = np.array([(val_i - frame_clock[i + 1]) for i, val_i in enumerate(frame_clock[:-1])])
+        # print(np.percentile(frame_diffs, [75 ,25]))
+        # print(np.max(frame_diffs), np.mean(frame_diffs), np.min(frame_diffs))
         self.frame_clock = frame_clock
-        plt.figure(figsize=(10, 5))
-        plt.plot(clock_voltage)
-        plt.plot(frame_clock, np.ones(len(frame_clock)), '.')
+        x = np.linspace(0, len(clock_voltage)/self.paq_rate, len(clock_voltage))
+        plt.figure(figsize=(20, 2))
+        plt.plot(x, clock_voltage)
+        plt.plot(frame_clock / self.paq_rate, np.ones(len(frame_clock)), '.')
+        plt.xticks(np.arange(0, len(clock_voltage)/self.paq_rate, 1))
+        plt.xlim([540, 545])
         plt.suptitle('frame clock from paq, with detected frame clock instances as scatter')
         sns.despine()
-        plt.show()
+        # plt.show()
 
         # find start and stop frame_clock times -- there might be multiple 2p imaging starts/stops in the paq trial (hence multiple frame start and end times)
         self.frame_start_times = [self.frame_clock[0]]  # initialize ls
@@ -501,6 +507,7 @@ class alloptical(TwoPhotonImaging):
         stim_idx = paq['chan_names'].index(self.stim_channel)
         stim_volts = paq['data'][stim_idx, :]
         stim_times = pj.threshold_detect(stim_volts, 1)
+        np.array([(val_i - stim_times[i + 1]) for i, val_i in enumerate(stim_times[:-1])])
         # self.stim_times = stim_times
         self.stim_start_times = stim_times
         print('# of stims found on %s: %s' % (self.stim_channel, len(self.stim_start_times)))
@@ -511,27 +518,29 @@ class alloptical(TwoPhotonImaging):
         duration_frames = np.ceil((duration_ms / 1000) * frame_rate)
         self.stim_duration_frames = int(duration_frames)
 
-        plt.figure(figsize=(10, 5))
-        plt.plot(stim_volts)
-        plt.plot(stim_times, np.ones(len(stim_times)), '.')
+        plt.figure(figsize=(10, 2))
+        x = np.linspace(0, len(stim_volts)/self.paq_rate, len(stim_volts))
+        plt.plot(x, stim_volts)
+        plt.plot(stim_times / self.paq_rate, np.ones(len(stim_times)), '.')
+        plt.xticks(np.arange(0, len(stim_volts)/self.paq_rate, 10))
         plt.suptitle('stim times')
         sns.despine()
-        plt.show()
+        # plt.show()
 
         # find stim frames
 
         self.stim_start_frames = []
-
+        # frame_clock = (self.frame_clock_actual - self.frame_start_time_actual)[:self.n_frames]
         for plane in range(self.n_planes):
 
             stim_start_frames = []
-
             for stim in stim_times:
                 # the index of the frame immediately preceeding stim
                 stim_start_frame = next(
                     i - 1 for i, sample in enumerate(frame_clock[plane::self.n_planes]) if sample - stim >= 0)
                 stim_start_frames.append(stim_start_frame)
 
+            stim_start_frames = np.array(stim_start_frames)
             self.stim_start_frames = stim_start_frames
             # self.stim_start_frames.append(np.array(stim_start_frames))  # recoded with slight improvement
 

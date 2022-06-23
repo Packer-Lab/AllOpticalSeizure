@@ -5,6 +5,7 @@ from funcsforprajay import funcs as pj
 from _exp_metainfo_.exp_metainfo import ExpMetainfo
 
 # %% HANDLING PICKLING ERRORS
+from _main_.TwoPhotonImagingMain import TwoPhotonImaging
 
 
 def load_from_backup(prep, trial, date, original_path, backup_path=None):
@@ -280,7 +281,7 @@ def import_expobj(aoresults_map_id: str = None, trial: str = None, prep: str = N
     try:
         with open(pkl_path, 'rb') as f:
             print(f'\- Loading {pkl_path}', end='\r')
-            expobj = pickle.load(f)
+            expobj: TwoPhotonImaging = pickle.load(f)
             print(f'|- Loaded {expobj.t_series_name} (from {pkl_path}) ... DONE')
     except EOFError:
         expobj = load_from_backup(prep, trial, date, original_path=pkl_path)
@@ -309,12 +310,10 @@ def import_expobj(aoresults_map_id: str = None, trial: str = None, prep: str = N
 
     ### roping in some extraneous processing steps if there's expobj's that haven't completed for them
     try:
-        _fps = expobj.fps
+        _pv_fr_times = expobj.pv_fr_time
     except AttributeError:
-        expobj._parsePVMetadata()
+        expobj.getXMLFrame(expobj.xml_path)
         expobj.save()
-
-
 
     # check for existence of backup (if not then make one through the saving func).
     if 'OneDrive' not in pkl_path:
