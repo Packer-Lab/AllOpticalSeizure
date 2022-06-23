@@ -708,7 +708,7 @@ def plot_periphotostim_avg2(dataset, fps=None, legend_labels=None, colors=None, 
 
 ### photostim analysis - PLOT avg over all photstim. trials traces from PHOTOSTIM TARGETTED cells
 @plot_piping_decorator(figsize=(5,5.5))
-def plot_periphotostim_avg(arr=None, pre_stim_sec=1.0, post_stim_sec=3.0, title='', expobj=None,
+def plot_periphotostim_avg(arr=None, pre_stim_sec=1.0, post_stim_sec=3.0, title='', expobj=None, plot_span = True,
                            avg_only: bool = False, x_label=None, y_label=None, fig=None, ax=None, pad=20, **kwargs):
     """
     plot trace across all stims
@@ -731,7 +731,7 @@ def plot_periphotostim_avg(arr=None, pre_stim_sec=1.0, post_stim_sec=3.0, title=
 
     fps = expobj.fps  # frames per second rate of the imaging data collection for the data to be plotted
     exp_prestim = expobj.pre_stim  # frames of pre-stim data collected for each trace for this expobj (should be same as what's under expobj.pre_stim_sec)
-    if 'stim_duration' in kwargs.keys():
+    if 'stim_duration' in kwargs:
         stim_duration = kwargs['stim_duration']
     else:
         stim_duration = expobj.stim_dur / 1000  # seconds of stimulation duration
@@ -742,7 +742,7 @@ def plot_periphotostim_avg(arr=None, pre_stim_sec=1.0, post_stim_sec=3.0, title=
 
     # ax.margins(x=0.07)
 
-    if 'alpha' in kwargs.keys():
+    if 'alpha' in kwargs:
         alpha = kwargs['alpha']
     else:
         alpha = 0.2
@@ -757,16 +757,19 @@ def plot_periphotostim_avg(arr=None, pre_stim_sec=1.0, post_stim_sec=3.0, title=
 
         if avg_only is True:
             # ax.axvspan(exp_prestim/fps, (exp_prestim + stim_duration + 1) / fps, alpha=alpha, color='plum', zorder = 3)
-            ax.axvspan(0 - pre_stim_sec/fps, 0 + stim_duration + pre_stim_sec / fps, alpha=alpha, color='plum', zorder = 3)  # note that we are setting 0 as the stimulation time
+            ax.axvspan(0 - pre_stim_sec/fps, 0 + stim_duration + pre_stim_sec / fps, alpha=alpha, color='plum', zorder = 3) if plot_span else None # note that we are setting 0 as the stimulation time
         else:
-            ax.axvspan(0 - pre_stim_sec/fps, 0 - pre_stim_sec/fps + stim_duration, alpha=alpha, color='plum', zorder = 3)  # note that we are setting 0 as the stimulation time
+            ax.axvspan(0 - pre_stim_sec/fps, 0 - pre_stim_sec/fps + stim_duration, alpha=alpha, color='plum', zorder = 3) if plot_span else None  # note that we are setting 0 as the stimulation time
+        if not plot_span: ax.axvline(0 - pre_stim_sec/fps, ls='--', lw=1, color='black')
+
     else:
         x = list(range(arr.shape[1]))  # x axis is Frames
-        ax.axvspan(exp_prestim, exp_prestim + int(stim_duration*fps), alpha=alpha, color='tomato')
+        ax.axvspan(exp_prestim, exp_prestim + int(stim_duration*fps), alpha=alpha, color='tomato') if plot_span else None
+        if not plot_span: ax.axvline(exp_prestim, ls='--', lw=1, color='black')
 
     if not avg_only:
         for cell_trace in arr:
-            if 'color' in kwargs.keys():
+            if 'color' in kwargs:
                 ax.plot(x, cell_trace, linewidth=1, alpha=0.6, c=kwargs['color'], zorder=1)
             else:
                 if arr.shape[0] > 50:
@@ -788,7 +791,7 @@ def plot_periphotostim_avg(arr=None, pre_stim_sec=1.0, post_stim_sec=3.0, title=
     # spine options
     ax.spines['top'].set_visible(False)
     ax.spines['right'].set_visible(False)
-    ax.spines['left'].set_visible(False)
+    # ax.spines['left'].set_visible(False)
 
     # set axis labels
     ax.set_xlabel(x_label)

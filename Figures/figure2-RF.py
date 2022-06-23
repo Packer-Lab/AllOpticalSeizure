@@ -16,7 +16,7 @@ import cairosvg
 from PIL import Image
 from io import BytesIO
 
-from onePexperiment.OnePhotonStimAnalysis_main import OnePhotonStimAnalysisFuncs
+from onePexperiment.OnePhotonStimAnalysis_main import OnePhotonStimAnalysisFuncs, OnePhotonStimResults
 
 sys.path.extend(['/home/pshah/Documents/code/reproducible_figures-main'])
 
@@ -27,35 +27,41 @@ import rep_fig_vis as rfv
 
 plot_settings()
 
+Results = OnePhotonStimResults.load()
+
 SAVE_FOLDER = f'/home/pshah/Documents/figures/alloptical_seizures_draft/'
 fig_items = f'/home/pshah/Documents/figures/alloptical_seizures_draft/figure-items/'
 
 date = '2021-01-24'
-expobj = import_expobj(prep='PS11', trial='t-012', date=date)  # post4ap trial
 
 
 # %% MAKE FIGURE LAYOUT  # TODO need to update for Figure 2!
 layout = {
-    'main-left': {'panel_shape': (1, 1),
-                'bound': (0.05, 0.64, 0.30, 0.98)},
-    'toprighttop': {'panel_shape': (2, 1),
-                    'bound': (0.31, 0.86, 0.90, 0.95)},
-    'toprightbottom': {'panel_shape': (2, 1),
-                       'bound': (0.31, 0.64, 0.90, 0.85)},
-    'bottom': {'panel_shape': (3, 1),
-               'bound': (0.05, 0.40, 0.63, 0.57),
-               'wspace': 0.4}
+    'A': {'panel_shape': (1, 1),
+          'bound': (0.05, 0.80, 0.40, 0.95)},
+    'B': {'panel_shape': (2, 2),
+          'bound': (0.45, 0.80, 0.95, 0.95)},
+    'C': {'panel_shape': (3, 2),
+          'bound': (0.05, 0.58, 0.40, 0.72)},
+    'D-E': {'panel_shape': (2, 1),
+               'bound': (0.47, 0.58, 0.70, 0.72),
+               'wspace': 0.6}
 }
 
-# fig, axes, grid = rfv.make_fig_layout(layout=layout, dpi=300)
+fig, axes, grid = rfv.make_fig_layout(layout=layout, dpi=50)
 
-# rfv.naked(axes['main-left'][0])
+rfv.naked(axes['A'][0])
+
+# rfv.show_test_figure_layout(fig, axes=axes, show=True)  # test what layout looks like quickly, but can also skip and moveon to plotting data.
+
 
 # %% F) Radial plot of Mean FOV for photostimulation trials, with period equal to that of photostimulation timing period
 
 # run data analysis
-exp_sz_occurrence, total_sz_occurrence = OnePhotonStimAnalysisFuncs.collectSzOccurrenceRelativeStim()
+exp_sz_occurrence, total_sz_occurrence = OnePhotonStimAnalysisFuncs.collectSzOccurrenceRelativeStim(Results=Results, rerun=0)
 
+
+expobj = import_expobj(prep='PS11', trial='t-012', date=date)  # post4ap trial
 
 # make plot
 bin_width = int(1 * expobj.fps)
@@ -68,7 +74,7 @@ _axes = np.empty(shape=(1,1), dtype=object)
 # ax.set_position(pos=bbox)
 # rfv.add_label_axes(s='F', ax=ax, y_adjust=0.035)
 
-fig, ax = plt.subplots(subplot_kw={'projection': 'polar'}, dpi=50)
+fig, ax = plt.subplots(subplot_kw={'projection': 'polar'}, dpi=300, figsize=(3,3))
 
 # by experiment
 # for exp, values in exp_sz_occurrence.items():
@@ -79,7 +85,7 @@ fig, ax = plt.subplots(subplot_kw={'projection': 'polar'}, dpi=50)
 total_sz = np.sum(np.sum(total_sz_occurrence, axis=0))
 sz_prob = np.sum(total_sz_occurrence, axis=0) / total_sz
 
-ax.bar(theta, sz_prob, width=(2 * np.pi) / period, bottom=0.0, alpha=0.5)
+ax.bar(theta, sz_prob, width=(2 * np.pi) / period, bottom=0.0, alpha=1, color='cornflowerblue')
 
 ax.set_rmax(1.1)
 ax.set_rticks([0.25, 0.5, 0.75, 1])  # radial ticks

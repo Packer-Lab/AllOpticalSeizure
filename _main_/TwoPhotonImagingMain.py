@@ -164,7 +164,7 @@ class TwoPhotonImaging:
         self.pv_fr_time = relativeTime
 
     def frame_time(self, frame: int):
-        return self.pv_fr_time[frame]
+        return self.pv_fr_time[frame - 1]
 
     def _getPVStateShard(self, path, key):
 

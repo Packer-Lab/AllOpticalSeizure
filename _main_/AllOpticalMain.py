@@ -1814,15 +1814,17 @@ class alloptical(TwoPhotonImaging):
 
         print('\nFinished collecting peri-stim traces ')
 
-        expobj.save() if save else None
-
-        plot = False
+        plot = True
         if plot:
-            cells_plot = np.random.randint(0, expobj.dff_traces_nontargets.shape[0], 100)
-            fig, ax = plt.subplots(figsize = (4,4))
+            if stim_frames == expobj.fake_stim_start_frames:
+                traces_plot = expobj.fakestims_dff_traces_nontargets_avg
+            else:
+                traces_plot = expobj.dff_traces_nontargets_avg
+            cells_plot = np.random.randint(0, traces_plot.shape[0], 100)
+            fig, ax = plt.subplots(figsize=(4, 4))
             for cell in cells_plot:
-                ax.plot(expobj.dfstdF_traces_nontargets_avg[cell])
-            ax.plot(np.mean(expobj.dfstdF_traces_nontargets_avg[cells_plot], axis=0), lw='2', color='black')
+                ax.plot(traces_plot[cell])
+            ax.plot(np.mean(traces_plot[cells_plot], axis=0), lw='2', color='black')
             fig.show()
 
             for i in cells_plot:
@@ -1833,6 +1835,8 @@ class alloptical(TwoPhotonImaging):
                 plt.plot(trace)
             plt.plot(np.mean(expobj.dfstdF_traces_nontargets[cell], axis=0), color='black')
             plt.show()
+
+        # expobj.save() if save else None
 
         return expobj.s2p_nontargets_analysis
 

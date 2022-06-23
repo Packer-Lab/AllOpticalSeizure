@@ -1,8 +1,6 @@
 """
 TODO:
 
-- calculate decay constant of targets' responses across baseline and interictal
-
 """
 
 # %%
@@ -43,10 +41,6 @@ fig_items = f'/home/pshah/Documents/figures/alloptical_seizures_draft/figure-ite
 ## Set general plotting parameters
 rfv.set_fontsize(7)
 
-## Set parameters
-n_cat = 2
-n_misc_rows = 2
-n_misc = 5
 colour_list = ['#101820', '#1b362c', '#2f553d', '#4f7553', '#79936f', '#aeae92']
 colours_misc_dict = {xx: colour_list[xx] for xx in range(len(colour_list))}
 
@@ -61,13 +55,16 @@ np.random.seed(2)  # fix seed
 
 layout = {
     'main-left': {'panel_shape': (1, 1),
-                'bound': (0.05, 0.64, 0.30, 0.98)},
+                  'bound': (0.05, 0.64, 0.30, 0.98)},
     'toprighttop': {'panel_shape': (2, 1),
                     'bound': (0.31, 0.86, 0.90, 0.95)},
-    'toprightbottom': {'panel_shape': (n_cat, 1),
+    'toprightbottom': {'panel_shape': (2, 1),
                        'bound': (0.31, 0.64, 0.90, 0.85)},
-    'bottom': {'panel_shape': (3, 1),
-               'bound': (0.05, 0.40, 0.63, 0.57),
+    'bottom-C': {'panel_shape': (2, 1),
+               'bound': (0.05, 0.40, 0.40, 0.57),
+               'wspace': 0.4},
+    'bottom-D': {'panel_shape': (1, 1),
+               'bound': (0.52, 0.40, 0.66, 0.57),
                'wspace': 0.4}
 }
 
@@ -78,16 +75,45 @@ rfv.naked(axes['main-left'][0])
 # rfv.show_test_figure_layout(fig, axes=axes, show=True)  # test what layout looks like quickly, but can also skip and moveon to plotting data.
 
 # %% add plots to axes ########################################################################################################################################################################################################################
+# %% D) BAR PLOT OF AVG PHOTOSTIMULATION FOV RAW FLU ACROSS CONDITIONS
+results: PhotostimResponsesSLMtargetsResults = PhotostimResponsesSLMtargetsResults.load()
 
-# F) Radial plot of Mean FOV for photostimulation trials, with period equal to that of photostimulation timing period
-bbox = Bbox.from_extents(0.70, 0.41, 0.85, 0.56)
-_axes = np.empty(shape=(1,1), dtype=object)
-ax = fig.add_subplot(projection = 'polar')
-ax.set_position(pos=bbox)
-rfv.add_label_axes(s='F', ax=ax, y_adjust=0.035)
+ax = axes['bottom-D'][0]
+rfv.add_label_axes(s="D", ax=ax, y_adjust=0, x_adjust=0.1)
+
+results.collect_avg_prestimf_states(rerun=0)
+baseline_prestimf = results.avg_prestim_Flu['baseline']
+interictal_prestimf = results.avg_prestim_Flu['interictal']
+ictal_prestimf = results.avg_prestim_Flu['ictal']
+
+plot_bar_with_points(data=[baseline_prestimf, interictal_prestimf, ictal_prestimf],
+                     bar=False, title='', show=False, fig=fig, ax=ax,
+                     x_tick_labels=['Baseline', 'Interictal', 'Ictal'],
+                     colors=['royalblue', 'mediumseagreen', 'blueviolet'],
+                     y_label='Fluorescence (a.u.)',
+                     ylims=[0, 1900], alpha=1, s=35)
+
+# %% B + B')
+ax = axes['toprighttop'][0]
+rfv.add_label_axes(s='B', ax=ax, y_adjust=-0.01)
 # fig.show()
 
-# fig, ax = plt.subplots(subplot_kw={'projection': 'polar'}, dpi=50, figsize=(4, 4))
+# ax = axes['toprightbottom'][0]
+# rfv.add_label_axes(s="B'", ax=ax, y_adjust=-0.01)
+
+main = PhotostimAnalysisSlmTargets
+main.plot_photostim_traces_stacked_LFP_pre4ap_post4ap(ax_cat=(axes['toprighttop'], axes['toprightbottom']), fig=fig)
+
+# fig.show()
+
+# %% F) Radial plot of Mean FOV for photostimulation trials, with period equal to that of photostimulation timing period
+bbox = Bbox.from_extents(0.72, 0.41, 0.87, 0.56)
+_axes = np.empty(shape=(1, 1), dtype=object)
+ax = fig.add_subplot(projection='polar')
+ax.set_position(pos=bbox)
+rfv.add_label_axes(s='F', ax=ax, y_adjust=0.025)
+# fig.show()
+
 
 # run data analysis
 exp_sz_occurrence, total_sz_occurrence = ExpSeizureAnalysis.collectSzOccurrenceRelativeStim()
@@ -109,7 +135,9 @@ theta = (2 * np.pi) * np.arange(0, (expobj.stim_interval_fr / bin_width)) / peri
 total_sz = np.sum(np.sum(total_sz_occurrence, axis=0))
 sz_prob = np.sum(total_sz_occurrence, axis=0) / total_sz
 
-ax.bar(theta, sz_prob, width=(2 * np.pi) / period, bottom=0.0, alpha=0.5)
+# fig, ax = plt.subplots(subplot_kw={'projection': 'polar'}, dpi=300, figsize=(3,3))
+
+ax.bar(theta, sz_prob, width=(2 * np.pi) / period, bottom=0.0, alpha=1, color='crimson')
 
 ax.set_rmax(1.1)
 ax.set_rticks([0.25, 0.5, 0.75, 1])  # Less radial ticks
@@ -133,43 +161,13 @@ img = mpimg.imread(sch_path)
 ax.imshow(img, interpolation='none')
 # fig.show()
 
-# %% B + B')
-ax = axes['toprighttop'][0]
-rfv.add_label_axes(s='B', ax=ax, y_adjust=-0.01)
-# fig.show()
-
-# ax = axes['toprightbottom'][0]
-# rfv.add_label_axes(s="B'", ax=ax, y_adjust=-0.01)
-
-main = PhotostimAnalysisSlmTargets
-main.plot_photostim_traces_stacked_LFP_pre4ap_post4ap(ax_cat=(axes['toprighttop'], axes['toprightbottom']), fig=fig)
-
-# fig.show()
 
 
-
-# %% D) BAR PLOT OF AVG PHOTOSTIMULATION FOV RAW FLU ACROSS CONDITIONS
-results: PhotostimResponsesSLMtargetsResults = PhotostimResponsesSLMtargetsResults.load()
-
-ax = axes['bottom'][2]
-rfv.add_label_axes(s="D", ax=ax, y_adjust=0, x_adjust=0.1)
-
-results.collect_avg_prestimf_states(rerun=0)
-baseline_prestimf = results.avg_prestim_Flu['baseline']
-interictal_prestimf = results.avg_prestim_Flu['interictal']
-ictal_prestimf = results.avg_prestim_Flu['ictal']
-
-plot_bar_with_points(data=[baseline_prestimf, interictal_prestimf, ictal_prestimf],
-                     bar=False, title='', show=False, fig=fig, ax=ax,
-                     x_tick_labels=['Baseline', 'Interictal', 'Ictal'],
-                     colors=['royalblue', 'mediumseagreen', 'blueviolet'],
-                     y_label='Fluorescence (a.u.)',
-                     ylims=[0, 1900], alpha=1, s=35)
 
 
 # %% C - C') GRAND AVERAGE PHOTOSTIM TRACES AND AVERAGE ACROSS EXPERIMENTS
 
-ax = axes['bottom'][0]
+ax = axes['bottom-C'][0]
 rfv.add_label_axes(s="C", ax=ax, y_adjust=0.0)
 
 results.collect_grand_avg_alloptical_traces(rerun=0)
@@ -213,8 +211,8 @@ ax.set_ylim([-1.5, 30])
 
 # %% C') BAR PLOT OF AVG PHOTOSTIMULATION RESPONSE OF TARGETS ACROSS CONDITIONS
 
-ax = axes['bottom'][1]
-rfv.add_label_axes(s="C'", ax=ax, y_adjust=0, x_adjust=0.05)
+ax = axes['bottom-C'][1]
+rfv.add_label_axes(s="C'", ax=ax, y_adjust=0, x_adjust=0.07)
 
 results.collect_avg_photostim_responses_states(rerun=0)
 baseline_responses = results.avg_photostim_responses['baseline']
@@ -227,10 +225,8 @@ plot_bar_with_points(data=[baseline_responses, interictal_responses, ictal_respo
                      colors=['royalblue', 'mediumseagreen', 'blueviolet'], figsize=(4, 4), y_label='dFF',
                      s=35, alpha=1, ylims=[-19, 90], show=False, fig=fig, ax=ax)
 
-
 # %%
 fig.show()
-
 
 # %% add plots to axes
 

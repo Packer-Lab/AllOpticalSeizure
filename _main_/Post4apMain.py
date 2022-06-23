@@ -1441,11 +1441,11 @@ class Post4ap(alloptical):
 
 
         for i, stim in enumerate(self.stim_start_frames[:-1]):
-            frame_binned = np.arange(stim, stim + self.stim_interval_fr, bin_width)
+            frame_binned = np.arange(stim - bin_width // 2, stim + self.stim_interval_fr - bin_width // 2, bin_width)
             _sz_prob = np.asarray([0] * int(self.stim_interval_fr / bin_width))
 
             for jdx, fr in enumerate(frame_binned[:-1]):
-                low_fr = fr - bin_width // 2
+                low_fr = fr  # - bin_width // 2
                 high_fr = fr + bin_width // 2
                 # sz_s = [1 for sz_start in self.seizure_lfp_onsets if sz_start in range(low_fr, high_fr)]
                 # total_sz = np.sum(sz_s) if len(sz_s) > 0 else 0
