@@ -61,11 +61,11 @@ layout = {
     'toprightbottom': {'panel_shape': (2, 1),
                        'bound': (0.31, 0.64, 0.90, 0.85)},
     'bottom-C': {'panel_shape': (2, 1),
-               'bound': (0.05, 0.40, 0.40, 0.57),
-               'wspace': 0.4},
+                 'bound': (0.05, 0.40, 0.40, 0.57),
+                 'wspace': 0.4},
     'bottom-D': {'panel_shape': (1, 1),
-               'bound': (0.52, 0.40, 0.66, 0.57),
-               'wspace': 0.4}
+                 'bound': (0.52, 0.40, 0.66, 0.57),
+                 'wspace': 0.4}
 }
 
 fig, axes, grid = rfv.make_fig_layout(layout=layout, dpi=300)
@@ -162,9 +162,6 @@ ax.imshow(img, interpolation='none')
 # fig.show()
 
 
-
-
-
 # %% C - C') GRAND AVERAGE PHOTOSTIM TRACES AND AVERAGE ACROSS EXPERIMENTS
 
 ax = axes['bottom-C'][0]
@@ -226,11 +223,9 @@ plot_bar_with_points(data=[baseline_responses, interictal_responses, ictal_respo
                      s=35, alpha=1, ylims=[-19, 90], show=False, fig=fig, ax=ax)
 
 # %%
-fig.show()
+# fig.show()
 
 # %% add plots to axes
-
-
 if save_fig:
     save_figure(fig=fig, save_path_full=f"{SAVE_FOLDER}/figure3-RF.png")
     save_figure(fig=fig, save_path_full=f"{SAVE_FOLDER}/figure3-RF.svg")

@@ -5,22 +5,77 @@ import pandas as pd
 from funcsforprajay import funcs as pj
 
 from _analysis_._utils import Results
-from onePexperiment.OnePhotonStimMain import OnePhotonStim
+from onePexperiment.OnePhotonStimMain import OnePhotonStim, onePresults
 
-SAVE_LOC = "/home/pshah/mnt/qnap/Analysis/analysis_export/analysis_quantification_classes/"
+LOCAL_LOC = f'/Users/prajayshah/data/oxford-data/export/'
+
+REMOTE_LOC = "/home/pshah/mnt/qnap/Analysis/analysis_export/analysis_quantification_classes/"
+SAVE_LOC = REMOTE_LOC
 
 # %% ANALYSIS FUNCTIONS
 
 class OnePhotonStimResults(Results):
     SAVE_PATH = SAVE_LOC + 'Results__OnePhotonStim.pkl'
 
+    # by experiments:
+    interictal_decay_constant = {
+        'PS07': [1.26471, 0.32844],
+        'PS11': [1.05109, 0.45986],
+        'PS18': [0.65681],
+        'PS09': [0.52549, 0.59118, 0.39412],
+        'PS16': [0.78811, 0.98517]
+    }
+
+    baseline_decay_constant = {
+        # 'PS17': [0.1686],
+        'PS07': [0.45972, 0.46595],
+        'PS11': [0.45980, 0.52553],
+        'PS18': [0.45975],
+        'PS09': [0.52546],
+        'PS16': [0.45964, 0.39399, 0.46595]
+    }
+
+
+    # by experiments:
+    interictal_response_magnitude = {
+        'PS07': [0.2654, 0.1296],
+        'PS11': [0.9005, 0.9208],
+        'PS18': [1.5309],
+        'PS09': [0.2543, 0.6789, 0.763],
+        'PS16': [0.1858, 0.2652]
+    }
+
+    baseline_response_magnitude = {
+        # 'PS17': [0.1686],  # can't be used for paird pre4ap to interictal plot
+        'PS07': [0.3574, 0.3032],
+        'PS11': [0.4180, 0.3852],
+        'PS18': [0.3594],
+        'PS09': [0.2662],
+        'PS16': [0.1217, 0.093, 0.087]
+    }
+
     def __init__(self):
         super().__init__()
         self.exp_sz_occurrence: dict = None
         self.total_sz_occurrence: dict = None
+        self.response_magnitudes = None  #: avg response magnitudes across all 1p stim trials
+        self.response_decay = None  #: avg response magnitudes across all 1p stim trials
 
         self.save_results()
 
+    def collect_response_magnitudes(self):
+        data = [[rp for rp in onePresults.mean_stim_responses.iloc[:, 1] if rp != '-']]
+        data.append([rp for rp in onePresults.mean_stim_responses.iloc[:, 2] if rp != '-'])
+        # data.append([rp for rp in onePresults.mean_stim_responses.iloc[:,3] if rp != '-'])
+        self.response_magnitudes = data
+
+    def collect_response_decay(self):
+        data = [
+            list(onePresults.mean_stim_responses[onePresults.mean_stim_responses.iloc[:, -3].notnull()].iloc[:, -3])]
+        data.append(
+            list(onePresults.mean_stim_responses[onePresults.mean_stim_responses.iloc[:, -2].notnull()].iloc[:, -2]))
+        # data.append(ls(onePresults.mean_stim_responses[onePresults.mean_stim_responses.iloc[:, -1].notnull()].iloc[:, -1]))
+        self.response_decay = data
 
 class OnePhotonStimAnalysisFuncs(OnePhotonStim):
 

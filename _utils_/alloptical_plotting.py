@@ -778,7 +778,7 @@ def plot_periphotostim_avg(arr=None, pre_stim_sec=1.0, post_stim_sec=3.0, title=
                     alpha = 0.5
                 ax.plot(x, cell_trace, linewidth=1, alpha=alpha, zorder=1)
 
-    ax.plot(x, flu_avg, color='black', linewidth=2.3, zorder=2)  # plot average trace
+    ax.plot(x, flu_avg, linewidth=2.3, zorder=2)  # plot average trace
 
     if 'y_lims' in kwargs:
         ax.set_ylim(kwargs['y_lims'])
@@ -1385,7 +1385,10 @@ def plotLfpSignal(expobj: TwoPhotonImaging, stim_span_color='powderblue', downsa
 @plot_piping_decorator(figsize=(4,5))
 def plot_flu_1pstim_avg_trace(expobj, title='Average trace of stims', individual_traces=False, x_axis='time', stim_span_color='white',
                               y_axis: str = 'raw', quantify: bool = False, stims_to_analyze: list = None, write_full_text: bool = True,
-                              fig=None, ax=None, **kwargs):
+                              **kwargs):
+
+    fig = kwargs['fig']
+    ax = kwargs['ax']
 
     shrink_text = 1 if not 'shrink_text' in kwargs else 1 / kwargs['shrink_text']
 
@@ -1399,39 +1402,40 @@ def plot_flu_1pstim_avg_trace(expobj, title='Average trace of stims', individual
         flu_list = [pj.dff(trace, baseline=np.mean(trace[:int(pre_stim * expobj.fps) - 2])) for trace in flu_list]
 
     avg_flu_trace = np.mean(flu_list, axis=0)
-    ax.plot(avg_flu_trace, color='black', zorder=2, linewidth=2.2)
+    x_range = np.linspace(0, len(avg_flu_trace) / expobj.fps, len(avg_flu_trace))
+    ax.plot(x_range, avg_flu_trace, color='black', zorder=2, linewidth=2.2)
     ax.margins(0)
 
     if individual_traces:
         # individual traces
         for trace in flu_list:
-            ax.plot(trace, color='forestgreen', zorder=1, alpha=0.25)
+            ax.plot(x_range, trace, color='forestgreen', zorder=1, alpha=0.25)
         if stim_span_color is not None:
-            ax.axvspan(int(pre_stim * expobj.fps) - 2.5, int(pre_stim * expobj.fps) + expobj.stim_duration_frames + 2.0, color=stim_span_color, zorder=4)
+            ax.axvspan(int(pre_stim) - 2.5, int(pre_stim) + (expobj.stim_duration_frames / expobj.fps) + 2.0, color=stim_span_color, zorder=4)
         elif stim_span_color is None:
-            plt.axvline(x=int(pre_stim * expobj.fps) - 2, color='black', linestyle='--', linewidth=1)
-            plt.axvline(x=int(pre_stim * expobj.fps) + expobj.stim_duration_frames + 1, color='black', linestyle='--', linewidth=1)
+            plt.axvline(x=int(pre_stim) - 2  / expobj.fps, color='black', linestyle='--', linewidth=1)
+            plt.axvline(x=int(pre_stim) + (expobj.stim_duration_frames + 1) / expobj.fps, color='black', linestyle='--', linewidth=1)
     else:
         # plot standard deviation of the traces array as a span above and below the mean
         std_ = np.std(flu_list, axis=0)
-        ax.fill_between(x=range(len(avg_flu_trace)), y1=avg_flu_trace + std_, y2=avg_flu_trace - std_, alpha=0.3, zorder=1, color='forestgreen')
+        ax.fill_between(x=x_range, y1=avg_flu_trace + std_, y2=avg_flu_trace - std_, alpha=0.3, zorder=1, color='forestgreen')
         if stim_span_color is not None:
-            ax.axvspan(int(pre_stim * expobj.fps) - 3, int(pre_stim * expobj.fps) + expobj.stim_duration_frames + 1.5, color=stim_span_color, zorder=3)
+            ax.axvspan(int(pre_stim) - 2/expobj.fps, int(pre_stim) + (expobj.stim_duration_frames + 1) / expobj.fps, color=stim_span_color, zorder=3)
         elif stim_span_color is None:
-            plt.axvline(x=int(pre_stim * expobj.fps) - 2, color='black', linestyle='--', linewidth=1)
-            plt.axvline(x=int(pre_stim * expobj.fps) + expobj.stim_duration_frames + 2, color='black', linestyle='--', linewidth=1)
+            plt.axvline(x=int(pre_stim) - 2, color='black', linestyle='--', linewidth=1)
+            plt.axvline(x=int(pre_stim) + (expobj.stim_duration_frames  / expobj.fps) + 2, color='black', linestyle='--', linewidth=1)
 
     if x_axis == 'time':
         # change x axis ticks to seconds
         x_ticks_time = [0, 1, 2, 3, 4]
-        ax.set_xticks(ticks=[(label * expobj.fps) for label in x_ticks_time])
+        ax.set_xticks(ticks=[(label) for label in x_ticks_time])
         ax.set_xticklabels(x_ticks_time)
         ax.set_xlabel('Time (secs)')
 
     else:
         ax.set_xlabel('frame clock')
     ax.set_ylabel(y_axis)
-    ax.set_title(f"{title} {expobj.metainfo['exptype']} {expobj.t_series_name}", fontsize = 7 * shrink_text, wrap=True)
+    # ax.set_title(f"{title} {expobj.metainfo['exptype']} {expobj.t_series_name}", fontsize = 7 * shrink_text, wrap=True)
 
 
     # quantification of the stim response (compared to prestim baseline)
@@ -1494,9 +1498,11 @@ def plot_flu_1pstim_avg_trace(expobj, title='Average trace of stims', individual
 @plot_piping_decorator(figsize=(4,5))
 def plot_lfp_1pstim_avg_trace(expobj, title='Average LFP peri- stims', individual_traces=False, x_axis='time', pre_stim=1.0, post_stim=5.0,
                               optoloopback: bool = False, stims_to_analyze: list = None, shrink_text: int = 1, write_full_text: bool = False,
-                              fig=None, ax=None, **kwargs):
+                              **kwargs):
+    fig = kwargs['fig']
+    ax = kwargs['ax']
 
-    stim_duration = int(np.mean([expobj.stim_end_times[idx] - expobj.stim_start_times[idx] for idx in range(len(expobj.stim_start_times))]) + 0.01*expobj.paq_rate)
+    stim_duration = (np.mean([expobj.stim_end_times[idx] - expobj.stim_start_times[idx] for idx in range(len(expobj.stim_start_times))]) + 0.01*expobj.paq_rate) / expobj.paq_rate
     pre_stim = pre_stim  # seconds
     post_stim = post_stim  # seconds
 
@@ -1508,7 +1514,8 @@ def plot_lfp_1pstim_avg_trace(expobj, title='Average LFP peri- stims', individua
 
     x = [expobj.lfp_signal[stim - int(pre_stim * expobj.paq_rate): stim + int(post_stim * expobj.paq_rate)] for stim in stims_to_analyze_paq]
     x_ = np.mean(x, axis=0)
-    ax.plot(x_, color='black', zorder=3, linewidth=1.75)
+    x_range = np.linspace(0, len(x_) / expobj.paq_rate, len(x_))
+    ax.plot(x_range, x_, color='black', zorder=3, linewidth=1.75)
 
     if 'ylims' in kwargs.keys() and kwargs['ylims'] is not None:
         ax.set_ylim([kwargs['ylims'][0], kwargs['ylims'][1]])
@@ -1519,20 +1526,18 @@ def plot_lfp_1pstim_avg_trace(expobj, title='Average LFP peri- stims', individua
     if individual_traces:
         # individual traces
         for trace in x:
-            ax.plot(trace, color='steelblue', zorder=1, alpha=0.25)
+            ax.plot(x_range, trace, color='steelblue', zorder=1, alpha=0.25)
             # ax.axvspan(int(pre_stim_sec * expobj.paq_rate),
             #            int(pre_stim_sec * expobj.paq_rate) + stim_duration,
             #            edgecolor='powderblue', zorder=1, alpha=0.3)
-        ax.axvspan(int(pre_stim * expobj.paq_rate),
-                   int(pre_stim * expobj.paq_rate) + stim_duration,
+        ax.axvspan(int(pre_stim), int(pre_stim) + stim_duration ,
                    color='skyblue', zorder=1, alpha=0.7)
 
     else:
         # plot standard deviation of the traces array as a span above and below the mean
         std_ = np.std(x, axis=0)
-        ax.fill_between(x=range(len(x_)), y1=x_ + std_, y2=x_ - std_, alpha=0.3, zorder=2, color='steelblue')
-        ax.axvspan(int(pre_stim * expobj.paq_rate),
-                   int(pre_stim * expobj.paq_rate) + stim_duration, color='skyblue', zorder=1, alpha=0.7)
+        ax.fill_between(x=x_range, y1=x_ + std_, y2=x_ - std_, alpha=0.3, zorder=2, color='steelblue')
+        ax.axvspan(pre_stim, pre_stim + stim_duration, color='skyblue', zorder=1, alpha=0.7)
 
     if 'shrink_text' in kwargs.keys():
         shrink_text = kwargs['shrink_text']
@@ -1548,7 +1553,7 @@ def plot_lfp_1pstim_avg_trace(expobj, title='Average LFP peri- stims', individua
             print('loading', expobj.paq_path)
 
             paq, _ = paq_read(expobj.paq_path, plot=False)
-            expobj.paq_rate = paq['rate']
+            # expobj.paq_rate = paq['rate']
 
             # find voltage channel and save as lfp_signal attribute
             voltage_idx = paq['chan_names'].index('opto_loopback')
@@ -1556,10 +1561,9 @@ def plot_lfp_1pstim_avg_trace(expobj, title='Average LFP peri- stims', individua
             #expobj.save()
         else:
             pass
-        x = [expobj.opto_loopback[stim - int(pre_stim * expobj.paq_rate): stim + int(post_stim * expobj.paq_rate)] for stim
-             in expobj.stim_start_times]
+        x = [expobj.opto_loopback[stim - int(pre_stim * expobj.paq_rate): stim + int(post_stim * expobj.paq_rate)] for stim in expobj.stim_start_times]
         y_avg = np.mean(x, axis=0)
-        ax2.plot(y_avg, color='royalblue', zorder=3, linewidth=1.75)
+        ax2.plot(x_range, y_avg, color='royalblue', zorder=3, linewidth=1.75)
         # if write_full_text:
         #     ax2.text(0.98, 0.12, 'Widefield LED TTL',
         #              transform=ax.transAxes, fontweight='bold', horizontalalignment='right',
@@ -1571,38 +1575,37 @@ def plot_lfp_1pstim_avg_trace(expobj, title='Average LFP peri- stims', individua
         ax2.margins(0)
 
 
-    if x_axis == 'time':
-        # change x axis ticks to seconds
-        label_format = '{:,.2f}'
-        labels = [item for item in ax.get_xticks()]
-        for item in labels:
-            labels[labels.index(item)] = round(item / expobj.paq_rate, 2)
-        ticks_loc = ax.get_xticks().tolist()
-        ax.xaxis.set_major_locator(mticker.FixedLocator(ticks_loc))
-        ax.set_xticklabels([label_format.format(x) for x in labels])
-        ax.set_xlabel('Time (secs)')
-    else:
-        ax.set_xlabel('paq clock')
+    # if x_axis == 'time':
+    #     # change x axis ticks to seconds
+    #     label_format = '{:,.2f}'
+    #     labels = [item for item in ax.get_xticks()]
+    #     for item in labels:
+    #         labels[labels.index(item)] = round(item / expobj.paq_rate, 2)
+    #     ticks_loc = ax.get_xticks().tolist()
+    #     ax.xaxis.set_major_locator(mticker.FixedLocator(ticks_loc))
+    #     ax.set_xticklabels([label_format.format(x) for x in labels])
+    #     ax.set_xlabel('Time (secs)')
+    # else:
+    #     ax.set_xlabel('paq clock')
     ax.set_ylabel('Voltage')
 
     ax.spines['top'].set_visible(False)
     ax.spines['right'].set_visible(False)
-    ax.spines['bottom'].set_visible(True)
+    ax.spines['bottom'].set_visible(False)
     ax.spines['left'].set_visible(False)
     ax2.spines['top'].set_visible(False)
     ax2.spines['right'].set_visible(False)
-    ax2.spines['bottom'].set_visible(True)
+    ax2.spines['bottom'].set_visible(False)
     ax2.spines['left'].set_visible(False)
 
     # add title
-    ax.set_title(f'{title} {expobj.t_series_name}', fontsize=10*shrink_text, wrap=True)
+    # ax.set_title(f'{title} {expobj.t_series_name}', fontsize=10*shrink_text, wrap=True)
 
     # ax.text(0.98, 0.97, '%s %s' % (expobj.metainfo['animal prep.'], expobj.metainfo['trial']),
     #         verticalalignment='top', horizontalalignment='right',
     #         transform=ax.transAxes, fontweight='bold',
     #         color='black', fontsize=10 * shrink_text)
 
-    fig.tight_layout(pad=1.3)
 
 
 
