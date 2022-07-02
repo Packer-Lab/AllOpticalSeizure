@@ -1,7 +1,6 @@
 import sys
 
 from _analysis_.nontargets_analysis._ClassPhotostimResponseQuantificationNonTargets import PhotostimResponsesQuantificationNonTargets, FakeStimsQuantification
-from _exp_metainfo_.exp_metainfo import SAVE_LOC
 
 sys.path.extend(['/home/pshah/Documents/code/AllOpticalSeizure', '/home/pshah/Documents/code/AllOpticalSeizure'])
 

@@ -1,6 +1,5 @@
 # read .csv file that contains metainfo about experiments
 
-
 # # import results superobject that will collect analyses from various individual experiments
 import pickle
 from dataclasses import dataclass
@@ -11,11 +10,13 @@ import funcsforprajay.funcs as pj
 import numpy as np
 import pandas as pd
 
-SAVE_LOC = "/home/pshah/mnt/qnap/Analysis/analysis_export/analysis_quantification_classes/"
+local = "/Users/prajayshah/data/oxford-data/export/"
+remote_base = "/home/pshah/mnt/qnap/Analysis/"
+remote = "/home/pshah/mnt/qnap/Analysis/analysis_export/analysis_quantification_classes/"
+current_loc = remote
 EXPMETA_path = '/home/pshah/mnt/qnap/Analysis/allopticalseizuresexpmeta.pkl'
-CSV_PATH_ao = '/home/pshah/mnt/qnap/Analysis/allopticalexpmeta.csv'
-CSV_PATH_1p = '/home/pshah/mnt/qnap/Analysis/onephotonexpmeta.csv'
-
+CSV_PATH_ao = f'{remote_base}allopticalexpmeta.csv'
+CSV_PATH_1p = f'{remote_base}onephotonexpmeta.csv'
 
 # UTILS
 def import_meta_from_csv(csv_path=CSV_PATH_ao):

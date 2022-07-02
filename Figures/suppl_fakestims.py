@@ -62,7 +62,7 @@ chan_num = paq['chan_names'].index('markpoints2packio')
 
 # %%
 ax = axes['left'][0]
-rfv.add_label_axes(s='A', ax=ax)
+rfv.add_label_axes(text='A', ax=ax)
 
 stim_signal = paq['data'][chan_num][expobj.frame_start_time_actual:]
 x_range = np.linspace(0, len(stim_signal)/expobj.paq_rate, len(stim_signal))
@@ -80,7 +80,7 @@ ax.set_ylabel('Stim timing signal')
 # %% bottom left
 
 ax = axes['bottom-left'][0]
-rfv.add_label_axes(s='B', ax=ax)
+rfv.add_label_axes(text='B', ax=ax)
 
 plot_peristim_avg_fakestims(fig, axs=axes['bottom-left'])
 

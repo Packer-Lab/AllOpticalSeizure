@@ -36,18 +36,18 @@ def plot_settings():
         }
 
     xticks = {
-        'labelsize' : 'large',         ## fontsize of the tick labels
+        # 'labelsize' : 'large',         ## fontsize of the tick labels
         'bottom': True
     }
 
     yticks = {
-        'labelsize' : 'large',         ## fontsize of the tick labels
+        # 'labelsize' : 'large',         ## fontsize of the tick labels
         'left': True,
     }
 
     font = {'family' : 'sans-serif',
             #'weight' : 'bold',
-            'size'   : 12}
+            'size'   : 7}
 
     plt.rc('font', **font)        # controls default text sizes
     plt.rc('axes', **axes)        # fontsize of the axes title

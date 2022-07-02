@@ -72,13 +72,13 @@ influence_response_proximal_and_distal(fig=fig, axs=axes['main-right'], results=
 x_adj = 0.11
 
 ax=axes['main-left'][0]
-rfv.add_label_axes(s='A', ax=ax, x_adjust=x_adj)
+rfv.add_label_axes(text='A', ax=ax, x_adjust=x_adj)
 
 ax=axes['main-right'][0]
-rfv.add_label_axes(s='B', ax=ax, x_adjust=x_adj + 0.02)
+rfv.add_label_axes(text='B', ax=ax, x_adjust=x_adj + 0.02)
 
 ax=axes['main-right'][1]
-rfv.add_label_axes(s="B'", ax=ax, x_adjust=x_adj + 0.02)
+rfv.add_label_axes(text="B'", ax=ax, x_adjust=x_adj + 0.02)
 
 
 fig.show()

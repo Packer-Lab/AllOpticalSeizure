@@ -14,7 +14,7 @@ import _utils_.alloptical_plotting as aoplot
 import funcsforprajay.funcs as pj
 import tifffile as tf
 
-from _analysis_._utils import Quantification
+from _analysis_._utils import Quantification, Results
 from _exp_metainfo_.exp_metainfo import AllOpticalExpsToAnalyze, ExpMetainfo
 from _main_.Post4apMain import Post4ap
 from _main_.TwoPhotonImagingMain import TwoPhotonImaging
@@ -29,6 +29,22 @@ import _utils_.io as io_
 
 
 # %%
+class ExpSeizureResults(Results):
+    SAVE_PATH = SAVE_LOC + 'Results__ExpSeizure.pkl'
+
+    def __init__(self):
+        super().__init__()
+        self.exp_sz_occurrence: dict
+        self.total_sz_occurrence: list
+
+
+REMAKE = True
+if not os.path.exists(ExpSeizureResults.SAVE_PATH) or REMAKE:
+    RESULTS = ExpSeizureResults()
+    RESULTS.save_results()
+else:
+    pass
+
 class ExpSeizureAnalysis(Quantification):
     """Processing/analysis of seizures overall for photostimulation experiments. Including analysis of seizure individual timed photostim trials."""
 

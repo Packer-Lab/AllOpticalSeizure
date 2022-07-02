@@ -1,5 +1,9 @@
 ## this file for code review for Targets Sz Invasion Spatial analysis
-import sys; print('Python %s on %s' % (sys.version, sys.platform))
+import sys;
+
+from scipy import stats
+
+print('Python %s on %s' % (sys.version, sys.platform))
 sys.path.extend(['/home/pshah/Documents/code/AllOpticalSeizure', '/home/pshah/Documents/code/AllOpticalSeizure'])
 
 import os.path
@@ -493,49 +497,57 @@ class TargetsSzInvasionSpatial_codereview(SLMTargets):
 
     # 3) distnace vs. photostim responses - no percentile normalization of distances
     @staticmethod
-    def collect__binned__distance_v_responses(results):
+    def collect__binned__distance_v_responses(results, rerun=0):
         """collect distance vs. respnses for distance bins"""
-        bin_width = 20  # um
-        bins = np.arange(0, 500, bin_width)  # 0 --> 500 um, split in XXum bins
-        num = [0 for _ in range(len(bins))]  # num of datapoints in binned distances
-        y = [0 for _ in range(len(bins))]  # avg responses at distance bin
-        responses = [[] for _ in range(len(bins))]  # collect all responses at distance bin
 
-        @Utils.run_for_loop_across_exps(run_pre4ap_trials=0, run_post4ap_trials=1, set_cache=False)
-        def add_dist_responses(bins, num, y, responses, **kwargs):
-            expobj = kwargs['expobj']
-            szinvspatial = expobj.TargetsSzInvasionSpatial_codereview
+        if rerun or not hasattr(results, 'binned__distance_vs_photostimresponses'):
+            bin_width = 20  # um
+            bins = np.arange(0, 500, bin_width)  # 0 --> 500 um, split in XXum bins
+            num = [0 for _ in range(len(bins))]  # num of datapoints in binned distances
+            y = [0 for _ in range(len(bins))]  # avg responses at distance bin
+            responses = [[] for _ in range(len(bins))]  # collect all responses at distance bin
 
-            for _, row in szinvspatial.responses_vs_distance_to_seizure_SLMTargets.iterrows():
-                dist = row['distance_to_sz_um']
-                response = row[szinvspatial.response_type]
-                for i, bin in enumerate(bins[:-1]):
-                    if bins[i] < dist < (bins[i + 1]):
-                        num[i] += 1
-                        y[i] += response
-                        responses[i].append(response)
+            @Utils.run_for_loop_across_exps(run_pre4ap_trials=0, run_post4ap_trials=1, set_cache=False)
+            def add_dist_responses(bins, num, y, responses, **kwargs):
+                expobj = kwargs['expobj']
+                szinvspatial = expobj.TargetsSzInvasionSpatial_codereview
 
-            return num, y, responses
+                for _, row in szinvspatial.responses_vs_distance_to_seizure_SLMTargets.iterrows():
+                    dist = row['distance_to_sz_um']
+                    response = row[szinvspatial.response_type]
+                    for i, bin in enumerate(bins[:-1]):
+                        if bins[i] < dist < (bins[i + 1]):
+                            num[i] += 1
+                            y[i] += response
+                            responses[i].append(response)
 
-        func_collector = add_dist_responses(bins=bins, num=num, y=y, responses=responses)
+                return num, y, responses
 
-        num, y, responses = func_collector[-1][0], func_collector[-1][1], func_collector[-1][2]
+            func_collector = add_dist_responses(bins=bins, num=num, y=y, responses=responses)
 
-        distances = bins + bin_width/2  # offset distance values to the center of each bin - for plotting
+            num, y, responses = func_collector[-1][0], func_collector[-1][1], func_collector[-1][2]
 
-        avg_responses = [np.mean(responses_) for responses_ in responses]
+            distances = bins + bin_width / 2  # offset distance values to the center of each bin - for plotting
 
-        # calculate 95% ci for avg responses
-        import scipy.stats as stats
-        conf_int = np.array(
-            [stats.t.interval(alpha=0.95, df=len(responses_) - 1, loc=np.mean(responses_), scale=stats.sem(responses_))
-             for responses_ in responses])
+            avg_responses = [np.mean(responses_) for responses_ in responses]
 
-        results.binned__distance_vs_photostimresponses = {'bin_width_um': bin_width, 'distance_bins': distances,
-                                                          'num_points_in_bin': num,
-                                                          'avg_photostim_response_in_bin': avg_responses,
-                                                          '95conf_int': conf_int}
-        results.save_results()
+            # calculate 95% ci for avg responses
+            conf_int = np.array(
+                [stats.t.interval(alpha=0.95, df=len(responses_) - 1, loc=np.mean(responses_), scale=stats.sem(responses_))
+                 for responses_ in responses])
+
+            # RUN STATS: 1-WAY ANOVA and KRUSKAL-WALLIS - responses across distance
+            kruskal_r = stats.kruskal(*responses[:-1])
+            oneway_r = stats.f_oneway(*responses[:-1])
+
+            results.binned__distance_vs_photostimresponses = {'bin_width_um': bin_width, 'distance_bins': distances,
+                                                              'num_points_in_bin': num,
+                                                              'avg_photostim_response_in_bin': avg_responses,
+                                                              '95conf_int': conf_int,
+                                                              'all responses (per bin)': responses,
+                                                              'kruskal - binned responses': kruskal_r,
+                                                              'anova oneway - binned responses': oneway_r}
+            results.save_results()
 
         # return bin_width, distances, num, avg_responses, conf_int
 
@@ -553,25 +565,27 @@ class TargetsSzInvasionSpatial_codereview(SLMTargets):
         conf_int_values_neg = pj.flattenOnce([[val, val] for val in conf_int[1:, 0]])
         conf_int_values_pos = pj.flattenOnce([[val, val] for val in conf_int[1:, 1]])
 
-
+        #### MAKE PLOT
         fig, axs = (kwargs['fig'], kwargs['axes']) if 'fig' in kwargs or 'axes' in kwargs else plt.subplots(figsize=(6, 5), nrows=2, ncols=1, dpi=300)
+        # fig, axs = plt.subplots(figsize=(6, 5), nrows=2, ncols=1, dpi=200)
 
         # ax.plot(distances[:-1], avg_responses, c='cornflowerblue', zorder=1)
-        ax = axs[0][0] if 'fig' in kwargs or 'axes' in kwargs  else axs[0]
-        ax2 = axs[1][0] if 'fig' in kwargs or 'axes' in kwargs  else axs[1]
+        ax = axs[0][0] if 'fig' in kwargs or 'axes' in kwargs else axs[0]
+        ax2 = axs[1][0] if 'fig' in kwargs or 'axes' in kwargs else axs[1]
         ax.step(distances, avg_responses, c='cornflowerblue', zorder=2)
         # ax.fill_between(x=(distances-0)[:-1], y1=conf_int[:-1, 0], y2=conf_int[:-1, 1], color='lightgray', zorder=0)
+        ax.axhline(0, ls='--', lw=1, color='black')
         ax.fill_between(x=conf_int_distances, y1=conf_int_values_neg, y2=conf_int_values_pos, color='lightgray',
                         zorder=0)
         # ax.scatter(distances[:-1], avg_responses, c='orange', zorder=4)
         ax.set_ylim([-1.5, 2.25])
-        ax.set_title(
-            f'photostim responses vs. distance to sz wavefront (binned every {results.binned__distance_vs_photostimresponses["bin_width_um"]}um)',
-            wrap=True)
-        ax.set_xlabel('distance to sz wavefront (um)')
-        ax.set_ylabel(TargetsSzInvasionSpatial_codereview.response_type)
+        # ax.set_title(
+        #     f'photostim responses vs. distance to sz wavefront (binned every {results.binned__distance_vs_photostimresponses["bin_width_um"]}um)',
+        #     wrap=True)
+        ax.set_xlabel('Distance to seizure wavefront ($\mu$m)')
+        # ax.set_ylabel(TargetsSzInvasionSpatial_codereview.response_type)
+        ax.set_ylabel(f'Photostimulation response')
         ax.margins(0)
-        ax.axhline(0, ls='--', lw=1, color='black')
 
         pixels = [np.array(num2)] * 10
         ax2.imshow(pixels, cmap='Greys', vmin=-5, vmax=100, aspect=0.05)
@@ -581,6 +595,7 @@ class TargetsSzInvasionSpatial_codereview(SLMTargets):
 
         if not 'fig' in kwargs and not 'axes' in kwargs:        # fig.tight_layout(pad=1)
             fig.show()
+            save_path_full = f'{SAVE_FIG}/responses_sz_distance_binned_line_plot.png'
             # Utils.save_figure(fig, save_path_full=save_path_full) if save_path_full is not None else None
             # Utils.save_figure(fig, save_path_full=save_path_full[:-4] + '.svg') if save_path_full is not None else None
 

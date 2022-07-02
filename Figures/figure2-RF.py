@@ -1,6 +1,7 @@
 # %%
 import sys
 
+from funcsforprajay.funcs import flattenOnce
 from funcsforprajay.plotting.plotting import plot_bar_with_points
 from matplotlib.transforms import Bbox
 from scipy import stats
@@ -53,15 +54,71 @@ layout = {
             'wspace': 0.9}
 }
 
-fig, axes, grid = rfv.make_fig_layout(layout=layout, dpi=300)
+fig, axes, grid = rfv.make_fig_layout(layout=layout, dpi=50)
 
 rfv.naked(axes['A'][0])
 
 # rfv.show_test_figure_layout(fig, axes=axes, show=True)  # test what layout looks like quickly, but can also skip and moveon to plotting data.
 
+
+
+# %% E) BAR PLOT OF RESPONSE DECAY FOR 1P STIM EXPERIMENTS
+
+rfv.add_label_axes(text='E', ax=axes['D-E'][1], y_adjust=0, x_adjust=0.07)
+
+baseline_decay_constant_plot = [np.mean(items) for items in Results.baseline_decay_constant.values()]
+interictal_decay_constant_plot = [np.mean(items) for items in Results.interictal_decay_constant.values()]
+
+plot_bar_with_points(data=[baseline_decay_constant_plot, interictal_decay_constant_plot],
+                     legend_labels=list(onePresults.mean_stim_responses.columns[-3:]), paired=True, x_tick_labels=['baseline', 'interictal'],
+                     points=True, bar=False, colors=['gray', 'green'], fig=fig, ax=axes['D-E'][1], show=False,
+                     x_label='', y_label=r'Decay ($\tau$, secs)', alpha=1, s=50, ylims=[0.2, 1.1])
+
+# paired t-test
+stats.ttest_rel(baseline_decay_constant_plot, interictal_decay_constant_plot, alternative='two-sided')
+
+
+
+# %% D) BAR PLOT OF RESPONSE MAGNITUDE FOR 1P STIM EXPERIMENTS
+
+rfv.add_label_axes(text='D', ax=axes['D-E'][0], y_adjust=0, x_adjust=0.07)
+
+baseline_response_magnitude_plot = [np.mean(items) for items in Results.baseline_response_magnitude.values()][1:]  # excluding first baseline sample, no post4ap for that experiment.
+interictal_response_magnitude_plot = [np.mean(items) for items in Results.interictal_response_magnitude.values()]
+
+
+# fig, ax = plt.subplots(figsize=[3, 5], dpi = 300)
+plot_bar_with_points(data=[baseline_response_magnitude_plot, interictal_response_magnitude_plot],
+                    x_tick_labels=['baseline', 'interictal'], paired=True,
+                     points=True, bar=False, colors=['gray', 'green'], fig=fig, ax=axes['D-E'][0], show=False, s=50,
+                     x_label='', y_label='Avg. dFF', alpha=1, ylims=[0, 2.2])
+
+
+# paired t-test - not significant
+stats.ttest_rel(np.array(baseline_response_magnitude_plot), np.array(interictal_response_magnitude_plot), alternative='less')
+
+
+# t-test
+interictal_responses = flattenOnce(Results.interictal_response_magnitude.values())
+baseline_responses = flattenOnce(Results.baseline_response_magnitude.values())
+
+stats.ttest_ind(baseline_responses, interictal_responses, alternative='less')
+
+plot_bar_with_points(data=[baseline_responses, interictal_responses],
+                    x_tick_labels=['baseline', 'interictal'], paired=False,
+                     points=True, bar=False, colors=['gray', 'green'], fig=fig, ax=axes['D-E'][0], show=False, s=50,
+                     x_label='', y_label='Avg. dFF', alpha=1, ylims=[0, 2.2])
+
+
+# wilcoxon
+
+stats.wilcoxon(np.array(baseline_response_magnitude_plot) - np.array(interictal_response_magnitude_plot))
+
+
+
 # %% B)
 
-rfv.add_label_axes(s='B', ax=axes['B'][0, 0], y_adjust=0)
+rfv.add_label_axes(text='B', ax=axes['B'][0, 0], y_adjust=0)
 
 
 # pre4ap
@@ -112,7 +169,7 @@ rfv.add_scale_bar(ax=axes['B'][1, 1], length=(500, 10 * expobj.fps), bartype='L'
 
 # %% C) avg LFP trace 1p stim plots
 
-rfv.add_label_axes(s='C', ax=axes['C'][0,0], y_adjust=0)
+rfv.add_label_axes(text='C', ax=axes['C'][0,0], y_adjust=0)
 
 # pre4ap
 pre4ap = import_expobj(prep='PS11', trial='t-009', date=date)  # pre4ap trial
@@ -164,40 +221,6 @@ rfv.add_scale_bar(ax=ax, length=(1, 0.25), bartype='L', text = ('1 mV', '0.25 s'
 
 
 
-
-
-
-# %% E) BAR PLOT OF RESPONSE DECAY FOR 1P STIM EXPERIMENTS
-
-rfv.add_label_axes(s='E', ax=axes['D-E'][1], y_adjust=0, x_adjust=0.07)
-
-baseline_decay_constant_plot = [np.mean(items) for items in Results.baseline_decay_constant.values()]
-interictal_decay_constant_plot = [np.mean(items) for items in Results.interictal_decay_constant.values()]
-
-plot_bar_with_points(data=[baseline_decay_constant_plot, interictal_decay_constant_plot],
-                     legend_labels=list(onePresults.mean_stim_responses.columns[-3:]), paired=True, x_tick_labels=['baseline', 'interictal'],
-                     points=True, bar=False, colors=['gray', 'green'], fig=fig, ax=axes['D-E'][1], show=False,
-                     x_label='', y_label=r'Decay ($\tau$, secs)', alpha=1, s=50, ylims=[0.2, 1.1])
-
-
-# %% D) BAR PLOT OF RESPONSE MAGNITUDE FOR 1P STIM EXPERIMENTS
-
-rfv.add_label_axes(s='D', ax=axes['D-E'][0], y_adjust=0, x_adjust=0.07)
-
-interictal_response_magnitude_plot = [np.mean(items) for items in Results.interictal_response_magnitude.values()]
-baseline_response_magnitude_plot = [np.mean(items) for items in Results.baseline_response_magnitude.values()]
-
-# fig, ax = plt.subplots(figsize=[3, 5], dpi = 300)
-plot_bar_with_points(data=[baseline_response_magnitude_plot, interictal_response_magnitude_plot],
-                    x_tick_labels=['baseline', 'interictal'], paired=True,
-                     points=True, bar=False, colors=['gray', 'green'], fig=fig, ax=axes['D-E'][0], show=False, s=50,
-                     x_label='', y_label='Avg. dFF', alpha=1, ylims=[0, 2.2])
-
-
-
-
-
-
 # %% F) Radial plot of Mean FOV for photostimulation trials, with period equal to that of photostimulation timing period
 
 # run data analysis
@@ -215,7 +238,7 @@ bbox = Bbox.from_extents(0.80, 0.58, 0.95, 0.72)
 _axes = np.empty(shape=(1, 1), dtype=object)
 ax = fig.add_subplot(projection = 'polar')
 ax.set_position(pos=bbox)
-rfv.add_label_axes(s='F', ax=ax, y_adjust=0.01)
+rfv.add_label_axes(text='F', ax=ax, y_adjust=0.01)
 
 # fig, ax = plt.subplots(subplot_kw={'projection': 'polar'}, dpi=300, figsize=(3, 3))
 

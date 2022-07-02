@@ -8,7 +8,7 @@ from matplotlib import pyplot as plt
 
 import _alloptical_utils as Utils
 from _analysis_._utils import Quantification, Results
-from _exp_metainfo_.exp_metainfo import AllOpticalExpsToAnalyze
+from _exp_metainfo_.exp_metainfo import AllOpticalExpsToAnalyze, current_loc
 from _main_.AllOpticalMain import alloptical
 from _main_.Post4apMain import Post4ap
 from funcsforprajay import plotting as pplot
@@ -17,7 +17,9 @@ import funcsforprajay.funcs as pj
 from _utils_._anndata import AnnotatedData2
 from _utils_.io import import_expobj
 
-SAVE_LOC = "/home/pshah/mnt/qnap/Analysis/analysis_export/analysis_quantification_classes/"
+
+
+SAVE_LOC = current_loc
 
 # %% COLLECTING DATA, PROCESSING AND ANALYSIS FOR PHOTOSTIM RESPONSES MAGNITUDES OF SLM TARGETS
 

@@ -68,7 +68,7 @@ x_adj = 0.09
 
 # %% B) total z scored responses of targets vs. total z scored responses of nontargets - photostim vs. sham stim
 axs = (axes['middle-left'], axes['middle-right'])
-rfv.add_label_axes(s='B', ax=axs[0][0], x_adjust=x_adj - 0.04, y_adjust=0.00)
+rfv.add_label_axes(text='B', ax=axs[0][0], x_adjust=x_adj - 0.04, y_adjust=0.00)
 
 # main.collect__zscored_summed_activity_vs_targets_activity(results=results)
 
@@ -103,7 +103,7 @@ axlegend.axis('off')
 # %% C) influence measurements - baseline + interictal across distance to targets
 # PLOTTING of average responses +/- sem across distance to targets bins - baseline + interictal
 axs = axes['right']
-rfv.add_label_axes(s='C', ax=axs[0], x_adjust=x_adj - 0.02)
+rfv.add_label_axes(text='C', ax=axs[0], x_adjust=x_adj - 0.02)
 
 distance_lims = [19, 400]
 
@@ -186,7 +186,7 @@ pj.lineplot_frame_options(fig=fig, ax=ax, x_label='Distance to target (um)', y_l
 
 # %% A - num targets at each distance - split by individual experiments
 ax = axes['left'][0]
-rfv.add_label_axes(s='A', ax=ax, x_adjust=x_adj, y_adjust=0.00)
+rfv.add_label_axes(text='A', ax=ax, x_adjust=x_adj, y_adjust=0.00)
 
 baseline_responses = results.baseline_responses.iloc[results.pre4ap_idxs]
 # num occurrences at each distance - split by trial types

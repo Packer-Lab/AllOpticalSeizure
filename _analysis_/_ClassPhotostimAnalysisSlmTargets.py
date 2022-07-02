@@ -1,6 +1,8 @@
 import sys
 
 from funcsforprajay.plotting.plotting import plot_bar_with_points
+from statsmodels.formula.api import ols
+from statsmodels.stats.anova import anova_lm
 
 sys.path.extend(['/home/pshah/Documents/code/reproducible_figures-main'])
 from typing import Union, List, Dict
@@ -12,7 +14,7 @@ import pandas as pd
 from funcsforprajay.wrappers import plot_piping_decorator
 import funcsforprajay.plotting as pplot
 from matplotlib import pyplot as plt
-from scipy.stats import variation, mannwhitneyu, stats
+from scipy.stats import variation, mannwhitneyu, ttest_rel, wilcoxon, zscore, ttest_ind
 from sklearn.cluster import KMeans
 from sklearn.decomposition import PCA
 
@@ -35,8 +37,6 @@ SAVE_LOC = "/home/pshah/mnt/qnap/Analysis/analysis_export/analysis_quantificatio
 SAVE_FIG = "/home/pshah/Documents/figures/alloptical-photostim-responses-traces/"
 
 results = PhotostimResponsesSLMtargetsResults.load()
-
-plot_settings()
 
 
 # %%
@@ -177,13 +177,15 @@ class PhotostimAnalysisSlmTargets(Quantification):
         return photostim_responses_adata
 
     @staticmethod
-    def collect_all_targets_all_exps(run_pre4ap_trials=0, run_post4ap_trials=True):
+    def collect_all_targets_all_exps(run_pre4ap_trials=True, run_post4ap_trials=True):
         @Utils.run_for_loop_across_exps(run_pre4ap_trials=run_pre4ap_trials, allow_rerun=1)
         def baseline_targets_responses(**kwargs):
             expobj = kwargs['expobj']
-            if np.nanmean(expobj.PhotostimAnalysisSlmTargets.adata.X) > 10:
+            if np.nanmean(expobj.PhotostimAnalysisSlmTargets.adata.X) > 0:
                 # print(np.nanmean(expobj.PhotostimAnalysisSlmTargets.adata.X))
                 return expobj.PhotostimAnalysisSlmTargets.adata.X, expobj.t_series_name
+            else:
+                pass
 
         if run_pre4ap_trials:
             func_collector = baseline_targets_responses()
@@ -221,7 +223,11 @@ class PhotostimAnalysisSlmTargets(Quantification):
 
             if pre4ap_expobj.t_series_name in tuple(results.baseline_adata.obs['exp']):
                 # print(np.mean(expobj.PhotostimResponsesSLMTargets.adata.layers['dFF (zscored)'][:, stims]))
-                return expobj.PhotostimResponsesSLMTargets.adata.layers['dFF (zscored)'][:, stims], expobj.t_series_name
+                return expobj.PhotostimResponsesSLMTargets.adata.layers['dFF (zscored) (baseline)'][:,
+                       stims], expobj.t_series_name
+                # return expobj.PhotostimResponsesSLMTargets.adata.X[:, stims], expobj.t_series_name
+            else:
+                pass
 
         if run_post4ap_trials:
             func_collector = interictal_targets_responses()
@@ -343,40 +349,51 @@ class PhotostimAnalysisSlmTargets(Quantification):
     @staticmethod
     def plot_variability_photostim_traces_by_targets(axs, fig):
 
-
-
         total_plot = 10
         ncols = total_plot
         nrows = total_plot // ncols
         if total_plot % ncols > 0 or total_plot % ncols == 0:
             nrows += 1
         fig, axs = fig, axs if 'fig' is not None or 'axs' is not None else plt.subplots(nrows=nrows, ncols=ncols,
-                                                                                        figsize=(ncols * 1.2, nrows * 1.75),
-                                                                                        constrained_layout=True, dpi=600)
-        # expobj: Union[alloptical, Post4ap] = kwargs['expobj']
-        for row, exp in enumerate(['RL108 t-009', 'RL108 t-013']):
-            expobj: Union[alloptical, Post4ap] = import_expobj(exp_prep=exp)
+                                                                                        figsize=(
+                                                                                            ncols * 1.2, nrows * 1.75),
+                                                                                        constrained_layout=True,
+                                                                                        dpi=300)
 
-            # if to_plot == 'delta dF':
-            #     responses = expobj.responses_SLMtargets_tracedFF
-            #     hits = expobj.hits_SLMtargets_tracedFF
-            #     trace_snippets = expobj.SLMTargets_tracedFF_stims_dff  # TODO confirm that the pre-stim period has mean of 0 for all these traces!
-            #     stimsuccessrates = expobj.StimSuccessRate_SLMtargets_tracedFF
-            #     y_label = 'delta dF'
-            # elif to_plot == 'dFF':
-            responses = expobj.PhotostimAnalysisSlmTargets.adata.X
-            hits = expobj.hits_SLMtargets
-            trace_snippets = expobj.SLMTargets_stims_dff
-            stimsuccessrates = expobj.StimSuccessRate_SLMtargets
-            y_label = '% dFF'
+        for ax in pj.flattenOnce(axs):
+            ax.axis('off')
 
-            # choose 10 random cells from each dataset
-            choice = np.random.choice(a=np.arange(0, trace_snippets.shape[0]), size=total_plot, replace=False)
+        pre4ap_exp: Post4ap = import_expobj(exp_prep='RL108 t-009')
 
-            axs[row, 0].set_ylabel(y_label)
+        pre4ap_responses = pre4ap_exp.PhotostimAnalysisSlmTargets.adata.X
+        trace_snippets = pre4ap_exp.SLMTargets_tracedFF_stims_dff
+        hits = pre4ap_exp.hits_SLMtargets
+        stimsuccessrates = pre4ap_exp.StimSuccessRate_SLMtargets
+        y_label = '% dFF'
 
-            # for cell in range(trace_snippets.shape[0]):  # for plotting all cells
-            for i, cell in enumerate(choice):  # for plotting only randomly chosen cells
+        # choose 10 random cells from pre4ap dataset
+        choice = np.random.choice(a=np.arange(0, trace_snippets.shape[0]), size=total_plot, replace=False)
+        pre4ap_responses_chosen = pre4ap_responses[choice]
+        cvs_ = [np.std(responses_, ddof=1) / np.mean(responses_) for responses_ in pre4ap_responses_chosen]
+        print('pre4ap cvs:', cvs_)
+        cvs_sorted = np.argsort(cvs_)
+        sorted_cells_chosen = choice[cvs_sorted]
+
+        pre4ap_responses_sorted = pre4ap_responses[sorted_cells_chosen]
+        print('pre4ap cvs:',
+              [np.std(responses_, ddof=1) / np.mean(responses_) for responses_ in pre4ap_responses_sorted])
+
+        post4ap_exp: Post4ap = import_expobj(exp_prep='RL108 t-013')
+        post4ap_responses = post4ap_exp.PhotostimAnalysisSlmTargets.adata.X
+        post4ap_responses_sorted = post4ap_responses[sorted_cells_chosen]
+        print('post4ap cvs:',
+              [np.std(responses_, ddof=1) / np.mean(responses_) for responses_ in post4ap_responses_sorted])
+
+        trace_snippets_all = (pre4ap_exp.SLMTargets_stims_dff, post4ap_exp.SLMTargets_stims_dff)
+
+        for row, responses in enumerate((pre4ap_responses, post4ap_responses)):
+
+            for i, cell in enumerate(sorted_cells_chosen):  # for plotting only randomly chosen cells
                 a = i
                 b = row
                 alpha = 1 * (stimsuccessrates[cell] / 100)
@@ -384,45 +401,49 @@ class PhotostimAnalysisSlmTargets(Quantification):
 
                 cv = np.std(responses_, ddof=1) / np.mean(responses_)
 
-                print(f'plotting target #{i}, CV: {cv:.3f}\n')
+                # print(f'plotting target #{i}, CV: {cv:.3f}\n')
 
-                x_range = np.linspace(0, len(trace_snippets[cell][0]) / expobj.fps, len(trace_snippets[cell][0]))
+                x_range = np.linspace(0, len(trace_snippets_all[row][cell][0]) / pre4ap_exp.fps,
+                                      len(trace_snippets_all[row][cell][0]))
 
                 # ax.scatter(np.random.choice(x_range[20:-20], size=len(responses_)), responses_, s=20, zorder=1, alpha=0.3)
                 x = simple_beeswarm(responses_)
                 # transform x
                 x_new = [(i + 1) / 2 * (x_range[-1]) for i in x]
                 # axs[a,b].scatter(x_new, responses_, s=10, alpha=0.4, color='yellowgreen', zorder=1)
-                sc = axs[a, b].scatter(x_new, responses_, s=10, alpha=0.4, c=[cv] * len(responses_), zorder=1,
-                                       cmap='viridis',
-                                       vmin=0, vmax=3)
+                sc = axs[a, b].scatter(x_new, responses_, s=3, alpha=0.4, c=[cv] * len(responses_), zorder=1,
+                                       cmap='viridis', vmin=0, vmax=3)
                 axs[a, b].set_xlim([-1.5, x_range[-1] + 1.5])
-                # cbar = plt.colorbar(sc)
-                # cbar.remove()
 
                 ax = axs[a, b].twiny()
                 avg = np.nanmean(trace_snippets[cell], axis=0)
-                ax.plot(x_range[:-4], pj.smoothen_signal(avg, 5), color='black', linewidth=2, zorder=5)
+                ax.plot(x_range[:-4], pj.smoothen_signal(avg, 5), color='black', linewidth=1.5, zorder=5)
 
                 ax.set_ylim([-50, 200])
+                if i == 0:
+                    # axs[a, b].set_ylabel(y_label)
+                    # ax.set_ylabel(y_label)
+                    rfv.despine(ax, remove=['top', 'right', 'bottom', 'left'])
+                    # ax.set_yticks([-10, 0, 50, 150])
+                    # ax.set_yticklabels([-10, 0, 50, 150])
+                    # axs[a, b].set_yticks([-10, 0, 50, 150])
+                    # axs[a, b].set_yticklabels([-10, 0, 50, 150])
+                else:
+                    rfv.despine(ax, remove=['top', 'left', 'right', 'bottom'])
+                    if row == 0 and i == total_plot - 1:
+                        rfv.add_scale_bar(ax=ax, length=(50, 1), bartype='L', text=('50% dFF', '1 $\it{s}$'), loc=(4.5, -120),
+                                          text_offset=[0.9, 25], fs=5)
+
+
                 # axs[a, b].set_ylim([-0.2 * 100, 2.0 * 100])
                 # axs[a, b].text(0.98, 0.97, f"{cv:.1f}",
                 #                verticalalignment='top', horizontalalignment='right',
                 #                transform=axs[a, b].transAxes, fontweight='bold', fontsize=8,
                 #                color='black')
                 axs[a, b].margins(0)
-                axs[a, b].spines['top'].set_visible(False)
-                axs[a, b].spines['right'].set_visible(False)
-                axs[a, b].spines['bottom'].set_visible(False)
-                axs[a, b].spines['left'].set_visible(False)
                 axs[a, b].set_xticks([])
                 ax.set_xticks([])
-                ax.spines['top'].set_visible(False)
-                ax.spines['right'].set_visible(False)
-                ax.spines['bottom'].set_visible(False)
-                ax.spines['left'].set_visible(False)
-                # axs[a, b].axvspan(expobj.pre_stim / expobj.fps, (expobj.pre_stim + expobj.stim_duration_frames) / expobj.fps, color='mistyrose',
-                #                   zorder=0)
+
 
         # fig.suptitle(f"{expobj.metainfo['animal prep.']} {expobj.metainfo['trial']} - {len(trace_snippets)} targets",
         #              y=0.995)
@@ -432,7 +453,7 @@ class PhotostimAnalysisSlmTargets(Quantification):
         # os.makedirs(os.path.dirname(save_path_full), exist_ok=True)
         # fig.savefig(save_path_full)
 
-
+        # CREATE COLORBAR
         from matplotlib.transforms import Bbox
         bbox = np.array(axs[-1, -1].get_position())
         bbox = Bbox.from_extents(bbox[0, 0], bbox[0, 1] - 0.02, bbox[1, 0], bbox[0, 1] + 0.00)
@@ -447,11 +468,12 @@ class PhotostimAnalysisSlmTargets(Quantification):
         # cmap = plt.cm.get_cmap(cmap)
         colors = cmap(np.arange(cmap.N))
         # fig, ax = plt.subplots(figsize=(6, 1), dpi=600)
-        ax_cmap.imshow([colors], extent=[0, 10, 0, 1])
+        ax_cmap.imshow([colors], extent=[0, 3, 0, 0.5], vmin=0, vmax=3)
+        ax_cmap.set_yticks([])
+        # rfv.despine(ax_cmap, remove=['top', 'left', 'right', 'bottom'])
+        ax_cmap.tick_params(length=1.5)
+        ax_cmap.set_xticks([0, 1.5, 3])
         ax_cmap.get_position()
-        ax_cmap.axis('off')
-        # fig.tight_layout(pad=0.4)
-        # fig.show()
 
         # save_path_full = f'{SAVE_FIG}/photostim-variation-individual-targets-dFF-colorbar.png'
         # os.makedirs(os.path.dirname(save_path_full), exist_ok=True)
@@ -463,11 +485,15 @@ class PhotostimAnalysisSlmTargets(Quantification):
         # assert axs.shape == (2,2), 'incorrect shape of axs.'
         results = PhotostimResponsesSLMtargetsResults.load()
 
-        # BASELINE
-        responses = results.baseline_adata.X
-        z_scored_responses = stats.zscore(responses, axis=1)  # z scoring of targets responses to their own distribution
+        # BASELINE ###########################################################################
+        # responses = results.baseline_adata.X
 
-        # correlation of targets
+        # select only one experiment:
+        responses = results.baseline_adata.X[results.baseline_adata.obs['exp'] == 'RL108 t-009']
+
+        z_scored_responses = zscore(responses, axis=1)  # z scoring of targets responses to their own distribution
+
+        # correlation of targets ###########################################################################
         # fig, ax = plt.subplots(figsize=(3, 3), dpi=400)
         ax = axs[0][0]
         ax.set_xticks([])
@@ -479,13 +505,12 @@ class PhotostimAnalysisSlmTargets(Quantification):
         # cbar = fig.colorbar(mesh, boundaries=np.linspace(-0.5, 0.5, 1000), ticks=[-0.5, 0, 0.5], fraction=0.045)
 
         # add lines for exps:
-        colors = pj.make_random_color_array(len(np.unique(results.baseline_adata.obs['exp'])))
-        for i, exp in enumerate(np.unique(results.baseline_adata.obs['exp'])):
-            sameexp = np.where(results.baseline_adata.obs['exp'] == exp)[0]
-            ax.plot(sameexp, [-10] * len(sameexp), lw=2, color=colors[i], solid_capstyle='projecting')
-            # plt.plot(sameexp, [-10] * len(sameexp), lw=2, color = colors[i], solid_capstyle = 'projecting')
-        ax.axis('off')
-        # print(f"{ax.get_position()}\n")
+        # colors = pj.make_random_color_array(len(np.unique(results.baseline_adata.obs['exp'])))
+        # for i, exp in enumerate(np.unique(results.baseline_adata.obs['exp'])):
+        #     sameexp = np.where(results.baseline_adata.obs['exp'] == exp)[0]
+        #     ax.plot(sameexp, [-10] * len(sameexp), lw=2, color=colors[i], solid_capstyle='projecting')
+        #     # plt.plot(sameexp, [-10] * len(sameexp), lw=2, color = colors[i], solid_capstyle = 'projecting')
+        # ax.axis('off')
 
         # fig.suptitle(f'baseline - correlation across - targets', wrap=True)
         # ax.set_title(f'baseline - correlation across - targets', wrap=True)
@@ -495,17 +520,16 @@ class PhotostimAnalysisSlmTargets(Quantification):
         # os.makedirs(os.path.dirname(save_path_full), exist_ok=True)
         # fig.savefig(save_path_full)
 
-        # correlation of stims
+        # correlation of stims ###########################################################################
         # fig, ax = plt.subplots(figsize=(3, 3), dpi=400)
-        ax = axs[1][0]
-        ax.set_xticks([])
-        ax.set_yticks([])
-        # print(ax.get_position())
-        stim_corr_mat = np.corrcoef(z_scored_responses.T)
-        mesh = ax.imshow(stim_corr_mat, cmap='bwr')
-        mesh.set_clim(-1, 1)
-        ax.axis('off')
-        # print(f"{ax.get_position()}\n")
+        # ax = axs[1][0]
+        # ax.set_xticks([])
+        # ax.set_yticks([])
+        # # print(ax.get_position())
+        # stim_corr_mat = np.corrcoef(z_scored_responses.T)
+        # mesh = ax.imshow(stim_corr_mat, cmap='bwr')
+        # mesh.set_clim(-1, 1)
+        # ax.axis('off')
 
         # cbar = fig.colorbar(mesh, boundaries=np.linspace(-0.5, 0.5, 1000), ticks=[-0.5, 0, 0.5], fraction=0.045)
         # fig.suptitle(f'baseline - correlation across - stims', wrap=True)
@@ -516,12 +540,14 @@ class PhotostimAnalysisSlmTargets(Quantification):
         # os.makedirs(os.path.dirname(save_path_full), exist_ok=True)
         # fig.savefig(save_path_full)
 
-        # INTERICTAL
-        z_scored_responses = results.interictal_adata.X
+        # INTERICTAL ######################################################################################################################################################
+        # z_scored_responses = results.interictal_adata.X
+        z_scored_responses = results.interictal_adata.X[results.interictal_adata.obs['exp'] == 'RL108 t-013']
+
         z_scored_responses = pd.DataFrame(z_scored_responses).iloc[:, :43]
         # z_scored_responses = stats.zscore(responses, axis=1)  # z scoring of targets responses to their own distribution
 
-        # correlation of targets
+        # correlation of targets ###########################################################################
         # fig, ax = plt.subplots(figsize=(3, 3), dpi=400)
         ax = axs[0][1]
         ax.set_xticks([])
@@ -534,11 +560,10 @@ class PhotostimAnalysisSlmTargets(Quantification):
         # cbar = fig.colorbar(mesh, boundaries=np.linspace(-0.5, 0.5, 1000), ticks=[-0.5, 0, 0.5], fraction=0.045)
 
         # add lines for exps:
-        for i, exp in enumerate(np.unique(results.baseline_adata.obs['exp'])):
-            sameexp = np.where(results.baseline_adata.obs['exp'] == exp)[0]
-            ax.plot(sameexp, [-10] * len(sameexp), lw=2, color=colors[i], solid_capstyle='projecting')
-        ax.axis('off')
-        # print(f"{ax.get_position()}\n")
+        # for i, exp in enumerate(np.unique(results.baseline_adata.obs['exp'])):
+        #     sameexp = np.where(results.baseline_adata.obs['exp'] == exp)[0]
+        #     ax.plot(sameexp, [-10] * len(sameexp), lw=2, color=colors[i], solid_capstyle='projecting')
+        # ax.axis('off')
 
         # fig.suptitle(f'interictal - correlation across - targets', wrap=True)
         # fig.tight_layout(pad=0.5)
@@ -547,17 +572,16 @@ class PhotostimAnalysisSlmTargets(Quantification):
         # os.makedirs(os.path.dirname(save_path_full), exist_ok=True)
         # fig.savefig(save_path_full)
 
-        # correlation of stims
+        # correlation of stims ###########################################################################
         # fig, ax = plt.subplots(figsize=(3, 3), dpi=400)
-        ax = axs[1][1]
-        ax.set_xticks([])
-        ax.set_yticks([])
-        # print(ax.get_position())
-        stim_corr_mat = np.corrcoef(z_scored_responses.T)
-        mesh = ax.imshow(stim_corr_mat, cmap='bwr')
-        mesh.set_clim(-1, 1)
-        ax.axis('off')
-        # print(f"{ax.get_position()}\n")
+        # ax = axs[1][1]
+        # ax.set_xticks([])
+        # ax.set_yticks([])
+        # # print(ax.get_position())
+        # stim_corr_mat = np.corrcoef(z_scored_responses.T)
+        # mesh = ax.imshow(stim_corr_mat, cmap='bwr')
+        # mesh.set_clim(-1, 1)
+        # ax.axis('off')
 
         # cbar = fig.colorbar(mesh, boundaries=np.linspace(-0.5, 0.5, 1000), ticks=[-0.5, 0, 0.5], fraction=0.045)
         # fig.suptitle(f'interictal - correlation across - stims', wrap=True)
@@ -568,18 +592,20 @@ class PhotostimAnalysisSlmTargets(Quantification):
         # fig.savefig(save_path_full)
         # fig.show()
 
-
-
-        # add colorbar for all axes - located beside the top right correlation matrix plot
+        #### CREATE COLORBAR for all axes - located beside the top right correlation matrix plot
         from matplotlib.transforms import Bbox
         bbox = np.array(axs[0][1].get_position())
-        bbox = Bbox.from_extents(bbox[1, 0] + 0.02, bbox[0, 1], bbox[1, 0] + 0.03, bbox[1, 1] - 0.01)
+        bbox = Bbox.from_extents(bbox[1, 0] + 0.02, bbox[0, 1], bbox[1, 0] + 0.03, bbox[1, 1])
         # bbox = Bbox.from_extents(bbox[1, 0], bbox[0, 0], bbox[0, 1] + 0.00, bbox[0, 1] - 0.02)
         # ax2 = fig.add_subplot(position = bbox)
         ax_cmap = fig.add_subplot()
         ax_cmap.set_position(pos=bbox)
-        fig.colorbar(mesh, cax=ax_cmap)
-        ax_cmap.axis('off')
+        rfv.despine(ax_cmap, remove=['top', 'bottom', 'left'])
+        ax_cmap.tick_params(length=1.5)
+        cbar = fig.colorbar(mesh, cax=ax_cmap, ticks=[-1, 0, 1])
+        cbar.set_ticklabels(['-0.5', '0', '0.5'])
+
+        # ax_cmap.axis('off')
         # fig.show()
         # pass
         # cmap = plt.cm.get_cmap('bwr')
@@ -600,7 +626,7 @@ class PhotostimAnalysisSlmTargets(Quantification):
 
             # BASELINE  ################################################################################################################################################################################################################################################################################################
             responses = results.baseline_adata.X
-            z_scored_responses = stats.zscore(responses, axis=1)  # z scoring of targets responses to their own distribution
+            z_scored_responses = zscore(responses, axis=1)  # z scoring of targets responses to their own distribution
 
             # correlation within exp
             within_exp_corr_baseline = {}
@@ -632,7 +658,7 @@ class PhotostimAnalysisSlmTargets(Quantification):
                 for target_within in responses_within:
                     corr_vals_1 = []
                     for target_across in responses_across:
-                        _corr = np.corrcoef(target_within, target_across)[1,0]
+                        _corr = np.corrcoef(target_within, target_across)[1, 0]
                         corr_vals_1.append(_corr)
                     corr_vals_2.append(np.mean(corr_vals_1))
                 between_exp_corr_baseline[exp] = np.mean(corr_vals_2)
@@ -668,7 +694,7 @@ class PhotostimAnalysisSlmTargets(Quantification):
                 for target_within in responses_within:
                     corr_vals_1 = []
                     for target_across in responses_across:
-                        _corr = np.corrcoef(target_within, target_across)[1,0]
+                        _corr = np.corrcoef(target_within, target_across)[1, 0]
                         corr_vals_1.append(_corr)
                     corr_vals_2.append(np.mean(corr_vals_1))
                 between_exp_corr_interictal[exp] = np.mean(corr_vals_2)
@@ -677,28 +703,41 @@ class PhotostimAnalysisSlmTargets(Quantification):
 
             results.save_results()
 
+        # STATS TEST
+        baseline = list(results.corr_targets['within - baseline'].values())
+        interictal = list(results.corr_targets['within - interictal'].values())
+
+        stats_score = wilcoxon(baseline, interictal)
+        print(stats_score)
+
         # MAKE PLOT
-        fig, axs = plt.subplots(ncols=2, nrows=1, figsize = (3,4)) if fig is None and axs is None else (fig, axs)
-        plot_bar_with_points(data=[list(results.corr_targets['within - baseline'].values()), list(results.corr_targets['between - baseline'].values())],
-            bar=False, title='Baseline', x_tick_labels=['within exp', 'across exp'],
-            colors=['gold', 'gray'], figsize=(4, 4), y_label='corr coef (r)', show=False, alpha=1,fig=fig, ax = axs[0], s=25, ylims=[-0.1, 0.80])
-        plot_bar_with_points(data=[list(results.corr_targets['within - interictal'].values()), list(results.corr_targets['between - interictal'].values())],
-            bar=False, title='Interictal', x_tick_labels=['within exp', 'across exp'],
-            colors=['gold', 'gray'], figsize=(4, 4), y_label='', show=False, alpha=1,fig=fig, ax = axs[1], s=25, ylims=[-0.1, 0.80])
+        fig, axs = plt.subplots(ncols=1, nrows=1, figsize=(3, 4)) if fig is None and axs is None else (fig, axs)
+        plot_bar_with_points(data=[list(results.corr_targets['within - baseline'].values()),
+                                   list(results.corr_targets['within - interictal'].values())], paired=True, fontsize=8,
+                             bar=False, x_tick_labels=['Baseline', 'Interictal'], colors=['royalblue', 'forestgreen'],
+                             y_label='corr coef (r)',
+                             show=False, alpha=1, fig=fig, ax=axs[0], s=25, ylims=[-0.1, 0.85])
+
+        # plot_bar_with_points(data=[list(results.corr_targets['within - baseline'].values()), list(results.corr_targets['between - baseline'].values())],
+        #     bar=False, title='Baseline', x_tick_labels=['within exp', 'across exp'],
+        #     colors=['gold', 'gray'], figsize=(4, 4), y_label='corr coef (r)', show=False, alpha=1,fig=fig, ax = axs[0], s=25, ylims=[-0.1, 0.80])
+        # plot_bar_with_points(data=[list(results.corr_targets['within - interictal'].values()), list(results.corr_targets['between - interictal'].values())],
+        #     bar=False, title='Interictal', x_tick_labels=['within exp', 'across exp'],
+        #     colors=['gold', 'gray'], figsize=(4, 4), y_label='', show=False, alpha=1,fig=fig, ax = axs[1], s=25, ylims=[-0.1, 0.80])
         for ax in axs:
             ax.set_xticks([])
         # axs[1].spines['left'].set_visible(False)
-        axs[1].set_yticklabels([])
+        # axs[1].set_yticklabels([])
 
         # Create the legend
         from matplotlib.lines import Line2D
         from matplotlib.transforms import Bbox
-        legend_elements = [Line2D([0], [0], marker='o', color='w', label='within',
-                                  markerfacecolor='gold', markersize=6, markeredgecolor='black'),
-                           Line2D([0], [0], marker='o', color='w', label='across',
-                                  markerfacecolor='gray', markersize=6, markeredgecolor='black')]
+        legend_elements = [Line2D([0], [0], marker='o', color='w', label='Baseline',
+                                  markerfacecolor='royalblue', markersize=6, markeredgecolor='black'),
+                           Line2D([0], [0], marker='o', color='w', label='Interictal',
+                                  markerfacecolor='forestgreen', markersize=6, markeredgecolor='black')]
 
-        bbox = np.array(axs[1].get_position())
+        bbox = np.array(axs[0].get_position())
         bbox = Bbox.from_extents(bbox[1, 0] + 0.02, bbox[1, 1] - 0.02, bbox[1, 0] + 0.06, bbox[1, 1])
         # bbox = Bbox.from_extents(bbox[1, 0], bbox[0, 0], bbox[0, 1] + 0.00, bbox[0, 1] - 0.02)
         # ax2 = fig.add_subplot(position = bbox)
@@ -710,14 +749,13 @@ class PhotostimAnalysisSlmTargets(Quantification):
         # fig.tight_layout(pad=0.7)
         # fig.show()
 
-
     @staticmethod
     @Utils.run_for_loop_across_exps(
         run_trials=[AllOpticalExpsToAnalyze.pre_4ap_trials[0][0], AllOpticalExpsToAnalyze.post_4ap_trials[0][0]],
         allow_rerun=1)
     def correlation_matrix_responses(**kwargs):
         expobj: Union[alloptical, Post4ap] = kwargs['expobj']
-        z_scored_responses = stats.zscore(expobj.PhotostimAnalysisSlmTargets.adata.X, axis=1)
+        z_scored_responses = zscore(expobj.PhotostimAnalysisSlmTargets.adata.X, axis=1)
 
         # correlation of targets
         fig, ax = plt.subplots(figsize=(3, 3), dpi=300)
@@ -739,51 +777,80 @@ class PhotostimAnalysisSlmTargets(Quantification):
         fig.tight_layout(pad=0.5)
         # fig.show()
 
-    # 8.1) PCA of stims
+    # 8.1) PCA of stims --> targets
     @staticmethod
-    @Utils.run_for_loop_across_exps(
-        run_trials=[AllOpticalExpsToAnalyze.pre_4ap_trials[0][0], AllOpticalExpsToAnalyze.post_4ap_trials[0][0]],
-        allow_rerun=1)
-    def pca_responses(**kwargs):
-        expobj: Union[alloptical, Post4ap] = kwargs['expobj']
-        z_scored_responses = stats.zscore(expobj.PhotostimAnalysisSlmTargets.adata.X, axis=1)
-        mean_responses = np.mean(expobj.PhotostimAnalysisSlmTargets.adata.X, axis=1)
-        variation_responses = variation(expobj.PhotostimAnalysisSlmTargets.adata.X, axis=1)
+    def pca_responses(fig=None, ax=None, results=results, rerun=0, **kwargs):
+        fontsize = kwargs['fontsize'] if 'fontsize' in kwargs else 8
+        rfv.set_fontsize(fontsize)
 
-        n_comp = 10
-        pca = PCA(n_components=n_comp)
-        pca_responses = pca.fit_transform(z_scored_responses)
+        @Utils.run_for_loop_across_exps(run_pre4ap_trials=True, run_post4ap_trials=True, allow_rerun=1)
+        def _pca_responses(fig=fig, ax=ax, **kwargs):
+            expobj: Union[alloptical, Post4ap] = kwargs['expobj']
+            stims = expobj.stim_idx_outsz if 'post' in expobj.exptype else expobj.stims_idx
 
-        # clustering
-        kmeans = KMeans(n_clusters=2, random_state=0).fit(z_scored_responses)
-        kmeans.labels_
+            if 'post' in expobj.exptype:
+                z_scored_responses = expobj.PhotostimResponsesSLMTargets.adata.layers['dFF (zscored) (baseline)'][:,
+                                     stims]
+            else:
+                z_scored_responses = expobj.PhotostimResponsesSLMTargets.adata.layers['dFF (zscored)'][:, stims]
 
-        # plot PCA transformed responses
-        fig, ax = plt.subplots(figsize=(5, 4))
-        # ax.scatter(pca_responses[:, 0], pca_responses[:, 1], s=50, color='green', edgecolor='yellowgreen', linewidth=3)
-        # sc = ax.scatter(pca_responses[:, 0], pca_responses[:, 1], s=50, c=kmeans.labels_, cmap=plt.cm.get_cmap('viridis', 2))
-        # fig.colorbar(sc, ticks=range(1), label ='kmeans clusters')
-        sc = ax.scatter(pca_responses[:, 0], pca_responses[:, 1], s=50, c=variation_responses,
-                        cmap=plt.cm.get_cmap('viridis', 10), vmin=0, vmax=3)
-        fig.colorbar(sc, ticks=range(10), label='variation responses')
-        fig.tight_layout(pad=1)
-        fig.show()
+            # z_scored_responses = zscore(expobj.PhotostimAnalysisSlmTargets.adata.X[:, stims], axis=1)
+            mean_responses = np.mean(expobj.PhotostimAnalysisSlmTargets.adata.X, axis=1)
+            variation_responses = variation(expobj.PhotostimAnalysisSlmTargets.adata.X, axis=1)
+            if np.mean(mean_responses) > 4.9:
+                try:
+                    n_comp = 10
+                    pca = PCA(n_components=n_comp)
+                    pca_responses = pca.fit_transform(z_scored_responses)
 
-        # plot skree plot for explained variance
-        fig, ax = plt.subplots(figsize=(3, 2))
-        ax.plot(range(1, 1 + n_comp), pca.explained_variance_ratio_)
-        fig.tight_layout(pad=1)
-        fig.show()
+                    # clustering
+                    # kmeans = KMeans(n_clusters=2, random_state=0).fit(z_scored_responses)
+                    # kmeans.labels_
 
-        print(pca.explained_variance_ratio_)
+                    # # plot PCA transformed responses
+                    # fig, ax = plt.subplots(figsize=(3, 3))
+                    # # ax.scatter(pca_responses[:, 0], pca_responses[:, 1], s=50, color='green', edgecolor='yellowgreen', linewidth=3)
+                    # # sc = ax.scatter(pca_responses[:, 0], pca_responses[:, 1], s=50, c=kmeans.labels_, cmap=plt.cm.get_cmap('viridis', 2))
+                    # # fig.colorbar(sc, ticks=range(1), label ='kmeans clusters')
+                    # sc = ax.scatter(pca_responses[:, 0], pca_responses[:, 1], s=50, c=variation_responses,
+                    #                 cmap=plt.cm.get_cmap('viridis', 5), vmin=0, vmax=3)
+                    # ax.set_ylim([-2e12, 2e12])
+                    # ax.set_xlim([-1e12, 1e12])
+                    # fig.colorbar(sc, ticks=range(10), label='variation responses')
+                    # fig.tight_layout(pad=1)
+                    # fig.show()
 
-        print(pca.singular_values_)
+                    # plot skree plot for explained variance
+                    # fig, ax = plt.subplots(figsize=(3, 2))
+                    color = 'royalblue' if 'pre' in expobj.exptype else 'forestgreen'
+                    ax.plot(range(1, 1 + n_comp), pca.explained_variance_ratio_, color=color, lw=0.5, marker='o', markersize=12) if ax else None
+                    # fig.suptitle(f'{expobj.t_series_name} {expobj.exptype} - scree plot')
+                    # fig.tight_layout(pad=1)
+                    # fig.show()
 
+                    print(pca.explained_variance_ratio_)
+                    # print(pca.singular_values_)
+                    return (expobj.t_series_name, expobj.exptype, pca.explained_variance_ratio_)
+                except:
+                    # raise ValueError('pca error')
+                    pass
+            else:
+                print(f'***** WARNING: EXCLUDING EXPERIMENT: {expobj.exptype} {expobj.t_series_name}')
+
+        if not hasattr(results, 'targets_responses_pca') or rerun:
+            pca_stats = _pca_responses(fig=fig, ax=ax)
+            results.targets_responses_pca = pca_stats
+            results.save_results()
+            return results.targets_responses_pca
+        else:
+            return results.targets_responses_pca
+
+    # 8.2) PCA of targets --> stims
     @staticmethod
     def pca_responses_all_targets():
         results = PhotostimResponsesSLMtargetsResults.load()
         responses = results.baseline_adata.X
-        z_scored_responses = stats.zscore(responses, axis=1)
+        z_scored_responses = zscore(responses, axis=1)
         exps = results.baseline_adata.obs['exp']
 
         mean_responses = np.nanmean(responses, axis=1)
@@ -924,14 +991,15 @@ class PhotostimAnalysisSlmTargets(Quantification):
         fig, ax = (kwargs['fig'], kwargs['ax']) if 'fig' in kwargs and 'ax' in kwargs else (None, None)
         # fig.show()
 
+        fontsize = kwargs['fontsize'] if 'fontsize' in kwargs else 8
+        rfv.set_fontsize(fontsize)
+
         pplot.plot_bar_with_points(
             data=[results.variance_photostimresponse['baseline'], results.variance_photostimresponse['interictal']],
-            x_tick_labels=['Baseline', 'Interictal'], bar=True, colors=['gray', 'green'], alpha=1, show=False, fig=fig, ax=ax,
-            expand_size_x=0.4, title='Average CV', y_label='Coefficient of Variation (CV)', shrink_text=0.9,
-            paired=False, s=40, bar_alpha=0.2, ylims=[0, 7.5])
+            x_tick_labels=['Baseline', 'Interictal'], bar=True, colors=['royalblue', 'forestgreen'], alpha=1, show=False, fig=fig,
+            ax=ax, expand_size_x=0.4, title='', y_label='Average CV', paired=False, s=40, bar_alpha=0.8, ylims=[0, 7.5],
+            sig_compare_lines={'*': [0, 1]}, points=False, fontsize=fontsize)
         ax.text(x=ax.get_xlim()[0] + 0.2, y=ax.get_ylim()[-1], s=f"MWU p-val: {res[1]:0.1e}", fontsize='xx-small')
-        # fig.tight_layout(pad=1)
-        # fig.show()
         # Utils.save_figure(fig, save_path_suffix=f"{fig_save_name}") if fig_save_name else None
 
     # return photostim_stdvars_baseline, photostim_stdvars_interictal, photostim_stdvars_ictal
@@ -985,10 +1053,12 @@ class PhotostimAnalysisSlmTargets(Quantification):
 
     # 2.2) plot mean magnitude of photostim responses vs. variability of photostim responses
     @staticmethod
-    def plot__mean_response_vs_variability(fig=None, axs=None, rerun=False):
+    def plot__mean_response_vs_variability(fig=None, axs=None, rerun=False, **kwargs):
         """create plot of mean photostim responses vs. variability for all three exp groups"""
 
         fig, axs = plt.subplots(ncols=3) if fig is None and axs is None else (fig, axs)
+        fontsize = kwargs['fontsize'] if 'fontsize' in kwargs else 8
+        rfv.set_fontsize(fontsize)
 
         if rerun or not hasattr(results, 'meanresponses_vs_variance'):
             results.meanresponses_vs_variance = {}
@@ -1068,24 +1138,81 @@ class PhotostimAnalysisSlmTargets(Quantification):
 
             results.save_results()
 
+        ## RUN STATS - 2-WAY ANOVA
+        # build longform dataframe
+        responses_cv_df = pd.DataFrame({
+            'group': [],
+            'response': [],
+            'CV': []
+        })
+
+        counter = 0
+        for response, cv in zip(pj.flattenOnce(results.meanresponses_vs_variance['baseline - mean responses']),
+                                np.abs(pj.flattenOnce(results.meanresponses_vs_variance['baseline - var responses']))):
+            _df = pd.DataFrame({
+                'group': 'baseline',
+                'response': response,
+                'CV': cv
+            }, index=[counter])
+            responses_cv_df = pd.concat([responses_cv_df, _df])
+            counter += 1
+
+        for response, cv in zip(pj.flattenOnce(results.meanresponses_vs_variance['interictal - mean responses']),
+                                np.abs(pj.flattenOnce(
+                                        results.meanresponses_vs_variance['interictal - var responses']))):
+            _df = pd.DataFrame({
+                'group': 'interictal',
+                'response': response,
+                'CV': cv
+            }, index=[counter])
+            responses_cv_df = pd.concat([responses_cv_df, _df])
+            counter += 1
+
+        binnned_responses_cv_df = responses_cv_df
+        binnned_responses_cv_df['binned_response'] = binnned_responses_cv_df['response'] // 5 * 5
+        selected_responses = binnned_responses_cv_df.loc[binnned_responses_cv_df['binned_response'] > 0, :]
+
+        # np.sum(responses_cv_df)
+        baseline_cvs = responses_cv_df[responses_cv_df['group'] == 'baseline']['CV']
+        interictal_cvs = responses_cv_df[responses_cv_df['group'] == 'interictal']['CV']
+
+        baseline_mean_cv = np.mean(responses_cv_df[responses_cv_df['group'] == 'baseline']['CV'])
+        interictal_mean_cv = np.mean(responses_cv_df[responses_cv_df['group'] == 'interictal']['CV'])
+
+        mwu_score = mannwhitneyu(baseline_cvs, interictal_cvs)
+
+        # plot_bar_with_points([baseline_cvs, interictal_cvs], points=True, bar=False, x_tick_labels=['Baseline', 'Interictal'],
+        #                      figsize=(3,5), y_lims=[0, 100], colors=['royalblue', 'forestgreen'])
+
+        # perform TWO WAY ANOVA
+        import statsmodels.api as sm
+        from statsmodels.formula.api import ols
+
+        # Performing two-way ANOVA
+        model = ols('CV ~ C(group) + C(binned_response) + C(group):C(binned_response)', data=selected_responses).fit()
+        twoway = sm.stats.anova_lm(model, typ=2)
+        print(f"2-way ANOVA (binned responses (+ve only) vs. CV): {twoway}")
+
         # make plot
+        ax = axs[0]
+        # fig, ax = plt.subplots(figsize = (3,3), dpi=200)
 
-        axs[0].scatter(pj.flattenOnce(results.meanresponses_vs_variance['baseline - mean responses']), pj.flattenOnce(results.meanresponses_vs_variance['baseline - var responses']),
-                       facecolors='gray', lw=1.3, s=4, alpha=0.1)
-        axs[0].set_xlim([-30, 130])
-        axs[0].set_ylim([-10, 50])
-        axs[0].set_xlabel('Mean responses (%dFF)')
-        axs[0].set_ylabel('CV')
+        ax.scatter(pj.flattenOnce(results.meanresponses_vs_variance['baseline - mean responses']),
+                   np.abs(pj.flattenOnce(results.meanresponses_vs_variance['baseline - var responses'])),
+                   facecolors='royalblue', s=0.5, alpha=1)
 
-        axs[1].scatter(pj.flattenOnce(results.meanresponses_vs_variance['interictal - mean responses']), pj.flattenOnce(results.meanresponses_vs_variance['interictal - var responses']),
-                       facecolors='forestgreen', lw=1.3, s=4, alpha=0.1)
-        axs[1].set_xlim([-30, 130])
-        axs[1].set_ylim([-10, 50])
-        axs[1].set_xlabel('Mean responses (%dFF)')
-        axs[1].set_ylabel('')
-        axs[1].set_yticklabels([])
+        ax.scatter(pj.flattenOnce(results.meanresponses_vs_variance['interictal - mean responses']),
+                   np.abs(pj.flattenOnce(results.meanresponses_vs_variance['interictal - var responses'])),
+                   facecolors='forestgreen', s=0.5, alpha=1)
+        ax.set_xlim([-30, 100])
+        ax.set_ylim([-10, 50])
+        ax.set_xlabel('Mean Responses (% dFF)')
+        ax.set_ylabel('Coefficient of Variation (CV)')
 
-        # fig.show()
+        ax.text(x=-15, y=-5,
+                s=f'2way: response: {twoway.loc["C(binned_response)", "PR(>F)"]:.2e}, group:respons): {twoway.loc["C(group):C(binned_response)", "PR(>F)"]:.2e}',
+                fontsize=5, wrap=True, clip_on = False)
+
 
         # fig, axs[0] = pplot.make_general_scatter([pj.flattenOnce(results.meanresponses_vs_variance['baseline - mean responses'])],
         #                            [pj.flattenOnce(results.meanresponses_vs_variance['baseline - var responses'])],
@@ -1100,8 +1227,6 @@ class PhotostimAnalysisSlmTargets(Quantification):
         #                            ax_titles=['Targets: avg. response vs. variability - interictal'],
         #                            facecolors=['forestgreen'], lw=1.3, xlim=[-30, 130],
         #                            ylim=[-0.1, 3.2], alpha=0.1, fig=fig, ax=axs[1], show=False)
-
-        pass
 
         # pplot.make_general_scatter([pj.flattenOnce(results.meanresponses_vs_variance['interictal - mean responses']),
         #                             pj.flattenOnce(results.meanresponses_vs_variance['baseline - mean responses'])],
@@ -1229,7 +1354,8 @@ class PhotostimAnalysisSlmTargets(Quantification):
             ax = kwargs['ax']
 
             x_range = np.linspace(0, expobj.frame_time(expobj.n_frames), array.shape[1])
-            start, end = pj.findClosest(x_range, kwargs['start_crop'])[1], pj.findClosest(x_range, kwargs['end_crop'])[1]
+            start, end = pj.findClosest(x_range, kwargs['start_crop'])[1], pj.findClosest(x_range, kwargs['end_crop'])[
+                1]
             x_plot = x_range[start: end]
             for i in range(array.shape[0]):
                 ca_trace_ = array[i] - np.mean(array[i][-100:]) + i * 40 * y_spacing_factor
@@ -1253,13 +1379,11 @@ class PhotostimAnalysisSlmTargets(Quantification):
             # ax.spines['left'].set_visible(False)
             # ax.spines['bottom'].set_visible(False)
 
-
             # change x axis ticks to seconds
             # labels = list(range(0, int(expobj.n_frames // expobj.fps), 30))
             # ax.set_xticks(ticks=labels)
             # ax.set_yticks([])
             rfv.naked(ax)
-
 
         # PRE4AP PLOTTING ##################################################################################################################################################################################################################
         expobj: alloptical = import_expobj(exp_prep='RL109 t-013')
@@ -1289,7 +1413,8 @@ class PhotostimAnalysisSlmTargets(Quantification):
         w = int(smooth * expobj.fps)
         array = np.asarray([pj.smoothen_signal(trace, w) for trace in array])
 
-        fig, ax = plot_photostim_traces_stacked(array, expobj, show=False, ax=ax_cat[1][0], fig=fig, linewidth=0.3, start_crop=start_crop, end_crop = end_crop)
+        fig, ax = plot_photostim_traces_stacked(array, expobj, show=False, ax=ax_cat[1][0], fig=fig, linewidth=0.3,
+                                                start_crop=start_crop, end_crop=end_crop)
         ax.spines['left'].set_visible(False)
         ax.set_xlim([start_crop, end_crop]) if start_crop is not None else None
         # y_max = np.mean(array[-1] - array[-1] - np.mean(array[-1][-100:]) + -1 * 40 * y_spacing_factor) + 3 * np.mean(array[-1])
@@ -1298,7 +1423,7 @@ class PhotostimAnalysisSlmTargets(Quantification):
         ylim_pre4ap = ax.get_ylim()
 
         ax.set_xticklabels([tick - start_crop for tick in ax.get_xticks()])
-        ax.set_ylabel('Individual targets')
+        ax.set_ylabel('Targetted neurons')
 
         # synced LFP signal
         fig, ax = plotLfpSignal(expobj=expobj, xlims=[start_crop, end_crop], ylims=[-5, 5],
@@ -1337,7 +1462,8 @@ class PhotostimAnalysisSlmTargets(Quantification):
         start_crop = 190
         end_crop = start_crop + 200
 
-        fig, ax = plot_photostim_traces_stacked(array, expobj, show=False, ax=ax, fig=fig, linewidth=0.3, start_crop=start_crop, end_crop=end_crop)
+        fig, ax = plot_photostim_traces_stacked(array, expobj, show=False, ax=ax, fig=fig, linewidth=0.3,
+                                                start_crop=start_crop, end_crop=end_crop)
         ax.set_xlim([start_crop, start_crop + 200]) if start_crop is not None else None
 
         # # plot LFP signal
@@ -1367,7 +1493,7 @@ class PhotostimAnalysisSlmTargets(Quantification):
         ax = ax_cat[0][1]
 
         plotLfpSignal(expobj=expobj, figsize=(10, 3), xlims=[start_crop, end_crop], ylims=[-5 + 0.75, 5 + 0.75],
-                      title=None,
+                      title=None, ylabel='LFP',
                       # save_path=f'{SAVE_FIG}/alloptical_Ca_traces_post4ap_LFP.png',
                       color='black', stim_span_color='lightgray', linewidth=0.3, ax=ax, fig=fig, show=False)
         ax.axis('off')
@@ -1375,10 +1501,10 @@ class PhotostimAnalysisSlmTargets(Quantification):
         # add scalebar
         from _utils_.rfv_funcs import add_scale_bar
         add_scale_bar(ax=ax_cat[0][1], loc=(end_crop + 10, -5 + 0.75), length=(1, 10), bartype='L',
-                      text=('1mV', '10secs'), text_offset=(6, 0.9), fs=5, fig=fig)
+                      text=('1mV', '10 $\it{s}$'), text_offset=(8, 0.9), fs=5, fig=fig, lw=1)
 
         add_scale_bar(ax=ax_cat[1][1], loc=(end_crop + 10, ylim_pre4ap[0] + 200), length=(100, 10), bartype='L',
-                      text=('1 dFF', '10secs'), text_offset=(6, 110), fs=5, fig=fig)
+                      text=('1 dFF', '10 $\it{s}$'), text_offset=(8, 110), fs=5, fig=fig, lw=1)
 
         # fig.show()
 

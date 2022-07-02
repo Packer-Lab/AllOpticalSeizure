@@ -46,7 +46,7 @@ class OnePhotonStimResults(Results):
     }
 
     baseline_response_magnitude = {
-        # 'PS17': [0.1686],  # can't be used for paird pre4ap to interictal plot
+        'PS17': [0.1686],  # can't be used for paird pre4ap to interictal plot
         'PS07': [0.3574, 0.3032],
         'PS11': [0.4180, 0.3852],
         'PS18': [0.3594],
