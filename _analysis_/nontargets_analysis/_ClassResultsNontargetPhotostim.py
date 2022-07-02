@@ -450,7 +450,7 @@ class PhotostimResponsesNonTargetsResults(Results):
         # re-sort by distance to target
         baseline_responses = baseline_responses.sort_values(by=['distance target'])
 
-        # binning distances - 20um bins
+        # binning distances - 10um bins
         baseline_responses['distance target binned'] = (baseline_responses['distance target'] // 10) * 10
 
         # average across distance bins

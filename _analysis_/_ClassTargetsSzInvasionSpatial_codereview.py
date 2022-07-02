@@ -583,7 +583,7 @@ class TargetsSzInvasionSpatial_codereview(SLMTargets):
         # ax.set_title(
         #     f'photostim responses vs. distance to sz wavefront (binned every {results.binned__distance_vs_photostimresponses["bin_width_um"]}um)',
         #     wrap=True)
-        ax.set_xlabel(r'Distance to seizure wavefront ($\mu$m)')
+        ax.set_xlabel(r'Distance to seizure wavefront ($\mu$$\it{m}$)')
         # ax.set_ylabel(TargetsSzInvasionSpatial_codereview.response_type)
         ax.set_ylabel(f'Photostimulation response\n' + r'($\it{z}$-scored)')
         ax.margins(0)

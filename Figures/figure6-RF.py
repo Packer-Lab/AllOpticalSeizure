@@ -1,7 +1,8 @@
 """
 TODO:
 
-[ ] add schematic of seizure distance to target
+RUN STATS:
+[x] - ttests for linear regression ratios
 
 suppl figure: write up RF code
 - responders analysis
@@ -34,7 +35,7 @@ SAVE_FOLDER = f'/home/pshah/Documents/figures/alloptical_seizures_draft/'
 
 # %% SETUP
 ## Set general plotting parameters
-rfv.set_fontsize(7)
+rfv.set_fontsize(8)
 
 ## Set parameters
 save_fig = True
@@ -48,17 +49,19 @@ np.random.seed(2)  # fix seed
 
 layout = {
     'left': {'panel_shape': (1, 1),
-                      'bound': (0.10, 0.80, 0.30, 0.95)},
+                      'bound': (0.10, 0.80, 0.25, 0.95)},
     'middle-left': {'panel_shape': (1, 2),
                          'bound': (0.37, 0.70, 0.52, 0.95)},
     'middle-right': {'panel_shape': (1, 2),
-                           'bound': (0.62, 0.72, 0.67, 0.95),
+                           'bound': (0.59, 0.72, 0.64, 0.95),
                            'wspace': 0.8},
     'right': {'panel_shape': (1, 1),
                           'bound': (0.75, 0.70, 0.95, 0.85),
                           'wspace': 0.8}
 }
-fig, axes, grid = rfv.make_fig_layout(layout=layout, dpi=300)
+
+dpi = 300
+fig, axes, grid = rfv.make_fig_layout(layout=layout, dpi=dpi)
 
 # rfv.show_test_figure_layout(fig, axes=axes)  # test what layout looks like quickly, but can also skip and moveon to plotting data.
 
@@ -68,12 +71,13 @@ x_adj = 0.09
 
 # %% B) total z scored responses of targets vs. total z scored responses of nontargets - photostim vs. sham stim
 axs = (axes['middle-left'], axes['middle-right'])
-rfv.add_label_axes(text='B', ax=axs[0][0], x_adjust=x_adj - 0.04, y_adjust=0.00)
+rfv.add_label_axes(text='B', ax=axs[0][0], x_adjust=x_adj, y_adjust=0.00)
 
 # main.collect__zscored_summed_activity_vs_targets_activity(results=results)
 
 # B + B') ratio of regression lines between baseline and interictal stims - photostim + fakestim
 main.plot__summed_activity_vs_targets_activity(results=results, SAVE_FOLDER=SAVE_FOLDER, fig=fig, axs=axs)
+
 
 
 # %% legend for B and C plots
@@ -103,7 +107,7 @@ axlegend.axis('off')
 # %% C) influence measurements - baseline + interictal across distance to targets
 # PLOTTING of average responses +/- sem across distance to targets bins - baseline + interictal
 axs = axes['right']
-rfv.add_label_axes(text='C', ax=axs[0], x_adjust=x_adj - 0.02)
+rfv.add_label_axes(text='C', ax=axs[0], x_adjust=x_adj - 0.00)
 
 distance_lims = [19, 400]
 
@@ -134,7 +138,7 @@ ax.plot(distances, avg_binned_responses, lw=1.5, color='mediumseagreen', label='
 ax.set_title(f"{measurement}", wrap=True)
 ax.set_xlim([0, 400])
 ax.set_ylim([-0.175, 0.25])
-pj.lineplot_frame_options(fig=fig, ax=ax, x_label='Distance to target (um)', y_label=measurement)
+pj.lineplot_frame_options(fig=fig, ax=ax, x_label='Distance to target ($\mu$$\it{m}$)', y_label='Photostimulation influence')
 # ax.legend(loc='lower right')
 # fig.suptitle('BASELINE + INTERICTAL')
 # fig.tight_layout()
@@ -196,14 +200,15 @@ for exp in np.unique(baseline_responses['expID']):
     distances.append(_distances)
 ax.hist(distances, 40, density=False, histtype='bar', stacked=True)
 # ax.set_title('number of measurements by individual experiments')
-ax.set_xlabel('Distance to target (um)')
+ax.set_xlabel('Distance to target ($\mu$$\it{m}$)')
 
-
-# %%
-# fig.show()
 
 
 # %%
-if save_fig:
+if save_fig and dpi > 250:
     Utils.save_figure(fig=fig, save_path_full=f"{SAVE_FOLDER}/figure6-RF.png")
     Utils.save_figure(fig=fig, save_path_full=f"{SAVE_FOLDER}/figure6-RF.svg")
+
+fig.show()
+
+

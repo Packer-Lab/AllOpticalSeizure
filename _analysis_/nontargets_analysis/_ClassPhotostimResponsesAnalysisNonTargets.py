@@ -1,6 +1,7 @@
 import sys
 
-from _analysis_.nontargets_analysis._ClassPhotostimResponseQuantificationNonTargets import PhotostimResponsesQuantificationNonTargets, FakeStimsQuantification
+from _analysis_.nontargets_analysis._ClassPhotostimResponseQuantificationNonTargets import \
+    PhotostimResponsesQuantificationNonTargets, FakeStimsQuantification
 
 sys.path.extend(['/home/pshah/Documents/code/AllOpticalSeizure', '/home/pshah/Documents/code/AllOpticalSeizure'])
 
@@ -18,8 +19,8 @@ from _main_.AllOpticalMain import alloptical
 from _main_.Post4apMain import Post4ap
 from funcsforprajay import plotting as pplot
 
-# %% ###### NON TARGETS analysis + plottings
 
+# %% ###### NON TARGETS analysis + plottings
 
 
 # results: PhotostimResponsesNonTargetsResults = PhotostimResponsesNonTargetsResults.load()
@@ -65,7 +66,8 @@ class PhotostimResponsesAnalysisNonTargets(PhotostimResponsesQuantificationNonTa
 
     @staticmethod
     @Utils.run_for_loop_across_exps(run_pre4ap_trials=1, run_post4ap_trials=1,
-                                    allow_rerun=0, skip_trials=PhotostimResponsesQuantificationNonTargets.EXCLUDE_TRIALS, )
+                                    allow_rerun=0,
+                                    skip_trials=PhotostimResponsesQuantificationNonTargets.EXCLUDE_TRIALS, )
     # run_trials=PhotostimResponsesQuantificationNonTargets.TEST_TRIALS)
     def run__initPhotostimResponsesAnalysisNonTargets(**kwargs):
         expobj: Union[alloptical, Post4ap] = kwargs['expobj']
@@ -136,8 +138,10 @@ class PhotostimResponsesAnalysisNonTargets(PhotostimResponsesQuantificationNonTa
 
         same_plot = True
 
-        if not same_plot: fig, axs = plt.subplots(figsize=(4, 6), nrows=2, ncols=1)
-        else: fig, axs = plt.subplots(figsize=(5, 5))
+        if not same_plot:
+            fig, axs = plt.subplots(figsize=(4, 6), nrows=2, ncols=1)
+        else:
+            fig, axs = plt.subplots(figsize=(5, 5))
 
         if len(pos_avg_traces[0]) > 0:
             ax = axs if same_plot else axs[0]
@@ -149,7 +153,8 @@ class PhotostimResponsesAnalysisNonTargets(PhotostimResponsesQuantificationNonTa
                                     pre_stim_sec=PhotostimAnalysisSlmTargets._pre_stim_sec,
                                     show=False, fontsize='small', figsize=(4, 4),
                                     xlabel='Time (secs)', ylabel='Avg. Stim. Response (dF/stdF)')
-        else: print(f"**** {expobj.t_series_name} has no statistically significant positive responders.")
+        else:
+            print(f"**** {expobj.t_series_name} has no statistically significant positive responders.")
         if len(neg_avg_traces[0]) > 0:
             ax = axs if same_plot else axs[1]
             plot_periphotostim_avg2(dataset=neg_avg_traces, fps=expobj.fps,
@@ -160,7 +165,8 @@ class PhotostimResponsesAnalysisNonTargets(PhotostimResponsesQuantificationNonTa
                                     pre_stim_sec=PhotostimAnalysisSlmTargets._pre_stim_sec,
                                     show=False, fontsize='small', figsize=(4, 4),
                                     xlabel='Time (secs)', ylabel='Avg. Stim. Response (dF/stdF)')
-        else: print(f"**** {expobj.t_series_name} has no statistically significant negative responders.")
+        else:
+            print(f"**** {expobj.t_series_name} has no statistically significant negative responders.")
 
         if len(fake_avg_traces[0]) > 0:
             ax = axs if same_plot else None
@@ -317,21 +323,21 @@ class PhotostimResponsesAnalysisNonTargets(PhotostimResponsesQuantificationNonTa
                                    (not np.isnan(val) and not np.isnan(pos_baseline[i]))],
                 'ictal_negative': [val for i, val in enumerate(neg_ictal) if
                                    (not np.isnan(val) and not np.isnan(neg_baseline[i]))]
-                }
+            }
 
         else:
             results.avg_responders_magnitude = {'baseline_positive': [val for i, val in enumerate(pos_baseline) if (
-                        not np.isnan(val) and not np.isnan(pos_interictal[i]))],
+                    not np.isnan(val) and not np.isnan(pos_interictal[i]))],
                                                 'baseline_negative': [val for i, val in enumerate(neg_baseline) if (
-                                                            not np.isnan(val) and not np.isnan(neg_interictal[i]))],
+                                                        not np.isnan(val) and not np.isnan(neg_interictal[i]))],
                                                 'interictal_negative': [val for i, val in enumerate(neg_interictal) if (
-                                                            not np.isnan(val) and not np.isnan(neg_baseline[i]))],
+                                                        not np.isnan(val) and not np.isnan(neg_baseline[i]))],
                                                 'interictal_positive': [val for i, val in enumerate(pos_interictal) if (
-                                                            not np.isnan(val) and not np.isnan(pos_baseline[i]))],
+                                                        not np.isnan(val) and not np.isnan(pos_baseline[i]))],
                                                 'ictal_negative': [val for i, val in enumerate(neg_ictal) if (
-                                                            not np.isnan(val) and not np.isnan(neg_baseline[i]))],
+                                                        not np.isnan(val) and not np.isnan(neg_baseline[i]))],
                                                 'ictal_positive': [val for i, val in enumerate(pos_ictal) if (
-                                                            not np.isnan(val) and not np.isnan(pos_baseline[i]))],
+                                                        not np.isnan(val) and not np.isnan(pos_baseline[i]))],
                                                 }
         results.save_results()
 
@@ -549,14 +555,15 @@ class PhotostimResponsesAnalysisNonTargets(PhotostimResponsesQuantificationNonTa
 
             assert 'nontargets fakestim_responses' in self.adata.layers, 'nontargets fakestim_responses not found in adata layers'
             fakestims_network_mean_activity = list(np.mean(self.adata.layers['nontargets fakestim_responses'],
-                                                            axis=0))  #: summed responses across all nontargets at each photostim trial
+                                                           axis=0))  #: summed responses across all nontargets at each photostim trial
 
             # add as var to anndata
             # self.adata.add_variable(var_name='summed_response_pos_baseline', values=summed_response_positive_baseline)
             # self.adata.add_variable(var_name='summed_response_neg_baseline', values=summed_response_negative_baseline)
             self.adata.add_variable(var_name='mean_nontargets_responses', values=network_mean_activity)
             self.adata.add_variable(var_name='std_nontargets_responses', values=network_std_activity)
-            self.adata.add_variable(var_name='mean_nontargets_fakestims_responses', values=fakestims_network_mean_activity)
+            self.adata.add_variable(var_name='mean_nontargets_fakestims_responses',
+                                    values=fakestims_network_mean_activity)
 
         elif 'post' in self.expobj_exptype:
 
@@ -600,7 +607,6 @@ class PhotostimResponsesAnalysisNonTargets(PhotostimResponsesQuantificationNonTa
             #     np.mean(self.adata.layers['nontargets fakestim_responses'][:, expobj.stim_idx_insz],
             #            axis=0))  #: summed responses across all nontargets at each photostim trial
 
-
             # ICTAL - NONTARGET OUTSZ MEASUREMENTS #####################################################################
             outsz_mean_activity_stims = [None for i in range(self.adata.n_vars)]
             outsz_std_activity_stims = [None for i in range(self.adata.n_vars)]
@@ -609,9 +615,8 @@ class PhotostimResponsesAnalysisNonTargets(PhotostimResponsesQuantificationNonTa
                               enumerate(tuple(expobj.PhotostimResponsesNonTargets.adata.obs['original_index'])) if
                               cell in tuple(expobj.NonTargetsSzInvasionSpatial.adata.obs['original_index'])]
             _idx_analyse = [idx for idx, cell in
-                              enumerate(tuple(expobj.PhotostimResponsesNonTargets.adata.obs['original_index'])) if
-                              cell in tuple(expobj.NonTargetsSzInvasionSpatial.adata.obs['original_index'])]
-
+                            enumerate(tuple(expobj.PhotostimResponsesNonTargets.adata.obs['original_index'])) if
+                            cell in tuple(expobj.NonTargetsSzInvasionSpatial.adata.obs['original_index'])]
 
             for i, stimidx in enumerate(expobj.stim_idx_insz):
                 print(f'processing stim: {stimidx},  {len(expobj.stim_idx_insz)} total stims...')
@@ -628,9 +633,6 @@ class PhotostimResponsesAnalysisNonTargets(PhotostimResponsesQuantificationNonTa
 
             self.adata.add_variable(var_name='mean_nontargets_responses - outsz', values=outsz_mean_activity_stims)
             self.adata.add_variable(var_name='std_nontargets_responses - outsz', values=outsz_std_activity_stims)
-
-
-
 
             # self.adata.add_variable(var_name='summed_response_pos_interictal',
             #                         values=summed_response_positive_interictal)
@@ -668,7 +670,6 @@ class PhotostimResponsesAnalysisNonTargets(PhotostimResponsesQuantificationNonTa
             # return summed_responses
 
         expobj.save()
-
 
     @staticmethod
     def run__summed_responses(rerun=0):
@@ -708,8 +709,8 @@ class PhotostimResponsesAnalysisNonTargets(PhotostimResponsesQuantificationNonTa
             targets_responses_summed = expobj.PhotostimResponsesSLMTargets.adata.var['summed_response_SLMtargets'][
                 expobj.stim_idx_outsz]
             targets_fakestims_responses_summed = \
-            expobj.PhotostimResponsesSLMTargets.adata.var['summed_fakestims_response_SLMtargets'][
-                expobj.fake_stim_idx_outsz]
+                expobj.PhotostimResponsesSLMTargets.adata.var['summed_fakestims_response_SLMtargets'][
+                    expobj.fake_stim_idx_outsz]
             nontargets_responses_summed = self.adata.var['total_nontargets_responses'][expobj.stim_idx_outsz]
             nontargets_fakestims_responses_summed = self.adata.var['total_nontargets_fakestims_responses'][
                 expobj.fake_stim_idx_outsz]
@@ -1084,9 +1085,11 @@ class PhotostimResponsesAnalysisNonTargets(PhotostimResponsesQuantificationNonTa
         if axs is not None:
             assert len(axs) == 2
             axs_ = axs
-        else: raise ValueError('axs arg must be a tuple.')
+        else:
+            raise ValueError('axs arg must be a tuple.')
         # SCATTER PLOT OF DATAPOINTS
-        fig, axs = plt.subplots(nrows=2, ncols=1, figsize=(10, 7), dpi=500) if fig is None or axs is None else (fig, axs_)
+        fig, axs = plt.subplots(nrows=2, ncols=1, figsize=(10, 7), dpi=500) if fig is None or axs is None else (
+            fig, axs_)
         axs = axs[0]
         # BASELINE CONDITION
 
@@ -1095,8 +1098,9 @@ class PhotostimResponsesAnalysisNonTargets(PhotostimResponsesQuantificationNonTa
             x=results.summed_responses['baseline']['targets_summed_zscored'],
             y=results.summed_responses['baseline']['all_non-targets_zscored'])
         regression_y = slope * results.summed_responses['baseline']['targets_summed_zscored'] + intercept
-        axs[0].scatter(results.summed_responses['baseline']['targets_summed_zscored'], results.summed_responses['baseline']['all_non-targets_zscored'],
-                       facecolor='white', edgecolor='blue', lw=1, alpha=1, s=5)
+        axs[0].scatter(results.summed_responses['baseline']['targets_summed_zscored'],
+                       results.summed_responses['baseline']['all_non-targets_zscored'],
+                       facecolor='white', edgecolor='blue', lw=0.5, alpha=1, s=5)
         # pplot.make_general_scatter(
         #     x_list=[results.summed_responses['baseline']['targets_summed_zscored']],
         #     y_data=[results.summed_responses['baseline']['all_non-targets_zscored']], fig=fig, ax=axs[0], show=False,
@@ -1112,8 +1116,9 @@ class PhotostimResponsesAnalysisNonTargets(PhotostimResponsesQuantificationNonTa
         regression_y = slope * results.summed_responses['baseline - fakestims'][
             'targets_fakestims_summed_zscored'] + intercept
 
-        axs[0].scatter(results.summed_responses['baseline - fakestims']['targets_fakestims_summed_zscored'], results.summed_responses['baseline - fakestims']['all_non-targets_fakestims_zscored'],
-                       facecolor='white', edgecolor='black', lw=1, alpha=1, s=5)
+        axs[0].scatter(results.summed_responses['baseline - fakestims']['targets_fakestims_summed_zscored'],
+                       results.summed_responses['baseline - fakestims']['all_non-targets_fakestims_zscored'],
+                       facecolor='white', edgecolor='black', lw=0.5, alpha=1, s=5)
 
         # pplot.make_general_scatter(
         #     x_list=[results.summed_responses['baseline - fakestims']['targets_fakestims_summed_zscored']],
@@ -1136,8 +1141,9 @@ class PhotostimResponsesAnalysisNonTargets(PhotostimResponsesQuantificationNonTa
 
         regression_y = slope * results.summed_responses['interictal']['targets_summed_zscored'] + intercept
 
-        axs[1].scatter(results.summed_responses['interictal']['targets_summed_zscored'], results.summed_responses['interictal']['all_non-targets_zscored'],
-                       facecolor='white', edgecolor='green', lw=1, alpha=1, s=5)
+        axs[1].scatter(results.summed_responses['interictal']['targets_summed_zscored'],
+                       results.summed_responses['interictal']['all_non-targets_zscored'],
+                       facecolor='white', edgecolor='green', lw=0.5, alpha=1, s=5)
 
         # pplot.make_general_scatter(x_list=[results.summed_responses['interictal']['targets_summed_zscored']],
         #                            y_data=[results.summed_responses['interictal']['all_non-targets_zscored']], s=5,
@@ -1159,8 +1165,9 @@ class PhotostimResponsesAnalysisNonTargets(PhotostimResponsesQuantificationNonTa
         regression_y = slope * results.summed_responses['interictal - fakestims'][
             'targets_fakestims_summed_zscored'] + intercept
 
-        axs[1].scatter(results.summed_responses['interictal - fakestims']['targets_fakestims_summed_zscored'], results.summed_responses['interictal - fakestims']['all_non-targets_fakestims_zscored'],
-                       facecolor='white', edgecolor='black', lw=1, alpha=1, s=5)
+        axs[1].scatter(results.summed_responses['interictal - fakestims']['targets_fakestims_summed_zscored'],
+                       results.summed_responses['interictal - fakestims']['all_non-targets_fakestims_zscored'],
+                       facecolor='white', edgecolor='black', lw=0.5, alpha=1, s=5)
 
         # pplot.make_general_scatter(
         #     x_list=[results.summed_responses['interictal - fakestims']['targets_fakestims_summed_zscored']],
@@ -1181,6 +1188,10 @@ class PhotostimResponsesAnalysisNonTargets(PhotostimResponsesQuantificationNonTa
         axs[1].set_ylim([-15, 15])
         axs[0].set_xlim([-7, 7])
         axs[1].set_xlim([-7, 7])
+        axs[0].set_xticklabels([])
+        # axs[1].set_xlabel(f'Total targets response\n' + r'($\it{z}$-scored)', ha='center')
+        # axs[1].set_ylabel(f'Total nontargets response\n' + r'($\it{z}$-scored)', ha='center')
+
         # fig.suptitle('Total z-scored (to baseline) responses for all trials, all exps', wrap=True)
         # fig.tight_layout(pad=0.6)
         # fig.show()
@@ -1189,38 +1200,52 @@ class PhotostimResponsesAnalysisNonTargets(PhotostimResponsesQuantificationNonTa
         # Utils.save_figure(fig=fig, save_path_full=f'{SAVE_FOLDER}/total_targets_vs_total_nontargets_photostim_fakestim_baseline_interictal.png')
 
         # BAR PLOT OF PEARSON'S R CORR VALUES BETWEEN BASELINE AND INTERICTAL
-        # ratio bar plots1
+        r2_ratio_baseline = [(val ** 2) / results.lin_reg_summed_responses['baseline - fakestims']['r_value'][i] for
+                             i, val in enumerate(results.lin_reg_summed_responses['baseline']['r_value'])]
+        r2_ratio_interictal = [(val ** 2) / results.lin_reg_summed_responses['interictal - fakestims']['r_value'][i] for
+                               i, val in enumerate(results.lin_reg_summed_responses['interictal']['r_value'])]
+
+        print(f"P(ttest rel of r2 photostim/fakestim ratio): {stats.ttest_rel(r2_ratio_baseline, r2_ratio_interictal)[1]}")
+        print(f"P(ttest rel of r2 photostim/fakestim ratio): {stats.ttest_rel(r2_ratio_baseline, r2_ratio_interictal)[1]}")
+        print(f"P(wilcoxon of r2 photostim/fakestim ratio): {stats.wilcoxon(r2_ratio_baseline, r2_ratio_interictal)[1]}")
+
         axs = axs_[1]
-        fig, ax = pplot.plot_bar_with_points(data=[
-            [(val ** 2) / results.lin_reg_summed_responses['baseline - fakestims']['r_value'][i] for i, val in
-             enumerate(results.lin_reg_summed_responses['baseline']['r_value'])],
-            [(val ** 2) / results.lin_reg_summed_responses['interictal - fakestims']['r_value'][i] for i, val in
-             enumerate(results.lin_reg_summed_responses['interictal']['r_value'])]],
-                                   paired=True, bar=False, colors=['royalblue', 'seagreen'], edgecolor='black', lw=1, s=25, alpha=1, shrink_text=0.8,
-                                   x_tick_labels=['Base', 'Inter'], ylims=[0, 1.5], y_label='photostim/fakestims $R^2$', y_ticklabels=[0, 0.5, 1.0, 1.5],
-                                   # title='ratio of $R^2$ per experiment',
-            fig=fig, ax=axs[0], show=False, capsize=0.7)
+        fig, ax = pplot.plot_bar_with_points(data=[r2_ratio_baseline, r2_ratio_interictal],
+                                             paired=True, bar=False, colors=['royalblue', 'seagreen'],
+                                             edgecolor='black', lw=1, s=25, alpha=1, shrink_text=0.8,
+                                             x_tick_labels=['Base', 'Inter'], ylims=[0, 1.5], y_label='$R^2$',
+                                             y_ticklabels=[0, 0.5, 1.0, 1.5],
+                                             # title='ratio of $R^2$ per experiment',
+                                             fig=fig, ax=axs[0], show=False, capsize=0.7)
         ax.spines['bottom'].set_visible(False)
         ax.set_xticks([])
         # fig.tight_layout(pad=0.5)
         # fig.show()
         # Utils.save_figure(fig=fig, save_path_full=f'{SAVE_FOLDER}/targets_nontargets_r2_ratio_photostim_fakestim.png')
 
-        fig, ax = pplot.plot_bar_with_points(data=[
-            [val / results.lin_reg_summed_responses['baseline - fakestims']['slope'][i] for i, val in
-             enumerate(results.lin_reg_summed_responses['baseline']['slope'])],
-            [val / results.lin_reg_summed_responses['interictal - fakestims']['slope'][i] for i, val in
-             enumerate(results.lin_reg_summed_responses['interictal']['slope'])]],
-                                   paired=True, bar=False, colors=['royalblue', 'seagreen'], edgecolor='black', lw=1, s=25, alpha=1, shrink_text=0.8,
-                                   x_tick_labels=['Base', 'Inter'], ylims=[0, 5], y_label='photostim/fakestims $m$',
-                                   # title='ratio of $m$ per experiment',
-            fig=fig, ax=axs[1], show=False, capsize=0.7)
+        # BAR PLOT OF LINEAR REGRESSION SLOPE VALUES BETWEEN BASELINE AND INTERICTAL
+        m_ratio_baseline = [val / results.lin_reg_summed_responses['baseline - fakestims']['slope'][i] for i, val in
+                            enumerate(results.lin_reg_summed_responses['baseline']['slope'])]
+        m_ratio_interictal = [val / results.lin_reg_summed_responses['interictal - fakestims']['slope'][i] for i, val in
+                              enumerate(results.lin_reg_summed_responses['interictal']['slope'])]
+
+        print(f"P(ttest rel of m photostim/fakestim ratio): {stats.ttest_rel(m_ratio_baseline, m_ratio_interictal)[1]}")
+        print(f"P(ttest ind of m photostim/fakestim ratio): {stats.ttest_ind(m_ratio_baseline, m_ratio_interictal)[1]}")
+        print(f"P(wilcoxon of m photostim/fakestim ratio): {stats.wilcoxon(m_ratio_baseline, m_ratio_interictal)[1]}")
+
+        fig, ax = pplot.plot_bar_with_points(data=[m_ratio_baseline, m_ratio_interictal],
+                                             paired=True, bar=False, colors=['royalblue', 'seagreen'],
+                                             edgecolor='black', lw=1, s=25, alpha=1,
+                                             shrink_text=0.8,
+                                             x_tick_labels=['Base', 'Inter'], ylims=[0, 4], y_label='Slope',
+                                             y_ticklabels=[0, 1, 2, 3, 4],
+                                             # title='ratio of $m$ per experiment',
+                                             fig=fig, ax=axs[1], show=False, capsize=0.7)
         ax.spines['bottom'].set_visible(False)
         ax.set_xticks([])
         # fig.tight_layout(pad=0.5)
         # fig.show()
         # Utils.save_figure(fig=fig, save_path_full=f'{SAVE_FOLDER}/targets_nontargets_slope_ratio_photostim_fakestim.png')
-
 
         # pplot.plot_bar_with_points(data=[[i ** 2 for i in results.lin_reg_summed_responses['baseline']['r_value']],
         #                                  [i ** 2 for i in
@@ -1249,18 +1274,5 @@ class PhotostimResponsesAnalysisNonTargets(PhotostimResponsesQuantificationNonTa
 if __name__ == '__main__':
     # expobj: alloptical = Utils.import_expobj(exp_prep='RL108 t-009')
     # expobj: Post4ap = Utils.import_expobj(exp_prep='RL108 t-013')
-
-
-
-
-
-
-
-
-
-
-
-
-
 
     pass
