@@ -1,3 +1,12 @@
+"""
+todo:
+
+- make schematic for distance of nontargets to seizure analysis
+- double check distances, etc. is everything in place - responses correct? distances correct?
+
+"""
+
+
 import sys
 
 from Figures.figure7_plots import z_score_response_proximal_distal, influence_response_proximal_and_distal
@@ -34,10 +43,6 @@ distance_lims = [19, 400]  # limit of analysis
 ## Set general plotting parameters
 # rfv.set_fontsize(7)
 
-## Set parameters
-n_cols = 3
-n_rows = 1
-
 save_fig = True
 
 np.random.seed(2)  # fix seed
@@ -55,7 +60,9 @@ layout = {
                 'bound': (0.40, 0.80, 0.90, 0.95),
              'wspace': 0.8}
 }
-fig, axes, grid = rfv.make_fig_layout(layout=layout, dpi=500)
+
+dpi = 300
+fig, axes, grid = rfv.make_fig_layout(layout=layout, dpi=dpi)
 
 
 # rfv.show_test_figure_layout(fig, axes=axes)  # test what layout looks like quickly, but can also skip and moveon to plotting data.
@@ -64,6 +71,7 @@ fig, axes, grid = rfv.make_fig_layout(layout=layout, dpi=500)
 
 z_score_response_proximal_distal(fig=fig, ax=axes['main-left'][0], results=results)
 axes['main-left'][0].set_title('')
+
 influence_response_proximal_and_distal(fig=fig, axs=axes['main-right'], results=results)
 
 
@@ -80,14 +88,12 @@ rfv.add_label_axes(text='B', ax=ax, x_adjust=x_adj + 0.02)
 ax=axes['main-right'][1]
 rfv.add_label_axes(text="B'", ax=ax, x_adjust=x_adj + 0.02)
 
-
-fig.show()
-
-
 # %%
 
-if save_fig:
+if save_fig and dpi > 250:
     Utils.save_figure(fig=fig, save_path_full=f'{SAVE_FOLDER}/figure7-RF.png')
     Utils.save_figure(fig=fig, save_path_full=f'{SAVE_FOLDER}/figure7-RF.svg')
+
+fig.show()
 
 

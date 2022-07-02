@@ -54,25 +54,31 @@ def z_score_response_proximal_distal(results, **kwargs):
         if distance_lims[0] < distance < distance_lims[1]:
             proximal_responses.append(responses)
 
-    # A) make bar plot
 
-    plot_settings()
+    # A) RUNNING STATS COMPARING SIGNIFICANCE OF DIFFERENCE IN MEAN PHOTOSTIM RESPONSE: DISTAL VS. PROXIMAL - some sort of t - test? mann whitney U test?
+
+    # run stats: t test:
+
+    proximal = pj.flattenOnce(proximal_responses)
+    distal = pj.flattenOnce(distal_responses)
+
+    print(f"\nP(ttest - proximal vs. distal responses): {stats.ttest_ind(proximal, distal)[1]:.2e}\n")
+
+
+
+    # A) make bar plot
+    # plot_settings()
 
     fig, ax = (kwargs['fig'], kwargs['ax']) if 'fig' in kwargs else (None, None)
 
     fig, ax = pplot.plot_bar_with_points(data=[pj.flattenOnce(proximal_responses), pj.flattenOnce(distal_responses)], points=False,
                                paired=False, bar=True, colors=['#db5aac', '#dbd25a'], edgecolor='black', lw = 1.25,
-                               x_tick_labels=['proximal', 'distal'], y_label='z score (to baseline)', shrink_text=1.3,
-                               title='avg z score response', ylims=[0, 0.25], show=False, fig=fig, ax=ax)
+                               x_tick_labels=['Proximal', 'Distal'], y_label='Photostimulation response \n($\it{z}$-score)', shrink_text=1.3,
+                               title='avg z score response', ylims=[0, 0.25], show=False, fig=fig, ax=ax, sig_compare_lines={'*****': [0, 1]})
 
     # fig.tight_layout(pad=0.5)
     # fig.show()
     # Utils.save_figure(fig=fig, save_path_full=f'{SAVE_FOLDER}/nontargets_ictal_zscore_proximal_distal_bar.png')
-
-    # A) RUNNING STATS COMPARING SIGNIFICANCE OF DIFFERENCE IN MEAN PHOTOSTIM RESPONSE: DISTAL VS. PROXIMAL - some sort of t - test? mann whitney U test?
-
-    # run stats: mann-whitney U t test form of some sort:
-
 
     # return fig, ax
 
@@ -86,14 +92,23 @@ def influence_response_proximal_and_distal(results, axs, fig):
 
 
     # run stats: one way ANOVA:
-    # distance_response = results.binned_distance_vs_responses_proximal['new influence response']['distance responses']
+    # PROXIMAL
+    distance_response = results.binned_distance_vs_responses_proximal[measurement]['distance responses']
+    args = []
+    for distance, responses in distance_response.items():
+        if distance_lims[0] < distance < distance_lims[1]:
+            args.append(responses)
+    print(f"p(f_oneway, proximal): {stats.f_oneway(*args)[1]}")
+
+
+    # DISTAL
     distance_response = results.binned_distance_vs_responses_distal[measurement]['distance responses']
     # run stats analysis on limited distances: ONE-WAY ANOVA:
     args = []
     for distance, responses in distance_response.items():
         if distance_lims[0] < distance < distance_lims[1]:
             args.append(responses)
-    stats.f_oneway(*args)
+    print(f"p(f_oneway, distal): {stats.f_oneway(*args)[1]}")
 
 
 
@@ -124,7 +139,7 @@ def influence_response_proximal_and_distal(results, axs, fig):
     ax.set_title(f"{measurement}", wrap=True)
     ax.set_xlim([0, 400])
     ax.set_ylim([-0.3, 0.5])
-    pj.lineplot_frame_options(fig=fig, ax=ax, x_label='distance to target (um)', y_label=measurement)
+    pj.lineplot_frame_options(fig=fig, ax=ax, x_label='Distance to target ' + '($\mu$$\it{m}$)', y_label='Photostimulation influence')
 
     ax.set_title('DISTAL')
     # fig.tight_layout()
@@ -154,7 +169,7 @@ def influence_response_proximal_and_distal(results, axs, fig):
     ax.set_title(f"{measurement}", wrap=True)
     ax.set_xlim([0, 400])
     ax.set_ylim([-0.3, 0.5])
-    pj.lineplot_frame_options(fig=fig, ax=ax, x_label='distance to target (um)', y_label=measurement)
+    pj.lineplot_frame_options(fig=fig, ax=ax, x_label='Distance to target ' + '($\mu$$\it{m}$)', y_label='Photostimulation influence')
 
     ax.set_title('PROXIMAL')
     # fig.tight_layout()

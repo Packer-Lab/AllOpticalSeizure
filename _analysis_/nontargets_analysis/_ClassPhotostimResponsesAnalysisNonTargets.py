@@ -1101,6 +1101,12 @@ class PhotostimResponsesAnalysisNonTargets(PhotostimResponsesQuantificationNonTa
         axs[0].scatter(results.summed_responses['baseline']['targets_summed_zscored'],
                        results.summed_responses['baseline']['all_non-targets_zscored'],
                        facecolor='white', edgecolor='blue', lw=0.5, alpha=1, s=5)
+
+        print(f"\np(Baseline - photostims): {p_value:.2e}")
+        print(f"m(Baseline - photostims): {slope:.2f}")
+        print(f"R^2(Baseline - photostims): {r_value**2:.2f}")
+
+
         # pplot.make_general_scatter(
         #     x_list=[results.summed_responses['baseline']['targets_summed_zscored']],
         #     y_data=[results.summed_responses['baseline']['all_non-targets_zscored']], fig=fig, ax=axs[0], show=False,
@@ -1119,6 +1125,10 @@ class PhotostimResponsesAnalysisNonTargets(PhotostimResponsesQuantificationNonTa
         axs[0].scatter(results.summed_responses['baseline - fakestims']['targets_fakestims_summed_zscored'],
                        results.summed_responses['baseline - fakestims']['all_non-targets_fakestims_zscored'],
                        facecolor='white', edgecolor='black', lw=0.5, alpha=1, s=5)
+
+        print(f"\np(Baseline - fakestims): {p_value:.2e}")
+        print(f"m(Baseline - fakestims): {slope:.2f}")
+        print(f"R^2(Baseline - fakestims): {r_value**2:.2f}")
 
         # pplot.make_general_scatter(
         #     x_list=[results.summed_responses['baseline - fakestims']['targets_fakestims_summed_zscored']],
@@ -1145,6 +1155,10 @@ class PhotostimResponsesAnalysisNonTargets(PhotostimResponsesQuantificationNonTa
                        results.summed_responses['interictal']['all_non-targets_zscored'],
                        facecolor='white', edgecolor='green', lw=0.5, alpha=1, s=5)
 
+        print(f"\np(Interictal - photostims): {p_value:.2e}")
+        print(f"m(Interictal - photostims): {slope:.2f}")
+        print(f"R^2(Interictal - photostims): {r_value**2:.2f}")
+
         # pplot.make_general_scatter(x_list=[results.summed_responses['interictal']['targets_summed_zscored']],
         #                            y_data=[results.summed_responses['interictal']['all_non-targets_zscored']], s=5,
         #                            facecolors=['white'],
@@ -1168,6 +1182,10 @@ class PhotostimResponsesAnalysisNonTargets(PhotostimResponsesQuantificationNonTa
         axs[1].scatter(results.summed_responses['interictal - fakestims']['targets_fakestims_summed_zscored'],
                        results.summed_responses['interictal - fakestims']['all_non-targets_fakestims_zscored'],
                        facecolor='white', edgecolor='black', lw=0.5, alpha=1, s=5)
+
+        print(f"\np(Interictal - fakestims): {p_value:.2e}")
+        print(f"m(Interictal - fakestims): {slope:.2f}")
+        print(f"R^2(Interictal - fakestims): {r_value**2:.2f}")
 
         # pplot.make_general_scatter(
         #     x_list=[results.summed_responses['interictal - fakestims']['targets_fakestims_summed_zscored']],
@@ -1199,17 +1217,22 @@ class PhotostimResponsesAnalysisNonTargets(PhotostimResponsesQuantificationNonTa
         SAVE_FOLDER = kwargs['SAVE_FOLDER']
         # Utils.save_figure(fig=fig, save_path_full=f'{SAVE_FOLDER}/total_targets_vs_total_nontargets_photostim_fakestim_baseline_interictal.png')
 
-        # BAR PLOT OF PEARSON'S R CORR VALUES BETWEEN BASELINE AND INTERICTAL
+        # BAR PLOT OF PEARSON'S R CORR VALUES BETWEEN BASELINE AND INTERICTAL, AND SLOPE OF REGRESSION
+        axs = axs_[1]
+
+        # STATS TESTS:
         r2_ratio_baseline = [(val ** 2) / results.lin_reg_summed_responses['baseline - fakestims']['r_value'][i] for
                              i, val in enumerate(results.lin_reg_summed_responses['baseline']['r_value'])]
         r2_ratio_interictal = [(val ** 2) / results.lin_reg_summed_responses['interictal - fakestims']['r_value'][i] for
                                i, val in enumerate(results.lin_reg_summed_responses['interictal']['r_value'])]
 
-        print(f"P(ttest rel of r2 photostim/fakestim ratio): {stats.ttest_rel(r2_ratio_baseline, r2_ratio_interictal)[1]}")
+        print(f"\nP(ttest rel of r2 photostim/fakestim ratio): {stats.ttest_rel(r2_ratio_baseline, r2_ratio_interictal)[1]}")
         print(f"P(ttest rel of r2 photostim/fakestim ratio): {stats.ttest_rel(r2_ratio_baseline, r2_ratio_interictal)[1]}")
         print(f"P(wilcoxon of r2 photostim/fakestim ratio): {stats.wilcoxon(r2_ratio_baseline, r2_ratio_interictal)[1]}")
+        print(f"P(wilcoxon of r2 photostim/fakestim ratio - baseline != 1): {stats.wilcoxon(r2_ratio_baseline, [1] * len(r2_ratio_baseline))[1]}")
+        print(f"P(wilcoxon of r2 photostim/fakestim ratio - interictal != 1): {stats.wilcoxon(r2_ratio_interictal, [1] * len(r2_ratio_interictal))[1]}")
 
-        axs = axs_[1]
+        # MAKE PLOT
         fig, ax = pplot.plot_bar_with_points(data=[r2_ratio_baseline, r2_ratio_interictal],
                                              paired=True, bar=False, colors=['royalblue', 'seagreen'],
                                              edgecolor='black', lw=1, s=25, alpha=1, shrink_text=0.8,
@@ -1224,15 +1247,20 @@ class PhotostimResponsesAnalysisNonTargets(PhotostimResponsesQuantificationNonTa
         # Utils.save_figure(fig=fig, save_path_full=f'{SAVE_FOLDER}/targets_nontargets_r2_ratio_photostim_fakestim.png')
 
         # BAR PLOT OF LINEAR REGRESSION SLOPE VALUES BETWEEN BASELINE AND INTERICTAL
+
+        # STATS TESTS:
         m_ratio_baseline = [val / results.lin_reg_summed_responses['baseline - fakestims']['slope'][i] for i, val in
                             enumerate(results.lin_reg_summed_responses['baseline']['slope'])]
         m_ratio_interictal = [val / results.lin_reg_summed_responses['interictal - fakestims']['slope'][i] for i, val in
                               enumerate(results.lin_reg_summed_responses['interictal']['slope'])]
 
-        print(f"P(ttest rel of m photostim/fakestim ratio): {stats.ttest_rel(m_ratio_baseline, m_ratio_interictal)[1]}")
+        print(f"\nP(ttest rel of m photostim/fakestim ratio): {stats.ttest_rel(m_ratio_baseline, m_ratio_interictal)[1]}")
         print(f"P(ttest ind of m photostim/fakestim ratio): {stats.ttest_ind(m_ratio_baseline, m_ratio_interictal)[1]}")
         print(f"P(wilcoxon of m photostim/fakestim ratio): {stats.wilcoxon(m_ratio_baseline, m_ratio_interictal)[1]}")
+        print(f"P(wilcoxon of m photostim/fakestim ratio - baseline != 1): {stats.wilcoxon(m_ratio_baseline, [1] * len(m_ratio_baseline))[1]}")
+        print(f"P(wilcoxon of m photostim/fakestim ratio - interictal != 1): {stats.wilcoxon(m_ratio_interictal, [1] * len(m_ratio_interictal))[1]}")
 
+        # MAKE PLOT
         fig, ax = pplot.plot_bar_with_points(data=[m_ratio_baseline, m_ratio_interictal],
                                              paired=True, bar=False, colors=['royalblue', 'seagreen'],
                                              edgecolor='black', lw=1, s=25, alpha=1,
