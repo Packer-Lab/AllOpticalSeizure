@@ -38,8 +38,6 @@ import matplotlib.pyplot as plt
 import matplotlib.image as mpimg
 import rep_fig_vis as rfv
 
-plot_settings()
-
 results: PhotostimResponsesSLMtargetsResults = PhotostimResponsesSLMtargetsResults.load()
 
 sz_results: ExpSeizureResults = ExpSeizureResults.load()

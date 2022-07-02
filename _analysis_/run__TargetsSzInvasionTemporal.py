@@ -151,7 +151,7 @@ def plot__targets_sz_invasion_meantraces(**kwargs):
                 label=expobj.t_series_name)
         # ax2.plot(x_time, fov_mean_normalize, color=pj.make_random_color_array(n_colors=1)[0], linewidth=3, alpha=0.5, linestyle='--')
         # ax.legend(loc='center left', bbox_to_anchor=(1.04, 0.5))
-        ax.scatter(x=0, y=to_plot_normalize[invasion_spot], color='crimson', s=30, zorder=5)
+        ax.scatter(x=0, y=to_plot_normalize[invasion_spot], color='black', s=30, zorder=5, marker="x", linewidth=2)
 
         xticks = [-pre, 0, post]
         # xticks_loc = [xtick*expobj.fps for xtick in [0, pre, pre+post]]
@@ -161,8 +161,8 @@ def plot__targets_sz_invasion_meantraces(**kwargs):
         # ax.set_title(f"{expobj.t_series_name}")
 
     plot_targets_sz_invasion_meantraces(fig=fig, ax=ax)
-    ax.set_xlabel('Time (secs)', wrap=True)  #: Time (secs) to sz invasion
-    ax.set_ylabel('Flu change (norm.)')
+    ax.set_xlabel(f'Time to recruitment\n(secs)', wrap=True, horizontalalignment = 'center')  #: Time (secs) to sz invasion
+    ax.set_ylabel('Fluorescence (norm.)')
     if not 'fig' in kwargs and not 'ax' in kwargs:
         fig.suptitle('avg Flu at sz invasion', wrap=True, y=0.96)
         fig.tight_layout(pad=2)
@@ -447,7 +447,7 @@ if __name__ == '__main__':
 
 
     # plot average stim response vs. (possibly binned?) time to sz invasion for all targets across all exps
-    main.collect__binned__szinvtime_v_responses()  # binsize = 3 secs
+    main.collect__binned__szinvtime_v_responses()  # binsize = 1 secs
     results = results.load()
     main.plot__responses_v_szinvtemporal_no_normalization(results=results)
 

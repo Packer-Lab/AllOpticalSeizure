@@ -31,6 +31,7 @@ def plot_settings():
     }
     axes = {
         'titlesize' : 'small',    ## fontsize of the axes title
+        'labelsize': 'large',
         'spines.right': False,
         'spines.top': False,
         }
@@ -47,7 +48,7 @@ def plot_settings():
 
     font = {'family' : 'sans-serif',
             #'weight' : 'bold',
-            'size'   : 7}
+            'size'   : 8}
 
     plt.rc('font', **font)        # controls default text sizes
     plt.rc('axes', **axes)        # fontsize of the axes title

@@ -548,57 +548,74 @@ class TargetsSzInvasionTemporal(Quantification):
 
     # 7) time to sz invasion vs. photostim responses - no percentile normalization of time bins
     @staticmethod
-    def collect__binned__szinvtime_v_responses():
-        """collect time vs. respnses for time bins"""
-        bin_width = 3  # sec
-        bins = np.arange(-60, 0, bin_width)  # -60 --> 0 secs, split in bins
-        num = [0 for _ in range(len(bins))]  # num of datapoints in binned sztemporalinv
-        y = [0 for _ in range(len(bins))]  # avg responses at distance bin
-        responses = [[] for _ in range(len(bins))]  # collect all responses at distance bin
+    def collect__binned__szinvtime_v_responses(results, rerun=0, bin_width=1):
+        """collect time vs. respnses for time bins
 
-        @Utils.run_for_loop_across_exps(run_pre4ap_trials=0, run_post4ap_trials=1, set_cache=False,
-                                        skip_trials=TargetsSzInvasionTemporal.EXCLUDE_TRIAL)
-        def add_time_responses(bins, num, y, responses, **kwargs):
-            expobj = kwargs['expobj']
+        :param results:
+        :param rerun:
+        :param bin_width: (secs)
+        :return:
+        """
+        if rerun or not hasattr(results, 'binned__time_vs_photostimresponses'):
+            bins = np.arange(-10, 0, bin_width)  # -15 --> 0 secs, split in bins
+            num = [0 for _ in range(len(bins))]  # num of datapoints in binned sztemporalinv
+            y = [0 for _ in range(len(bins))]  # avg responses at distance bin
+            responses = [[] for _ in range(len(bins))]  # collect all responses at distance bin
 
-            temporal = expobj.TargetsSzInvasionTemporal
+            @Utils.run_for_loop_across_exps(run_pre4ap_trials=0, run_post4ap_trials=1, set_cache=False,
+                                            skip_trials=TargetsSzInvasionTemporal.EXCLUDE_TRIAL)
+            def add_time_responses(bins, num, y, responses, **kwargs):
+                expobj = kwargs['expobj']
 
-            # temporal.sztime_v_photostimresponses
+                temporal = expobj.TargetsSzInvasionTemporal
 
-            for _, row in temporal.sztime_v_photostimresponses_zscored_df.iterrows():
-                time = row['time_to_szinvasion']
-                response = row['photostim_responses']
-                for i, bin in enumerate(bins[:-1]):
-                    if bins[i] < time < (bins[i + 1]):
-                        num[i] += 1
-                        y[i] += response
-                        responses[i].append(response)
+                # temporal.sztime_v_photostimresponses
 
-            return num, y, responses
+                for _, row in temporal.sztime_v_photostimresponses_zscored_df.iterrows():
+                    time = row['time_to_szinvasion']
+                    response = row['photostim_responses']
+                    for i, bin in enumerate(bins[:-1]):
+                        if bins[i] < time < (bins[i + 1]):
+                            num[i] += 1
+                            y[i] += response
+                            responses[i].append(response)
 
-        func_collector = add_time_responses(bins=bins, num=num, y=y, responses=responses)
+                return num, y, responses
 
-        num, y, responses = func_collector[-1][0], func_collector[-1][1], func_collector[-1][2]
+            func_collector = add_time_responses(bins=bins, num=num, y=y, responses=responses)
 
-        sztemporalinv = bins + bin_width / 2
+            num, y, responses = func_collector[-1][0], func_collector[-1][1], func_collector[-1][2]
 
-        avg_responses = [np.mean(responses_) for responses_ in responses]
+            sztemporalinv = bins + bin_width
 
-        # calculate 95% ci for avg responses
-        import scipy.stats as stats
+            avg_responses = [np.mean(responses_) for responses_ in responses]
 
-        conf_int = np.array(
-            [stats.t.interval(alpha=0.95, df=len(responses_) - 1, loc=np.mean(responses_), scale=stats.sem(responses_))
-             for responses_ in responses])
+            # calculate 95% ci for avg responses
+            import scipy.stats as stats
 
-        results.binned__time_vs_photostimresponses = {'bin_width_sec': bin_width, 'sztemporal_bins': sztemporalinv,
-                                                      'num_points_in_bin': num,
-                                                      'avg_photostim_response_in_bin': avg_responses,
-                                                      '95conf_int': conf_int}
+            conf_int = np.array(
+                [stats.t.interval(alpha=0.95, df=len(responses_) - 1, loc=np.mean(responses_), scale=stats.sem(responses_))
+                 for responses_ in responses])
 
-        results.save_results()
 
-        # return bin_width, sztemporalinv, num,  avg_responses, conf_int
+            # RUN STATS: 1-WAY ANOVA and KRUSKAL-WALLIS - responses across distance
+            kruskal_r = stats.kruskal(*responses[:-1])
+            oneway_r = stats.f_oneway(*responses[:-1])
+
+
+            results.binned__time_vs_photostimresponses = {'bin_width_sec': bin_width, 'sztemporal_bins': sztemporalinv,
+                                                          'num_points_in_bin': num,
+                                                          'avg_photostim_response_in_bin': avg_responses,
+                                                          '95conf_int': conf_int,
+                                                          'all responses (per bin)': responses,
+                                                          'kruskal - binned responses': kruskal_r,
+                                                          'anova oneway - binned responses': oneway_r
+                                                          }
+
+            results.save_results()
+            return results
+        else:
+            return results
 
     @staticmethod
     def plot__responses_v_szinvtemporal_no_normalization(results, **kwargs):
@@ -623,15 +640,20 @@ class TargetsSzInvasionTemporal(Quantification):
         ax.fill_between(x=conf_int_sztemporalinv, y1=conf_int_values_neg, y2=conf_int_values_pos, color='lightgray',
                         zorder=0)
         # ax.scatter(sztemporalinv[:-1], avg_responses, c='orange', zorder=4)
-        ax.set_ylim([-2, 2.5])
+        ax.set_ylim([-2, 2.25])
+        ax.set_yticks([-1, 0, 1, 2])
         ax.invert_xaxis()
-        ax.set_title(
-            f'photostim responses vs. distance to sz wavefront (binned every {results.binned__time_vs_photostimresponses["bin_width_sec"]}sec)',
-            wrap=True)
-        ax.set_xlabel('time to sz inv (secs)')
-        ax.set_ylabel(TargetsSzInvasionTemporal.photostim_responses_zscore_type)
+        # xticks = ax.get_xticks()
+        xticks = sztemporalinv[::2][:-1]
+        ax.set_xticks(xticks)
+        ax.set_xticklabels([int(x + 0.5) for x in xticks])
+        # ax.set_title(
+        #     f'photostim responses vs. time to sz recruitment (binned every {results.binned__time_vs_photostimresponses["bin_width_sec"]}sec)',
+        #     wrap=True)
+        ax.set_xlabel('Time to seizure recruitment (secs)')
+        ax.set_ylabel(f'Photostimulation response\n' + r'($\it{z}$-scored)')
         ax.margins(0)
-        ax.axhline(0, ls='--', lw=1, color='black')
+        ax.axhline(0, ls='--', lw=1, color='black', zorder=0)
 
         pixels = [np.array(num2)] * 10
         ax2.imshow(pixels, cmap='Greys', vmin=-5, vmax=100, aspect=0.05)

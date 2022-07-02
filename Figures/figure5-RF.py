@@ -1,7 +1,11 @@
 """
 TODO:
 
-[ ] add schematic of seizure distance to target
+[x] add schematic of seizure distance to target
+
+STATS:
+[x] repsonses vs. time to invasion
+
 
 suppl figure: write up RF code
 - seizure boundary classification
@@ -50,11 +54,9 @@ SAVE_FOLDER = f'/home/pshah/Documents/figures/alloptical_seizures_draft/'
 
 # %% SETUP
 ## Set general plotting parameters
-# rfv.set_fontsize(7)
-
-## Set parameters
-n_cols = 2
-n_rows = 2
+fontsize = 8
+fs = fontsize
+rfv.set_fontsize(fs)
 
 save_fig = True
 
@@ -67,66 +69,75 @@ np.random.seed(2)  # fix seed
 
 layout = {
     'main-left-top': {'panel_shape': (1, 1),
-                      'bound': (0.05, 0.80, 0.27, 0.95)},
+                      'bound': (0.05, 0.77, 0.27, 0.92)},
     'main-left-bottom': {'panel_shape': (1, 1),
-                         'bound': (0.08, 0.45, 0.26, 0.60)},
+                         'bound': (0.08, 0.42, 0.26, 0.57)},
     'main-right-tophigh': {'panel_shape': (1, 1),
                            'bound': (0.40, 0.75, 0.90, 0.95),
                            'wspace': 0.8},
     'main-right-toplow': {'panel_shape': (1, 1),
-                          'bound': (0.40, 0.65, 0.90, 0.70),
+                          'bound': (0.40, 0.66, 0.90, 0.71),
                           'wspace': 0.8},
     'main-right-bottomhigh': {'panel_shape': (1, 1),
                               'bound': (0.40, 0.40, 0.90, 0.60),
                               'wspace': 0.8},
     'main-right-bottomlow': {'panel_shape': (1, 1),
-                             'bound': (0.40, 0.30, 0.90, 0.35),
+                             'bound': (0.40, 0.31, 0.90, 0.34),
                              'wspace': 0.8},
 }
-fig, axes, grid = rfv.make_fig_layout(layout=layout, dpi=300)
+dpi = 300
+fig, axes, grid = rfv.make_fig_layout(layout=layout, dpi=dpi)
 
 # rfv.show_test_figure_layout(fig, axes=axes)  # test what layout looks like quickly, but can also skip and moveon to plotting data.
 
 x_adj = 0.09
 
+
+
+# %% B' - photostim responses relative to time to seizure recruitment
+ax = axes['main-right-bottomhigh'][0]
+# rfv.add_label_axes(text="B'", ax=ax, x_adjust=x_adj + 0.03)
+results_temporal = main_temporal.collect__binned__szinvtime_v_responses(results=results_temporal, rerun=0, bin_width=0.5)  # binsize = .1 secs
+main_temporal.plot__responses_v_szinvtemporal_no_normalization(results=results_temporal, save_path_full=f'{SAVE_FIG}/responses_sz_temporal_binned_line_plot.png',
+                                                               axes=(axes['main-right-bottomhigh'], axes['main-right-bottomlow']), fig=fig)
+# ax.text(x=-2, y=2, s=f'{results_temporal.binned__time_vs_photostimresponses["kruskal - binned responses"]}', fontsize=5)
+ax.text(x=-2, y=1.95, s=f'{results_temporal.binned__time_vs_photostimresponses["anova oneway - binned responses"]}', fontsize=5)
+
 # %% A' - photostim responses relative to distance to seizure
 ax = axes['main-right-tophigh'][0]
-rfv.add_label_axes(text="A'", ax=ax, x_adjust=x_adj + 0.03)
+# rfv.add_label_axes(text="A'", ax=ax, x_adjust=x_adj + 0.03)
 main_spatial.collect__binned__distance_v_responses(results=results_spatial, rerun=0)
 results_spatial = TargetsSzInvasionSpatialResults_codereview.load()
 main_spatial.plot__responses_v_distance_no_normalization(results=results_spatial, axes=(axes['main-right-tophigh'], axes['main-right-toplow']), fig=fig)
-ax.text(x=50, y=2, s=f'{results_spatial.binned__distance_vs_photostimresponses["kruskal - binned responses"]}', fontsize=5)
+# ax.text(x=50, y=2, s=f'{results_spatial.binned__distance_vs_photostimresponses["kruskal - binned responses"]}', fontsize=5)
+ax.text(x=50, y=1.95, s=f'{results_spatial.binned__distance_vs_photostimresponses["anova oneway - binned responses"]}', fontsize=5)
 
 
 # %% MAKE PLOTS
 
-## A - schematic of sz distance to target
+# %% A - schematic of sz distance to target
 ax = axes['main-left-top'][0]
 rfv.add_label_axes(text='A', ax=ax, x_adjust=x_adj - 0.06)
 sch_path = '/home/pshah/Documents/figures/alloptical_seizures_draft/figure-items/schematic-targets-distance-to-sz.png'
 img = mpimg.imread(sch_path)
 axes['main-left-top'][0].imshow(img, interpolation='none')
 axes['main-left-top'][0].axis('off')
-axes['main-left-top'][0].set_title('Distance to seizure boundary')
+# axes['main-left-top'][0].set_title('Distance to seizure boundary')
 
-## B - Flu change during recruitment to seizure of target
+# %% B - Flu change during recruitment to seizure of target
 ax = axes['main-left-bottom'][0]
 rfv.add_label_axes(text="B", ax=ax, x_adjust=x_adj - 0.02)
 plot__targets_sz_invasion_meantraces(fig=fig, ax=axes['main-left-bottom'][0])
-axes['main-left-bottom'][0].set_title('Time to seizure recruitment')
+# axes['main-left-bottom'][0].set_title('Time to seizure recruitment')
 # fig.show()
 
-# %%B' - photostim responses relative to time to seizure recruitment
-ax = axes['main-right-bottomhigh'][0]
-rfv.add_label_axes(text="B'", ax=ax, x_adjust=x_adj + 0.03)
-main_temporal.plot__responses_v_szinvtemporal_no_normalization(results=results_temporal, save_path_full=f'{SAVE_FIG}/responses_sz_temporal_binned_line_plot.png',
-                                                               axes=(axes['main-right-bottomhigh'], axes['main-right-bottomlow']), fig=fig)
-
-# %%
-fig.show()
 
 
 # %%
-if save_fig:
+if save_fig and dpi >= 250:
     Utils.save_figure(fig=fig, save_path_full=f"{SAVE_FOLDER}/figure5-RF.png")
     Utils.save_figure(fig=fig, save_path_full=f"{SAVE_FOLDER}/figure5-RF.svg")
+
+# fig.show()
+
+
