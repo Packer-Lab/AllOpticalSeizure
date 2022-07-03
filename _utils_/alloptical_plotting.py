@@ -1404,7 +1404,7 @@ def plot_flu_1pstim_avg_trace(expobj, title='Average trace of stims', individual
 
     avg_flu_trace = np.mean(flu_list, axis=0)
     x_range = np.linspace(0, len(avg_flu_trace) / expobj.fps, len(avg_flu_trace))
-    ax.plot(x_range, avg_flu_trace, color='black', zorder=2, linewidth=2.2)
+    ax.plot(x_range, avg_flu_trace, color='black', zorder=2, linewidth=2)
     ax.margins(0)
 
     if individual_traces:
@@ -1419,7 +1419,7 @@ def plot_flu_1pstim_avg_trace(expobj, title='Average trace of stims', individual
     else:
         # plot standard deviation of the traces array as a span above and below the mean
         std_ = np.std(flu_list, axis=0)
-        ax.fill_between(x=x_range, y1=avg_flu_trace + std_, y2=avg_flu_trace - std_, alpha=0.3, zorder=1, color='forestgreen')
+        ax.fill_between(x=x_range, y1=avg_flu_trace + std_, y2=avg_flu_trace - std_, alpha=0.3, zorder=1, color='gray')
         if stim_span_color is not None:
             ax.axvspan(int(pre_stim) - 2/expobj.fps, int(pre_stim) + (expobj.stim_duration_frames + 1) / expobj.fps, color=stim_span_color, zorder=3)
         elif stim_span_color is None:
@@ -1516,7 +1516,7 @@ def plot_lfp_1pstim_avg_trace(expobj, title='Average LFP peri- stims', individua
     x = [expobj.lfp_signal[stim - int(pre_stim * expobj.paq_rate): stim + int(post_stim * expobj.paq_rate)] for stim in stims_to_analyze_paq]
     x_ = np.mean(x, axis=0)
     x_range = np.linspace(0, len(x_) / expobj.paq_rate, len(x_))
-    ax.plot(x_range, x_, color='black', zorder=3, linewidth=1.75)
+    ax.plot(x_range, x_, color='black', zorder=3, linewidth=1)
 
     if 'ylims' in kwargs.keys() and kwargs['ylims'] is not None:
         ax.set_ylim([kwargs['ylims'][0], kwargs['ylims'][1]])
@@ -1537,7 +1537,7 @@ def plot_lfp_1pstim_avg_trace(expobj, title='Average LFP peri- stims', individua
     else:
         # plot standard deviation of the traces array as a span above and below the mean
         std_ = np.std(x, axis=0)
-        ax.fill_between(x=x_range, y1=x_ + std_, y2=x_ - std_, alpha=0.3, zorder=2, color='steelblue')
+        ax.fill_between(x=x_range, y1=x_ + std_, y2=x_ - std_, alpha=0.3, zorder=2, color='gray')
         ax.axvspan(pre_stim, pre_stim + stim_duration, color='skyblue', zorder=1, alpha=0.7)
 
     if 'shrink_text' in kwargs.keys():
@@ -1564,7 +1564,7 @@ def plot_lfp_1pstim_avg_trace(expobj, title='Average LFP peri- stims', individua
             pass
         x = [expobj.opto_loopback[stim - int(pre_stim * expobj.paq_rate): stim + int(post_stim * expobj.paq_rate)] for stim in expobj.stim_start_times]
         y_avg = np.mean(x, axis=0)
-        ax2.plot(x_range, y_avg, color='royalblue', zorder=3, linewidth=1.75)
+        ax2.plot(x_range, y_avg, color='royalblue', zorder=3, linewidth=0.4)
         # if write_full_text:
         #     ax2.text(0.98, 0.12, 'Widefield LED TTL',
         #              transform=ax.transAxes, fontweight='bold', horizontalalignment='right',
