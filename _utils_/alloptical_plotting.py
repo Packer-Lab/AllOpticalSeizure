@@ -16,6 +16,7 @@ import tifffile as tf
 from _main_.TwoPhotonImagingMain import TwoPhotonImaging
 from _main_.AllOpticalMain import alloptical
 from _main_.Post4apMain import Post4ap
+import scipy.stats
 
 from typing import List, Union
 
@@ -1536,7 +1537,8 @@ def plot_lfp_1pstim_avg_trace(expobj, title='Average LFP peri- stims', individua
 
     else:
         # plot standard deviation of the traces array as a span above and below the mean
-        std_ = np.std(x, axis=0)
+        # std_ = np.std(x, axis=0)
+        std_ = stats.sem(x, axis=0)
         ax.fill_between(x=x_range, y1=x_ + std_, y2=x_ - std_, alpha=0.3, zorder=2, color='gray')
         ax.axvspan(pre_stim, pre_stim + stim_duration, color='skyblue', zorder=1, alpha=0.7)
 
