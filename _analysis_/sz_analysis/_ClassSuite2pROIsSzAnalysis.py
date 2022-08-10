@@ -139,148 +139,150 @@ class Suite2pROIsSz(Quantification):
 
     # 1) MEASURING + PLOTTING AVG SPIKES RATE FOR EXPERIMENTS
     @staticmethod
-    def collect__avg_spk_rate(Suite2pROIsSzResults: Suite2pROIsSzResults):
+    def collect__avg_spk_rate(Suite2pROIsSzResults: Suite2pROIsSzResults, rerun=False):
 
-        # Gaussian filter smoothing of spks data
-        def fwhm2sigma(fwhm):
-            return fwhm / np.sqrt(8 * np.log(2))
-
-        def frames2sigma(frames):
-            return np.sqrt(frames / 2)
-
-        # binning of spks data
-        def rebin(arr, new_shape):
-            """Rebin 2D array arr to shape new_shape by averaging."""
-            shape = (new_shape[0], arr.shape[0] // new_shape[0],
-                     new_shape[1], arr.shape[1] // new_shape[1])
-            return arr.reshape(shape).mean(-1).mean(1)
-
-        @Utils.run_for_loop_across_exps(run_pre4ap_trials=True, run_post4ap_trials=False, set_cache=True, allow_rerun=1)
-        def collect__pre4ap_spk_rate(**kwargs):
-            expobj: alloptical = kwargs['expobj']
-            # expobj = import_expobj(exp_prep='RL108 t-009')
-
-            # calculate spks/s across all cells
-            spks_per_sec = np.sum(expobj.Suite2pROIsSz.adata.layers['s2p_spks'], axis=1) / (
-                    expobj.n_frames / expobj.fps)
-            avg_spks_per_sec = np.mean(spks_per_sec)
+        if not hasattr(Suite2pROIsSzResults, 'neural_activity_rate') or rerun:
 
             # Gaussian filter smoothing of spks data
-            from scipy.ndimage import gaussian_filter
-            spks_smooth_ = np.asarray([gaussian_filter(a, sigma=frames2sigma(frames=int(expobj.fps))) for a in
-                                       expobj.Suite2pROIsSz.adata.layers['s2p_spks']])  # TODO this is Matthias's suggested metric for calculating sigma, need to confirm
+            def fwhm2sigma(fwhm):
+                return fwhm / np.sqrt(8 * np.log(2))
 
-            # # rebinning of spks data
-            # bin = 4 if int(expobj.fps) == 15 else 8
-            # spks_smooth_binned = rebin(spks_smooth_, (spks_smooth_.shape[0], int(spks_smooth_.shape[1] / 4)))
+            def frames2sigma(frames):
+                return np.sqrt(frames / 2)
 
-            spks_smooth_binned = spks_smooth_  # no binning
-            from sklearn.metrics import auc
-            area = [auc(np.arange(len(spks_smooth_binned[i])), spks_smooth_binned[i])
-                    for i in range(len(spks_smooth_binned))]
+            # binning of spks data
+            def rebin(arr, new_shape):
+                """Rebin 2D array arr to shape new_shape by averaging."""
+                shape = (new_shape[0], arr.shape[0] // new_shape[0],
+                         new_shape[1], arr.shape[1] // new_shape[1])
+                return arr.reshape(shape).mean(-1).mean(1)
 
-            imaging_len_secs = spks_smooth_binned.shape[1] / expobj.fps
+            @Utils.run_for_loop_across_exps(run_pre4ap_trials=True, run_post4ap_trials=False, set_cache=True, allow_rerun=1)
+            def collect__pre4ap_spk_rate(**kwargs):
+                expobj: alloptical = kwargs['expobj']
+                # expobj = import_expobj(exp_prep='RL108 t-009')
 
-            neural_activity_rate = np.array(area) / imaging_len_secs
+                # calculate spks/s across all cells
+                spks_per_sec = np.sum(expobj.Suite2pROIsSz.adata.layers['s2p_spks'], axis=1) / (
+                        expobj.n_frames / expobj.fps)
+                avg_spks_per_sec = np.mean(spks_per_sec)
 
-            # # test plot cumsum plot
-            # values, base = np.histogram(spks_per_sec, bins=100)
-            #
-            # # evaluate the cumulative function
-            # cumulative = np.cumsum(values) / len(spks_per_sec)
-            #
-            # # plot the cumulative function
-            # plt.plot(base[:-1], cumulative, c='blue')
-            #
-            # plt.show()
+                # Gaussian filter smoothing of spks data
+                from scipy.ndimage import gaussian_filter
+                spks_smooth_ = np.asarray([gaussian_filter(a, sigma=frames2sigma(frames=int(expobj.fps))) for a in
+                                           expobj.Suite2pROIsSz.adata.layers['s2p_spks']])  # TODO this is Matthias's suggested metric for calculating sigma, need to confirm
 
-            return avg_spks_per_sec, spks_per_sec, neural_activity_rate
+                # # rebinning of spks data
+                # bin = 4 if int(expobj.fps) == 15 else 8
+                # spks_smooth_binned = rebin(spks_smooth_, (spks_smooth_.shape[0], int(spks_smooth_.shape[1] / 4)))
 
-        @Utils.run_for_loop_across_exps(run_pre4ap_trials=False, run_post4ap_trials=True, set_cache=True, allow_rerun=1)
-        def collect__interictal_spk_rate(**kwargs):
-            expobj: Post4ap = kwargs['expobj']
+                spks_smooth_binned = spks_smooth_  # no binning
+                from sklearn.metrics import auc
+                area = [auc(np.arange(len(spks_smooth_binned[i])), spks_smooth_binned[i])
+                        for i in range(len(spks_smooth_binned))]
 
-            # calculate spks/s across all cells
-            interictal_idx = [idx for idx, val in enumerate(expobj.Suite2pROIsSz.adata.var['ictal_fr']) if val == False]
-            interictal_spks_per_sec = np.sum(expobj.Suite2pROIsSz.adata.layers['s2p_spks'][:, interictal_idx],
-                                             axis=1) / (expobj.n_frames / expobj.fps)
-            avg_interictal_spks_per_sec = np.mean(interictal_spks_per_sec)
+                imaging_len_secs = spks_smooth_binned.shape[1] / expobj.fps
 
-            # Gaussian filter smoothing of spks data
-            from scipy.ndimage import gaussian_filter
-            spks_smooth_ = np.asarray([gaussian_filter(a, sigma=frames2sigma(frames=int(expobj.fps))) for a in
-                                       expobj.Suite2pROIsSz.adata.layers['s2p_spks'][:, interictal_idx]])  # TODO this is Matthias's suggested metric for calculating sigma, need to confirm
+                neural_activity_rate = np.array(area) / imaging_len_secs
 
-            # # rebinning of spks data
-            # bin = 4 if int(expobj.fps) == 15 else 8
-            # spks_smooth_binned = rebin(spks_smooth_, (spks_smooth_.shape[0], int(spks_smooth_.shape[1] / 4)))
+                # # test plot cumsum plot
+                # values, base = np.histogram(spks_per_sec, bins=100)
+                #
+                # # evaluate the cumulative function
+                # cumulative = np.cumsum(values) / len(spks_per_sec)
+                #
+                # # plot the cumulative function
+                # plt.plot(base[:-1], cumulative, c='blue')
+                #
+                # plt.show()
 
-            spks_smooth_binned = spks_smooth_  # no binning
-            from sklearn.metrics import auc
-            area = [auc(np.arange(len(spks_smooth_binned[i])), spks_smooth_binned[i])
-                    for i in range(len(spks_smooth_binned))]
+                return avg_spks_per_sec, spks_per_sec, neural_activity_rate
 
-            imaging_len_secs = spks_smooth_binned.shape[1] / expobj.fps
+            @Utils.run_for_loop_across_exps(run_pre4ap_trials=False, run_post4ap_trials=True, set_cache=True, allow_rerun=1)
+            def collect__interictal_spk_rate(**kwargs):
+                expobj: Post4ap = kwargs['expobj']
 
-            neural_activity_rate = np.array(area) / imaging_len_secs
+                # calculate spks/s across all cells
+                interictal_idx = [idx for idx, val in enumerate(expobj.Suite2pROIsSz.adata.var['ictal_fr']) if val == False]
+                interictal_spks_per_sec = np.sum(expobj.Suite2pROIsSz.adata.layers['s2p_spks'][:, interictal_idx],
+                                                 axis=1) / (expobj.n_frames / expobj.fps)
+                avg_interictal_spks_per_sec = np.mean(interictal_spks_per_sec)
 
-            return avg_interictal_spks_per_sec, interictal_spks_per_sec, neural_activity_rate
+                # Gaussian filter smoothing of spks data
+                from scipy.ndimage import gaussian_filter
+                spks_smooth_ = np.asarray([gaussian_filter(a, sigma=frames2sigma(frames=int(expobj.fps))) for a in
+                                           expobj.Suite2pROIsSz.adata.layers['s2p_spks'][:, interictal_idx]])  # TODO this is Matthias's suggested metric for calculating sigma, need to confirm
 
-        @Utils.run_for_loop_across_exps(run_pre4ap_trials=False, run_post4ap_trials=True, set_cache=True, allow_rerun=1)
-        def collect__ictal_spk_rate(**kwargs):
-            expobj: Post4ap = kwargs['expobj']
+                # # rebinning of spks data
+                # bin = 4 if int(expobj.fps) == 15 else 8
+                # spks_smooth_binned = rebin(spks_smooth_, (spks_smooth_.shape[0], int(spks_smooth_.shape[1] / 4)))
 
-            # calculate spks/s across all cells
-            ictal = [idx for idx, val in enumerate(expobj.Suite2pROIsSz.adata.var['ictal_fr']) if val == True]
-            ictal_spks_per_sec = np.sum(expobj.Suite2pROIsSz.adata.layers['s2p_spks'][:, ictal],
-                                        axis=1) / (expobj.n_frames / expobj.fps)
-            avg_ictal_spks_per_sec = np.mean(ictal_spks_per_sec)
+                spks_smooth_binned = spks_smooth_  # no binning
+                from sklearn.metrics import auc
+                area = [auc(np.arange(len(spks_smooth_binned[i])), spks_smooth_binned[i])
+                        for i in range(len(spks_smooth_binned))]
 
-            # Gaussian filter smoothing of spks data
-            from scipy.ndimage import gaussian_filter
-            spks_smooth_ = np.asarray([gaussian_filter(a, sigma=frames2sigma(frames=int(expobj.fps))) for a in
-                                       expobj.Suite2pROIsSz.adata.layers['s2p_spks'][:, ictal]])  # TODO this is Matthias's suggested metric for calculating sigma, need to confirm
+                imaging_len_secs = spks_smooth_binned.shape[1] / expobj.fps
 
-            # # rebinning of spks data
-            # bin = 4 if int(expobj.fps) == 15 else 8
-            # spks_smooth_binned = rebin(spks_smooth_, (spks_smooth_.shape[0], int(spks_smooth_.shape[1] / 4)))
+                neural_activity_rate = np.array(area) / imaging_len_secs
 
-            spks_smooth_binned = spks_smooth_  # no binning
-            from sklearn.metrics import auc
-            area = [auc(np.arange(len(spks_smooth_binned[i])), spks_smooth_binned[i])
-                    for i in range(len(spks_smooth_binned))]
+                return avg_interictal_spks_per_sec, interictal_spks_per_sec, neural_activity_rate
 
-            imaging_len_secs = spks_smooth_binned.shape[1] / expobj.fps
+            @Utils.run_for_loop_across_exps(run_pre4ap_trials=False, run_post4ap_trials=True, set_cache=True, allow_rerun=1)
+            def collect__ictal_spk_rate(**kwargs):
+                expobj: Post4ap = kwargs['expobj']
 
-            neural_activity_rate = np.array(area) / imaging_len_secs
+                # calculate spks/s across all cells
+                ictal = [idx for idx, val in enumerate(expobj.Suite2pROIsSz.adata.var['ictal_fr']) if val == True]
+                ictal_spks_per_sec = np.sum(expobj.Suite2pROIsSz.adata.layers['s2p_spks'][:, ictal],
+                                            axis=1) / (expobj.n_frames / expobj.fps)
+                avg_ictal_spks_per_sec = np.mean(ictal_spks_per_sec)
 
-            return avg_ictal_spks_per_sec, ictal_spks_per_sec, neural_activity_rate
+                # Gaussian filter smoothing of spks data
+                from scipy.ndimage import gaussian_filter
+                spks_smooth_ = np.asarray([gaussian_filter(a, sigma=frames2sigma(frames=int(expobj.fps))) for a in
+                                           expobj.Suite2pROIsSz.adata.layers['s2p_spks'][:, ictal]])  # TODO this is Matthias's suggested metric for calculating sigma, need to confirm
 
-        pre4ap_spk_rate = np.asarray(collect__pre4ap_spk_rate())[:, 1]
-        interictal_spk_rate = np.asarray(collect__interictal_spk_rate())[:, 1]
-        ictal_spk_rate = np.asarray(collect__ictal_spk_rate())[:, 1]
+                # # rebinning of spks data
+                # bin = 4 if int(expobj.fps) == 15 else 8
+                # spks_smooth_binned = rebin(spks_smooth_, (spks_smooth_.shape[0], int(spks_smooth_.shape[1] / 4)))
 
-        avg_pre4ap_spk_rate = np.asarray(collect__pre4ap_spk_rate())[:, 0]
-        avg_interictal_spk_rate = np.asarray(collect__interictal_spk_rate())[:, 0]
-        avg_ictal_spk_rate = np.asarray(collect__ictal_spk_rate())[:, 0]
+                spks_smooth_binned = spks_smooth_  # no binning
+                from sklearn.metrics import auc
+                area = [auc(np.arange(len(spks_smooth_binned[i])), spks_smooth_binned[i])
+                        for i in range(len(spks_smooth_binned))]
 
-        neural_activity_rate_pre4ap = np.asarray(collect__pre4ap_spk_rate())[:, 2]
-        neural_activity_rate_interictal = np.asarray(collect__interictal_spk_rate())[:, 2]
-        neural_activity_rate_ictal = np.asarray(collect__ictal_spk_rate())[:, 2]
+                imaging_len_secs = spks_smooth_binned.shape[1] / expobj.fps
 
-        Suite2pROIsSzResults.spk_rates = {'baseline': pre4ap_spk_rate,
-                                          'interictal': interictal_spk_rate,
-                                          'ictal': ictal_spk_rate}
+                neural_activity_rate = np.array(area) / imaging_len_secs
 
-        Suite2pROIsSzResults.avg_spk_rate = {'baseline': avg_pre4ap_spk_rate,
-                                             'interictal': avg_interictal_spk_rate,
-                                             'ictal': avg_ictal_spk_rate}
+                return avg_ictal_spks_per_sec, ictal_spks_per_sec, neural_activity_rate
 
-        Suite2pROIsSzResults.neural_activity_rate = {'baseline': neural_activity_rate_pre4ap,
-                                                     'interictal': neural_activity_rate_interictal,
-                                                     'ictal': neural_activity_rate_ictal}
+            pre4ap_spk_rate = np.asarray(collect__pre4ap_spk_rate())[:, 1]
+            interictal_spk_rate = np.asarray(collect__interictal_spk_rate())[:, 1]
+            ictal_spk_rate = np.asarray(collect__ictal_spk_rate())[:, 1]
 
-        Suite2pROIsSzResults.save_results()
+            avg_pre4ap_spk_rate = np.asarray(collect__pre4ap_spk_rate())[:, 0]
+            avg_interictal_spk_rate = np.asarray(collect__interictal_spk_rate())[:, 0]
+            avg_ictal_spk_rate = np.asarray(collect__ictal_spk_rate())[:, 0]
+
+            neural_activity_rate_pre4ap = np.asarray(collect__pre4ap_spk_rate())[:, 2]
+            neural_activity_rate_interictal = np.asarray(collect__interictal_spk_rate())[:, 2]
+            neural_activity_rate_ictal = np.asarray(collect__ictal_spk_rate())[:, 2]
+
+            Suite2pROIsSzResults.spk_rates = {'baseline': pre4ap_spk_rate,
+                                              'interictal': interictal_spk_rate,
+                                              'ictal': ictal_spk_rate}
+
+            Suite2pROIsSzResults.avg_spk_rate = {'baseline': avg_pre4ap_spk_rate,
+                                                 'interictal': avg_interictal_spk_rate,
+                                                 'ictal': avg_ictal_spk_rate}
+
+            Suite2pROIsSzResults.neural_activity_rate = {'baseline': neural_activity_rate_pre4ap,
+                                                         'interictal': neural_activity_rate_interictal,
+                                                         'ictal': neural_activity_rate_ictal}
+
+            Suite2pROIsSzResults.save_results()
 
 
     @staticmethod

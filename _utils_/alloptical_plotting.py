@@ -31,19 +31,19 @@ def plot_settings():
         'dpi'       : 500,        ## figure dots per inch
     }
     axes = {
-        'titlesize' : 'small',    ## fontsize of the axes title
-        'labelsize': 'large',
+        'titlesize' : 'large',    ## fontsize of the axes title
+        'labelsize': 5,
         'spines.right': False,
         'spines.top': False,
         }
 
     xticks = {
-        # 'labelsize' : 'large',         ## fontsize of the tick labels
+        'labelsize' : 5,         ## fontsize of the tick labels
         'bottom': True
     }
 
     yticks = {
-        # 'labelsize' : 'large',         ## fontsize of the tick labels
+        'labelsize' : 5,         ## fontsize of the tick labels
         'left': True,
     }
 

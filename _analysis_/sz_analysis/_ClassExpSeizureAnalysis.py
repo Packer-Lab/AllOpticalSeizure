@@ -511,22 +511,18 @@ class ExpSeizureAnalysis(Quantification):
     onep_trials_sz_incidence = [0.38, 0.26, 0.19, 0.436666667, 0.685]  # sz/min
 
     @classmethod
-    def plot__sz_incidence(cls):
-        # pj.plot_bar_with_points(data=[cls.twop_trials_sz_incidence, cls.onep_trials_sz_incidence],
-        #                         x_tick_labels=['2p stim', '1p stim'],
-        #                         colors=['purple', 'green'], y_label='sz incidence (events/min)',
-        #                         title='rate of seizures during exp', expand_size_x=0.4, expand_size_y=1, ylims=[0, 1],
-        #                         shrink_text=0.8)
-
-        fig, ax = plt.subplots(figsize = (1.8, 3), dpi=300)
+    def plot__sz_incidence(cls, **kwargs):
+        if 'ax' not in kwargs: fig, ax = plt.subplots(figsize = (1.8, 3), dpi=300)
+        else: fig, ax = kwargs['fig'], kwargs['ax']
         plot_bar_with_points(data=[cls.twop_trials_sz_incidence + cls.onep_trials_sz_incidence],
-                             x_tick_labels=['Experiments'], colors=['coral'], y_label='Seizure incidence (events/min)',
+                             x_tick_labels=['Experiments'], colors=['coral'], y_label='Avg. seizure incidence \n(events/min)',
                              alpha=1, bar=False, title='rate of seizures during exp', expand_size_x=2, expand_size_y=1, ylims=[0, 1],
                              fig=fig, ax=ax, show=False, shrink_text=0.8, lw=1)
         ax.spines['bottom'].set_visible(False)
         ax.set_xticks([])
-        fig.tight_layout(pad=2)
-        fig.show()
+        if 'ax' not in kwargs:
+            fig.tight_layout(pad=2)
+            fig.show()
 
     # 4.2) measure seizure LENGTHS across all imaging trials (including any spont imaging you might have)
 
@@ -597,23 +593,19 @@ class ExpSeizureAnalysis(Quantification):
     onep_trials_sz_lengths = [30.02, 34.25, 114.53, 35.57]
 
     @classmethod
-    def plot__sz_lengths(cls):
-        # pj.plot_bar_with_points(data=[cls.twop_trials_sz_lengths, cls.onep_trials_sz_lengths],
-        #                         x_tick_labels=['2p stim', '1p stim'],
-        #                         colors=['purple', 'green'], y_label='seizure length (secs)',
-        #                         title='Avg. length of sz', expand_size_x=0.4, expand_size_y=1, ylims=[0, 120],
-        #                         title_pad=15,
-        #                         shrink_text=0.8)
-        fig, ax = plt.subplots(figsize=(1.8,3), dpi=300)
+    def plot__sz_lengths(cls, **kwargs):
+        if 'ax' not in kwargs: fig, ax = plt.subplots(figsize = (1.8, 3), dpi=300)
+        else: fig, ax = kwargs['fig'], kwargs['ax']
         plot_bar_with_points(data=[cls.twop_trials_sz_lengths + cls.onep_trials_sz_lengths],
                                 x_tick_labels=['Experiments'], fig=fig, ax=ax, show=False,
-                                colors=['coral'], y_label='Seizure length (secs)', alpha=1, bar=False, lw=1,
+                                colors=['coral'], y_label='Seizure length \n(secs)', alpha=1, bar=False, lw=1,
                                 title='Avg sz length', expand_size_x=0.7, expand_size_y=1, ylims=[0, 120],
                                 shrink_text=0.8)
         ax.spines['bottom'].set_visible(False)
         ax.set_xticks([])
-        fig.tight_layout(pad=2)
-        fig.show()
+        if 'ax' not in kwargs:
+            fig.tight_layout(pad=2)
+            fig.show()
 
     # 6.0-dc) ANALYSIS: calculate time delay between LFP onset of seizures and imaging FOV invasion for each seizure for each experiment
     # -- this section has been moved to _ClassExpSeizureAnalysis .22/02/20 -- this copy here is now archived

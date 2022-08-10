@@ -41,9 +41,9 @@ save_fig = True
 # %% MAKE FIGURE LAYOUT
 layout = {
     'left': {'panel_shape': (1, 1),
-             'bound': (0.15, 0.65, 0.50, 0.90)},
-    # 'right': {'panel_shape': (1, 1),
-    #                 'bound': (0.25, 0.80, 0.3, 0.90)},
+             'bound': (0.15, 0.725, 0.40, 0.85)},
+    'right': {'panel_shape': (1, 1),
+                    'bound': (0.58, 0.70, 0.88, 0.90)},
 }
 
 dpi = 300
@@ -51,28 +51,47 @@ fig, axes, grid = rfv.make_fig_layout(layout=layout, dpi=dpi)
 
 # rfv.show_test_figure_layout(fig, axes=axes, show=1)  # test what layout looks like quickly, but can also skip and moveon to plotting data.
 
+# %% SCHEMATIZED NORMAL DISTRIBUTION
 
+ax = axes['left'][0]
 
-# %% ANALYSIS OF NORMALITY OF PHOTOSTIMULATION RESPONSES - A
+x = np.arange(0, 100)
+y = np.random.standard_normal(10000)*0.4
+plot_hist_density(data=[list(y)], mean_line=False, num_bins=101, ax=ax, fig=fig, show=False, fill_alpha=0.2,
+                              lw=1, fill_color=['gray'], bar_alpha=0.0)
+ax.set_title('')
+ax.set_ylabel('')
+# ax.set_xlabel(f'Normalized\nphotostimulation responses')
+ax.set_xticks([0])
+ax.set_yticks([])
+ax.set_ylim([-0.08, 1.1])
+ax.set_xlim([-1, 1])
+ax.set_xticklabels([0])
+rfv.despine(ax, remove=['top', 'left', 'right'])
+# ax.plot(x, y, lw=3)
+# ax.fill_between(x, 0, y, color='skyblue')
+
+# %% ANALYSIS + PLOTTING OF NORMALITY OF PHOTOSTIMULATION RESPONSES FROM EXPS
 
 p_value_normal = {}
 
-ax=axes['left'][0]
+ax=axes['right'][0]
 for trial in flattenOnce(AllOpticalExpsToAnalyze.pre_4ap_trials):
-        expobj: alloptical = import_expobj(exp_prep=trial)
-        responses = flattenOnce(expobj.PhotostimResponsesSLMTargets.adata.X) - np.mean(expobj.PhotostimResponsesSLMTargets.adata.X)
-        plot_hist_density(data=[list(responses)], mean_line=False, num_bins=21, ax=ax, fig=fig, show=False, alpha=0.1,
-                          lw=1)
-        p_value_normal[expobj.t_series_name] = stats.normaltest(responses)[1]
+        if trial != 'PS04 t-017': # exclude doubled up trial from same mouse
+            expobj: alloptical = import_expobj(exp_prep=trial)
+            responses = flattenOnce(expobj.PhotostimResponsesSLMTargets.adata.X) - np.mean(expobj.PhotostimResponsesSLMTargets.adata.X)
+            plot_hist_density(data=[list(responses)], mean_line=False, num_bins=21, ax=ax, fig=fig, show=False, fill_alpha=0.1, bar_alpha=0.5,
+                              lw=1)
+            p_value_normal[expobj.t_series_name] = stats.normaltest(responses)[1]
 
-ax.set_title('Photostimulation responses\n(Baseline)', fontsize=12)
-ax.set_ylabel('Density', fontsize=12)
-ax.set_xlabel('Photostimulation responses\n(% dFF)', fontsize=12)
+ax.set_title(f'All experiments\n(Baseline trials)', fontsize=12)
+ax.set_ylabel('Density', fontsize=10)
+ax.set_xlabel('Photostimulation responses\n(mean substracted, % dFF)', fontsize=10)
+ax.set_xlim([-200, 200])
 
-
-# %% PLOTTING OF FIGURE - B
 
 print(p_value_normal)
+print(p_value_normal.values())
 
 if save_fig and dpi > 250:
     save_figure(fig=fig, save_path_full=f"{SAVE_FOLDER}/figure-suppl-normality-RF.png")

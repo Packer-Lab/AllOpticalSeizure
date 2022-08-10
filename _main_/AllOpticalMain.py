@@ -2549,33 +2549,23 @@ class alloptical(TwoPhotonImaging):
     # -- determine slice object for collecting pre-stim frames
     def _create_slice_obj_excl_zone(self):
         """
-        creates a list of slice objects for each target.
+        creates a list of slice objects for all targets, by using the annulus areas defined across all targets for this analysis.
 
-        :param self:
         """
-        # frame = np.zeros(shape=(expobj.frame_x, expobj.frame_y), dtype=int)  # test frame
-
         arr = np.asarray(self.target_areas_exclude_annulus)
         annulus_slice_obj = []
-        # _test_sum = 0
         slice_obj_full = np.array([np.array([])] * 2,
                                   dtype=int)  # not really finding any use for this, but have it here in case need it
         for idx, coord in enumerate(self.target_coords_all):
             annulus_slice_obj_target = np.s_[arr[idx][:, 0], arr[idx][:, 1]]
-            # _test_sum += np.sum(frame[annulus_slice_obj_target])
             annulus_slice_obj.append(annulus_slice_obj_target)
             slice_obj_full = np.hstack((slice_obj_full, annulus_slice_obj_target))
-
-        # slice_obj_full = np.asarray(annulus_slice_obj)
-        # frame[slice_obj_full[0, :], slice_obj_full[1, :]]
-
         return annulus_slice_obj
 
     def _collect_annulus_flu(self, annulus_slice_obj):
         """
         Read in raw registered tiffs, then use slice object to collect individual targets' annulus raw traces directly from the tiffs
 
-        :param self:
         :param annulus_slice_obj: list of len(n_targets) containing the numpy slice object for SLM targets
         """
 

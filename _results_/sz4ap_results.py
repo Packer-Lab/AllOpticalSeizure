@@ -1,5 +1,7 @@
 # %% DATA ANALYSIS + PLOTTING FOR ALL-OPTICAL TWO-P PHOTOSTIM EXPERIMENTS - FOCUS ON THE SEIZURES!
 import os
+import sys
+
 import numpy as np
 import matplotlib.pyplot as plt
 import alloptical_utils_pj as aoutils
@@ -8,6 +10,8 @@ from funcsforprajay import funcs as pj
 import tifffile as tf
 from skimage.transform import resize
 from _main_.Post4apMain import Post4ap
+sys.path.extend(['/home/pshah/Documents/code/reproducible_figures-main'])
+import rep_fig_vis as rfv
 
 # import results superobject that will collect analyses from various individual experiments
 from _utils_.io import import_expobj
@@ -28,7 +32,7 @@ os.makedirs(save_path_prefix) if not os.path.exists(save_path_prefix) else None
 # PLOT HEATMAP of SEIZURE EVENTS
 """
 
-def plotHeatMapSzAllCells(expobj: Post4ap, sz_num: int):
+def plotHeatMapSzAllCells(expobj: Post4ap, sz_num: int, **kwargs):
 
     sz_onset, sz_offset = expobj.seizure_lfp_onsets[sz_num], expobj.seizure_lfp_offsets[sz_num]
 
@@ -83,33 +87,34 @@ def plotHeatMapSzAllCells(expobj: Post4ap, sz_num: int):
     # fig.show()
 
 
-    # just the bottom half cells that seems to show more of an order
-    fig, ax = plt.subplots(figsize=(5, 3), dpi=400)
+    # heatmap of sz propagation across FOV
+    fig, ax1 = plt.subplots(figsize=(5, 3), dpi=400)
+    ax1 = kwargs['ax1'] if 'ax1' in kwargs else ax1
     x_ordered = x_norm[new_order[:]]
-    fig, ax = aoplot.plot_traces_heatmap(expobj=expobj, arr=x_ordered, cmap='afmhot', cbar=True,
+    fig, ax1 = aoplot.plot_traces_heatmap(expobj=expobj, arr=x_ordered, cmap='afmhot', cbar=True,
                                          title=f'{expobj.t_series_name} - seizure {sz_num} - sz flu smooth',
-                                         xlims=None, vmin=100, vmax=500, fig=fig, ax=ax, show=False, x_label='Time (secs)')
-    x_c = np.linspace(0, x_ordered.shape[1] - 1, len(lfp_signal))
-    x_labels = [item for item in ax.get_xticks()]
-    y_labels = [-5, -4]
+                                         xlims=None, vmin=100, vmax=500, fig=fig, ax=ax1, show=False, x_label='Time (secs)')
+    # x_labels = [item for item in ax1.get_xticks()]
+    # y_labels = [-5, -4]
     # ax2.set_ylabel('LFP (mV)')
-    ax.spines['top'].set_visible(False)
-    ax.spines['bottom'].set_visible(False)
-    ax.spines['left'].set_visible(False)
-    ax.spines['right'].set_visible(False)
-
+    ax1.spines['top'].set_visible(False)
+    ax1.spines['bottom'].set_visible(False)
+    ax1.spines['left'].set_visible(False)
+    ax1.spines['right'].set_visible(False)
+    ax1.set_title('')
     fig.tight_layout(pad=0.2)
-    fig.show()
+    fig.show() if 'ax1' not in kwargs else None
 
 
     fig, ax = plt.subplots(figsize=(5, 1.7), dpi=300)
+    ax = kwargs['ax2'] if 'ax2' in kwargs else ax
     # x_ordered = x_norm[new_order[:]]
     # fig, ax = aoplot.plot_traces_heatmap(expobj=expobj, arr=x_ordered, cmap='afmhot', cbar=True,
     #                                      title=f'{expobj.t_series_name} - seizure {sz_num} - sz flu smooth',
     #                                      xlims=None, vmin=100, vmax=500, fig=fig, ax=ax, show=False, x_label='Time (secs)')
-    x_c = np.linspace(0, x_ordered.shape[1] - 1, len(lfp_signal))
+    x_c = np.linspace(0, (x_ordered.shape[1] - 1)/expobj.fps, len(lfp_signal))
     # ax2.plot(x_c, kwargs['lfp_signal'] * 50 + arr.shape[0] - 100, c='black')
-    ax.plot(x_c, lfp_signal, c='black', lw=0.35)
+    ax.plot(x_c, lfp_signal, c='black', lw=0.2)
     x_labels = [item for item in ax.get_xticks()]
     y_labels = [-5, -4]
     ax.margins(0)
@@ -121,8 +126,9 @@ def plotHeatMapSzAllCells(expobj: Post4ap, sz_num: int):
     ax.spines['bottom'].set_visible(False)
     ax.spines['left'].set_visible(False)
     ax.spines['right'].set_visible(False)
-    fig.tight_layout(pad=0.2)
-    fig.show()
+    ax.set_title('')
+    # fig.tight_layout(pad=0.2)
+    fig.show() if 'ax2' not in kwargs else None
 
     print('done plotting.')
     # # PLOT cell location with cmap based on their order of reaching top 5% signal during sz event
