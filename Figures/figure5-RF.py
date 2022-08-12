@@ -93,6 +93,22 @@ fig, axes, grid = rfv.make_fig_layout(layout=layout, dpi=dpi)
 x_adj = 0.09
 
 
+# %% A' - photostim responses relative to distance to seizure
+ax = axes['main-right-tophigh'][0]
+
+# rfv.add_label_axes(text="A'", ax=ax, x_adjust=x_adj + 0.03)
+main_spatial.collect__binned__distance_v_responses(results=results_spatial, rerun=0)
+
+# TRYING ROLLING BINS - AUG 11 2022:
+main_spatial.collect__binned__distance_v_responses_rolling_bins(results=results_spatial, rerun=0)
+
+results_spatial = TargetsSzInvasionSpatialResults_codereview.load()
+# main_spatial.plot__responses_v_distance_no_normalization(results=results_spatial, axes=(axes['main-right-tophigh'], axes['main-right-toplow']), fig=fig)
+main_spatial.plot__responses_v_distance_no_normalization_rolling_bins(results=results_spatial, axes=(axes['main-right-tophigh'], axes['main-right-toplow']), fig=fig)
+# ax.text(x=50, y=2, s=f'{results_spatial.binned__distance_vs_photostimresponses["kruskal - binned responses"]}', fontsize=5)
+ax.text(x=50, y=1.95, s=f'{results_spatial.binned__distance_vs_photostimresponses["anova oneway - binned responses"]}', fontsize=5)
+
+
 
 # %% B' - photostim responses relative to time to seizure recruitment
 ax = axes['main-right-bottomhigh'][0]
@@ -102,15 +118,6 @@ main_temporal.plot__responses_v_szinvtemporal_no_normalization(results=results_t
                                                                axes=(axes['main-right-bottomhigh'], axes['main-right-bottomlow']), fig=fig)
 # ax.text(x=-2, y=2, s=f'{results_temporal.binned__time_vs_photostimresponses["kruskal - binned responses"]}', fontsize=5)
 ax.text(x=-2, y=1.95, s=f'{results_temporal.binned__time_vs_photostimresponses["anova oneway - binned responses"]}', fontsize=5)
-
-# %% A' - photostim responses relative to distance to seizure
-ax = axes['main-right-tophigh'][0]
-# rfv.add_label_axes(text="A'", ax=ax, x_adjust=x_adj + 0.03)
-main_spatial.collect__binned__distance_v_responses(results=results_spatial, rerun=0)
-results_spatial = TargetsSzInvasionSpatialResults_codereview.load()
-main_spatial.plot__responses_v_distance_no_normalization(results=results_spatial, axes=(axes['main-right-tophigh'], axes['main-right-toplow']), fig=fig)
-# ax.text(x=50, y=2, s=f'{results_spatial.binned__distance_vs_photostimresponses["kruskal - binned responses"]}', fontsize=5)
-ax.text(x=50, y=1.95, s=f'{results_spatial.binned__distance_vs_photostimresponses["anova oneway - binned responses"]}', fontsize=5)
 
 
 # %% MAKE PLOTS
