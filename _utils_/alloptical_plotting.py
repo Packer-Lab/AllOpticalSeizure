@@ -32,7 +32,7 @@ def plot_settings():
     }
     axes = {
         'titlesize' : 'large',    ## fontsize of the axes title
-        'labelsize': 5,
+        'labelsize': 8,
         'spines.right': False,
         'spines.top': False,
         }

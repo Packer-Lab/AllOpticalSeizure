@@ -2,6 +2,7 @@
 import sys
 
 from funcsforprajay.plotting.plotting import plot_bar_with_points
+from scipy.stats import sem
 
 sys.path.extend(['/home/pshah/Documents/code/AllOpticalSeizure', '/home/pshah/Documents/code/AllOpticalSeizure'])
 
@@ -27,23 +28,33 @@ SAVE_PATH_PREFIX = '/home/pshah/mnt/qnap/Analysis/Procesing_figs/sz_processing_b
 
 import _utils_.io as io_
 
+#
+# expobj: Post4ap = io_.import_expobj(exp_prep='RL108 t-013')
 
 # %%
+
+exclude_sz = {
+    'RL109 t-018': [2],
+    'PS06 t-013': [4]
+}  #: seizures to exclude from analysis (for any of the exclusion criteria)
+
 class ExpSeizureResults(Results):
     SAVE_PATH = SAVE_LOC + 'Results__ExpSeizure.pkl'
 
     def __init__(self):
         super().__init__()
-        self.exp_sz_occurrence: dict
-        self.total_sz_occurrence: list
+        self.exp_sz_occurrence: dict = {}
+        self.total_sz_occurrence: list = []
+        self.meanFOV_post_sz_term: list = [] #: mean FOV post seizure termination
 
 
-REMAKE = True
+REMAKE = False
 if not os.path.exists(ExpSeizureResults.SAVE_PATH) or REMAKE:
-    RESULTS = ExpSeizureResults()
-    RESULTS.save_results()
+    results = ExpSeizureResults()
+    results.save_results()
 else:
     pass
+    # results = ExpSeizureResults.load()
 
 class ExpSeizureAnalysis(Quantification):
     """Processing/analysis of seizures overall for photostimulation experiments. Including analysis of seizure individual timed photostim trials."""
@@ -733,7 +744,7 @@ class ExpSeizureAnalysis(Quantification):
     # 8) cooccurrence with stims
     @staticmethod
     def collectSzOccurrenceRelativeStim():
-
+        """calculating seizure occurrence relative to photostim"""
         @Utils.run_for_loop_across_exps(run_pre4ap_trials=False, run_post4ap_trials=True, allow_rerun=True)
         def __function(**kwargs):
             expobj: Post4ap = kwargs['expobj']
@@ -782,16 +793,112 @@ class ExpSeizureAnalysis(Quantification):
         # theta = (2 * np.pi) * np.arange(0, (expobj.stim_interval_fr / bin_width))[:-1] / period
         # plot = expobj.sz_occurrence_stim_intervals
 
+    # 9) Mean FOV and LFP power after seizure termination
+    @staticmethod
+    def calcMeanFovGcampSzTermination(results):
+        """calculating mean FOV Ca2+ signal after seizure termination"""
+        @Utils.run_for_loop_across_exps(run_pre4ap_trials=False, run_post4ap_trials=1, allow_rerun=True,
+                                        skip_trials=['PS07 t-011', 'PS04 t-018'])
+        def __plot_individual(**kwargs):
+            expobj: Post4ap = kwargs['expobj'] #; plt.plot(expobj.meanRawFluTrace, lw=0.5); plt.suptitle(expobj.t_series_name); plt.show()
+            # f, ax = plt.subplots(figsize=(5, 3))
+
+            f = kwargs['fig']
+            ax = kwargs['ax']
+
+            mean_interictal = np.mean([expobj.meanRawFluTrace[x] for x in range(expobj.n_frames) if x not in expobj.seizure_frames])
+
+            traces = []
+            num_frames = []
+            for onset, offset in zip(expobj.seizure_lfp_onsets, expobj.seizure_lfp_offsets):
+                if expobj.t_series_name in exclude_sz.keys() and expobj.seizure_lfp_onsets.index(onset) in exclude_sz[expobj.t_series_name]:
+                    pass
+                else:
+                    frames = np.arange(int(offset - expobj.fps * 10), int(offset + expobj.fps * 20))
+                    frames = [frame for frame in frames if frame not in expobj.photostim_frames]
+                    try:
+                        if onset > 0 and offset + int(expobj.fps * 30) < expobj.n_frames:
+                            pre_onset_frames =  np.arange(int(onset - expobj.fps * 10), int(onset))
+                            pre_onset_frames = [frame for frame in pre_onset_frames if frame not in expobj.photostim_frames]
+                            # pre_onset = expobj.meanRawFluTrace[onset - int(expobj.fps * 30): onset]
+                            pre_onset = expobj.meanRawFluTrace[pre_onset_frames]
+                            pre_mean = np.mean(pre_onset)
+                            trace = expobj.meanRawFluTrace[frames]
+                            # trace = expobj.meanRawFluTrace[int(offset - expobj.fps * 10): int(offset + expobj.fps * 30)]
+                            trace_norm = (trace / mean_interictal) * 100
+                            # trace_norm = (trace / pre_mean) * 100
+                            # plt.plot(trace_norm, lw=0.3); plt.suptitle(f"{expobj.t_series_name} - {expobj.seizure_lfp_offsets.index(offset)}"); plt.show()
+                            traces.append(trace_norm)
+                            num_frames.append(len(frames))
+                    except:
+                        pass
+            x_range = np.linspace(0, 30, min(num_frames))
+            mean_ = np.mean([trace[:min(num_frames)] for trace in traces], axis=0)
+            sem_ = sem([trace[:min(num_frames)] for trace in traces])
+            ax.plot(x_range, mean_, c='black', lw=0.5)
+            ax.fill_between(x_range, mean_ - sem_, mean_ + sem_, alpha=0.3)
+            ax.axhline(y=100)
+            ax.set_title(expobj.t_series_name)
+            ax.set_ylim([50, 150])
+            # f.show()
+
+        f, ax = plt.subplots(figsize=(5, 3))
+
+        # __plot_individual(fig = f, ax = ax)
+        # f.show()
+
+        @Utils.run_for_loop_across_exps(run_pre4ap_trials=False, run_post4ap_trials=1, allow_rerun=True,
+                                  skip_trials=['PS04 t-018'])
+        def __collect_mean(**kwargs):
+            expobj: Post4ap = kwargs[
+                'expobj']  # ; plt.plot(expobj.meanRawFluTrace, lw=0.5); plt.suptitle(expobj.t_series_name); plt.show()
+
+            mean_interictal = np.mean(
+                [expobj.meanRawFluTrace[x] for x in range(expobj.n_frames) if x not in expobj.seizure_frames])
+
+            mean_post_seizure_termination = []
+            num_frames = []
+            for onset, offset in zip(expobj.seizure_lfp_onsets, expobj.seizure_lfp_offsets):
+                if expobj.t_series_name in exclude_sz.keys() and expobj.seizure_lfp_onsets.index(onset) in exclude_sz[
+                    expobj.t_series_name]:
+                    pass
+                else:
+                    frames = np.arange(int(offset + expobj.fps * 5), int(offset + expobj.fps * 30))
+                    frames = [frame for frame in frames if frame not in expobj.photostim_frames]
+                    try:
+                        if onset > 0 and offset + int(expobj.fps * 30) < expobj.n_frames:
+                            pre_onset_frames = np.arange(int(onset - expobj.fps * 10), int(onset))
+                            pre_onset_frames = [frame for frame in pre_onset_frames if
+                                                frame not in expobj.photostim_frames]
+                            # pre_onset = expobj.meanRawFluTrace[onset - int(expobj.fps * 30): onset]
+                            pre_onset = expobj.meanRawFluTrace[pre_onset_frames]
+                            pre_mean = np.mean(pre_onset)
+                            trace = expobj.meanRawFluTrace[frames]
+                            # trace = expobj.meanRawFluTrace[int(offset - expobj.fps * 10): int(offset + expobj.fps * 30)]
+                            trace_norm = (trace / mean_interictal) * 100
+                            # trace_norm = (trace / pre_mean) * 100
+                            mean_post_seizure_termination.append(np.round(np.mean(trace_norm), 3))
+                            num_frames.append(len(frames))
+                    except:
+                        pass
+            return np.mean(mean_post_seizure_termination)
+
+        mean_post_seizure_termination_all = __collect_mean()
+        results.meanFOV_post_sz_term = mean_post_seizure_termination_all
+        results.save_results()
+
+
+
 # %%
 if __name__ == '__main__':
     # DATA INSPECTION
 
     # ExpSeizureAnalysis.plot__exp_sz_lfp_fov(prep='RL109', trial='t-017')
 
-    expobj: Post4ap = io_.import_expobj(exp_prep='PS06 t-013')
+    # expobj: Post4ap = io_.import_expobj(exp_prep='PS06 t-013')
 
-    print(expobj.ExpSeizure.not_flip_stims)
-    ExpSeizureAnalysis.enter_stims_to_flip(expobj=expobj, stims=[14916])
+    # print(expobj.ExpSeizure.not_flip_stims)
+    # ExpSeizureAnalysis.enter_stims_to_flip(expobj=expobj, stims=[14916])
 
 
     # ExpSeizureAnalysis.remove_stims_to_flip(expobj=expobj, stims=[14916])
@@ -806,3 +913,8 @@ if __name__ == '__main__':
         expobj.save()
 
     # __fix__not_flip_stims_expseizure_class()
+    results = ExpSeizureResults.load()
+    ExpSeizureAnalysis.calcMeanFovGcampSzTermination(results)
+
+
+

@@ -188,12 +188,12 @@ fig, ax = plot_bar_with_points(data=[baseline_responses, interictal_responses, i
                      s=35, alpha=1, ylims=[-19, 90], show=False, fig=fig, ax=ax)
 
 
-# %% F) Radial plot of Mean FOV for photostimulation trials, with period equal to that of photostimulation timing period
+# %% E) Radial plot of Mean FOV for photostimulation trials, with period equal to that of photostimulation timing period
 bbox = Bbox.from_extents(0.72, 0.41, 0.87, 0.56)
 _axes = np.empty(shape=(1, 1), dtype=object)
 ax = fig.add_subplot(projection='polar')
 ax.set_position(pos=bbox)
-rfv.add_label_axes(text='F', ax=ax, y_adjust=0.025)
+rfv.add_label_axes(text='E', ax=ax, y_adjust=0.025)
 # fig.show()
 
 
