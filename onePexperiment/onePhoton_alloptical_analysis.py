@@ -27,14 +27,18 @@ date = '2021-01-24'
 #                      ylims=[-4,1], xlims=[110*expobj.paq_rate, 210*expobj.paq_rate])
 
 # post4ap trial
-expobj, _ = import_1pexobj(prep='PS07', trial='t-012', verbose=False)
-aoplot.plotLfpSignal(expobj, x_axis='time', figsize=(15,3), linewidth=0.5, downsample=True, sz_markings=True, color='black')
-aoplot.plotMeanRawFluTrace(expobj, stim_span_color='white', x_axis='Time')
+# expobj, _ = import_1pexobj(prep='PS07', trial='t-012', verbose=False)
+# aoplot.plotLfpSignal(expobj, x_axis='time', figsize=(15,3), linewidth=0.5, downsample=True, sz_markings=True, color='black')
+# aoplot.plotMeanRawFluTrace(expobj, stim_span_color='white', x_axis='Time')
 
 
 # print(expobj.fov_trace_shutter_blanked_dff_pre_norm)
 
 # self = expobj
+
+# %% 1.0) ## measuring PRE-STIM CA2+ AVG FLU vs. DFF RESPONSE MAGNITUDE, DECAY CONSTANT of the fov
+
+OnePhotonStimAnalysisFuncs.collectPhotostimResponseIndivual(run_pre4ap_trials=True, run_post4ap_trials=True, ignore_cache=False)
 
 
 # %% 2.1) PLOT - time to seizure onset vs. pre-stim Flu
@@ -186,6 +190,25 @@ for exp in exp_sz_occurrence:
     ax.grid(True)
     ax.set_title("sz occurrence", va='bottom')
 fig.show()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 # %% developing code below....

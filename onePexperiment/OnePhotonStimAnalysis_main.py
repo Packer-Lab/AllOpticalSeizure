@@ -60,6 +60,8 @@ class OnePhotonStimResults(Results):
         self.total_sz_occurrence: dict = None
         self.response_magnitudes = None  #: avg response magnitudes across all 1p stim trials
         self.response_decay = None  #: avg response magnitudes across all 1p stim trials
+        self.photostim_responses = {'baseline': None,
+                                    'interictal': None}  #: individual post-stim response magnitudes across all 1p stim trials
 
         self.save_results()
 
@@ -85,8 +87,7 @@ class OnePhotonStimAnalysisFuncs(OnePhotonStim):
         @OnePhotonStim.runOverExperiments(run_pre4ap_trials=run_pre4ap_trials, run_post4ap_trials=run_post4ap_trials, ignore_cache=ignore_cache,
                                           run_trials=run_trials, skip_trials=skip_trials)
         def _collectPhotostimResponses(self: OnePhotonStim = None, pre_stim=pre_stim, post_stim=post_stim,
-                                       response_len=response_len,
-                                       response_type: str = response_type, **kwargs):
+                                       response_len=response_len, response_type: str = response_type, **kwargs):
             """calculates and returns photostim reponse magnitudes and time decay constants."""
 
             self = self if not 'expobj' in [*kwargs] else kwargs['expobj']
@@ -345,6 +346,35 @@ class OnePhotonStimAnalysisFuncs(OnePhotonStim):
         return _collectPhotostimResponses()
 
     @staticmethod
+    def collectPhotostimResponseIndivual(run_pre4ap_trials=True, run_post4ap_trials=True, run_trials=[], skip_trials=[], ignore_cache=False,
+                                         resultsobj: OnePhotonStimResults=None):
+        """collecting all photostimulation responses for individual experiments."""
+        if not hasattr(onePresults, 'photostim_responses') or ignore_cache:
+            @OnePhotonStim.runOverExperiments(run_pre4ap_trials=run_pre4ap_trials, run_post4ap_trials=run_post4ap_trials,
+                                              ignore_cache=ignore_cache, run_trials=run_trials, skip_trials=skip_trials, supress_print=False)
+            def _collect_photostimResponse(**kwargs):
+                print('start')
+                expobj = kwargs['expobj']
+
+                if 'pre' in expobj.exptype:
+                    stims = expobj.stim_start_frames
+                    pre4ap_resposnes[expobj.t_series_name] = expobj.photostim_results.loc['photostim responses', stims]
+
+                elif 'post' in expobj.exptype:
+                    stims = expobj.stims_out_sz
+                    post4ap_resposnes[expobj.t_series_name] = expobj.photostim_results.loc['photostim responses', stims]
+
+            pre4ap_resposnes = {}
+            post4ap_resposnes = {}
+
+            _collect_photostimResponse()
+
+            resultsobj.photostim_responses = {'baseline': pre4ap_resposnes,
+                                               'interictal': post4ap_resposnes}
+            resultsobj.save_results()
+
+
+    @staticmethod
     def collectPreStimFluAvgs(run_pre4ap_trials=True, run_post4ap_trials=True, ignore_cache=False, run_trials=[], skip_trials=[]):
         @OnePhotonStim.runOverExperiments(run_pre4ap_trials=run_pre4ap_trials, run_post4ap_trials=run_post4ap_trials,
                                           ignore_cache=ignore_cache,
@@ -468,10 +498,10 @@ class OnePhotonStimAnalysisFuncs(OnePhotonStim):
 
 REMAKE = False
 if not os.path.exists(OnePhotonStimResults.SAVE_PATH) or REMAKE:
-    RESULTS = OnePhotonStimResults()
+    onePresults = OnePhotonStimResults()
 else:
     pass
-    # RESULTS = OnePhotonStimResults.load()
+    # onePresults = OnePhotonStimResults.load()
 
 
 

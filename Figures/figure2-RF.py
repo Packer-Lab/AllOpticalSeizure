@@ -26,7 +26,7 @@ import rep_fig_vis as rfv
 
 plot_settings()
 
-Results = OnePhotonStimResults.load()
+Results: OnePhotonStimResults = OnePhotonStimResults.load()
 
 SAVE_FOLDER = f'/home/pshah/Documents/figures/alloptical_seizures_draft/'
 fig_items = f'/home/pshah/Documents/figures/alloptical_seizures_draft/figure-items/'
@@ -52,7 +52,7 @@ layout = {
             'wspace': 1.2}
 }
 
-dpi = 300
+dpi = 100
 fig, axes, grid = rfv.make_fig_layout(layout=layout, dpi=dpi)
 
 rfv.naked(axes['A'][0])
@@ -60,6 +60,36 @@ rfv.add_label_axes(text='A', ax=axes['A'][0], y_adjust=0)
 
 # rfv.show_test_figure_layout(fig, axes=axes, show=True)  # test what layout looks like quickly, but can also skip and moveon to plotting data.
 print('\n\n')
+
+
+# %% D - new 2022-09-10) BAR PLOT OF RESPONSE MAGNITUDE FOR 1P STIM EXPERIMENTS - BY INDIVIDUAL STIMS
+
+rfv.add_label_axes(text='D', ax=axes['D-E'][0], y_adjust=0.01, x_adjust=0.09)
+
+baseline_response_magnitudes = Results.photostim_responses['baseline']
+interictal_response_magnitudes = Results.photostim_responses['interictal']
+
+baseline_resposnes = []
+interictal_resposnes = []
+for trial, responses in baseline_response_magnitudes.items():
+    baseline_resposnes.extend(list(responses))
+for trial, responses in interictal_response_magnitudes.items():
+    interictal_resposnes.extend(list(responses))
+
+# fig, ax = plt.subplots(figsize=[2, 3], dpi = 100)
+plot_bar_with_points(data=[baseline_resposnes, interictal_resposnes],
+                     x_tick_labels=['Baseline', 'Interictal'],
+                     points=True, bar=False, colors=['gray', 'green'], fig=fig, ax=axes['D-E'][0], show=False, s=10,
+                     x_label='Group', y_label='Avg. dFF', alpha=0.5)
+# fig.tight_layout(pad=0.2)
+# fig.show()
+
+
+# STATS
+# t-test - individual sessions
+print(f"P(t-test - (indiv. trials) response - baseline vs. interictal): {stats.ttest_ind(baseline_resposnes, interictal_resposnes)[1]:.3e}")
+
+
 
 # %% C) avg LFP trace 1p stim plots
 
@@ -147,39 +177,6 @@ plot_bar_with_points(data=[baseline_decay_constant_plot, interictal_decay_consta
 
 print('\n\n')
 
-# %% D) BAR PLOT OF RESPONSE MAGNITUDE FOR 1P STIM EXPERIMENTS
-rfv.add_label_axes(text='D', ax=axes['D-E'][0], y_adjust=0.01, x_adjust=0.09)
-
-
-baseline_response_magnitude_plot = [np.mean(items) for items in Results.baseline_response_magnitude.values()][
-                                   1:]  # excluding first baseline sample, no post4ap for that experiment.
-interictal_response_magnitude_plot = [np.mean(items) for items in Results.interictal_response_magnitude.values()]
-
-# fig, ax = plt.subplots(figsize=[3, 5], dpi = 300)
-# plot_bar_with_points(data=[baseline_response_magnitude_plot, interictal_response_magnitude_plot],
-#                      x_tick_labels=['baseline', 'interictal'], paired=True,
-#                      points=True, bar=False, colors=['gray', 'green'], fig=fig, ax=axes['D-E'][0], show=False, s=50,
-#                      x_label='', y_label='Avg. dFF', alpha=1, ylims=[0, 2.2])
-
-# STATS
-print(
-    f"P(paired t-test - response - baseline vs. interictal): {stats.ttest_rel(np.array(baseline_response_magnitude_plot), np.array(interictal_response_magnitude_plot))[1]:.3f}")
-print(
-    f"P(t-test - response - baseline vs. interictal): {stats.ttest_ind(np.array(baseline_response_magnitude_plot), np.array(interictal_response_magnitude_plot))[1]:.3f}")
-
-# t-test - individual sessions
-baseline_responses = flattenOnce(Results.baseline_response_magnitude.values())
-interictal_responses = flattenOnce(Results.interictal_response_magnitude.values())
-
-print(f"P(t-test - (indiv. trials) response - baseline vs. interictal): {stats.ttest_ind(baseline_responses, interictal_responses)[1]:.3f}")
-print(f"P(WSR - (indiv. trials) response - baseline vs. interictal): {stats.wilcoxon(baseline_responses, interictal_responses)[1]:.3f}")
-
-plot_bar_with_points(data=[baseline_responses, interictal_responses],
-                     x_tick_labels=['Baseline', 'Interictal'], paired=False,
-                     points=False, bar=True, colors=['royalblue', 'seagreen'], fig=fig, ax=axes['D-E'][0], show=False, s=50,
-                     x_label='', y_label='Avg. response (dFF)', alpha=1, ylims=[0, 1.5])
-
-print('\n\n')
 
 # %% B)
 
