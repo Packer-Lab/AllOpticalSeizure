@@ -2,6 +2,7 @@ import os
 
 import numpy as np
 from funcsforprajay.plotting.plotting import plot_bar_with_points
+from scipy.stats import mannwhitneyu
 
 from _alloptical_utils import run_for_loop_across_exps
 from _analysis_._ClassPhotostimAnalysisSlmTargets import PhotostimAnalysisSlmTargets, plot__avg_photostim_dff_allexps
@@ -24,6 +25,11 @@ main.plot_variability_photostim_traces_by_targets()
 # %% B) measure of average coefficient of variation of target responses
 main.plot__variability(figsize=[3, 5], rerun=False)
 
+print(f"Mean Baseline CV = {np.mean(RESULTS.variance_photostimresponse['baseline'])}")
+print(f"Mean Interictal CV = {np.mean(RESULTS.variance_photostimresponse['interictal'])}")
+
+res = mannwhitneyu(RESULTS.variance_photostimresponse['baseline'], RESULTS.variance_photostimresponse['interictal'])
+print(res)
 
 # %% C) plot mean response vs. variability for baseline + interictal
 

@@ -8,9 +8,11 @@ from matplotlib import cm
 # import alloptical_utils_pj as aoutils
 from _utils_ import alloptical_plotting as aoplot
 from _utils_.io import import_expobj, import_1pexobj
-from onePexperiment.OnePhotonStimAnalysis_main import OnePhotonStimAnalysisFuncs
+from onePexperiment.OnePhotonStimAnalysis_main import OnePhotonStimAnalysisFuncs, OnePhotonStimResults
 
 from onePexperiment.OnePhotonStimMain import OnePhotonStimPlots as onepplots, OnePhotonStim
+
+Results: OnePhotonStimResults = OnePhotonStimResults.load()
 
 # #  ###### IMPORT pkl file containing data in form of expobj
 # trial = 't-008'
@@ -38,7 +40,11 @@ date = '2021-01-24'
 
 # %% 1.0) ## measuring PRE-STIM CA2+ AVG FLU vs. DFF RESPONSE MAGNITUDE, DECAY CONSTANT of the fov
 
-OnePhotonStimAnalysisFuncs.collectPhotostimResponseIndivual(run_pre4ap_trials=True, run_post4ap_trials=True, ignore_cache=False)
+# seizure excluded responses collection
+OnePhotonStimAnalysisFuncs.collectPhotostimResponses_szexcluded(resultsobj=Results, ignore_cache=True)
+
+
+OnePhotonStimAnalysisFuncs.collectPhotostimResponseIndivual(resultsobj=Results, run_pre4ap_trials=True, run_post4ap_trials=True, ignore_cache=False)
 
 
 # %% 2.1) PLOT - time to seizure onset vs. pre-stim Flu

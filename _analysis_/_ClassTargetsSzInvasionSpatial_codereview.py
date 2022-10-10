@@ -42,6 +42,8 @@ run_trials = ['RL108 t-013']
 class TargetsSzInvasionSpatial_codereview(SLMTargets):
     # response_type = 'dFF (zscored) (interictal)'
     response_type = 'dFF (zscored) (baseline)'
+    proximal_sz_wavefront = 100  #um
+    distal_sz_wavefront = 200  #um
 
     def __init__(self, expobj: Post4ap):
         super().__init__(expobj)
@@ -150,9 +152,9 @@ class TargetsSzInvasionSpatial_codereview(SLMTargets):
         newarr = np.full_like(distances, np.nan, dtype='<U10')
 
         newarr[distances < 0] = 'insz'
-        newarr[distances > 200] = 'distal'
-        newarr[np.where((distances < 100) & (distances > 0), True, False)] = 'proximal'
-        newarr[np.where((distances < 200) & (distances > 100), True, False)] = 'middle'
+        newarr[distances > self.distal_sz_wavefront] = 'distal'
+        newarr[np.where((distances < self.proximal_sz_wavefront) & (distances > 0), True, False)] = 'proximal'
+        newarr[np.where((distances < self.distal_sz_wavefront) & (distances > self.proximal_sz_wavefront), True, False)] = 'middle'
 
         self.adata.add_layer(layer_name='outsz location', data=newarr)
 

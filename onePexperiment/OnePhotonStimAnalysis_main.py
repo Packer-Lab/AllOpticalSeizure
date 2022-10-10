@@ -5,12 +5,14 @@ import pandas as pd
 from funcsforprajay import funcs as pj
 
 from _analysis_._utils import Results
+from _utils_.io import import_expobj, import_1pexobj
 from onePexperiment.OnePhotonStimMain import OnePhotonStim, onePresults
 
 LOCAL_LOC = f'/Users/prajayshah/data/oxford-data/export/'
 
 REMOTE_LOC = "/home/pshah/mnt/qnap/Analysis/analysis_export/analysis_quantification_classes/"
 SAVE_LOC = REMOTE_LOC
+
 
 # %% ANALYSIS FUNCTIONS
 
@@ -34,7 +36,6 @@ class OnePhotonStimResults(Results):
         'PS09': [0.52546],
         'PS16': [0.45964, 0.39399, 0.46595]
     }
-
 
     # by experiments:
     interictal_response_magnitude = {
@@ -61,30 +62,40 @@ class OnePhotonStimResults(Results):
         self.response_magnitudes = None  #: avg response magnitudes across all 1p stim trials
         self.response_decay = None  #: avg response magnitudes across all 1p stim trials
         self.photostim_responses = {'baseline': None,
-                                    'interictal': None}  #: individual post-stim response magnitudes across all 1p stim trials
+                                    'interictal': None,
+                                    'interictal - sz excluded': None}  #: individual post-stim response magnitudes across all 1p stim trials. includes separate set of values for stims that are seizure excluded.
 
         self.save_results()
 
     def collect_response_magnitudes(self):
-        data = [[rp for rp in onePresults.mean_stim_responses.iloc[:, 1] if rp != '-']]
-        data.append([rp for rp in onePresults.mean_stim_responses.iloc[:, 2] if rp != '-'])
+        data = [[rp for rp in onePresults.mean_stim_responses.iloc[:, 1] if rp != '-'],
+                [rp for rp in onePresults.mean_stim_responses.iloc[:, 2] if rp != '-']]
         # data.append([rp for rp in onePresults.mean_stim_responses.iloc[:,3] if rp != '-'])
         self.response_magnitudes = data
 
     def collect_response_decay(self):
         data = [
-            list(onePresults.mean_stim_responses[onePresults.mean_stim_responses.iloc[:, -3].notnull()].iloc[:, -3])]
-        data.append(
-            list(onePresults.mean_stim_responses[onePresults.mean_stim_responses.iloc[:, -2].notnull()].iloc[:, -2]))
+            list(onePresults.mean_stim_responses[onePresults.mean_stim_responses.iloc[:, -3].notnull()].iloc[:, -3]),
+            list(onePresults.mean_stim_responses[onePresults.mean_stim_responses.iloc[:, -2].notnull()].iloc[:, -2])]
         # data.append(ls(onePresults.mean_stim_responses[onePresults.mean_stim_responses.iloc[:, -1].notnull()].iloc[:, -1]))
         self.response_decay = data
+
+
+REMAKE = False
+if not os.path.exists(OnePhotonStimResults.SAVE_PATH) or REMAKE:
+    onePresults = OnePhotonStimResults()
+else:
+    pass
+
 
 class OnePhotonStimAnalysisFuncs(OnePhotonStim):
 
     @staticmethod
     def collectPhotostimResponses(pre_stim=None, post_stim=None, response_len=None, response_type: str = 'pre-stim dFF',
-                                  run_pre4ap_trials=True, run_post4ap_trials=True, ignore_cache=False, run_trials=[], skip_trials=[]):
-        @OnePhotonStim.runOverExperiments(run_pre4ap_trials=run_pre4ap_trials, run_post4ap_trials=run_post4ap_trials, ignore_cache=ignore_cache,
+                                  run_pre4ap_trials=True, run_post4ap_trials=True, ignore_cache=False, run_trials=[],
+                                  skip_trials=[]):
+        @OnePhotonStim.runOverExperiments(run_pre4ap_trials=run_pre4ap_trials, run_post4ap_trials=run_post4ap_trials,
+                                          ignore_cache=ignore_cache,
                                           run_trials=run_trials, skip_trials=skip_trials)
         def _collectPhotostimResponses(self: OnePhotonStim = None, pre_stim=pre_stim, post_stim=post_stim,
                                        response_len=response_len, response_type: str = response_type, **kwargs):
@@ -98,7 +109,8 @@ class OnePhotonStimAnalysisFuncs(OnePhotonStim):
             if not response_type in OnePhotonStim.compatible_responses_process:
                 raise ValueError(f"{response_type} is not a compatible response_type")
 
-            self.photostim_results = pd.DataFrame(index=['stim type', 'photostim responses', 'decay constant'], columns=self.stim_start_frames)
+            self.photostim_results = pd.DataFrame(index=['stim type', 'photostim responses', 'decay constant'],
+                                                  columns=self.stim_start_frames)
 
             #### all stims for all exp types ###########################################################################
 
@@ -108,10 +120,13 @@ class OnePhotonStimAnalysisFuncs(OnePhotonStim):
                         stim in stims_to_analyze]
 
             if 'post' in self.exptype:
-                self.photostim_results.loc['stim type', self.stims_out_sz] = 'interictal'  # set stim type to interictal for stim starts outsz in post4ap experiment
-                self.photostim_results.loc['stim type', self.stims_in_sz] = 'ictal'  # set stim type to ictal for stim starts insz in post4ap experiment
+                self.photostim_results.loc[
+                    'stim type', self.stims_out_sz] = 'interictal'  # set stim type to interictal for stim starts outsz in post4ap experiment
+                self.photostim_results.loc[
+                    'stim type', self.stims_in_sz] = 'ictal'  # set stim type to ictal for stim starts insz in post4ap experiment
             elif 'pre' in self.exptype:
-                self.photostim_results.loc['stim type', self.stim_start_frames] = 'baseline'  # set stim type to baseline for all stim frames in pre4ap experiment
+                self.photostim_results.loc[
+                    'stim type', self.stim_start_frames] = 'baseline'  # set stim type to baseline for all stim frames in pre4ap experiment
 
             # convert to dFF normalized to pre-stim F
             if response_type == 'pre-stim dFF':  # otherwise default param is raw Flu
@@ -123,7 +138,8 @@ class OnePhotonStimAnalysisFuncs(OnePhotonStim):
 
             # measure magnitude of response
             if response_type == 'pre-stim dFF':  # otherwise default param is raw Flu
-                poststim_1 = int(pre_stim * self.fps) + self.stim_duration_frames + 2  # starting just after the end of the shutter opening
+                poststim_1 = int(
+                    pre_stim * self.fps) + self.stim_duration_frames + 2  # starting just after the end of the shutter opening
                 poststim_2 = poststim_1 + int(response_len * self.fps)
                 baseline = int(pre_stim * self.fps) - 2
 
@@ -156,13 +172,6 @@ class OnePhotonStimAnalysisFuncs(OnePhotonStim):
                     self.decay_constants = [None]
 
             ############################################################################### all stims for all exp types #
-
-
-
-
-
-
-
 
             # ## archiving
             # if 'pre' in self.exptype:
@@ -346,12 +355,14 @@ class OnePhotonStimAnalysisFuncs(OnePhotonStim):
         return _collectPhotostimResponses()
 
     @staticmethod
-    def collectPhotostimResponseIndivual(run_pre4ap_trials=True, run_post4ap_trials=True, run_trials=[], skip_trials=[], ignore_cache=False,
-                                         resultsobj: OnePhotonStimResults=None):
+    def collectPhotostimResponseIndivual(resultsobj: OnePhotonStimResults, run_pre4ap_trials=True,
+                                         run_post4ap_trials=True, run_trials=[], skip_trials=[], ignore_cache=False):
         """collecting all photostimulation responses for individual experiments."""
-        if not hasattr(onePresults, 'photostim_responses') or ignore_cache:
-            @OnePhotonStim.runOverExperiments(run_pre4ap_trials=run_pre4ap_trials, run_post4ap_trials=run_post4ap_trials,
-                                              ignore_cache=ignore_cache, run_trials=run_trials, skip_trials=skip_trials, supress_print=False)
+        if not hasattr(resultsobj, 'photostim_responses') or ignore_cache:
+            @OnePhotonStim.runOverExperiments(run_pre4ap_trials=run_pre4ap_trials,
+                                              run_post4ap_trials=run_post4ap_trials,
+                                              ignore_cache=ignore_cache, run_trials=run_trials, skip_trials=skip_trials,
+                                              supress_print=False)
             def _collect_photostimResponse(**kwargs):
                 print('start')
                 expobj = kwargs['expobj']
@@ -370,12 +381,52 @@ class OnePhotonStimAnalysisFuncs(OnePhotonStim):
             _collect_photostimResponse()
 
             resultsobj.photostim_responses = {'baseline': pre4ap_resposnes,
-                                               'interictal': post4ap_resposnes}
+                                              'interictal': post4ap_resposnes}
+            resultsobj.save_results()
+
+    @staticmethod
+    def collectPhotostimResponses_szexcluded(resultsobj: OnePhotonStimResults, ignore_cache=False):
+        """collect all photostimulation responses for individual experiments - excluding stims that occured near seizure.
+        idea is to exclude specifically the stims that led to seizure induction since these stim responses will be elevated"""
+
+        if 'interictal - sz excluded' in [*resultsobj.photostim_responses] and not ignore_cache: pass
+        else:
+            @OnePhotonStim.runOverExperiments(run_pre4ap_trials=False, run_post4ap_trials=True, supress_print=False, ignore_cache=ignore_cache)
+            def _collect_photostimResponse_szexclude(**kwargs):
+                expobj = kwargs['expobj']
+
+                responses = resultsobj.photostim_responses['interictal'][expobj.t_series_name]
+                resultsobj.photostim_responses['interictal - sz excluded'][expobj.t_series_name] = None
+                stims = list(responses.index)
+                responses = list(responses.values)
+                stims_keep = []
+                responses_keep = []
+                for i, stim in enumerate(stims):
+                    exclude = False
+                    for fr in expobj.seizure_frames:
+                        if np.abs((stim - fr)) < 1 * expobj.fps:  # exclude within 1 sec
+                            exclude = True
+                            print('\txx -- excluding', i, stim)
+                            # break
+                    if not exclude:
+                        stims_keep.append(stim)
+                        print('\too --keeping', i, stim)
+                        responses_keep.append(responses[i])
+
+                post4ap_responses_sz_excluded[expobj.t_series_name] = pd.Series(index=stims_keep, data=responses_keep)
+
+
+            post4ap_responses_sz_excluded = {}
+
+            _collect_photostimResponse_szexclude()
+
+            resultsobj.photostim_responses['interictal - sz excluded'] = post4ap_responses_sz_excluded
             resultsobj.save_results()
 
 
     @staticmethod
-    def collectPreStimFluAvgs(run_pre4ap_trials=True, run_post4ap_trials=True, ignore_cache=False, run_trials=[], skip_trials=[]):
+    def collectPreStimFluAvgs(run_pre4ap_trials=True, run_post4ap_trials=True, ignore_cache=False, run_trials=[],
+                              skip_trials=[]):
         @OnePhotonStim.runOverExperiments(run_pre4ap_trials=run_pre4ap_trials, run_post4ap_trials=run_post4ap_trials,
                                           ignore_cache=ignore_cache,
                                           run_trials=run_trials, skip_trials=skip_trials)
@@ -390,11 +441,11 @@ class OnePhotonStimAnalysisFuncs(OnePhotonStim):
                 self.photostim_results = self.photostim_results.append(df_)
 
             #### all stim for all exp types ########################################################################
-            pre_stim_flu_list = [self.meanRawFluTrace[stim - int(pre_stim * self.fps): stim] for stim in self.stim_start_frames]
+            pre_stim_flu_list = [self.meanRawFluTrace[stim - int(pre_stim * self.fps): stim] for stim in
+                                 self.stim_start_frames]
             _pre_stim_flu_list = np.mean(np.asarray(pre_stim_flu_list), axis=1)
             self.photostim_results.loc['pre stim flu avg', self.stim_start_frames] = np.round(_pre_stim_flu_list, 3)
             ############################################################################ all stim for all exp types #
-
 
             self.save()
             return True
@@ -402,10 +453,12 @@ class OnePhotonStimAnalysisFuncs(OnePhotonStim):
         return _collectPreStimFluAvgs()
 
     @staticmethod
-    def collectTimeToSzOnset(self=None, run_pre4ap_trials=True, run_post4ap_trials=True, ignore_cache=False, run_trials=[],
+    def collectTimeToSzOnset(self=None, run_pre4ap_trials=True, run_post4ap_trials=True, ignore_cache=False,
+                             run_trials=[],
                              skip_trials=[], supress_print=False):
         @OnePhotonStim.runOverExperiments(run_pre4ap_trials=run_pre4ap_trials, run_post4ap_trials=run_post4ap_trials,
-                                          ignore_cache=ignore_cache, run_trials=run_trials, skip_trials=skip_trials,supress_print=supress_print)
+                                          ignore_cache=ignore_cache, run_trials=run_trials, skip_trials=skip_trials,
+                                          supress_print=supress_print)
         def _collectTimeToSzOnset(self=self, **kwargs):
             "returns time to sz onset for each stim"
             self = self if not 'expobj' in [*kwargs] else kwargs['expobj']
@@ -422,26 +475,27 @@ class OnePhotonStimAnalysisFuncs(OnePhotonStim):
                     closest_sz_onset = pj.findClosest(arr=self.seizure_lfp_onsets, input=stim_frame)[0]
                     time_diff = (closest_sz_onset - stim_frame) / self.fps  # time difference in seconds
 
-                    if stim_frame in self.stims_out_sz and time_diff < 0: time_diff = None
-                    elif stim_frame in self.stims_in_sz and time_diff > 0: time_diff = None
-                    else: time_diff = round(time_diff, 3)
+                    if stim_frame in self.stims_out_sz and time_diff < 0:
+                        time_diff = None
+                    elif stim_frame in self.stims_in_sz and time_diff > 0:
+                        time_diff = None
+                    else:
+                        time_diff = round(time_diff, 3)
 
                     self.photostim_results.loc['time to seizure onset (secs)', stim_frame] = time_diff
 
                 ########################################################################### inter-ictal and ictal stims #
 
-
-
                 self.save()
                 return True
             elif 'pre' in self.exptype:
                 df2 = pd.DataFrame(index=['time to seizure onset (secs)'], columns=self.stim_start_frames)
-                self.photostim_results = self.photostim_results.append(df2)  # only append NaN's for pre4ap (no seizure) trials
+                self.photostim_results = self.photostim_results.append(
+                    df2)  # only append NaN's for pre4ap (no seizure) trials
 
                 return True
 
         return _collectTimeToSzOnset()
-
 
     @staticmethod
     def collectSzOccurrenceRelativeStim(Results: OnePhotonStimResults, rerun=0):
@@ -452,13 +506,13 @@ class OnePhotonStimAnalysisFuncs(OnePhotonStim):
                 expobj: OnePhotonStim = kwargs['expobj']
 
                 if expobj.t_series_name == 'PS16 t-009' or expobj.t_series_name == 'PS07 t-015':
-                    print('break here and investigate further where this exp"s seizures are occuring relative to precise timing of stims.')
+                    print(
+                        'break here and investigate further where this exp"s seizures are occuring relative to precise timing of stims.')
                     # from _utils_.alloptical_plotting import plotLfpSignal
                     # plotLfpSignal(expobj, x_axis='time', figsize=(30, 3), linewidth=0.5, downsample=True,
                     #                      sz_markings=True, color='black')
 
                 # print(f'{expobj.t_series_name}: {np.sum(expobj.sz_occurrence_stim_intervals2)}')
-
 
                 return (expobj.t_series_name, expobj.sz_occurrence_stim_intervals2)
 
@@ -492,19 +546,3 @@ class OnePhotonStimAnalysisFuncs(OnePhotonStim):
             return Results.exp_sz_occurrence, Results.total_sz_occurrence
         else:
             return Results.exp_sz_occurrence, Results.total_sz_occurrence
-
-
-
-
-REMAKE = False
-if not os.path.exists(OnePhotonStimResults.SAVE_PATH) or REMAKE:
-    onePresults = OnePhotonStimResults()
-else:
-    pass
-    # onePresults = OnePhotonStimResults.load()
-
-
-
-
-
-

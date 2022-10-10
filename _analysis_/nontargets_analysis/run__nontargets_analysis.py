@@ -5,8 +5,7 @@ import matplotlib.pyplot as plt
 
 from scipy import stats
 
-from _analysis_.nontargets_analysis._ClassPhotostimResponsesAnalysisNonTargets import \
-    PhotostimResponsesAnalysisNonTargets
+from _analysis_.nontargets_analysis._ClassPhotostimResponsesAnalysisNonTargets import PhotostimResponsesAnalysisNonTargets
 import funcsforprajay.plotting as pplot
 import funcsforprajay.funcs as pj
 

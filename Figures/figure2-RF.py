@@ -1,16 +1,11 @@
 # %%
 import sys
 
-from funcsforprajay.funcs import flattenOnce
 from funcsforprajay.plotting.plotting import plot_bar_with_points
 from matplotlib.transforms import Bbox
 from scipy import stats
 
-from _alloptical_utils import run_for_loop_across_exps
-from _main_.AllOpticalMain import alloptical
-from _main_.Post4apMain import Post4ap
-from _utils_.alloptical_plotting import plot_settings, plotLfpSignal, plotMeanRawFluTrace, plot_flu_1pstim_avg_trace, \
-    plot_lfp_1pstim_avg_trace
+from _utils_.alloptical_plotting import plot_settings, plotLfpSignal, plotMeanRawFluTrace, plot_flu_1pstim_avg_trace, plot_lfp_1pstim_avg_trace
 from _utils_.io import import_expobj
 from alloptical_utils_pj import save_figure
 
@@ -20,8 +15,6 @@ from onePexperiment.OnePhotonStimMain import OnePhotonStim, onePresults
 sys.path.extend(['/home/pshah/Documents/code/reproducible_figures-main'])
 
 import numpy as np
-import matplotlib.pyplot as plt
-import matplotlib.image as mpimg
 import rep_fig_vis as rfv
 
 plot_settings()
@@ -52,7 +45,7 @@ layout = {
             'wspace': 1.2}
 }
 
-dpi = 100
+dpi = 300
 fig, axes, grid = rfv.make_fig_layout(layout=layout, dpi=dpi)
 
 rfv.naked(axes['A'][0])
@@ -64,31 +57,41 @@ print('\n\n')
 
 # %% D - new 2022-09-10) BAR PLOT OF RESPONSE MAGNITUDE FOR 1P STIM EXPERIMENTS - BY INDIVIDUAL STIMS
 
-rfv.add_label_axes(text='D', ax=axes['D-E'][0], y_adjust=0.01, x_adjust=0.09)
-
+rfv.add_label_axes(text='D', ax=axes['D-E'][0], y_adjust=0.01, x_adjust=0.07)
 baseline_response_magnitudes = Results.photostim_responses['baseline']
 interictal_response_magnitudes = Results.photostim_responses['interictal']
+interictal_response_magnitudes_szexclude = Results.photostim_responses['interictal - sz excluded']
 
 baseline_resposnes = []
 interictal_resposnes = []
+interictal_resposnes_szexclude = []
 for trial, responses in baseline_response_magnitudes.items():
     baseline_resposnes.extend(list(responses))
 for trial, responses in interictal_response_magnitudes.items():
     interictal_resposnes.extend(list(responses))
+for trial, responses in interictal_response_magnitudes_szexclude.items():
+    interictal_resposnes_szexclude.extend(list(responses))
 
 # fig, ax = plt.subplots(figsize=[2, 3], dpi = 100)
-plot_bar_with_points(data=[baseline_resposnes, interictal_resposnes],
-                     x_tick_labels=['Baseline', 'Interictal'],
-                     points=True, bar=False, colors=['gray', 'green'], fig=fig, ax=axes['D-E'][0], show=False, s=10,
-                     x_label='Group', y_label='Avg. dFF', alpha=0.5)
+plot_bar_with_points(data=[baseline_resposnes, interictal_resposnes, interictal_resposnes_szexclude],
+                     x_tick_labels=['Baseline', 'Interictal', 'Interictal - sz excluded'],
+                     points=True, bar=False, colors=['gray', 'green', 'red'], fig=fig, ax=axes['D-E'][0], show=False, s=2,
+                     x_label='', y_label='Avg. dFF', alpha=0.25, lw=0.5)
 # fig.tight_layout(pad=0.2)
-# fig.show()
+fig.show()
 
 
 # STATS
 # t-test - individual sessions
 print(f"P(t-test - (indiv. trials) response - baseline vs. interictal): {stats.ttest_ind(baseline_resposnes, interictal_resposnes)[1]:.3e}")
 
+# %% plot as Violin plot
+
+import seaborn as sns
+import matplotlib.pyplot as plt
+fig = plt.figure(figsize=(2, 3))
+sns.violinplot(data=[baseline_resposnes, interictal_resposnes_szexclude], scale='count')
+plt.show()
 
 
 # %% C) avg LFP trace 1p stim plots
@@ -101,10 +104,9 @@ pre4ap = import_expobj(prep='PS11', trial='t-009', date=date)  # pre4ap trial
 assert 'pre' in pre4ap.exptype
 fig, ax = plot_lfp_1pstim_avg_trace(pre4ap, x_axis='time', individual_traces=False, pre_stim=0.25, post_stim=0.75,
                                     fig=fig, ax=axes['C'][0, 0], show=False,
-                                    write_full_text=False, optoloopback=True, stims_to_analyze=pre4ap.stim_start_frames,
-                                    title='Baseline')
+                                    write_full_text=False, optoloopback=True, stims_to_analyze=pre4ap.stim_start_frames, title='Baseline')
 ax.axis('off')
-ax.text(s='LFP', x=-0.3,y=-1.65, ha='center', rotation=90, fontsize=8)
+ax.text(s='LFP', x=-0.3, y=-1.65, ha='center', rotation=90, fontsize=8)
 ax.set_title('Baseline', fontsize=10, fontweight='semibold')
 
 fig, ax = plot_flu_1pstim_avg_trace(pre4ap, x_axis='time', individual_traces=False, stim_span_color='skyblue', fig=fig,
@@ -118,23 +120,19 @@ post4ap = import_expobj(prep='PS11', trial='t-012', date=date)  # post4ap trial
 
 assert 'post' in post4ap.exptype
 fig, ax = plot_flu_1pstim_avg_trace(post4ap, x_axis='time', individual_traces=False, stim_span_color='skyblue', fig=fig,
-                                    ax=axes['C'][1, 1], show=False,
-                                    stims_to_analyze=post4ap.stims_out_sz, y_axis='dff', quantify=False,
-                                    title='Interictal',
-                                    ylims=[-0.5, 2.0])
+                                    ax=axes['C'][1, 1], show=False, stims_to_analyze=post4ap.stims_out_sz, y_axis='dff', quantify=False,
+                                    title='Interictal', ylims=[-0.5, 2.0])
 ax.axis('off')
 
 fig, ax = plot_lfp_1pstim_avg_trace(post4ap, x_axis='time', individual_traces=False, pre_stim=0.25, post_stim=0.75,
-                                    fig=fig, ax=axes['C'][1, 0], show=False,
-                                    write_full_text=False, optoloopback=True, stims_to_analyze=post4ap.stims_out_sz,
+                                    fig=fig, ax=axes['C'][1, 0], show=False, write_full_text=False, optoloopback=True, stims_to_analyze=post4ap.stims_out_sz,
                                     title='Interictal')
 ax.axis('off')
 ax.set_title('Interictal', fontsize=10, fontweight='semibold')
 
 
 fig, ax = plot_flu_1pstim_avg_trace(post4ap, x_axis='time', individual_traces=False, stim_span_color='skyblue', fig=fig,
-                                    ax=axes['C'][2, 1], show=False,
-                                    stims_to_analyze=post4ap.stims_in_sz, y_axis='dff', quantify=False, title='Ictal',
+                                    ax=axes['C'][2, 1], show=False, stims_to_analyze=post4ap.stims_in_sz, y_axis='dff', quantify=False, title='Ictal',
                                     ylims=[-0.5, 2.0])
 ax.axis('off')
 x = ax.get_xlim()[1]

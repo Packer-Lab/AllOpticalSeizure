@@ -360,13 +360,13 @@ class PhotostimResponsesAnalysisNonTargets(PhotostimResponsesQuantificationNonTa
 
         pplot.plot_bar_with_points(data=[results_to_plot['baseline_positive'], results_to_plot['interictal_positive'],
                                          results_to_plot['ictal_positive']],
-                                   paired=True, points=True, x_tick_labels=['baseline', 'interictal', 'ictal'],
+                                   paired=True, points=True, x_tick_labels=['baseline', 'interictal'],
                                    colors=['blue', 'green', 'purple'], y_label='Avg. magnitude of response',
                                    title='Positive responders' + title, bar=False, ylims=[-0.1, 1.0])
 
         pplot.plot_bar_with_points(data=[results_to_plot['baseline_negative'], results_to_plot['interictal_negative'],
                                          results_to_plot['ictal_negative']],
-                                   paired=True, points=True, x_tick_labels=['baseline', 'interictal', 'ictal'],
+                                   paired=True, points=True, x_tick_labels=['baseline', 'interictal'],
                                    colors=['blue', 'green', 'purple'], y_label='Avg. magnitude of response',
                                    title='Negative responders' + title, bar=False, ylims=[-1.0, 0.1])
 

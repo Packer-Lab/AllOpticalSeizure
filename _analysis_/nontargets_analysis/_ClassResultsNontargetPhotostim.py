@@ -24,6 +24,7 @@ from _utils_._anndata import AnnotatedData2
 
 SAVE_LOC = "/home/pshah/mnt/qnap/Analysis/analysis_export/analysis_quantification_classes/"
 
+
 # %%
 
 class PhotostimResponsesNonTargetsResults(Results):
@@ -171,10 +172,11 @@ class PhotostimResponsesNonTargetsResults(Results):
             assert tuple(expobj.PhotostimResponsesNonTargets.adata.var_names) == tuple(
                 expobj.NonTargetsSzInvasionSpatial.adata.var_names), 'mismatching stim indexes in photostim nontargets responses and distance to sz measured for cells'
 
-            interictal_stim_idxs = np.where(expobj.PhotostimResponsesNonTargets.adata.var['stim_group'] == 'interictal')[0]
+            interictal_stim_idxs = \
+            np.where(expobj.PhotostimResponsesNonTargets.adata.var['stim_group'] == 'interictal')[0]
 
-
-            z_scored_response = expobj.PhotostimResponsesNonTargets.adata.layers['nontargets responses z scored (to baseline)']
+            z_scored_response = expobj.PhotostimResponsesNonTargets.adata.layers[
+                'nontargets responses z scored (to baseline)']
             photostim_response = expobj.PhotostimResponsesNonTargets.adata.X
             fakestim_response = expobj.PhotostimResponsesNonTargets.adata.layers['nontargets fakestim_responses']
             distance_targets = expobj.PhotostimResponsesNonTargets.adata.obs['distance to nearest target (um)']
@@ -182,21 +184,20 @@ class PhotostimResponsesNonTargetsResults(Results):
             mean_nontargets_responses = expobj.PhotostimResponsesNonTargets.adata.var['mean_nontargets_responses']
             std_nontargets_responses = expobj.PhotostimResponsesNonTargets.adata.var['std_nontargets_responses']
 
-
             ## Chettih - influence metric type analysis of nontargets response:
             #   - for interictal, the Chettih "control site" stim is going to be the baseline mean response of the cell...
             print('\-calculating Chettih style influence....')
             pre4ap_trial = AllOpticalExpsToAnalyze.find_matched_trial(post4ap_trial_name=expobj.t_series_name)
             pre4ap_trial: alloptical = Utils.import_expobj(exp_prep=pre4ap_trial)
-            assert tuple(expobj.PhotostimResponsesNonTargets.adata.obs_names) == tuple(pre4ap_trial.PhotostimResponsesNonTargets.adata.obs_names), 'mismatch of post4ap (current trial) and matched pre4ap trials adata nontarget responses cells...'
+            assert tuple(expobj.PhotostimResponsesNonTargets.adata.obs_names) == tuple(
+                pre4ap_trial.PhotostimResponsesNonTargets.adata.obs_names), 'mismatch of post4ap (current trial) and matched pre4ap trials adata nontarget responses cells...'
             influence = np.zeros_like(photostim_response)
             for i, cell_i in enumerate(expobj.PhotostimResponsesNonTargets.adata.obs.index):
-
                 cell_i = int(cell_i)
-                mean_inf = expobj.PhotostimResponsesNonTargets.adata.X[i, :] - np.mean(pre4ap_trial.PhotostimResponsesNonTargets.adata.X[i, :])
+                mean_inf = expobj.PhotostimResponsesNonTargets.adata.X[i, :] - np.mean(
+                    pre4ap_trial.PhotostimResponsesNonTargets.adata.X[i, :])
                 inf_norm = mean_inf / np.std(mean_inf, ddof=1)
                 influence[i, :] = inf_norm
-
 
             ## a new influence metric analysis of nontargets response - that leverages the widescale changes in variability:
             print('\-calculating new z score style influence response....')
@@ -204,8 +205,10 @@ class PhotostimResponsesNonTargetsResults(Results):
             for i, cell_i in enumerate(expobj.PhotostimResponsesNonTargets.adata.obs.index):
                 cell_i = int(cell_i)
 
-                new_inf = (expobj.PhotostimResponsesNonTargets.adata.X[i, :] - mean_nontargets_responses) / std_nontargets_responses
-                inf_norm = new_inf / np.std(new_inf, ddof=1)  # not sure yet if i need to be normalizing to the total variability of this or not???
+                new_inf = (expobj.PhotostimResponsesNonTargets.adata.X[i,
+                           :] - mean_nontargets_responses) / std_nontargets_responses
+                inf_norm = new_inf / np.std(new_inf,
+                                            ddof=1)  # not sure yet if i need to be normalizing to the total variability of this or not???
                 new_influence[i, :] = new_inf
 
             collect_df = []
@@ -219,7 +222,8 @@ class PhotostimResponsesNonTargetsResults(Results):
                     _target_distance_idx = list(expobj.PhotostimResponsesNonTargets.adata.obs['original_index']).index(
                         cell)
 
-                    assert expobj.PhotostimResponsesNonTargets.adata.var['stim_group'][stim_idx] == 'interictal', 'incorrect stim group for stim index.'
+                    assert expobj.PhotostimResponsesNonTargets.adata.var['stim_group'][
+                               stim_idx] == 'interictal', 'incorrect stim group for stim index.'
                     _cell_df = pd.DataFrame({
                         'expID': f'{expobj.t_series_name}',
                         'expID_cell': f'{expobj.t_series_name}_{cell}',
@@ -254,7 +258,7 @@ class PhotostimResponsesNonTargetsResults(Results):
             results.interictal_responses = df
             results.save_results()
 
-        # POST 4AP TRIALS - ictal (split up by proximal and distal to sz) todo need to run collecting datapoints ############################################################################################
+        # POST 4AP TRIALS - ictal (split up by proximal and distal to sz)
         @Utils.run_for_loop_across_exps(run_post4ap_trials=True, set_cache=0,
                                         skip_trials=PhotostimResponsesQuantificationNonTargets.EXCLUDE_TRIALS)
         def _collect_responses_distancetarget_distancesz_ictal(**kwrags):
@@ -280,7 +284,8 @@ class PhotostimResponsesNonTargetsResults(Results):
             sz_distance_groups = expobj.NonTargetsSzInvasionSpatial.adata.layers['outsz location']
 
             ## these need to be metrics measured only on non targets outszzzzz
-            mean_nontargets_responses = expobj.PhotostimResponsesNonTargets.adata.var['mean_nontargets_responses - outsz']
+            mean_nontargets_responses = expobj.PhotostimResponsesNonTargets.adata.var[
+                'mean_nontargets_responses - outsz']
             std_nontargets_responses = expobj.PhotostimResponsesNonTargets.adata.var['std_nontargets_responses - outsz']
 
             ## Chettih - influence metric type analysis of nontargets response:
@@ -303,8 +308,10 @@ class PhotostimResponsesNonTargetsResults(Results):
             new_influence = np.zeros_like(photostim_response)
             for i, cell_i in enumerate(expobj.PhotostimResponsesNonTargets.adata.obs.index):
                 cell_i = int(cell_i)
-                new_inf = (expobj.PhotostimResponsesNonTargets.adata.X[i, :] - mean_nontargets_responses) / std_nontargets_responses
-                inf_norm = new_inf / np.std(new_inf, ddof=1)  # not sure yet if i need to be normalizing to the total variability of this or not???
+                new_inf = (expobj.PhotostimResponsesNonTargets.adata.X[i,
+                           :] - mean_nontargets_responses) / std_nontargets_responses
+                inf_norm = new_inf / np.std(new_inf,
+                                            ddof=1)  # not sure yet if i need to be normalizing to the total variability of this or not???
                 new_influence[i, :] = new_inf
 
             collect_df = []
@@ -340,7 +347,6 @@ class PhotostimResponsesNonTargetsResults(Results):
 
                         collect_df.append(_cell_df)
 
-
             exp_df_ = pd.concat(collect_df)
 
             return exp_df_
@@ -354,7 +360,6 @@ class PhotostimResponsesNonTargetsResults(Results):
 
             results.ictal_responses = df
             results.save_results()
-            pass
 
     def binned_distances_vs_responses_baseline(results, measurement='new influence response'):
         """
@@ -561,7 +566,8 @@ class PhotostimResponsesNonTargetsResults(Results):
             averages_cells = []
             for cell in cells_:
                 _jdxs = np.where(interictal_responses.iloc[_idxs]['expID_cell'] == cell)[0]
-                mean_cell_distance_response = np.nanmean(tuple(interictal_responses.iloc[_idxs].iloc[_jdxs][measurement]))
+                mean_cell_distance_response = np.nanmean(
+                    tuple(interictal_responses.iloc[_idxs].iloc[_jdxs][measurement]))
                 averages_cells.append(mean_cell_distance_response)
 
             # avg_response = np.nanmean(interictal_responses[measurement].iloc[_idxs])
@@ -612,7 +618,8 @@ class PhotostimResponsesNonTargetsResults(Results):
             averages_cells = []
             for cell in cells_:
                 _jdxs = np.where(interictal_responses.iloc[_idxs]['expID_cell'] == cell)[0]
-                mean_cell_distance_response = np.nanmean(tuple(interictal_responses.iloc[_idxs].iloc[_jdxs][measurement]))
+                mean_cell_distance_response = np.nanmean(
+                    tuple(interictal_responses.iloc[_idxs].iloc[_jdxs][measurement]))
                 averages_cells.append(mean_cell_distance_response)
 
             # avg_response = np.nanmean(interictal_responses[measurement].iloc[_idxs])
@@ -699,7 +706,8 @@ class PhotostimResponsesNonTargetsResults(Results):
         distance_response = {}
         for bin in distances:
             print(f'\t\- processing SHUFFLED DISTAL distance bin: {bin}')
-            _idxs = np.where((ictal_responses['shuffled distance binned'] == bin) & (ictal_responses['sz distance group'] == 'distal'))[0]
+            _idxs = np.where((ictal_responses['shuffled distance binned'] == bin) & (
+                        ictal_responses['sz distance group'] == 'distal'))[0]
 
             # average across all stims for each cell
             cells_ = np.unique(ictal_responses.iloc[_idxs]['expID_cell'])
@@ -721,7 +729,6 @@ class PhotostimResponsesNonTargetsResults(Results):
             else:
                 print(f'\t\t\- no responses for SHUFFLED distance bin {bin}')
 
-
         avg_binned_responses = np.asarray(avg_binned_responses)
         sem_binned_responses = np.asarray(sem_binned_responses)
 
@@ -729,8 +736,8 @@ class PhotostimResponsesNonTargetsResults(Results):
             results.binned_distance_vs_responses_shuffled_distal = {}
 
         results.binned_distance_vs_responses_shuffled_distal[measurement] = {'distances': distances_with_responses,
-                                                                                 'avg binned responses': avg_binned_responses,
-                                                                                 'sem binned responses': sem_binned_responses,
+                                                                             'avg binned responses': avg_binned_responses,
+                                                                             'sem binned responses': sem_binned_responses,
                                                                              'distance responses': distance_response
                                                                              }
 
@@ -744,7 +751,8 @@ class PhotostimResponsesNonTargetsResults(Results):
         distance_response = {}
         for bin in distances:
             print(f'\t\- processing SHUFFLED PROXIMAL distance bin: {bin}')
-            _idxs = np.where((ictal_responses['shuffled distance binned'] == bin) & (ictal_responses['sz distance group'] == 'proximal'))[0]
+            _idxs = np.where((ictal_responses['shuffled distance binned'] == bin) & (
+                        ictal_responses['sz distance group'] == 'proximal'))[0]
 
             # average across all stims for each cell
             cells_ = np.unique(ictal_responses.iloc[_idxs]['expID_cell'])
@@ -775,15 +783,12 @@ class PhotostimResponsesNonTargetsResults(Results):
             results.binned_distance_vs_responses_shuffled_proximal = {}
 
         results.binned_distance_vs_responses_shuffled_proximal[measurement] = {'distances': distances_with_responses,
-                                                                                 'avg binned responses': avg_binned_responses,
-                                                                                 'sem binned responses': sem_binned_responses,
+                                                                               'avg binned responses': avg_binned_responses,
+                                                                               'sem binned responses': sem_binned_responses,
                                                                                'distance responses': distance_response
                                                                                }
 
         results.save_results()
-
-
-
 
         ####### binning across SORTED ACTUAL distance to target: ############################################################################
         # re-sort by distance to target
@@ -802,7 +807,8 @@ class PhotostimResponsesNonTargetsResults(Results):
         distance_response = {}
         for bin in distances:
             print(f'\t\- processing DISTAL distance bin: {bin}')
-            _idxs = np.where((ictal_responses['distance target binned'] == bin) & (ictal_responses['sz distance group'] == 'distal'))[0]
+            _idxs = np.where((ictal_responses['distance target binned'] == bin) & (
+                        ictal_responses['sz distance group'] == 'distal'))[0]
 
             # average across all stims for each cell
             cells_ = np.unique(ictal_responses.iloc[_idxs]['expID_cell'])
@@ -824,7 +830,6 @@ class PhotostimResponsesNonTargetsResults(Results):
             else:
                 print(f'\t\t\- no responses for distance bin {bin}')
 
-
         avg_binned_responses = np.asarray(avg_binned_responses)
         sem_binned_responses = np.asarray(sem_binned_responses)
 
@@ -832,13 +837,12 @@ class PhotostimResponsesNonTargetsResults(Results):
             results.binned_distance_vs_responses_distal = {}
 
         results.binned_distance_vs_responses_distal[measurement] = {'distances': distances_with_responses,
-                                                                        'avg binned responses': avg_binned_responses,
-                                                                        'sem binned responses': sem_binned_responses,
+                                                                    'avg binned responses': avg_binned_responses,
+                                                                    'sem binned responses': sem_binned_responses,
                                                                     'distance responses': distance_response
                                                                     }
 
         results.save_results()
-
 
         # collect responses as average across distance bins - PROXIMAL SZ CELLS
         assert measurement in ictal_responses.columns, f'measurement not found in responses df columns:\n\t {ictal_responses.columns}'
@@ -850,7 +854,8 @@ class PhotostimResponsesNonTargetsResults(Results):
         distance_response = {}
         for bin in distances:
             print(f'\t\- processing PROXIMAL distance bin: {bin}')
-            _idxs = np.where((ictal_responses['distance target binned'] == bin) & (ictal_responses['sz distance group'] == 'proximal'))[0]
+            _idxs = np.where((ictal_responses['distance target binned'] == bin) & (
+                        ictal_responses['sz distance group'] == 'proximal'))[0]
 
             # average across all stims for each cell
             cells_ = np.unique(ictal_responses.iloc[_idxs]['expID_cell'])
@@ -875,7 +880,6 @@ class PhotostimResponsesNonTargetsResults(Results):
             else:
                 print(f'\t\t\- no responses for distance bin {bin}')
 
-
         avg_binned_responses = np.asarray(avg_binned_responses)
         sem_binned_responses = np.asarray(sem_binned_responses)
 
@@ -883,8 +887,8 @@ class PhotostimResponsesNonTargetsResults(Results):
             results.binned_distance_vs_responses_proximal = {}
 
         results.binned_distance_vs_responses_proximal[measurement] = {'distances': distances_with_responses,
-                                                                        'avg binned responses': avg_binned_responses,
-                                                                        'sem binned responses': sem_binned_responses,
+                                                                      'avg binned responses': avg_binned_responses,
+                                                                      'sem binned responses': sem_binned_responses,
                                                                       'distance responses': distance_response
                                                                       }
 
@@ -898,4 +902,3 @@ if not os.path.exists(PhotostimResponsesNonTargetsResults.SAVE_PATH) or REMAKE:
 
 if __name__ == '__main__':
     results = PhotostimResponsesNonTargetsResults.load()
-

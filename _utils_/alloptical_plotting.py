@@ -9,6 +9,8 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 import matplotlib.ticker as mticker
 from mpl_point_clicker import clicker
+from scipy.stats import stats
+
 from _utils_.paq_utils import paq_read, frames_discard
 from funcsforprajay import funcs as pj
 import _alloptical_utils as Utils

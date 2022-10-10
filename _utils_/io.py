@@ -339,7 +339,7 @@ def import_expobj(aoresults_map_id: str = None, trial: str = None, prep: str = N
     return expobj
 
 
-def import_1pexobj(prep=None, trial=None, date=None, pkl_path=None, verbose=False, load_backup_path=None):
+def import_1pexobj(prep=None, trial=None, date=None, pkl_path=None, verbose=False, load_backup_path=None, exp_prep=None):
     # if need to load from backup path!
     if load_backup_path:
         pkl_path = load_backup_path
@@ -354,6 +354,10 @@ def import_1pexobj(prep=None, trial=None, date=None, pkl_path=None, verbose=Fals
             except ValueError:
                 raise ValueError('not able to find date in allopticalResults.metainfo')
         pkl_path = f"/home/pshah/mnt/qnap/Analysis/{date}/{prep}/{date}_{trial}/{date}_{trial}.pkl"
+
+    if prep is None or trial is None and exp_prep:
+        prep = exp_prep[:-6]
+        trial = exp_prep[-5:]
 
     if not os.path.exists(pkl_path):
         raise Exception('pkl path NOT found: ' + pkl_path)

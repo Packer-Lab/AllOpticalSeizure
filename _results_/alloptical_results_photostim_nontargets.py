@@ -10,7 +10,7 @@ from funcsforprajay import funcs as pj
 results_object_path = '/home/pshah/mnt/qnap/Analysis/alloptical_results_superobject.pkl'
 allopticalResults = aoutils.import_resultsobj(pkl_path=results_object_path)
 
-expobj, experiment = aoutils.import_expobj(aoresults_map_id='pre e.1')  # PLACEHOLDER IMPORT OF EXPOBJ TO MAKE THE CODE WORK
+expobj = aoutils.import_expobj(aoresults_map_id='pre e.1')  # PLACEHOLDER IMPORT OF EXPOBJ TO MAKE THE CODE WORK
 
 
 # %%
@@ -206,11 +206,11 @@ counter = 0
 for key in list(allopticalResults.trial_maps['pre'].keys()):
     j = 0  # get just the first trial from the allopticalResults.trial_maps
 
-    expobj, experiment = aoutils.import_expobj(aoresults_map_id='pre %s.%s' % (key, j))  # import expobj
+    expobj = aoutils.import_expobj(aoresults_map_id='pre %s.%s' % (key, j))  # import expobj
     allunits_prestdF_pre4ap_ = np.mean(np.std(expobj.raw_traces_nontargets[:, :, expobj.pre_stim_frames_test], axis=2), axis=1)
 
 
-    expobj, experiment = aoutils.import_expobj(aoresults_map_id='post %s.%s' % (key, j))  # import expobj
+    expobj = aoutils.import_expobj(aoresults_map_id='post %s.%s' % (key, j))  # import expobj
     allunits_prestdF_post4ap_ = np.mean(np.std(expobj.raw_traces_nontargets[:, :, expobj.pre_stim_frames_test], axis=2), axis=1)
 
     # plot the histogram
@@ -335,10 +335,10 @@ counter = 0
 for key in list(allopticalResults.trial_maps['pre'].keys()):
     j = 0  # get just the first trial from the allopticalResults.trial_maps
 
-    expobj, experiment = aoutils.import_expobj(aoresults_map_id='pre %s.%s' % (key, j))  # import expobj
+    expobj = aoutils.import_expobj(aoresults_map_id='pre %s.%s' % (key, j))  # import expobj
     raw_meanprestim_pre4ap = np.mean(np.mean(expobj.raw_traces_nontargets[:, :, expobj.pre_stim_frames_test], axis=2), axis=1)  # collect mean prestim for raw traces avg over trials - run_pre4ap_trials
 
-    expobj, experiment = aoutils.import_expobj(aoresults_map_id='post %s.%s' % (key, j))  # import expobj
+    expobj = aoutils.import_expobj(aoresults_map_id='post %s.%s' % (key, j))  # import expobj
     raw_meanprestim_post4ap = np.mean(np.mean(expobj.raw_traces_nontargets[:, :, expobj.pre_stim_frames_test], axis=2), axis=1)  # collect mean prestim for raw traces avg over trials - run_post4ap_trials
 
     # plot the histogram
@@ -681,24 +681,6 @@ aoutils.save_figure(fig, save_path_suffix=f"{title}.png")
 fig.show()
 
 
-
-"""# 1.5.3) # # -  total post stim response evoked across all cells recorded
-    # - like maybe add up all trials (sig and non sig), and all cells
-    # - and compare pre-4ap and post-4ap (exp by exp, maybe normalizing the peak value per comparison from run_pre4ap_trials?)
-    # - or just make one graph per comparison and show all to Adam?
-"""
-
-
-# %% 1.4-todo) PLOT - plot some response measure against success rate of the stimulation
-"""#  think about some normalization via success rate of the stimulus (plot some response measure against success rate of the stimulation) - 
-#  calculate pearson's correlation value of the association
-"""
-# %% 1.5-todo) PLOT - dynamic changes in responses across multiple stim trials - this is very similar to the deltaActivity measurements
-
-"""
-dynamic changes in responses across multiple stim trials - this is very similar to the deltaActivity measurements
-- NOT REALLY APPROPRIATE HERE, THIS IS a WHOLE NEW SET OF ANALYSIS
-"""
 
 # %% 1.6-dc) PLOTting- responses of non targets to photostim - xyloc 2D plot using s2p ROI colors
 
