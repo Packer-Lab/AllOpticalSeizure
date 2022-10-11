@@ -72,6 +72,7 @@ class OnePhotonStimResults(Results):
                 [rp for rp in onePresults.mean_stim_responses.iloc[:, 2] if rp != '-']]
         # data.append([rp for rp in onePresults.mean_stim_responses.iloc[:,3] if rp != '-'])
         self.response_magnitudes = data
+        self.save_results()
 
     def collect_response_decay(self):
         data = [
@@ -79,6 +80,7 @@ class OnePhotonStimResults(Results):
             list(onePresults.mean_stim_responses[onePresults.mean_stim_responses.iloc[:, -2].notnull()].iloc[:, -2])]
         # data.append(ls(onePresults.mean_stim_responses[onePresults.mean_stim_responses.iloc[:, -1].notnull()].iloc[:, -1]))
         self.response_decay = data
+        self.save_results()
 
 
 REMAKE = False

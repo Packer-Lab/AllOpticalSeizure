@@ -2,6 +2,7 @@
 import sys
 
 from funcsforprajay.plotting.plotting import plot_bar_with_points
+from matplotlib import pyplot as plt
 from matplotlib.transforms import Bbox
 from scipy import stats
 
@@ -58,6 +59,9 @@ print('\n\n')
 # %% D - new 2022-09-10) BAR PLOT OF RESPONSE MAGNITUDE FOR 1P STIM EXPERIMENTS - BY INDIVIDUAL STIMS
 
 rfv.add_label_axes(text='D', ax=axes['D-E'][0], y_adjust=0.01, x_adjust=0.07)
+
+
+# individual trials photostim responses
 baseline_response_magnitudes = Results.photostim_responses['baseline']
 interictal_response_magnitudes = Results.photostim_responses['interictal']
 interictal_response_magnitudes_szexclude = Results.photostim_responses['interictal - sz excluded']
@@ -72,26 +76,72 @@ for trial, responses in interictal_response_magnitudes.items():
 for trial, responses in interictal_response_magnitudes_szexclude.items():
     interictal_resposnes_szexclude.extend(list(responses))
 
-# fig, ax = plt.subplots(figsize=[2, 3], dpi = 100)
-plot_bar_with_points(data=[baseline_resposnes, interictal_resposnes, interictal_resposnes_szexclude],
-                     x_tick_labels=['Baseline', 'Interictal', 'Interictal - sz excluded'],
-                     points=True, bar=False, colors=['gray', 'green', 'red'], fig=fig, ax=axes['D-E'][0], show=False, s=2,
-                     x_label='', y_label='Avg. dFF', alpha=0.25, lw=0.5)
-# fig.tight_layout(pad=0.2)
-fig.show()
+# import seaborn as sns
+# sns.violinplot(data=[baseline_resposnes, interictal_resposnes], ax=axes['D-E'][0])
 
+# experimental average photostim responses
+baseline_response_magnitudes_exp = [np.mean(x) for x in list(Results.baseline_response_magnitude.values())]
+interictal_response_magnitudes_exp = [np.mean(x) for x in list(Results.interictal_response_magnitude.values())]
+
+# ax=axes['D-E'][0]
+fig, ax = plt.subplots(figsize=[2, 3], dpi = 100)
+plot_bar_with_points(data=[baseline_resposnes, interictal_resposnes],
+                     x_tick_labels=['Baseline', 'Interictal'],
+                     points=True, bar=False, colors=['gray', 'green'], fig=fig, ax=ax, show=False, s=10,
+                     x_label='', y_label='Avg. dFF', alpha=0.7, lw=2, ylims=[-0.2, 1.5])
+fig.tight_layout(pad=0.2)
+fig.show()
 
 # STATS
 # t-test - individual sessions
 print(f"P(t-test - (indiv. trials) response - baseline vs. interictal): {stats.ttest_ind(baseline_resposnes, interictal_resposnes)[1]:.3e}")
 
-# %% plot as Violin plot
 
-import seaborn as sns
-import matplotlib.pyplot as plt
-fig = plt.figure(figsize=(2, 3))
-sns.violinplot(data=[baseline_resposnes, interictal_resposnes_szexclude], scale='count')
-plt.show()
+
+
+# %% B) representative plot of onePhoton experiment
+
+rfv.add_label_axes(text='B', ax=axes['B'][0, 0], y_adjust=0)
+
+# pre4ap
+expobj: OnePhotonStim = import_expobj(prep='PS11', trial='t-009', date=date)  # pre4ap trial
+plotLfpSignal(expobj, x_axis='time', linewidth=0.15, downsample=True,
+              sz_markings=False, color='black', fig=fig, ax=axes['B'][0, 0], show=False, title='',
+              ylims=[-4, 1], xlims=[105, 205])
+axes['B'][0, 0].set_title('')
+axes['B'][0, 0].axis('off')
+
+# pre4ap
+expobj = import_expobj(prep='PS11', trial='t-009', date=date)  # pre4ap trial
+plotMeanRawFluTrace(expobj, stim_span_color='cornflowerblue', x_axis='Time (secs)', linewidth = 0.3,
+                    xlims=[105 * expobj.fps, 205 * expobj.fps], stim_lines=False, fig=fig, ax=axes['B'][0, 1],
+                    show=False)
+axes['B'][0, 1].set_title('')
+axes['B'][0, 1].axis('off')
+
+# post4ap
+expobj: OnePhotonStim = import_expobj(prep='PS11', trial='t-012', date=date)  # post4ap trial
+plotLfpSignal(expobj, x_axis='time', linewidth=0.15, downsample=True, sz_markings=False, color='black', fig=fig,
+              ax=axes['B'][1, 0],
+              show=False, ylims=[0, 5], xlims=[10, 160])
+axes['B'][1, 0].set_title('')
+axes['B'][1, 0].axis('off')
+rfv.add_scale_bar(ax=axes['B'][1, 0], length=(1, 10), bartype='L', text=('1 mV', '10 s'), loc=(170, 0),
+                  text_offset=[5, 0.6], fs=5)
+
+# Avg Flu signal with optogenetic stims
+offset = expobj.frame_start_time_actual / expobj.paq_rate
+
+# post4ap
+expobj = import_expobj(prep='PS11', trial='t-012', date=date)  # post4ap trial
+plotMeanRawFluTrace(expobj, stim_span_color='cornflowerblue', x_axis='Time (secs)',
+                    xlims=[10 * expobj.fps, 160 * expobj.fps], linewidth=0.3,
+                    stim_lines=False, fig=fig, ax=axes['B'][1, 1], show=False)
+axes['B'][1, 1].set_title('')
+axes['B'][1, 1].axis('off')
+rfv.add_scale_bar(ax=axes['B'][1, 1], length=(500, 10 * expobj.fps), bartype='L', text=('500 a.u.', '10 s'),
+                  loc=(170 * expobj.fps, 0), text_offset=[5 * expobj.fps, 250], fs=5)
+
 
 
 # %% C) avg LFP trace 1p stim plots
@@ -103,8 +153,8 @@ pre4ap = import_expobj(prep='PS11', trial='t-009', date=date)  # pre4ap trial
 
 assert 'pre' in pre4ap.exptype
 fig, ax = plot_lfp_1pstim_avg_trace(pre4ap, x_axis='time', individual_traces=False, pre_stim=0.25, post_stim=0.75,
-                                    fig=fig, ax=axes['C'][0, 0], show=False,
-                                    write_full_text=False, optoloopback=True, stims_to_analyze=pre4ap.stim_start_frames, title='Baseline')
+                                    fig=fig, ax=axes['C'][0, 0], show=False, write_full_text=False, optoloopback=True, stims_to_analyze=pre4ap.stim_start_frames,
+                                    title='Baseline')
 ax.axis('off')
 ax.text(s='LFP', x=-0.3, y=-1.65, ha='center', rotation=90, fontsize=8)
 ax.set_title('Baseline', fontsize=10, fontweight='semibold')
@@ -153,6 +203,10 @@ rfv.add_scale_bar(ax=ax, length=(1, 0.25), bartype='L', text=('1 mV', '0.25 s'),
                   text_offset=[0.1, 0.50], fs=5)
 
 
+
+
+
+
 # %% E) BAR PLOT OF RESPONSE DECAY FOR 1P STIM EXPERIMENTS
 rfv.add_label_axes(text='E', ax=axes['D-E'][1], y_adjust=0.01, x_adjust=0.09)
 
@@ -175,55 +229,6 @@ plot_bar_with_points(data=[baseline_decay_constant_plot, interictal_decay_consta
 
 print('\n\n')
 
-
-# %% B)
-
-rfv.add_label_axes(text='B', ax=axes['B'][0, 0], y_adjust=0)
-
-# pre4ap
-expobj: OnePhotonStim = import_expobj(prep='PS11', trial='t-009', date=date)  # pre4ap trial
-plotLfpSignal(expobj, x_axis='time', linewidth=0.5, downsample=True,
-              sz_markings=False, color='black', fig=fig, ax=axes['B'][0, 0], show=False, title='',
-              ylims=[-4, 1], xlims=[105, 205])
-axes['B'][0, 0].set_title('')
-axes['B'][0, 0].axis('off')
-
-# pre4ap
-expobj = import_expobj(prep='PS11', trial='t-009', date=date)  # pre4ap trial
-plotMeanRawFluTrace(expobj, stim_span_color='cornflowerblue', x_axis='Time (secs)',
-                    xlims=[105 * expobj.fps, 205 * expobj.fps], stim_lines=False, fig=fig, ax=axes['B'][0, 1],
-                    show=False)
-axes['B'][0, 1].set_title('')
-axes['B'][0, 1].axis('off')
-
-# %%
-
-
-# post4ap
-expobj: OnePhotonStim = import_expobj(prep='PS11', trial='t-012', date=date)  # post4ap trial
-plotLfpSignal(expobj, x_axis='time', linewidth=0.5, downsample=True, sz_markings=False, color='black', fig=fig,
-              ax=axes['B'][1, 0],
-              show=False, ylims=[0, 5], xlims=[10, 160])
-axes['B'][1, 0].set_title('')
-axes['B'][1, 0].axis('off')
-rfv.add_scale_bar(ax=axes['B'][1, 0], length=(1, 10), bartype='L', text=('1 mV', '10 s'), loc=(170, 0),
-                  text_offset=[5, 0.6], fs=5)
-
-# Avg Flu signal with optogenetic stims
-offset = expobj.frame_start_time_actual / expobj.paq_rate
-
-# post4ap
-expobj = import_expobj(prep='PS11', trial='t-012', date=date)  # post4ap trial
-plotMeanRawFluTrace(expobj, stim_span_color='cornflowerblue', x_axis='Time (secs)',
-                    xlims=[10 * expobj.fps, 160 * expobj.fps],
-                    stim_lines=False, fig=fig, ax=axes['B'][1, 1], show=False)
-axes['B'][1, 1].set_title('')
-axes['B'][1, 1].axis('off')
-rfv.add_scale_bar(ax=axes['B'][1, 1], length=(500, 10 * expobj.fps), bartype='L', text=('500 a.u.', '10 s'),
-                  loc=(170 * expobj.fps, 0),
-                  text_offset=[5 * expobj.fps, 250], fs=5)
-
-# fig.show()
 
 
 
