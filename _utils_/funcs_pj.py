@@ -410,6 +410,7 @@ def SaveDownsampledTiff(tiff_path: str = None, stack: np.array = None, group_by:
         final_stack = avgd_stack
 
     # write output
+    os.makedirs(os.path.dirname(save_as), exist_ok=True)
     print("\nsaving %s to... %s" % (final_stack.shape, save_as))
     tf.imwrite(save_as, final_stack, photometric='minisblack')
 

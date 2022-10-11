@@ -594,7 +594,7 @@ class Post4ap(alloptical):
 
         print('reading in seizure trial from: ', self.tiff_path, '\n')
         stack = tf.imread(self.tiff_path)
-
+        assert len(onsets) == len(offsets), f'mismatch of seizure onsets/offsets in {self.t_series_name}, \n\t onsets: {self.seizure_lfp_onsets} \n\t offsets: {self.seizure_lfp_offsets}'
         # subselect raw tiff movie over all seizures as marked by LFP onset and offsets
         for on, off in zip(onsets, offsets):
             select_frames = (on, off)

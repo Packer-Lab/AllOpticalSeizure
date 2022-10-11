@@ -25,6 +25,14 @@ import tifffile as tf
 import _alloptical_utils as Utils
 
 
+# %%
+@Utils.run_for_loop_across_exps(run_pre4ap_trials=1, run_post4ap_trials=1, allow_rerun=1, supress_print=True)
+def retrieve_dates(**kwargs):
+    expobj: alloptical = kwargs['expobj']
+    print('\t', expobj.t_series_name, expobj.date, '\n')
+
+retrieve_dates()
+
 # %% investigating why/if? there are different # of s2p nontargets between MATCHED pre4ap and post4ap trials
 
 pre4aptrial = 'RL108 t-009'
