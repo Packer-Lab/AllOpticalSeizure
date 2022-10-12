@@ -23,15 +23,9 @@ ADJUST_SZ_INV = {'PS04 t-018': 2,
                  # 'PS11 t-011': 5,
                  'PS11 t-011': 0}  # - changing PS11 t-011 back because most targets are already up against the lfp onset temporally
 
+
 # %%
-
 class TargetsSzInvasionTemporal(Quantification):
-
-    # archived in favor of a dedicated results class .22/03/07
-    # @staticmethod
-    # def save_data(dataname: str, data):
-    #     save_TargetsSzInvasionTemporal[dataname] = data
-    #     pj.save_pkl(obj=save_TargetsSzInvasionTemporal, pkl_path=SAVE_PATH)
 
     # photostim_responses_zscore_type = 'dFF (zscored) (interictal)'
     photostim_responses_zscore_type = 'dFF (zscored) (baseline)'
@@ -40,6 +34,9 @@ class TargetsSzInvasionTemporal(Quantification):
     EXCLUDE_TRIAL = [
         'PS11 t-011'  # I think there’s good cause for exclusion from this analysis, since the seizure isnt particularly propagating across temporally (like the cells seem to be recruited right away..) - there’s basically no datapoints prior to sz invasion..
     ]
+    TEMPORAL_BIN_WIDTH = 0.5  # secs
+    TEMPORAL_START = -30  # secs - time prior to seizure invasion of cell to collect photostim data from
+    ROLLING_RES = 0.1  # secs - resolution of indexes for rollings bins
 
     def __init__(self, expobj: Post4ap):
         super().__init__(expobj)
@@ -285,7 +282,7 @@ class TargetsSzInvasionTemporal(Quantification):
 
 
 
-    # 3) COLLECT PHOTOSTIM RESPONSES MAGNITUDE VS. PHOTOSTIM RESPONSES FOR AN EXP  #####################################
+    # 3) COLLECT SZ INVASION TIME VS. PHOTOSTIM RESPONSES FOR AN EXP  #####################################
     def collect_szinvasiontime_vs_photostimresponses(self, expobj: Post4ap):
         """collects dictionary of sz invasion time and photostim responses across all targets for each stim for an expobj"""
         sztime_v_photostimresponses = {}
@@ -322,7 +319,7 @@ class TargetsSzInvasionTemporal(Quantification):
 
         self.sztime_v_photostimresponses = sztime_v_photostimresponses
 
-    # 3.1) PLOT PHOTOSTIM RESPONSES MAGNITUDE VS. PHOTOSTIM RESPONSES FOR AN EXP  #####################################
+    # 3.1) PLOT SZ INVASION TIME VS. PHOTOSTIM RESPONSES FOR AN EXP  #####################################
     def return_szinvasiontime_vs_photostimresponses(self):
         """
         retrieve list of datapoints for sz invasion time (return in x), and datapoints for photostim responses
@@ -548,7 +545,7 @@ class TargetsSzInvasionTemporal(Quantification):
 
     # 7) time to sz invasion vs. photostim responses - no percentile normalization of time bins
     @staticmethod
-    def collect__binned__szinvtime_v_responses(results, rerun=0, bin_width=1):
+    def collect__binned__szinvtime_v_responses(results, rerun=0, bin_width=TEMPORAL_BIN_WIDTH, t_start=TEMPORAL_START, rolling_bins=False, rolling_res=ROLLING_RES):
         """collect time vs. respnses for time bins
 
         :param results:
@@ -557,7 +554,10 @@ class TargetsSzInvasionTemporal(Quantification):
         :return:
         """
         if rerun or not hasattr(results, 'binned__time_vs_photostimresponses'):
-            bins = np.arange(-10, 0, bin_width)  # -15 --> 0 secs, split in bins
+
+            # create rolling bins if called for, otherwise stepped bins
+            bins = [(np.round(i, 3), np.round(i + bin_width, 3)) for i in np.arange(t_start, 0, rolling_res)] if rolling_bins else [(i, i + bin_width) for i in np.arange(t_start, 0, bin_width)]
+
             num = [0 for _ in range(len(bins))]  # num of datapoints in binned sztemporalinv
             y = [0 for _ in range(len(bins))]  # avg responses at distance bin
             responses = [[] for _ in range(len(bins))]  # collect all responses at distance bin
@@ -575,7 +575,7 @@ class TargetsSzInvasionTemporal(Quantification):
                     time = row['time_to_szinvasion']
                     response = row['photostim_responses']
                     for i, bin in enumerate(bins[:-1]):
-                        if bins[i] < time < (bins[i + 1]):
+                        if bin[0] < time < (bin[1]):
                             num[i] += 1
                             y[i] += response
                             responses[i].append(response)
@@ -586,7 +586,7 @@ class TargetsSzInvasionTemporal(Quantification):
 
             num, y, responses = func_collector[-1][0], func_collector[-1][1], func_collector[-1][2]
 
-            sztemporalinv = bins + bin_width
+            sztemporalinv_bins = [(bin[0] + bin_width, bin[1] + bin_width) for i, bin in enumerate(bins)]
 
             avg_responses = [np.mean(responses_) for responses_ in responses]
 
@@ -603,7 +603,7 @@ class TargetsSzInvasionTemporal(Quantification):
             oneway_r = stats.f_oneway(*responses[:-1])
 
 
-            results.binned__time_vs_photostimresponses = {'bin_width_sec': bin_width, 'sztemporal_bins': sztemporalinv,
+            results.binned__time_vs_photostimresponses = {'bin_width_sec': bin_width, 'sztemporal_bins': sztemporalinv_bins,
                                                           'num_points_in_bin': num,
                                                           'avg_photostim_response_in_bin': avg_responses,
                                                           '95conf_int': conf_int,
@@ -620,33 +620,45 @@ class TargetsSzInvasionTemporal(Quantification):
     @staticmethod
     def plot__responses_v_szinvtemporal_no_normalization(results, **kwargs):
         """plotting of binned responses over time to sz invasion for each target+stim as a step function, with heatmap showing # of datapoints"""
+        fig, axs = (kwargs['fig'], kwargs['axes']) if 'fig' in kwargs or 'axes' in kwargs else plt.subplots(figsize=(6, 5), nrows=2, ncols=1, dpi=300)
+        ax = axs[0][0] if 'fig' in kwargs or 'axes' in kwargs else axs[0]
+        ax2 = axs[1][0] if 'fig' in kwargs or 'axes' in kwargs else axs[1]
+
+
+
         # sztemporalinv_bins = results.binned__distance_vs_photostimresponses['sztemporal_bins']
         sztemporalinv = results.binned__time_vs_photostimresponses['sztemporal_bins']
         avg_responses = results.binned__time_vs_photostimresponses['avg_photostim_response_in_bin']
         conf_int = results.binned__time_vs_photostimresponses['95conf_int']
         num2 = results.binned__time_vs_photostimresponses['num_points_in_bin']
 
-        conf_int_sztemporalinv = pj.flattenOnce(
-            [[sztemporalinv[i], sztemporalinv[i + 1]] for i in range(len(sztemporalinv) - 1)])
-        conf_int_values_neg = pj.flattenOnce([[val, val] for val in conf_int[1:, 0]])
-        conf_int_values_pos = pj.flattenOnce([[val, val] for val in conf_int[1:, 1]])
+        ## new for rolling bins
+        avg_responses = results.binned__time_vs_photostimresponses['avg_photostim_response_in_bin'][1:]
+        x_ = [np.mean((bins[0], bins[1])) for bins in sztemporalinv[1:]]
+        conf_int_values_neg = [val for val in conf_int[1:, 0]]
+        conf_int_values_pos = [val for val in conf_int[1:, 1]]
+        ax.plot(x_, avg_responses, c='cornflowerblue', zorder=2)
+        ## new
 
-        fig, axs = (kwargs['fig'], kwargs['axes']) if 'fig' in kwargs or 'axes' in kwargs else plt.subplots(figsize=(6, 5), nrows=2, ncols=1, dpi=300)
-        # ax.plot(sztemporalinv[:-1], avg_responses, c='cornflowerblue', zorder=1)
-        ax = axs[0][0] if 'fig' in kwargs or 'axes' in kwargs else axs[0]
-        ax2 = axs[1][0] if 'fig' in kwargs or 'axes' in kwargs else axs[1]
-        ax.step(sztemporalinv, avg_responses, c='cornflowerblue', zorder=2)
+
+        # conf_int_sztemporalinv = pj.flattenOnce([[sztemporalinv[i-1][1], bins[0]] for i, bins in enumerate(sztemporalinv[1:])])
+        # conf_int_sztemporalinv = pj.flattenOnce([[bins[0], sztemporalinv[i+1][0]] for i, bins in enumerate(sztemporalinv[1:])])
+        #
+        # conf_int_values_neg = pj.flattenOnce([[val, val] for val in conf_int[1:, 0]])
+        # conf_int_values_pos = pj.flattenOnce([[val, val] for val in conf_int[1:, 1]])
+
+        # ax.step(sztemporalinv, avg_responses, c='cornflowerblue', zorder=2)
         # ax.fill_between(x=(sztemporalinv-0)[:-1], y1=conf_int[:-1, 0], y2=conf_int[:-1, 1], color='lightgray', zorder=0)
-        ax.fill_between(x=conf_int_sztemporalinv, y1=conf_int_values_neg, y2=conf_int_values_pos, color='lightgray',
+        ax.fill_between(x=x_, y1=conf_int_values_neg, y2=conf_int_values_pos, color='lightgray',
                         zorder=0)
         # ax.scatter(sztemporalinv[:-1], avg_responses, c='orange', zorder=4)
         ax.set_ylim([-2, 2.25])
         ax.set_yticks([-1, 0, 1, 2])
         ax.invert_xaxis()
         # xticks = ax.get_xticks()
-        xticks = sztemporalinv[::2][:-1]
+        xticks = np.arange(np.round(sztemporalinv[0][0]), 0, 2.5)
         ax.set_xticks(xticks)
-        ax.set_xticklabels([int(x + 0.5) for x in xticks])
+        ax.set_xticklabels([int(x + results.binned__time_vs_photostimresponses['bin_width_sec']) for x in xticks])
         # ax.set_title(
         #     f'photostim responses vs. time to sz recruitment (binned every {results.binned__time_vs_photostimresponses["bin_width_sec"]}sec)',
         #     wrap=True)

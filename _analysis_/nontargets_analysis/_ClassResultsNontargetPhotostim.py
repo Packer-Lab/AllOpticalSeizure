@@ -649,6 +649,8 @@ class PhotostimResponsesNonTargetsResults(Results):
 
     def binned_distances_vs_responses_ictal(results, measurement='new influence response'):
         """
+        Photostim responses relative to sz boundary - proximal vs. distal.
+
 
         use the specified response measurement argument.
         - bin the dataframe across distance

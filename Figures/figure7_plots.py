@@ -36,7 +36,7 @@ distance_lims = [19, 400]  # limit of analysis
 # %% plotting definitions
 
 def z_score_response_proximal_distal(results, **kwargs):
-    "BAR PLOT COMPARING PHOTOSTIM RESPONSES OF DISTAL VS. PROXIMAL NONTARGETS (WITHIN 250UM OF TARGET)"
+    """BAR PLOT COMPARING PHOTOSTIM RESPONSES OF DISTAL VS. PROXIMAL NONTARGETS (WITHIN 250UM OF TARGET)"""
     measurement = 'z score response'
 
     distance_response = results.binned_distance_vs_responses_distal[measurement]['distance responses']

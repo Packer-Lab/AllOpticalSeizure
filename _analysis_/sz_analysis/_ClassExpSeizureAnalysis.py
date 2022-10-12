@@ -111,7 +111,8 @@ class ExpSeizureAnalysis(Quantification):
     def downsample_all_sz(**kwargs):
         expobj: Post4ap = kwargs['expobj']
         assert len(expobj.seizure_lfp_offsets) == len(expobj.seizure_lfp_onsets), f'mismatch of seizure onsets/offsets in {expobj.t_series_name}, \n\t onsets: {expobj.seizure_lfp_onsets} \n\t offsets: {expobj.seizure_lfp_offsets}'
-        for i, sz_start, sz_end in enumerate(zip(expobj.seizure_lfp_onsets, expobj.seizure_lfp_offsets)):
+        for i, sz_start in enumerate(expobj.seizure_lfp_onsets):
+            sz_end = expobj.seizure_lfp_offsets[i]
             save_as = expobj.analysis_save_path + f'downsampled_sz_tiffs/{expobj.date}_{expobj.t_series_name}_groupavg_sz{i}_{sz_start}_{sz_end}.tif'
             stack_cropped = subselect_tiff(tiff_path=expobj.tiff_path, select_frames=(sz_start, sz_end), save_as=None)
             SaveDownsampledTiff(stack=stack_cropped, group_by=4, save_as=save_as)

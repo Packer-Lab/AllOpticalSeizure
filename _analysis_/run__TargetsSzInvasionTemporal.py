@@ -428,7 +428,7 @@ if __name__ == '__main__':
     #
     # # run collecting and plotting zscored photostim responses vs. time delay to sz invasion
     # run__collect_szinvasiontime_vs_photostimresponses_zscored()
-    run__collect_szinvasiontime_vs_photostimresponses_zscored_df()
+    # run__collect_szinvasiontime_vs_photostimresponses_zscored_df()
 
     # plot__szinvasiontime_vs_photostimresponseszscored()
     #
@@ -447,8 +447,8 @@ if __name__ == '__main__':
 
 
     # plot average stim response vs. (possibly binned?) time to sz invasion for all targets across all exps
-    main.collect__binned__szinvtime_v_responses()  # binsize = 1 secs
     results = results.load()
+    main.collect__binned__szinvtime_v_responses(results=results, rerun=0, rolling_bins=True)
     main.plot__responses_v_szinvtemporal_no_normalization(results=results)
 
     # results.range_of_sz_invasion_time = [-1, -1, -1]

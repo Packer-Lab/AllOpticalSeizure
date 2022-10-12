@@ -37,8 +37,7 @@ if not os.path.exists(NonTargetsResponsesSpatialResults.SAVE_PATH) or REMAKE:
 
 
 class NonTargetsResponsesSpatialAnalysis(Quantification):
-    """Analysis of responses of nontargets in relation to spatial distances from seizure boundary.
-    Fig 6.
+    """Analysis of response magnitudes of nontargets in relation to spatial distances from seizure boundary.
 
     - big goal is to use cells binned into proximal, middle or distal.
 
