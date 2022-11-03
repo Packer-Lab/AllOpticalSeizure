@@ -79,6 +79,7 @@ class NonTargetsSzInvasionSpatial(Quantification):
     @Utils.run_for_loop_across_exps(run_pre4ap_trials=False, run_post4ap_trials=True, allow_rerun=1, skip_trials=EXCLUDE_TRIALS)
     def run__methods(**kwargs):
         expobj: Union[alloptical, Post4ap] = kwargs['expobj']
+        print(expobj.PhotostimResponsesNonTargets.adata)
         distances_um = expobj.NonTargetsSzInvasionSpatial._calculate_distance_to_target(expobj=expobj)
         expobj.NonTargetsSzInvasionSpatial._add_nontargets_distance_to_targets_anndata(expobj.PhotostimResponsesNonTargets.adata, distances_um)
         expobj.save()

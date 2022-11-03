@@ -6,19 +6,15 @@ import matplotlib.pyplot as plt
 from scipy import stats
 
 from _analysis_.nontargets_analysis._ClassPhotostimResponsesAnalysisNonTargets import PhotostimResponsesAnalysisNonTargets
-import funcsforprajay.plotting as pplot
 import funcsforprajay.funcs as pj
 
 import pandas as pd
 import numpy as np
 
 from _analysis_.nontargets_analysis._ClassResultsNontargetPhotostim import PhotostimResponsesNonTargetsResults
-from _main_.AllOpticalMain import alloptical
 
 import statsmodels.api as sm
 from statsmodels.formula.api import ols
-
-import _alloptical_utils as Utils
 
 main = PhotostimResponsesAnalysisNonTargets
 
@@ -375,7 +371,7 @@ Objectives:
 
 
 # %% 5.0) run processing + create dataframe of nontargets responses across stim groups and distances to targets:
-results.collect_nontargets_stim_responses(run_post4ap_ictal=True)
+results.collect_nontargets_stim_responses(run_post4ap_ictal=True, run_post4ap=True, run_pre4ap=True)
 
 
 # %% 5.2) binning responses relative to distance from targets, then average the responses across binned distances

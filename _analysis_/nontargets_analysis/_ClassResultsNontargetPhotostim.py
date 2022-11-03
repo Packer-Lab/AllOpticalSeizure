@@ -262,6 +262,7 @@ class PhotostimResponsesNonTargetsResults(Results):
         @Utils.run_for_loop_across_exps(run_post4ap_trials=True, set_cache=0,
                                         skip_trials=PhotostimResponsesQuantificationNonTargets.EXCLUDE_TRIALS)
         def _collect_responses_distancetarget_distancesz_ictal(**kwrags):
+            "collect responses of nontargets for ictal photostim trials relative to distances "
             expobj: Post4ap = kwrags['expobj']
             # exp_df_ = pd.DataFrame(columns=['expID_cell', 'stim_idx', 'z score response', 'distance target', 'distance sz'])
 
@@ -377,7 +378,7 @@ class PhotostimResponsesNonTargetsResults(Results):
 
         # CURRENT SETUP FOR BASELINE RESPONSES ONLY!! ************
         baseline_responses = results.baseline_responses.iloc[results.pre4ap_idxs]
-        assert measurement in baseline_responses.columns, f'measurement not found in responses df columns:\n\t {baseline_responses.columns}'
+        assert measurement in baseline_responses.columns, f'{measurement} not found in responses df columns:\n\t {baseline_responses.columns}'
         print(f'\- processing measurement: {measurement}')
 
         if 'shuffled distance' not in baseline_responses.columns or 'shuffled distance binned' not in baseline_responses.columns:
@@ -518,7 +519,7 @@ class PhotostimResponsesNonTargetsResults(Results):
 
         # CURRENT SETUP FOR interictal RESPONSES ONLY!! ************
         interictal_responses = results.interictal_responses
-        assert measurement in interictal_responses.columns, f'measurement not found in responses df columns:\n\t {interictal_responses.columns}'
+        assert measurement in interictal_responses.columns, f'{measurement} not found in responses df columns:\n\t {interictal_responses.columns}'
         print(f'\- processing measurement: {measurement}')
 
         # interictal_responses = results.interictal_responses.iloc[results.post4ap_idxs]
@@ -651,7 +652,6 @@ class PhotostimResponsesNonTargetsResults(Results):
         """
         Photostim responses relative to sz boundary - proximal vs. distal.
 
-
         use the specified response measurement argument.
         - bin the dataframe across distance
         - for each distance bin:
@@ -664,7 +664,7 @@ class PhotostimResponsesNonTargetsResults(Results):
         """
 
         ictal_responses = results.ictal_responses
-        assert measurement in ictal_responses.columns, f'measurement not found in responses df columns:\n\t {ictal_responses.columns}'
+        assert measurement in ictal_responses.columns, f'{measurement} measurement not found in responses df columns:\n\t {ictal_responses.columns}'
         print(f'\- processing measurement: {measurement}')
 
         # ictal_responses = results.ictal_responses.iloc[results.post4ap_idxs]

@@ -118,6 +118,12 @@ class ExpSeizureAnalysis(Quantification):
             SaveDownsampledTiff(stack=stack_cropped, group_by=4, save_as=save_as)
             print(f'\t\t oo -- Done creating {save_as}')
 
+    @staticmethod
+    @Utils.run_for_loop_across_exps(run_pre4ap_trials=False, run_post4ap_trials=True, allow_rerun=True, supress_print=True)
+    def print_expobj_analysis_path(**kwargs):
+        expobj: Post4ap = kwargs['expobj']
+        print(f"\n{expobj.t_series_name}: {expobj.analysis_save_path}/downsampled_sz_tiffs")
+
 
     # 1.0) calculate time delay between LFP onset of seizures and imaging FOV invasion for each seizure for each experiment
 
@@ -932,7 +938,9 @@ if __name__ == '__main__':
     # __fix__not_flip_stims_expseizure_class()
     # results = ExpSeizureResults.load()
     # ExpSeizureAnalysis.calcMeanFovGcampSzTermination(results)
-    ExpSeizureAnalysis.downsample_all_sz()
+    # ExpSeizureAnalysis.downsample_all_sz()
+    ExpSeizureAnalysis.print_expobj_analysis_path()
+
 
 
 

@@ -690,6 +690,8 @@ class PhotostimResponsesQuantificationNonTargets(Quantification):
         self.adata.add_layer(layer_name='nontargets fakestim_responses', data=fakestim_responses_arr)
 
     def z_score_responses(self):
+        """calculate z scored photostim responses for nontargets. zscored to baseline"""
+
         if 'pre' in self.expobj_exptype or 'post' in self.expobj_exptype:
             # z score photostim responses
             zscored = stats.zscore(self.adata.X, ddof=1, axis=1)

@@ -35,7 +35,7 @@ distance_lims = [19, 400]  # limit of analysis
 
 # %% plotting definitions
 
-def z_score_response_proximal_distal(results, **kwargs):
+def z_score_response_proximal_distal(results=results, **kwargs):
     """BAR PLOT COMPARING PHOTOSTIM RESPONSES OF DISTAL VS. PROXIMAL NONTARGETS (WITHIN 250UM OF TARGET)"""
     measurement = 'z score response'
 
@@ -46,7 +46,6 @@ def z_score_response_proximal_distal(results, **kwargs):
         if distance_lims[0] < distance < distance_lims[1]:
             distal_responses.append(responses)
 
-
     distance_response = results.binned_distance_vs_responses_proximal[measurement]['distance responses']
     # run stats analysis on limited distances: ONE-WAY ANOVA:
     proximal_responses = []
@@ -54,6 +53,20 @@ def z_score_response_proximal_distal(results, **kwargs):
         if distance_lims[0] < distance < distance_lims[1]:
             proximal_responses.append(responses)
 
+
+    distance_response = results.binned_distance_vs_responses_interictal[measurement]['distance responses']
+    # run stats analysis on limited distances: ONE-WAY ANOVA:
+    interictal_responses = []
+    for distance, responses in distance_response.items():
+        if distance_lims[0] < distance < distance_lims[1]:
+            interictal_responses.append(responses)
+
+    distance_response = results.binned_distance_vs_responses[measurement]['distance responses']
+    # run stats analysis on limited distances: ONE-WAY ANOVA:
+    baseline_responses = []
+    for distance, responses in distance_response.items():
+        if distance_lims[0] < distance < distance_lims[1]:
+            baseline_responses.append(responses)
 
     # A) RUNNING STATS COMPARING SIGNIFICANCE OF DIFFERENCE IN MEAN PHOTOSTIM RESPONSE: DISTAL VS. PROXIMAL - some sort of t - test? mann whitney U test?
 
@@ -65,16 +78,33 @@ def z_score_response_proximal_distal(results, **kwargs):
     print(f"\nP(ttest - proximal vs. distal responses): {stats.ttest_ind(proximal, distal)[1]:.2e}\n")
 
 
-
     # A) make bar plot
     # plot_settings()
 
+
+
+    #### new bar plot including interictal and baseline z score responses
+
+    fig, ax = plt.subplots(figsize=[3, 3])
+    fig, ax = pplot.plot_bar_with_points(data=[pj.flattenOnce(proximal_responses), pj.flattenOnce(distal_responses), pj.flattenOnce(interictal_responses),
+                                               pj.flattenOnce(baseline_responses)], points=False,
+                               paired=False, bar=True, colors=['#db5aac', '#dbd25a', 'gray', 'cornflowerblue'], edgecolor='black', lw = 1,
+                               x_tick_labels=[f'Proximal', 'Distal', 'Interictal', 'Baseline'], y_label='Photostim. response \n($\it{z}$-score to baseline)', shrink_text=1.3,
+                               title='avg z score response', show=False, fig=fig, ax=ax)
+    #### // end
+
+    fig.tight_layout(pad=0.5)
+    fig.show()
+
+    #### bar plot not including interictal and baseline z score responses - only proximal and distal responses
     fig, ax = (kwargs['fig'], kwargs['ax']) if 'fig' in kwargs else (None, None)
 
     fig, ax = pplot.plot_bar_with_points(data=[pj.flattenOnce(proximal_responses), pj.flattenOnce(distal_responses)], points=False,
                                paired=False, bar=True, colors=['#db5aac', '#dbd25a'], edgecolor='black', lw = 1.25,
-                               x_tick_labels=['Proximal', 'Distal'], y_label='Photostimulation response \n($\it{z}$-score)', shrink_text=1.3,
+                               x_tick_labels=['Proximal', 'Distal'], y_label='Photostim. response \n($\it{z}$-score to baseline)', shrink_text=1.3,
                                title='avg z score response', ylims=[0, 0.25], show=False, fig=fig, ax=ax, sig_compare_lines={'*****': [0, 1]})
+    #### // end
+
 
     # fig.tight_layout(pad=0.5)
     # fig.show()
@@ -84,7 +114,7 @@ def z_score_response_proximal_distal(results, **kwargs):
 
 
 
-def influence_response_proximal_and_distal(results, axs, fig):
+def influence_response_proximal_and_distal(axs, fig, results=results):
     # B + B') RUNNING STATS COMPARING SIGNIFICANCE OF DISTANCE, DISTAL + PROXIMAL
 
     measurement = 'new influence response'
@@ -177,4 +207,8 @@ def influence_response_proximal_and_distal(results, axs, fig):
     # Utils.save_figure(fig=fig, save_path_full=f'{SAVE_FOLDER}/nontargets_distance_stim_influence_proximal.png')
 
     # return fig, axs
+
+
+if __name__ == '__main__':
+    z_score_response_proximal_distal()
 

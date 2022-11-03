@@ -37,13 +37,7 @@ if not os.path.exists(NonTargetsResponsesSpatialResults.SAVE_PATH) or REMAKE:
 
 
 class NonTargetsResponsesSpatialAnalysis(Quantification):
-    """Analysis of response magnitudes of nontargets in relation to spatial distances from seizure boundary.
-
-    - big goal is to use cells binned into proximal, middle or distal.
-
-    [ ] quantification of cells' distance to nearest target.
-
-    """
+    """Analysis of response magnitudes of nontargets in relation to spatial distances from seizure boundary"""
 
     def __init__(self, expobj: Union[alloptical, Post4ap] = None):
         super(NonTargetsResponsesSpatialAnalysis, self).__init__(expobj=expobj)
@@ -65,8 +59,7 @@ class NonTargetsResponsesSpatialAnalysis(Quantification):
     def run__methods(**kwargs):
         expobj: Union[alloptical, Post4ap] = kwargs['expobj']
         distances_um = expobj.NonTargetsResponsesSpatial._calculate_distance_to_target(expobj=expobj)
-        expobj.NonTargetsResponsesSpatial._add_nontargets_distance_to_targets_anndata(
-            expobj.PhotostimResponsesNonTargets.adata, distances_um)
+        expobj.NonTargetsResponsesSpatial._add_nontargets_distance_to_targets_anndata(expobj.PhotostimResponsesNonTargets.adata, distances_um)
         expobj.save()
 
     ## CALCULATING DISTANCE TO NEAREST TARGET  #########################################################################

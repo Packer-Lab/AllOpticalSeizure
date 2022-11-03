@@ -189,6 +189,8 @@ assert len(AllOpticalExpsToAnalyze.trial_maps['pre'].keys()) == len(
     f"# of post trials: {len(AllOpticalExpsToAnalyze.trial_maps['post'].keys())}")
 
 
+
+
 @dataclass
 class OnePhotonStimExpsToAnalyze:
     """Lists of all one photon stim experiments to use during analysis"""

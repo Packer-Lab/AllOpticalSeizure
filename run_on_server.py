@@ -36,6 +36,7 @@ results: PhotostimResponsesNonTargetsResults = PhotostimResponsesNonTargetsResul
 # results.binned_distances_vs_responses_baseline(measurement='new influence response')
 # results.binned_distances_vs_responses_baseline(measurement='influence response')
 # results.binned_distances_vs_responses_baseline(measurement='photostim response')
+results.binned_distances_vs_responses_baseline(measurement='z score response')
 
 
 
@@ -44,6 +45,7 @@ results: PhotostimResponsesNonTargetsResults = PhotostimResponsesNonTargetsResul
 # results.binned_distances_vs_responses_interictal(measurement='new influence response')
 # results.binned_distances_vs_responses_interictal(measurement='influence response')
 # results.binned_distances_vs_responses_interictal(measurement='photostim response')
+results.binned_distances_vs_responses_interictal(measurement='z score response')
 
 
 
@@ -51,7 +53,7 @@ results: PhotostimResponsesNonTargetsResults = PhotostimResponsesNonTargetsResul
 # results.collect_nontargets_stim_responses(run_pre4ap=False, run_post4ap=False, run_post4ap_ictal=True)
 # results.binned_distances_vs_responses_ictal(measurement='new influence response')
 # results.binned_distances_vs_responses_ictal(measurement='photostim response')
-results.binned_distances_vs_responses_ictal(measurement='z score response')
+# results.binned_distances_vs_responses_ictal(measurement='z score response')
 # results.binned_distances_vs_responses_ictal(measurement='influence response')
 
 
