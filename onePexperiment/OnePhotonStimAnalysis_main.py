@@ -1,11 +1,11 @@
 import os
+from typing import Dict, Union, Any
 
 import numpy as np
 import pandas as pd
 from funcsforprajay import funcs as pj
 
 from _analysis_._utils import Results
-from _utils_.io import import_expobj, import_1pexobj
 from onePexperiment.OnePhotonStimMain import OnePhotonStim, onePresults
 
 LOCAL_LOC = f'/Users/prajayshah/data/oxford-data/export/'
@@ -20,6 +20,8 @@ class OnePhotonStimResults(Results):
     SAVE_PATH = SAVE_LOC + 'Results__OnePhotonStim.pkl'
 
     # by experiments:
+    expids = ['PS07', 'PS11', 'PS18', 'PS09', 'PS16']
+
     interictal_decay_constant = {
         'PS07': [1.26471, 0.32844],
         'PS11': [1.05109, 0.45986],
@@ -63,7 +65,9 @@ class OnePhotonStimResults(Results):
         self.response_decay = None  #: avg response magnitudes across all 1p stim trials
         self.photostim_responses = {'baseline': None,
                                     'interictal': None,
-                                    'interictal - sz excluded': None}  #: individual post-stim response magnitudes across all 1p stim trials. includes separate set of values for stims that are seizure excluded.
+                                    'interictal - sz excluded': None,
+                                    'interictal - presz': Any,
+                                    'interictal - postsz': Any}  #: individual post-stim response magnitudes across all 1p stim trials. includes separate set of values for stims that are seizure excluded.
 
         self.save_results()
 
@@ -85,7 +89,7 @@ class OnePhotonStimResults(Results):
 
 REMAKE = False
 if not os.path.exists(OnePhotonStimResults.SAVE_PATH) or REMAKE:
-    onePresults = OnePhotonStimResults()
+    resultsobj = OnePhotonStimResults()
 else:
     pass
 
@@ -96,6 +100,8 @@ class OnePhotonStimAnalysisFuncs(OnePhotonStim):
     def collectPhotostimResponses(pre_stim=None, post_stim=None, response_len=None, response_type: str = 'pre-stim dFF',
                                   run_pre4ap_trials=True, run_post4ap_trials=True, ignore_cache=False, run_trials=[],
                                   skip_trials=[]):
+        """I think collecting all photostimulation trials' responses for all experiments."""
+
         @OnePhotonStim.runOverExperiments(run_pre4ap_trials=run_pre4ap_trials, run_post4ap_trials=run_post4ap_trials,
                                           ignore_cache=ignore_cache,
                                           run_trials=run_trials, skip_trials=skip_trials)
@@ -173,179 +179,6 @@ class OnePhotonStimAnalysisFuncs(OnePhotonStim):
                 else:
                     self.decay_constants = [None]
 
-            ############################################################################### all stims for all exp types #
-
-            # ## archiving
-            # if 'pre' in self.exptype:
-            #
-            #     #### baseline stims ####################################################################################
-            #
-            #     stims_to_analyze = self.stim_start_frames
-            #
-            #     flu_list = [self.meanRawFluTrace[stim - int(pre_stim * self.fps): stim + int(post_stim * self.fps)] for
-            #                 stim in stims_to_analyze]
-            #
-            #     self.photostim_results.loc['stim type', stims_to_analyze] = 'baseline'  # set stim type to baseline for all stim frames in pre4ap experiment
-            #
-            #
-            #     # convert to dFF normalized to pre-stim F
-            #     if response_type == 'pre-stim dFF':  # otherwise default param is raw Flu
-            #         flu_list = [pj.dff(trace, baseline=np.mean(trace[:int(pre_stim * self.fps) - 2])) for trace in
-            #                     flu_list]
-            #     else:
-            #         raise ValueError(f"{response_type} is not a compatible response_type")
-            #     self.photostim_flu_snippets = np.asarray(flu_list)
-            #
-            #     # measure magnitude of response
-            #     if response_type == 'pre-stim dFF':  # otherwise default param is raw Flu
-            #         poststim_1 = int(
-            #             pre_stim * self.fps) + self.stim_duration_frames + 2  # starting just after the end of the shutter opening
-            #         poststim_2 = poststim_1 + int(response_len * self.fps)
-            #         baseline = int(pre_stim * self.fps) - 2
-            #
-            #         for idx, flu_snippet in enumerate(self.photostim_flu_snippets):
-            #             response = np.mean(flu_snippet[poststim_1:poststim_2]) - np.mean(flu_snippet[:baseline])
-            #             stim = stims_to_analyze[idx]
-            #             self.photostim_results.loc['photostim responses', stim] = response
-            #         # self.photostim_results = response_list
-            #
-            #     # measure the timescale of the decay
-            #     if response_type == 'pre-stim dFF':  # otherwise default param is raw Flu
-            #         if len(self.photostim_results) > 0:
-            #             poststim_1 = int(
-            #                 pre_stim * self.fps) + self.stim_duration_frames + 2  # starting just after the end of the shutter opening
-            #
-            #             for idx, flu_snippet in enumerate(self.photostim_flu_snippets):
-            #                 max_value = max(flu_snippet[poststim_1:])  # peak Flu value after stim
-            #                 threshold = np.exp(-1) * max_value  # set threshod to be at 1/e x peak
-            #                 try:
-            #                     x_ = np.where(flu_snippet[poststim_1:] < threshold)[0][
-            #                         0]  # find frame # where, after the stim period, avg_flu_trace reaches the threshold
-            #                     decay_constant = x_ / self.fps  # convert frame # to time
-            #                 except IndexError:
-            #                     decay_constant = None  # cases where the trace doesn't return to threshold after the max value
-            #                 stim = stims_to_analyze[idx]
-            #                 self.photostim_results.loc['decay constant', stim] = decay_constant
-            #
-            #             # self.decay_constants = decay_constant_list
-            #         else:
-            #             self.decay_constants = [None]
-            #
-            #     ######################################################################################## baseline stims #
-            #
-            #
-            #
-            #
-            # elif 'post' in self.exptype:
-            #     stims_to_analyze_ic = self.stims_in_sz
-            #     stims_to_analyze_interic = self.stims_out_sz
-            #
-            #
-            #     #### ictal stims #######################################################################################
-            #     self.photostim_results.loc['stim type', stims_to_analyze_ic] = 'ictal'  # set stim type to ictal for ictal stim frames in post4ap experiment
-            #
-            #
-            #     flu_list = [self.meanRawFluTrace[stim - int(pre_stim * self.fps): stim + int(post_stim * self.fps)]
-            #                 for stim in stims_to_analyze_ic]
-            #     self.photostim_results_ic = pd.DataFrame(index=['photostim responses',
-            #                                                        'decay constant'], columns=stims_to_analyze_ic)
-            #
-            #     self.photostim_results_interic = pd.DataFrame(index=['photostim responses',
-            #                                                        'decay constant'], columns=stims_to_analyze_interic)
-            #
-            #
-            #     # convert to dFF normalized to pre-stim F
-            #     if response_type == 'pre-stim dFF':  # otherwise default param is raw Flu
-            #         flu_list = [pj.dff(trace, baseline=np.mean(trace[:int(pre_stim * self.fps) - 2])) for trace in
-            #                     flu_list]
-            #     else:
-            #         raise ValueError(f"{response_type} is not a compatible response_type")
-            #     self.photostim_flu_snippets_ic = np.asarray(flu_list)
-            #
-            #     # measure magnitude of response
-            #     if response_type == 'pre-stim dFF':  # otherwise default param is raw Flu
-            #         poststim_1 = int(
-            #             pre_stim * self.fps) + self.stim_duration_frames + 2  # starting just after the end of the shutter opening
-            #         poststim_2 = poststim_1 + int(response_len * self.fps)
-            #         baseline = int(pre_stim * self.fps) - 2
-            #
-            #         for idx, flu_snippet in enumerate(self.photostim_flu_snippets_ic):
-            #             response = np.mean(flu_snippet[poststim_1:poststim_2]) - np.mean(flu_snippet[:baseline])
-            #             stim = stims_to_analyze_ic[idx]
-            #             self.photostim_results.loc['photostim responses', stim] = response
-            #
-            #     # measure the timescale of the decay
-            #     if response_type == 'pre-stim dFF':  # otherwise default param is raw Flu
-            #         if len(self.photostim_results) > 0:
-            #             poststim_1 = int(
-            #                 pre_stim * self.fps) + self.stim_duration_frames + 2  # starting just after the end of the shutter opening
-            #
-            #             for idx, flu_snippet in enumerate(self.photostim_flu_snippets_ic):
-            #                 max_value = max(flu_snippet[poststim_1:])  # peak Flu value after stim
-            #                 threshold = np.exp(-1) * max_value  # set threshod to be at 1/e x peak
-            #                 try:
-            #                     x_ = np.where(flu_snippet[poststim_1:] < threshold)[0][
-            #                         0]  # find frame # where, after the stim period, avg_flu_trace reaches the threshold
-            #                     decay_constant = x_ / self.fps  # convert frame # to time
-            #                 except IndexError:
-            #                     decay_constant = None  # cases where the trace doesn't return to threshold after the max value
-            #                 stim = stims_to_analyze_ic[idx]
-            #                 self.photostim_results.loc['decay constant', stim] = decay_constant
-            #
-            #         else:
-            #             self.decay_constants_ic = [None]
-            #     ########################################################################################### ictal stims #
-            #
-            #     #### inter-ictal stims #################################################################################
-            #     self.photostim_results.loc['stim type', stims_to_analyze_interic] = 'interictal'  # set stim type to inter-ictal for ictal stim frames in post4ap experiment
-            #
-            #
-            #     flu_list = [self.meanRawFluTrace[stim - int(pre_stim * self.fps): stim + int(post_stim * self.fps)]
-            #                 for stim in stims_to_analyze_interic]
-            #
-            #     # convert to dFF normalized to pre-stim F
-            #     if response_type == 'pre-stim dFF':  # otherwise default param is raw Flu
-            #         flu_list = [pj.dff(trace, baseline=np.mean(trace[:int(pre_stim * self.fps) - 2])) for trace in
-            #                     flu_list]
-            #     else:
-            #         raise ValueError(f"{response_type} is not a compatible response_type")
-            #     self.photostim_flu_snippets_interic = np.asarray(flu_list)
-            #
-            #     # measure magnitude of response
-            #     if response_type == 'pre-stim dFF':  # otherwise default param is raw Flu
-            #         poststim_1 = int(
-            #             pre_stim * self.fps) + self.stim_duration_frames + 2  # starting just after the end of the shutter opening
-            #         poststim_2 = poststim_1 + int(response_len * self.fps)
-            #         baseline = int(pre_stim * self.fps) - 2
-            #
-            #         for idx, flu_snippet in enumerate(self.photostim_flu_snippets_interic):
-            #             response = np.mean(flu_snippet[poststim_1:poststim_2]) - np.mean(flu_snippet[:baseline])
-            #             stim = stims_to_analyze_interic[idx]
-            #             self.photostim_results.loc['photostim responses', stim] = response
-            #
-            #         # self.photostim_results_interic = response_list
-            #
-            #     # measure the timescale of the decay
-            #     if response_type == 'pre-stim dFF':  # otherwise default param is raw Flu
-            #         if len(self.photostim_results) > 0:
-            #             poststim_1 = int(
-            #                 pre_stim * self.fps) + self.stim_duration_frames + 2  # starting just after the end of the shutter opening
-            #
-            #             for idx, flu_snippet in enumerate(self.photostim_flu_snippets_interic):
-            #                 max_value = max(flu_snippet[poststim_1:])  # peak Flu value after stim
-            #                 threshold = np.exp(-1) * max_value  # set threshod to be at 1/e x peak
-            #                 try:
-            #                     x_ = np.where(flu_snippet[poststim_1:] < threshold)[0][
-            #                         0]  # find frame # where, after the stim period, avg_flu_trace reaches the threshold
-            #                     decay_constant = x_ / self.fps  # convert frame # to time
-            #                 except IndexError:
-            #                     decay_constant = None  # cases where the trace doesn't return to threshold after the max value
-            #                 stim = stims_to_analyze_interic[idx]
-            #                 self.photostim_results.loc['decay constant', stim] = decay_constant
-            #         else:
-            #             self.decay_constants_interic = [None]
-            #     ###################################################################################### interictal stims #
-            # ## archiving
 
             if hasattr(self, 'photostim_results'):
                 self.save()
@@ -406,7 +239,7 @@ class OnePhotonStimAnalysisFuncs(OnePhotonStim):
                 for i, stim in enumerate(stims):
                     exclude = False
                     for fr in expobj.seizure_frames:
-                        if np.abs((stim - fr)) < 1 * expobj.fps:  # exclude within 1 sec
+                        if np.abs((stim - fr)) < 1 * expobj.fps:  # exclude if stim is within 1 sec of a seizure onset time
                             exclude = True
                             print('\txx -- excluding', i, stim)
                             # break
@@ -423,6 +256,120 @@ class OnePhotonStimAnalysisFuncs(OnePhotonStim):
             _collect_photostimResponse_szexclude()
 
             resultsobj.photostim_responses['interictal - sz excluded'] = post4ap_responses_sz_excluded
+            resultsobj.save_results()
+
+
+    @staticmethod
+    def collectPhotostimResponses_PrePostSz(resultsobj: OnePhotonStimResults, ignore_cache=False):
+        """collect all photostimulation responses for individual experiments -
+        and group by bin of stim relative to seizure onset/offset."""
+
+        if 'interictal - mid' in [*resultsobj.photostim_responses] and not ignore_cache: pass
+        else:
+            resultsobj.photostim_responses['interictal - mid'] = {}
+            @OnePhotonStim.runOverExperiments(run_pre4ap_trials=False, run_post4ap_trials=True, supress_print=False, ignore_cache=ignore_cache)
+            def _collect_photostimResponse_mid(**kwargs):
+                expobj: OnePhotonStim = kwargs['expobj']
+
+                responses = resultsobj.photostim_responses['interictal'][expobj.t_series_name]
+                resultsobj.photostim_responses['interictal - mid'][expobj.t_series_name] = None
+                stims = list(responses.index)
+                responses = list(responses.values)
+                stims_keep = []
+                responses_keep = []
+                for i, stim in enumerate(stims):
+                    exclude = False
+                    for fr in expobj.seizure_frames:
+                        if np.abs((stim - fr)) < 5 * expobj.fps:  # exclude if stim is within 5 sec of a seizure onset time
+                            exclude = True
+                            print(f'\txx -- excluding {i} {stim}')
+                            break
+                    if not exclude:
+                        include = True
+                        for sz_on, sz_off in zip(expobj.seizure_lfp_onsets, expobj.seizure_lfp_offsets):
+                            if not (not (0 < (sz_on - stim) < 30 * expobj.fps) and not (0 < (stim - sz_off) < 30 * expobj.fps)):  # keep stim if >30secs of seizure onset AND >30secs after seizure offset
+                                print(f'\too --kicking out {i} {stim}, sz on fr: {sz_on}, sz off fr: {sz_off}')
+                                include = False
+                        if include:
+                            print(f'\too --keeping {i} {stim}')
+                            stims_keep.append(stim)
+                            responses_keep.append(responses[i])
+
+                post4ap_responses_mid[expobj.t_series_name] = pd.Series(index=stims_keep, data=responses_keep)
+
+            post4ap_responses_mid = {}
+            _collect_photostimResponse_mid()
+            resultsobj.photostim_responses['interictal - mid'] = post4ap_responses_mid
+            resultsobj.save_results()
+
+        if 'interictal - presz' in [*resultsobj.photostim_responses] and not ignore_cache: pass
+        else:
+            resultsobj.photostim_responses['interictal - presz'] = {}
+            @OnePhotonStim.runOverExperiments(run_pre4ap_trials=False, run_post4ap_trials=True, supress_print=False, ignore_cache=ignore_cache)
+            def _collect_photostimResponse_presz(**kwargs):
+                expobj: OnePhotonStim = kwargs['expobj']
+
+                responses = resultsobj.photostim_responses['interictal'][expobj.t_series_name]
+                resultsobj.photostim_responses['interictal - presz'][expobj.t_series_name] = None
+                stims = list(responses.index)
+                responses = list(responses.values)
+                stims_keep = []
+                responses_keep = []
+                for i, stim in enumerate(stims):
+                    exclude = False
+                    for fr in expobj.seizure_frames:
+                        if np.abs((stim - fr)) < 5 * expobj.fps:  # exclude if stim is within 5 sec of a seizure onset time
+                            exclude = True
+                            print(f'\txx -- excluding {i} {stim}')
+                            break
+                    if not exclude:
+                        for sz_on in expobj.seizure_lfp_onsets:
+                            if 0 < (sz_on - stim) < 30 * expobj.fps:  # keep stim if within 30secs of seizure onset
+                                print(f'\too --keeping {i} {stim}, sz on fr: {sz_on}')
+                                stims_keep.append(stim)
+                                responses_keep.append(responses[i])
+
+                post4ap_responses_presz[expobj.t_series_name] = pd.Series(index=stims_keep, data=responses_keep)
+
+            post4ap_responses_presz = {}
+            _collect_photostimResponse_presz()
+            resultsobj.photostim_responses['interictal - presz'] = post4ap_responses_presz
+            resultsobj.save_results()
+
+
+        if 'interictal - postsz' in [*resultsobj.photostim_responses] and not ignore_cache: pass
+        else:
+            resultsobj.photostim_responses['interictal - postsz'] = {}
+            @OnePhotonStim.runOverExperiments(run_pre4ap_trials=False, run_post4ap_trials=True, supress_print=False, ignore_cache=ignore_cache)
+            def _collect_photostimResponse_postsz(**kwargs):
+                expobj: OnePhotonStim = kwargs['expobj']
+
+                responses = resultsobj.photostim_responses['interictal'][expobj.t_series_name]
+                resultsobj.photostim_responses['interictal - postsz'][expobj.t_series_name] = None
+                stims = list(responses.index)
+                responses = list(responses.values)
+                stims_keep = []
+                responses_keep = []
+                for i, stim in enumerate(stims):
+                    exclude = False
+                    for fr in expobj.seizure_frames:
+                        if np.abs((stim - fr)) < 5 * expobj.fps:  # exclude if stim is within 5 sec of a seizure onset time
+                            exclude = True
+                            print(f'\txx -- excluding {i} {stim}')
+                            break
+                    if not exclude:
+                        for sz_off in expobj.seizure_lfp_offsets:
+                            if 0 < (stim - sz_off) < 30 * expobj.fps:  # keep stim if within 30secs of seizure offset
+                                print(f'\too --keeping {i} {stim}')
+                                stims_keep.append(stim)
+                                responses_keep.append(responses[i])
+
+                post4ap_responses_postsz[expobj.t_series_name] = pd.Series(index=stims_keep, data=responses_keep)
+
+            post4ap_responses_postsz = {}
+            _collect_photostimResponse_postsz()
+
+            resultsobj.photostim_responses['interictal - postsz'] = post4ap_responses_postsz
             resultsobj.save_results()
 
 

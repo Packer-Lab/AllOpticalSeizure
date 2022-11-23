@@ -144,6 +144,7 @@ def multi_plot_subplots(num_total_plots: int, ncols: int=3):
     nrows = int(np.ceil(num_total_plots / ncols)) if int(np.ceil(num_total_plots / ncols)) > 1 else 2
     fig, axs = plt.subplots(nrows=nrows, ncols=ncols, figsize=(ncols * 4, nrows * 4))
     counter = 0
+    fig.tight_layout()
     return fig, axs, counter, ncols, nrows
 
 def get_ax_for_multi_plot(axs, counter, ncols):
@@ -170,11 +171,6 @@ def plot_sz_boundary_location(expobj, fig: mpl.figure.Figure = None, ax: mpl.axe
         inframe_coord1 = np.array(list(expobj.stimsSzLocations[expobj.stimsSzLocations['wavefront_in_frame'] == True]['coord1']))
         inframe_coord2 = np.array(list(expobj.stimsSzLocations[expobj.stimsSzLocations['wavefront_in_frame'] == True]['coord2']))
 
-
-        # pj.plot_coordinates(coords=inframe_coord1,frame_x=expobj.frame_x, frame_y=expobj.frame_y, show=False, fig=fig, ax=ax,
-        #                     edgecolors='green')
-        # pj.plot_coordinates(coords=inframe_coord2,frame_x=expobj.frame_x, frame_y=expobj.frame_y, show=False, fig=fig, ax=ax,
-        #                     edgecolors='green')
         ax.plot([inframe_coord1_x, inframe_coord2_x], [inframe_coord1_y, inframe_coord2_y], c='white', linestyle='dashed', alpha=0.3)
 
     if len(expobj.stimsSzLocations[expobj.stimsSzLocations['wavefront_in_frame'] == False]) > 1:

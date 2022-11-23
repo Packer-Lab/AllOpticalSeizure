@@ -136,12 +136,16 @@ class alloptical(TwoPhotonImaging):
             PhotostimResponsesQuantificationSLMtargets
         self.PhotostimResponsesSLMTargets: PhotostimResponsesQuantificationSLMtargets = None  # module that holds analysis and results for Photostim Responses of SLM Targets
 
+        from _analysis_._ClassPhotostimImages import PhotostimImages
+        self.PhotostimImages: PhotostimImages = None  #: module for collecting single photostim timed images for each experiment
+
         from _analysis_.nontargets_analysis._ClassPhotostimResponseQuantificationNonTargets import \
             PhotostimResponsesQuantificationNonTargets
         from _analysis_.nontargets_analysis._ClassResultsNontargetPhotostim import PhotostimResponsesNonTargetsResults
         results = PhotostimResponsesNonTargetsResults.load()
         self.PhotostimResponsesNonTargets: PhotostimResponsesQuantificationNonTargets = \
             PhotostimResponsesQuantificationNonTargets(expobj=self, results=results)
+
 
 
         self.save()

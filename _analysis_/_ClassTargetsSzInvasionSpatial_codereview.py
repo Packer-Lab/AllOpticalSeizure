@@ -2,11 +2,12 @@
 import sys;
 
 from scipy import stats
+from scipy.stats import linregress
+from skimage.draw import line, polygon
 
 print('Python %s on %s' % (sys.version, sys.platform))
 sys.path.extend(['/home/pshah/Documents/code/AllOpticalSeizure', '/home/pshah/Documents/code/AllOpticalSeizure'])
 
-import os.path
 from typing import List
 
 import numpy as np
@@ -157,6 +158,100 @@ class TargetsSzInvasionSpatial_codereview(SLMTargets):
         newarr[np.where((distances < self.distal_sz_wavefront) & (distances > self.proximal_sz_wavefront), True, False)] = 'middle'
 
         self.adata.add_layer(layer_name='outsz location', data=newarr)
+
+    @staticmethod
+    @Utils.run_for_loop_across_exps(run_pre4ap_trials=False, run_post4ap_trials=True, allow_rerun=1)
+    def calc_meanGCaMP_in_out_szwavefront(**kwargs):
+        """
+        *****Goal:***** calculate the mean FOV signal outside of the seizure wavefront.
+
+        ********Purpose:********
+
+        - the mean GCaMP signal coarsely correlates with the inputs coming into a region.
+
+            ***********hypothesis:*********** the level of inputs outside of the seizure wavefront are decreased, resulting in a decreased firing rate with increased excitability as a result of increased membrane resistance
+
+        - however, note that Schevon et al., 2012 find that 2-50Hz LFP waves are heightened across the propagation zone immediately at the start of seizure
+
+        **Approach:**
+
+        - quantify the mean FOV GCaMP at photostim frames from FOV areas that are inside and outside the seizure wavefront
+
+        """
+        expobj: Post4ap = kwargs['expobj']
+        self = expobj.TargetsSzInvasionSpatial_codereview
+        # print(self.adata.var['seizure location'])
+
+        aoplot.plot_sz_boundary_location(expobj)
+
+        fig, axs, counter, ncols, nrows = aoplot.multi_plot_subplots(num_total_plots=len(expobj.stimsSzLocations))
+
+        for i, sz_wavefront in enumerate(zip(expobj.stimsSzLocations['coord1'], expobj.stimsSzLocations['coord2'])):
+            if expobj.stimsSzLocations['wavefront_in_frame'].iloc[i] == True:
+                SZ_COORD = sz_wavefront
+                from numpy import ones, vstack
+                from numpy.linalg import lstsq
+                x_coords, y_coords = zip(*SZ_COORD)
+                A = vstack([x_coords, ones(len(x_coords))]).T
+                slope, intercept = lstsq(A, y_coords)[0]
+
+                # slope, intercept, r, p, se = linregress(SZ_COORD[0], SZ_COORD[1])
+
+
+                # plt.figure(figsize=(3, 3))
+                # plt.scatter(SZ_COORD[0][0], SZ_COORD[0][1])
+                # plt.scatter(SZ_COORD[1][0], SZ_COORD[1][1])
+                # plt.plot([slope*x + intercept for x in range(512)])
+                # plt.xlim((0, 512))
+                # plt.ylim((512, 0))
+                # plt.suptitle(f'Stim num: {i}, coord: {sz_wavefront}')
+                # plt.show()
+
+                # creating a polygon to use to calculate pixels area
+                c0 = 0
+                c1 = expobj.frame_x
+
+                v1 = [0, 0]
+                v4 = [0, expobj.frame_x]
+
+                if (c0 * slope + intercept) >= expobj.frame_y or (c1 * slope + intercept) >= expobj.frame_y:
+                    if (c1 * slope + intercept) <= expobj.frame_y:
+                        v3 = [expobj.frame_y - round((c1 * slope + intercept)), expobj.frame_y]
+                    else:
+                        y_line = expobj.frame_y
+                        x = (y_line - intercept) / slope
+                        v3 = [0, round(x)]
+
+                    if (c0 * slope + intercept) <= expobj.frame_y:
+                        v2 = [expobj.frame_x - round((c0 * slope + intercept)), expobj.frame_x]
+                    else:
+                        y_line = expobj.frame_y
+                        x = (y_line - intercept) / slope
+                        v2 = [0, round(x)]
+                else:
+                    v2 = [expobj.frame_y - round((c0 * slope + intercept)), 0]
+                    v3 = [expobj.frame_y - round((c1 * slope + intercept)), expobj.frame_y]
+
+                img = np.ones(shape=(expobj.frame_x, expobj.frame_y))
+                r = np.array([expobj.frame_x - v1[0], expobj.frame_x - v2[0], expobj.frame_x - v3[0], expobj.frame_x - v4[0]])
+                c = np.array([v1[1], v2[1], v3[1], v4[1]])
+                rr, cc = polygon(r, c)
+                img[rr, cc] = 0
+
+                ax, counter = aoplot.get_ax_for_multi_plot(axs, counter, ncols)
+
+                # plt.figure(figsize=(3, 3))
+                ax.imshow(img)
+                ax.scatter(SZ_COORD[0][0], SZ_COORD[0][1])
+                ax.scatter(SZ_COORD[1][0], SZ_COORD[1][1])
+                ax.plot([slope*x + intercept for x in range(512)])
+                ax.set_xlim((0, 512))
+                ax.set_ylim((512, 0))
+                ax.set_title(f'Stim num: {i}, coord: {sz_wavefront}')
+
+        print('plotted all sz wavefronts...')
+        fig.suptitle(f'{expobj.t_series_name}')
+        fig.show()
 
     @staticmethod
     @Utils.run_for_loop_across_exps(run_pre4ap_trials=False, run_post4ap_trials=True, set_cache=0)
@@ -776,55 +871,64 @@ def run__class_targets_proximal_distal(**kwargs):
     expobj.TargetsSzInvasionSpatial_codereview.class_targets_proximal_distal()
     expobj.save()
 
+@Utils.run_for_loop_across_exps(run_pre4ap_trials=0, run_post4ap_trials=1, allow_rerun=1, run_trials=['PS04 t-018'])
+def run__calc_meanGCaMP_in_out_szwavefront(**kwargs):
+    expobj = kwargs['expobj']
+    expobj.TargetsSzInvasionSpatial_codereview.calc_meanGCaMP_in_out_szwavefront()
+    expobj.save()
+
+
+# %%
+
+main = TargetsSzInvasionSpatial_codereview
+results = TargetsSzInvasionSpatialResults_codereview.load()
+
+"Running updated code pipeline for just one experiment all the way thru."
+# run__initTargetsSzInvasionSpatial()  # <- code review done
+#
+# main.run__add__min_distance_to_seizure()  # <- code review done
+#
+# main.run__collect_responses_vs_distance_to_seizure_SLMTargets()  # <- code review done
+
+# collect distance vs. respnses for distance bins
+# bin_width, distances, num, avg_responses, conf_int =  main.collect__binned__distance_v_responses()
+# results.binned__distance_vs_photostimresponses = {'bin_width_um': bin_width, 'distance_bins': distances, 'num_points_in_bin': num,
+# 'avg_photostim_response_in_bin': avg_responses, '95conf_int': conf_int}
+# results.save_results()
+
+# main.plot__responses_v_distance_no_normalization(results=results)
+
+# main.run__add_sz_distance_um_layer()
+
+# run__class_targets_proximal_distal()
+
+# main.plot_responses_vs_distance_to_seizure_SLMTargets()
+
+# main.plot_collection_response_distance()
+
+# results.responses_vs_distance_to_seizure = main.retrieve__responses_vs_distance_to_seizure(response_type=main.response_type, positive_distances_only=False, plot=False)  # <- code review done
+
+# results.save_results()
+
+# results.data_all, results.percentiles, results.responses_sorted, results.distances_to_sz_sorted, \
+#     results.scale_percentile_distances = main.convert__responses_szdistances_percentile_space(input_data=results.responses_vs_distance_to_seizure)  # <- code review done
+# results.save_results()
+
+# # not sure why there are nans in the .distances_to_sz_sorted and .percentiles and .data_all[:, 0], but need to remove them....
+# nan_list = np.isnan(list(results.data_all[:, 0]))
+# results.data_all = results.data_all[~nan_list, :]
+# nan_indexes = np.where(np.isnan(list(results.percentiles)))[0]
+# results.percentiles = [val for i, val in enumerate(results.percentiles) if i not in nan_indexes]
+# results.responses_sorted = [val for i, val in enumerate(results.responses_sorted) if i not in nan_indexes]
+# results.distances_to_sz_sorted = [val for i, val in enumerate(results.distances_to_sz_sorted) if i not in nan_indexes]
+#
+# main.plot_density_responses_szdistances(response_type=results.response_type, data_all=results.data_all,
+#                                         distances_to_sz_sorted=results.distances_to_sz_sorted, scale_percentile_distances=results.scale_percentile_distances,
+#                                         save_path_full=f'{SAVE_FIG}')
+#
+# main.plot_lineplot_responses_pctszdistances(results.percentiles, results.responses_sorted, response_type=results.response_type,
+#                                             scale_percentile_distances=results.scale_percentile_distances)
+# main.plot__responses_v_distance_no_normalization(results=results, save_path_full=f'{SAVE_FIG}/responses_sz_distance_binned_line_plot.png')
 
 if __name__ == '__main__':
-    main = TargetsSzInvasionSpatial_codereview
-    results = TargetsSzInvasionSpatialResults_codereview.load()
-
-    'Running updated code pipeline for just one experiment all the way thru.'
-    # run__initTargetsSzInvasionSpatial()  # <- code review done
-    #
-    # main.run__add__min_distance_to_seizure()  # <- code review done
-    #
-    # main.run__collect_responses_vs_distance_to_seizure_SLMTargets()  # <- code review done
-
-    # collect distance vs. respnses for distance bins
-    # bin_width, distances, num, avg_responses, conf_int =  main.collect__binned__distance_v_responses()
-    # results.binned__distance_vs_photostimresponses = {'bin_width_um': bin_width, 'distance_bins': distances, 'num_points_in_bin': num,
-    # 'avg_photostim_response_in_bin': avg_responses, '95conf_int': conf_int}
-    # results.save_results()
-
-    main.plot__responses_v_distance_no_normalization(results=results)
-
-    # main.run__add_sz_distance_um_layer()
-
-    # run__class_targets_proximal_distal()
-
-    # main.plot_responses_vs_distance_to_seizure_SLMTargets()
-
-    # main.plot_collection_response_distance()
-
-    # results.responses_vs_distance_to_seizure = main.retrieve__responses_vs_distance_to_seizure(response_type=main.response_type, positive_distances_only=False, plot=False)  # <- code review done
-
-    # results.save_results()
-
-    # results.data_all, results.percentiles, results.responses_sorted, results.distances_to_sz_sorted, \
-    #     results.scale_percentile_distances = main.convert__responses_szdistances_percentile_space(input_data=results.responses_vs_distance_to_seizure)  # <- code review done
-    # results.save_results()
-
-    # # not sure why there are nans in the .distances_to_sz_sorted and .percentiles and .data_all[:, 0], but need to remove them....
-    # nan_list = np.isnan(list(results.data_all[:, 0]))
-    # results.data_all = results.data_all[~nan_list, :]
-    # nan_indexes = np.where(np.isnan(list(results.percentiles)))[0]
-    # results.percentiles = [val for i, val in enumerate(results.percentiles) if i not in nan_indexes]
-    # results.responses_sorted = [val for i, val in enumerate(results.responses_sorted) if i not in nan_indexes]
-    # results.distances_to_sz_sorted = [val for i, val in enumerate(results.distances_to_sz_sorted) if i not in nan_indexes]
-    #
-    # main.plot_density_responses_szdistances(response_type=results.response_type, data_all=results.data_all,
-    #                                         distances_to_sz_sorted=results.distances_to_sz_sorted, scale_percentile_distances=results.scale_percentile_distances,
-    #                                         save_path_full=f'{SAVE_FIG}')
-    #
-    # main.plot_lineplot_responses_pctszdistances(results.percentiles, results.responses_sorted, response_type=results.response_type,
-    #                                             scale_percentile_distances=results.scale_percentile_distances)
-    main.plot__responses_v_distance_no_normalization(results=results,
-                                                     save_path_full=f'{SAVE_FIG}/responses_sz_distance_binned_line_plot.png')
+    run__calc_meanGCaMP_in_out_szwavefront()

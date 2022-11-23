@@ -1,15 +1,131 @@
 #%% DATA ANALYSIS + PLOTTING FOR ONE-P PHOTOSTIM EXPERIMENTS
 import matplotlib.pyplot as plt
+import numpy as np
+from scipy import stats
+
 import alloptical_utils_pj as aoutils
 from _utils_ import alloptical_plotting as aoplot
 from funcsforprajay import funcs as pj
 
 import onePexperiment.OnePhotonStimMain as oneP
+from onePexperiment.OnePhotonStimAnalysis_main import OnePhotonStimResults
 from onePexperiment.OnePhotonStimMain import OnePhotonStimPlots as onepplots
+
+Results: OnePhotonStimResults = OnePhotonStimResults.load()
+from funcsforprajay.plotting.plotting import plot_bar_with_points
 
 # import onePstim superobject that will collect analyses from various individual experiments
 results_object_path = '/home/pshah/mnt/qnap/Analysis/onePstim_results_superobject.pkl'
 onePresults = aoutils.import_resultsobj(pkl_path=results_object_path)
+
+
+# %% 3.0) PLOT OF PHOTOSTIM RESPONSES <30SEC PRE SZ ONSET AND <30SEC POST SZ OFFSET
+
+interictal_response_magnitudes_midsz = Results.photostim_responses['interictal - mid']
+interictal_response_magnitudes_presz = Results.photostim_responses['interictal - presz']
+interictal_response_magnitudes_postsz = Results.photostim_responses['interictal - postsz']
+interictal_response_magnitudes_szexclude = Results.photostim_responses['interictal - sz excluded']
+baseline_response_magnitudes = Results.photostim_responses['baseline']
+
+
+# BASELINE
+baseline_resposnes = []
+for trial, responses in baseline_response_magnitudes.items():
+    baseline_resposnes.extend(list(responses))
+
+baseline_response_magnitudes_exp = {}
+for exp in OnePhotonStimResults.expids:
+    _responses = []
+    for trial, responses in baseline_response_magnitudes.items():
+        if exp in trial:
+            _responses.extend(responses)
+    baseline_response_magnitudes_exp[exp] = np.mean(_responses)
+
+
+# INTERICTAL - 
+interictal_resposnes_szexclude = []
+for trial, responses in interictal_response_magnitudes_szexclude.items():
+    interictal_resposnes_szexclude.extend(list(responses))
+
+interictal_response_magnitudes_exp = {}
+for exp in OnePhotonStimResults.expids:
+    _responses = []
+    for trial, responses in interictal_response_magnitudes_szexclude.items():
+        if exp in trial:
+            _responses.extend(responses)
+    interictal_response_magnitudes_exp[exp] = np.mean(_responses)
+
+
+# INTERICTAL - mid SZ
+interictal_resposnes_midsz = []
+for trial, responses in interictal_response_magnitudes_midsz.items():
+    interictal_resposnes_midsz.extend(list(responses))
+
+interictal_response_magnitudes_midsz_exp = {}
+for exp in OnePhotonStimResults.expids:
+    _responses = []
+    for trial, responses in interictal_response_magnitudes_midsz.items():
+        if exp in trial:
+            _responses.extend(responses)
+    interictal_response_magnitudes_midsz_exp[exp] = np.mean(_responses)
+
+
+# INTERICTAL - PRE SZ
+interictal_resposnes_presz = []
+for trial, responses in interictal_response_magnitudes_presz.items():
+    interictal_resposnes_presz.extend(list(responses))
+
+interictal_response_magnitudes_presz_exp = {}
+for exp in OnePhotonStimResults.expids:
+    _responses = []
+    for trial, responses in interictal_response_magnitudes_presz.items():
+        if exp in trial:
+            _responses.extend(responses)
+    interictal_response_magnitudes_presz_exp[exp] = np.mean(_responses)
+
+
+
+# INTERICTAL - POST SZ
+interictal_resposnes_postsz = []
+for trial, responses in interictal_response_magnitudes_postsz.items():
+    interictal_resposnes_postsz.extend(list(responses))
+
+interictal_response_magnitudes_postsz_exp = {}
+for exp in OnePhotonStimResults.expids:
+    _responses = []
+    for trial, responses in interictal_response_magnitudes_postsz.items():
+        if exp in trial:
+            _responses.extend(responses)
+    interictal_response_magnitudes_postsz_exp[exp] = np.mean(_responses)
+
+
+
+fig, ax = plt.subplots(figsize=[2, 3], dpi = 100)
+plot_bar_with_points(data=[interictal_resposnes_midsz, interictal_resposnes_presz, interictal_resposnes_postsz, interictal_resposnes_szexclude,
+                           baseline_resposnes],
+                     x_tick_labels=['Mid', 'Pre-sz', 'Post-sz', 'Interictal', 'Baseline'],
+                     points=True, bar=False, colors=['steelblue', 'orange', 'red', 'green', 'gray'], fig=fig, ax=ax, show=False, s=10,
+                     x_label='', y_label='Avg. dFF', alpha=0.7, lw=0.5)
+fig.tight_layout(pad=0.2)
+fig.show()
+
+
+fig, ax = plt.subplots(figsize=[2, 3], dpi = 100)
+plot_bar_with_points(data=[list(interictal_response_magnitudes_presz_exp.values()), list(interictal_response_magnitudes_postsz_exp.values()),
+                           list(interictal_response_magnitudes_exp.values()), list(baseline_response_magnitudes_exp.values())],
+                     x_tick_labels=['Pre-sz', 'Post-sz', 'Interictal', 'Baseline'],
+                     points=True, bar=False, colors=['orange', 'red', 'green', 'gray'], fig=fig, ax=ax, show=False, s=10,
+                     x_label='', y_label='Avg. dFF', alpha=0.7, lw=1, ylims=[-0.2, 3])
+fig.tight_layout(pad=0.2)
+fig.show()
+
+
+print(f"P(t-test - (indiv. trials) response - baseline vs. interictal): {stats.ttest_ind(baseline_resposnes, interictal_resposnes_szexclude)[1]:.3e}")
+print(f"P(t-test - (indiv. trials) response - baseline vs. postsz): {stats.ttest_ind(baseline_resposnes, interictal_resposnes_postsz)[1]:.3e}")
+print(f"P(t-test - (indiv. trials) response - baseline vs. presz): {stats.ttest_ind(baseline_resposnes, interictal_resposnes_presz)[1]:.3e}")
+print(f"P(t-test - (indiv. trials) response - presz vs. interictal): {stats.ttest_ind(interictal_resposnes_szexclude, interictal_resposnes_presz)[1]:.3e}")
+print(f"P(t-test - (indiv. trials) response - postsz vs. interictal): {stats.ttest_ind(interictal_resposnes_szexclude, interictal_resposnes_postsz)[1]:.3e}")
+print(f"P(t-test - (indiv. trials) response - postsz vs. presz): {stats.ttest_ind(interictal_resposnes_presz, interictal_resposnes_postsz)[1]:.3e}")
 
 
 # %% 2.0) TIME TO SZ ONSET VS.: PRE-STIM FLU, AND PHOTOSTIM RESPONSES - PLOT - time to seizure onset vs. pre-stim Flu

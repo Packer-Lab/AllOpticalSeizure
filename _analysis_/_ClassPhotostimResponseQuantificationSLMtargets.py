@@ -647,7 +647,6 @@ class PhotostimResponsesQuantificationSLMtargets(Quantification):
         fakestim_responses = self.fake_responses_SLMtargets_tracedFF
         self.adata.add_layer(layer_name='fakestim_responses', data=fakestim_responses)
 
-
     # 3) PLOTTING MEAN PHOTOSTIM RESPONSE AMPLITUDES
     def collect_photostim_responses_magnitude_avgtargets(self, stims: Union[slice, str, list] = 'all',
                                                          targets: Union[slice, str, list] = 'all',

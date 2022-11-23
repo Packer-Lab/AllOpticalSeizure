@@ -65,6 +65,8 @@ rfv.add_label_axes(text='D', ax=axes['D-E'][0], y_adjust=0.01, x_adjust=0.07)
 baseline_response_magnitudes = Results.photostim_responses['baseline']
 interictal_response_magnitudes = Results.photostim_responses['interictal']
 interictal_response_magnitudes_szexclude = Results.photostim_responses['interictal - sz excluded']
+interictal_response_magnitudes_presz = Results.photostim_responses['interictal - presz']
+interictal_response_magnitudes_postsz = Results.photostim_responses['interictal - postsz']
 
 baseline_resposnes = []
 interictal_resposnes = []
