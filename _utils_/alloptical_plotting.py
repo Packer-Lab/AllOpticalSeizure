@@ -156,6 +156,26 @@ def get_ax_for_multi_plot(axs, counter, ncols):
         print('debug here')
 
 
+def inspectExperimentMeanFOVandLFP(exp_run = [], run_pre = False, run_post = False):
+    if type(exp_run) == str: exp_run  = [exp_run]
+    if len(exp_run) == 0 and run_pre is False and run_post is False:
+        run_pre = True
+        run_post = True
+    @Utils.run_for_loop_across_exps(run_pre4ap_trials=run_pre, run_post4ap_trials=run_post, allow_rerun=True, run_trials=exp_run)
+                              #skip_trials=['PS04 t-018'])
+    def _inspectExperimentMeanFOVandLFP(**kwargs):
+        expobj: Post4ap = kwargs[
+            'expobj']  # ; plt.plot(expobj.meanRawFluTrace, lw=0.5); plt.suptitle(expobj.t_series_name); plt.show()
+
+        fig, axs = plt.subplots(2, 1, figsize=(20, 6))
+        fig, ax = plotMeanRawFluTrace(expobj=expobj, stim_span_color=None, x_axis='frames', fig=fig, ax=axs[0],
+                                             show=False)
+        fig, ax = plotLfpSignal(expobj=expobj, stim_span_color='', x_axis='time', fig=fig, ax=axs[1], show=False,
+                                sz_markings=True)
+        fig.show()
+
+    _inspectExperimentMeanFOVandLFP()
+
 
 # %%
 @plot_piping_decorator(figsize=(8,4), nrows=1, ncols=1, verbose=False)
@@ -242,12 +262,13 @@ def plot_SLMtargets_Locs(expobj, targets_coords: list = None, background: np.nda
 
     title = kwargs['title'] if 'title' in [*kwargs] else ''
 
-    colors = pj.make_random_color_array(len(expobj.target_coords))
     if targets_coords is None:
         if len(expobj.target_coords) > 1:
+            colors = pj.make_random_color_array(len(expobj.target_coords))
+            facecolors = ["None"] * len(pj.flattenOnce(expobj.target_coords)) if 'facecolors' in kwargs and kwargs['facecolors'] is None else colors
             for i in range(len(expobj.target_coords)):
                 for (x, y) in expobj.target_coords[i]:
-                    ax.scatter(x=x, y=y, edgecolors=colors[i], facecolors=colors[i], linewidths=2.0)
+                    ax.scatter(x=x, y=y, edgecolors=colors[i], facecolors=facecolors[i], linewidths=0.5)
         else:
             if 'edgecolors' in kwargs.keys():
                 edgecolors = kwargs['edgecolors']
@@ -1268,7 +1289,7 @@ def plotMeanRawFluTrace(expobj, stim_span_color='white', stim_lines: bool = True
     #             color='black', fontsize=10 * shrink_text)
     #     return fig, ax
 
-# plots the raw trace for the Flu mean of the FOV
+# plots the raw trace for the LFP signal
 @print_start_end_plot
 @plot_piping_decorator(figsize=(10,3))
 def plotLfpSignal(expobj: TwoPhotonImaging, stim_span_color='powderblue', downsample: bool = True, stim_lines: bool = True, sz_markings: bool = False,
@@ -1327,12 +1348,12 @@ def plotLfpSignal(expobj: TwoPhotonImaging, stim_span_color='powderblue', downsa
         # print(f'{expobj.t_series_name}, stim counter: {stim_counter}')
 
     # plot seizure onset and offset markings
-    if sz_markings:
+    if sz_markings and ('time' in x_axis or 'Time' in x_axis):  # troubleshoot the x-axis marking
         if hasattr(expobj, 'seizure_lfp_onsets'):
             for sz_onset in expobj.seizure_lfp_onsets:
-                ax.axvline(x=expobj.frame_clock_actual[sz_onset] - expobj.frame_start_time_actual, color='black', linestyle='--', linewidth=1.0, zorder=0)
+                ax.axvline(x=expobj.getTimefromPaq(expobj.frame_clock_actual[sz_onset] - expobj.frame_start_time_actual), color='black', linestyle='--', linewidth=1.0, zorder=0)
             for sz_offset in expobj.seizure_lfp_offsets:
-                ax.axvline(x=expobj.frame_clock_actual[sz_offset] - expobj.frame_start_time_actual, color='gray', linestyle='--', linewidth=1.0, zorder=0)
+                ax.axvline(x=expobj.getTimefromPaq(expobj.frame_clock_actual[sz_offset] - expobj.frame_start_time_actual), color='gray', linestyle='--', linewidth=1.0, zorder=0)
 
     # change x axis ticks to seconds
     labels_ = kwargs['labels'] if 'labels' in [*kwargs] else labels

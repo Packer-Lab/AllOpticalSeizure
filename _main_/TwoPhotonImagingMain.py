@@ -2,6 +2,7 @@ import re
 
 import os
 import sys
+from typing import Union
 
 sys.path.append('/home/pshah/Documents/code/')
 from Vape.utils.utils_funcs import s2p_loader
@@ -164,6 +165,7 @@ class TwoPhotonImaging:
         self.pv_fr_time = relativeTime
 
     def frame_time(self, frame: int):
+        """return the timing of the frame capture - relative to frame 0 = time 0 secs"""
         return self.pv_fr_time[frame - 1]
 
     def _getPVStateShard(self, path, key):
@@ -412,6 +414,14 @@ class TwoPhotonImaging:
         """path to the TIFF file derived from underlying suite2p batch registered TIFFs and cropped to frames for current
         t-series of experiment analysis object"""
         return self.analysis_save_path + 'reg_tiff_%s_r.tif' % self.metainfo['trial']
+
+    def getFrames(self, seconds: Union[float, int]):
+        "return the number of frames provided an input number of seconds"
+        return np.round(self.fps * seconds, 0)
+
+    def getTimefromPaq(self, paqstamp: int):
+        """return time in seconds for a given paq data collection timing stamp"""
+        return paqstamp / self.paq_rate
 
     def subset_frames_current_trial(self, to_suite2p, trial, baseline_trials, force_redo: bool = False, save=True):
 

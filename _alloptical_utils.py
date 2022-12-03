@@ -56,6 +56,7 @@ def run_for_loop_across_exps(run_pre4ap_trials=False, run_post4ap_trials=False, 
             print(f"\n {'**' * 5} [3] INITIATING FOR LOOP ACROSS EXPS FOR func: {func} {'..' * 5}\n")
 
             if len(run_trials) > 0:
+                run_trials_ = run_trials
                 print(f"\n{'-' * 5} RUNNING SPECIFIED TRIALS from `trials_run` {'-' * 5}")
                 counter1 = 0
                 res = []
@@ -234,7 +235,7 @@ def run_for_loop_across_exps(run_pre4ap_trials=False, run_post4ap_trials=False, 
 
             t_end = time.time()
             pj.timer(t_start, t_end)
-            print(f" {'--' * 5} COMPLETED FOR LOOP ACROSS EXPS {'--' * 5}\n")
+            print(f" {'--' * 5} COMPLETED FOR LOOP ACROSS EXPS {run_trials_} {'--' * 5}\n")
         return inner
     return main_for_loop
 

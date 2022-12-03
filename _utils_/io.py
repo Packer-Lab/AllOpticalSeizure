@@ -112,6 +112,11 @@ class CustomUnpicklerAttributeError(pickle.Unpickler):
             print(f'\t for: TwoPhotonImaging')
             from _main_.TwoPhotonImagingMain import TwoPhotonImaging
             return TwoPhotonImaging
+        elif name == 'PhotostimImages':
+            print(f'\t for: PhotostimImages')
+            from _analysis_._ClassPhotostimImages import PhotostimImages
+            return PhotostimImages
+
 
         return super().find_class(module, name)
 
