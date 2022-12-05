@@ -18,7 +18,7 @@ import sys
 from typing import Union
 
 from funcsforprajay.plotting.plotting import plot_bar_with_points
-# from funcsforprajay.funcs import calc_decay_constant#, decay_constant_logfit_method, convert_to_positive
+from funcsforprajay.funcs import decay_constant_logfit_method, convert_to_positive, decay_timescale
 from scipy.stats import sem
 
 from _alloptical_utils import run_for_loop_across_exps
@@ -51,8 +51,7 @@ save_fig = True
 
 # CHECKING POST-ICTAL SUPPRESSION PLOTS FOR ALL EXPERIMENTS
 
-@run_for_loop_across_exps(run_pre4ap_trials=False, run_post4ap_trials=1, allow_rerun=True,
-                                skip_trials=['PS04 t-018'])
+@run_for_loop_across_exps(run_pre4ap_trials=False, run_post4ap_trials=1, allow_rerun=True, skip_trials=['PS07 t-011'])
 def __function(**kwargs):
     expobj: Post4ap = kwargs[
         'expobj']  # ; plt.plot(expobj.meanRawFluTrace, lw=0.5); plt.suptitle(expobj.t_series_name); plt.show()
@@ -62,8 +61,7 @@ def __function(**kwargs):
     pre_termination_limit = 10  # seconds
     post_ictal_limit = 40  # seconds
 
-    mean_interictal = np.mean(
-        [expobj.meanRawFluTrace[x] for x in range(expobj.n_frames) if x not in expobj.seizure_frames])
+    mean_interictal = np.median([expobj.meanRawFluTrace[x] for x in range(expobj.n_frames) if (x not in expobj.seizure_frames and x not in expobj.photostim_frames and x < expobj.photostim_frames[-1])])
 
     lfp_trace = expobj.lfp_signal[expobj.frame_clock][:expobj.n_frames]
 
@@ -71,8 +69,8 @@ def __function(**kwargs):
     traces = []
     decay_constants = []
     num_frames = []
-    for i, (onset, offset) in enumerate(zip(expobj.seizure_lfp_onsets[:-1], expobj.seizure_lfp_offsets[:-1])):
-        onset2 = expobj.seizure_lfp_onsets[i+1]
+    for i, (onset, offset) in enumerate(zip(expobj.seizure_lfp_onsets, expobj.seizure_lfp_offsets)):
+        # onset2 = expobj.seizure_lfp_onsets[i+1]
         skip = False
         if expobj.t_series_name in [*ExpMetainfo.alloptical.post_ictal_exclude_sz]:
             if i in ExpMetainfo.alloptical.post_ictal_exclude_sz[expobj.t_series_name]:
@@ -82,24 +80,23 @@ def __function(**kwargs):
             frames = [frame for frame in frames if frame not in expobj.photostim_frames]  # filter out photostim frames - photostim artifact spiking imaging signal
             try:
                 if onset > 0 and offset + int(expobj.getFrames(post_ictal_limit)) < expobj.n_frames:
-                    pre_onset_frames2 = np.arange(int(onset2 - expobj.getFrames(20)), int(onset2 - expobj.getFrames(10)))
                     pre_onset_frames = np.arange(int(onset - expobj.getFrames(20)), int(onset - expobj.getFrames(10)))
                     pre_onset_frames = [frame for frame in pre_onset_frames if frame not in expobj.photostim_frames]
-                    # pre_onset = expobj.meanRawFluTrace[onset - int(expobj.getFrames(30)): onset]
-                    # pre_onset2 = expobj.meanRawFluTrace[onset2 - int(expobj.getFrames(30)): onset2]
                     pre_onset = expobj.meanRawFluTrace[pre_onset_frames]
-                    pre_onset2 = expobj.meanRawFluTrace[pre_onset_frames2]
                     pre_mean = np.mean(pre_onset)
-                    pre_mean2 = np.mean(pre_onset2)
+
+                    # pre_onset_frames2 = np.arange(int(onset2 - expobj.getFrames(20)), int(onset2 - expobj.getFrames(10)))
+                    # pre_onset_frames2 = [frame for frame in pre_onset_frames2 if frame not in expobj.photostim_frames]
+                    # pre_onset2 = expobj.meanRawFluTrace[pre_onset_frames2]
+                    # pre_mean2 = np.mean(pre_onset2)
 
                     trace = expobj.meanRawFluTrace[frames]
                     lfp_traces_ = lfp_trace[frames]
 
-                    # trace = expobj.meanRawFluTrace[int(offset - expobj.fps * 10): int(offset + expobj.fps * 30)]
-                    # trace_norm = (trace / mean_interictal) * 100
+                    trace_norm = (trace / mean_interictal) * 100  # normalize trace to the selected mean of the interictal period
 
                     # trace_norm = (trace / pre_mean) * 100
-                    trace_norm = (trace / pre_mean2) * 100  # TRYING TO NORMALIZE THE PRE-ONSET BASELINE FOR THE UPCOMING SEIZURES!
+                    # trace_norm = (trace / pre_mean2) * 100  # TRYING TO NORMALIZE THE PRE-ONSET BASELINE FOR THE UPCOMING SEIZURES!
                     # ax.plot(trace_norm, lw=0.3)
 
                     lfp_traces.append(lfp_traces_)
@@ -114,10 +111,11 @@ def __function(**kwargs):
                     # plt.plot(_trace_corrected[max_index:]); plt.show()
 
                     # decay_c = calc_decay_constant(arr= _trace_flipped[max_index:], signal_rate = expobj.fps)
+                    # decay_c2 = decay_constant(arr= trace_norm * -1, signal_rate = expobj.fps)
 
-                    timesc = decay_timescale(arr=_trace_corrected[max_index:], signal_rate=1)
+                    decay_c = decay_constant_logfit_method(arr = _trace_corrected[max_index:])
+                    timesc = decay_timescale(arr=_trace_corrected[max_index:], signal_rate=30, decay_constant=decay_c)
 
-                    decay_c2 = decay_constant(arr= trace_norm * -1, signal_rate = expobj.fps)
                     decay_constants.append(timesc)
 
 
@@ -128,6 +126,22 @@ def __function(**kwargs):
     mean_ = np.mean([trace[:min(num_frames)] for trace in traces], axis=0)
     sem_ = sem([trace[:min(num_frames)] for trace in traces])
 
+    _trace_flipped = mean_ * -1
+    # _trace_corrected = convert_to_positive(_trace_flipped)
+    _trace_corrected = (100 - mean_)
+    # plt.plot(_trace_corrected); plt.show()
+    max_index = _trace_corrected.argmax()
+    below_zero_index = np.where(_trace_corrected[max_index:] < 0)[0][0] + max_index if np.any(_trace_corrected[max_index:] < 0) else -1  # only look at values that are positive
+
+    # plt.plot(_trace_corrected); plt.show()
+    # plt.plot(_trace_corrected[max_index:below_zero_index]); plt.show()
+
+    decay_c_of_mean = decay_constant_logfit_method(arr=_trace_corrected[max_index:below_zero_index])
+    timesc_of_mean = np.round(decay_timescale(arr=_trace_corrected[max_index:below_zero_index], signal_rate=expobj.fps, decay_constant=decay_c_of_mean), 2)
+
+    if timesc_of_mean is np.nan:
+        print('debugggg why the timescale isnot returning a value')
+
     f, ax = plt.subplots(figsize=(5, 3))
     ax.plot(x_range, mean_, c='black', lw=0.5)
     ax.fill_between(x_range, mean_ - sem_, mean_ + sem_, alpha=0.3)
@@ -135,7 +149,7 @@ def __function(**kwargs):
     # ax.set_ylim([30, 400])
     ax.set_ylabel('Mean FOV Flu \n (norm. to interictal)')
     ax.set_xlabel('Time (secs)')
-    ax.set_title(expobj.t_series_name)
+    ax.set_title(f"{expobj.t_series_name}, timescale of decay: {timesc_of_mean}secs", fontsize=8)
     # plot lfp traces
     ax2 = ax.twinx()
     ax2.set_ylabel('LFP (mV)')
@@ -144,10 +158,10 @@ def __function(**kwargs):
     ax.spines['right'].set_visible(True)
     f.show()
 
-    return mean_, lfp_traces
+    return mean_, lfp_traces, timesc_of_mean
 
 _return = __function()
-mean_post_seizure_termination_all, lfp_traces = _return[0], _return[1]
+mean_post_seizure_termination_all, lfp_traces, timescales = _return[0], _return[1], _return[2]
 
 
 
@@ -179,7 +193,7 @@ rfv.add_label_axes(text='B', ax=axes['B'][0], y_adjust=0.01, x_adjust=0.101)
 
 expobj: Post4ap = import_expobj(exp_prep='RL108 t-013')
 
-mean_interictal = np.mean([expobj.meanRawFluTrace[x] for x in range(expobj.n_frames) if x not in expobj.seizure_frames])
+mean_interictal = np.mean([expobj.meanRawFluTrace[x] for x in range(expobj.n_frames) if (x not in expobj.seizure_frames and x not in expobj.photostim_frames and x < expobj.photostim_frames[-1])])
 lfp_trace = expobj.lfp_signal[expobj.frame_clock][:expobj.n_frames]
 
 

@@ -134,7 +134,9 @@ class AllOpticalExpsToAnalyze:
 
     post_ictal_exclude_sz = {
         'RL109 t-018': [2],
-        'PS06 t-013': [4, 5],
+        'PS06 t-013': [0, 4, 5],
+        'PS04 t-018': [],  # the interseizure interval is short, but likely it's okay for the post-ictal analysis
+        'PS07 t-011': [0, 1, 2, 3, 4, 6, 7, 8, 9, 10],
         'PS11 t-011': [2, 7]
     }  #: seizures to exclude from analysis for the post ictal phase (most because the seizure termination marking isn't perfect or there is a CSD or other artifact)
 

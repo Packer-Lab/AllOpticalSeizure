@@ -871,7 +871,7 @@ class ExpSeizureAnalysis(Quantification):
         # f.show()
 
         @Utils.run_for_loop_across_exps(run_pre4ap_trials=False, run_post4ap_trials=1, allow_rerun=True,
-                                  skip_trials=['PS04 t-018'])
+                                  skip_trials=['PS04 t-018', 'PS07 t-011'])
         def __collect_mean(**kwargs):
             expobj: Post4ap = kwargs[
                 'expobj']  # ; plt.plot(expobj.meanRawFluTrace, lw=0.5); plt.suptitle(expobj.t_series_name); plt.show()
