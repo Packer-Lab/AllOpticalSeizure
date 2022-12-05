@@ -51,7 +51,7 @@ def plot_settings():
 
     font = {'family' : 'sans-serif',
             #'weight' : 'bold',
-            'size'   : 8}
+            'size'   : 12}
 
     plt.rc('font', **font)        # controls default text sizes
     plt.rc('axes', **axes)        # fontsize of the axes title
@@ -1223,7 +1223,7 @@ def plotMeanRawFluTrace(expobj, stim_span_color='white', stim_lines: bool = True
     if 'linewidth' in kwargs:
         lw = kwargs['linewidth']
     else:
-        lw = 2
+        lw = 0.75
 
     ax.plot(expobj.meanRawFluTrace, c='forestgreen', zorder=1, linewidth=lw)
     ax.margins(0.02)

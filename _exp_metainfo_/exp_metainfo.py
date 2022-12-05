@@ -132,6 +132,12 @@ class AllOpticalExpsToAnalyze:
         # 'r': ['PS18 t-008']
     }}
 
+    post_ictal_exclude_sz = {
+        'RL109 t-018': [2],
+        'PS06 t-013': [4, 5],
+        'PS11 t-011': [2, 7]
+    }  #: seizures to exclude from analysis for the post ictal phase (most because the seizure termination marking isn't perfect or there is a CSD or other artifact)
+
     def __post_init__(self):
         self.metainfo = import_meta_from_csv(csv_path=self.csv_path)
 
