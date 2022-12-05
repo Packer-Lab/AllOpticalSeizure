@@ -114,7 +114,7 @@ def __function(**kwargs):
                     # decay_c2 = decay_constant(arr= trace_norm * -1, signal_rate = expobj.fps)
 
                     decay_c = decay_constant_logfit_method(arr = _trace_corrected[max_index:])
-                    timesc = decay_timescale(arr=_trace_corrected[max_index:], signal_rate=30, decay_constant=decay_c)
+                    timesc = decay_timescale(arr=_trace_corrected[max_index:], signal_rate=expobj.fps, decay_constant=decay_c)
 
                     decay_constants.append(timesc)
 
