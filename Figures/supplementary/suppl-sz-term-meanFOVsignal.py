@@ -45,164 +45,6 @@ fig_items = f'/home/pshah/Documents/figures/alloptical_seizures_draft/figure-ite
 save_fig = True
 
 
-# %% troubleshooting calculating decay constant
-import numpy as np
-
-def calc_decay_constant(signal: np.ndarray, signal_rate = 1):
-    """Calculate decay constant of an input array.
-
-    ChatGPT, 2022-12-04
-    """
-    # Calculate the natural log of the ratio of consecutive elements in the array
-    log_ratios = np.log(arr[1:] / signal[:-1])
-
-    # Calculate the difference between consecutive elements in the array
-    time_intervals = np.diff(signal) / signal_rate  # convert index # to time units based on the signal collection rate
-
-    # Divide the log ratios by the time intervals to get the decay constant
-    decay_constants = np.divide(log_ratios, time_intervals)
-
-    # Calculate the average decay constant
-    avg_decay_constant = np.mean(decay_constants)
-
-    return avg_decay_constant
-
-
-def calculate_decay_constant(signal):
-    # Calculate the mean of the signal array
-    mean = np.mean(signal)
-
-    # Calculate the difference between each value in the signal array and the mean
-    diff = signal - mean
-
-    # Calculate the sum of the squared differences
-    ssd = np.sum(diff ** 2)
-
-    # Calculate the decay constant
-    decay_constant = 1 / ssd
-
-    return decay_constant
-
-
-def decay_constant_logfit_method(arr):
-    """use the polyfit on the logarithm of the signal to calculate the decay coefficient
-
-    >>> r = 0.5
-    >>> a = 10
-    >>> n = 10
-    >>> arr = np.array([a*np.exp((-r)*i) for i in range(n)])
-    >>> decay_constant = decay_constant_logfit_method(arr=arr)
-    """
-    coeffs = np.polyfit(range(n), np.log(arr), 1)
-    decay_constant = -coeffs[0]
-    return decay_constant
-
-
-def decay_timescale(arr, decay_constant = None, signal_rate = 1):
-    """
-    Calculation of the decay timescale (optionally adjusting for signal collection data rate).
-
-    :param arr:
-    :param decay_constant:
-    :param signal_rate:
-    :return:
-
-    >>> r = 0.5
-    >>> a = 10
-    >>> n = 10
-    >>> arr = np.array([a*np.exp((-r)*i) for i in range(n)])
-    >>> decay_constant = decay_constant_logfit_method(arr=arr)
-    >>> decay_timescale(arr=arr, decay_constant=decay_constant, signal_rate=30)
-    """
-
-    max_value = np.max(arr)
-
-    if decay_constant is None:
-        decay_constant = decay_constant_logfit_method(arr=arr)
-
-    timescale = -(1 / decay_constant) * np.log(1 - 1/np.e)
-    half_life = -(1 / decay_constant) * np.log(0.5)
-
-    plot = False
-    if plot:
-        time_steps = np.arange(0, len(arr))
-        decay = max_value * np.exp(-decay_constant * time_steps)
-        plt.plot(decay)
-        plt.axhline(arr.max() * 0.5)
-        plt.axvline(half_life)
-        plt.suptitle('half life')
-        plt.show()
-
-
-        plt.plot(decay)
-        plt.axhline(arr.max() * (1 - 1/np.e))
-        plt.axvline(timescale)
-        plt.suptitle('timescale value')
-        plt.show()
-
-    return timescale / signal_rate
-
-
-
-
-def decay_constant(arr: np.ndarray, threshold: float = None, signal_rate: Union[float, int] = 1):
-    """measure the timeconstant of decay of a signal array.
-    If signal rate is provided, will return in units of time, otherwise will return as the index of the array.
-    """
-    if not type(arr) is np.ndarray:
-        raise TypeError('provide `arr` input as type = np.array')
-    max_value = arr.max()  # peak Flu value after stim
-    max_index = arr.argmax()  # peak Flu value after stim
-    threshold = np.exp(-1) * max_value if not threshold else threshold  # set threshold to be at 1/e x peak
-    try:
-        x_ = np.where(arr[max_index:] < threshold)[0][0]  # find index AFTER the index of the max value of the trace, where the trace decays to the threshold value
-        return x_ / signal_rate  # convert frame # to time
-    except Exception:
-        print(f'Could not find decay below the maximum value of the trace provided. max: {max_value}, max index: {max_index}, decay threshold: {threshold}')
-
-
-
-
-
-
-def calc_decay_constant(arr: np.ndarray, signal_rate: Union[float, int] = 1):
-    """Calculate decay constant of an input array.
-
-    ChatGPT, 2022-12-04
-    """
-    # Calculate the natural log of the ratio of consecutive elements in the array
-    log_ratios = np.log(arr[1:] / arr[:-1])
-
-    # Calculate the difference between consecutive elements in the array
-    time_intervals = np.diff(arr) / signal_rate  # convert index # to time units based on the signal collection rate
-
-    # Divide the log ratios by the time intervals to get the decay constant
-    decay_constants = np.divide(log_ratios, time_intervals)
-
-    # Calculate the average decay constant
-    avg_decay_constant = np.mean(decay_constants)
-
-    return avg_decay_constant
-
-
-def decay_timescale(arr, decay_constant = None, signal_rate: Union[float, int] = 1):
-    max_value = np.max(arr)
-
-    if decay_constant is None:
-        decay_constant = calc_decay_constant(arr=arr, signal_rate=signal_rate)
-    threshold = 1 / np.e * max_value  # set threshold as: 1/e x max
-
-    half_life = -(1 / decay_constant) * np.log(0.5)
-    time_steps = np.arange(0, len(arr))
-    # time_steps = np.linspace(0, len(arr)/signal_rate, len(arr))
-    decay = max_value * np.exp(-decay_constant * time_steps)
-    plt.plot(decay); plt.show()
-
-
-
-    timescale = -(1 / decay_constant) * np.log(threshold)
-    return timescale / signal_rate
-
 # %% archive:
 
 # inspectExperimentMeanFOVandLFP(run_post=True)
@@ -412,6 +254,166 @@ if save_fig and dpi > 250:
 fig.show()
 
 
+
+
+
+# %% troubleshooting calculating decay constant
+import numpy as np
+
+def calc_decay_constant(signal: np.ndarray, signal_rate = 1):
+    """Calculate decay constant of an input array.
+
+    ChatGPT, 2022-12-04
+    """
+    # Calculate the natural log of the ratio of consecutive elements in the array
+    log_ratios = np.log(arr[1:] / signal[:-1])
+
+    # Calculate the difference between consecutive elements in the array
+    time_intervals = np.diff(signal) / signal_rate  # convert index # to time units based on the signal collection rate
+
+    # Divide the log ratios by the time intervals to get the decay constant
+    decay_constants = np.divide(log_ratios, time_intervals)
+
+    # Calculate the average decay constant
+    avg_decay_constant = np.mean(decay_constants)
+
+    return avg_decay_constant
+
+
+def calculate_decay_constant(signal):
+    # Calculate the mean of the signal array
+    mean = np.mean(signal)
+
+    # Calculate the difference between each value in the signal array and the mean
+    diff = signal - mean
+
+    # Calculate the sum of the squared differences
+    ssd = np.sum(diff ** 2)
+
+    # Calculate the decay constant
+    decay_constant = 1 / ssd
+
+    return decay_constant
+
+
+def decay_constant_logfit_method(arr):
+    """use the polyfit on the logarithm of the signal to calculate the decay coefficient
+
+    >>> r = 0.5
+    >>> a = 10
+    >>> n = 10
+    >>> arr = np.array([a*np.exp((-r)*i) for i in range(n)])
+    >>> decay_constant = decay_constant_logfit_method(arr=arr)
+    """
+    coeffs = np.polyfit(range(n), np.log(arr), 1)
+    decay_constant = -coeffs[0]
+    return decay_constant
+
+
+def decay_timescale(arr, decay_constant = None, signal_rate = 1):
+    """
+    Calculation of the decay timescale (optionally adjusting for signal collection data rate).
+
+    :param arr:
+    :param decay_constant:
+    :param signal_rate:
+    :return:
+
+    >>> r = 0.5
+    >>> a = 10
+    >>> n = 10
+    >>> arr = np.array([a*np.exp((-r)*i) for i in range(n)])
+    >>> decay_constant = decay_constant_logfit_method(arr=arr)
+    >>> decay_timescale(arr=arr, decay_constant=decay_constant, signal_rate=30)
+    """
+
+    max_value = np.max(arr)
+
+    if decay_constant is None:
+        decay_constant = decay_constant_logfit_method(arr=arr)
+
+    timescale = -(1 / decay_constant) * np.log(1 - 1/np.e)
+    half_life = -(1 / decay_constant) * np.log(0.5)
+
+    plot = False
+    if plot:
+        time_steps = np.arange(0, len(arr))
+        decay = max_value * np.exp(-decay_constant * time_steps)
+        plt.plot(decay)
+        plt.axhline(arr.max() * 0.5)
+        plt.axvline(half_life)
+        plt.suptitle('half life')
+        plt.show()
+
+
+        plt.plot(decay)
+        plt.axhline(arr.max() * (1 - 1/np.e))
+        plt.axvline(timescale)
+        plt.suptitle('timescale value')
+        plt.show()
+
+    return timescale / signal_rate
+
+
+
+
+def decay_constant(arr: np.ndarray, threshold: float = None, signal_rate: Union[float, int] = 1):
+    """measure the timeconstant of decay of a signal array.
+    If signal rate is provided, will return in units of time, otherwise will return as the index of the array.
+    """
+    if not type(arr) is np.ndarray:
+        raise TypeError('provide `arr` input as type = np.array')
+    max_value = arr.max()  # peak Flu value after stim
+    max_index = arr.argmax()  # peak Flu value after stim
+    threshold = np.exp(-1) * max_value if not threshold else threshold  # set threshold to be at 1/e x peak
+    try:
+        x_ = np.where(arr[max_index:] < threshold)[0][0]  # find index AFTER the index of the max value of the trace, where the trace decays to the threshold value
+        return x_ / signal_rate  # convert frame # to time
+    except Exception:
+        print(f'Could not find decay below the maximum value of the trace provided. max: {max_value}, max index: {max_index}, decay threshold: {threshold}')
+
+
+
+
+
+
+def calc_decay_constant(arr: np.ndarray, signal_rate: Union[float, int] = 1):
+    """Calculate decay constant of an input array.
+
+    ChatGPT, 2022-12-04
+    """
+    # Calculate the natural log of the ratio of consecutive elements in the array
+    log_ratios = np.log(arr[1:] / arr[:-1])
+
+    # Calculate the difference between consecutive elements in the array
+    time_intervals = np.diff(arr) / signal_rate  # convert index # to time units based on the signal collection rate
+
+    # Divide the log ratios by the time intervals to get the decay constant
+    decay_constants = np.divide(log_ratios, time_intervals)
+
+    # Calculate the average decay constant
+    avg_decay_constant = np.mean(decay_constants)
+
+    return avg_decay_constant
+
+
+def decay_timescale(arr, decay_constant = None, signal_rate: Union[float, int] = 1):
+    max_value = np.max(arr)
+
+    if decay_constant is None:
+        decay_constant = calc_decay_constant(arr=arr, signal_rate=signal_rate)
+    threshold = 1 / np.e * max_value  # set threshold as: 1/e x max
+
+    half_life = -(1 / decay_constant) * np.log(0.5)
+    time_steps = np.arange(0, len(arr))
+    # time_steps = np.linspace(0, len(arr)/signal_rate, len(arr))
+    decay = max_value * np.exp(-decay_constant * time_steps)
+    plt.plot(decay); plt.show()
+
+
+
+    timescale = -(1 / decay_constant) * np.log(threshold)
+    return timescale / signal_rate
 
 
 
