@@ -943,16 +943,19 @@ class ExpSeizureAnalysis(Quantification):
 
         # __plot_individual()
 
-        @Utils.run_for_loop_across_exps(run_pre4ap_trials=False, run_post4ap_trials=1, allow_rerun=True, skip_trials=['PS04 t-018'])
+        @Utils.run_for_loop_across_exps(run_pre4ap_trials=False, run_post4ap_trials=1, allow_rerun=True, skip_trials=['PS04 t-018', 'PS07 t-011'])
         def __collect_mean(**kwargs):
             expobj: Post4ap = kwargs[
                 'expobj']  # ; plt.plot(expobj.meanRawFluTrace, lw=0.5); plt.suptitle(expobj.t_series_name); plt.show()
 
             pre_termination_limit = 0  # seconds
-            post_ictal_limit = 20  # seconds
+            post_ictal_limit = 23  # seconds
 
             mean_interictal = np.mean(
                 [expobj.meanRawFluTrace[x] for x in range(expobj.n_frames) if x not in expobj.seizure_frames])
+            mean_interictal_filtered = np.mean([expobj.meanRawFluTrace[x] for x in range(expobj.n_frames) if (
+                        x not in expobj.seizure_frames and x not in expobj.photostim_frames and x <
+                        expobj.photostim_frames[-1])])
 
             traces = []
             decay_constants = []
@@ -976,7 +979,7 @@ class ExpSeizureAnalysis(Quantification):
                             # pre_onset = expobj.meanRawFluTrace[pre_onset_frames]
                             # pre_mean = np.mean(pre_onset)
                             trace = expobj.meanRawFluTrace[frames]
-                            trace_norm = (trace / mean_interictal) * 100  # normalize trace to the selected mean of the interictal period
+                            trace_norm = (trace / mean_interictal_filtered) * 100  # normalize trace to the selected mean of the interictal period
                             traces.append(trace_norm)
                             mean_post_seizure_termination.append(np.round(np.mean(trace_norm), 3))
                             num_frames.append(len(frames))
@@ -1000,7 +1003,18 @@ class ExpSeizureAnalysis(Quantification):
                     except:
                         pass
 
+            x_range = np.linspace(-pre_termination_limit, post_ictal_limit, min(num_frames))
             mean_ = np.mean([trace[:min(num_frames)] for trace in traces], axis=0)
+            sem_ = sem([trace[:min(num_frames)] for trace in traces])
+            f, ax = plt.subplots(figsize=(5, 3))
+            ax.plot(x_range, mean_, c='black', lw=0.5)
+            ax.fill_between(x_range, mean_ - sem_, mean_ + sem_, alpha=0.3)
+            ax.axhline(y=100)
+            ax.set_ylabel('Mean FOV Flu \n (norm. to interictal)')
+            ax.set_xlabel('Time (secs)')
+            ax.set_title(f"{expobj.t_series_name}", fontsize=8)
+            ax.spines['right'].set_visible(True)
+            # f.show()
 
             _trace_flipped = mean_ * -1
             _trace_corrected = (100 - mean_)
@@ -1019,9 +1033,9 @@ class ExpSeizureAnalysis(Quantification):
 
             return np.mean(mean_post_seizure_termination), timesc_of_mean
 
-        mean_post_seizure_termination_all = __collect_mean()
-        results.meanFOV_post_sz_term = mean_post_seizure_termination_all[0]
-        results.meanFOV_post_sz_term_decay_timescale = mean_post_seizure_termination_all[1]
+        mean_post_seizure_termination_all = np.array(__collect_mean())
+        results.meanFOV_post_sz_term = mean_post_seizure_termination_all[:, 0]
+        results.meanFOV_post_sz_term_decay_timescale = mean_post_seizure_termination_all[:, 1]
         results.save_results()
 
 

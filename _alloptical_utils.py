@@ -100,6 +100,7 @@ def run_for_loop_across_exps(run_pre4ap_trials=False, run_post4ap_trials=False, 
                 if run_post4ap_trials:
                     print(f"\n{'-' * 5} RUNNING POST4AP TRIALS {'-' * 5}: {AllOpticalExpsToAnalyze.post_4ap_trials}")
                     run_trials_.extend(AllOpticalExpsToAnalyze.post_4ap_trials)
+                print(f"\n{'-' *10} SKIPPING TRIALS {'-' * 5}: {skip_trials}")
 
                 counter_i = 0
                 res = []
