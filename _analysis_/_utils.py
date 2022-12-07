@@ -14,6 +14,10 @@ class CustomUnpicklerAttributeError(pickle.Unpickler):
             from _analysis_.nontargets_analysis._ClassResultsNontargetPhotostim import \
                 PhotostimResponsesNonTargetsResults
             return PhotostimResponsesNonTargetsResults
+        elif name == 'ExpSeizureResults':
+            print(f'\t for: ExpSeizureResults')
+            from _analysis_.sz_analysis._ClassExpSeizureAnalysis import ExpSeizureResults
+            return ExpSeizureResults
 
         return super().find_class(module, name)
 
