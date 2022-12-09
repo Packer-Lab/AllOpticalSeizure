@@ -773,8 +773,7 @@ class TargetsSzInvasionSpatial_codereview(SLMTargets):
         # fig, axs = plt.subplots(figsize=(6, 5), nrows=2, ncols=1, dpi=200)
 
         # ax.plot(distances[:-1], avg_responses, c='cornflowerblue', zorder=1)
-        ax = axs[0][0] if 'fig' in kwargs or 'axes' in kwargs else axs[0]
-        ax2 = axs[1][0] if 'fig' in kwargs or 'axes' in kwargs else axs[1]
+        ax = axs[0] if 'fig' in kwargs or 'axes' in kwargs else axs[0]
         ax.step(distances, avg_responses, c='cornflowerblue', zorder=2)
         # ax.fill_between(x=(distances-0)[:-1], y1=conf_int[:-1, 0], y2=conf_int[:-1, 1], color='lightgray', zorder=0)
         ax.axhline(0, ls='--', lw=1, color='black', zorder=0)
@@ -791,11 +790,13 @@ class TargetsSzInvasionSpatial_codereview(SLMTargets):
         ax.set_ylabel(f'Photostimulation response\n' + r'($\it{z}$-scored)')
         ax.margins(0)
 
-        pixels = [np.array(num2)] * 10
-        ax2.imshow(pixels, cmap='Greys', vmin=-5, vmax=100, aspect=0.05)
+        # ADD DENSITY OF DATA POINTS IN EACH BIN FOR PHOTOSTIM RESPONSES OF TARGETS
+        # pixels = [np.array(num2)] * 10
+        # ax2 = axs[1] if 'fig' in kwargs or 'axes' in kwargs else axs[1]
+        # ax2.imshow(pixels, cmap='Greys', vmin=-5, vmax=100, aspect=0.05)
         # ax2.set_xticks([])
         # ax2.set_yticks([])
-        ax2.axis('off')
+        # ax2.axis('off')
 
         if not 'fig' in kwargs and not 'axes' in kwargs:  # fig.tight_layout(pad=1)
             fig.show()

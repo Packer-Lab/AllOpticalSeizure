@@ -18,6 +18,8 @@ suppl figure: write up RF code
 import sys
 
 from _analysis_._ClassTargetsSzInvasionTemporal import TargetsSzInvasionTemporal, TargetsSzInvasionTemporalResults
+from _analysis_.nontargets_analysis._ClassNonTargetsSzInvasionSpatial import NonTargetsSzInvasionSpatialResults, \
+    NonTargetsSzInvasionSpatial
 from _analysis_.run__TargetsSzInvasionTemporal import plot__targets_sz_invasion_meantraces
 
 sys.path.extend(['/home/pshah/Documents/code/reproducible_figures-main'])
@@ -50,7 +52,7 @@ fontsize = 8
 fs = fontsize
 rfv.set_fontsize(fs)
 
-test = True
+test = False
 save_fig = True if not test else False
 
 np.random.seed(2)  # fix seed
@@ -63,20 +65,20 @@ np.random.seed(2)  # fix seed
 layout = {
     'main-left-top': {'panel_shape': (1, 1),
                       'bound': (0.05, 0.77, 0.27, 0.92)},
-    'main-left-bottom': {'panel_shape': (1, 1),
-                         'bound': (0.08, 0.42, 0.26, 0.57)},
-    'main-right-tophigh': {'panel_shape': (1, 1),
+    # 'main-left-bottom': {'panel_shape': (1, 1),
+    #                      'bound': (0.08, 0.42, 0.26, 0.57)},
+    'main-right-tophigh': {'panel_shape': (1, 1, 'twinx'),
                            'bound': (0.40, 0.75, 0.90, 0.95),
                            'wspace': 0.8},
-    'main-right-toplow': {'panel_shape': (1, 1),
-                          'bound': (0.40, 0.66, 0.90, 0.71),
-                          'wspace': 0.8},
-    'main-right-bottomhigh': {'panel_shape': (1, 1),
-                              'bound': (0.40, 0.40, 0.90, 0.60),
-                              'wspace': 0.8},
-    'main-right-bottomlow': {'panel_shape': (1, 1),
-                             'bound': (0.40, 0.31, 0.90, 0.34),
-                             'wspace': 0.8},
+    # 'main-right-toplow': {'panel_shape': (1, 1),
+    #                       'bound': (0.40, 0.66, 0.90, 0.71),
+    #                       'wspace': 0.8},
+    # 'main-right-bottomhigh': {'panel_shape': (1, 1),
+    #                           'bound': (0.40, 0.40, 0.90, 0.60),
+    #                           'wspace': 0.8},
+    # 'main-right-bottomlow': {'panel_shape': (1, 1),
+    #                          'bound': (0.40, 0.31, 0.90, 0.34),
+    #                          'wspace': 0.8},
 }
 
 dpi = 100 if test else 300
@@ -99,7 +101,8 @@ axes['main-left-top'][0].axis('off')
 
 
 # %% A' - photostim responses relative to distance to seizure
-ax = axes['main-right-tophigh'][0]
+ax = axes['main-right-tophigh'][0][0]
+ax2 = axes['main-right-tophigh'][0][1]
 
 # rfv.add_label_axes(text="A'", ax=ax, x_adjust=x_adj + 0.03)
 main_spatial.collect__binned__distance_v_responses(results=results_spatial, rerun=0)
@@ -109,11 +112,14 @@ main_spatial.collect__binned__distance_v_responses_rolling_bins(results=results_
 
 results_spatial = TargetsSzInvasionSpatialResults_codereview.load()
 # main_spatial.plot__responses_v_distance_no_normalization(results=results_spatial, axes=(axes['main-right-tophigh'], axes['main-right-toplow']), fig=fig)
-main_spatial.plot__responses_v_distance_no_normalization_rolling_bins(results=results_spatial, axes=(axes['main-right-tophigh'], axes['main-right-toplow']), fig=fig)
+main_spatial.plot__responses_v_distance_no_normalization_rolling_bins(results=results_spatial, axes=[ax,], fig=fig)
 # ax.text(x=50, y=2, s=f'{results_spatial.binned__distance_vs_photostimresponses["kruskal - binned responses"]}', fontsize=5)
 # ax.text(x=50, y=1.95, s=f'{results_spatial.binned__distance_vs_photostimresponses["anova oneway - binned responses"]}', fontsize=5)
 
-
+# %% A' - adding neuropil signal
+results = NonTargetsSzInvasionSpatialResults.load()
+NonTargetsSzInvasionSpatial.plot__responses_v_distance_no_normalization_rolling_bins(results=results, axes=ax2, fig=fig)
+rfv.despine(ax=ax2, keep=['right'])
 
 # %%
 if save_fig and dpi >= 250:

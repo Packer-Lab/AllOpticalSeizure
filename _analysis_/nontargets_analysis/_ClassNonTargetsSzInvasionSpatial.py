@@ -437,9 +437,9 @@ class NonTargetsSzInvasionSpatial(Quantification):
 
     # 2.4) PLOT - distance vs. firing rates - no percentile normalization of distances - ROLLING BINS
     @staticmethod
-    def plot__responses_v_distance_no_normalization_rolling_bins(results, save_path_full=None, **kwargs):
+    def plot__responses_v_distance_no_normalization_rolling_bins(results, save_path_full=None, type_fr = "neuropil - zscored", **kwargs):
         """plotting of binned responses over distance as a step function, with heatmap showing # of datapoints"""
-        type_fr = "neuropil - zscored"
+        # type_fr = "neuropil - zscored"
         data_results = results.rolling_binned__distance_vs_firingrates[type_fr]
 
         distances = data_results['distance_bins'][:-20]
@@ -457,7 +457,7 @@ class NonTargetsSzInvasionSpatial(Quantification):
         # fig, axs = plt.subplots(figsize=(6, 5), nrows=2, ncols=1, dpi=200)
 
         # ax.plot(distances[:-1], avg_responses, c='cornflowerblue', zorder=1)
-        ax.step(distances, avg_firing_rates, c='cornflowerblue', zorder=2, lw=1)
+        ax.step(distances, avg_firing_rates, c='green', zorder=2, lw=1)
         # ax.fill_between(x=(distances-0)[:-1], y1=conf_int[:-1, 0], y2=conf_int[:-1, 1], color='lightgray', zorder=0)
         ax.fill_between(x=conf_int_distances, y1=conf_int_values_neg, y2=conf_int_values_pos, color='lightgray',
                         zorder=0)
@@ -471,7 +471,7 @@ class NonTargetsSzInvasionSpatial(Quantification):
         # ax.set_ylabel(TargetsSzInvasionSpatial_codereview.response_type)
         ax.set_ylabel(type_fr)
         ax.margins(0)
-        y_lims = [0.5, 4.5] if type_fr == 'neuropil - zscored' else ax.get_ylim()
+        y_lims = [0, 4.5] if type_fr == 'neuropil - zscored' else ax.get_ylim()
         ax.set_ylim(y_lims)
         if not 'fig' in kwargs and not 'axes' in kwargs:  # fig.tight_layout(pad=1)
             fig.tight_layout()
