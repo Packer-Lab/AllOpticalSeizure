@@ -6,7 +6,6 @@ from typing import Union
 
 sys.path.append('/home/pshah/Documents/code/')
 from Vape.utils.utils_funcs import s2p_loader
-from suite2p.run_s2p import run_s2p
 import matplotlib.pyplot as plt
 import seaborn as sns
 import time
@@ -141,6 +140,7 @@ class TwoPhotonImaging:
             }
 
         print(db)
+        from suite2p.run_s2p import run_s2p
 
         opsEnd = run_s2p(ops=ops, db=db)
 

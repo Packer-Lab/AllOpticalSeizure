@@ -86,7 +86,7 @@ for trial in flattenOnce(AllOpticalExpsToAnalyze.pre_4ap_trials):
 
 ax.set_title(f'All experiments\n(Baseline trials)', fontsize=12)
 ax.set_ylabel('Density', fontsize=10)
-ax.set_xlabel('Photostimulation responses\n(mean substracted, % dFF)', fontsize=10)
+ax.set_xlabel('Photostimulation responses\n(mean subtracted, % dFF)', fontsize=10)
 ax.set_xlim([-200, 200])
 
 

@@ -49,7 +49,9 @@ def plot_settings():
         'left': True,
     }
 
-    font = {'family' : 'sans-serif',
+    font = {
+        # 'family' : 'sans-serif',
+            'name' : 'Sathu',
             #'weight' : 'bold',
             'size'   : 12}
 
@@ -627,7 +629,6 @@ def plot_photostim_traces_stacked(array, expobj, exclude_id=[], y_spacing_factor
 @plot_piping_decorator(figsize=(5,5.5))
 def plot_periphotostim_avg2(dataset, fps=None, legend_labels=None, colors=None, avg_with_std=False,
                             title='high quality plot', pre_stim_sec=None, ylim=None, fig=None, ax=None, **kwargs):
-
     meantraces = []
     stdtraces = []
 
@@ -663,12 +664,12 @@ def plot_periphotostim_avg2(dataset, fps=None, legend_labels=None, colors=None, 
     else:
         AttributeError('please provide the data to plot in a ls format, each different data group as a ls item...')
 
-
     if 'xlabel' not in kwargs or kwargs['xlabel'] is None or 'time' in kwargs['xlabel'] or 'Time' in kwargs['xlabel']:
         ## change xaxis to time (secs)
         if fps is not None:
+            x_range = np.linspace(0, len(meantraces[0]) / fps, len(meantraces[0]))
             if pre_stim_sec is not None:
-                x_range = np.linspace(0, len(meantraces[0]) / fps, len(meantraces[0])) - pre_stim_sec  # x scale, but in time domain (transformed from frames based on the provided fps)
+                x_range = x_range - pre_stim_sec  # x scale, but in time domain (transformed from frames based on the provided fps)
                 if 'xlabel' in kwargs:
                     ax.set_xlabel(kwargs['xlabel'])
                 else:
@@ -694,9 +695,9 @@ def plot_periphotostim_avg2(dataset, fps=None, legend_labels=None, colors=None, 
         else:
             ax.plot(x_range, meantraces[i], color=colors[i], lw=2, zorder=5)
             if len(dataset[i]) > 1:
+                colors = colors * len(dataset[i])
                 for idx, trace in enumerate(dataset[i]):
-                    ax.plot(x_range, trace, color=colors[idx + 1], alpha=0.3, lw=2, zorder=1)
-
+                    ax.plot(x_range, trace, color=colors[idx], alpha=0.3, lw=2, zorder=1)
 
     if legend_labels:
         if 'fontsize' in kwargs.keys():
@@ -1094,19 +1095,19 @@ def plot_traces_heatmap(expobj, arr, vmin=None, vmax=None, stim_on = None, stim_
     # # plt.set_cmap(cmap)
     # ax.set_clim(vmin, vmax)
 
-    heatmap_options()
+    # heatmap_options()
 
     mesh1 = ax.pcolormesh(arr, cmap=cmap)
     mesh1.set_clim(vmin, vmax)
-    if cbar is True:
-        pass
-    else:
-        cbar.remove()
 
     if xlims is not None:
         ax.set_xlim(xlims)
     if vmin is not None:
-        cbar = fig.colorbar(mesh1, boundaries=np.linspace(vmin, vmax, 1000), ticks=[vmin, 0, vmax])
+        cbar_ = fig.colorbar(mesh1, boundaries=np.linspace(vmin, vmax, 1000), ticks=[vmin, 0, vmax])
+        if cbar is True:
+            pass
+        else:
+            cbar_.remove()
 
     if stim_on and stim_off:  # draw vertical dashed lines for stim period
         # plt.vlines(x=stim_on, ymin=0, ymax=len(arr), colors='black')

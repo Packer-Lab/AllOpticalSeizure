@@ -45,7 +45,7 @@ import rep_fig_vis as rfv
 # plot_settings()
 SAVE_FOLDER = f'/home/pshah/Documents/figures/alloptical_seizures_draft/'
 
-fontsize = 8
+fontsize = 10
 rfv.set_fontsize(fontsize)
 
 # %%
@@ -90,19 +90,20 @@ layout = {
                           'wspace': 0.2},
 }
 
-fig, axes, grid = rfv.make_fig_layout(layout=layout, dpi=300)
+dpi=300
+fig, axes, grid = rfv.make_fig_layout(layout=layout, dpi=dpi)
 
 
 # rfv.show_test_figure_layout(fig, axes=axes)  # test what layout looks like quickly, but can also skip and moveon to plotting data.
 
 
-# %% A, B - add plots to axes
+# %% A, B - photostimulation variability across trials - quantified by CV
 
 ax = axes['main-top'][0, 0]  #: CV representative examples
 main.plot_variability_photostim_traces_by_targets(axs=axes['main-top'], fig=fig)
 rfv.add_label_axes(text='A', ax=ax, y_adjust=0)
-axes['main-top'][0, 0].text(s='Baseline', x = -4, y=0, rotation=90, fontsize=10)
-axes['main-top'][0, 1].text(s='Interictal', x = -4, y=0, rotation=90, fontsize=10)
+axes['main-top'][0, 0].text(s='Baseline', x = -4, y=0, rotation=90, fontsize=12)
+axes['main-top'][0, 1].text(s='Interictal', x = -4, y=0, rotation=90, fontsize=12)
 
 
 ax = axes['main-middle-left'][0]  #: CV quantification bar plot
@@ -148,9 +149,9 @@ print(tukey)
 data = [RESULTS.interictal_responses['preictal_responses'],
         RESULTS.interictal_responses['very_interictal_responses'],
         RESULTS.interictal_responses['postictal_responses']]
-plot_bar_with_points(data=data, bar=False, title='', fontsize=fontsize,
+plot_bar_with_points(data=data, bar=False, title='', fontsize=12,
                      x_tick_labels=['Pre', 'Mid', 'Post'], colors=['lightseagreen', 'gold', 'lightcoral'],
-                     y_label='Responses ($\it{z}$-scored)', show=False, ylims=[-0.5, 0.8],
+                     y_label='Response magnitude\n(z-scored)', show=False, ylims=[-0.5, 0.8],
                      alpha=1, fig=fig, ax=ax, s=25, sig_compare_lines={'*': [1, 2]})
 
 rfv.add_label_axes(text='D', ax=ax, x_adjust=0.1)
@@ -184,7 +185,7 @@ axs = axes['main-bottom-right']
 rfv.add_label_axes(text='F', ax=axs[0], y_adjust=0.015, x_adjust=0.075)
 
 # fig2, ax2 = plt.subplots(figsize = (3, 2))
-pca_stats = main.pca_responses(fig=fig, ax=axs[0], rerun=0, results=RESULTS, fontsize=fontsize)
+pca_stats = main.pca_responses(fig=fig, ax=axs[0], rerun=0, results=RESULTS, fontsize=12)
 axs[0].set_ylabel('Explained variance')
 axs[0].set_xlabel('PC')
 axs[0].set_ylim([0, 0.6])
@@ -245,7 +246,7 @@ axs[0].text(x=8, y=0.2,
 
 
 # %%
-if save_fig:
+if save_fig and dpi > 250:
     save_figure(fig=fig, save_path_full=f"{SAVE_FOLDER}/figure4-RF.png")
     save_figure(fig=fig, save_path_full=f"{SAVE_FOLDER}/figure4-RF.svg")
 

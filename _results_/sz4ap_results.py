@@ -88,12 +88,18 @@ def plotHeatMapSzAllCells(expobj: Post4ap, sz_num: int, **kwargs):
 
 
     # heatmap of sz propagation across FOV
-    fig, ax1 = plt.subplots(figsize=(5, 3), dpi=400)
-    ax1 = kwargs['ax1'] if 'ax1' in kwargs else ax1
+    if 'ax1' not in kwargs:
+        fig, ax1 = plt.subplots(figsize=(5, 3), dpi=400)
+        fig.tight_layout(pad=0.2)
+    else:
+        fig, ax1 = kwargs['fig'], kwargs['ax1']
+    pos= ax1.get_position()
     x_ordered = x_norm[new_order[:]]
-    fig, ax1 = aoplot.plot_traces_heatmap(expobj=expobj, arr=x_ordered, cmap='afmhot', cbar=True,
+    fig, ax1 = aoplot.plot_traces_heatmap(expobj=expobj, arr=x_ordered, cmap='afmhot', cbar=False,
                                          title=f'{expobj.t_series_name} - seizure {sz_num} - sz flu smooth',
                                          xlims=None, vmin=100, vmax=500, fig=fig, ax=ax1, show=False, x_label='Time (secs)')
+    ax1.set_position(pos)
+    # ax1.get_position()
     # x_labels = [item for item in ax1.get_xticks()]
     # y_labels = [-5, -4]
     # ax2.set_ylabel('LFP (mV)')
@@ -102,12 +108,15 @@ def plotHeatMapSzAllCells(expobj: Post4ap, sz_num: int, **kwargs):
     ax1.spines['left'].set_visible(False)
     ax1.spines['right'].set_visible(False)
     ax1.set_title('')
-    fig.tight_layout(pad=0.2)
     fig.show() if 'ax1' not in kwargs else None
 
 
-    fig, ax = plt.subplots(figsize=(5, 1.7), dpi=300)
-    ax = kwargs['ax2'] if 'ax2' in kwargs else ax
+
+    if 'ax2' not in kwargs:
+        fig, ax = plt.subplots(figsize=(5, 1.7), dpi=400)
+        fig.tight_layout(pad=0.2)
+    else:
+        ax = kwargs['ax2']
     # x_ordered = x_norm[new_order[:]]
     # fig, ax = aoplot.plot_traces_heatmap(expobj=expobj, arr=x_ordered, cmap='afmhot', cbar=True,
     #                                      title=f'{expobj.t_series_name} - seizure {sz_num} - sz flu smooth',
@@ -204,7 +213,11 @@ def fourDplot_SzWavefront(expobj: Post4ap):
     fig.show()
 
 
-# %% 3) plotting of
+# %%
+if __name__ == '__main__':
+    expobj: Post4ap = import_expobj(exp_prep='RL108 t-013')
+    plotHeatMapSzAllCells(expobj=expobj, sz_num=4)
+
 
 
 

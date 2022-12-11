@@ -1,5 +1,6 @@
 ## FIGURE 1 - LIVE IMAGING OF SEIZURES IN AWAKE ANIMALS
 import sys
+
 sys.path.extend(['/home/pshah/Documents/code/AllOpticalSeizure', '/home/pshah/Documents/code/AllOpticalSeizure'])
 sys.path.extend(['/home/pshah/Documents/code/reproducible_figures-main'])
 
@@ -21,11 +22,14 @@ results = Suite2pROIsSzResults.load()
 
 expobj: Post4ap = import_expobj(exp_prep='RL108 t-013')
 
+
 # %% MAKE FIGURE LAYOUT
 rfv.set_fontsize(6)
-dpi = 300
+dpi = 100
 save_fig = True
 
+
+# set layout of the figure
 layout = {
     'A': {'panel_shape': (1, 1),
           'bound': (0.05, 0.80, 0.33, 0.95)},
@@ -56,8 +60,37 @@ rfv.add_label_axes(text='A', ax=axes['A'][0], y_adjust=0)
 rfv.add_label_axes(text='B', ax=axes['B'][0], y_adjust=0)
 rfv.add_label_axes(text='C', ax=axes['C'][0], y_adjust=0)
 
-# rfv.show_test_figure_layout(fig, axes=axes, show=True)  # test what layout looks like quickly, but can also skip and moveon to plotting data.
 print('\n\n')
+
+
+
+# rfv.show_test_figure_layout(fig, axes=axes, show=True)  # test what layout looks like quickly, but can also skip and moveon to plotting data.
+
+
+
+# %% D) suite2p cells gcamp imaging for seizures, with simultaneous LFP recording
+
+# fig, axs = plt.subplots(2, 1, figsize=(6, 6))
+# fig, axs[0] = aoplot.plotMeanRawFluTrace(expobj=expobj, stim_span_color=None, x_axis='time', fig=fig, ax=axs[0], show=False)
+# fig, axs[1] = aoplot.plotLfpSignal(expobj=expobj, stim_span_color='', x_axis='time', fig=fig, ax=axs[1], show=False)
+# axs[0].set_xlim([400 * expobj.fps, 470 * expobj.fps])
+# axs[1].set_xlim([400 * expobj.paq_rate, 470 * expobj.paq_rate])
+# fig.show()
+
+# plot heatmap of raw neuropil corrected s2p signal from s2p cells
+time = (400, 460)
+frames = (time[0] * expobj.fps, time[1] * expobj.fps)
+paq = (time[0] * expobj.paq_rate, time[1] * expobj.paq_rate)
+
+ax1, ax2 = axes['D bottom'][0], axes['D top'][0]
+plotHeatMapSzAllCells(expobj=expobj, sz_num=4, ax1=ax1, ax2=ax2, fig=fig)
+ax1.set_yticks([0, 100])
+
+x = ax2.get_xlim()[1]
+
+rfv.add_label_axes(text='D', ax=axes['D top'][0], x_adjust=0.05, y_adjust=-0.02)
+
+
 
 # %% E) seizure stats
 
@@ -81,28 +114,6 @@ ax2.set_yticks([0, 100])
 ax2.set_title('')
 rfv.add_label_axes(text='E', ax=axes['E'][0], x_adjust=0.07, y_adjust=0.03)
 
-
-# %% D) suite2p cells gcamp imaging for seizures, with simultaneous LFP recording
-
-# fig, axs = plt.subplots(2, 1, figsize=(6, 6))
-# fig, axs[0] = aoplot.plotMeanRawFluTrace(expobj=expobj, stim_span_color=None, x_axis='time', fig=fig, ax=axs[0], show=False)
-# fig, axs[1] = aoplot.plotLfpSignal(expobj=expobj, stim_span_color='', x_axis='time', fig=fig, ax=axs[1], show=False)
-# axs[0].set_xlim([400 * expobj.fps, 470 * expobj.fps])
-# axs[1].set_xlim([400 * expobj.paq_rate, 470 * expobj.paq_rate])
-# fig.show()
-
-# plot heatmap of raw neuropil corrected s2p signal from s2p cells
-time = (400, 460)
-frames = (time[0] * expobj.fps, time[1] * expobj.fps)
-paq = (time[0] * expobj.paq_rate, time[1] * expobj.paq_rate)
-
-ax1, ax2 = axes['D bottom'][0], axes['D top'][0]
-plotHeatMapSzAllCells(expobj=expobj, sz_num=4, ax1=ax1, ax2=ax2)
-ax1.set_yticks([0, 100])
-
-x = ax2.get_xlim()[1]
-
-rfv.add_label_axes(text='D', ax=axes['D top'][0], x_adjust=0.05, y_adjust=-0.02)
 
 
 # %% F) DECONVOLVED SPIKE RATE ANALYSIS
@@ -137,7 +148,7 @@ for pre4ap_exp in results.neural_activity_rate['baseline']:
     cumulative = np.cumsum(values) / len(pre4ap_exp)
 
     # plot the cumulative function
-    ax.plot(base[:-1], cumulative, c='cornflowerblue', alpha=0.5, lw=1)
+    ax.plot(base[:-1], cumulative, c='navy', alpha=0.5, lw=1)
 
 # baseline experiments
 for interictal_exp in results.neural_activity_rate['interictal']:
@@ -150,7 +161,7 @@ for interictal_exp in results.neural_activity_rate['interictal']:
     cumulative = np.cumsum(values) / len(interictal_exp)
 
     # plot the cumulative function
-    ax.plot(base[:-1], cumulative, c='forestgreen', alpha=0.5, lw=1)
+    ax.plot(base[:-1], cumulative, c='darkgreen', alpha=0.5, lw=1)
 
 ax.set_xlim([0, 200])
 # ax2.set_xlim([0, 200])

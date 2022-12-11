@@ -54,6 +54,7 @@ rfv.set_fontsize(fs)
 
 test = False
 save_fig = True if not test else False
+dpi = 100 if test else 300
 
 np.random.seed(2)  # fix seed
 
@@ -81,7 +82,6 @@ layout = {
     #                          'wspace': 0.8},
 }
 
-dpi = 100 if test else 300
 fig, axes, grid = rfv.make_fig_layout(layout=layout, dpi=dpi)
 
 # rfv.show_test_figure_layout(fig, axes=axes)  # test what layout looks like quickly, but can also skip and moveon to plotting data.

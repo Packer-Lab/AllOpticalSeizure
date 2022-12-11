@@ -37,7 +37,7 @@ distance_lims = [19, 400]  # limit of analysis
 
 def z_score_response_proximal_distal(results=results, **kwargs):
     """BAR PLOT COMPARING PHOTOSTIM RESPONSES OF DISTAL VS. PROXIMAL NONTARGETS (WITHIN 250UM OF TARGET)"""
-    measurement = 'z score response'
+    measurement = 'z score response'  # z scored to baseline distribution
 
     distance_response = results.binned_distance_vs_responses_distal[measurement]['distance responses']
     # run stats analysis on limited distances: ONE-WAY ANOVA:
@@ -85,24 +85,23 @@ def z_score_response_proximal_distal(results=results, **kwargs):
 
     #### new bar plot including interictal and baseline z score responses
 
-    fig, ax = plt.subplots(figsize=[3, 3])
+    fig, ax = plt.subplots(figsize=[3, 3]) if 'fig' not in kwargs and 'ax' not in kwargs else (kwargs['fig'], kwargs['ax'])
     fig, ax = pplot.plot_bar_with_points(data=[pj.flattenOnce(proximal_responses), pj.flattenOnce(distal_responses), pj.flattenOnce(interictal_responses),
                                                pj.flattenOnce(baseline_responses)], points=False,
-                               paired=False, bar=True, colors=['#db5aac', '#dbd25a', 'gray', 'cornflowerblue'], edgecolor='black', lw = 1,
+                               paired=False, bar=True, colors=['#db5aac', '#dbd25a', 'gray', 'cornflowerblue'], edgecolor='black', lw = 0.8,
                                x_tick_labels=[f'Proximal', 'Distal', 'Interictal', 'Baseline'], y_label='Photostim. response \n($\it{z}$-score to baseline)', shrink_text=1.3,
                                title='avg z score response', show=False, fig=fig, ax=ax)
     #### // end
 
-    fig.tight_layout(pad=0.5)
-    fig.show()
+    # fig.tight_layout(pad=0.5)
+    # fig.show()
 
     #### bar plot not including interictal and baseline z score responses - only proximal and distal responses
-    fig, ax = (kwargs['fig'], kwargs['ax']) if 'fig' in kwargs else (None, None)
-
-    fig, ax = pplot.plot_bar_with_points(data=[pj.flattenOnce(proximal_responses), pj.flattenOnce(distal_responses)], points=False,
-                               paired=False, bar=True, colors=['#db5aac', '#dbd25a'], edgecolor='black', lw = 1.25,
-                               x_tick_labels=['Proximal', 'Distal'], y_label='Photostim. response \n($\it{z}$-score to baseline)', shrink_text=1.3,
-                               title='avg z score response', ylims=[0, 0.25], show=False, fig=fig, ax=ax, sig_compare_lines={'*****': [0, 1]})
+    # fig, ax = (kwargs['fig'], kwargs['ax']) if 'fig' in kwargs else (None, None)
+    # fig, ax = pplot.plot_bar_with_points(data=[pj.flattenOnce(proximal_responses), pj.flattenOnce(distal_responses)], points=False,
+    #                            paired=False, bar=True, colors=['#db5aac', '#dbd25a'], edgecolor='black', lw = 1.25,
+    #                            x_tick_labels=['Proximal', 'Distal'], y_label='Response magnitude \n($\it{z}$-score)', shrink_text=1.3,
+    #                            title='avg z score response', ylims=[0, 0.25], show=False, fig=fig, ax=ax, sig_compare_lines={'*****': [0, 1]})
     #### // end
 
 

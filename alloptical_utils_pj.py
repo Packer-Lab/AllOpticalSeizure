@@ -23,7 +23,6 @@ from Vape.utils.utils_funcs import s2p_loader
 from Vape.utils import STAMovieMaker_noGUI as STAMM
 import scipy.stats as stats
 import statsmodels as sm
-from suite2p.run_s2p import run_s2p
 import matplotlib.pyplot as plt
 import seaborn as sns
 import time
@@ -164,6 +163,7 @@ class TwoPhotonImaging:
             }
 
         print(db)
+        from suite2p.run_s2p import run_s2p
 
         opsEnd = run_s2p(ops=ops, db=db)
 

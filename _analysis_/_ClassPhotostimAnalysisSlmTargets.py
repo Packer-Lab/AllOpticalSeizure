@@ -29,7 +29,7 @@ from funcsforprajay import plotting as pplot
 import funcsforprajay.funcs as pj
 
 from _utils_._anndata import AnnotatedData2
-from _utils_.alloptical_plotting import plot_settings, plotLfpSignal
+from _utils_.alloptical_plotting import plot_settings, plotLfpSignal, plot_periphotostim_avg, plot_periphotostim_avg2
 from _utils_.io import import_expobj
 import rep_fig_vis as rfv
 
@@ -262,7 +262,8 @@ class PhotostimAnalysisSlmTargets(Quantification):
     # 1) plot peri-photostim avg traces for all targets from all exp analyzed to make sure they look alright -- plot as little postage stamps
     @staticmethod
     @Utils.run_for_loop_across_exps(
-        run_trials=[AllOpticalExpsToAnalyze.pre_4ap_trials[0][0], AllOpticalExpsToAnalyze.post_4ap_trials[0][0]],
+        # run_trials=[AllOpticalExpsToAnalyze.pre_4ap_trials[0][0], AllOpticalExpsToAnalyze.post_4ap_trials[0][0]],
+        run_trials=['RL108 t-009'],
         allow_rerun=1)
     def plot_postage_stamps_photostim_traces(to_plot='delta dF', **kwargs):
         expobj: Union[alloptical, Post4ap] = kwargs['expobj']
@@ -317,11 +318,11 @@ class PhotostimAnalysisSlmTargets(Quantification):
             # fail_stims = np.where(expobj.responses_SLMtargets_dfprestimf.loc[cell] < 0.1 * 100)
             for i in success_stims[0]:
                 trace = trace_snippets[cell][i]
-                axs[a, b].plot(x_range, trace, color='skyblue', zorder=2, alpha=0.05)
+                # axs[a, b].plot(x_range, trace, color='skyblue', zorder=2, alpha=0.05)
 
             for i in fail_stims[0]:
                 trace = trace_snippets[cell][i]
-                axs[a, b].plot(x_range, trace, color='gray', zorder=3, alpha=0.05)
+                # axs[a, b].plot(x_range, trace, color='gray', zorder=3, alpha=0.05)
 
             if len(success_stims[0]) > 5:
                 success_avg = np.nanmean(trace_snippets[cell][success_stims], axis=0)
@@ -347,23 +348,24 @@ class PhotostimAnalysisSlmTargets(Quantification):
         fig.show()
 
     @staticmethod
-    def plot_variability_photostim_traces_by_targets(axs, fig):
+    def plot_variability_photostim_traces_by_targets(axs=None, fig=None):
 
         total_plot = 10
         ncols = total_plot
         nrows = total_plot // ncols
         if total_plot % ncols > 0 or total_plot % ncols == 0:
             nrows += 1
-        fig, axs = fig, axs if 'fig' is not None or 'axs' is not None else plt.subplots(nrows=nrows, ncols=ncols,
-                                                                                        figsize=(
-                                                                                            ncols * 1.2, nrows * 1.75),
-                                                                                        constrained_layout=True,
-                                                                                        dpi=300)
+        if fig is not None or axs is not None:
+            fig, axs = (fig, axs)
+        else:
+            plt.subplots(nrows=nrows, ncols=ncols, figsize=(ncols * 1.2, nrows * 1.75), constrained_layout=True, dpi=300)
+            axs = axs.T
 
         for ax in pj.flattenOnce(axs):
             ax.axis('off')
 
-        pre4ap_exp: Post4ap = import_expobj(exp_prep='RL108 t-009')
+        pre4ap_exp: alloptical = import_expobj(exp_prep='RL108 t-009')
+
 
         pre4ap_responses = pre4ap_exp.PhotostimAnalysisSlmTargets.adata.X
         trace_snippets = pre4ap_exp.SLMTargets_tracedFF_stims_dff
@@ -371,9 +373,32 @@ class PhotostimAnalysisSlmTargets(Quantification):
         stimsuccessrates = pre4ap_exp.StimSuccessRate_SLMtargets
         y_label = '% dFF'
 
+        x_range = np.linspace(0, trace_snippets.shape[2] / pre4ap_exp.fps,
+                              trace_snippets.shape[2])
+
+        # troubleshooting span of photostim duration
+        # plot_periphotostim_avg2(dataset=[pre4ap_exp.SLMTargets_tracedFF_stims_dff], fps=pre4ap_exp.fps, legend_labels=['pre4ap'], colors=None, avg_with_std=True,
+        #                     title='high quality plot',)
+        # fig, ax = plt.subplots(figsize=(5,5), dpi=100)
+        # for trace in np.mean(trace_snippets, axis=0):
+        #     ax.plot(x_range, trace)
+        #     ax.axvspan(pre4ap_exp.pre_stim / pre4ap_exp.fps, (pre4ap_exp.pre_stim + pre4ap_exp.stim_duration_frames)/ pre4ap_exp.fps, color='mistyrose', zorder=0)
+        # ax.set_title('troubleshooting span of photostim duration')
+        # ax.set_xlabel('Time')
+        # ax.set_ylabel('dFF')
+        # fig.show()
+
         # choose 10 random cells from pre4ap dataset
-        choice = np.random.choice(a=np.arange(0, trace_snippets.shape[0]), size=total_plot, replace=False)
+        # choice = np.random.choice(a=np.arange(0, trace_snippets.shape[0]), size=total_plot, replace=False)
+
+        # choose 10 cells with highest stim response magnitudes
+        mean_responses = np.mean(pre4ap_responses, axis=1)
+        mean_responses_sorted = np.argsort(mean_responses)
+        choice = mean_responses_sorted[-10:][::-1]
+
         pre4ap_responses_chosen = pre4ap_responses[choice]
+        mean_responses_chosen = np.mean(pre4ap_responses_chosen, axis=1)
+
         cvs_ = [np.std(responses_, ddof=1) / np.mean(responses_) for responses_ in pre4ap_responses_chosen]
         print('pre4ap cvs:', cvs_)
         cvs_sorted = np.argsort(cvs_)
@@ -392,7 +417,7 @@ class PhotostimAnalysisSlmTargets(Quantification):
         trace_snippets_all = (pre4ap_exp.SLMTargets_stims_dff, post4ap_exp.SLMTargets_stims_dff)
 
         for row, responses in enumerate((pre4ap_responses, post4ap_responses)):
-
+            trace_snippets = trace_snippets_all[row]
             for i, cell in enumerate(sorted_cells_chosen):  # for plotting only randomly chosen cells
                 a = i
                 b = row
@@ -403,27 +428,39 @@ class PhotostimAnalysisSlmTargets(Quantification):
 
                 # print(f'plotting target #{i}, CV: {cv:.3f}\n')
 
-                x_range = np.linspace(0, len(trace_snippets_all[row][cell][0]) / pre4ap_exp.fps,
-                                      len(trace_snippets_all[row][cell][0]))
+                # x_range = np.linspace(0, len(trace_snippets_all[row][cell][0]) / pre4ap_exp.fps,
+                #                       len(trace_snippets_all[row][cell][0]))
 
+                ax = axs[a, b].twiny()
+
+                # PLOT PHOTOSTIM DURATION SPAN for each ax
+                ax.axvspan(pre4ap_exp.pre_stim / pre4ap_exp.fps, (pre4ap_exp.pre_stim + pre4ap_exp.stim_duration_frames) / pre4ap_exp.fps, color='mistyrose', zorder=1)
+
+                # PLOT ALL STIMULI - SCATTER PLOT
                 # ax.scatter(np.random.choice(x_range[20:-20], size=len(responses_)), responses_, s=20, zorder=1, alpha=0.3)
                 x = simple_beeswarm(responses_)
                 # transform x
                 x_new = [(i + 1) / 2 * (x_range[-1]) for i in x]
                 # axs[a,b].scatter(x_new, responses_, s=10, alpha=0.4, color='yellowgreen', zorder=1)
-                sc = axs[a, b].scatter(x_new, responses_, s=3, alpha=0.4, c=[cv] * len(responses_), zorder=1,
+                axs[a, b].scatter(x_new, responses_, s=3, alpha=1, c=[cv] * len(responses_), zorder=5,
                                        cmap='viridis', vmin=0, vmax=3)
                 axs[a, b].set_xlim([-1.5, x_range[-1] + 1.5])
 
-                ax = axs[a, b].twiny()
-                avg = np.nanmean(trace_snippets[cell], axis=0)
-                ax.plot(x_range[:-4], pj.smoothen_signal(avg, 5), color='black', linewidth=1.5, zorder=5)
 
+                # PLOT MEAN TRACE SNIPPET
+                avg = np.nanmean(trace_snippets[cell], axis=0)
+                x_range_trace_snippet = np.linspace(0, trace_snippets.shape[2] / pre4ap_exp.fps,
+                                      len(pj.smoothen_signal(avg, 5)))
+                ax.plot(x_range_trace_snippet, pj.smoothen_signal(avg, 5), color='black', linewidth=1.5, zorder=9)
+                # ax.plot(x_range[:-4], pj.smoothen_signal(avg, 5), color='black', linewidth=1.5, zorder=5)
                 ax.set_ylim([-50, 200])
+
+
+                rfv.despine(ax, remove=['top', 'right', 'bottom', 'left'])
                 if i == 0:
+                    pass
                     # axs[a, b].set_ylabel(y_label)
                     # ax.set_ylabel(y_label)
-                    rfv.despine(ax, remove=['top', 'right', 'bottom', 'left'])
                     # ax.set_yticks([-10, 0, 50, 150])
                     # ax.set_yticklabels([-10, 0, 50, 150])
                     # axs[a, b].set_yticks([-10, 0, 50, 150])
@@ -431,8 +468,9 @@ class PhotostimAnalysisSlmTargets(Quantification):
                 else:
                     rfv.despine(ax, remove=['top', 'left', 'right', 'bottom'])
                     if row == 0 and i == total_plot - 1:
-                        rfv.add_scale_bar(ax=ax, length=(50, 1), bartype='L', text=('50% dFF', '1 $\it{s}$'), loc=(4.5, -120),
-                                          text_offset=[0.9, 25], fs=5)
+                        rfv.add_scale_bar(ax=ax, length=(50, 1), bartype='L', text=(f'50%\ndFF', '1$\it{sec}$'), loc=(9, -40),
+                                          text_offset=[0.1, 40], fs=10)
+                        # ax.set_xlim([-1.5, x_range[-1] + 1.5])
 
 
                 # axs[a, b].set_ylim([-0.2 * 100, 2.0 * 100])
@@ -470,9 +508,9 @@ class PhotostimAnalysisSlmTargets(Quantification):
         # fig, ax = plt.subplots(figsize=(6, 1), dpi=600)
         ax_cmap.imshow([colors], extent=[0, 3, 0, 0.5], vmin=0, vmax=3)
         ax_cmap.set_yticks([])
-        # rfv.despine(ax_cmap, remove=['top', 'left', 'right', 'bottom'])
+        rfv.despine(ax_cmap, remove=['top', 'left', 'right'])
         ax_cmap.tick_params(length=1.5)
-        ax_cmap.set_xticks([0, 1.5, 3])
+        ax_cmap.set_xticks([1, 2])
         ax_cmap.get_position()
 
         # save_path_full = f'{SAVE_FIG}/photostim-variation-individual-targets-dFF-colorbar.png'
@@ -1669,19 +1707,19 @@ def plot__avg_photostim_dff_allexps():
 
 if __name__ == '__main__':
     main = PhotostimAnalysisSlmTargets
-    main.run__init()
+    # main.run__init()
     # main.run__add_fps()
 
     # RUNNING PLOTS:
     # main.plot_postage_stamps_photostim_traces()
-    # main.plot_variability_photostim_traces_by_targets()
+    main.plot_variability_photostim_traces_by_targets()
 
     # main.correlation_matrix_responses()
     # main.pca_responses()
 
-    main.collect_all_targets_all_exps()
-    main.correlation_matrix_all_targets()
-    main.pca_responses_all_targets()
+    # main.collect_all_targets_all_exps()
+    # main.correlation_matrix_all_targets()
+    # main.pca_responses_all_targets()
     # main.plot__variability()
     # main.plot__mean_response_vs_variability()
     # plot__avg_photostim_dff_allexps()
