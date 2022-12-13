@@ -1,6 +1,8 @@
 ## FIGURE 1 - LIVE IMAGING OF SEIZURES IN AWAKE ANIMALS
 import sys
 
+from matplotlib import pyplot as plt
+
 sys.path.extend(['/home/pshah/Documents/code/AllOpticalSeizure', '/home/pshah/Documents/code/AllOpticalSeizure'])
 sys.path.extend(['/home/pshah/Documents/code/reproducible_figures-main'])
 
@@ -66,6 +68,65 @@ print('\n\n')
 
 # rfv.show_test_figure_layout(fig, axes=axes, show=True)  # test what layout looks like quickly, but can also skip and moveon to plotting data.
 
+# %% F) DECONVOLVED SPIKE RATE ANALYSIS
+
+# RUN collect spk rates
+Suite2pROIsSz.collect__avg_spk_rate(Suite2pROIsSzResults=results, rerun=False)
+
+
+# PLOT averaged results as a bar chart
+
+# results = Suite2pROIsSzResults.load()
+#
+# # todo add statistical test for this bar chart!
+# Suite2pROIsSz.plot__avg_spk_rate(results.avg_spk_rate['baseline'],
+#                                  results.avg_spk_rate['interictal'])
+#
+
+# PLOT individual results as a cum sum plot
+
+# evaluate the histogram
+# ax = axes['F'][0]
+f, ax2 = plt.subplots(figsize=(5, 5))
+ax = ax2
+# baseline experiments
+for pre4ap_exp in results.neural_activity_rate['baseline']:
+    # test plot cumsum plot
+    values, base = np.histogram(pre4ap_exp, bins=100)
+
+    # ax2.hist(pre4ap_exp, density=True, histtype='stepfilled', alpha=0.3, bins=100, color='cornflowerblue')
+
+    # evaluate the cumulative function
+    cumulative = np.cumsum(values) / len(pre4ap_exp)
+
+    # plot the cumulative function
+    ax.plot(base[:-1], cumulative, c='navy', alpha=0.5, lw=1)
+
+# baseline experiments
+for interictal_exp in results.neural_activity_rate['interictal']:
+    # test plot cumsum plot
+    values, base = np.histogram(interictal_exp, bins=100)
+
+    # ax2.hist(interictal_exp, density=True, histtype='stepfilled', alpha=0.3, bins=100, color='forestgreen')
+
+    # evaluate the cumulative function
+    cumulative = np.cumsum(values) / len(interictal_exp)
+
+    # plot the cumulative function
+    ax.plot(base[:-1], cumulative, c='darkgreen', alpha=0.5, lw=1)
+
+# ax.set_xlim([0, 200])
+# ax2.set_xlim([0, 200])
+# ax.set_yticks([0, 1])
+# ax.set_xticks([0, 100, 200])
+# ax.set_xlabel('Avg. activity\nrate (Hz)')
+ax.spines['right'].set_visible(False)
+ax.spines['top'].set_visible(False)
+f.show()
+
+rfv.add_label_axes(text='F', ax=axes['F'][0], y_adjust=0.03, x_adjust=0.06)
+
+
 
 
 # %% D) suite2p cells gcamp imaging for seizures, with simultaneous LFP recording
@@ -115,63 +176,6 @@ ax2.set_title('')
 rfv.add_label_axes(text='E', ax=axes['E'][0], x_adjust=0.07, y_adjust=0.03)
 
 
-
-# %% F) DECONVOLVED SPIKE RATE ANALYSIS
-
-
-# RUN collect spk rates
-Suite2pROIsSz.collect__avg_spk_rate(Suite2pROIsSzResults=results, rerun=False)
-
-
-# PLOT averaged results as a bar chart
-
-# results = Suite2pROIsSzResults.load()
-#
-# # todo add statistical test for this bar chart!
-# Suite2pROIsSz.plot__avg_spk_rate(results.avg_spk_rate['baseline'],
-#                                  results.avg_spk_rate['interictal'])
-#
-
-# PLOT individual results as a cum sum plot
-
-# evaluate the histogram
-ax = axes['F'][0]
-# f, ax2 = plt.subplots(figsize=(5, 5))
-# baseline experiments
-for pre4ap_exp in results.neural_activity_rate['baseline']:
-    # test plot cumsum plot
-    values, base = np.histogram(pre4ap_exp, bins=100)
-
-    # ax2.hist(pre4ap_exp, density=True, histtype='stepfilled', alpha=0.3, bins=100, color='cornflowerblue')
-
-    # evaluate the cumulative function
-    cumulative = np.cumsum(values) / len(pre4ap_exp)
-
-    # plot the cumulative function
-    ax.plot(base[:-1], cumulative, c='navy', alpha=0.5, lw=1)
-
-# baseline experiments
-for interictal_exp in results.neural_activity_rate['interictal']:
-    # test plot cumsum plot
-    values, base = np.histogram(interictal_exp, bins=100)
-
-    # ax2.hist(interictal_exp, density=True, histtype='stepfilled', alpha=0.3, bins=100, color='forestgreen')
-
-    # evaluate the cumulative function
-    cumulative = np.cumsum(values) / len(interictal_exp)
-
-    # plot the cumulative function
-    ax.plot(base[:-1], cumulative, c='darkgreen', alpha=0.5, lw=1)
-
-ax.set_xlim([0, 200])
-# ax2.set_xlim([0, 200])
-ax.set_yticks([0, 1])
-ax.set_xticks([0, 100, 200])
-# ax.set_xlabel('Avg. activity\nrate (Hz)')
-ax.spines['right'].set_visible(False)
-ax.spines['top'].set_visible(False)
-
-rfv.add_label_axes(text='F', ax=axes['F'][0], y_adjust=0.03, x_adjust=0.06)
 
 
 # %%

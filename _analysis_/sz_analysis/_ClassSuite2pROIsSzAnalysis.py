@@ -165,12 +165,17 @@ class Suite2pROIsSz(Quantification):
                 # calculate spks/s across all cells
                 spks_per_sec = np.sum(expobj.Suite2pROIsSz.adata.layers['s2p_spks'], axis=1) / (
                         expobj.n_frames / expobj.fps)
+                spks_per_sec = np.sum(expobj.Suite2pROIsSz.adata.layers['raw_dFF_normalized'], axis=1) / (
+                        expobj.n_frames / expobj.fps)
                 avg_spks_per_sec = np.mean(spks_per_sec)
 
                 # Gaussian filter smoothing of spks data
                 from scipy.ndimage import gaussian_filter
                 spks_smooth_ = np.asarray([gaussian_filter(a, sigma=frames2sigma(frames=int(expobj.fps))) for a in
                                            expobj.Suite2pROIsSz.adata.layers['s2p_spks']])  # TODO this is Matthias's suggested metric for calculating sigma, need to confirm
+
+                spks_smooth_ = np.asarray([gaussian_filter(a, sigma=frames2sigma(frames=int(expobj.fps))) for a in
+                                           expobj.Suite2pROIsSz.adata.layers['raw_dFF_normalized']])
 
                 # # rebinning of spks data
                 # bin = 4 if int(expobj.fps) == 15 else 8
@@ -185,16 +190,16 @@ class Suite2pROIsSz(Quantification):
 
                 neural_activity_rate = np.array(area) / imaging_len_secs
 
-                # # test plot cumsum plot
-                # values, base = np.histogram(spks_per_sec, bins=100)
-                #
-                # # evaluate the cumulative function
-                # cumulative = np.cumsum(values) / len(spks_per_sec)
-                #
-                # # plot the cumulative function
-                # plt.plot(base[:-1], cumulative, c='blue')
-                #
-                # plt.show()
+                # test plot cumsum plot
+                values, base = np.histogram(spks_per_sec, bins=100)
+
+                # evaluate the cumulative function
+                cumulative = np.cumsum(values) / len(spks_per_sec)
+
+                # plot the cumulative function
+                plt.plot(base[:-1], cumulative, c='blue')
+                plt.title(f'Raw dff normalized - {expobj.t_series_name} - {expobj.exptype}')
+                plt.show()
 
                 return avg_spks_per_sec, spks_per_sec, neural_activity_rate
 
@@ -206,12 +211,17 @@ class Suite2pROIsSz(Quantification):
                 interictal_idx = [idx for idx, val in enumerate(expobj.Suite2pROIsSz.adata.var['ictal_fr']) if val == False]
                 interictal_spks_per_sec = np.sum(expobj.Suite2pROIsSz.adata.layers['s2p_spks'][:, interictal_idx],
                                                  axis=1) / (expobj.n_frames / expobj.fps)
+                interictal_spks_per_sec = np.sum(expobj.Suite2pROIsSz.adata.layers['raw_dFF_normalized'][:, interictal_idx],
+                                                 axis=1) / (expobj.n_frames / expobj.fps)
                 avg_interictal_spks_per_sec = np.mean(interictal_spks_per_sec)
 
                 # Gaussian filter smoothing of spks data
                 from scipy.ndimage import gaussian_filter
                 spks_smooth_ = np.asarray([gaussian_filter(a, sigma=frames2sigma(frames=int(expobj.fps))) for a in
                                            expobj.Suite2pROIsSz.adata.layers['s2p_spks'][:, interictal_idx]])  # TODO this is Matthias's suggested metric for calculating sigma, need to confirm
+
+                spks_smooth_ = np.asarray([gaussian_filter(a, sigma=frames2sigma(frames=int(expobj.fps))) for a in
+                                           expobj.Suite2pROIsSz.adata.layers['raw_dFF_normalized'][:, interictal_idx]])  # TODO this is Matthias's suggested metric for calculating sigma, need to confirm
 
                 # # rebinning of spks data
                 # bin = 4 if int(expobj.fps) == 15 else 8
@@ -225,6 +235,17 @@ class Suite2pROIsSz(Quantification):
                 imaging_len_secs = spks_smooth_binned.shape[1] / expobj.fps
 
                 neural_activity_rate = np.array(area) / imaging_len_secs
+
+                # test plot cumsum plot
+                values, base = np.histogram(interictal_spks_per_sec, bins=100)
+
+                # evaluate the cumulative function
+                cumulative = np.cumsum(values) / len(interictal_spks_per_sec)
+
+                # plot the cumulative function
+                plt.plot(base[:-1], cumulative, c='blue')
+                plt.title(f'Raw dff normalized - {expobj.t_series_name} - {expobj.exptype}')
+                plt.show()
 
                 return avg_interictal_spks_per_sec, interictal_spks_per_sec, neural_activity_rate
 
@@ -302,17 +323,11 @@ if __name__ == '__main__':
     main = Suite2pROIsSz
     results: Suite2pROIsSzResults = Suite2pROIsSzResults.load()
 
-    main.run__init_Suite2pROIsSz()
-    main.label__interictal_ictal_post4ap()
+    # main.run__init_Suite2pROIsSz()
+    # main.label__interictal_ictal_post4ap()
 
-    # pre4ap_spk_rate, interictal_spk_rate, ictal_spk_rate = main.collect__avg_spk_rate()
-
-    # results.avg_spk_rate = {'pre4ap': pre4ap_spk_rate,
-    #                         'interictal': interictal_spk_rate,
-    #                         'ictal': ictal_spk_rate}
-    # results.save_results()
-    # main.plot__avg_spk_rate(results.avg_spk_rate['pre4ap'], results.avg_spk_rate['interictal'],
-    #                         results.avg_spk_rate['ictal'])
+    main.collect__avg_spk_rate(results, rerun=True)
+    # main.plot__avg_spk_rate(results.avg_spk_rate['baseline'], results.avg_spk_rate['interictal'])
 
 # %%
 
