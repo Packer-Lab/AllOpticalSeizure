@@ -683,11 +683,11 @@ class PhotostimAnalysisSlmTargets(Quantification):
         # ax2 = fig.add_subplot(position = bbox)
         ax_cmap = fig.add_subplot()
         ax_cmap.set_position(pos=bbox)
-        rfv.despine(ax_cmap, remove=['top', 'bottom', 'left'])
+        # rfv.despine(ax_cmap, remove=['top', 'bottom', 'left'])
         ax_cmap.tick_params(length=1.5)
         cbar = fig.colorbar(mesh, cax=ax_cmap, ticks=[-1, 0, 1])
         cbar.set_ticklabels(['-0.5', '0', '0.5'])
-        ax_cmap.axis('off')
+        # ax_cmap.axis('off')
         # fig.show()
         # pass
         # cmap = plt.cm.get_cmap('bwr')
@@ -800,27 +800,27 @@ class PhotostimAnalysisSlmTargets(Quantification):
             # results.corr_targets['between - interictal'] = between_exp_corr_interictal
 
 
-        # ALL MID-INTERICTAL STIMS ################################################################################################################################################################################################################################################################################################
-        interictal_responses = results.midinterictal_adata.X
-        # remove nans
-        non_nan_col = np.min([i for i in range(interictal_responses.shape[1]) if sum(np.isnan(interictal_responses[:, i])) == interictal_responses.shape[0]])
-        # z_scored_responses = interictal_responses[:, :78]
-        z_scored_responses = pd.DataFrame(interictal_responses)
+            # ALL MID-INTERICTAL STIMS ################################################################################################################################################################################################################################################################################################
+            interictal_responses = results.midinterictal_adata.X
+            # remove nans
+            non_nan_col = np.min([i for i in range(interictal_responses.shape[1]) if sum(np.isnan(interictal_responses[:, i])) == interictal_responses.shape[0]])
+            # z_scored_responses = interictal_responses[:, :78]
+            z_scored_responses = pd.DataFrame(interictal_responses)
 
-        # correlation within exp
-        within_exp_corr_interictal = {}
-        for exp in np.unique(results.midinterictal_adata.obs['exp']):
-            # exp = np.unique(results.midinterictal_adata.obs['exp'])[0]
-            idx_ = np.where(results.midinterictal_adata.obs['exp'] == exp)[0]
-            # count_nans = [sum(np.isnan(z_scored_responses[idx_, i])) for i in range(z_scored_responses.shape[1])]
-            _non_nan_cols_across = np.array([i for i in range(z_scored_responses.shape[1]) if sum(np.isnan(z_scored_responses.iloc[idx_, i])) == 0])
-            responses_ = z_scored_responses.iloc[idx_, _non_nan_cols_across]
-            responses_corr_mat = np.corrcoef(responses_)
-            idx2 = np.triu_indices(len(responses_), k=1)
-            avg_corr = np.mean(responses_corr_mat[idx2])
-            within_exp_corr_interictal[exp] = avg_corr
+            # correlation within exp
+            within_exp_corr_interictal = {}
+            for exp in np.unique(results.midinterictal_adata.obs['exp']):
+                # exp = np.unique(results.midinterictal_adata.obs['exp'])[0]
+                idx_ = np.where(results.midinterictal_adata.obs['exp'] == exp)[0]
+                # count_nans = [sum(np.isnan(z_scored_responses[idx_, i])) for i in range(z_scored_responses.shape[1])]
+                _non_nan_cols_across = np.array([i for i in range(z_scored_responses.shape[1]) if sum(np.isnan(z_scored_responses.iloc[idx_, i])) == 0])
+                responses_ = z_scored_responses.iloc[idx_, _non_nan_cols_across]
+                responses_corr_mat = np.corrcoef(responses_)
+                idx2 = np.triu_indices(len(responses_), k=1)
+                avg_corr = np.mean(responses_corr_mat[idx2])
+                within_exp_corr_interictal[exp] = avg_corr
 
-        results.corr_targets['within - midinterictal'] = within_exp_corr_interictal
+            results.corr_targets['within - midinterictal'] = within_exp_corr_interictal
 
         # NOTE: DIDN'T BOTHER CACLULATING BETWEEN EXP CORRELATIONS FOR MIDINTERICTAL STIMS BECAUSE THE BETWEEN EXP COMPARISON DOENS'T MAKE SENSE AND NOT WORTH TROUBLESHOOTING FOR A NEW SET OF RESULTS
 
@@ -832,25 +832,23 @@ class PhotostimAnalysisSlmTargets(Quantification):
         midinterictal = list(results.corr_targets['within - midinterictal'].values())[1:]
         assert len(midinterictal) == len(baseline), f'mismatch in number of experiments in midinterictal {len(midinterictal)} and baseline {len(baseline)}'
 
-        stats_score = wilcoxon(baseline, midinterictal)
-        print(stats_score)
+        # stats_score = ttest_ind(midinterictal, baseline)
+        stats_score = ttest_rel(midinterictal, baseline, alternative='greater')
+        print(f"paired t-test score, baseline vs. mid-interictal: {stats_score}")
 
         # MAKE PLOT
         fig, axs = plt.subplots(ncols=1, nrows=1, figsize=(3, 4)) if fig is None and axs is None else (fig, axs)
-        plot_bar_with_points(data=[list(results.corr_targets['within - baseline'].values()),
-                                   list(results.corr_targets['within - interictal'].values())], paired=True, fontsize=8,
-                             bar=False, x_tick_labels=['Baseline', 'Interictal'], colors=['royalblue', 'forestgreen'],
-                             y_label='corr coef (r)',
-                             show=False, alpha=1, fig=fig, ax=axs[0], s=25, ylims=[-0.1, 0.85])
+        plot_bar_with_points(data=[baseline, midinterictal], paired=True, fontsize=10, bar=False, x_tick_labels=['Baseline', 'Interictal'], colors=['royalblue', 'forestgreen'],
+                             y_label='Correlation (R)', show=False, alpha=1, fig=fig, ax=axs, s=15, ylims=[-0.05, 0.93], sig_compare_lines = {'*': [0, 1]})
+        axs.text(x=2.5, y=0, s=f't-test rel.: {stats_score[1]:.2e}', fontsize=5)
 
         # plot_bar_with_points(data=[list(results.corr_targets['within - baseline'].values()), list(results.corr_targets['between - baseline'].values())],
         #     bar=False, title='Baseline', x_tick_labels=['within exp', 'across exp'],
-        #     colors=['gold', 'gray'], figsize=(4, 4), y_label='corr coef (r)', show=False, alpha=1,fig=fig, ax = axs[0], s=25, ylims=[-0.1, 0.80])
+        #     colors=['gold', 'gray'], figsize=(4, 4), y_label='corr coef (r)', show=False, alpha=1,fig=fig, ax = axs, s=25, ylims=[-0.1, 0.80])
         # plot_bar_with_points(data=[list(results.corr_targets['within - interictal'].values()), list(results.corr_targets['between - interictal'].values())],
         #     bar=False, title='Interictal', x_tick_labels=['within exp', 'across exp'],
         #     colors=['gold', 'gray'], figsize=(4, 4), y_label='', show=False, alpha=1,fig=fig, ax = axs[1], s=25, ylims=[-0.1, 0.80])
-        for ax in axs:
-            ax.set_xticks([])
+        # axs.set_xticks([])
         # axs[1].spines['left'].set_visible(False)
         # axs[1].set_yticklabels([])
 
@@ -862,15 +860,14 @@ class PhotostimAnalysisSlmTargets(Quantification):
                            Line2D([0], [0], marker='o', color='w', label='Interictal',
                                   markerfacecolor='forestgreen', markersize=6, markeredgecolor='black')]
 
-        bbox = np.array(axs[0].get_position())
+        bbox = np.array(axs.get_position())
         bbox = Bbox.from_extents(bbox[1, 0] + 0.02, bbox[1, 1] - 0.02, bbox[1, 0] + 0.06, bbox[1, 1])
         # bbox = Bbox.from_extents(bbox[1, 0], bbox[0, 0], bbox[0, 1] + 0.00, bbox[0, 1] - 0.02)
         # ax2 = fig.add_subplot(position = bbox)
-        axlegend = fig.add_subplot()
-        axlegend.set_position(pos=bbox)
-        axlegend.legend(handles=legend_elements, loc='center')
-        axlegend.axis('off')
-        # fig.show()
+        # axlegend = fig.add_subplot()
+        # axlegend.set_position(pos=bbox)
+        # axlegend.legend(handles=legend_elements, loc='center')
+        # axlegend.axis('off')
         # fig.tight_layout(pad=0.7)
         # fig.show()
 
