@@ -774,11 +774,12 @@ class TargetsSzInvasionSpatial_codereview(SLMTargets):
 
         # ax.plot(distances[:-1], avg_responses, c='cornflowerblue', zorder=1)
         ax = axs[0] if 'fig' in kwargs or 'axes' in kwargs else axs[0]
-        ax.step(distances, avg_responses, c='cornflowerblue', zorder=2)
+        ax.step(distances, avg_responses, c='cornflowerblue', zorder=3)
         # ax.fill_between(x=(distances-0)[:-1], y1=conf_int[:-1, 0], y2=conf_int[:-1, 1], color='lightgray', zorder=0)
         ax.axhline(0, ls='--', lw=1, color='black', zorder=0)
         ax.fill_between(x=conf_int_distances, y1=conf_int_values_neg, y2=conf_int_values_pos, color='lightgray',
-                        zorder=0)
+                        zorder=2)
+        ax.step(distances, avg_responses, c='cornflowerblue', zorder=3)
         # ax.scatter(distances[:-1], avg_responses, c='orange', zorder=4)
         ax.set_ylim([-2, 2.25])
         ax.set_yticks([-1, 0, 1, 2])

@@ -47,13 +47,138 @@ save_fig = True
 
 
 
-# %% archive:
+# %% MAKE FIGURE LAYOUT
+rfv.set_fontsize(10)
+
+layout = {
+    # 'A': {'panel_shape': (1, 1, 'twinx'),
+    #       'bound': (0.15, 0.75, 0.45, 0.90)},
+    'A': {'panel_shape': (1, 2),
+          'bound': (0.15, 0.60, 0.45, 0.90),
+          'hspace': 0},
+    'B': {'panel_shape': (1, 1),
+          'bound': (0.65, 0.75, 0.72, 0.90)}
+}
+
+dpi = 300
+fig, axes, grid = rfv.make_fig_layout(layout=layout, dpi=dpi)
+
+
+
+
+# rfv.show_test_figure_layout(fig, axes=axes, show=True)  # test what layout looks like quickly, but can also skip and moveon to plotting data.
+
+
+
+# %% A - example of all seizures from RL108 t-013
+
+expobj: Post4ap = import_expobj(exp_prep='RL108 t-013')
+
+mean_interictal = np.mean([expobj.meanRawFluTrace[x] for x in range(expobj.n_frames) if (x not in expobj.seizure_frames and x not in expobj.photostim_frames and x < expobj.photostim_frames[-1])])
+lfp_trace = expobj.lfp_signal[expobj.frame_clock][:expobj.n_frames]
+
+
+lfp_traces = []
+traces = []
+num_frames = []
+for onset, offset in zip(expobj.seizure_lfp_onsets, expobj.seizure_lfp_offsets):
+    frames = np.arange(int(offset - expobj.fps * 10), int(offset + expobj.fps * 40))
+    frames = [frame for frame in frames if frame not in expobj.photostim_frames]
+    try:
+        if onset > 0 and offset + int(expobj.fps * 30) < expobj.n_frames:
+            pre_onset_frames = np.arange(int(onset - expobj.fps * 10), int(onset))
+            pre_onset_frames = [frame for frame in pre_onset_frames if frame not in expobj.photostim_frames]
+            # pre_onset = expobj.meanRawFluTrace[onset - int(expobj.fps * 30): onset]
+            pre_onset = expobj.meanRawFluTrace[pre_onset_frames]
+            pre_mean = np.mean(pre_onset)
+
+            trace = expobj.meanRawFluTrace[frames]
+            lfp_traces_ = lfp_trace[frames]
+
+            # trace = expobj.meanRawFluTrace[int(offset - expobj.fps * 10): int(offset + expobj.fps * 30)]
+            trace_norm = (trace / mean_interictal) * 100
+            # trace_norm = (trace / pre_mean) * 100
+            # ax.plot(trace_norm, lw=0.3)
+
+            lfp_traces.append(lfp_traces_)
+            traces.append(trace_norm)
+            num_frames.append(len(frames))
+    except:
+        pass
+
+x_range = np.linspace(0, 30, min(num_frames))
+mean_ = np.mean([trace[:min(num_frames)] for trace in traces], axis=0)
+sem_ = sem([trace[:min(num_frames)] for trace in traces])
+
+# %%
+
+# add to plot
+ax = axes['A'][0]
+ax2 = axes['A'][1]
+
+# f, ax = plt.subplots(figsize=(5, 3))
+ax.plot(x_range, mean_, c='black', lw=1.5)
+ax.fill_between(x_range, mean_ - sem_, mean_ + sem_, alpha=0.3, color='forestgreen')
+# ax.axhline(y=100, ls='--', zorder=0, color='black', lw=1)
+ax.plot([0, x_range[-1]], [100]*2, ls='--', zorder=0, color='black', lw=1)
+ax.set_xticks([])
+# ax.set_xticklabels(['', '', '', ''])
+ax.set_ylim([70, 160])
+ax.set_yticks([70, 100, 130, 160])
+ax.set_yticklabels([70, 100, 130, 160], fontsize=10)
+rfv.despine(ax=ax, keep=['left'])
+# ax2 = ax.twinx()
+ax2.spines['left'].set_visible(True)
+for trace in [trace[:min(num_frames)] for trace in lfp_traces]:
+    ax2.plot(x_range, trace, c='black', lw=0.75, alpha=0.4)
+ax2.set_ylim([-6.5, 1.3])
+ax2.set_yticks([])
+ax2.set_xticks([0, 10, 20, 30])
+ax2.set_xticklabels([0, 10, 20, 30], fontsize=10)
+rfv.despine(ax=ax2, remove=['top', 'right', 'left'])
+rfv.add_scale_bar(ax=ax2, length=1, bartype='|', text='1mV', loc=(ax2.get_xlim()[1] + 1, -0.4), text_offset=[-0.4, 0], fs=10, lw=1.25)
+ax.set_ylim([60, 160])
+ax.set_ylabel('Mean FOV Ca$^{2+}$\n(% dFF)', fontsize=10)
+# ax2.set_ylabel('LFP (mV)', fontsize=10)
+ax2.set_xlabel('Time (secs)', fontsize=10)
+# add lfp traces
+
+rfv.add_label_axes(text='A', ax=axes['A'][0], y_adjust=0.01, x_adjust=0.13)
+ax.set_ylim([70, 160])
+ax.set_xlim([0, 30])
+ax2.set_xlim([0, 30])
+ax.margins(x=10, y=0)
+ax2.margins(x=10, y=0)
+
+
+
+
+# %% B - quantification of post-sz norm mean Flu of each seizure
+
+
+mean_post_seizure_termination_all = Results.meanFOV_post_sz_term
+
+plot_bar_with_points([mean_post_seizure_termination_all], x_tick_labels=[''], bar=False, ax=axes['B'][0], show=False, y_label='Mean FOV Ca$^{2+}$\n(% dFF)',
+                     fig=fig, ylims=[60, 110], s=50, colors=['cornflowerblue'], alpha=1, fontsize=10)
+rfv.add_label_axes(text='B', ax=axes['B'][0], y_adjust=0.01, x_adjust=0.12)
+
+
+# %%
+if save_fig and dpi > 250:
+    save_figure(fig=fig, save_path_full=f"{SAVE_FOLDER}/suppl-sz-term-meanFOVsignal-RF.png")
+    save_figure(fig=fig, save_path_full=f"{SAVE_FOLDER}/suppl-sz-term-meanFOVsignal-RF.svg")
+
+fig.show()
+
+
+# %% MEASUREMENTS FUNCTIONS BELOW
+
 
 # inspectExperimentMeanFOVandLFP(run_post=True)
 
 
 # CHECKING POST-ICTAL SUPPRESSION PLOTS FOR ALL EXPERIMENTS
-@run_for_loop_across_exps(run_pre4ap_trials=False, run_post4ap_trials=1, allow_rerun=True, skip_trials=['PS07 t-011'])
+@run_for_loop_across_exps(run_pre4ap_trials=False, run_post4ap_trials=1, allow_rerun=False, skip_trials=['PS07 t-011'])
 def __photostim_timed_postictal(**kwargs):
     expobj: Post4ap = kwargs['expobj']
 
@@ -110,122 +235,10 @@ def __photostim_timed_postictal(**kwargs):
 
     return mean_, lfp_traces
 
-__photostim_timed_postictal()
-
-
-
-
-
-# %% MAKE FIGURE LAYOUT
-rfv.set_fontsize(8)
-
-layout = {
-    'A': {'panel_shape': (1, 1, 'twinx'),
-          'bound': (0.15, 0.75, 0.45, 0.90)},
-    'B': {'panel_shape': (1, 1),
-          'bound': (0.6, 0.75, 0.67, 0.90)}
-}
-
-dpi = 100
-fig, axes, grid = rfv.make_fig_layout(layout=layout, dpi=dpi)
-
-
-rfv.add_label_axes(text='A', ax=axes['A'][0][0], y_adjust=0.01, x_adjust=0.1)
-rfv.add_label_axes(text='B', ax=axes['B'][0], y_adjust=0.01, x_adjust=0.101)
-
-
-# rfv.show_test_figure_layout(fig, axes=axes, show=True)  # test what layout looks like quickly, but can also skip and moveon to plotting data.
-
-
-
-# %% A - example of all seizures from RL108 t-013
-
-expobj: Post4ap = import_expobj(exp_prep='RL108 t-013')
-
-mean_interictal = np.mean([expobj.meanRawFluTrace[x] for x in range(expobj.n_frames) if (x not in expobj.seizure_frames and x not in expobj.photostim_frames and x < expobj.photostim_frames[-1])])
-lfp_trace = expobj.lfp_signal[expobj.frame_clock][:expobj.n_frames]
-
-
-lfp_traces = []
-traces = []
-num_frames = []
-for onset, offset in zip(expobj.seizure_lfp_onsets, expobj.seizure_lfp_offsets):
-    frames = np.arange(int(offset - expobj.fps * 10), int(offset + expobj.fps * 40))
-    frames = [frame for frame in frames if frame not in expobj.photostim_frames]
-    try:
-        if onset > 0 and offset + int(expobj.fps * 30) < expobj.n_frames:
-            pre_onset_frames = np.arange(int(onset - expobj.fps * 10), int(onset))
-            pre_onset_frames = [frame for frame in pre_onset_frames if frame not in expobj.photostim_frames]
-            # pre_onset = expobj.meanRawFluTrace[onset - int(expobj.fps * 30): onset]
-            pre_onset = expobj.meanRawFluTrace[pre_onset_frames]
-            pre_mean = np.mean(pre_onset)
-
-            trace = expobj.meanRawFluTrace[frames]
-            lfp_traces_ = lfp_trace[frames]
-
-            # trace = expobj.meanRawFluTrace[int(offset - expobj.fps * 10): int(offset + expobj.fps * 30)]
-            trace_norm = (trace / mean_interictal) * 100
-            # trace_norm = (trace / pre_mean) * 100
-            # ax.plot(trace_norm, lw=0.3)
-
-            lfp_traces.append(lfp_traces_)
-            traces.append(trace_norm)
-            num_frames.append(len(frames))
-    except:
-        pass
-
-x_range = np.linspace(0, 30, min(num_frames))
-mean_ = np.mean([trace[:min(num_frames)] for trace in traces], axis=0)
-sem_ = sem([trace[:min(num_frames)] for trace in traces])
-# %%
-# add to plot
-ax = axes['A'][0][0]
-ax2 = axes['A'][0][1]
-fig.show()
-# %%
-# f, ax = plt.subplots(figsize=(5, 3))
-ax.plot(x_range, mean_, c='black', lw=0.5)
-ax.fill_between(x_range, mean_ - sem_, mean_ + sem_, alpha=0.3)
-ax.axhline(y=100)
-# ax2 = ax.twinx()
-ax2.spines['right'].set_visible(True)
-for trace in [trace[:min(num_frames)] for trace in lfp_traces]:
-    ax2.plot(x_range, trace, c='black', lw=0.5, alpha=0.4)
-ax.set_ylim([60, 160])
-ax.set_ylabel('Mean FOV Flu \n (norm. to interictal)')
-ax.set_xlabel('Time (secs)')
-# add lfp traces
-
-fig.show()
-
-
-
-
-# %% B - quantification of post-sz norm mean Flu of each seizure
-
-
-mean_post_seizure_termination_all = Results.meanFOV_post_sz_term
-
-plot_bar_with_points([mean_post_seizure_termination_all], x_tick_labels=[''], bar=False, ax=axes['B'][0], show=False, y_label='Mean FOV Flu \n (norm. to interictal)',
-                     fig=fig, ylims=[60, 110], s=60, colors=['cornflowerblue'], alpha=1, fontsize=10)
-
-
-# %%
-if save_fig and dpi > 250:
-    save_figure(fig=fig, save_path_full=f"{SAVE_FOLDER}/suppl-sz-term-meanFOVsignal-RF.png")
-    save_figure(fig=fig, save_path_full=f"{SAVE_FOLDER}/suppl-sz-term-meanFOVsignal-RF.svg")
-
-
-fig.show()
-
-
+# __photostim_timed_postictal()
 
 
 # %% archive:
-
-# inspectExperimentMeanFOVandLFP(run_post=True)
-
-
 
 # CHECKING POST-ICTAL SUPPRESSION PLOTS FOR ALL EXPERIMENTS
 @run_for_loop_across_exps(run_pre4ap_trials=False, run_post4ap_trials=1, allow_rerun=True, skip_trials=['PS07 t-011'])

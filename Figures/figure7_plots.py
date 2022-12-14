@@ -86,10 +86,9 @@ def z_score_response_proximal_distal(results=results, **kwargs):
     #### new bar plot including interictal and baseline z score responses
 
     fig, ax = plt.subplots(figsize=[3, 3]) if 'fig' not in kwargs and 'ax' not in kwargs else (kwargs['fig'], kwargs['ax'])
-    fig, ax = pplot.plot_bar_with_points(data=[pj.flattenOnce(proximal_responses), pj.flattenOnce(distal_responses), pj.flattenOnce(interictal_responses),
-                                               pj.flattenOnce(baseline_responses)], points=False,
-                               paired=False, bar=True, colors=['#db5aac', '#dbd25a', 'gray', 'cornflowerblue'], edgecolor='black', lw = 0.8,
-                               x_tick_labels=[f'Proximal', 'Distal', 'Interictal', 'Baseline'], y_label='Photostim. response \n($\it{z}$-score to baseline)', shrink_text=1.3,
+    fig, ax = pplot.plot_bar_with_points(data=[pj.flattenOnce(proximal_responses), pj.flattenOnce(distal_responses), pj.flattenOnce(interictal_responses)], points=False,
+                               paired=False, bar=True, colors=['#db5aac', '#dbd25a', 'forestgreen'], edgecolor='black', lw = 0.8, capsize=3.5,
+                               x_tick_labels=[f'Proximal', 'Distal', 'Interictal'], y_label='Response magnitude\n($\it{z}$-score)', shrink_text=1.25,
                                title='avg z score response', show=False, fig=fig, ax=ax)
     #### // end
 

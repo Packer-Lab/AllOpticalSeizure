@@ -18,8 +18,6 @@ import rep_fig_vis as rfv
 
 from _analysis_.nontargets_analysis._ClassPhotostimResponsesAnalysisNonTargets import \
     PhotostimResponsesAnalysisNonTargets
-import funcsforprajay.plotting as pplot
-import funcsforprajay.funcs as pj
 
 import numpy as np
 
@@ -43,7 +41,7 @@ distance_lims = [19, 400]  # limit of analysis
 ## Set general plotting parameters
 # rfv.set_fontsize(7)
 
-test = True
+test = 0
 save_fig = True if not test else False
 dpi = 100 if test else 300
 
@@ -73,8 +71,13 @@ fig, axes, grid = rfv.make_fig_layout(layout=layout, dpi=dpi)
 
 z_score_response_proximal_distal(fig=fig, ax=axes['main-left'][0], results=results)
 axes['main-left'][0].set_title('')
+axes['main-left'][0].set_ylim([-0.075, 0.25])
 
 influence_response_proximal_and_distal(fig=fig, axs=axes['main-right'], results=results)
+axes['main-right'][0].set_xticklabels([0, 200, 400], fontsize=10)
+axes['main-right'][1].set_xticklabels([0, 200, 400], fontsize=10)
+axes['main-right'][0].set_yticks([-0.2, 0, 0.2, 0.4], [-0.2, 0, 0.2, 0.4], fontsize=10)
+axes['main-right'][1].set_yticks([-0.2, 0, 0.2, 0.4], [-0.2, 0, 0.2, 0.4], fontsize=10)
 
 
 # %% ADD PANEL LABELS

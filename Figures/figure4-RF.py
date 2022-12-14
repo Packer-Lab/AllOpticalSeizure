@@ -5,9 +5,9 @@ TODO:
 [x] add bar plot + stats comparing avg targets correlation within baseline to within interictal
 
 
-Suppl figure - todo make:
+Suppl figure:
 - normal distribution of targets responses (normalized across x-axis to avg dFF for each target)
-- corr matrices for each exp to exp comparison of baseline and interictal
+
 
 """
 
@@ -17,7 +17,7 @@ import numpy as np
 import pandas as pd
 from funcsforprajay.funcs import flattenOnce
 from funcsforprajay.plotting.plotting import plot_bar_with_points
-from scipy.stats import stats
+from scipy.stats import stats, ttest_rel
 from statsmodels.stats.multicomp import pairwise_tukeyhsd
 
 from _analysis_._ClassPhotostimAnalysisSlmTargets import PhotostimAnalysisSlmTargets, plot__avg_photostim_dff_allexps
@@ -113,8 +113,26 @@ rfv.add_label_axes(text='F', ax=ax, y_adjust=0.015, x_adjust=0.095)
 # avg correlation magnitude
 main.correlation_magnitude_exps(fig=fig, axs=ax)
 
+# STATS TEST
+baseline = list(results.corr_targets['within - baseline'].values())[
+           2:]  # skipping over PS04 because of improper photostim responses for correlation measurements
+midinterictal = list(results.corr_targets['within - midinterictal'].values())[1:]
+assert len(midinterictal) == len(
+    baseline), f'mismatch in number of experiments in midinterictal {len(midinterictal)} and baseline {len(baseline)}'
 
+# stats_score = ttest_ind(midinterictal, baseline)
+stats_score = ttest_rel(midinterictal, baseline)
+print(f"Figure 4F, baseline: {np.mean(baseline):.2f}, interictal (middle): {np.mean(midinterictal):.2f}, paired t-test: *p = {stats_score[1]: .2e}")
+print(f"paired t-test score, baseline vs. mid-interictal: {stats_score}")
 
+# MAKE PLOT
+axs = ax
+fig, axs = plt.subplots(ncols=1, nrows=1, figsize=(3, 4)) if fig is None and axs is None else (fig, axs)
+plot_bar_with_points(data=[baseline, midinterictal], paired=True, fontsize=10, bar=False,
+                     x_tick_labels=['Baseline', 'Interictal'], colors=['royalblue', 'forestgreen'],
+                     y_label='Correlation (R)', show=False, alpha=1, fig=fig, ax=axs, s=15, ylims=[-0.05, 0.93],
+                     sig_compare_lines={'*': [0, 1]})
+axs.text(x=2.5, y=0, s=f't-test rel.: {stats_score[1]:.2e}', fontsize=5)
 
 # %% C - mean response vs. variability
 axs = axes['main-middle-middle']

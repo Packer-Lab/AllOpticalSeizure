@@ -50,10 +50,10 @@ def plot_settings():
     }
 
     font = {
-        # 'family' : 'sans-serif',
-            'name' : 'Sathu',
+            'family': 'sans-serif',
+            # 'name' : 'Sathu',
             #'weight' : 'bold',
-            'size'   : 12}
+            'size'   : 10}
 
     plt.rc('font', **font)        # controls default text sizes
     plt.rc('axes', **axes)        # fontsize of the axes title

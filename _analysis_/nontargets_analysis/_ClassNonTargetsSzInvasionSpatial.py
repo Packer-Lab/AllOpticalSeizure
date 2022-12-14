@@ -438,7 +438,7 @@ class NonTargetsSzInvasionSpatial(Quantification):
     # 2.4) PLOT - distance vs. firing rates - no percentile normalization of distances - ROLLING BINS
     @staticmethod
     def plot__responses_v_distance_no_normalization_rolling_bins(results, save_path_full=None, type_fr = "neuropil - zscored", **kwargs):
-        """plotting of binned responses over distance as a step function, with heatmap showing # of datapoints"""
+        """plotting of binned neuropil firing over distance as a step function"""
         # type_fr = "neuropil - zscored"
         data_results = results.rolling_binned__distance_vs_firingrates[type_fr]
 
@@ -457,10 +457,11 @@ class NonTargetsSzInvasionSpatial(Quantification):
         # fig, axs = plt.subplots(figsize=(6, 5), nrows=2, ncols=1, dpi=200)
 
         # ax.plot(distances[:-1], avg_responses, c='cornflowerblue', zorder=1)
-        ax.step(distances, avg_firing_rates, c='green', zorder=2, lw=1)
+        ax.step(distances, avg_firing_rates, c='green', zorder=1, lw=1)
         # ax.fill_between(x=(distances-0)[:-1], y1=conf_int[:-1, 0], y2=conf_int[:-1, 1], color='lightgray', zorder=0)
         ax.fill_between(x=conf_int_distances, y1=conf_int_values_neg, y2=conf_int_values_pos, color='lightgray',
                         zorder=0)
+        ax.step(distances, avg_firing_rates, c='green', zorder=1, lw=1)
         # ax.scatter(distances[:-1], avg_responses, c='orange', zorder=4)
         # ax.set_ylim([-2, 2.25])
         # ax.set_yticks([-1, 0, 1, 2])

@@ -52,7 +52,7 @@ fontsize = 8
 fs = fontsize
 rfv.set_fontsize(fs)
 
-test = False
+test = True
 save_fig = True if not test else False
 dpi = 100 if test else 300
 
@@ -88,7 +88,6 @@ fig, axes, grid = rfv.make_fig_layout(layout=layout, dpi=dpi)
 
 x_adj = 0.09
 
-# %% MAKE PLOTS
 
 # %% A - schematic of sz distance to target
 ax = axes['main-left-top'][0]
@@ -104,22 +103,24 @@ axes['main-left-top'][0].axis('off')
 ax = axes['main-right-tophigh'][0][0]
 ax2 = axes['main-right-tophigh'][0][1]
 
+# adding neuropil signal
+results = NonTargetsSzInvasionSpatialResults.load()
+NonTargetsSzInvasionSpatial.plot__responses_v_distance_no_normalization_rolling_bins(results=results, axes=ax2, fig=fig)
+rfv.despine(ax=ax2, keep=['right'])
+
+
 # rfv.add_label_axes(text="A'", ax=ax, x_adjust=x_adj + 0.03)
 main_spatial.collect__binned__distance_v_responses(results=results_spatial, rerun=0)
 
-# TRYING ROLLING BINS - AUG 11 2022:
+# ROLLING BINS:
 main_spatial.collect__binned__distance_v_responses_rolling_bins(results=results_spatial, rerun=0)
 
 results_spatial = TargetsSzInvasionSpatialResults_codereview.load()
 # main_spatial.plot__responses_v_distance_no_normalization(results=results_spatial, axes=(axes['main-right-tophigh'], axes['main-right-toplow']), fig=fig)
-main_spatial.plot__responses_v_distance_no_normalization_rolling_bins(results=results_spatial, axes=[ax,], fig=fig)
+main_spatial.plot__responses_v_distance_no_normalization_rolling_bins(results=results_spatial, axes=[ax, ], fig=fig)
 # ax.text(x=50, y=2, s=f'{results_spatial.binned__distance_vs_photostimresponses["kruskal - binned responses"]}', fontsize=5)
 # ax.text(x=50, y=1.95, s=f'{results_spatial.binned__distance_vs_photostimresponses["anova oneway - binned responses"]}', fontsize=5)
 
-# %% A' - adding neuropil signal
-results = NonTargetsSzInvasionSpatialResults.load()
-NonTargetsSzInvasionSpatial.plot__responses_v_distance_no_normalization_rolling_bins(results=results, axes=ax2, fig=fig)
-rfv.despine(ax=ax2, keep=['right'])
 
 # %%
 if save_fig and dpi >= 250:
