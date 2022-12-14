@@ -48,11 +48,11 @@ SAVE_FOLDER = f'/home/pshah/Documents/figures/alloptical_seizures_draft/'
 
 # %% SETUP
 ## Set general plotting parameters
-fontsize = 8
-fs = fontsize
+
+fs = 10
 rfv.set_fontsize(fs)
 
-test = True
+test = 0
 save_fig = True if not test else False
 dpi = 100 if test else 300
 
@@ -68,9 +68,12 @@ layout = {
                       'bound': (0.05, 0.77, 0.27, 0.92)},
     # 'main-left-bottom': {'panel_shape': (1, 1),
     #                      'bound': (0.08, 0.42, 0.26, 0.57)},
-    'main-right-tophigh': {'panel_shape': (1, 1, 'twinx'),
-                           'bound': (0.40, 0.75, 0.90, 0.95),
-                           'wspace': 0.8},
+    'main-right': {'panel_shape': (2, 1),
+                           'bound': (0.40, 0.77, 0.95, 0.92),
+                           'wspace': 0.2},
+    # 'main-right-tophigh': {'panel_shape': (1, 1, 'twinx'),
+    #                        'bound': (0.40, 0.75, 0.90, 0.95),
+    #                        'wspace': 0.8},
     # 'main-right-toplow': {'panel_shape': (1, 1),
     #                       'bound': (0.40, 0.66, 0.90, 0.71),
     #                       'wspace': 0.8},
@@ -100,13 +103,12 @@ axes['main-left-top'][0].axis('off')
 
 
 # %% A' - photostim responses relative to distance to seizure
-ax = axes['main-right-tophigh'][0][0]
-ax2 = axes['main-right-tophigh'][0][1]
+ax = axes['main-right'][0]
+ax2 = axes['main-right'][1]
 
 # adding neuropil signal
 results = NonTargetsSzInvasionSpatialResults.load()
 NonTargetsSzInvasionSpatial.plot__responses_v_distance_no_normalization_rolling_bins(results=results, axes=ax2, fig=fig)
-rfv.despine(ax=ax2, keep=['right'])
 
 
 # rfv.add_label_axes(text="A'", ax=ax, x_adjust=x_adj + 0.03)
@@ -126,6 +128,7 @@ main_spatial.plot__responses_v_distance_no_normalization_rolling_bins(results=re
 if save_fig and dpi >= 250:
     Utils.save_figure(fig=fig, save_path_full=f"{SAVE_FOLDER}/figure6-RF.png")
     Utils.save_figure(fig=fig, save_path_full=f"{SAVE_FOLDER}/figure6-RF.svg")
+    Utils.save_figure(fig=fig, save_path_full=f"{SAVE_FOLDER}/figure6-RF.pdf")
 
 fig.show()
 

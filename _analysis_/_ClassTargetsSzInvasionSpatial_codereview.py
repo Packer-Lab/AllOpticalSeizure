@@ -7,6 +7,9 @@ from skimage.draw import line, polygon
 
 print('Python %s on %s' % (sys.version, sys.platform))
 sys.path.extend(['/home/pshah/Documents/code/AllOpticalSeizure', '/home/pshah/Documents/code/AllOpticalSeizure'])
+sys.path.extend(['/home/pshah/Documents/code/reproducible_figures-main'])
+
+import rep_fig_vis as rfv
 
 from typing import List
 
@@ -782,14 +785,17 @@ class TargetsSzInvasionSpatial_codereview(SLMTargets):
         ax.step(distances, avg_responses, c='cornflowerblue', zorder=3)
         # ax.scatter(distances[:-1], avg_responses, c='orange', zorder=4)
         ax.set_ylim([-2, 2.25])
-        ax.set_yticks([-1, 0, 1, 2])
+        ax.set_yticks([-1, 0, 1, 2],fontsize=10)
         # ax.set_title(
         #     f'photostim responses vs. distance to sz wavefront (binned every {results.rolling_binned__distance_vs_photostimresponses["bin_width_um"]}um)',
         #     wrap=True)
-        ax.set_xlabel(r'Distance to seizure wavefront ($\mu$$\it{m}$)')
+        # ax.set_xlabel(r'Distance to seizure wavefront ($\mu$$\it{m}$)')
         # ax.set_ylabel(TargetsSzInvasionSpatial_codereview.response_type)
-        ax.set_ylabel(f'Photostimulation response\n' + r'($\it{z}$-scored)')
-        ax.margins(0)
+        # ax.set_ylabel(f'Photostimulation response\n' + r'($\it{z}$-scored)')
+        ax.set_ylabel(f'{rfv.italic("Z")}-score\n(to baseline)',fontsize=10)
+        ax.set_title(f'Photostimulation response\nTargets',fontsize=10)
+        ax.margins(0.02)
+        ax.text(x=230, y=-3.5, s=r'Distance to seizure wavefront ($\mu$$\it{m}$)',fontsize=10)
 
         # ADD DENSITY OF DATA POINTS IN EACH BIN FOR PHOTOSTIM RESPONSES OF TARGETS
         # pixels = [np.array(num2)] * 10
@@ -798,7 +804,6 @@ class TargetsSzInvasionSpatial_codereview(SLMTargets):
         # ax2.set_xticks([])
         # ax2.set_yticks([])
         # ax2.axis('off')
-
         if not 'fig' in kwargs and not 'axes' in kwargs:  # fig.tight_layout(pad=1)
             fig.show()
             save_path_full = f'{SAVE_FIG}/responses_sz_distance_binned_line_plot.png'

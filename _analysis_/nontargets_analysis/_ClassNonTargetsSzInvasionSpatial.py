@@ -4,6 +4,7 @@ from funcsforprajay.funcs import calc_distance_2points
 from matplotlib import pyplot as plt
 
 sys.path.extend(['/home/pshah/Documents/code/AllOpticalSeizure', '/home/pshah/Documents/code/AllOpticalSeizure'])
+sys.path.extend(['/home/pshah/Documents/code/reproducible_figures-main'])
 
 import os
 from typing import Union, List
@@ -18,6 +19,7 @@ from _main_.AllOpticalMain import alloptical
 from _main_.Post4apMain import Post4ap
 from funcsforprajay import plotting as pplot
 from funcsforprajay import funcs as pj
+import rep_fig_vis as rfv
 
 # SAVE_LOC = "/Users/prajayshah/OneDrive/UTPhD/2022/OXFORD/export/"
 from _utils_._anndata import AnnotatedData2
@@ -439,6 +441,7 @@ class NonTargetsSzInvasionSpatial(Quantification):
     @staticmethod
     def plot__responses_v_distance_no_normalization_rolling_bins(results, save_path_full=None, type_fr = "neuropil - zscored", **kwargs):
         """plotting of binned neuropil firing over distance as a step function"""
+
         # type_fr = "neuropil - zscored"
         data_results = results.rolling_binned__distance_vs_firingrates[type_fr]
 
@@ -457,23 +460,29 @@ class NonTargetsSzInvasionSpatial(Quantification):
         # fig, axs = plt.subplots(figsize=(6, 5), nrows=2, ncols=1, dpi=200)
 
         # ax.plot(distances[:-1], avg_responses, c='cornflowerblue', zorder=1)
-        ax.step(distances, avg_firing_rates, c='green', zorder=1, lw=1)
+        ax.step(distances, avg_firing_rates, c='green', zorder=1, lw=0.75)
         # ax.fill_between(x=(distances-0)[:-1], y1=conf_int[:-1, 0], y2=conf_int[:-1, 1], color='lightgray', zorder=0)
         ax.fill_between(x=conf_int_distances, y1=conf_int_values_neg, y2=conf_int_values_pos, color='lightgray',
                         zorder=0)
         ax.step(distances, avg_firing_rates, c='green', zorder=1, lw=1)
+        rfv.despine(ax=ax, keep=['left', 'bottom'])
         # ax.scatter(distances[:-1], avg_responses, c='orange', zorder=4)
         # ax.set_ylim([-2, 2.25])
         # ax.set_yticks([-1, 0, 1, 2])
         # ax.set_title(
         #     f'photostim responses vs. distance to sz wavefront (binned every {results.rolling_binned__distance_vs_photostimresponses["bin_width_um"]}um)',
         #     wrap=True)
-        ax.set_xlabel(r'Distance to seizure wavefront ($\mu$$\it{m}$)')
+        # ax.set_xlabel(rf'Distance to seizure wavefront ({rfv.italic(f"{rfv.SpecialCharacters.micro}m")})')
+
+        # ax.set_xlabel(rf'Distance to seizure wavefront $\it{rfv.SpecialCharacters.micro}{{m}}$')
         # ax.set_ylabel(TargetsSzInvasionSpatial_codereview.response_type)
-        ax.set_ylabel(type_fr)
-        ax.margins(0)
-        y_lims = [0, 4.5] if type_fr == 'neuropil - zscored' else ax.get_ylim()
+        # ax.set_ylabel(f'{rfv.italic("Z")}-score\n(to baseline)') if type_fr == 'neuropil - zscored' else type_fr
+        ax.margins(0.02)
+        ax.set_yticks([1, 2, 3],fontsize=10)
+        y_lims = [0.5, 3.5] if type_fr == 'neuropil - zscored' else ax.get_ylim()
         ax.set_ylim(y_lims)
+
+        ax.set_title(f'Neuropil signal\nAll cells', fontsize=10)
         if not 'fig' in kwargs and not 'axes' in kwargs:  # fig.tight_layout(pad=1)
             fig.tight_layout()
             fig.show()
