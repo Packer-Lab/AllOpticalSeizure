@@ -9,9 +9,7 @@ todo:
 
 import sys
 
-from Figures.figure7_plots import z_score_response_proximal_distal, influence_response_proximal_and_distal
-from _analysis_._ClassPhotostimAnalysisSlmTargets import PhotostimAnalysisSlmTargets
-from _utils_.rfv_funcs import make_fig_layout, show_test_figure_layout, add_label_axes
+from _utils_.nontargets_responses_ictal_plots import z_score_response_proximal_distal, influence_response_proximal_and_distal
 
 sys.path.extend(['/home/pshah/Documents/code/reproducible_figures-main'])
 import rep_fig_vis as rfv

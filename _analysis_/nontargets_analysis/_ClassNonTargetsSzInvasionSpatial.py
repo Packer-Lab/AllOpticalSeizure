@@ -439,8 +439,31 @@ class NonTargetsSzInvasionSpatial(Quantification):
 
     # 2.4) PLOT - distance vs. firing rates - no percentile normalization of distances - ROLLING BINS
     @staticmethod
-    def plot__responses_v_distance_no_normalization_rolling_bins(results, save_path_full=None, type_fr = "neuropil - zscored", **kwargs):
+    def plot__firingrate_v_distance_no_normalization_rolling_bins(results, save_path_full=None, type_fr ="neuropil - zscored", **kwargs):
         """plotting of binned neuropil firing over distance as a step function"""
+
+        print(f'Neuropil/firing rate  signal anova: {results.rolling_binned__distance_vs_firingrates[type_fr]["anova oneway - binned responses"]}')
+
+        firing_rates = results.rolling_binned__distance_vs_firingrates[type_fr]['all firing rates (per bin)']
+        firing_rates = np.asarray([np.asarray(firing_rates_) for firing_rates_ in firing_rates if len(firing_rates_) > 0])
+        kruskal_r = stats.kruskal(*firing_rates)
+        oneway_r = stats.f_oneway(*firing_rates)
+
+        import pingouin as pg
+        # run anova
+        # make dataframe of firing rate per distance bin
+        df = pd.DataFrame()
+        distances = results.rolling_binned__distance_vs_firingrates[type_fr]['distance_bins'][:-20]
+        assert len(distances) == len(firing_rates), 'mismatch in number of distance bins and firing rate bins'
+        for idx, firing_rates_ in enumerate(firing_rates):
+            # df = df.append(pd.DataFrame({'firing_rate': firing_rates_, 'distance_bin': distances[idx]}))
+            # use pandas concat instead of append
+            df = pd.concat([df, pd.DataFrame({'firing_rate': firing_rates_, 'distance_bin': distances[idx]})], axis=0)
+        # df
+        # calculate ANOVA of firing rate per distance bin
+        aov = pg.anova(dv='firing_rate', between='distance_bin', data=df, detailed=True)
+        print(f'ANOVA p(distance_bins): {aov["p-unc"][0]}')
+
 
         # type_fr = "neuropil - zscored"
         data_results = results.rolling_binned__distance_vs_firingrates[type_fr]
@@ -500,7 +523,7 @@ if __name__ == '__main__':
     # NonTargetsSzInvasionSpatial.run__NonTargetsSzInvasionSpatial()
     # NonTargetsSzInvasionSpatial.run__methods()
     # NonTargetsSzInvasionSpatial.collect__binned__distance_v_firing_rates_rolling_bins(results=results, rerun=1)
-    NonTargetsSzInvasionSpatial.plot__responses_v_distance_no_normalization_rolling_bins(results=results)
+    NonTargetsSzInvasionSpatial.plot__firingrate_v_distance_no_normalization_rolling_bins(results=results)
 
     """
     TODO:

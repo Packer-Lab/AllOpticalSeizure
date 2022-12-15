@@ -701,7 +701,7 @@ class TargetsSzInvasionSpatial_codereview(SLMTargets):
                                                                       'num_points_in_bin': num,
                                                                       'avg_photostim_response_in_bin': avg_responses,
                                                                       '95conf_int': conf_int,
-                                                                      'all responses (per bin)': responses,
+                                                                      'all responses (per bin)': responses[:-20],
                                                                       'kruskal - binned responses': kruskal_r,
                                                                       'anova oneway - binned responses': oneway_r}
             results.save_results()
@@ -760,6 +760,9 @@ class TargetsSzInvasionSpatial_codereview(SLMTargets):
     @staticmethod
     def plot__responses_v_distance_no_normalization_rolling_bins(results, save_path_full=None, **kwargs):
         """plotting of binned responses over distance as a step function, with heatmap showing # of datapoints"""
+
+        print(f'Photostim responses anova: {results.rolling_binned__distance_vs_photostimresponses["anova oneway - binned responses"]}')
+
         # distances_bins = results.rolling_binned__distance_vs_photostimresponses['distance_bins']
         distances = results.rolling_binned__distance_vs_photostimresponses['distance_bins']
         avg_responses = results.rolling_binned__distance_vs_photostimresponses['avg_photostim_response_in_bin']
