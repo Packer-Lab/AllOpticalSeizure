@@ -97,7 +97,7 @@ rfv.add_label_axes(text="B'", ax=ax, x_adjust=x_adj + 0.02)
 
 if save_fig and dpi > 250:
     Utils.save_figure(fig=fig, save_path_full=f'{SAVE_FOLDER}/figure7-RF.png')
-    Utils.save_figure(fig=fig, save_path_full=f'{SAVE_FOLDER}/figure7-RF.svg')
+    Utils.save_figure(fig=fig, save_path_full=f'{SAVE_FOLDER}/figure7-RF.pdf')
 
 fig.show()
 

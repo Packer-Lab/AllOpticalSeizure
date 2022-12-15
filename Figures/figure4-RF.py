@@ -186,7 +186,7 @@ data_nums.extend(['pre'] * num_pre)
 data_nums.extend(['mid'] * num_mid)
 data_nums.extend(['post'] * num_post)
 
-df = pd.DataFrame({'score': flattenOnce([RESULTS.interictal_responses['preictal_responses'],
+df = pd.DataFrame({'score': stats.f_oneway([RESULTS.interictal_responses['preictal_responses'],
                                          RESULTS.interictal_responses['very_interictal_responses'],
                                          RESULTS.interictal_responses['postictal_responses']]),
                    'group': data_nums})

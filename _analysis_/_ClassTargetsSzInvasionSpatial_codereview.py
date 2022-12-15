@@ -780,21 +780,22 @@ class TargetsSzInvasionSpatial_codereview(SLMTargets):
         ax.step(distances, avg_responses, c='cornflowerblue', zorder=3)
         # ax.fill_between(x=(distances-0)[:-1], y1=conf_int[:-1, 0], y2=conf_int[:-1, 1], color='lightgray', zorder=0)
         ax.axhline(0, ls='--', lw=1, color='black', zorder=0)
-        ax.fill_between(x=conf_int_distances, y1=conf_int_values_neg, y2=conf_int_values_pos, color='lightgray',
-                        zorder=2)
-        ax.step(distances, avg_responses, c='cornflowerblue', zorder=3)
+        # ax.fill_between(x=conf_int_distances, y1=conf_int_values_neg, y2=conf_int_values_pos, color='#e7bcbc', zorder=2, alpha=1)
+        ax.fill_between(x=conf_int_distances, y1=conf_int_values_neg, y2=conf_int_values_pos, color='lightgray', zorder=2, alpha=1)
+        ax.step(distances, avg_responses, c='forestgreen', zorder=3)
         # ax.scatter(distances[:-1], avg_responses, c='orange', zorder=4)
         ax.set_ylim([-2, 2.25])
-        ax.set_yticks([-1, 0, 1, 2],fontsize=10)
+        ax.set_yticks([-1, 0, 1, 2], [-1, 0, 1, 2], fontsize=10)
+        ax.set_ylabel(f'{rfv.italic("Z")}-score\n(to baseline)',fontsize=10)
+        ax.set_xticks([0, 100, 200, 300, 400], [0, 100, 200, 300, 400], fontsize=10)
         # ax.set_title(
         #     f'photostim responses vs. distance to sz wavefront (binned every {results.rolling_binned__distance_vs_photostimresponses["bin_width_um"]}um)',
         #     wrap=True)
         # ax.set_xlabel(r'Distance to seizure wavefront ($\mu$$\it{m}$)')
         # ax.set_ylabel(TargetsSzInvasionSpatial_codereview.response_type)
         # ax.set_ylabel(f'Photostimulation response\n' + r'($\it{z}$-scored)')
-        ax.set_ylabel(f'{rfv.italic("Z")}-score\n(to baseline)',fontsize=10)
-        ax.set_title(f'Photostimulation response\nTargets',fontsize=10)
-        ax.margins(0.02)
+        ax.set_title(f'Response magnitude\nTargets', fontsize=10)
+        ax.margins(0)
         ax.text(x=230, y=-3.5, s=r'Distance to seizure wavefront ($\mu$$\it{m}$)',fontsize=10)
 
         # ADD DENSITY OF DATA POINTS IN EACH BIN FOR PHOTOSTIM RESPONSES OF TARGETS

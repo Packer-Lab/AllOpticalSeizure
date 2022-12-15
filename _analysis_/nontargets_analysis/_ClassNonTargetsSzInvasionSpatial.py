@@ -464,7 +464,7 @@ class NonTargetsSzInvasionSpatial(Quantification):
         # ax.fill_between(x=(distances-0)[:-1], y1=conf_int[:-1, 0], y2=conf_int[:-1, 1], color='lightgray', zorder=0)
         ax.fill_between(x=conf_int_distances, y1=conf_int_values_neg, y2=conf_int_values_pos, color='lightgray',
                         zorder=0)
-        ax.step(distances, avg_firing_rates, c='green', zorder=1, lw=1)
+        ax.step(distances, avg_firing_rates, c='black', zorder=1, lw=1)
         rfv.despine(ax=ax, keep=['left', 'bottom'])
         # ax.scatter(distances[:-1], avg_responses, c='orange', zorder=4)
         # ax.set_ylim([-2, 2.25])
@@ -477,10 +477,11 @@ class NonTargetsSzInvasionSpatial(Quantification):
         # ax.set_xlabel(rf'Distance to seizure wavefront $\it{rfv.SpecialCharacters.micro}{{m}}$')
         # ax.set_ylabel(TargetsSzInvasionSpatial_codereview.response_type)
         # ax.set_ylabel(f'{rfv.italic("Z")}-score\n(to baseline)') if type_fr == 'neuropil - zscored' else type_fr
-        ax.margins(0.02)
-        ax.set_yticks([1, 2, 3],fontsize=10)
+        ax.margins(0)
         y_lims = [0.5, 3.5] if type_fr == 'neuropil - zscored' else ax.get_ylim()
         ax.set_ylim(y_lims)
+        ax.set_yticks([1, 2, 3], [1, 2, 3], fontsize=10)
+        ax.set_xticks([0, 100, 200, 300, 400], [0, 100, 200, 300, 400], fontsize=10)
 
         ax.set_title(f'Neuropil signal\nAll cells', fontsize=10)
         if not 'fig' in kwargs and not 'axes' in kwargs:  # fig.tight_layout(pad=1)
