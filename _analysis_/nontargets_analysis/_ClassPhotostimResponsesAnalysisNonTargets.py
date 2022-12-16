@@ -1141,6 +1141,9 @@ class PhotostimResponsesAnalysisNonTargets(PhotostimResponsesQuantificationNonTa
         #     show=False)
         axs[0].plot(results.summed_responses['baseline - fakestims']['targets_fakestims_summed_zscored'], regression_y,
                     color='gray', lw=1)
+        axs[0].set_ylabel('Total non-targets\nresponse (z-scored)', fontsize=10)
+
+
 
         # INTERICTAL CONDITION
         # TEST AND DEVELOP AND DEBU BELOW VERY NEXT!!!
@@ -1206,8 +1209,13 @@ class PhotostimResponsesAnalysisNonTargets(PhotostimResponsesQuantificationNonTa
         axs[1].set_ylim([-15, 15])
         axs[0].set_xlim([-7, 7])
         axs[1].set_xlim([-7, 7])
-        axs[0].set_xticklabels([])
-        # axs[1].set_xlabel(f'Total targets response\n' + r'($\it{z}$-scored)', ha='center')
+        axs[0].set_xticks([-5, 0, 5], [-5, 0, 5], fontsize=10)
+        axs[1].set_xticks([-5, 0, 5], [-5, 0, 5], fontsize=10)
+        # axs[0].set_xticklabels([])
+        # axs[0].set_yticks([-5, 0, 5])
+        axs[0].set_yticks([-10, 0, 10], [-10, 0, 10], fontsize=10)
+        axs[1].set_yticklabels([])
+        # axs[0].set_xlabel(f'Total targets response\n' + r'($\it{z}$-scored)', ha='center')
         # axs[1].set_ylabel(f'Total nontargets response\n' + r'($\it{z}$-scored)', ha='center')
 
         # fig.suptitle('Total z-scored (to baseline) responses for all trials, all exps', wrap=True)
@@ -1236,10 +1244,10 @@ class PhotostimResponsesAnalysisNonTargets(PhotostimResponsesQuantificationNonTa
         fig, ax = pplot.plot_bar_with_points(data=[r2_ratio_baseline, r2_ratio_interictal],
                                              paired=True, bar=False, colors=['royalblue', 'seagreen'],
                                              edgecolor='black', lw=1, s=25, alpha=1, shrink_text=0.8,
-                                             x_tick_labels=['Base', 'Inter'], ylims=[0, 1.5], y_label='$R^2$',
-                                             y_ticklabels=[0, 0.5, 1.0, 1.5],
+                                             x_tick_labels=['Base', 'Inter'], ylims=[0, 1.5], title='$R^2$',
+                                             y_ticklabels=[0, 0.5, 1.0, 1.5],y_label='Ratio',
                                              # title='ratio of $R^2$ per experiment',
-                                             fig=fig, ax=axs[0], show=False, capsize=0.7)
+                                             fig=fig, ax=axs[0], show=False, capsize=0.7, fontsize=10)
         ax.spines['bottom'].set_visible(False)
         ax.set_xticks([])
         # fig.tight_layout(pad=0.5)
@@ -1265,12 +1273,13 @@ class PhotostimResponsesAnalysisNonTargets(PhotostimResponsesQuantificationNonTa
                                              paired=True, bar=False, colors=['royalblue', 'seagreen'],
                                              edgecolor='black', lw=1, s=25, alpha=1,
                                              shrink_text=0.8,
-                                             x_tick_labels=['Base', 'Inter'], ylims=[0, 4], y_label='Slope',
-                                             y_ticklabels=[0, 1, 2, 3, 4],
+                                             x_tick_labels=['Base', 'Inter'], ylims=[0, 4],
+                                             y_ticklabels=[0, 1, 2, 3, 4], title='Slope', y_label='',
                                              # title='ratio of $m$ per experiment',
-                                             fig=fig, ax=axs[1], show=False, capsize=0.7)
+                                             fig=fig, ax=axs[1], show=False, capsize=0.7, fontsize=10)
         ax.spines['bottom'].set_visible(False)
         ax.set_xticks([])
+
         # fig.tight_layout(pad=0.5)
         # fig.show()
         # Utils.save_figure(fig=fig, save_path_full=f'{SAVE_FOLDER}/targets_nontargets_slope_ratio_photostim_fakestim.png')
