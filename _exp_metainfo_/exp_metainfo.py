@@ -238,6 +238,7 @@ class ExpMetainfo:
         "fontsize - label": 12,
         "lfp - lw": 0.15,
         "gcamp - single cell - lw": 0.5,
+        "gcamp - FOV - lw": 0.5,
     }
 
 
