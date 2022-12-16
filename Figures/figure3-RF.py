@@ -2,8 +2,6 @@
 TODO:
 
 run stats test:
-[x] C'
-[x] D
 - F: not sure which circular test to run, need to ask Taufik what stats test to run
 """
 
@@ -17,6 +15,8 @@ from matplotlib.transforms import Bbox
 from scipy import stats
 from statsmodels.stats.multicomp import pairwise_tukeyhsd
 
+from _exp_metainfo_.exp_metainfo import ExpMetainfo
+
 from _alloptical_utils import run_for_loop_across_exps
 from _analysis_._ClassPhotostimAnalysisSlmTargets import PhotostimAnalysisSlmTargets
 from _analysis_._ClassPhotostimResponseQuantificationSLMtargets import PhotostimResponsesSLMtargetsResults
@@ -26,10 +26,6 @@ from _main_.Post4apMain import Post4ap
 from _utils_.alloptical_plotting import plot_settings
 from _utils_.io import import_expobj
 from alloptical_utils_pj import save_figure
-
-import cairosvg
-from PIL import Image
-from io import BytesIO
 
 sys.path.extend(['/home/pshah/Documents/code/reproducible_figures-main'])
 
@@ -45,17 +41,19 @@ sz_results: ExpSeizureResults = ExpSeizureResults.load()
 SAVE_FOLDER = f'/home/pshah/Documents/figures/alloptical_seizures_draft/'
 fig_items = f'/home/pshah/Documents/figures/alloptical_seizures_draft/figure-items/'
 
+
 # %%
 
 ## Set general plotting parameters
-fontsize = 8
-fs = fontsize
+fs = ExpMetainfo.figure_settings['fontsize - extraplot']
 rfv.set_fontsize(fs)
+
+test = 0
+save_fig = True if not test else False
+dpi = 100 if test else 300
 
 colour_list = ['#101820', '#1b362c', '#2f553d', '#4f7553', '#79936f', '#aeae92']
 colours_misc_dict = {xx: colour_list[xx] for xx in range(len(colour_list))}
-
-save_fig = True
 
 np.random.seed(2)  # fix seed
 
@@ -72,128 +70,83 @@ layout = {
     'toprightbottom': {'panel_shape': (2, 1),
                        'bound': (0.31, 0.64, 0.90, 0.85)},
     'bottom-C': {'panel_shape': (2, 1),
-                 'bound': (0.05, 0.40, 0.40, 0.57),
-                 'wspace': 0.6},
+                 'bound': (0.05, 0.47, 0.41, 0.60),
+                 'wspace': 0.8},
     'bottom-D': {'panel_shape': (1, 1),
-                 'bound': (0.52, 0.40, 0.66, 0.57),
+                 'bound': (0.53, 0.47, 0.67, 0.60),
                  'wspace': 0.4}
 }
-dpi = 300
+
+
+
 fig, axes, grid = rfv.make_fig_layout(layout=layout, dpi=dpi)
 
 rfv.naked(axes['main-left'][0])
 
 # rfv.show_test_figure_layout(fig, axes=axes, show=True)  # test what layout looks like quickly, but can also skip and moveon to plotting data.
 
+# %% add labels
+rfv.add_label_axes(text="D", ax=axes['bottom-D'][0], y_adjust=0, x_adjust=0.11)
+rfv.add_label_axes(text="C'", ax=axes['bottom-C'][1], y_adjust=0, x_adjust=0.07)
+rfv.add_label_axes(text="C", ax=axes['bottom-C'][0], y_adjust=0.0)
+
+
 
 # %% D) BAR PLOT OF AVG PHOTOSTIMULATION FOV RAW FLU ACROSS CONDITIONS
 
 ax = axes['bottom-D'][0]
-rfv.add_label_axes(text="D", ax=ax, y_adjust=0, x_adjust=0.1)
 
 results.collect_avg_prestimf_states(rerun=0)
-baseline_prestimf = results.avg_prestim_Flu['baseline']
-interictal_prestimf = results.avg_prestim_Flu['interictal']
-ictal_prestimf = results.avg_prestim_Flu['ictal']
+baseline_prestimf = results.avg_prestim_Flu_all('baseline')
+interictal_prestimf = results.avg_prestim_Flu_all('interictal')
+
+# ttest of independence
+ttest = stats.ttest_rel(baseline_prestimf, interictal_prestimf)
+print(f"ttest paired - p(Baseline vs. interictal): {ttest[1]}")
+
+# ictal_prestimf = results.avg_prestim_Flu['ictal']
 
 
 # kruskal wallis
-kw_score = stats.kruskal(baseline_prestimf, interictal_prestimf, ictal_prestimf)
-
-print(f"D: KW: *p<0.05, p={kw_score[1]}")
-
+# kw_score = stats.kruskal(baseline_prestimf, interictal_prestimf, ictal_prestimf)
+# print(f"D: KW: *p<0.05, p={kw_score[1]}")
 
 # 1-WAY ANOVA
-oneway_score = stats.f_oneway(baseline_prestimf, interictal_prestimf, ictal_prestimf)
+# oneway_score = stats.f_oneway(baseline_prestimf, interictal_prestimf, ictal_prestimf)
 
-print(f"D: f_oneway: **p<0.01, p={oneway_score[1]}")
+# print(f"D: f_oneway: **p<0.01, p={oneway_score[1]}")
 
 # create DataFrame to hold data
-data_nums = []
-num_baseline = len(baseline_prestimf)
-num_interictal = len(interictal_prestimf)
-num_ictal = len(ictal_prestimf)
-data_nums.extend(['baseline'] * num_baseline)
-data_nums.extend(['interictal'] * num_interictal)
-data_nums.extend(['ictal'] * num_ictal)
+# data_nums = []
+# num_baseline = len(baseline_prestimf)
+# num_interictal = len(interictal_prestimf)
+# num_ictal = len(ictal_prestimf)
+# data_nums.extend(['baseline'] * num_baseline)
+# data_nums.extend(['interictal'] * num_interictal)
+# data_nums.extend(['ictal'] * num_ictal)
 
-df = pd.DataFrame({'score': flattenOnce([baseline_prestimf, interictal_prestimf, ictal_prestimf]),
-                   'group': data_nums})
-
-
+# df = pd.DataFrame({'score': flattenOnce([baseline_prestimf, interictal_prestimf, ictal_prestimf]),
+#                    'group': data_nums})
 
 # perform Tukey's test
-tukey = pairwise_tukeyhsd(endog=df['score'], groups=df['group'],
-                          alpha=0.05)
-print(tukey)
+# tukey = pairwise_tukeyhsd(endog=df['score'], groups=df['group'], alpha=0.05)
+# print(tukey)
 
 
-
-plot_bar_with_points(data=[baseline_prestimf, interictal_prestimf, ictal_prestimf],
+plot_bar_with_points(data=[baseline_prestimf, interictal_prestimf],
                      bar=False, title='', show=False, fig=fig, ax=ax,
-                     x_tick_labels=['Baseline', 'Interictal', 'Ictal'],
-                     colors=['royalblue', 'mediumseagreen', 'blueviolet'],
+                     x_tick_labels=['Baseline', 'Interictal'], fontsize=10,
+                     colors=['royalblue', 'forestgreen'],
                      y_label='Fluorescence (a.u.)',
-                     ylims=[0, 1900], alpha=1, s=35, sig_compare_lines={'*': [1, 2],
-                                                                        '**': [0, 2]})
-
-# %% C') BAR PLOT OF AVG PHOTOSTIMULATION RESPONSE OF TARGETS ACROSS CONDITIONS
-
-ax = axes['bottom-C'][1]
-rfv.add_label_axes(text="C'", ax=ax, y_adjust=0, x_adjust=0.07)
-
-results.collect_avg_photostim_responses_states(rerun=0)
-baseline_responses = results.avg_photostim_responses['baseline']
-interictal_responses = results.avg_photostim_responses['interictal']
-ictal_responses = results.avg_photostim_responses['ictal']
-
-
-# kruskal wallis
-kw_score = stats.kruskal(baseline_responses,
-               interictal_responses,
-               ictal_responses)
-
-print(f"C': KW: n.s., p={kw_score[1]}")
-
-# 1-WAY ANOVA
-oneway_score = stats.f_oneway(baseline_responses,
-               interictal_responses,
-               ictal_responses)
-
-
-
-# create DataFrame to hold data
-data_nums = []
-num_baseline = len(baseline_responses)
-num_interictal = len(interictal_responses)
-num_ictal = len(ictal_responses)
-data_nums.extend(['baseline'] * num_baseline)
-data_nums.extend(['interictal'] * num_interictal)
-data_nums.extend(['ictal'] * num_ictal)
-
-df = pd.DataFrame({'score': flattenOnce([baseline_responses, interictal_responses, ictal_responses]),
-                   'group': data_nums})
-
-# perform Tukey's test
-tukey = pairwise_tukeyhsd(endog=df['score'], groups=df['group'],
-                          alpha=0.05)
-print(tukey)
-
-
-
-fig, ax = plot_bar_with_points(data=[baseline_responses, interictal_responses, ictal_responses],
-                     bar=False, title='',
-                     x_tick_labels=['Baseline', 'Interictal', 'Ictal'],
-                     colors=['royalblue', 'mediumseagreen', 'blueviolet'], figsize=(4, 4), y_label='dFF (%)',
-                     s=35, alpha=1, ylims=[-19, 90], show=False, fig=fig, ax=ax)
+                     ylims=[0, 1900], alpha=1, s=35, sig_compare_lines={'n.s.': [0, 1]})
 
 
 # %% E) Radial plot of Mean FOV for photostimulation trials, with period equal to that of photostimulation timing period
-bbox = Bbox.from_extents(0.72, 0.41, 0.87, 0.56)
+bbox = Bbox.from_extents(0.70, 0.445, 0.84, 0.595)
 _axes = np.empty(shape=(1, 1), dtype=object)
 ax = fig.add_subplot(projection='polar')
 ax.set_position(pos=bbox)
-rfv.add_label_axes(text='E', ax=ax, y_adjust=0.025)
+rfv.add_label_axes(text='E', ax=ax, y_adjust=0.02)
 # fig.show()
 
 
@@ -225,15 +178,15 @@ ax.bar(theta, sz_prob, width=(2 * np.pi) / period, bottom=0.0, alpha=1, color='c
 
 ax.set_rmax(1.1)
 ax.set_rticks([0.25, 0.5, 0.75, 1])  # Less radial ticks
-ax.set_yticklabels(['', '0.5', '', '1.0'])  # Less radial ticks
+ax.set_yticklabels(['', '0.5', '', '1.0'], fontsize=8)  # Less radial ticks
 ax.set_rlabel_position(-60)  # Move radial labels away from plotted line
 ax.grid(True)
 # ax.set_xticks((2 * np.pi) * np.arange(0, (expobj.stim_interval_fr / bin_width)) / period)
 ax.set_xticks([0, (2 * np.pi) / 4, (2 * np.pi) / 2, (6 * np.pi) / 4])
-ax.set_xticklabels([r'$\it{\Theta}$ = 0', '', '', ''])
+ax.set_xticklabels([r'$\it{\Theta}$ = 0', '', '', ''], fontsize=10)
 ax.spines['polar'].set_visible(False)
 
-ax.set_title(label='Seizure probability', fontsize=10, fontweight='semibold', va='bottom')
+ax.set_title(label='Seizure probability', fontsize=fs, va='bottom')
 
 # fig.show()
 
@@ -258,13 +211,12 @@ rfv.add_label_axes(text="A", ax=ax, y_adjust=-0.02)
 sch_path = f'{fig_items}alloptical-interrogation-schematic.png'
 img = mpimg.imread(sch_path)
 ax.imshow(img, interpolation='none')
-ax.text(s='All-optical \ninterrogation', x = 0, y=80, fontsize=10, fontweight='semibold')
+# ax.text(s='All-optical \ninterrogation', x = 12, y=85, fontsize=10, fontweight='semibold', ha='center', va='center')
 
 
 # %% C) GRAND AVERAGE PHOTOSTIM TRACES AND AVERAGE ACROSS EXPERIMENTS
 
 ax = axes['bottom-C'][0]
-rfv.add_label_axes(text="C", ax=ax, y_adjust=0.0)
 
 results.collect_grand_avg_alloptical_traces(rerun=0)
 
@@ -279,15 +231,15 @@ ax.fill_between(x=results.grand_avg_traces['time_arr'], y1=avg_ + sem_, y2=avg_ 
 
 avg_ = np.mean(results.grand_avg_traces['interictal'], axis=0)
 sem_ = stats.sem(results.grand_avg_traces['interictal'], axis=0, ddof=1, nan_policy='omit')
-ax.plot(results.grand_avg_traces['time_arr'], avg_, color='mediumseagreen', lw=1)
+ax.plot(results.grand_avg_traces['time_arr'], avg_, color='forestgreen', lw=1)
 ax.fill_between(x=results.grand_avg_traces['time_arr'], y1=avg_ + sem_, y2=avg_ - sem_, alpha=0.3, zorder=2,
                 color='forestgreen')
 
-avg_ = np.mean(results.grand_avg_traces['ictal'], axis=0)
-sem_ = stats.sem(results.grand_avg_traces['ictal'], axis=0, ddof=1, nan_policy='omit')
-ax.plot(results.grand_avg_traces['time_arr'], avg_, color='blueviolet', lw=1)
-ax.fill_between(x=results.grand_avg_traces['time_arr'], y1=avg_ + sem_, y2=avg_ - sem_, alpha=0.3, zorder=2,
-                color='purple')
+# avg_ = np.mean(results.grand_avg_traces['ictal'], axis=0)
+# sem_ = stats.sem(results.grand_avg_traces['ictal'], axis=0, ddof=1, nan_policy='omit')
+# ax.plot(results.grand_avg_traces['time_arr'], avg_, color='blueviolet', lw=1)
+# ax.fill_between(x=results.grand_avg_traces['time_arr'], y1=avg_ + sem_, y2=avg_ - sem_, alpha=0.3, zorder=2,
+#                 color='purple')
 
 # # fakestims - targets
 # avg_ = np.mean(fakestim_targets_average_traces, axis=0)
@@ -302,15 +254,60 @@ ax.axvspan(results.grand_avg_traces['time_arr'][stim_[0] - 1], results.grand_avg
 rfv.naked(ax)
 ax.set_ylim([-1.5, 30])
 
-rfv.add_scale_bar(ax=ax, length=(5, 1), bartype='L', text=('5% dFF', '1 $\it{s}$'), loc=(2, 20),
-                  text_offset=[0.5, 2.5], fs=fs, lw=1)
+rfv.add_scale_bar(ax=ax, length=(5, 1), bartype='L', text=('5%\ndFF', '1 $\it{s}$'), loc=(2.5, 20),
+                  text_offset=[0.2, 4], fs=fs, lw=1.5)
 
-ax.text(s='Targeted neurons', x = -2, y=1.5, rotation=90, fontsize=10, fontweight='semibold')
-ax.text(s='Photostimulation', x = 0.005, y=0, rotation=90, fontsize=8, fontweight='bold', color='white', zorder=9)
+ax.text(s='All neuron targets', x = -2, y=1.5, rotation=90, fontsize=fs)
+ax.text(s='Photostimulation', x = 0.09, y=0, rotation=90, fontsize=ExpMetainfo.figure_settings['fontsize - intraplot'], fontweight='bold', color='white', zorder=9)
 
 # ax.set_ylabel('dFF')
 # ax.set_xlabel('Time (secs) rel. to stim')
 # ax.set_title('grand average all cells, all exps - baseline', wrap=True, fontsize='small')
+
+
+# %% C') BAR PLOT OF AVG PHOTOSTIMULATION RESPONSE OF TARGETS ACROSS CONDITIONS
+
+ax = axes['bottom-C'][1]
+
+results.collect_avg_photostim_responses_states(rerun=0)
+baseline_responses = results.avg_photostim_responses_all('baseline')
+interictal_responses = results.avg_photostim_responses_all('interictal')
+# ictal_responses = results.avg_photostim_responses['ictal']
+
+# ttest of independence
+ttest = stats.ttest_rel(baseline_responses, interictal_responses)
+print(f"ttest paired - p(Baseline vs. interictal): {ttest[1]}")
+
+# # kruskal wallis - for comparing baseline, interictal and ictal
+# kw_score = stats.kruskal(baseline_responses,
+#                interictal_responses,
+#                ictal_responses)
+# print(f"C': KW: n.s., p={kw_score[1]}")
+# # 1-WAY ANOVA
+# oneway_score = stats.f_oneway(baseline_responses,
+#                interictal_responses,
+#                ictal_responses)
+# create DataFrame to hold data
+# data_nums = []
+# num_baseline = len(baseline_responses)
+# num_interictal = len(interictal_responses)
+# num_ictal = len(ictal_responses)
+# data_nums.extend(['baseline'] * num_baseline)
+# data_nums.extend(['interictal'] * num_interictal)
+# data_nums.extend(['ictal'] * num_ictal)
+#
+# df = pd.DataFrame({'score': flattenOnce([baseline_responses, interictal_responses, ictal_responses]),
+#                    'group': data_nums})
+# # perform Tukey's test
+# tukey = pairwise_tukeyhsd(endog=df['score'], groups=df['group'],
+#                           alpha=0.05)
+# print(tukey)
+
+
+fig, ax = plot_bar_with_points(data=[baseline_responses, interictal_responses],
+                     bar=False, title='', x_tick_labels=['Baseline', 'Interictal'],
+                     colors=['royalblue', 'forestgreen'], figsize=(4, 4), y_label='% dFF', fontsize=fs,
+                     s=35, alpha=1, ylims=[-19, 90], show=False, fig=fig, ax=ax, sig_compare_lines={'n.s.': [0, 1]})
 
 
 

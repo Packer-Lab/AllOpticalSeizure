@@ -22,7 +22,7 @@ import _alloptical_utils as Utils
 from _analysis_._ClassPhotostimResponseQuantificationSLMtargets import PhotostimResponsesQuantificationSLMtargets, \
     PhotostimResponsesSLMtargetsResults
 from _analysis_._utils import Quantification, Results
-from _exp_metainfo_.exp_metainfo import AllOpticalExpsToAnalyze
+from _exp_metainfo_.exp_metainfo import AllOpticalExpsToAnalyze, ExpMetainfo
 from _main_.AllOpticalMain import alloptical
 from _main_.Post4apMain import Post4ap
 from funcsforprajay import plotting as pplot
@@ -1557,7 +1557,7 @@ class PhotostimAnalysisSlmTargets(Quantification):
         w = int(smooth * expobj.fps)
         array = np.asarray([pj.smoothen_signal(trace, w) for trace in array])
 
-        fig, ax = plot_photostim_traces_stacked(array, expobj, show=False, ax=ax_cat[1][0], fig=fig, linewidth=0.3,
+        fig, ax = plot_photostim_traces_stacked(array, expobj, show=False, ax=ax_cat[1][0], fig=fig, linewidth=ExpMetainfo.figure_settings["gcamp - single cell - lw"],
                                                 start_crop=start_crop, end_crop=end_crop)
         ax.spines['left'].set_visible(False)
         ax.set_xlim([start_crop, end_crop]) if start_crop is not None else None
@@ -1572,7 +1572,7 @@ class PhotostimAnalysisSlmTargets(Quantification):
         # synced LFP signal
         fig, ax = plotLfpSignal(expobj=expobj, xlims=[start_crop, end_crop], ylims=[-5, 5],
                                 # save_path=f'{SAVE_FIG}/alloptical_Ca_traces_pre4ap_LFP.png',
-                                linewidth=0.3, color='black', title=None,
+                                linewidth=ExpMetainfo.figure_settings["lfp - lw"], color='black', title=None,
                                 stim_lines=True, show=False, ax=ax_cat[0][0], fig=fig)
         rfv.naked(ax)
 
@@ -1606,7 +1606,7 @@ class PhotostimAnalysisSlmTargets(Quantification):
         start_crop = 190
         end_crop = start_crop + 200
 
-        fig, ax = plot_photostim_traces_stacked(array, expobj, show=False, ax=ax, fig=fig, linewidth=0.3,
+        fig, ax = plot_photostim_traces_stacked(array, expobj, show=False, ax=ax, fig=fig, linewidth=ExpMetainfo.figure_settings["gcamp - single cell - lw"],
                                                 start_crop=start_crop, end_crop=end_crop)
         ax.set_xlim([start_crop, start_crop + 200]) if start_crop is not None else None
 
@@ -1639,16 +1639,16 @@ class PhotostimAnalysisSlmTargets(Quantification):
         plotLfpSignal(expobj=expobj, figsize=(10, 3), xlims=[start_crop, end_crop], ylims=[-5 + 0.75, 5 + 0.75],
                       title=None, ylabel='LFP',
                       # save_path=f'{SAVE_FIG}/alloptical_Ca_traces_post4ap_LFP.png',
-                      color='black', stim_span_color='lightgray', linewidth=0.3, ax=ax, fig=fig, show=False)
+                      color='black', stim_span_color='lightgray', linewidth=ExpMetainfo.figure_settings["lfp - lw"], ax=ax, fig=fig, show=False)
         ax.axis('off')
 
         # add scalebar
         from _utils_.rfv_funcs import add_scale_bar
-        add_scale_bar(ax=ax_cat[0][1], loc=(end_crop + 10, -5 + 0.75), length=(1, 10), bartype='L',
-                      text=('1mV', '10 $\it{s}$'), text_offset=(8, 0.9), fs=5, fig=fig, lw=1)
+        add_scale_bar(ax=ax_cat[0][1], loc=(end_crop + 14, -5 + 1), length=(1, 10), bartype='L', lw=1.25,
+                      text=('1 mV', '10 $\it{s}$'), text_offset=(11, 1.5), fs=ExpMetainfo.figure_settings['fontsize - extraplot'], fig=fig)
 
-        add_scale_bar(ax=ax_cat[1][1], loc=(end_crop + 10, ylim_pre4ap[0] + 200), length=(100, 10), bartype='L',
-                      text=('1 dFF', '10 $\it{s}$'), text_offset=(8, 110), fs=5, fig=fig, lw=1)
+        add_scale_bar(ax=ax_cat[1][1], loc=(end_crop + 14, ylim_pre4ap[0] + 150), length=(100, 10), bartype='L', lw=1.25,
+                      text=('1 dFF', '10 $\it{s}$'), text_offset=(11, 190), fs=ExpMetainfo.figure_settings['fontsize - extraplot'], fig=fig)
 
         # fig.show()
 

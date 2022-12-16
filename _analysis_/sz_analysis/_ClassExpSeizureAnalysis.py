@@ -120,6 +120,19 @@ class ExpSeizureAnalysis(Quantification):
             SaveDownsampledTiff(stack=stack_cropped, group_by=4, save_as=save_as)
             print(f'\t\t oo -- Done creating {save_as}')
 
+    # print out paths to downsampled tiffs
+    @staticmethod
+    @Utils.run_for_loop_across_exps(run_pre4ap_trials=False, run_post4ap_trials=True, allow_rerun=True)
+    def print_downsampled_sz_paths(**kwargs):
+        expobj: Post4ap = kwargs['expobj']
+        assert len(expobj.seizure_lfp_offsets) == len(expobj.seizure_lfp_onsets), f'mismatch of seizure onsets/offsets in {expobj.t_series_name}, \n\t onsets: {expobj.seizure_lfp_onsets} \n\t offsets: {expobj.seizure_lfp_offsets}'
+        print(f'\n{expobj.t_series_name}: ')
+        print(f'\t', expobj.analysis_save_path + f'downsampled_sz_tiffs/')
+        for i, sz_start in enumerate(expobj.seizure_lfp_onsets):
+            sz_end = expobj.seizure_lfp_offsets[i]
+            save_as = expobj.analysis_save_path + f'downsampled_sz_tiffs/{expobj.date}_{expobj.t_series_name}_groupavg_sz{i}_{sz_start}_{sz_end}.tif'
+            print(f'\t\t', save_as)
+
     @staticmethod
     @Utils.run_for_loop_across_exps(run_pre4ap_trials=False, run_post4ap_trials=True, allow_rerun=True, supress_print=True)
     def print_expobj_analysis_path(**kwargs):
@@ -1064,9 +1077,10 @@ if __name__ == '__main__':
         expobj.save()
 
     # __fix__not_flip_stims_expseizure_class()
-    results = ExpSeizureResults.load()
-    ExpSeizureAnalysis.calcMeanFovGcampSzTermination(results)
+    # results = ExpSeizureResults.load()
+    # ExpSeizureAnalysis.calcMeanFovGcampSzTermination(results)
     # ExpSeizureAnalysis.downsample_all_sz()
+    ExpSeizureAnalysis.print_downsampled_sz_paths()
     # ExpSeizureAnalysis.print_expobj_analysis_path()
 
 

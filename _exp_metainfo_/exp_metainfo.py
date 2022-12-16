@@ -140,6 +140,11 @@ class AllOpticalExpsToAnalyze:
         'PS11 t-011': [2, 7]
     }  #: seizures to exclude from analysis for the post ictal phase (most because the seizure termination marking isn't perfect or there is a CSD or other artifact)
 
+    trials_idx_analysis = {
+        'baseline': [[0], [1], [2, 3], [4], [5], [6]],
+        'interictal': [[0], [1], [2], [3], [4], [5]]
+    }
+
     def __post_init__(self):
         self.metainfo = import_meta_from_csv(csv_path=self.csv_path)
 
@@ -226,6 +231,15 @@ class ExpMetainfo:
     csv_path: str = CSV_PATH_ao
     alloptical: AllOpticalExpsToAnalyze = AllOpticalExpsToAnalyze()
     onephotonstim: OnePhotonStimExpsToAnalyze = OnePhotonStimExpsToAnalyze()
+    figure_settings = {
+        "fontsize - extraplot": 10,
+        "fontsize - intraplot": 8,
+        "fontsize - title": 10,
+        "fontsize - label": 12,
+        "lfp - lw": 0.15,
+        "gcamp - single cell - lw": 0.5,
+    }
+
 
     def __init__(self):
         pass

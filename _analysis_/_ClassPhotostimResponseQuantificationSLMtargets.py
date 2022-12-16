@@ -5,10 +5,11 @@ import numpy as np
 import os
 import pandas as pd
 from matplotlib import pyplot as plt
+from scipy import stats
 
 import _alloptical_utils as Utils
 from _analysis_._utils import Quantification, Results
-from _exp_metainfo_.exp_metainfo import AllOpticalExpsToAnalyze, current_loc
+from _exp_metainfo_.exp_metainfo import AllOpticalExpsToAnalyze, current_loc, ExpMetainfo
 from _main_.AllOpticalMain import alloptical
 from _main_.Post4apMain import Post4ap
 from funcsforprajay import plotting as pplot
@@ -36,6 +37,7 @@ class PhotostimResponsesSLMtargetsResults(Results):
 
     def __init__(self):
         super().__init__()
+        self.exp_info: dict = {}
         self.grand_avg_traces: dict = {}                                        #: mean traces of targets all optical for plotting grand avg plots
         self.pre_stim_targets_annulus_vs_targets_responses_results = None
         self.mean_photostim_responses_baseline: List[float] = [-1]
@@ -60,7 +62,7 @@ class PhotostimResponsesSLMtargetsResults(Results):
             'preictal_responses': [],
                                      'postictal_responses': []}  #: responses during interictal split by preictal and postictal
 
-        self.baseline_adata: AnnotatedData2 = None      #: baseline dFF repsonses all targets, all exps, all stims
+        self.baseline_adata: AnnotatedData2 = None      #: baseline % dFF repsonses all targets, all exps, all stims
         self.interictal_adata: AnnotatedData2 = None    #: interictal dFF repsonses all targets, all exps, all interictal stims
         self.midinterictal_adata: AnnotatedData2 = None    #: interictal dFF repsonses all targets, all exps, all midinterictal stims
         self.corr_targets: dict = None                  #: correlation coef values of z-scored targets responses compared trial-wise
@@ -359,6 +361,24 @@ class PhotostimResponsesSLMtargetsResults(Results):
             self.avg_prestim_Flu['ictal'] = collect_avg_prestimf_ictal()
             self.save_results()
         else: print('---- skipped rerunning collect_avg_prestimf_states ----')
+
+
+    def avg_prestim_Flu_all(self, input):
+        _results = []
+        for i, exp in enumerate(ExpMetainfo.alloptical.trials_idx_analysis[input]):
+            _results.append(np.round(np.mean([self.avg_prestim_Flu[input][i] for i in exp]), 2))
+        assert len(_results) == len(ExpMetainfo.alloptical.trials_idx_analysis[input])
+        # print f"{input}: {_results}"
+        return _results
+
+
+    def avg_photostim_responses_all(self, input):
+        _results = []
+        for i, exp in enumerate(ExpMetainfo.alloptical.trials_idx_analysis[input]):
+            _results.append(np.round(np.mean([self.avg_photostim_responses[input][i] for i in exp]), 2))
+        assert len(_results) == len(ExpMetainfo.alloptical.trials_idx_analysis[input])
+        # return f"{input}: {_results}"
+        return _results
 
 
 REMAKE = False
@@ -1485,19 +1505,98 @@ class PhotostimResponsesQuantificationSLMtargets(Quantification):
             title='plot__targets_annulus_prestim_Flu_all_points', alpha=0.1)
 
 
+# %% COLLECTING STATS ABOUT EXPERIMENT TO ADD TO THE RESULTS SECTION RELATED TO FIGURE 3
+
+def collect_stats_about_photostim_exp_baseline():
+    results = PhotostimResponsesSLMtargetsResults.load()
+    # number of photostim SLM targets in each experiment
+    experiments = []
+    results.exp_info['num targets'] = {}
+    for exp in results.baseline_adata.obs['exp'].unique():
+        if exp[:5] not in experiments:
+            results.exp_info['num targets'][exp] = len(results.baseline_adata[results.baseline_adata.obs['exp'] == exp])
+            experiments.append(exp[:5])
+    # print mean and std of number of photostim SLM targets in each experiment, rounded to 2 decimal places and save to results under exp_info
+    print(f"Mean number of photostim SLM targets: {np.mean(list(results.exp_info['num targets'].values())):.2f}")
+    print(f"Stdev of number of photostim SLM targets: {np.std(list(results.exp_info['num targets'].values())):.2f}")
+    results.exp_info['num targets']['mean'] = np.mean(list(results.exp_info['num targets'].values()))
+    results.exp_info['num targets']['std'] = np.std(list(results.exp_info['num targets'].values()))
+
+    results.save_results()
+
+    # collect photostim response stats for each experiment, and collect overall mean and stdev of photostim response across all experiments
+    results.exp_info['photostim response'] = {}
+    results.exp_info['photostim response']['overall mean'] =  None
+    results.exp_info['photostim response']['overall stdev'] = None
+    _overall_mean = []
+    experiments = []
+    for exp in results.baseline_adata.obs['exp'].unique():
+        if exp[:5] not in experiments:
+            results.exp_info['photostim response'][exp] = {}
+            results.exp_info['photostim response'][exp]['mean'] = np.nanmean(results.baseline_adata.X[results.baseline_adata.obs['exp'] == exp, :])
+            results.exp_info['photostim response'][exp]['std'] = np.nanstd(results.baseline_adata.X[results.baseline_adata.obs['exp'] == exp, :])
+            results.exp_info['photostim response'][exp]['median'] = np.nanmedian(results.baseline_adata.X[results.baseline_adata.obs['exp'] == exp, :])
+            results.exp_info['photostim response'][exp]['min'] = np.min(results.baseline_adata.X[results.baseline_adata.obs['exp'] == exp, :])
+            results.exp_info['photostim response'][exp]['max'] = np.max(results.baseline_adata.X[results.baseline_adata.obs['exp'] == exp, :])
+            results.exp_info['photostim response'][exp]['sem'] = stats.sem(results.baseline_adata.X[results.baseline_adata.obs['exp'] == exp, :])
+            _overall_mean.append(results.exp_info['photostim response'][exp]['mean'])
+            experiments.append(exp[:5])
+
+    results.exp_info['photostim response']['overall mean'] = np.mean(_overall_mean)
+    results.exp_info['photostim response']['overall stdev'] = np.std(_overall_mean)
+
+
+    # print mean and stdev of average photostim response from each experiment, rounded to 2 decimal places and save to results under exp_info
+    print(f"Mean photostim response: {results.exp_info['photostim response']['overall mean']:.2f}")
+    print(f"Stdev of photostim response: {results.exp_info['photostim response']['overall stdev']:.2f}")
+
+    results.save_results()
+
+
+def collect_stats_about_photostim_exp_interictal():
+    results = PhotostimResponsesSLMtargetsResults.load()
+
+    # collect photostim response stats for each experiment, and collect overall mean and stdev of photostim response across all experiments
+    results.exp_info['photostim response - interictal'] = {}
+    results.exp_info['photostim response - interictal']['overall mean'] = None
+    results.exp_info['photostim response - interictal']['overall stdev'] = None
+    _overall_mean = []
+    experiments = []
+    for exp in results.interictal_adata.obs['exp'].unique():
+        if exp[:5] not in experiments:
+            expobj: Post4ap = import_expobj(exp_prep=exp)
+            stims = expobj.stim_idx_outsz
+            responses = expobj.PhotostimResponsesSLMTargets.adata.X[:, stims]
+            results.exp_info['photostim response - interictal'][exp] = {}
+            results.exp_info['photostim response - interictal'][exp]['mean'] = np.nanmean(responses)
+            results.exp_info['photostim response - interictal'][exp]['std'] = np.nanstd(responses)
+            results.exp_info['photostim response - interictal'][exp]['median'] = np.nanmedian(responses)
+            results.exp_info['photostim response - interictal'][exp]['min'] = np.min(responses)
+            results.exp_info['photostim response - interictal'][exp]['max'] = np.max(responses)
+            results.exp_info['photostim response - interictal'][exp]['sem'] = stats.sem(responses)
+            _overall_mean.append(results.exp_info['photostim response - interictal'][exp]['mean'])
+            experiments.append(exp[:5])
+
+    results.exp_info['photostim response - interictal']['overall mean'] = np.mean(_overall_mean)
+    results.exp_info['photostim response - interictal']['overall stdev'] = np.std(_overall_mean)
+
+
+    # print mean and stdev of average photostim response - interictal from each experiment, rounded to 2 decimal places and save to results under exp_info
+    print(f"Mean photostim response - interictal: {results.exp_info['photostim response - interictal']['overall mean']:.2f}")
+    print(f"Stdev of photostim response - interictal: {results.exp_info['photostim response - interictal']['overall stdev']:.2f}")
+
+    results.save_results()
+
+
 # %% CODE RUNNING ZONE
 
 """
 TODO:
 
 MAJOR
-[x] collecting and plotting prestim Flu of annulus around target - goal is to see that rise consistently across targets that in seizure, vs. 
-not rise for targets that ARE NOT in seizure. would be really helpful to show and make these plots.
-[x] - then also compare photostim responses in relation to the targets' annulus Flu.
 
 MINOR
 send out plots for prestim FOV flu and prestim targets annulus flu 
-
 """
 
 
@@ -1511,6 +1610,7 @@ if __name__ == '__main__':
     # retrieve__photostim_responses_vs_prestim_targets_annulus_flu()
     PhotostimResponsesQuantificationSLMtargets.plot__photostim_responses_vs_prestim_targets_annulus_flu(RESULTS)
     PhotostimResponsesQuantificationSLMtargets.plot__targets_annulus_prestim_Flu_all_points(RESULTS)
+    # collect_stats_about_photostim_exp_baseline()
 
     pass
 
