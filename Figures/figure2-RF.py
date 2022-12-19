@@ -64,6 +64,62 @@ print('\n\n')
 
 
 
+# %% E) BAR PLOT OF RESPONSE DECAY FOR 1P STIM EXPERIMENTS - changing to individual stims - '22 dec 19
+ax = axes['D-E'][1]
+
+# individual trials photostim decays
+baseline_decay_magnitudes = Results.decay_constants['baseline']
+interictal_decay_magnitudes_szexclude = Results.decay_constants['interictal - sz excluded']
+
+baseline_decays = []
+interictal_decays_szexclude = []
+for trial, decays in baseline_decay_magnitudes.items():
+    decays = [decay for decay in decays if (decay > 0.0 and decay is not None)]
+    baseline_decays.extend(list(decays))
+for trial, decays in interictal_decay_magnitudes_szexclude.items():
+    decays = [decay for decay in decays if (decay > 0.0 and decay is not None)]
+    interictal_decays_szexclude.extend(list(decays))
+
+
+# STATS
+# t-test - individual sessions
+print(f"P(t-test - (indiv. trials) decay constants: baseline vs. interictal): {stats.ttest_ind(baseline_decays, interictal_decays_szexclude)[1]:.3e}")
+
+
+# fig, ax = plt.subplots(figsize=[2, 3], dpi = 100)
+plot_bar_with_points(data=[baseline_decays, interictal_decays_szexclude],
+                     x_tick_labels=['Baseline', 'Interictal'], fontsize=ExpMetainfo.figure_settings["fontsize - extraplot"],
+                     points=False, bar=True, colors=['royalblue', 'forestgreen'], fig=fig, ax=ax, show=False, s=10,
+                     x_label='', y_label=r'Decay ($\tau$, secs)', alpha=1, lw=0.75, ylims=[0, 1.25])
+fig.show()
+# fig.tight_layout(pad=0.2)
+
+
+
+
+
+### archiving below '22 dec 19
+ax=axes['D-E'][1]
+baseline_decay_constant_plot = [np.mean(items) for items in Results.baseline_decay_constant.values()]
+interictal_decay_constant_plot = [np.mean(items) for items in Results.interictal_decay_constant.values()]
+
+# STATS
+print(
+    f"P(paired t-test - decay - baseline vs. interictal): {stats.ttest_rel(baseline_decay_constant_plot, interictal_decay_constant_plot)[1]:.3f}")
+print(
+    f"P(t-test - decay - baseline vs. interictal): {stats.ttest_ind(baseline_decay_constant_plot, interictal_decay_constant_plot)[1]:.3f}")
+
+# make plot
+plot_bar_with_points(data=[baseline_decay_constant_plot, interictal_decay_constant_plot],
+                     legend_labels=list(onePresults.mean_stim_responses.columns[-3:]), paired=True,
+                     x_tick_labels=['Baseline', 'Interictal'], fs=ExpMetainfo.figure_settings["fontsize - extraplot"],
+                     points=True, bar=False, colors=['royalblue', 'forestgreen'], fig=fig, ax=ax, show=False,
+                     x_label='', y_label=r'Decay ($\tau$, secs)', alpha=1, s=35, ylims=[0.3, 1.1], fontsize=ExpMetainfo.figure_settings["fontsize - extraplot"])
+
+print('\n\n')
+
+
+
 # %% C) avg LFP trace 1p stim plots
 
 rfv.add_label_axes(text='C', ax=axes['C'][0, 0], y_adjust=0.01)
@@ -127,27 +183,6 @@ rfv.add_scale_bar(ax=ax, length=(1, 0.25), bartype='L', text=('1\nmV', '0.25 s')
 
 
 
-# %% E) BAR PLOT OF RESPONSE DECAY FOR 1P STIM EXPERIMENTS
-
-baseline_decay_constant_plot = [np.mean(items) for items in Results.baseline_decay_constant.values()]
-interictal_decay_constant_plot = [np.mean(items) for items in Results.interictal_decay_constant.values()]
-
-# STATS
-print(
-    f"P(paired t-test - decay - baseline vs. interictal): {stats.ttest_rel(baseline_decay_constant_plot, interictal_decay_constant_plot)[1]:.3f}")
-print(
-    f"P(t-test - decay - baseline vs. interictal): {stats.ttest_ind(baseline_decay_constant_plot, interictal_decay_constant_plot)[1]:.3f}")
-
-# make plot
-plot_bar_with_points(data=[baseline_decay_constant_plot, interictal_decay_constant_plot],
-                     legend_labels=list(onePresults.mean_stim_responses.columns[-3:]), paired=True,
-                     x_tick_labels=['Baseline', 'Interictal'], fs=ExpMetainfo.figure_settings["fontsize - extraplot"],
-                     points=True, bar=False, colors=['royalblue', 'forestgreen'], fig=fig, ax=axes['D-E'][1], show=False,
-                     x_label='', y_label=r'Decay ($\tau$, secs)', alpha=1, s=35, ylims=[0.3, 1.1], fontsize=ExpMetainfo.figure_settings["fontsize - extraplot"])
-
-print('\n\n')
-
-
 # %% B) representative plot of onePhoton experiment
 
 
@@ -193,7 +228,7 @@ rfv.add_scale_bar(ax=axes['B'][1, 1], length=(500, 10 * expobj.fps), bartype='L'
 
 
 
-# %% D - new 2022-09-10) BAR PLOT OF RESPONSE MAGNITUDE FOR 1P STIM EXPERIMENTS - BY INDIVIDUAL STIMS
+# %% D) BAR PLOT OF RESPONSE MAGNITUDE FOR 1P STIM EXPERIMENTS - BY INDIVIDUAL STIMS
 
 # individual trials photostim responses
 baseline_response_magnitudes = Results.photostim_responses['baseline']

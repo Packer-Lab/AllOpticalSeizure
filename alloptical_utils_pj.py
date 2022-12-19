@@ -3970,7 +3970,7 @@ class OnePhotonStim_(TwoPhotonImaging):
             trial = self.metainfo['trial']
             information = f"{prep} {trial}"
 
-        return repr(f"({information}) TwoPhotonImaging.OnePhotonStim experimental data object, last saved: {lastmod}")
+        return repr(f"({information}) [alloptical_utils_pj]TwoPhotonImaging.OnePhotonStim experimental data object, last saved: {lastmod}")
 
     @property
     def date(self):

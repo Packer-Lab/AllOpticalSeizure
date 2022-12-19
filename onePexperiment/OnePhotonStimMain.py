@@ -3,6 +3,8 @@ import os
 import pickle
 import sys
 
+import pandas as pd
+
 from _utils_.io import import_expobj, import_1pexobj
 from alloptical_utils_pj import import_resultsobj
 import _alloptical_utils as Utils
@@ -207,6 +209,8 @@ class OnePhotonStim(TwoPhotonImaging):
 
         print('\n-----DONE OnePhotonStim init of trial # %s-----' % trial)
 
+        self.photostim_results = pd.DataFrame  # row: [stim type, photostim responses, decay constant, pre stim flu avg], col: [individual stim frames]
+
     def __repr__(self):
         if os.path.exists(self.pkl_path) and hasattr(self, 'metainfo'):
             lastmod = time.ctime(os.path.getmtime(self.pkl_path))
@@ -215,7 +219,7 @@ class OnePhotonStim(TwoPhotonImaging):
             information = f"{prep} {trial}, {self.exptype}"
         else:
             information = f"uninitialized"
-        return repr(f"({information}) TwoPhotonImaging.OnePhotonStim experimental data object, last saved: {lastmod}")
+        return repr(f"({information}) [OnePhotonStimMain]TwoPhotonImaging.OnePhotonStim experimental data object, last saved: {lastmod}")
 
     @staticmethod
     def import_1pexobj(prep=None, trial=None, date=None, pkl_path=None, verbose=False, load_backup_path=None):

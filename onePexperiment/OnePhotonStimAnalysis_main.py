@@ -67,7 +67,12 @@ class OnePhotonStimResults(Results):
                                     'interictal': None,
                                     'interictal - sz excluded': None,
                                     'interictal - presz': Any,
-                                    'interictal - postsz': Any}  #: individual post-stim response magnitudes across all 1p stim trials. includes separate set of values for stims that are seizure excluded.
+                                    'interictal - postsz': Any}  #: individual post-stim response magnitudes across all 1p stim trials. includes separate set of values for excluded stims that induced seizure.
+        self.decay_constants = {'baseline': None,
+                               'interictal': None,
+                               'interictal - sz excluded': None,
+                               'interictal - presz': Any,
+                               'interictal - postsz': Any}  #: individual post-stim decay constants across all 1p stim trials. includes separate set of values for excluded stims that are induced seizure.
 
         self.save_results()
 
@@ -179,7 +184,6 @@ class OnePhotonStimAnalysisFuncs(OnePhotonStim):
                 else:
                     self.decay_constants = [None]
 
-
             if hasattr(self, 'photostim_results'):
                 self.save()
                 return True
@@ -190,9 +194,10 @@ class OnePhotonStimAnalysisFuncs(OnePhotonStim):
         return _collectPhotostimResponses()
 
     @staticmethod
-    def collectPhotostimResponseIndivual(resultsobj: OnePhotonStimResults, run_pre4ap_trials=True,
-                                         run_post4ap_trials=True, run_trials=[], skip_trials=[], ignore_cache=False):
-        """collecting all photostimulation responses for individual experiments."""
+    def collectPhotostimResponsesIndivual(resultsobj: OnePhotonStimResults, run_pre4ap_trials=True,
+                                          run_post4ap_trials=True, run_trials=[], skip_trials=[], ignore_cache=False):
+        """collecting all photostimulation responses for individual trials.
+        """
         if not hasattr(resultsobj, 'photostim_responses') or ignore_cache:
             @OnePhotonStim.runOverExperiments(run_pre4ap_trials=run_pre4ap_trials,
                                               run_post4ap_trials=run_post4ap_trials,
@@ -219,14 +224,20 @@ class OnePhotonStimAnalysisFuncs(OnePhotonStim):
                                               'interictal': post4ap_resposnes}
             resultsobj.save_results()
 
+
     @staticmethod
-    def collectPhotostimResponses_szexcluded(resultsobj: OnePhotonStimResults, ignore_cache=False):
+    def collectPhotostimResponsesAndDecay_szexcluded(resultsobj: OnePhotonStimResults, ignore_cache=False):
         """collect all photostimulation responses for individual experiments - excluding stims that occured near seizure.
-        idea is to exclude specifically the stims that led to seizure induction since these stim responses will be elevated"""
+        idea is to exclude specifically the stims that led to seizure induction since these stim responses will be elevated
+        - also collect all photostimulation decay constants for individual trials.
+
+
+        """
 
         if 'interictal - sz excluded' in [*resultsobj.photostim_responses] and not ignore_cache: pass
         else:
-            @OnePhotonStim.runOverExperiments(run_pre4ap_trials=False, run_post4ap_trials=True, supress_print=False, ignore_cache=ignore_cache)
+            @OnePhotonStim.runOverExperiments(run_pre4ap_trials=False, run_post4ap_trials=True, supress_print=False,
+                                              ignore_cache=ignore_cache)
             def _collect_photostimResponse_szexclude(**kwargs):
                 expobj = kwargs['expobj']
 
@@ -250,12 +261,90 @@ class OnePhotonStimAnalysisFuncs(OnePhotonStim):
 
                 post4ap_responses_sz_excluded[expobj.t_series_name] = pd.Series(index=stims_keep, data=responses_keep)
 
-
             post4ap_responses_sz_excluded = {}
 
             _collect_photostimResponse_szexclude()
 
             resultsobj.photostim_responses['interictal - sz excluded'] = post4ap_responses_sz_excluded
+            resultsobj.save_results()
+
+        if 'interictal - sz excluded' in [*resultsobj.decay_constants] and not ignore_cache: pass
+        else:
+            @OnePhotonStim.runOverExperiments(run_pre4ap_trials=True, run_post4ap_trials=True, supress_print=False,
+                                              ignore_cache=ignore_cache)
+            def _collect_decay_constant(**kwargs):
+                print('start')
+                expobj: OnePhotonStim = kwargs['expobj']
+
+
+                if 'post' in expobj.exptype:
+                    stims = expobj.stims_out_sz
+                    assert ['interictal' in i for i in expobj.photostim_results.loc['stim type', stims]], 'a non-interictal stim type was found in the post4ap trials selected'
+                    post4ap_decays[expobj.t_series_name] = expobj.photostim_results.loc['decay constant', stims]
+
+                    decays = expobj.photostim_results.loc['decay constant', stims]
+                    # resultsobj.decay_constants['interictal - sz excluded'][expobj.t_series_name] = None
+
+                    stims = list(decays.index)
+                    decays = list(decays.values)
+                    stims_keep = []
+                    decays_keep = []
+                    for i, stim in enumerate(stims):
+                        exclude = False
+                        for fr in expobj.seizure_frames:
+                            if np.abs((stim - fr)) < 1 * expobj.fps:  # exclude if stim is within 1 sec of a seizure onset time
+                                exclude = True
+                                print('\txx -- excluding', i, stim)
+                                # break
+                        if not exclude:
+                            stims_keep.append(stim)
+                            print('\too --keeping', i, stim)
+                            decays_keep.append(decays[i])
+
+                    post4ap_decays[expobj.t_series_name] = pd.Series(index=stims_keep, data=decays_keep)
+
+
+                elif 'pre' in expobj.exptype:
+                    stims = expobj.stim_start_frames
+
+
+                    # write new code for calculating decay constant for each stim below:
+
+                    stims_keep = stims
+                    decays_keep = expobj.photostim_results.loc['decay constant', stims]
+
+
+
+                    # pre4ap_decays[expobj.t_series_name] = expobj.photostim_results.loc['decay constant', stims]
+                    # responses = resultsobj.decay_constants['interictal'][expobj.t_series_name]
+                    # resultsobj.decay_constants['interictal - sz excluded'][expobj.t_series_name] = None
+                    # stims = list(responses.index)
+                    # responses = list(responses.values)
+                    # stims_keep = []
+                    # responses_keep = []
+                    # for i, stim in enumerate(stims):
+                    #     exclude = False
+                    #     for fr in expobj.seizure_frames:
+                    #         if np.abs((stim - fr)) < 1 * expobj.fps:  # exclude if stim is within 1 sec of a seizure onset time
+                    #             exclude = True
+                    #             print('\txx -- excluding', i, stim)
+                    #             # break
+                    #     if not exclude:
+                    #         stims_keep.append(stim)
+                    #         print('\too --keeping', i, stim)
+                    #         responses_keep.append(responses[i])
+
+                    pre4ap_decays[expobj.t_series_name] = pd.Series(index=stims_keep, data=decays_keep)
+
+            resultsobj.decay_constants = {}
+
+            pre4ap_decays = {}
+            post4ap_decays = {}
+
+            _collect_decay_constant()
+
+            resultsobj.decay_constants = {'baseline': pre4ap_decays,
+                                         'interictal - sz excluded': post4ap_decays}
             resultsobj.save_results()
 
 
@@ -264,10 +353,13 @@ class OnePhotonStimAnalysisFuncs(OnePhotonStim):
         """collect all photostimulation responses for individual experiments -
         and group by bin of stim relative to seizure onset/offset."""
 
-        if 'interictal - mid' in [*resultsobj.photostim_responses] and not ignore_cache: pass
+        if 'interictal - mid' in [*resultsobj.photostim_responses] and not ignore_cache:
+            pass
         else:
             resultsobj.photostim_responses['interictal - mid'] = {}
-            @OnePhotonStim.runOverExperiments(run_pre4ap_trials=False, run_post4ap_trials=True, supress_print=False, ignore_cache=ignore_cache)
+
+            @OnePhotonStim.runOverExperiments(run_pre4ap_trials=False, run_post4ap_trials=True, supress_print=False,
+                                              ignore_cache=ignore_cache)
             def _collect_photostimResponse_mid(**kwargs):
                 expobj: OnePhotonStim = kwargs['expobj']
 
@@ -280,14 +372,16 @@ class OnePhotonStimAnalysisFuncs(OnePhotonStim):
                 for i, stim in enumerate(stims):
                     exclude = False
                     for fr in expobj.seizure_frames:
-                        if np.abs((stim - fr)) < 5 * expobj.fps:  # exclude if stim is within 5 sec of a seizure onset time
+                        if np.abs((
+                                          stim - fr)) < 5 * expobj.fps:  # exclude if stim is within 5 sec of a seizure onset time
                             exclude = True
                             print(f'\txx -- excluding {i} {stim}')
                             break
                     if not exclude:
                         include = True
                         for sz_on, sz_off in zip(expobj.seizure_lfp_onsets, expobj.seizure_lfp_offsets):
-                            if not (not (0 < (sz_on - stim) < 30 * expobj.fps) and not (0 < (stim - sz_off) < 30 * expobj.fps)):  # keep stim if >30secs of seizure onset AND >30secs after seizure offset
+                            if not (not (0 < (sz_on - stim) < 30 * expobj.fps) and not (0 < (
+                                    stim - sz_off) < 30 * expobj.fps)):  # keep stim if >30secs of seizure onset AND >30secs after seizure offset
                                 print(f'\too --kicking out {i} {stim}, sz on fr: {sz_on}, sz off fr: {sz_off}')
                                 include = False
                         if include:
@@ -302,10 +396,13 @@ class OnePhotonStimAnalysisFuncs(OnePhotonStim):
             resultsobj.photostim_responses['interictal - mid'] = post4ap_responses_mid
             resultsobj.save_results()
 
-        if 'interictal - presz' in [*resultsobj.photostim_responses] and not ignore_cache: pass
+        if 'interictal - presz' in [*resultsobj.photostim_responses] and not ignore_cache:
+            pass
         else:
             resultsobj.photostim_responses['interictal - presz'] = {}
-            @OnePhotonStim.runOverExperiments(run_pre4ap_trials=False, run_post4ap_trials=True, supress_print=False, ignore_cache=ignore_cache)
+
+            @OnePhotonStim.runOverExperiments(run_pre4ap_trials=False, run_post4ap_trials=True, supress_print=False,
+                                              ignore_cache=ignore_cache)
             def _collect_photostimResponse_presz(**kwargs):
                 expobj: OnePhotonStim = kwargs['expobj']
 
@@ -318,7 +415,8 @@ class OnePhotonStimAnalysisFuncs(OnePhotonStim):
                 for i, stim in enumerate(stims):
                     exclude = False
                     for fr in expobj.seizure_frames:
-                        if np.abs((stim - fr)) < 5 * expobj.fps:  # exclude if stim is within 5 sec of a seizure onset time
+                        if np.abs((
+                                          stim - fr)) < 5 * expobj.fps:  # exclude if stim is within 5 sec of a seizure onset time
                             exclude = True
                             print(f'\txx -- excluding {i} {stim}')
                             break
@@ -336,11 +434,13 @@ class OnePhotonStimAnalysisFuncs(OnePhotonStim):
             resultsobj.photostim_responses['interictal - presz'] = post4ap_responses_presz
             resultsobj.save_results()
 
-
-        if 'interictal - postsz' in [*resultsobj.photostim_responses] and not ignore_cache: pass
+        if 'interictal - postsz' in [*resultsobj.photostim_responses] and not ignore_cache:
+            pass
         else:
             resultsobj.photostim_responses['interictal - postsz'] = {}
-            @OnePhotonStim.runOverExperiments(run_pre4ap_trials=False, run_post4ap_trials=True, supress_print=False, ignore_cache=ignore_cache)
+
+            @OnePhotonStim.runOverExperiments(run_pre4ap_trials=False, run_post4ap_trials=True, supress_print=False,
+                                              ignore_cache=ignore_cache)
             def _collect_photostimResponse_postsz(**kwargs):
                 expobj: OnePhotonStim = kwargs['expobj']
 
@@ -353,7 +453,8 @@ class OnePhotonStimAnalysisFuncs(OnePhotonStim):
                 for i, stim in enumerate(stims):
                     exclude = False
                     for fr in expobj.seizure_frames:
-                        if np.abs((stim - fr)) < 5 * expobj.fps:  # exclude if stim is within 5 sec of a seizure onset time
+                        if np.abs((
+                                          stim - fr)) < 5 * expobj.fps:  # exclude if stim is within 5 sec of a seizure onset time
                             exclude = True
                             print(f'\txx -- excluding {i} {stim}')
                             break
@@ -371,7 +472,6 @@ class OnePhotonStimAnalysisFuncs(OnePhotonStim):
 
             resultsobj.photostim_responses['interictal - postsz'] = post4ap_responses_postsz
             resultsobj.save_results()
-
 
     @staticmethod
     def collectPreStimFluAvgs(run_pre4ap_trials=True, run_post4ap_trials=True, ignore_cache=False, run_trials=[],

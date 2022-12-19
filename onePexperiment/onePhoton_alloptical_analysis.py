@@ -40,15 +40,18 @@ date = '2021-01-24'
 
 # %% 1.0) ## measuring PRE-STIM CA2+ AVG FLU vs. DFF RESPONSE MAGNITUDE, DECAY CONSTANT of the fov
 
-# collection of: photostims relative to seizure timing
-OnePhotonStimAnalysisFuncs.collectPhotostimResponses_PrePostSz(resultsobj=Results, ignore_cache=True)
-
-
 # seizure excluded responses collection
-OnePhotonStimAnalysisFuncs.collectPhotostimResponses_szexcluded(resultsobj=Results, ignore_cache=True)
+OnePhotonStimAnalysisFuncs.collectPhotostimResponsesAndDecay_szexcluded(resultsobj=Results, ignore_cache=False)
 
 
-OnePhotonStimAnalysisFuncs.collectPhotostimResponseIndivual(resultsobj=Results, run_pre4ap_trials=True, run_post4ap_trials=True, ignore_cache=False)
+
+# collection of: photostims relative to seizure timing
+OnePhotonStimAnalysisFuncs.collectPhotostimResponses_PrePostSz(resultsobj=Results, ignore_cache=False)
+
+
+
+
+OnePhotonStimAnalysisFuncs.collectPhotostimResponsesIndivual(resultsobj=Results, run_pre4ap_trials=True, run_post4ap_trials=True, ignore_cache=False)
 
 
 # %% 2.1) PLOT - time to seizure onset vs. pre-stim Flu

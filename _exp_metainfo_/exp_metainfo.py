@@ -232,6 +232,21 @@ class ExpMetainfo:
     alloptical: AllOpticalExpsToAnalyze = AllOpticalExpsToAnalyze()
     onephotonstim: OnePhotonStimExpsToAnalyze = OnePhotonStimExpsToAnalyze()
     figure_settings = {
+        "fontsize": {
+            "title": 10,
+            "label": 12,
+            "extraplot": 10,
+            "intraplot": 8
+        },
+        'lw': {
+            "gcamp - single cell": 0.5,
+            "gcamp - FOV": 0.5,
+            "lfp": 0.15},
+        'colors': {'baseline': 'royalblue',  # light matte blue
+                    'interictal': 'orange',  # like lightish matte orange
+                    'ictal': 'purple',  # like a light matte purple
+                    },
+
         "fontsize - extraplot": 10,
         "fontsize - intraplot": 8,
         "fontsize - title": 10,
@@ -239,6 +254,7 @@ class ExpMetainfo:
         "lfp - lw": 0.15,
         "gcamp - single cell - lw": 0.5,
         "gcamp - FOV - lw": 0.5,
+
     }
 
 
