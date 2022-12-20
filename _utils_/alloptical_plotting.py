@@ -1399,8 +1399,9 @@ def plot_flu_1pstim_avg_trace(expobj, individual_traces=False, x_axis='time', st
 
     shrink_text = 1 if not 'shrink_text' in kwargs else 1 / kwargs['shrink_text']
 
-    pre_stim = 1  # seconds
-    post_stim = 4  # seconds
+    pre_stim = 1 if 'pre_stim' not in kwargs else kwargs['pre_stim']  # seconds
+    post_stim = 4 if 'post_stim' not in kwargs else kwargs['post_stim']  # seconds
+    fillcolor = 'gray' if 'fillcolor' not in kwargs else kwargs['fillcolor']  # fill color when plotting mean +/- std
 
     if stims_to_analyze is None: stims_to_analyze = expobj.stim_start_frames
     flu_list = [expobj.meanRawFluTrace[stim - int(pre_stim * expobj.fps): stim + int(post_stim * expobj.fps)] for stim in stims_to_analyze]
@@ -1425,9 +1426,9 @@ def plot_flu_1pstim_avg_trace(expobj, individual_traces=False, x_axis='time', st
     else:
         # plot standard deviation of the traces array as a span above and below the mean
         std_ = np.std(flu_list, axis=0)
-        ax.fill_between(x=x_range, y1=avg_flu_trace + std_, y2=avg_flu_trace - std_, alpha=0.3, zorder=1, color='gray')
+        ax.fill_between(x=x_range, y1=avg_flu_trace + std_, y2=avg_flu_trace - std_, alpha=0.7, zorder=1, color=fillcolor)
         if stim_span_color is not None:
-            ax.axvspan(int(pre_stim) - 2/expobj.fps, int(pre_stim) + (expobj.stim_duration_frames + 1) / expobj.fps, color=stim_span_color, zorder=3)
+            ax.axvspan(pre_stim - 2.1/expobj.fps, pre_stim + (expobj.stim_duration_frames + 1) / expobj.fps, color=stim_span_color, zorder=3)
         elif stim_span_color is None:
             plt.axvline(x=int(pre_stim) - 2, color='black', linestyle='--', linewidth=1)
             plt.axvline(x=int(pre_stim) + (expobj.stim_duration_frames  / expobj.fps) + 2, color='black', linestyle='--', linewidth=1)
@@ -1501,13 +1502,15 @@ def plot_flu_1pstim_avg_trace(expobj, individual_traces=False, x_axis='time', st
 
 @print_start_end_plot
 @plot_piping_decorator(figsize=(4,5))
-def plot_lfp_1pstim_avg_trace(expobj, individual_traces=False, pre_stim=1.0, post_stim=5.0,
-                              optoloopback: bool = False, stims_to_analyze: list = None, **kwargs):
+def plot_lfp_1pstim_avg_trace(expobj, individual_traces=False, optoloopback: bool = False, stims_to_analyze: list = None, **kwargs):
     ax = kwargs['ax']
 
     stim_duration = (np.mean([expobj.stim_end_times[idx] - expobj.stim_start_times[idx] for idx in range(len(expobj.stim_start_times))]) + 0.01*expobj.paq_rate) / expobj.paq_rate
-    pre_stim = pre_stim  # seconds
-    post_stim = post_stim  # seconds
+
+    pre_stim = 1 if 'pre_stim' not in kwargs else kwargs['pre_stim']  # seconds
+    post_stim = 4 if 'post_stim' not in kwargs else kwargs['post_stim']  # seconds
+    fillcolor = 'gray' if 'fillcolor' not in kwargs else kwargs['fillcolor']  # fill color when plotting mean +/- std
+    spancolor = 'gray' if 'spancolor' not in kwargs else kwargs['spancolor']  # fill color when plotting mean +/- std
 
 
     if stims_to_analyze is None:
@@ -1530,13 +1533,13 @@ def plot_lfp_1pstim_avg_trace(expobj, individual_traces=False, pre_stim=1.0, pos
         # individual traces
         for trace in x:
             ax.plot(x_range, trace, color='steelblue', zorder=1, alpha=0.25)
-        ax.axvspan(int(pre_stim), int(pre_stim) + stim_duration, color='skyblue', zorder=1, alpha=0.5)
+        ax.axvspan(int(pre_stim), int(pre_stim) + stim_duration, color='skyblue', zorder=0, alpha=1)
 
     else:
         # plot standard deviation of the traces array as a span above and below the mean
         std_ = stats.sem(x, axis=0)
-        ax.fill_between(x=x_range, y1=x_ + std_, y2=x_ - std_, alpha=0.5, zorder=1, color='gray')
-        ax.axvspan(pre_stim, pre_stim + stim_duration, color='skyblue', zorder=1, alpha=0.5)
+        ax.fill_between(x=x_range, y1=x_ + std_, y2=x_ - std_, alpha=0.7, zorder=1, color=fillcolor)
+        ax.axvspan(pre_stim, pre_stim + stim_duration, color=spancolor, zorder=0, alpha=1)
 
     if 'shrink_text' in kwargs.keys():
         shrink_text = kwargs['shrink_text']

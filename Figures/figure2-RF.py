@@ -32,6 +32,8 @@ save_fig = True
 fs = 10
 rfv.set_fontsize(ExpMetainfo.figure_settings['fontsize - extraplot'])
 
+stim_color = '#d5f8ff'
+
 layout = {
     'A': {'panel_shape': (1, 1),
           'bound': (0.05, 0.80, 0.40, 0.95)},
@@ -64,61 +66,6 @@ print('\n\n')
 
 
 
-# %% E) BAR PLOT OF RESPONSE DECAY FOR 1P STIM EXPERIMENTS - changing to individual stims - '22 dec 19
-ax = axes['D-E'][1]
-
-# individual trials photostim decays
-baseline_decay_magnitudes = Results.decay_constants['baseline']
-interictal_decay_magnitudes_szexclude = Results.decay_constants['interictal - sz excluded']
-
-baseline_decays = []
-interictal_decays_szexclude = []
-for trial, decays in baseline_decay_magnitudes.items():
-    decays = [decay for decay in decays if (decay > 0.0 and decay is not None)]
-    baseline_decays.extend(list(decays))
-for trial, decays in interictal_decay_magnitudes_szexclude.items():
-    decays = [decay for decay in decays if (decay > 0.0 and decay is not None)]
-    interictal_decays_szexclude.extend(list(decays))
-
-
-# STATS
-# t-test - individual sessions
-print(f"P(t-test - (indiv. trials) decay constants: baseline vs. interictal): {stats.ttest_ind(baseline_decays, interictal_decays_szexclude)[1]:.3e}")
-
-
-# fig, ax = plt.subplots(figsize=[2, 3], dpi = 100)
-plot_bar_with_points(data=[baseline_decays, interictal_decays_szexclude],
-                     x_tick_labels=['Baseline', 'Interictal'], fontsize=ExpMetainfo.figure_settings["fontsize - extraplot"],
-                     points=False, bar=True, colors=['royalblue', 'forestgreen'], fig=fig, ax=ax, show=False, s=10,
-                     x_label='', y_label=r'Decay ($\tau$, secs)', alpha=1, lw=0.75, ylims=[0, 1.25])
-fig.show()
-# fig.tight_layout(pad=0.2)
-
-
-
-
-
-### archiving below '22 dec 19
-ax=axes['D-E'][1]
-baseline_decay_constant_plot = [np.mean(items) for items in Results.baseline_decay_constant.values()]
-interictal_decay_constant_plot = [np.mean(items) for items in Results.interictal_decay_constant.values()]
-
-# STATS
-print(
-    f"P(paired t-test - decay - baseline vs. interictal): {stats.ttest_rel(baseline_decay_constant_plot, interictal_decay_constant_plot)[1]:.3f}")
-print(
-    f"P(t-test - decay - baseline vs. interictal): {stats.ttest_ind(baseline_decay_constant_plot, interictal_decay_constant_plot)[1]:.3f}")
-
-# make plot
-plot_bar_with_points(data=[baseline_decay_constant_plot, interictal_decay_constant_plot],
-                     legend_labels=list(onePresults.mean_stim_responses.columns[-3:]), paired=True,
-                     x_tick_labels=['Baseline', 'Interictal'], fs=ExpMetainfo.figure_settings["fontsize - extraplot"],
-                     points=True, bar=False, colors=['royalblue', 'forestgreen'], fig=fig, ax=ax, show=False,
-                     x_label='', y_label=r'Decay ($\tau$, secs)', alpha=1, s=35, ylims=[0.3, 1.1], fontsize=ExpMetainfo.figure_settings["fontsize - extraplot"])
-
-print('\n\n')
-
-
 
 # %% C) avg LFP trace 1p stim plots
 
@@ -128,16 +75,16 @@ rfv.add_label_axes(text='C', ax=axes['C'][0, 0], y_adjust=0.01)
 pre4ap = import_expobj(prep='PS11', trial='t-009', date=date)  # pre4ap trial
 
 assert 'pre' in pre4ap.exptype
-fig, ax = plot_lfp_1pstim_avg_trace(pre4ap, x_axis='time', individual_traces=False, pre_stim=0.25, post_stim=0.75,
+fig, ax = plot_lfp_1pstim_avg_trace(pre4ap, x_axis='time', individual_traces=False, pre_stim=0.15, post_stim=0.85,
                                     fig=fig, ax=axes['C'][0, 0], show=False, write_full_text=False, optoloopback=True, stims_to_analyze=pre4ap.stim_start_frames,
-                                    title='Baseline')
+                                    title='Baseline', fillcolor=ExpMetainfo.figure_settings['colors']['baseline'], spancolor=stim_color)
 ax.axis('off')
 ax.text(s='LFP', x=-0.17, y=-1.65, ha='center', rotation=90, fontsize=8)
 ax.set_title('Baseline', fontsize=ExpMetainfo.figure_settings["fontsize - title"])
 
-fig, ax = plot_flu_1pstim_avg_trace(pre4ap, x_axis='time', individual_traces=False, stim_span_color='skyblue', fig=fig,
-                                    ax=axes['C'][0, 1], show=False, y_axis='dff', quantify=False, title='Baseline',
-                                    ylims=[-0.5, 2.0])
+fig, ax = plot_flu_1pstim_avg_trace(pre4ap, x_axis='time', individual_traces=False, stim_span_color=stim_color, fig=fig,
+                                    ax=axes['C'][0, 1], show=False, y_axis='dff', quantify=False, title='Baseline', pre_stim=0.85, post_stim=3.60,
+                                    ylims=[-0.5, 2.0], fillcolor=ExpMetainfo.figure_settings['colors']['baseline'])
 ax.axis('off')
 ax.text(s=r'FOV Ca$^{2+}$', x=-0.9, y=0.25, ha='center', rotation=90, fontsize=8)
 
@@ -145,9 +92,9 @@ ax.text(s=r'FOV Ca$^{2+}$', x=-0.9, y=0.25, ha='center', rotation=90, fontsize=8
 post4ap = import_expobj(prep='PS11', trial='t-012', date=date)  # post4ap trial
 
 assert 'post' in post4ap.exptype
-fig, ax = plot_flu_1pstim_avg_trace(post4ap, x_axis='time', individual_traces=False, stim_span_color='skyblue', fig=fig,
+fig, ax = plot_flu_1pstim_avg_trace(post4ap, x_axis='time', individual_traces=False, stim_span_color=stim_color, fig=fig, pre_stim=0.85, post_stim=3.60,
                                     ax=axes['C'][1, 1], show=False, stims_to_analyze=post4ap.stims_out_sz, y_axis='dff', quantify=False,
-                                    title='Interictal', ylims=[-0.5, 2.0])
+                                    title='Interictal', ylims=[-0.5, 2.0], fillcolor=ExpMetainfo.figure_settings['colors']['interictal'])
 ax.axis('off')
 x = ax.get_xlim()[1]
 y = ax.get_ylim()[1]
@@ -156,9 +103,9 @@ rfv.add_scale_bar(ax=ax, length=(0.5, 1), bartype='L', text=(f'0.5\ndFF', '1 s')
 
 
 
-fig, ax = plot_lfp_1pstim_avg_trace(post4ap, x_axis='time', individual_traces=False, pre_stim=0.25, post_stim=0.75,
+fig, ax = plot_lfp_1pstim_avg_trace(post4ap, x_axis='time', individual_traces=False, pre_stim=0.15, post_stim=0.85,
                                     fig=fig, ax=axes['C'][1, 0], show=False, write_full_text=False, optoloopback=True, stims_to_analyze=post4ap.stims_out_sz,
-                                    title='Interictal')
+                                    title='Interictal', fillcolor=ExpMetainfo.figure_settings['colors']['interictal'], spancolor=stim_color)
 ax.axis('off')
 ax.set_title('Interictal', fontsize=ExpMetainfo.figure_settings["fontsize - title"])
 x = ax.get_xlim()[1]
@@ -166,6 +113,7 @@ y = ax.get_ylim()[1]
 rfv.add_scale_bar(ax=ax, length=(1, 0.25), bartype='L', text=('1\nmV', '0.25 s'), loc=(x - 0.25, y - 1),
                   text_offset=[0.035, 0.7], fs=ExpMetainfo.figure_settings["fontsize - intraplot"])
 
+# fig.show()
 
 # fig, ax = plot_flu_1pstim_avg_trace(post4ap, x_axis='time', individual_traces=False, stim_span_color='skyblue', fig=fig,
 #                                     ax=axes['C'][2, 1], show=False, stims_to_analyze=post4ap.stims_in_sz, y_axis='dff', quantify=False, title='Ictal',
@@ -183,52 +131,8 @@ rfv.add_scale_bar(ax=ax, length=(1, 0.25), bartype='L', text=('1\nmV', '0.25 s')
 
 
 
-# %% B) representative plot of onePhoton experiment
-
-
-# pre4ap
-expobj: OnePhotonStim = import_expobj(prep='PS11', trial='t-009', date=date)  # pre4ap trial
-plotLfpSignal(expobj, x_axis='time', linewidth=ExpMetainfo.figure_settings['lfp - lw'], downsample=True,
-              sz_markings=False, color='black', fig=fig, ax=axes['B'][0, 0], show=False, title='',
-              ylims=[-4, 1], xlims=[105, 205])
-axes['B'][0, 0].set_title('')
-axes['B'][0, 0].axis('off')
-
-# pre4ap
-expobj = import_expobj(prep='PS11', trial='t-009', date=date)  # pre4ap trial
-plotMeanRawFluTrace(expobj, stim_span_color='cornflowerblue', x_axis='Time (secs)', linewidth = ExpMetainfo.figure_settings["gcamp - FOV - lw"],
-                    xlims=[105 * expobj.fps, 205 * expobj.fps], stim_lines=False, fig=fig, ax=axes['B'][0, 1],
-                    show=False)
-axes['B'][0, 1].set_title('')
-axes['B'][0, 1].axis('off')
-
-# post4ap
-expobj: OnePhotonStim = import_expobj(prep='PS11', trial='t-012', date=date)  # post4ap trial
-plotLfpSignal(expobj, x_axis='time', linewidth=ExpMetainfo.figure_settings['lfp - lw'], downsample=True, sz_markings=False, color='black', fig=fig,
-              ax=axes['B'][1, 0],
-              show=False, ylims=[0, 5], xlims=[10, 160])
-axes['B'][1, 0].set_title('')
-axes['B'][1, 0].axis('off')
-rfv.add_scale_bar(ax=axes['B'][1, 0], length=(1, 10), bartype='L', text=('1\nmV', '10 s'), loc=(170, 0),
-                  text_offset=[2, 0.8], fs=ExpMetainfo.figure_settings["fontsize - intraplot"])
-
-# Avg Flu signal with optogenetic stims
-offset = expobj.frame_start_time_actual / expobj.paq_rate
-
-# post4ap
-expobj = import_expobj(prep='PS11', trial='t-012', date=date)  # post4ap trial
-plotMeanRawFluTrace(expobj, stim_span_color='cornflowerblue', x_axis='Time (secs)',
-                    xlims=[10 * expobj.fps, 160 * expobj.fps], linewidth=ExpMetainfo.figure_settings["gcamp - FOV - lw"],
-                    stim_lines=False, fig=fig, ax=axes['B'][1, 1], show=False)
-axes['B'][1, 1].set_title('')
-axes['B'][1, 1].axis('off')
-rfv.add_scale_bar(ax=axes['B'][1, 1], length=(500, 10 * expobj.fps), bartype='L', text=('500\na.u.', '10 s'),
-                  loc=(170 * expobj.fps, 0), text_offset=[2 * expobj.fps, 350], fs=ExpMetainfo.figure_settings["fontsize - intraplot"])
-
-
-
-
 # %% D) BAR PLOT OF RESPONSE MAGNITUDE FOR 1P STIM EXPERIMENTS - BY INDIVIDUAL STIMS
+ax=axes['D-E'][0]
 
 # individual trials photostim responses
 baseline_response_magnitudes = Results.photostim_responses['baseline']
@@ -254,17 +158,156 @@ for trial, responses in interictal_response_magnitudes_szexclude.items():
 baseline_response_magnitudes_exp = [np.mean(x) for x in list(Results.baseline_response_magnitude.values())]
 interictal_response_magnitudes_exp = [np.mean(x) for x in list(Results.interictal_response_magnitude.values())]
 
-# ax=axes['D-E'][0]
+# STATS
+# t-test - individual sessions
+print(f"P(t-test - (indiv. trials) response: baseline ({len(baseline_resposnes)} trials) vs. interictal ({len(interictal_resposnes_szexclude)} trials)): \n\t\t{stats.ttest_ind(baseline_resposnes, interictal_resposnes_szexclude)[1]:.3e}")
+
+# print mean and stdev of response magnitudes
+print(f"Mean response magnitude (baseline): {np.mean(baseline_resposnes):.3f} +/- {np.std(baseline_resposnes):.3f}")
+print(f"Mean response magnitude (interictal): {np.mean(interictal_resposnes_szexclude):.3f} +/- {np.std(interictal_resposnes_szexclude):.3f}")
+
+
+# VIOLIN PLOT
+# vp = ax.violinplot([baseline_resposnes, interictal_resposnes_szexclude], showmeans=True, showextrema=False, showmedians=False,
+#                    widths=0.7)
+# ax.set_xlim([0.2, 2.8])
+# ax.set_ylim([0, 1.25])
+# ax.set_xticks([1,2], ['Baseline', 'Interictal'], fontsize=ExpMetainfo.figure_settings["fontsize - extraplot"], rotation=45)
+# # Set the color of the boxes to blue and orange
+# vp['bodies'][0].set(facecolor=ExpMetainfo.figure_settings['colors']['baseline'], edgecolor=ExpMetainfo.figure_settings['colors']['baseline'])
+# vp['bodies'][1].set(facecolor=ExpMetainfo.figure_settings['colors']['interictal'], edgecolor=ExpMetainfo.figure_settings['colors']['interictal'])
+# ax.set_ylabel('Avg. dFF', fontsize=ExpMetainfo.figure_settings["fontsize - extraplot"])
+# Set the widths of the violins to 0.2
+# for body in vp['bodies']:
+#     body.set_widths(0.2)
+
 # fig, ax = plt.subplots(figsize=[2, 3], dpi = 100)
-plot_bar_with_points(data=[baseline_resposnes, interictal_resposnes],
+plot_bar_with_points(data=[baseline_resposnes, interictal_resposnes_szexclude],
                      x_tick_labels=['Baseline', 'Interictal'], fontsize=ExpMetainfo.figure_settings["fontsize - extraplot"],
-                     points=False, bar=True, colors=['royalblue', 'forestgreen'], fig=fig, ax=axes['D-E'][0], show=False, s=10,
+                     points=False, bar=True, colors=[ExpMetainfo.figure_settings['colors']['baseline'], ExpMetainfo.figure_settings['colors']['interictal']], fig=fig, ax=axes['D-E'][0], show=False, s=10,
                      x_label='', y_label='Avg. dFF', alpha=0.7, lw=0.75, ylims=[0, 1.25])
 # fig.tight_layout(pad=0.2)
 
+
+
+
+# %% E) BAR PLOT OF RESPONSE DECAY FOR 1P STIM EXPERIMENTS - changing to individual stims - '22 dec 19
+ax = axes['D-E'][1]
+
+# individual trials photostim decays
+baseline_decay_magnitudes = Results.decay_constants['baseline']
+interictal_decay_magnitudes_szexclude = Results.decay_constants['interictal - sz excluded']
+
+baseline_decays = []
+interictal_decays_szexclude = []
+for trial, decays in baseline_decay_magnitudes.items():
+    decays = [decay for decay in decays if (decay > 0.0 and decay is not None)]
+    baseline_decays.extend(list(decays))
+for trial, decays in interictal_decay_magnitudes_szexclude.items():
+    decays = [decay for decay in decays if (decay > 0.0 and decay is not None)]
+    interictal_decays_szexclude.extend(list(decays))
+
+
 # STATS
 # t-test - individual sessions
-print(f"P(t-test - (indiv. trials) response - baseline vs. interictal): {stats.ttest_ind(baseline_resposnes, interictal_resposnes)[1]:.3e}")
+print(f"t-test - (indiv. trials) decay constants: baseline ({len(baseline_decays)} trials) vs. interictal ({len(interictal_decays_szexclude)} trials): \n\t\t p = {stats.ttest_ind(baseline_decays, interictal_decays_szexclude)[1]:.3e}")
+
+# print mean and stdev of decay constants
+print(f"Mean decay constant (baseline): {np.mean(baseline_decays):.3f} +/- {np.std(baseline_decays):.3f}")
+print(f"Mean decay constant (interictal): {np.mean(interictal_decays_szexclude):.3f} +/- {np.std(interictal_decays_szexclude):.3f}")
+
+
+# VIOLIN PLOT
+# # add violin plot of baseline vs. interictal decays, with color of baseline as royalblue and interictal as darkorange to ax
+# vp = ax.violinplot([baseline_decays, interictal_decays_szexclude], showmeans=True, showextrema=False, showmedians=False,
+#                    widths=0.7)
+# ax.set_xlim([0.2, 2.8])
+# ax.set_ylim([0, 1.0])
+# ax.set_xticks([1,2], ['Baseline', 'Interictal'], fontsize=ExpMetainfo.figure_settings["fontsize - extraplot"], rotation=45)
+#
+# # Set the color of the boxes to blue and orange
+# vp['bodies'][0].set(facecolor=ExpMetainfo.figure_settings['colors']['baseline'], edgecolor=ExpMetainfo.figure_settings['colors']['baseline'])
+# vp['bodies'][1].set(facecolor=ExpMetainfo.figure_settings['colors']['interictal'], edgecolor=ExpMetainfo.figure_settings['colors']['interictal'])
+# ax.set_ylabel(r'Decay ($\tau$, secs)', fontsize=ExpMetainfo.figure_settings["fontsize - extraplot"])
+
+# fig.show()
+
+# fig, ax = plt.subplots(figsize=[2, 3], dpi = 100)
+plot_bar_with_points(data=[baseline_decays, interictal_decays_szexclude],
+                     x_tick_labels=['Baseline', 'Interictal'], fontsize=ExpMetainfo.figure_settings["fontsize - extraplot"],
+                     points=False, bar=True, colors=[ExpMetainfo.figure_settings['colors']['baseline'], ExpMetainfo.figure_settings['colors']['interictal']], fig=fig, ax=ax, show=False, s=10,
+                     x_label='', y_label=r'Decay ($\tau$, secs)', alpha=1, lw=0.75, ylims=[0, 1.0])
+# fig.show()
+# fig.tight_layout(pad=0.2)
+
+
+
+
+
+# ### archiving below '22 dec 19
+# ax=axes['D-E'][1]
+# baseline_decay_constant_plot = [np.mean(items) for items in Results.baseline_decay_constant.values()]
+# interictal_decay_constant_plot = [np.mean(items) for items in Results.interictal_decay_constant.values()]
+#
+# # STATS
+# print(
+#     f"P(paired t-test - decay - baseline vs. interictal): {stats.ttest_rel(baseline_decay_constant_plot, interictal_decay_constant_plot)[1]:.3f}")
+# print(
+#     f"P(t-test - decay - baseline vs. interictal): {stats.ttest_ind(baseline_decay_constant_plot, interictal_decay_constant_plot)[1]:.3f}")
+#
+# # make plot
+# plot_bar_with_points(data=[baseline_decay_constant_plot, interictal_decay_constant_plot],
+#                      legend_labels=list(onePresults.mean_stim_responses.columns[-3:]), paired=True,
+#                      x_tick_labels=['Baseline', 'Interictal'], fs=ExpMetainfo.figure_settings["fontsize - extraplot"],
+#                      points=True, bar=False, colors=['royalblue', 'forestgreen'], fig=fig, ax=ax, show=False,
+#                      x_label='', y_label=r'Decay ($\tau$, secs)', alpha=1, s=35, ylims=[0.3, 1.1], fontsize=ExpMetainfo.figure_settings["fontsize - extraplot"])
+#
+# print('\n\n')
+
+
+
+# %% B) representative plot of onePhoton experiment
+
+
+# pre4ap
+expobj: OnePhotonStim = import_expobj(prep='PS11', trial='t-009', date=date)  # pre4ap trial
+plotLfpSignal(expobj, x_axis='time', linewidth=ExpMetainfo.figure_settings['lfp - lw'], downsample=True, stim_span_color=stim_color,
+              sz_markings=False, color='black', fig=fig, ax=axes['B'][0, 0], show=False, title='',
+              ylims=[-4, 1], xlims=[105, 205])
+axes['B'][0, 0].set_title('')
+axes['B'][0, 0].axis('off')
+
+# pre4ap
+expobj = import_expobj(prep='PS11', trial='t-009', date=date)  # pre4ap trial
+plotMeanRawFluTrace(expobj, stim_span_color=stim_color, x_axis='Time (secs)', linewidth = ExpMetainfo.figure_settings["gcamp - FOV - lw"],
+                    xlims=[105 * expobj.fps, 205 * expobj.fps], stim_lines=False, fig=fig, ax=axes['B'][0, 1],
+                    show=False)
+axes['B'][0, 1].set_title('')
+axes['B'][0, 1].axis('off')
+
+# post4ap
+expobj: OnePhotonStim = import_expobj(prep='PS11', trial='t-012', date=date)  # post4ap trial
+plotLfpSignal(expobj, x_axis='time', linewidth=ExpMetainfo.figure_settings['lfp - lw'], downsample=True, sz_markings=False, color='black', fig=fig, stim_span_color=stim_color,
+              ax=axes['B'][1, 0], show=False, ylims=[0, 5], xlims=[10, 160])
+axes['B'][1, 0].set_title('')
+axes['B'][1, 0].axis('off')
+rfv.add_scale_bar(ax=axes['B'][1, 0], length=(1, 10), bartype='L', text=('1\nmV', '10 s'), loc=(170, 0),
+                  text_offset=[2, 0.8], fs=ExpMetainfo.figure_settings["fontsize - intraplot"])
+
+# Avg Flu signal with optogenetic stims
+offset = expobj.frame_start_time_actual / expobj.paq_rate
+
+# post4ap
+expobj = import_expobj(prep='PS11', trial='t-012', date=date)  # post4ap trial
+plotMeanRawFluTrace(expobj, stim_span_color=stim_color, x_axis='Time (secs)',
+                    xlims=[10 * expobj.fps, 160 * expobj.fps], linewidth=ExpMetainfo.figure_settings["gcamp - FOV - lw"],
+                    stim_lines=False, fig=fig, ax=axes['B'][1, 1], show=False)
+axes['B'][1, 1].set_title('')
+axes['B'][1, 1].axis('off')
+rfv.add_scale_bar(ax=axes['B'][1, 1], length=(500, 10 * expobj.fps), bartype='L', text=('500\na.u.', '10 s'),
+                  loc=(170 * expobj.fps, 0), text_offset=[2 * expobj.fps, 350], fs=ExpMetainfo.figure_settings["fontsize - intraplot"])
+
+
 
 
 # %% F) Radial plot of Mean FOV for photostimulation trials, with period equal to that of photostimulation timing period
@@ -297,7 +340,7 @@ rfv.add_label_axes(text='F', ax=ax, y_adjust=0.035)
 total_sz = np.sum(np.sum(total_sz_occurrence, axis=0))
 sz_prob = np.sum(total_sz_occurrence, axis=0) / total_sz
 
-ax.bar(theta, sz_prob, width=(2 * np.pi) / period, bottom=0.0, alpha=1, color='cornflowerblue', lw=0.3)
+ax.bar(theta, sz_prob, width=(2 * np.pi) / period, bottom=0.0, alpha=1, color=ExpMetainfo.figure_settings['colors']['general'], lw=0.3)
 
 ax.set_rmax(1.1)
 ax.set_rticks([0.25, 0.5, 0.75, 1])  # radial ticks

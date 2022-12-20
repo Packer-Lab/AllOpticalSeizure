@@ -242,10 +242,19 @@ class ExpMetainfo:
             "gcamp - single cell": 0.5,
             "gcamp - FOV": 0.5,
             "lfp": 0.15},
-        'colors': {'baseline': 'royalblue',  # light matte blue
-                    'interictal': 'orange',  # like lightish matte orange
-                    'ictal': 'purple',  # like a light matte purple
-                    },
+        'colors': {'baseline': '#5777c6',  # light matte blue
+                    'interictal': '#77c65a',  # like forest green
+                    'ictal': 'slateblue',  # like a light matte purple
+                   'gcamp - FOV': '#208b23',
+                  'general': '#d3bbad'
+                   },
+        # 'colors': {'ictal': '#775d90',  # light matte orange
+        #             # 'interictal': '#a1d18d',  # like lightish matte green
+        #             'interictal': '#ac8feb',  # like lightish matte purple
+        #             'baseline': '#eb7625',  # like a light matte purple
+        #             'gcamp - FOV': '#208b23',
+        #            'general': '#9faad9'
+        #             },
 
         "fontsize - extraplot": 10,
         "fontsize - intraplot": 8,
