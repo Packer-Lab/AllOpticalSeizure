@@ -364,6 +364,5 @@ if save_fig and dpi > 250:
     save_figure(fig=fig, save_path_full=f"{SAVE_FOLDER}/figure2-RF.png")
     save_figure(fig=fig, save_path_full=f"{SAVE_FOLDER}/figure2-RF.pdf")
 
-
 fig.show()
 

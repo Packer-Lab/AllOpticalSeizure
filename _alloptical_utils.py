@@ -27,6 +27,21 @@ pd.set_option("expand_frame_repr", True)
 
 # %% DECORATORS
 ## DECORATORS
+#
+# def figure_plot_ax(func):
+#     """
+#     This decorator helps either create or pass the correct subplots to a plotting function. This makes it easy for the plotting function to be used
+#     either indepently or as part of another plotting call that is meant to be called directly on the axs object(s) provided.
+#     """
+#
+#     @functools.wraps(func)
+#     def inner(**kwargs):
+#         # figsize = 10,
+#         if 'axs' not in kwargs:
+#             fig, ax = plt.subplots()
+#             func(fig=fig, axs=ax, **kwargs)
+#
+
 
 # ALL OPTICAL EXPERIMENTS RUN
 def run_for_loop_across_exps(run_pre4ap_trials=False, run_post4ap_trials=False, skip_trials=[], run_trials=[],

@@ -31,10 +31,10 @@ from _utils_.io import import_expobj
 from alloptical_utils_pj import save_figure
 
 sys.path.extend(['/home/pshah/Documents/code/reproducible_figures-main'])
+import rep_fig_vis as rfv
 
 import numpy as np
 import matplotlib.pyplot as plt
-import rep_fig_vis as rfv
 
 plot_settings()
 

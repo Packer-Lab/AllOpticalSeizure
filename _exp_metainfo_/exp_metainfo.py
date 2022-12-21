@@ -232,6 +232,8 @@ class FigureSettings:
     colors= {'baseline': '#5777c6',  # light matte blue
                'interictal': '#77c65a',  # like forest green
                'ictal': 'slateblue',  # like a light matte purple
+               'ictal - outsz': '#cd7537',  # dark dark orange
+               'ictal - insz': '#f1d49d',  # very pale orange
                'gcamp - FOV': '#208b23',
                'general': '#d3bbad',
                'stim span': '#ffd9df'  # very pale pinkish
@@ -241,6 +243,13 @@ class FigureSettings:
         "gcamp - single cell": 0.5,
         "gcamp - FOV": 0.5,
         "lfp": 0.15}
+
+    fontsize = {
+            "title": 10,
+            "label": 12,
+            "extraplot": 10,
+            "intraplot": 8
+        }
 
 class ExpMetainfo:
     csv_path: str = CSV_PATH_ao
@@ -302,6 +311,8 @@ except Exception:
 
 baseline_color = ExpMetainfo.figures.colors['baseline']
 interictal_color = ExpMetainfo.figures.colors['interictal']
+insz_color = ExpMetainfo.figures.colors['ictal - insz']
+outsz_color = ExpMetainfo.figures.colors['ictal - outsz']
 
 
 # # ARCHIVE
