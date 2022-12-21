@@ -3,11 +3,15 @@ import sys
 
 from matplotlib import pyplot as plt
 
+from _exp_metainfo_.exp_metainfo import fontsize_extraplot
+
 sys.path.extend(['/home/pshah/Documents/code/AllOpticalSeizure', '/home/pshah/Documents/code/AllOpticalSeizure'])
 sys.path.extend(['/home/pshah/Documents/code/reproducible_figures-main'])
 
 from _analysis_.sz_analysis._ClassSuite2pROIsSzAnalysis import Suite2pROIsSz, Suite2pROIsSzResults
 from _results_.sz4ap_results import plotHeatMapSzAllCells
+from _analysis_.sz_analysis._ClassExpSeizureAnalysis import ExpSeizureResults
+
 
 from _utils_.io import import_expobj
 from alloptical_utils_pj import save_figure
@@ -21,111 +25,81 @@ SAVE_FOLDER = f'/home/pshah/Documents/figures/alloptical_seizures_draft/'
 fig_items = f'/home/pshah/Documents/figures/alloptical_seizures_draft/figure-items/'
 
 results = Suite2pROIsSzResults.load()
+results_seizure: ExpSeizureResults = ExpSeizureResults.load()
 
 expobj: Post4ap = import_expobj(exp_prep='RL108 t-013')
 
 
 # %% MAKE FIGURE LAYOUT
-rfv.set_fontsize(6)
-dpi = 100
-save_fig = True
+rfv.set_fontsize(fontsize_extraplot)
 
+test = 0
+save_fig = True if not test else False
+dpi = 100 if test else 300
 
 # set layout of the figure
 layout = {
     'A': {'panel_shape': (1, 1),
           'bound': (0.05, 0.80, 0.33, 0.95)},
-    'B': {'panel_shape': (1, 1),
-          'bound': (0.05, 0.70, 0.33, 0.76)},
+    # 'B': {'panel_shape': (1, 1),
+    #       'bound': (0.05, 0.70, 0.33, 0.76)},
     'C': {'panel_shape': (1, 1),
-          'bound': (0.35, 0.86, 0.95, 0.95)},
+          'bound': (0.43, 0.86, 0.95, 0.95)},
     'D top': {'panel_shape': (1, 1),
-          'bound': (0.37, 0.78, 0.60, 0.83)},
+          'bound': (0.07, 0.67, 0.30, 0.72)},
     'D bottom': {'panel_shape': (1, 1),
-          'bound': (0.37, 0.68, 0.60, 0.78)},
-    'E': {'panel_shape': (2, 1),
-          'bound': (0.70, 0.70, 0.82, 0.78),
-          'wspace': 2.5},
-    'F': {'panel_shape': (1, 1),
-          'bound': (0.90, 0.70, 0.95, 0.78)
-          }
+          'bound': (0.07, 0.57, 0.30, 0.67)},
+    'E': {'panel_shape': (3, 1),
+          'bound': (0.43, 0.57, 0.73, 0.67),
+          'wspace': 1.8},
+    # 'F': {'panel_shape': (1, 1),
+    #       'bound': (0.90, 0.70, 0.95, 0.78)
+    #       }
 }
 
 fig, axes, grid = rfv.make_fig_layout(layout=layout, dpi=dpi)
 
 rfv.naked(axes['A'][0])
-rfv.naked(axes['B'][0])
+# rfv.naked(axes['B'][0])
 rfv.naked(axes['C'][0])
 rfv.naked(axes['D bottom'][0])
 rfv.naked(axes['D top'][0])
-rfv.add_label_axes(text='A', ax=axes['A'][0], y_adjust=0)
-rfv.add_label_axes(text='B', ax=axes['B'][0], y_adjust=0)
-rfv.add_label_axes(text='C', ax=axes['C'][0], y_adjust=0)
+rfv.add_label_axes(text='A', ax=axes['A'][0], y_adjust=0, x_adjust=0.04)
+# rfv.add_label_axes(text='B', ax=axes['B'][0], y_adjust=0)
+rfv.add_label_axes(text='C', ax=axes['C'][0], y_adjust=0, x_adjust=0.07)
 
 print('\n\n')
 
 
-
 # rfv.show_test_figure_layout(fig, axes=axes, show=True)  # test what layout looks like quickly, but can also skip and moveon to plotting data.
 
-# %% F) DECONVOLVED SPIKE RATE ANALYSIS
-
-# RUN collect spk rates
-Suite2pROIsSz.collect__avg_spk_rate(Suite2pROIsSzResults=results, rerun=False)
 
 
-# PLOT averaged results as a bar chart
+# %% E) seizure stats
 
-# results = Suite2pROIsSzResults.load()
-#
-# # todo add statistical test for this bar chart!
-# Suite2pROIsSz.plot__avg_spk_rate(results.avg_spk_rate['baseline'],
-#                                  results.avg_spk_rate['interictal'])
-#
+from _analysis_.sz_analysis._ClassExpSeizureAnalysis import ExpSeizureAnalysis as main, ExpSeizureResults
 
-# PLOT individual results as a cum sum plot
+# main.FOVszInvasionTime()
+# main.calc__szInvasionTime()
+# main.plot__sz_invasion()
 
-# evaluate the histogram
-# ax = axes['F'][0]
-f, ax2 = plt.subplots(figsize=(5, 5))
-ax = ax2
-# baseline experiments
-for pre4ap_exp in results.neural_activity_rate['baseline']:
-    # test plot cumsum plot
-    values, base = np.histogram(pre4ap_exp, bins=100)
+ax, ax2, ax3 = axes['E'][0], axes['E'][1], axes['E'][2]
 
-    # ax2.hist(pre4ap_exp, density=True, histtype='stepfilled', alpha=0.3, bins=100, color='cornflowerblue')
+main.plot__sz_incidence(fig=fig, ax=ax, show=False)
+main.plot__sz_lengths(fig=fig, ax=ax2, show=False)
+main.plot__sz_propagation_speed(results=results_seizure, fig=fig, ax=ax3, show=False)
 
-    # evaluate the cumulative function
-    cumulative = np.cumsum(values) / len(pre4ap_exp)
-
-    # plot the cumulative function
-    ax.plot(base[:-1], cumulative, c='navy', alpha=0.5, lw=1)
-
-# baseline experiments
-for interictal_exp in results.neural_activity_rate['interictal']:
-    # test plot cumsum plot
-    values, base = np.histogram(interictal_exp, bins=100)
-
-    # ax2.hist(interictal_exp, density=True, histtype='stepfilled', alpha=0.3, bins=100, color='forestgreen')
-
-    # evaluate the cumulative function
-    cumulative = np.cumsum(values) / len(interictal_exp)
-
-    # plot the cumulative function
-    ax.plot(base[:-1], cumulative, c='darkgreen', alpha=0.5, lw=1)
-
-# ax.set_xlim([0, 200])
-# ax2.set_xlim([0, 200])
-# ax.set_yticks([0, 1])
-# ax.set_xticks([0, 100, 200])
-# ax.set_xlabel('Avg. activity\nrate (Hz)')
-ax.spines['right'].set_visible(False)
-ax.spines['top'].set_visible(False)
-f.show()
-
-rfv.add_label_axes(text='F', ax=axes['F'][0], y_adjust=0.03, x_adjust=0.06)
-
+ax.set_ylabel(f'Ictal events / min', fontsize=fontsize_extraplot)
+ax.set_yticks([0, 1], [0, 1], fontsize=fontsize_extraplot)
+ax.set_title('')
+ax2.set_title('')
+ax2.set_ylabel('Length (secs)', fontsize=fontsize_extraplot)
+ax2.set_yticks([0, 120], [0, 120], fontsize=fontsize_extraplot)
+ax2.set_ylim([0, 120])
+ax3.set_ylabel('Speed ($\mu$$\it{m}$/sec)', fontsize=fontsize_extraplot)
+ax3.set_yticks([0, 40], [0, 40], fontsize=fontsize_extraplot)
+ax3.set_ylim([0, 40])
+rfv.add_label_axes(text='E', ax=axes['E'][0], x_adjust=0.07, y_adjust=0.03)
 
 
 
@@ -149,31 +123,7 @@ ax1.set_yticks([0, 100])
 
 x = ax2.get_xlim()[1]
 
-rfv.add_label_axes(text='D', ax=axes['D top'][0], x_adjust=0.05, y_adjust=-0.02)
-
-
-
-# %% E) seizure stats
-
-from _analysis_.sz_analysis._ClassExpSeizureAnalysis import ExpSeizureAnalysis as main
-
-# main.FOVszInvasionTime()
-# main.calc__szInvasionTime()
-# main.plot__sz_invasion()
-
-ax, ax2 = axes['E'][0], axes['E'][1]
-
-main.plot__sz_incidence(fig=fig, ax=ax)
-main.plot__sz_lengths(fig=fig, ax=ax2)
-
-ax.set_ylabel('')
-ax.set_yticks([0, 1])
-ax.set_yticklabels([0, 1])
-ax2.set_ylabel('')
-ax.set_title('')
-ax2.set_yticks([0, 100])
-ax2.set_title('')
-rfv.add_label_axes(text='E', ax=axes['E'][0], x_adjust=0.07, y_adjust=0.03)
+rfv.add_label_axes(text='D', ax=axes['D top'][0], x_adjust=0.06, y_adjust=-0.02)
 
 
 
@@ -182,7 +132,7 @@ rfv.add_label_axes(text='E', ax=axes['E'][0], x_adjust=0.07, y_adjust=0.03)
 
 if save_fig and dpi > 250:
     save_figure(fig=fig, save_path_full=f"{SAVE_FOLDER}/figure1-RF.png")
-    save_figure(fig=fig, save_path_full=f"{SAVE_FOLDER}/figure1-RF.svg")
+    save_figure(fig=fig, save_path_full=f"{SAVE_FOLDER}/figure1-RF.pdf")
 
 
 fig.show()

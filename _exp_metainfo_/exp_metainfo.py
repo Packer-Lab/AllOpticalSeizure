@@ -203,7 +203,6 @@ assert len(AllOpticalExpsToAnalyze.trial_maps['pre'].keys()) == len(
 
 
 
-
 @dataclass
 class OnePhotonStimExpsToAnalyze:
     """Lists of all one photon stim experiments to use during analysis"""
@@ -229,7 +228,7 @@ class OnePhotonStimExpsToAnalyze:
 @dataclass
 class FigureSettings:
     """class to hold various values to standardize across all figures"""
-    colors= {'baseline': '#5777c6',  # light matte blue
+    colors = {'baseline': '#5777c6',  # light matte blue
                'interictal': '#77c65a',  # like forest green
                'ictal': 'slateblue',  # like a light matte purple
                'ictal - outsz': '#cd7537',  # dark dark orange
@@ -313,6 +312,9 @@ baseline_color = ExpMetainfo.figures.colors['baseline']
 interictal_color = ExpMetainfo.figures.colors['interictal']
 insz_color = ExpMetainfo.figures.colors['ictal - insz']
 outsz_color = ExpMetainfo.figures.colors['ictal - outsz']
+general_color = ExpMetainfo.figures.colors['general']
+
+fontsize_extraplot = ExpMetainfo.figures.fontsize['extraplot']
 
 
 # # ARCHIVE

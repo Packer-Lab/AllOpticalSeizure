@@ -2,6 +2,8 @@
 import sys
 
 from funcsforprajay.plotting.plotting import plot_bar_with_points
+from funcsforprajay.wrappers import plot_piping_decorator
+from scipy import stats
 from scipy.stats import sem
 
 sys.path.extend(['/home/pshah/Documents/code/AllOpticalSeizure', '/home/pshah/Documents/code/AllOpticalSeizure'])
@@ -19,7 +21,7 @@ from _utils_.funcs_pj import subselect_tiff
 from _utils_.funcs_pj import SaveDownsampledTiff
 
 from _analysis_._utils import Quantification, Results
-from _exp_metainfo_.exp_metainfo import AllOpticalExpsToAnalyze, ExpMetainfo
+from _exp_metainfo_.exp_metainfo import AllOpticalExpsToAnalyze, ExpMetainfo, general_color
 from _main_.Post4apMain import Post4ap
 from _main_.TwoPhotonImagingMain import TwoPhotonImaging
 from _utils_.alloptical_plotting import multi_plot_subplots, get_ax_for_multi_plot, plot_SLMtargets_Locs, \
@@ -50,15 +52,14 @@ class ExpSeizureResults(Results):
         self.total_sz_occurrence: list = []
         self.meanFOV_post_sz_term: list = [] #: mean FOV post seizure termination
         self.meanFOV_post_sz_term_decay_timescale: list = [] #: mean FOV post seizure termination - decay timescale
-
+        self.propagation_speeds: dict = {}  #: raw measured propagation speeds of seizures
 
 REMAKE = False
 if not os.path.exists(ExpSeizureResults.SAVE_PATH) or REMAKE:
     results = ExpSeizureResults()
     results.save_results()
 else:
-    pass
-    # results = ExpSeizureResults.load()
+    results = ExpSeizureResults.load()
 
 class ExpSeizureAnalysis(Quantification):
     """Processing/analysis of seizures overall for photostimulation experiments. Including analysis of seizure individual timed photostim trials."""
@@ -560,18 +561,20 @@ class ExpSeizureAnalysis(Quantification):
     onep_trials_sz_incidence = [0.38, 0.26, 0.19, 0.436666667, 0.685]  # sz/min
 
     @classmethod
+    @plot_piping_decorator(figsize = (1.8, 3))
     def plot__sz_incidence(cls, **kwargs):
-        if 'ax' not in kwargs: fig, ax = plt.subplots(figsize = (1.8, 3), dpi=300)
-        else: fig, ax = kwargs['fig'], kwargs['ax']
-        plot_bar_with_points(data=[cls.twop_trials_sz_incidence + cls.onep_trials_sz_incidence],
-                             x_tick_labels=['Experiments'], colors=['coral'], y_label='Avg. seizure incidence \n(events/min)',
+        # if 'ax' not in kwargs: fig, ax = plt.subplots(figsize = (1.8, 3), dpi=300)
+        # else:
+        fig, ax = kwargs['fig'], kwargs['ax']
+        plot_bar_with_points(data=[cls.twop_trials_sz_incidence + cls.onep_trials_sz_incidence], s=20,
+                             x_tick_labels=['Experiments'], colors=[general_color], y_label='Avg. seizure incidence \n(events/min)',
                              alpha=1, bar=False, title='rate of seizures during exp', expand_size_x=2, expand_size_y=1, ylims=[0, 1],
-                             fig=fig, ax=ax, show=False, shrink_text=0.8, lw=1)
+                             fig=fig, ax=ax, show=False, lw=1.2, capsize=0.1)
         ax.spines['bottom'].set_visible(False)
         ax.set_xticks([])
-        if 'ax' not in kwargs:
-            fig.tight_layout(pad=2)
-            fig.show()
+        # if 'ax' not in kwargs:
+        #     fig.tight_layout(pad=2)
+        #     fig.show()
 
     # 4.2) measure seizure LENGTHS across all imaging trials (including any spont imaging you might have)
 
@@ -642,19 +645,18 @@ class ExpSeizureAnalysis(Quantification):
     onep_trials_sz_lengths = [30.02, 34.25, 114.53, 35.57]
 
     @classmethod
+    @plot_piping_decorator(figsize = (1.8, 3))
     def plot__sz_lengths(cls, **kwargs):
-        if 'ax' not in kwargs: fig, ax = plt.subplots(figsize = (1.8, 3), dpi=300)
-        else: fig, ax = kwargs['fig'], kwargs['ax']
+        # if 'ax' not in kwargs: fig, ax = plt.subplots()
+        # else:
+        fig, ax = kwargs['fig'], kwargs['ax']
         plot_bar_with_points(data=[cls.twop_trials_sz_lengths + cls.onep_trials_sz_lengths],
-                                x_tick_labels=['Experiments'], fig=fig, ax=ax, show=False,
-                                colors=['coral'], y_label='Seizure length \n(secs)', alpha=1, bar=False, lw=1,
+                                x_tick_labels=['Experiments'], fig=fig, ax=ax, show=False, s=20,
+                                colors=[general_color], y_label='Seizure length \n(secs)', alpha=1, bar=False,
                                 title='Avg sz length', expand_size_x=0.7, expand_size_y=1, ylims=[0, 120],
-                                shrink_text=0.8)
+                                lw=1.2, capsize=0.1)
         ax.spines['bottom'].set_visible(False)
         ax.set_xticks([])
-        if 'ax' not in kwargs:
-            fig.tight_layout(pad=2)
-            fig.show()
 
     # 6.0-dc) ANALYSIS: calculate time delay between LFP onset of seizures and imaging FOV invasion for each seizure for each experiment
     # -- this section has been moved to _ClassExpSeizureAnalysis .22/02/20 -- this copy here is now archived
@@ -1052,6 +1054,64 @@ class ExpSeizureAnalysis(Quantification):
         results.save_results()
 
 
+    # 10) calculate average speed of propagation
+    @staticmethod
+    def load_and_calc_propagation(results: ExpSeizureResults, rerun=False):
+        if hasattr(results, 'propagation_speeds') and not rerun: return
+        data = pj.read_csv(csvpath='/home/pshah/mnt/qnap/Analysis/sz_propagation_raw_measurements.csv', as_pandas=True)
+        speeds = {}
+        for exp in np.unique(data.iloc[:,0]):
+            if exp != '2020-03-03':
+                exp_prep = [(prep) for prep in pj.flattenOnce(ExpMetainfo.alloptical.post_4ap_trials) if exp in prep][0]
+                expobj: Post4ap = io_.import_expobj(exp_prep=exp_prep)
+                for sz in np.unique(data.loc[data['Exp ID'] == exp]['sz number']):
+                    frs = data.loc[data['Exp ID'] == exp][data['sz number'] == sz]['frames']
+                    pixels = data.loc[data['Exp ID'] == exp][data['sz number'] == sz]['distance (pixels)']
+
+                    _pix_idx = np.where(list(~np.isnan(pixels)))[0]
+
+                    time = [(frs.iloc[idx] * 4) / expobj.fps for idx in _pix_idx]
+                    distance = [pixels.iloc[idx] / expobj.pix_sz_x for idx in _pix_idx]
+
+                    # calculate the slope of time (secs) vs. distance (microns), which should be equal to the speed (in microns/seconds)
+                    slope, _, _, _, _ = stats.linregress(x=time, y=distance)
+                    if not type(slope) == np.float64 or np.isnan(slope):
+                        print('debug here')
+
+
+                    speeds[expobj.t_series_name] = slope
+
+            elif exp == '2020-03-03': # needs hardcoding of fps and pixel size data
+                for sz in np.unique(data.loc[data['Exp ID'] == exp]['sz number']):
+
+                    frs = data.loc[data['Exp ID'] == exp][data['sz number'] == sz]['frames']
+                    pixels = data.loc[data['Exp ID'] == exp][data['sz number'] == sz]['distance (pixels)']
+
+                    time = [(fr * 4) / 30 for fr in frs]
+                    distance = [px / 2.18 for px in pixels]
+
+                    # calculate the slope of time (secs) vs. distance (microns), which should be equal to the speed (in microns/seconds)
+                    slope, _, _, _, _ = stats.linregress(x=time, y=distance)
+
+                    speeds['RL66 t-004'] = slope
+
+        results.propagation_speeds = speeds
+        results.save_results()
+
+    # 10.1) plot average speed of propagation
+    @staticmethod
+    @plot_piping_decorator(figsize = (1.8, 3))
+    def plot__sz_propagation_speed(results, **kwargs):
+        # if 'ax' not in kwargs: fig, ax = plt.subplots(figsize = (1.8, 3), dpi=300)
+        # else:
+        fig, ax = kwargs['fig'], kwargs['ax']
+        plot_bar_with_points(data=[list(results.propagation_speeds.values())],
+                             x_tick_labels=['Experiments'], colors=[general_color], y_label='Avg. propagation \nspeed ($\mu$$\it{m}$/sec)',
+                             alpha=1, bar=False, title='', expand_size_x=2, expand_size_y=1, ylims=[0, 50], s=20,
+                             fig=fig, ax=ax, show=False, lw=1.2, capsize=0.1)
+        ax.spines['bottom'].set_visible(False)
+        ax.set_xticks([])
+
 
 # %%
 if __name__ == '__main__':
@@ -1080,9 +1140,10 @@ if __name__ == '__main__':
     # results = ExpSeizureResults.load()
     # ExpSeizureAnalysis.calcMeanFovGcampSzTermination(results)
     # ExpSeizureAnalysis.downsample_all_sz()
-    ExpSeizureAnalysis.print_downsampled_sz_paths()
+    # ExpSeizureAnalysis.print_downsampled_sz_paths()
     # ExpSeizureAnalysis.print_expobj_analysis_path()
-
+    ExpSeizureAnalysis.load_and_calc_propagation(results=results, rerun=False)
+    ExpSeizureAnalysis.plot__sz_propagation_speed(results=results)
 
 
 

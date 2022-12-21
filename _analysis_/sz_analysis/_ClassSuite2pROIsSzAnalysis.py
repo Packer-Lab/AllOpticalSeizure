@@ -9,6 +9,7 @@ import _alloptical_utils as Utils
 from funcsforprajay import plotting as pplot
 
 from _analysis_._utils import Quantification, Results
+from _exp_metainfo_.exp_metainfo import baseline_color, interictal_color
 from _main_.AllOpticalMain import alloptical
 from _main_.Post4apMain import Post4ap
 from _utils_._anndata import AnnotatedData2
@@ -165,8 +166,8 @@ class Suite2pROIsSz(Quantification):
                 # calculate spks/s across all cells
                 spks_per_sec = np.sum(expobj.Suite2pROIsSz.adata.layers['s2p_spks'], axis=1) / (
                         expobj.n_frames / expobj.fps)
-                spks_per_sec = np.sum(expobj.Suite2pROIsSz.adata.layers['raw_dFF_normalized'], axis=1) / (
-                        expobj.n_frames / expobj.fps)
+                # spks_per_sec = np.sum(expobj.Suite2pROIsSz.adata.layers['raw_dFF_normalized'], axis=1) / (
+                #         expobj.n_frames / expobj.fps)
                 avg_spks_per_sec = np.mean(spks_per_sec)
 
                 # Gaussian filter smoothing of spks data
@@ -174,8 +175,8 @@ class Suite2pROIsSz(Quantification):
                 spks_smooth_ = np.asarray([gaussian_filter(a, sigma=frames2sigma(frames=int(expobj.fps))) for a in
                                            expobj.Suite2pROIsSz.adata.layers['s2p_spks']])  # TODO this is Matthias's suggested metric for calculating sigma, need to confirm
 
-                spks_smooth_ = np.asarray([gaussian_filter(a, sigma=frames2sigma(frames=int(expobj.fps))) for a in
-                                           expobj.Suite2pROIsSz.adata.layers['raw_dFF_normalized']])
+                # spks_smooth_ = np.asarray([gaussian_filter(a, sigma=frames2sigma(frames=int(expobj.fps))) for a in
+                #                            expobj.Suite2pROIsSz.adata.layers['raw_dFF_normalized']])
 
                 # # rebinning of spks data
                 # bin = 4 if int(expobj.fps) == 15 else 8
@@ -199,7 +200,7 @@ class Suite2pROIsSz(Quantification):
                 # plot the cumulative function
                 plt.plot(base[:-1], cumulative, c='blue')
                 plt.title(f'Raw dff normalized - {expobj.t_series_name} - {expobj.exptype}')
-                plt.show()
+                # plt.show()
 
                 return avg_spks_per_sec, spks_per_sec, neural_activity_rate
 
@@ -211,8 +212,8 @@ class Suite2pROIsSz(Quantification):
                 interictal_idx = [idx for idx, val in enumerate(expobj.Suite2pROIsSz.adata.var['ictal_fr']) if val == False]
                 interictal_spks_per_sec = np.sum(expobj.Suite2pROIsSz.adata.layers['s2p_spks'][:, interictal_idx],
                                                  axis=1) / (expobj.n_frames / expobj.fps)
-                interictal_spks_per_sec = np.sum(expobj.Suite2pROIsSz.adata.layers['raw_dFF_normalized'][:, interictal_idx],
-                                                 axis=1) / (expobj.n_frames / expobj.fps)
+                # interictal_spks_per_sec = np.sum(expobj.Suite2pROIsSz.adata.layers['raw_dFF_normalized'][:, interictal_idx],
+                #                                  axis=1) / (expobj.n_frames / expobj.fps)
                 avg_interictal_spks_per_sec = np.mean(interictal_spks_per_sec)
 
                 # Gaussian filter smoothing of spks data
@@ -245,7 +246,7 @@ class Suite2pROIsSz(Quantification):
                 # plot the cumulative function
                 plt.plot(base[:-1], cumulative, c='blue')
                 plt.title(f'Raw dff normalized - {expobj.t_series_name} - {expobj.exptype}')
-                plt.show()
+                # plt.show()
 
                 return avg_interictal_spks_per_sec, interictal_spks_per_sec, neural_activity_rate
 
@@ -312,7 +313,7 @@ class Suite2pROIsSz(Quantification):
         pplot.plot_bar_with_points(
             data=[pre4ap_spk_rate, interictal_spk_rate],
             bar=False, x_tick_labels=['baseline', 'interictal'],
-            colors=['cornflowerblue', 'forestgreen'], lw=1.3,
+            colors=[baseline_color, interictal_color], lw=1.3,
             expand_size_x=0.4, title='Average s2p ROIs spk rate', y_label='spikes rate (Hz)', alpha=0.7,
             expand_size_y=1.2)
 
