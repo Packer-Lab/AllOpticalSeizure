@@ -6,7 +6,6 @@ import sys
 from typing import Union
 
 sys.path.append('/home/pshah/Documents/code/')
-from Vape.utils import STAMovieMaker_noGUI as STAMM
 import scipy.stats as stats
 # import statsmodels as sm
 import statsmodels.stats.multitest as multi
@@ -1292,6 +1291,7 @@ class alloptical(TwoPhotonImaging):
                     'makeMaxImage': True,
                     'makeColourImage': False
                     }
+        from Vape.utils import STAMovieMaker_noGUI as STAMM
 
         # run STAmm
         STAMM.STAMovieMaker(arg_dict)

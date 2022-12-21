@@ -2,6 +2,7 @@ import sys
 
 from _analysis_.nontargets_analysis._ClassPhotostimResponseQuantificationNonTargets import \
     PhotostimResponsesQuantificationNonTargets, FakeStimsQuantification
+from _exp_metainfo_.exp_metainfo import ExpMetainfo
 
 sys.path.extend(['/home/pshah/Documents/code/AllOpticalSeizure', '/home/pshah/Documents/code/AllOpticalSeizure'])
 
@@ -1100,7 +1101,7 @@ class PhotostimResponsesAnalysisNonTargets(PhotostimResponsesQuantificationNonTa
         regression_y = slope * results.summed_responses['baseline']['targets_summed_zscored'] + intercept
         axs[0].scatter(results.summed_responses['baseline']['targets_summed_zscored'],
                        results.summed_responses['baseline']['all_non-targets_zscored'],
-                       facecolor='white', edgecolor='blue', lw=0.5, alpha=1, s=5)
+                       facecolor='white', edgecolor=ExpMetainfo.figures.colors['baseline'], lw=0.5, alpha=1, s=5)
 
         print(f"\np(Baseline - photostims): {p_value:.2e}")
         print(f"m(Baseline - photostims): {slope:.2f}")
@@ -1156,7 +1157,7 @@ class PhotostimResponsesAnalysisNonTargets(PhotostimResponsesQuantificationNonTa
 
         axs[1].scatter(results.summed_responses['interictal']['targets_summed_zscored'],
                        results.summed_responses['interictal']['all_non-targets_zscored'],
-                       facecolor='white', edgecolor='green', lw=0.5, alpha=1, s=5)
+                       facecolor='white', edgecolor=ExpMetainfo.figures.colors['interictal'], lw=0.5, alpha=1, s=5)
 
         print(f"\np(Interictal - photostims): {p_value:.2e}")
         print(f"m(Interictal - photostims): {slope:.2f}")
@@ -1242,7 +1243,7 @@ class PhotostimResponsesAnalysisNonTargets(PhotostimResponsesQuantificationNonTa
 
         # MAKE PLOT
         fig, ax = pplot.plot_bar_with_points(data=[r2_ratio_baseline, r2_ratio_interictal],
-                                             paired=True, bar=False, colors=['royalblue', 'seagreen'],
+                                             paired=True, bar=False, colors=[ExpMetainfo.figures.colors['baseline'], ExpMetainfo.figures.colors['interictal']],
                                              edgecolor='black', lw=1, s=25, alpha=1, shrink_text=0.8,
                                              x_tick_labels=['Base', 'Inter'], ylims=[0, 1.5], title='$R^2$',
                                              y_ticklabels=[0, 0.5, 1.0, 1.5],y_label='Ratio',
@@ -1270,7 +1271,7 @@ class PhotostimResponsesAnalysisNonTargets(PhotostimResponsesQuantificationNonTa
 
         # MAKE PLOT
         fig, ax = pplot.plot_bar_with_points(data=[m_ratio_baseline, m_ratio_interictal],
-                                             paired=True, bar=False, colors=['royalblue', 'seagreen'],
+                                             paired=True, bar=False, colors=[ExpMetainfo.figures.colors['baseline'], ExpMetainfo.figures.colors['interictal']],
                                              edgecolor='black', lw=1, s=25, alpha=1,
                                              shrink_text=0.8,
                                              x_tick_labels=['Base', 'Inter'], ylims=[0, 4],

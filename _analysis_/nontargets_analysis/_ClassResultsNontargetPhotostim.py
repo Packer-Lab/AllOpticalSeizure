@@ -362,7 +362,7 @@ class PhotostimResponsesNonTargetsResults(Results):
             results.ictal_responses = df
             results.save_results()
 
-    def binned_distances_vs_responses_baseline(results, measurement='new influence response'):
+    def binned_distances_vs_responses_baseline(results, measurement='new influence response', run_shuffle=False):
         """
 
         use the specified response measurement argument.
@@ -376,81 +376,81 @@ class PhotostimResponsesNonTargetsResults(Results):
         :return:
         """
 
-        # CURRENT SETUP FOR BASELINE RESPONSES ONLY!! ************
         baseline_responses = results.baseline_responses.iloc[results.pre4ap_idxs]
         assert measurement in baseline_responses.columns, f'{measurement} not found in responses df columns:\n\t {baseline_responses.columns}'
         print(f'\- processing measurement: {measurement}')
 
-        if 'shuffled distance' not in baseline_responses.columns or 'shuffled distance binned' not in baseline_responses.columns:
+        if run_shuffle:
+            if 'shuffled distance' not in baseline_responses.columns or 'shuffled distance binned' not in baseline_responses.columns:
 
-            baseline_responses['shuffled distance'] = 0.0
+                baseline_responses['shuffled distance'] = 0.0
 
-            # responses sorted by shuffled distance and then binned by 10um bins ########################################
-            # baseline_responses_shuffled = baseline_responses.sort_values(by=['distance target'])
-            # random_order = np.random.choice(range(baseline_responses.shape[0]), baseline_responses.shape[0], replace=False)
+                # responses sorted by shuffled distance and then binned by 10um bins ########################################
+                # baseline_responses_shuffled = baseline_responses.sort_values(by=['distance target'])
+                # random_order = np.random.choice(range(baseline_responses.shape[0]), baseline_responses.shape[0], replace=False)
 
-            cells_ = tuple(np.unique(baseline_responses['expID_cell']))
-            distances = []
-            for cell in cells_:
-                idxs = np.where(baseline_responses['expID_cell'] == cell)[0]
-                distances.append(baseline_responses['distance target'].iloc[idxs[0]])
-                # assert len(np.unique(distance)) == 1
-                # distance = baseline_responses['distance target'].iloc[idxs[0]]
+                cells_ = tuple(np.unique(baseline_responses['expID_cell']))
+                distances = []
+                for cell in cells_:
+                    idxs = np.where(baseline_responses['expID_cell'] == cell)[0]
+                    distances.append(baseline_responses['distance target'].iloc[idxs[0]])
+                    # assert len(np.unique(distance)) == 1
+                    # distance = baseline_responses['distance target'].iloc[idxs[0]]
 
-            # add shuffled distances
-            random_order_distances = np.random.choice(distances, len(distances), replace=False)
-            for idx, cell in enumerate(cells_):
-                idxs = np.where(baseline_responses['expID_cell'] == cell)[0]
-                baseline_responses['shuffled distance'].iloc[idxs] = random_order_distances[idx]
+                # add shuffled distances
+                random_order_distances = np.random.choice(distances, len(distances), replace=False)
+                for idx, cell in enumerate(cells_):
+                    idxs = np.where(baseline_responses['expID_cell'] == cell)[0]
+                    baseline_responses['shuffled distance'].iloc[idxs] = random_order_distances[idx]
 
-            baseline_responses = baseline_responses.sort_values(by=['shuffled distance'])
+                baseline_responses = baseline_responses.sort_values(by=['shuffled distance'])
 
-            # binning distances - 10um bins
-            baseline_responses['shuffled distance binned'] = (baseline_responses['shuffled distance'] // 10) * 10
-            results.baseline_responses = baseline_responses
+                # binning distances - 10um bins
+                baseline_responses['shuffled distance binned'] = (baseline_responses['shuffled distance'] // 10) * 10
+                results.baseline_responses = baseline_responses
+                results.save_results()
+
+            # average across distance bins
+            # measurement = 'influence response'
+            distances = np.unique(baseline_responses['shuffled distance binned'])
+            avg_binned_responses = []
+            sem_binned_responses = []
+            distance_response = {}
+            for bin in distances:
+                print(f'\t\- processing distance bin: {bin}')
+                _idxs = np.where(baseline_responses['shuffled distance binned'] == bin)
+
+                # average across all stims for each cell
+                cells_ = np.unique(baseline_responses.iloc[_idxs]['expID_cell'])
+                averages_cells = []
+                for cell in cells_:
+                    _jdxs = np.where(baseline_responses.iloc[_idxs]['expID_cell'] == cell)[0]
+                    mean_cell_distance_response = np.mean(baseline_responses.iloc[_idxs].iloc[_jdxs][measurement])
+                    averages_cells.append(mean_cell_distance_response)
+
+                # avg_response = np.mean(baseline_responses[measurement].iloc[_idxs])
+                # std_response = np.std(baseline_responses[measurement].iloc[_idxs], ddof=1)
+
+                avg_response = np.mean(averages_cells)
+                sem_response = stats.sem(averages_cells, ddof=1)
+
+                avg_binned_responses.append(avg_response)
+                sem_binned_responses.append(sem_response)
+                distance_response[bin] = averages_cells
+
+            avg_binned_responses = np.asarray(avg_binned_responses)
+            sem_binned_responses = np.asarray(sem_binned_responses)
+
+            if not hasattr(results, 'binned_distance_vs_responses_shuffled'):
+                results.binned_distance_vs_responses_shuffled = {}
+
+            results.binned_distance_vs_responses_shuffled[measurement] = {'distances': distances,
+                                                                          'avg binned responses': avg_binned_responses,
+                                                                          'sem binned responses': sem_binned_responses,
+                                                                          'distance responses': distance_response
+                                                                          }
+
             results.save_results()
-
-        # average across distance bins
-        # measurement = 'influence response'
-        distances = np.unique(baseline_responses['shuffled distance binned'])
-        avg_binned_responses = []
-        sem_binned_responses = []
-        distance_response = {}
-        for bin in distances:
-            print(f'\t\- processing distance bin: {bin}')
-            _idxs = np.where(baseline_responses['shuffled distance binned'] == bin)
-
-            # average across all stims for each cell
-            cells_ = np.unique(baseline_responses.iloc[_idxs]['expID_cell'])
-            averages_cells = []
-            for cell in cells_:
-                _jdxs = np.where(baseline_responses.iloc[_idxs]['expID_cell'] == cell)[0]
-                mean_cell_distance_response = np.mean(baseline_responses.iloc[_idxs].iloc[_jdxs][measurement])
-                averages_cells.append(mean_cell_distance_response)
-
-            # avg_response = np.mean(baseline_responses[measurement].iloc[_idxs])
-            # std_response = np.std(baseline_responses[measurement].iloc[_idxs], ddof=1)
-
-            avg_response = np.mean(averages_cells)
-            sem_response = stats.sem(averages_cells, ddof=1)
-
-            avg_binned_responses.append(avg_response)
-            sem_binned_responses.append(sem_response)
-            distance_response[bin] = averages_cells
-
-        avg_binned_responses = np.asarray(avg_binned_responses)
-        sem_binned_responses = np.asarray(sem_binned_responses)
-
-        if not hasattr(results, 'binned_distance_vs_responses_shuffled'):
-            results.binned_distance_vs_responses_shuffled = {}
-
-        results.binned_distance_vs_responses_shuffled[measurement] = {'distances': distances,
-                                                                      'avg binned responses': avg_binned_responses,
-                                                                      'sem binned responses': sem_binned_responses,
-                                                                      'distance responses': distance_response
-                                                                      }
-
-        results.save_results()
 
         # binning across distance to target: ############################################################################
         # re-sort by distance to target
@@ -464,6 +464,7 @@ class PhotostimResponsesNonTargetsResults(Results):
         assert measurement in baseline_responses.columns, f'measurement not found in responses df columns:\n\t {baseline_responses.columns}'
         print(f'\- processing measurement: {measurement}')
         distances = np.unique(baseline_responses['distance target binned'])
+        all_cells_total = []
         avg_binned_responses = []
         sem_binned_responses = []
         distance_response = {}
@@ -478,6 +479,7 @@ class PhotostimResponsesNonTargetsResults(Results):
                 _jdxs = np.where(baseline_responses.iloc[_idxs]['expID_cell'] == cell)[0]
                 mean_cell_distance_response = np.mean(baseline_responses.iloc[_idxs].iloc[_jdxs][measurement])
                 averages_cells.append(mean_cell_distance_response)
+            all_cells_total.append(cells_)
 
             # avg_response = np.mean(baseline_responses[measurement].iloc[_idxs])
             # std_response = np.std(baseline_responses[measurement].iloc[_idxs], ddof=1)
@@ -498,12 +500,13 @@ class PhotostimResponsesNonTargetsResults(Results):
         results.binned_distance_vs_responses[measurement] = {'distances': distances,
                                                              'avg binned responses': avg_binned_responses,
                                                              'sem binned responses': sem_binned_responses,
-                                                             'distance responses': distance_response
+                                                             'distance responses': distance_response,
+                                                             'cells measured': all_cells_total
                                                              }
 
         results.save_results()
 
-    def binned_distances_vs_responses_interictal(results, measurement='new influence response'):
+    def binned_distances_vs_responses_interictal(results, measurement='new influence response', run_shuffle=False):
         """
 
         use the specified response measurement argument.
@@ -522,78 +525,79 @@ class PhotostimResponsesNonTargetsResults(Results):
         assert measurement in interictal_responses.columns, f'{measurement} not found in responses df columns:\n\t {interictal_responses.columns}'
         print(f'\- processing measurement: {measurement}')
 
-        # interictal_responses = results.interictal_responses.iloc[results.post4ap_idxs]
-        if 'shuffled distance' not in interictal_responses.columns or 'shuffled distance binned' not in interictal_responses.columns:
-            interictal_responses['shuffled distance'] = 0.0
+        if run_shuffle:
+            # interictal_responses = results.interictal_responses.iloc[results.post4ap_idxs]
+            if 'shuffled distance' not in interictal_responses.columns or 'shuffled distance binned' not in interictal_responses.columns:
+                interictal_responses['shuffled distance'] = 0.0
 
-            # responses sorted by shuffled distance and then binned by 10um bins ########################################
-            # interictal_responses_shuffled = interictal_responses.sort_values(by=['distance target'])
-            # random_order = np.random.choice(range(interictal_responses.shape[0]), interictal_responses.shape[0], replace=False)
+                # responses sorted by shuffled distance and then binned by 10um bins ########################################
+                # interictal_responses_shuffled = interictal_responses.sort_values(by=['distance target'])
+                # random_order = np.random.choice(range(interictal_responses.shape[0]), interictal_responses.shape[0], replace=False)
 
-            cells_ = tuple(np.unique(interictal_responses['expID_cell']))
-            distances = []
-            for cell in cells_:
-                idxs = np.where(interictal_responses['expID_cell'] == cell)[0]
-                distances.append(interictal_responses['distance target'].iloc[idxs[0]])
-                # assert len(np.unique(distance)) == 1
-                # distance = interictal_responses['distance target'].iloc[idxs[0]]
+                cells_ = tuple(np.unique(interictal_responses['expID_cell']))
+                distances = []
+                for cell in cells_:
+                    idxs = np.where(interictal_responses['expID_cell'] == cell)[0]
+                    distances.append(interictal_responses['distance target'].iloc[idxs[0]])
+                    # assert len(np.unique(distance)) == 1
+                    # distance = interictal_responses['distance target'].iloc[idxs[0]]
 
-            # add shuffled distances
-            random_order_distances = np.random.choice(distances, len(distances), replace=False)
-            for idx, cell in enumerate(cells_):
-                idxs = np.where(interictal_responses['expID_cell'] == cell)[0]
-                interictal_responses['shuffled distance'].iloc[idxs] = random_order_distances[idx]
+                # add shuffled distances
+                random_order_distances = np.random.choice(distances, len(distances), replace=False)
+                for idx, cell in enumerate(cells_):
+                    idxs = np.where(interictal_responses['expID_cell'] == cell)[0]
+                    interictal_responses['shuffled distance'].iloc[idxs] = random_order_distances[idx]
 
-            interictal_responses = interictal_responses.sort_values(by=['shuffled distance'])
+                interictal_responses = interictal_responses.sort_values(by=['shuffled distance'])
 
-            # binning distances - 10um bins
-            interictal_responses['shuffled distance binned'] = (interictal_responses['shuffled distance'] // 10) * 10
+                # binning distances - 10um bins
+                interictal_responses['shuffled distance binned'] = (interictal_responses['shuffled distance'] // 10) * 10
 
-            results.interictal_responses = interictal_responses
+                results.interictal_responses = interictal_responses
+                results.save_results()
+
+            # average across distance bins
+            # measurement = 'influence response'
+            distances = np.unique(interictal_responses['shuffled distance binned'])
+            avg_binned_responses = []
+            sem_binned_responses = []
+            distance_response = {}
+            for bin in distances:
+                print(f'\t\- processing distance bin: {bin}')
+                _idxs = np.where(interictal_responses['shuffled distance binned'] == bin)
+
+                # average across all stims for each cell
+                cells_ = np.unique(interictal_responses.iloc[_idxs]['expID_cell'])
+                averages_cells = []
+                for cell in cells_:
+                    _jdxs = np.where(interictal_responses.iloc[_idxs]['expID_cell'] == cell)[0]
+                    mean_cell_distance_response = np.nanmean(
+                        tuple(interictal_responses.iloc[_idxs].iloc[_jdxs][measurement]))
+                    averages_cells.append(mean_cell_distance_response)
+
+                # avg_response = np.nanmean(interictal_responses[measurement].iloc[_idxs])
+                # std_response = np.nanstd(interictal_responses[measurement].iloc[_idxs], ddof=1)
+                if len(averages_cells) > 0:
+                    avg_response = np.nanmean(averages_cells)
+                    sem_response = stats.sem(averages_cells, ddof=1, nan_policy='omit')
+
+                    avg_binned_responses.append(avg_response)
+                    sem_binned_responses.append(sem_response)
+                    distance_response[bin] = averages_cells
+
+            avg_binned_responses = np.asarray(avg_binned_responses)
+            sem_binned_responses = np.asarray(sem_binned_responses)
+
+            if not hasattr(results, 'binned_distance_vs_responses_shuffled_interictal'):
+                results.binned_distance_vs_responses_shuffled_interictal = {}
+
+            results.binned_distance_vs_responses_shuffled_interictal[measurement] = {'distances': distances,
+                                                                                     'avg binned responses': avg_binned_responses,
+                                                                                     'sem binned responses': sem_binned_responses,
+                                                                                     'distance responses': distance_response
+                                                                                     }
+
             results.save_results()
-
-        # average across distance bins
-        # measurement = 'influence response'
-        distances = np.unique(interictal_responses['shuffled distance binned'])
-        avg_binned_responses = []
-        sem_binned_responses = []
-        distance_response = {}
-        for bin in distances:
-            print(f'\t\- processing distance bin: {bin}')
-            _idxs = np.where(interictal_responses['shuffled distance binned'] == bin)
-
-            # average across all stims for each cell
-            cells_ = np.unique(interictal_responses.iloc[_idxs]['expID_cell'])
-            averages_cells = []
-            for cell in cells_:
-                _jdxs = np.where(interictal_responses.iloc[_idxs]['expID_cell'] == cell)[0]
-                mean_cell_distance_response = np.nanmean(
-                    tuple(interictal_responses.iloc[_idxs].iloc[_jdxs][measurement]))
-                averages_cells.append(mean_cell_distance_response)
-
-            # avg_response = np.nanmean(interictal_responses[measurement].iloc[_idxs])
-            # std_response = np.nanstd(interictal_responses[measurement].iloc[_idxs], ddof=1)
-            if len(averages_cells) > 0:
-                avg_response = np.nanmean(averages_cells)
-                sem_response = stats.sem(averages_cells, ddof=1, nan_policy='omit')
-
-                avg_binned_responses.append(avg_response)
-                sem_binned_responses.append(sem_response)
-                distance_response[bin] = averages_cells
-
-        avg_binned_responses = np.asarray(avg_binned_responses)
-        sem_binned_responses = np.asarray(sem_binned_responses)
-
-        if not hasattr(results, 'binned_distance_vs_responses_shuffled_interictal'):
-            results.binned_distance_vs_responses_shuffled_interictal = {}
-
-        results.binned_distance_vs_responses_shuffled_interictal[measurement] = {'distances': distances,
-                                                                                 'avg binned responses': avg_binned_responses,
-                                                                                 'sem binned responses': sem_binned_responses,
-                                                                                 'distance responses': distance_response
-                                                                                 }
-
-        results.save_results()
 
         # binning across distance to target: ############################################################################
         # re-sort by distance to target
@@ -607,6 +611,7 @@ class PhotostimResponsesNonTargetsResults(Results):
         assert measurement in interictal_responses.columns, f'measurement not found in responses df columns:\n\t {interictal_responses.columns}'
         print(f'\- processing measurement: {measurement}')
         distances = np.unique(interictal_responses['distance target binned'])
+        all_cells_total = []
         avg_binned_responses = []
         sem_binned_responses = []
         distance_response = {}
@@ -622,6 +627,7 @@ class PhotostimResponsesNonTargetsResults(Results):
                 mean_cell_distance_response = np.nanmean(
                     tuple(interictal_responses.iloc[_idxs].iloc[_jdxs][measurement]))
                 averages_cells.append(mean_cell_distance_response)
+            all_cells_total.append(cells_)
 
             # avg_response = np.nanmean(interictal_responses[measurement].iloc[_idxs])
             # std_response = np.nanstd(interictal_responses[measurement].iloc[_idxs], ddof=1)
@@ -643,7 +649,8 @@ class PhotostimResponsesNonTargetsResults(Results):
         results.binned_distance_vs_responses_interictal[measurement] = {'distances': distances,
                                                                         'avg binned responses': avg_binned_responses,
                                                                         'sem binned responses': sem_binned_responses,
-                                                                        'distance responses': distance_response
+                                                                        'distance responses': distance_response,
+                                                                        'cells measured': all_cells_total
                                                                         }
 
         results.save_results()

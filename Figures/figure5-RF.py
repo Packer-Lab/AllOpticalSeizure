@@ -12,7 +12,10 @@ suppl figure: write up RF code
 # %%
 import sys
 
+import matplotlib.pyplot as plt
 from matplotlib.ticker import ScalarFormatter
+
+from _exp_metainfo_.exp_metainfo import ExpMetainfo, baseline_color, interictal_color
 
 sys.path.extend(['/home/pshah/Documents/code/reproducible_figures-main'])
 
@@ -32,7 +35,7 @@ main = PhotostimResponsesAnalysisNonTargets
 
 results: PhotostimResponsesNonTargetsResults = PhotostimResponsesNonTargetsResults.load()
 
-plot_settings()
+# plot_settings()
 SAVE_FOLDER = f'/home/pshah/Documents/figures/alloptical_seizures_draft/'
 
 # %% SETUP
@@ -81,56 +84,21 @@ fig, axes, grid = rfv.make_fig_layout(layout=layout, dpi=dpi)
 # rfv.show_test_figure_layout(fig, axes=axes)  # test what layout looks like quickly, but can also skip and moveon to plotting data.
 
 
+
+
 # %% MAKE PLOTS
 x_adj = 0.09
 
-
-
-# %% A - num targets at each distance - split by individual experiments
-ax = axes['A'][0]
-rfv.add_label_axes(text='A', ax=ax, x_adjust=x_adj, y_adjust=0.00)
-
-baseline_responses = results.baseline_responses.iloc[results.pre4ap_idxs]
-# num occurrences at each distance - split by trial types
-distances = []
-for exp in np.unique(baseline_responses['expID']):
-    _distances = list(baseline_responses[baseline_responses['expID'] == exp]['distance target'])
-    distances.append(_distances)
-ax.hist(distances, 40, density=False, histtype='bar', stacked=True)
-ax.set_yticks([0, 20000, 40000, 60000, 80000], ['0', '2', '4', '6', '8'], fontsize=fs)
-ax.set_xticks([0, 300,  600], [0, 300, 600], fontsize=fs)
-ax.text(x=-50, y=82000, s='x 10$^{4}$', fontsize=fs, clip_on=False)
-ax.set_ylabel('Number of\nmeasurements', fontsize=fs)
-
-# ax.ticklabel_format(axis='y', style='scientific', useMathText=False)
-# ax.set_title('number of measurements by individual experiments')
-ax.set_xlabel('Distance to target ($\mu$$\it{m}$)', fontsize=fs)
-
-
-# %% B) total z scored responses of targets vs. total z scored responses of nontargets - photostim vs. sham stim
-axs = (axes['B'], axes['C'])
-rfv.add_label_axes(text='B', ax=axs[0][0], x_adjust=x_adj + 0.02, y_adjust=0.00)
-rfv.add_label_axes(text='C', ax=axs[1][0], x_adjust=x_adj - 0.01, y_adjust=0.00)
-
-# main.collect__zscored_summed_activity_vs_targets_activity(results=results)
-
-# B + B') ratio of regression lines between baseline and interictal stims - photostim + fakestim
-main.plot__summed_activity_vs_targets_activity(results=results, SAVE_FOLDER=SAVE_FOLDER, fig=fig, axs=axs)
-
-axs[0][0].text(x=8, y = -29.5, s=f'Total targets\n' + r'response ($\it{z}$-scored)', fontsize=fs, clip_on=False, ha='center')
-
-# axs[1][0].text(x=10, y=2.0, s=f'Photostimulation/Artificial\nratio', ha='center', va='center', fontsize=10)
-
-# %% legend for B and C plots
+# legend for B and C plots
 
 # Create the legend
 from matplotlib.lines import Line2D
 from matplotlib.transforms import Bbox
 
-legend_elements = [Line2D([0], [0], marker='o', color='royalblue', label='Baseline', lw=2,
-                          markerfacecolor='royalblue', markersize=7, markeredgecolor='black'),
-                   Line2D([0], [0], marker='o', color='forestgreen', label='Interictal', lw=2,
-                          markerfacecolor='forestgreen', markersize=7, markeredgecolor='black'),
+legend_elements = [Line2D([0], [0], marker='o', color=baseline_color, label='Baseline', lw=2,
+                          markerfacecolor=baseline_color, markersize=7, markeredgecolor='black'),
+                   Line2D([0], [0], marker='o', color=interictal_color, label='Interictal', lw=2,
+                          markerfacecolor=interictal_color, markersize=7, markeredgecolor='black'),
                    Line2D([0], [0], marker='o', color='gray', label='Artificial stimulation', lw=2,
                           markerfacecolor='white', markersize=7, markeredgecolor='black'),
                    ]
@@ -145,17 +113,48 @@ axlegend.legend(handles=legend_elements, loc='center')
 axlegend.axis('off')
 # fig.show()
 
+
+
+
+# %% B and C) total z scored responses of targets vs. total z scored responses of nontargets - photostim vs. sham stim
+axs = (axes['B'], axes['C'])
+rfv.add_label_axes(text='B', ax=axs[0][0], x_adjust=x_adj + 0.02, y_adjust=0.00)
+rfv.add_label_axes(text='C', ax=axs[1][0], x_adjust=x_adj - 0.01, y_adjust=0.00)
+
+# main.collect__zscored_summed_activity_vs_targets_activity(results=results)
+
+print(f"Number of trials measured - baseline - {len(results.summed_responses['baseline']['exp'])} photostim trials")
+print(f"Number of trials measured - interictal - {len(results.summed_responses['interictal']['exp'])} photostim trials")
+
+
+# B + B') ratio of regression lines between baseline and interictal stims - photostim + fakestim
+main.plot__summed_activity_vs_targets_activity(results=results, SAVE_FOLDER=SAVE_FOLDER, fig=fig, axs=axs)
+
+
+
+axs[0][0].text(x=8, y = -29.5, s=f'Total targets\n' + r'response ($\it{z}$-scored)', fontsize=fs, clip_on=False, ha='center')
+
+# axs[1][0].text(x=10, y=2.0, s=f'Photostimulation/Artificial\nratio', ha='center', va='center', fontsize=10)
+
+
+
 # %% D) influence measurements - baseline + interictal across distance to targets
 # PLOTTING of average responses +/- sem across distance to targets bins - baseline + interictal
 axs = axes['D']
 rfv.add_label_axes(text='D', ax=axs[0], x_adjust=x_adj - 0.00)
 
-distance_lims = [19, 400]
+distance_lims = [19, 600]
 
-measurement = 'new influence response'
+measurement = 'new influence response'  # refers to the influence measurement where expected activity is inferred based on the overall population
+
 ax = axs[0]
 ax.axhline(y=0, ls='--', color='gray', lw=1)
 ax.axvline(x=20, ls='--', color='gray', lw=1)
+
+# print total number of cells measured:
+print(f"Total number of cells measured - baseline - {len(np.unique(pj.flattenOnce(results.binned_distance_vs_responses[measurement]['cells measured'])))} nontargets")
+print(f"Total number of cells measured - interictal - {len(np.unique(pj.flattenOnce(results.binned_distance_vs_responses_interictal[measurement]['cells measured'])))} nontargets")
+
 
 # BASELINE- distances vs. responses
 distances = results.binned_distance_vs_responses[measurement]['distances']
@@ -164,17 +163,17 @@ distances = distances[distances_lim_idx]
 avg_binned_responses = results.binned_distance_vs_responses[measurement]['avg binned responses'][distances_lim_idx]
 sem_binned_responses = results.binned_distance_vs_responses[measurement]['sem binned responses'][distances_lim_idx]
 ax.fill_between(x=list(distances), y1=list(avg_binned_responses + sem_binned_responses), y2=list(avg_binned_responses - sem_binned_responses), alpha=0.3, color='royalblue')
-ax.plot(distances, avg_binned_responses, lw=1.5, color='royalblue', label='baseline')
+ax.plot(distances, avg_binned_responses, lw=1.5, color=baseline_color, label='baseline')
 
 
-# binned distances vs responses
+# INTERICTAL - binned distances vs responses
 distances = results.binned_distance_vs_responses_interictal[measurement]['distances']
 distances_lim_idx = [idx for idx, distance in enumerate(distances) if distance_lims[0] < distance < distance_lims[1]]
 distances = distances[distances_lim_idx]
 avg_binned_responses = results.binned_distance_vs_responses_interictal[measurement]['avg binned responses'][distances_lim_idx]
 sem_binned_responses = results.binned_distance_vs_responses_interictal[measurement]['sem binned responses'][distances_lim_idx]
 ax.fill_between(x=list(distances), y1=list(avg_binned_responses + sem_binned_responses), y2=list(avg_binned_responses - sem_binned_responses), alpha=0.3, color='mediumseagreen')
-ax.plot(distances, avg_binned_responses, lw=1.5, color='forestgreen', label='interictal')
+ax.plot(distances, avg_binned_responses, lw=1.5, color=interictal_color, label='interictal')
 
 # ax.set_title(f"{measurement}", wrap=True)
 ax.set_xlim([0, 400])
@@ -232,6 +231,26 @@ ax.set_yticks([0, 0.2], [0,0.2], fontsize=fs)
 # sm.stats.anova_lm(model, typ=2)
 
 
+
+# %% A - num targets at each distance - split by individual experiments
+ax = axes['A'][0]
+rfv.add_label_axes(text='A', ax=ax, x_adjust=x_adj, y_adjust=0.00)
+
+baseline_responses = results.baseline_responses.iloc[results.pre4ap_idxs]
+# num occurrences at each distance - split by trial types
+distances = []
+for exp in np.unique(baseline_responses['expID']):
+    _distances = list(baseline_responses[baseline_responses['expID'] == exp]['distance target'])  # need to update to only count unique target to nontarget distances! - there's repeat for all the stims for the same measurement i think.....
+    distances.append(np.unique(_distances))
+ax.hist(distances, 40, density=False, histtype='bar', stacked=True)
+# ax.set_yticks([0, 20000, 40000, 60000, 80000], ['0', '2', '4', '6', '8'], fontsize=fs)
+ax.set_xticks([0, 300,  600], [0, 300, 600], fontsize=fs)
+# ax.text(x=-50, y=82000, s='x 10$^{4}$', fontsize=fs, clip_on=False)
+ax.set_ylabel('Number of\nnon targets', fontsize=fs)
+
+# ax.ticklabel_format(axis='y', style='scientific', useMathText=False)
+# ax.set_title('number of measurements by individual experiments')
+ax.set_xlabel('Distance to target ($\mu$$\it{m}$)', fontsize=fs)
 
 # %%
 if save_fig and dpi > 250:

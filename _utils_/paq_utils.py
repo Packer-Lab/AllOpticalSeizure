@@ -2,8 +2,6 @@
 
 import sys;
 
-from Vape.utils import sta
-
 sys.path.append('/home/pshah/Documents/code/Vape/')
 from _utils_.funcs_pj import threshold_detect
 
@@ -13,9 +11,6 @@ import matplotlib.pyplot as plt
 import matplotlib.ticker as mticker
 import scipy.signal as signal
 from scipy import io
-
-import plotly.graph_objects as go
-import plotly.express as px
 
 
 # %%
@@ -141,6 +136,8 @@ def paq_read(file_path=None, plot=False):
 
 
 def plot_paq_interactive(paq, input_path, channels_to_plot=None):
+    import plotly.graph_objects as go
+
     name = input_path[input_path.find('/20', 30) + 1:len(
         input_path)]  # note that the arguments for find here are very arbitrary, might break in some circumstances
     # Create figure
@@ -197,6 +194,9 @@ def plot_paq_interactive(paq, input_path, channels_to_plot=None):
 
 
 def plot_paq_interactive_line(paq_df, input_path, channels_to_plot=None):
+    import plotly.graph_objects as go
+    import plotly.express as px
+
     name = input_path[input_path.find('/20', 30) + 1:len(
         input_path)]  # note that the arguments for find here are very arbitrary, might break in some circumstances
     # Create figure

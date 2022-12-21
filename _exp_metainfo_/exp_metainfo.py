@@ -226,11 +226,28 @@ class OnePhotonStimExpsToAnalyze:
     def add_to_csv(self):
         pass
 
+@dataclass
+class FigureSettings:
+    """class to hold various values to standardize across all figures"""
+    colors= {'baseline': '#5777c6',  # light matte blue
+               'interictal': '#77c65a',  # like forest green
+               'ictal': 'slateblue',  # like a light matte purple
+               'gcamp - FOV': '#208b23',
+               'general': '#d3bbad',
+               'stim span': '#ffd9df'  # very pale pinkish
+               }
+
+    lw= {
+        "gcamp - single cell": 0.5,
+        "gcamp - FOV": 0.5,
+        "lfp": 0.15}
 
 class ExpMetainfo:
     csv_path: str = CSV_PATH_ao
     alloptical: AllOpticalExpsToAnalyze = AllOpticalExpsToAnalyze()
     onephotonstim: OnePhotonStimExpsToAnalyze = OnePhotonStimExpsToAnalyze()
+    figures: FigureSettings = FigureSettings()
+
     figure_settings = {
         "fontsize": {
             "title": 10,
@@ -246,7 +263,8 @@ class ExpMetainfo:
                     'interictal': '#77c65a',  # like forest green
                     'ictal': 'slateblue',  # like a light matte purple
                    'gcamp - FOV': '#208b23',
-                  'general': '#d3bbad'
+                  'general': '#d3bbad',
+                  'stim span': '#ffd9df'  # very pale pinkish
                    },
         # 'colors': {'ictal': '#775d90',  # light matte orange
         #             # 'interictal': '#a1d18d',  # like lightish matte green
@@ -282,7 +300,8 @@ try:
 except Exception:
     ExpMetainfo.save(ExpMetainfo)
 
-
+baseline_color = ExpMetainfo.figures.colors['baseline']
+interictal_color = ExpMetainfo.figures.colors['interictal']
 
 
 # # ARCHIVE
@@ -346,10 +365,9 @@ except Exception:
 
 
 
-if __name__ == '__main__':
-    # __resultsmeta_to_csv()
-    # __1presultsmeta_to_csv()
-    # ExpMetainfo
+# __resultsmeta_to_csv()
+# __1presultsmeta_to_csv()
+# ExpMetainfo
 
-    pass
+    # pass
 

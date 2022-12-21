@@ -32,7 +32,7 @@ save_fig = True
 fs = 10
 rfv.set_fontsize(ExpMetainfo.figure_settings['fontsize - extraplot'])
 
-stim_color = '#d5f8ff'
+stim_color = ExpMetainfo.figure_settings['colors']["stim span"]
 
 layout = {
     'A': {'panel_shape': (1, 1),
