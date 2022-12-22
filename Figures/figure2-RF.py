@@ -19,6 +19,8 @@ sys.path.extend(['/home/pshah/Documents/code/reproducible_figures-main'])
 import numpy as np
 import rep_fig_vis as rfv
 
+from pycircstat.tests import vtest
+
 Results: OnePhotonStimResults = OnePhotonStimResults.load()
 
 SAVE_FOLDER = f'/home/pshah/Documents/figures/alloptical_seizures_draft/'
@@ -64,6 +66,57 @@ rfv.add_label_axes(text='B', ax=axes['B'][0, 0], y_adjust=0)
 print('\n\n')
 
 
+
+# %% F) Radial plot of Mean FOV for photostimulation trials, with period equal to that of photostimulation timing period
+
+# run data analysis
+exp_sz_occurrence, total_sz_occurrence = OnePhotonStimAnalysisFuncs.collectSzOccurrenceRelativeStim(Results=Results,
+                                                                                                    rerun=0)
+
+expobj = import_expobj(prep='PS11', trial='t-012', date=date)  # post4ap trial
+
+# make plot
+bin_width = int(1 * expobj.fps)
+period = len(np.arange(0, (expobj.stim_interval_fr // bin_width)))
+theta = (2 * np.pi) * np.arange(0, (expobj.stim_interval_fr // bin_width)) / period
+
+bbox = Bbox.from_extents(0.70, 0.60, 0.84, 0.74)
+_axes = np.empty(shape=(1, 1), dtype=object)
+ax = fig.add_subplot(projection='polar')
+ax.set_position(pos=bbox)
+rfv.add_label_axes(text='F', ax=ax, y_adjust=0.035)
+
+# fig, ax = plt.subplots(subplot_kw={'projection': 'polar'}, dpi=300, figsize=(3, 3))
+
+
+# by experiment
+# for exp, values in exp_sz_occurrence.items():
+#     plot = values
+#     ax.bar(theta, plot, width=(2 * np.pi) / period, bottom=0.0, alpha=0.5)
+
+# across all seizures
+total_sz = np.sum(np.sum(total_sz_occurrence, axis=0))
+sz_prob = np.sum(total_sz_occurrence, axis=0) / total_sz
+
+pval, z = vtest(alpha=theta, mu=0, w=np.sum(total_sz_occurrence, axis=0))
+print(f'pval for oneP stim seizure incidence is: {pval}')
+
+
+ax.bar(theta, sz_prob, width=(2 * np.pi) / period, bottom=0.0, alpha=1, color=ExpMetainfo.figure_settings['colors']['general'], lw=0.3)
+
+ax.set_rmax(1.1)
+ax.set_rticks([0.25, 0.5, 0.75, 1])  # radial ticks
+ax.set_yticklabels(['', '0.5', '', '1.0'], fontsize=ExpMetainfo.figure_settings['fontsize - intraplot'])  # radial ticks
+ax.set_rlabel_position(-60)
+ax.grid(True)
+# ax.set_xticks((2 * np.pi) * np.arange(0, (expobj.stim_interval_fr / bin_width)) / period)
+ax.set_xticks([0, (2 * np.pi) / 4, (2 * np.pi) / 2, (6 * np.pi) / 4])
+ax.set_xticklabels([r'$\it{\Theta}$ = 0', '', '', ''], fontsize=ExpMetainfo.figure_settings['fontsize - extraplot'])
+# ax.set_title("sz probability occurrence (binned every 1s)", va='bottom')
+ax.spines['polar'].set_visible(False)
+ax.set_title(label='Seizure probability', fontsize=10, va='bottom')
+
+# fig.show()
 
 
 
@@ -309,52 +362,6 @@ rfv.add_scale_bar(ax=axes['B'][1, 1], length=(500, 10 * expobj.fps), bartype='L'
 
 
 
-
-# %% F) Radial plot of Mean FOV for photostimulation trials, with period equal to that of photostimulation timing period
-
-# run data analysis
-exp_sz_occurrence, total_sz_occurrence = OnePhotonStimAnalysisFuncs.collectSzOccurrenceRelativeStim(Results=Results,
-                                                                                                    rerun=0)
-
-expobj = import_expobj(prep='PS11', trial='t-012', date=date)  # post4ap trial
-
-# make plot
-bin_width = int(1 * expobj.fps)
-period = len(np.arange(0, (expobj.stim_interval_fr // bin_width)))
-theta = (2 * np.pi) * np.arange(0, (expobj.stim_interval_fr // bin_width)) / period
-
-bbox = Bbox.from_extents(0.70, 0.60, 0.84, 0.74)
-_axes = np.empty(shape=(1, 1), dtype=object)
-ax = fig.add_subplot(projection='polar')
-ax.set_position(pos=bbox)
-rfv.add_label_axes(text='F', ax=ax, y_adjust=0.035)
-
-# fig, ax = plt.subplots(subplot_kw={'projection': 'polar'}, dpi=300, figsize=(3, 3))
-
-# by experiment
-# for exp, values in exp_sz_occurrence.items():
-#     plot = values
-#     ax.bar(theta, plot, width=(2 * np.pi) / period, bottom=0.0, alpha=0.5)
-
-# across all seizures
-total_sz = np.sum(np.sum(total_sz_occurrence, axis=0))
-sz_prob = np.sum(total_sz_occurrence, axis=0) / total_sz
-
-ax.bar(theta, sz_prob, width=(2 * np.pi) / period, bottom=0.0, alpha=1, color=ExpMetainfo.figure_settings['colors']['general'], lw=0.3)
-
-ax.set_rmax(1.1)
-ax.set_rticks([0.25, 0.5, 0.75, 1])  # radial ticks
-ax.set_yticklabels(['', '0.5', '', '1.0'], fontsize=ExpMetainfo.figure_settings['fontsize - intraplot'])  # radial ticks
-ax.set_rlabel_position(-60)
-ax.grid(True)
-# ax.set_xticks((2 * np.pi) * np.arange(0, (expobj.stim_interval_fr / bin_width)) / period)
-ax.set_xticks([0, (2 * np.pi) / 4, (2 * np.pi) / 2, (6 * np.pi) / 4])
-ax.set_xticklabels([r'$\it{\Theta}$ = 0', '', '', ''], fontsize=ExpMetainfo.figure_settings['fontsize - extraplot'])
-# ax.set_title("sz probability occurrence (binned every 1s)", va='bottom')
-ax.spines['polar'].set_visible(False)
-ax.set_title(label='Seizure probability', fontsize=10, va='bottom')
-
-# fig.show()
 
 
 

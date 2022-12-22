@@ -34,6 +34,8 @@ import matplotlib.pyplot as plt
 import matplotlib.image as mpimg
 import rep_fig_vis as rfv
 
+from pycircstat.tests import vtest
+
 results: PhotostimResponsesSLMtargetsResults = PhotostimResponsesSLMtargetsResults.load()
 
 sz_results: ExpSeizureResults = ExpSeizureResults.load()
@@ -92,6 +94,61 @@ rfv.add_label_axes(text="C", ax=axes['bottom-C'][0], y_adjust=0.0)
 
 
 
+# %% E) Radial plot of Mean FOV for photostimulation trials, with period equal to that of photostimulation timing period
+bbox = Bbox.from_extents(0.70, 0.445, 0.84, 0.595)
+_axes = np.empty(shape=(1, 1), dtype=object)
+ax = fig.add_subplot(projection='polar')
+ax.set_position(pos=bbox)
+rfv.add_label_axes(text='E', ax=ax, y_adjust=0.02)
+# fig.show()
+
+
+# run data analysis
+if not hasattr(sz_results, 'exp_sz_occurrence'):
+    sz_results.exp_sz_occurrence, sz_results.total_sz_occurrence = ExpSeizureAnalysis.collectSzOccurrenceRelativeStim()
+    sz_results.save_results()
+
+expobj: Post4ap = import_expobj(exp_prep='RL109 t-013')
+
+# make plot
+bin_width = int(1 * expobj.fps) if expobj.fps == 15 else int(0.5 * expobj.fps)
+# period = len(np.arange(0, (expobj.stim_interval_fr / bin_width)))
+period = 10
+theta = (2 * np.pi) * np.arange(0, (expobj.stim_interval_fr / bin_width)) / period
+
+# by experiment
+# for exp, values in exp_sz_occurrence.items():
+#     plot = values
+#     ax.bar(theta, plot, width=(2 * np.pi) / period, bottom=0.0, alpha=0.5)
+
+# across all seizures
+total_sz = np.sum(np.sum(sz_results.total_sz_occurrence, axis=0))
+sz_prob = np.sum(sz_results.total_sz_occurrence, axis=0) / total_sz
+
+pval, z = vtest(alpha=theta, mu=0, w=np.sum(sz_results.total_sz_occurrence, axis=0))
+print(f'pval for twoP stim seizure incidence is: {pval}')
+
+# fig, ax = plt.subplots(subplot_kw={'projection': 'polar'}, dpi=300, figsize=(3,3))
+
+ax.bar(theta, sz_prob, width=(2 * np.pi) / period, bottom=0.0, alpha=1, color='crimson')
+
+ax.set_rmax(1.1)
+ax.set_rticks([0.25, 0.5, 0.75, 1])  # Less radial ticks
+ax.set_yticklabels(['', '0.5', '', '1.0'], fontsize=8)  # Less radial ticks
+ax.set_rlabel_position(-60)  # Move radial labels away from plotted line
+ax.grid(True)
+# ax.set_xticks((2 * np.pi) * np.arange(0, (expobj.stim_interval_fr / bin_width)) / period)
+ax.set_xticks([0, (2 * np.pi) / 4, (2 * np.pi) / 2, (6 * np.pi) / 4])
+ax.set_xticklabels([r'$\it{\Theta}$ = 0', '', '', ''], fontsize=10)
+ax.spines['polar'].set_visible(False)
+
+ax.set_title(label='Seizure probability', fontsize=fs, va='bottom')
+
+# fig.show()
+
+
+
+
 # %% D) BAR PLOT OF AVG PHOTOSTIMULATION FOV RAW FLU ACROSS CONDITIONS
 
 ax = axes['bottom-D'][0]
@@ -139,56 +196,6 @@ plot_bar_with_points(data=[baseline_prestimf, interictal_prestimf],
                      colors=['royalblue', 'forestgreen'],
                      y_label='Fluorescence (a.u.)',
                      ylims=[0, 1900], alpha=1, s=35, sig_compare_lines={'n.s.': [0, 1]})
-
-
-# %% E) Radial plot of Mean FOV for photostimulation trials, with period equal to that of photostimulation timing period
-bbox = Bbox.from_extents(0.70, 0.445, 0.84, 0.595)
-_axes = np.empty(shape=(1, 1), dtype=object)
-ax = fig.add_subplot(projection='polar')
-ax.set_position(pos=bbox)
-rfv.add_label_axes(text='E', ax=ax, y_adjust=0.02)
-# fig.show()
-
-
-# run data analysis
-if not hasattr(sz_results, 'exp_sz_occurrence'):
-    sz_results.exp_sz_occurrence, sz_results.total_sz_occurrence = ExpSeizureAnalysis.collectSzOccurrenceRelativeStim()
-    sz_results.save_results()
-
-expobj: Post4ap = import_expobj(exp_prep='RL109 t-013')
-
-# make plot
-bin_width = int(1 * expobj.fps) if expobj.fps == 15 else int(0.5 * expobj.fps)
-# period = len(np.arange(0, (expobj.stim_interval_fr / bin_width)))
-period = 10
-theta = (2 * np.pi) * np.arange(0, (expobj.stim_interval_fr / bin_width)) / period
-
-# by experiment
-# for exp, values in exp_sz_occurrence.items():
-#     plot = values
-#     ax.bar(theta, plot, width=(2 * np.pi) / period, bottom=0.0, alpha=0.5)
-
-# across all seizures
-total_sz = np.sum(np.sum(sz_results.total_sz_occurrence, axis=0))
-sz_prob = np.sum(sz_results.total_sz_occurrence, axis=0) / total_sz
-
-# fig, ax = plt.subplots(subplot_kw={'projection': 'polar'}, dpi=300, figsize=(3,3))
-
-ax.bar(theta, sz_prob, width=(2 * np.pi) / period, bottom=0.0, alpha=1, color='crimson')
-
-ax.set_rmax(1.1)
-ax.set_rticks([0.25, 0.5, 0.75, 1])  # Less radial ticks
-ax.set_yticklabels(['', '0.5', '', '1.0'], fontsize=8)  # Less radial ticks
-ax.set_rlabel_position(-60)  # Move radial labels away from plotted line
-ax.grid(True)
-# ax.set_xticks((2 * np.pi) * np.arange(0, (expobj.stim_interval_fr / bin_width)) / period)
-ax.set_xticks([0, (2 * np.pi) / 4, (2 * np.pi) / 2, (6 * np.pi) / 4])
-ax.set_xticklabels([r'$\it{\Theta}$ = 0', '', '', ''], fontsize=10)
-ax.spines['polar'].set_visible(False)
-
-ax.set_title(label='Seizure probability', fontsize=fs, va='bottom')
-
-# fig.show()
 
 
 # %% B + B')
