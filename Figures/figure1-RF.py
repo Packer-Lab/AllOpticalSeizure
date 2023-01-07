@@ -35,7 +35,7 @@ rfv.set_fontsize(fontsize_extraplot)
 
 test = 0
 save_fig = True if not test else False
-dpi = 100 if test else 300
+dpi = 120 if test else 300
 
 # set layout of the figure
 layout = {
@@ -43,13 +43,13 @@ layout = {
           'bound': (0.05, 0.80, 0.33, 0.95)},
     # 'B': {'panel_shape': (1, 1),
     #       'bound': (0.05, 0.70, 0.33, 0.76)},
-    'C': {'panel_shape': (1, 1),
+    'B': {'panel_shape': (1, 1),
           'bound': (0.43, 0.86, 0.95, 0.95)},
-    'D top': {'panel_shape': (1, 1),
+    'C top': {'panel_shape': (1, 1),
           'bound': (0.07, 0.67, 0.30, 0.72)},
-    'D bottom': {'panel_shape': (1, 1),
+    'C bottom': {'panel_shape': (1, 1),
           'bound': (0.07, 0.57, 0.30, 0.67)},
-    'E': {'panel_shape': (3, 1),
+    'D': {'panel_shape': (3, 1),
           'bound': (0.43, 0.57, 0.73, 0.67),
           'wspace': 1.8},
     # 'F': {'panel_shape': (1, 1),
@@ -61,12 +61,13 @@ fig, axes, grid = rfv.make_fig_layout(layout=layout, dpi=dpi)
 
 rfv.naked(axes['A'][0])
 # rfv.naked(axes['B'][0])
-rfv.naked(axes['C'][0])
-rfv.naked(axes['D bottom'][0])
-rfv.naked(axes['D top'][0])
+rfv.naked(axes['B'][0])
+rfv.naked(axes['C bottom'][0])
+rfv.naked(axes['C top'][0])
 rfv.add_label_axes(text='A', ax=axes['A'][0], y_adjust=0, x_adjust=0.04)
 # rfv.add_label_axes(text='B', ax=axes['B'][0], y_adjust=0)
-rfv.add_label_axes(text='C', ax=axes['C'][0], y_adjust=0, x_adjust=0.07)
+rfv.add_label_axes(text='B', ax=axes['B'][0], y_adjust=0, x_adjust=0.07)
+rfv.add_label_axes(text='C', ax=axes['C top'][0], x_adjust=0.06, y_adjust=-0.02)
 
 print('\n\n')
 
@@ -75,7 +76,7 @@ print('\n\n')
 
 
 
-# %% E) seizure stats
+# %% D) seizure stats
 
 from _analysis_.sz_analysis._ClassExpSeizureAnalysis import ExpSeizureAnalysis as main, ExpSeizureResults
 
@@ -83,7 +84,7 @@ from _analysis_.sz_analysis._ClassExpSeizureAnalysis import ExpSeizureAnalysis a
 # main.calc__szInvasionTime()
 # main.plot__sz_invasion()
 
-ax, ax2, ax3 = axes['E'][0], axes['E'][1], axes['E'][2]
+ax, ax2, ax3 = axes['D'][0], axes['D'][1], axes['D'][2]
 
 main.plot__sz_incidence(fig=fig, ax=ax, show=False)
 main.plot__sz_lengths(fig=fig, ax=ax2, show=False)
@@ -99,11 +100,11 @@ ax2.set_ylim([0, 120])
 ax3.set_ylabel('Speed ($\mu$$\it{m}$/sec)', fontsize=fontsize_extraplot)
 ax3.set_yticks([0, 40], [0, 40], fontsize=fontsize_extraplot)
 ax3.set_ylim([0, 40])
-rfv.add_label_axes(text='E', ax=axes['E'][0], x_adjust=0.07, y_adjust=0.03)
+rfv.add_label_axes(text='D', ax=axes['D'][0], x_adjust=0.07, y_adjust=0.03)
 
 
 
-# %% D) suite2p cells gcamp imaging for seizures, with simultaneous LFP recording
+# %% C) suite2p cells gcamp imaging for seizures, with simultaneous LFP recording
 
 # fig, axs = plt.subplots(2, 1, figsize=(6, 6))
 # fig, axs[0] = aoplot.plotMeanRawFluTrace(expobj=expobj, stim_span_color=None, x_axis='time', fig=fig, ax=axs[0], show=False)
@@ -117,13 +118,12 @@ time = (400, 460)
 frames = (time[0] * expobj.fps, time[1] * expobj.fps)
 paq = (time[0] * expobj.paq_rate, time[1] * expobj.paq_rate)
 
-ax1, ax2 = axes['D bottom'][0], axes['D top'][0]
+ax1, ax2 = axes['C bottom'][0], axes['C top'][0]
 plotHeatMapSzAllCells(expobj=expobj, sz_num=4, ax1=ax1, ax2=ax2, fig=fig)
 ax1.set_yticks([0, 100])
 
 x = ax2.get_xlim()[1]
 
-rfv.add_label_axes(text='D', ax=axes['D top'][0], x_adjust=0.06, y_adjust=-0.02)
 
 
 

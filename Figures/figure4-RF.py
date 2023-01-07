@@ -23,6 +23,7 @@ from statsmodels.stats.multicomp import pairwise_tukeyhsd
 from _analysis_._ClassPhotostimAnalysisSlmTargets import PhotostimAnalysisSlmTargets, plot__avg_photostim_dff_allexps
 from _analysis_._ClassPhotostimResponseQuantificationSLMtargets import PhotostimResponsesSLMtargetsResults, \
     PhotostimResponsesQuantificationSLMtargets
+from _exp_metainfo_.exp_metainfo import ExpMetainfo
 from _utils_.alloptical_plotting import plot_settings
 from alloptical_utils_pj import save_figure
 
@@ -46,8 +47,7 @@ import rep_fig_vis as rfv
 # plot_settings()
 SAVE_FOLDER = f'/home/pshah/Documents/figures/alloptical_seizures_draft/'
 
-fontsize = 10
-rfv.set_fontsize(fontsize)
+rfv.set_fontsize(ExpMetainfo.figures.fontsize['extraplot'])
 
 # %%
 ## Set parameters
@@ -91,12 +91,11 @@ layout = {
                           'wspace': 0.2},
 }
 
-dpi = 300
-
+test = 0
+save_fig = True if not test > 0 else False
+dpi = 150 if test > 0 else 300
 fig, axes, grid = rfv.make_fig_layout(layout=layout, dpi=dpi)
-
-
-# rfv.show_test_figure_layout(fig, axes=axes)  # test what layout looks like quickly, but can also skip and moveon to plotting data.
+rfv.show_test_figure_layout(fig, axes=axes, show=True) if test == 2 else None  # test what layout looks like quickly, but can also skip and moveon to plotting data.
 
 # %% F - #: within exp, across targets correlation magnitudes // PCA eigen value decomposition
 """note: currently computing filtered on MID interictal stims. change one of the lines below to be able to compute on all interictal stims"""
@@ -108,10 +107,10 @@ results = RESULTS
 # results.interictal_adata.obs['exp']
 
 ax = axes['main-bottom-right'][0]
-rfv.add_label_axes(text='F', ax=ax, y_adjust=0.015, x_adjust=0.095)
+rfv.add_label_axes(text='F', ax=ax, x_adjust=0.095)
 
 # avg correlation magnitude
-main.correlation_magnitude_exps(fig=fig, axs=ax)
+# main.correlation_magnitude_exps(fig=fig, axs=ax)
 
 # STATS TEST
 baseline = list(results.corr_targets['within - baseline'].values())[
@@ -130,27 +129,24 @@ axs = ax
 fig, axs = plt.subplots(ncols=1, nrows=1, figsize=(3, 4)) if fig is None and axs is None else (fig, axs)
 plot_bar_with_points(data=[baseline, midinterictal], paired=True, fontsize=10, bar=False,
                      x_tick_labels=['Baseline', 'Interictal'], colors=['royalblue', 'forestgreen'],
-                     y_label='Correlation (R)', show=False, alpha=1, fig=fig, ax=axs, s=15, ylims=[-0.05, 0.93],
-                     sig_compare_lines={'*': [0, 1]})
-axs.text(x=2.5, y=0, s=f't-test rel.: {stats_score[1]:.2e}', fontsize=5)
+                     y_label='Correlation (R)', show=False, alpha=1, fig=fig, ax=axs, s=15, ylims=[0, 1.0],
+                     sig_compare_lines={'*': [0, 1]}, points_lw=0.5)
+# axs.text(x=2.5, y=0.025, s=f't-test rel.: {stats_score[1]:.2e}', fontsize=3)
 
 # %% C - mean response vs. variability
 axs = axes['main-middle-middle']
-main.plot__mean_response_vs_variability(fig, axs=axs, rerun=0, fontsize=fontsize)
+main.plot__mean_response_vs_variability(fig, axs=axs, rerun=0, fontsize=ExpMetainfo.figures.fontsize['extraplot'])
 rfv.add_label_axes(text='C', ax=axs[0], x_adjust=0.1)
 
 # %% E - correlation matrix of z scored responses across targets - selected one experiment
 axs = (axes['main-bottom-left'],)  #: within exp, across targets correlation matrixes
 main.correlation_matrix_all_targets(fig=fig, axs=axs)
-rfv.add_label_axes(text='E', ax=axs[0][0], y_adjust=0)
+rfv.add_label_axes(text='E', ax=axs[0][0])
 # rfv.add_label_axes(text="F'", ax=axs[1][0], y_adjust=0)
 
 for ax in axes['main-bottom-left']:
     rfv.naked(ax)
     ax.axis('off')
-
-
-
 
 
 
@@ -164,7 +160,7 @@ axes['main-top'][0, 1].text(s='Interictal', x = -4, y=0, rotation=90, fontsize=1
 
 
 ax = axes['main-middle-left'][0]  #: CV quantification bar plot
-main.plot__variability(fig=fig, ax=ax, fontsize=fontsize)
+main.plot__variability(fig=fig, ax=ax, fontsize=ExpMetainfo.figures.fontsize['extraplot'])
 rfv.add_label_axes(text='B', ax=ax, x_adjust = 0.09)
 
 
@@ -186,7 +182,7 @@ data_nums.extend(['pre'] * num_pre)
 data_nums.extend(['mid'] * num_mid)
 data_nums.extend(['post'] * num_post)
 
-df = pd.DataFrame({'score': stats.f_oneway([RESULTS.interictal_responses['preictal_responses'],
+df = pd.DataFrame({'score': flattenOnce([RESULTS.interictal_responses['preictal_responses'],
                                          RESULTS.interictal_responses['very_interictal_responses'],
                                          RESULTS.interictal_responses['postictal_responses']]),
                    'group': data_nums})
@@ -202,7 +198,7 @@ print(tukey)
 data = [RESULTS.interictal_responses['preictal_responses'],
         RESULTS.interictal_responses['very_interictal_responses'],
         RESULTS.interictal_responses['postictal_responses']]
-plot_bar_with_points(data=data, bar=False, title='', fontsize=10,
+plot_bar_with_points(data=data, bar=False, title='', fontsize=10,points_lw=0.5,
                      x_tick_labels=['Pre', 'Mid', 'Post'], colors=['lightseagreen', 'gold', 'lightcoral'],
                      y_label='Response magnitude\n(z-scored)', show=False, ylims=[-0.5, 0.8],
                      alpha=1, fig=fig, ax=ax, s=15, sig_compare_lines={'*': [1, 2]})

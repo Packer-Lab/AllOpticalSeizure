@@ -40,7 +40,7 @@ SAVE_FOLDER = f'/home/pshah/Documents/figures/alloptical_seizures_draft/'
 
 # %% SETUP
 ## Set general plotting parameters
-fs = 10
+fs = ExpMetainfo.figures.fontsize['extraplot']
 rfv.set_fontsize(fs)
 
 # %% MAKING LAYOUT:
@@ -76,12 +76,10 @@ layout = {
 
 
 test = 0
-save_fig = True if not test else False
-dpi = 100 if test else 300
-
+save_fig = True if not test > 0 else False
+dpi = 150 if test > 0 else 300
 fig, axes, grid = rfv.make_fig_layout(layout=layout, dpi=dpi)
-
-# rfv.show_test_figure_layout(fig, axes=axes)  # test what layout looks like quickly, but can also skip and moveon to plotting data.
+rfv.show_test_figure_layout(fig, axes=axes, show=True) if test == 2 else None  # test what layout looks like quickly, but can also skip and moveon to plotting data.
 
 
 

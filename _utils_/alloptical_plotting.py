@@ -1235,7 +1235,7 @@ def plotMeanRawFluTrace(expobj, stim_span_color='white', stim_lines: bool = True
         if hasattr(expobj, 'shutter_frames'):
             for start, end in zip(expobj.shutter_start_frames[0], expobj.shutter_end_frames[0]):
                 ax.axvspan(start-9, end + 2, color='white', zorder=2)
-                ax.axvspan(start-1, end+1, color='powderblue', zorder=2)
+                ax.axvspan(start-1, end+1, color=stim_span_color, zorder=2)
         else:
             for stim in expobj.stim_start_frames:
                 ax.axvspan(stim-2, 1 + stim + expobj.stim_duration_frames, color=stim_span_color, zorder=2)
@@ -1519,14 +1519,14 @@ def plot_lfp_1pstim_avg_trace(expobj, individual_traces=False, optoloopback: boo
     stims_to_analyze_paq = [expobj.stim_start_times[expobj.stim_start_frames.index(stim_frame)] for stim_frame in stims_to_analyze]
 
     x = [expobj.lfp_signal[stim - int(pre_stim * expobj.paq_rate): stim + int(post_stim * expobj.paq_rate)] for stim in stims_to_analyze_paq]
-    x_ = np.mean(x, axis=0)
-    x_range = np.linspace(0, len(x_) / expobj.paq_rate, len(x_))
-    ax.plot(x_range, x_, color='black', zorder=3, linewidth=0.5)
+    y = np.mean(x, axis=0)
+    x_range = np.linspace(0, len(y) / expobj.paq_rate, len(y))
+    ax.plot(x_range, y, color='black', zorder=3, linewidth=0.5)
 
     if 'ylims' in kwargs.keys() and kwargs['ylims'] is not None:
         ax.set_ylim([kwargs['ylims'][0], kwargs['ylims'][1]])
     else:
-        ax.set_ylim([np.mean(x_) - 2.5, np.mean(x_) + 2.5])
+        ax.set_ylim([np.mean(y) - 2.5, np.mean(y) + 2.5])
     ax.margins(0)
 
     if individual_traces:
@@ -1538,7 +1538,7 @@ def plot_lfp_1pstim_avg_trace(expobj, individual_traces=False, optoloopback: boo
     else:
         # plot standard deviation of the traces array as a span above and below the mean
         std_ = stats.sem(x, axis=0)
-        ax.fill_between(x=x_range, y1=x_ + std_, y2=x_ - std_, alpha=0.7, zorder=1, color=fillcolor)
+        ax.fill_between(x=x_range, y1=y + std_, y2=y - std_, alpha=0.7, zorder=1, color=fillcolor)
         ax.axvspan(pre_stim, pre_stim + stim_duration, color=spancolor, zorder=0, alpha=1)
 
     if 'shrink_text' in kwargs.keys():

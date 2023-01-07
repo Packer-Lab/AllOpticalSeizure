@@ -4,8 +4,15 @@ from typing import Dict, Union, Any
 import numpy as np
 import pandas as pd
 from funcsforprajay import funcs as pj
+from funcsforprajay.funcs import flattenOnce
+from funcsforprajay.stats import tukey_hsd
+from funcsforprajay.plotting.plotting import plot_bar_with_points
+from matplotlib import pyplot as plt
+from scipy import stats
+from statsmodels.stats.multicomp import pairwise_tukeyhsd
 
 from _analysis_._utils import Results
+from _exp_metainfo_.exp_metainfo import fontsize_extraplot, interictal_color, baseline_color
 from onePexperiment.OnePhotonStimMain import OnePhotonStim, onePresults
 
 LOCAL_LOC = f'/Users/prajayshah/data/oxford-data/export/'
@@ -63,14 +70,14 @@ class OnePhotonStimResults(Results):
         self.total_sz_occurrence: dict = None
         self.response_magnitudes = None  #: avg response magnitudes across all 1p stim trials
         self.response_decay = None  #: avg response magnitudes across all 1p stim trials
-        self.photostim_responses = {'baseline': None,
-                                    'interictal': None,
-                                    'interictal - sz excluded': None,
+        self.photostim_responses = {'baseline': Any,
+                                    'interictal': Any,
+                                    'interictal - sz excluded': Any,
                                     'interictal - presz': Any,
                                     'interictal - postsz': Any}  #: individual post-stim response magnitudes across all 1p stim trials. includes separate set of values for excluded stims that induced seizure.
-        self.decay_constants = {'baseline': None,
-                               'interictal': None,
-                               'interictal - sz excluded': None,
+        self.decay_constants = {'baseline': Any,
+                               'interictal': Any,
+                               'interictal - sz excluded': Any,
                                'interictal - presz': Any,
                                'interictal - postsz': Any}  #: individual post-stim decay constants across all 1p stim trials. includes separate set of values for excluded stims that are induced seizure.
 
@@ -595,3 +602,55 @@ class OnePhotonStimAnalysisFuncs(OnePhotonStim):
             return Results.exp_sz_occurrence, Results.total_sz_occurrence
         else:
             return Results.exp_sz_occurrence, Results.total_sz_occurrence
+
+
+if __name__ == '__main__':
+    Results: OnePhotonStimResults = OnePhotonStimResults.load()
+
+    # plot photostim responses
+    # individual trials photostim responses
+
+    # 1) interictal - comparing presz vs. postsz photostim responses
+
+    interictal_response_magnitudes_presz = Results.photostim_responses['interictal - presz']
+    interictal_response_magnitudes_postsz = Results.photostim_responses['interictal - postsz']
+    baseline_response_magnitudes = Results.photostim_responses['baseline']
+    interictal_response_magnitudes_szexclude = Results.photostim_responses['interictal - sz excluded']
+
+    baseline_resposnes = []
+    presz_responses = []
+    postsz_responses = []
+    interictal_resposnes_szexclude = []
+    for trial, responses in interictal_response_magnitudes_szexclude.items():
+        interictal_resposnes_szexclude.extend(list(responses))
+    for trial, responses in baseline_response_magnitudes.items():
+        baseline_resposnes.extend(list(responses))
+    for trial, responses in interictal_response_magnitudes_presz.items():
+        presz_responses.extend(list(responses))
+    for trial, responses in interictal_response_magnitudes_postsz.items():
+        postsz_responses.extend(list(responses))
+
+    # STATS
+    # t-test - individual sessions
+    print(f"P(t-test - (indiv. trials) response: presz ({len(presz_responses)} trials) vs. postsz ({len(postsz_responses)} trials)): \n\t\t{stats.ttest_ind(presz_responses, postsz_responses)[1]:.3e}")
+    print(f"P(t-test - (indiv. trials) response: interictal ({len(interictal_resposnes_szexclude)} trials) vs. postsz ({len(postsz_responses)} trials)): \n\t\t{stats.ttest_ind(interictal_resposnes_szexclude, postsz_responses)[1]:.3e}")
+    print(f"P(t-test - (indiv. trials) response: interictal ({len(interictal_resposnes_szexclude)} trials) vs. presz ({len(presz_responses)} trials)): \n\t\t{stats.ttest_ind(interictal_resposnes_szexclude, presz_responses)[1]:.3e}")
+    print(f"P(t-test - (indiv. trials) response: baseline ({len(baseline_resposnes)} trials) vs. postsz ({len(postsz_responses)} trials)): \n\t\t{stats.ttest_ind(baseline_resposnes, postsz_responses)[1]:.3e}")
+
+    # run ANOVA of photostim response magnitudes across baseline, presz, postsz, interictal
+    stats.kruskal(baseline_resposnes, presz_responses, postsz_responses, interictal_resposnes_szexclude)
+    # run post hoc tukey comparisons
+    tukey_hsd({'baseline': baseline_resposnes, 'presz': presz_responses,
+               'postsz': postsz_responses, 'interictal': interictal_resposnes_szexclude})
+
+
+    # print mean and stdev of response magnitudes
+    print(f"Mean response magnitude (presz): {np.mean(presz_responses):.3f} +/- {np.std(presz_responses):.3f}")
+    print(f"Mean response magnitude (postsz): {np.mean(postsz_responses):.3f} +/- {np.std(postsz_responses):.3f}")
+
+    plot_bar_with_points(data=[baseline_resposnes, presz_responses, postsz_responses, interictal_resposnes_szexclude], x_tick_labels=['baseline', 'presz', 'postsz', 'interictal'], fontsize=fontsize_extraplot,
+                         points=False, bar=True, figsize=[3, 3], colors=[baseline_color, 'red', 'violet', interictal_color], s=10, show=True,
+                         x_label='', y_label='Avg. dFF', alpha=0.7, lw=1)
+
+
+

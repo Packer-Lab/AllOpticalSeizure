@@ -234,8 +234,9 @@ class FigureSettings:
                'ictal - outsz': '#cd7537',  # dark dark orange
                'ictal - insz': '#f1d49d',  # very pale orange
                'gcamp - FOV': '#208b23',
-               'general': '#d3bbad',
-               'stim span': '#ffd9df'  # very pale pinkish
+               'general': '#9f9f9f',  # just like a basic grey
+               'stim span': '#ffd9df',  # very pale pinkish
+               '1p stim span': '#cbe2e4'  # very pale pinkish
                }
 
     lw= {
@@ -244,10 +245,10 @@ class FigureSettings:
         "lfp": 0.15}
 
     fontsize = {
-            "title": 10,
+            "title": 9,
             "label": 12,
-            "extraplot": 10,
-            "intraplot": 8
+            "extraplot": 9,
+            "intraplot": 7
         }
 
 class ExpMetainfo:

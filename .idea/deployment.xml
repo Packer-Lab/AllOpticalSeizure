@@ -1,7 +1,14 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
-  <component name="PublishConfigData" autoUpload="Always" serverName="pshah@packerserver1.dpag.ox.ac.uk:22 agent">
+  <component name="PublishConfigData" autoUpload="Always" serverName="pshah@packerserver1">
     <serverData>
+      <paths name="pshah@packerserver1">
+        <serverdata>
+          <mappings>
+            <mapping deploy="/Documents/code/AllOpticalSeizure" local="$PROJECT_DIR$" />
+          </mappings>
+        </serverdata>
+      </paths>
       <paths name="pshah@packerserver1.dpag.ox.ac.uk:22 agent">
         <serverdata>
           <mappings>

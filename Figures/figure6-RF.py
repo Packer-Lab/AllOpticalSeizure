@@ -25,6 +25,7 @@ import sys
 
 from _analysis_.nontargets_analysis._ClassNonTargetsSzInvasionSpatial import NonTargetsSzInvasionSpatialResults, \
     NonTargetsSzInvasionSpatial
+from _exp_metainfo_.exp_metainfo import ExpMetainfo
 
 sys.path.extend(['/home/pshah/Documents/code/reproducible_figures-main'])
 import rep_fig_vis as rfv
@@ -62,7 +63,7 @@ distance_lims = [19, 400]  # limit of analysis
 # %% SETUP
 ## Set general plotting parameters
 
-fs = 10
+fs = ExpMetainfo.figures.fontsize['extraplot']
 rfv.set_fontsize(fs)
 
 test = 0
@@ -89,10 +90,12 @@ layout = {
                        'wspace': 0.2}
 }
 
+
+test = 0
+save_fig = True if not test > 0 else False
+dpi = 150 if test > 0 else 300
 fig, axes, grid = rfv.make_fig_layout(layout=layout, dpi=dpi)
-
-
-# rfv.show_test_figure_layout(fig, axes=axes)  # test what layout looks like quickly, but can also skip and moveon to plotting data.
+rfv.show_test_figure_layout(fig, axes=axes, show=True) if test == 2 else None  # test what layout looks like quickly, but can also skip and moveon to plotting data.
 
 
 # ADD PLOTS TO AXES  ##################################################################################################################

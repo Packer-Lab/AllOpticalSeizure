@@ -6,7 +6,7 @@ from matplotlib import pyplot as plt
 from matplotlib.transforms import Bbox
 from scipy import stats
 
-from _exp_metainfo_.exp_metainfo import ExpMetainfo
+from _exp_metainfo_.exp_metainfo import ExpMetainfo, baseline_color, interictal_color, fontsize_extraplot
 from _utils_.alloptical_plotting import plot_settings, plotLfpSignal, plotMeanRawFluTrace, plot_flu_1pstim_avg_trace, plot_lfp_1pstim_avg_trace
 from _utils_.io import import_expobj
 from alloptical_utils_pj import save_figure
@@ -30,11 +30,13 @@ date = '2021-01-24'
 
 save_fig = True
 
+stim_color = ExpMetainfo.figures.colors['1p stim span']
+# stim_color = 'powderblue'
+
 # %% MAKE FIGURE LAYOUT
 fs = 10
-rfv.set_fontsize(ExpMetainfo.figure_settings['fontsize - extraplot'])
+rfv.set_fontsize(fontsize_extraplot)
 
-stim_color = ExpMetainfo.figure_settings['colors']["stim span"]
 
 layout = {
     'A': {'panel_shape': (1, 1),
@@ -52,7 +54,7 @@ layout = {
 
 test = 0
 save_fig = True if not test else False
-dpi = 100 if test else 300
+dpi = 150 if test else 300
 
 fig, axes, grid = rfv.make_fig_layout(layout=layout, dpi=dpi)
 
@@ -66,57 +68,6 @@ rfv.add_label_axes(text='B', ax=axes['B'][0, 0], y_adjust=0)
 print('\n\n')
 
 
-
-# %% F) Radial plot of Mean FOV for photostimulation trials, with period equal to that of photostimulation timing period
-
-# run data analysis
-exp_sz_occurrence, total_sz_occurrence = OnePhotonStimAnalysisFuncs.collectSzOccurrenceRelativeStim(Results=Results,
-                                                                                                    rerun=0)
-
-expobj = import_expobj(prep='PS11', trial='t-012', date=date)  # post4ap trial
-
-# make plot
-bin_width = int(1 * expobj.fps)
-period = len(np.arange(0, (expobj.stim_interval_fr // bin_width)))
-theta = (2 * np.pi) * np.arange(0, (expobj.stim_interval_fr // bin_width)) / period
-
-bbox = Bbox.from_extents(0.70, 0.60, 0.84, 0.74)
-_axes = np.empty(shape=(1, 1), dtype=object)
-ax = fig.add_subplot(projection='polar')
-ax.set_position(pos=bbox)
-rfv.add_label_axes(text='F', ax=ax, y_adjust=0.035)
-
-# fig, ax = plt.subplots(subplot_kw={'projection': 'polar'}, dpi=300, figsize=(3, 3))
-
-
-# by experiment
-# for exp, values in exp_sz_occurrence.items():
-#     plot = values
-#     ax.bar(theta, plot, width=(2 * np.pi) / period, bottom=0.0, alpha=0.5)
-
-# across all seizures
-total_sz = np.sum(np.sum(total_sz_occurrence, axis=0))
-sz_prob = np.sum(total_sz_occurrence, axis=0) / total_sz
-
-pval, z = vtest(alpha=theta, mu=0, w=np.sum(total_sz_occurrence, axis=0))
-print(f'pval for oneP stim seizure incidence is: {pval}')
-
-
-ax.bar(theta, sz_prob, width=(2 * np.pi) / period, bottom=0.0, alpha=1, color=ExpMetainfo.figure_settings['colors']['general'], lw=0.3)
-
-ax.set_rmax(1.1)
-ax.set_rticks([0.25, 0.5, 0.75, 1])  # radial ticks
-ax.set_yticklabels(['', '0.5', '', '1.0'], fontsize=ExpMetainfo.figure_settings['fontsize - intraplot'])  # radial ticks
-ax.set_rlabel_position(-60)
-ax.grid(True)
-# ax.set_xticks((2 * np.pi) * np.arange(0, (expobj.stim_interval_fr / bin_width)) / period)
-ax.set_xticks([0, (2 * np.pi) / 4, (2 * np.pi) / 2, (6 * np.pi) / 4])
-ax.set_xticklabels([r'$\it{\Theta}$ = 0', '', '', ''], fontsize=ExpMetainfo.figure_settings['fontsize - extraplot'])
-# ax.set_title("sz probability occurrence (binned every 1s)", va='bottom')
-ax.spines['polar'].set_visible(False)
-ax.set_title(label='Seizure probability', fontsize=10, va='bottom')
-
-# fig.show()
 
 
 
@@ -151,8 +102,8 @@ fig, ax = plot_flu_1pstim_avg_trace(post4ap, x_axis='time', individual_traces=Fa
 ax.axis('off')
 x = ax.get_xlim()[1]
 y = ax.get_ylim()[1]
-rfv.add_scale_bar(ax=ax, length=(0.5, 1), bartype='L', text=(f'0.5\ndFF', '1 s'), loc=(x - 1, y - 0.8),
-                  text_offset=[0.10, 0.35], fs=ExpMetainfo.figure_settings["fontsize - intraplot"])
+rfv.add_scale_bar(ax=ax, length=(0.5, 1), bartype='L', text=(f'0.5\ndFF', '1 s'), loc=(x - 1, y - 0.9),
+                  text_offset=[0.10, 0.35], fs=ExpMetainfo.figures.fontsize['intraplot'])
 
 
 
@@ -163,8 +114,8 @@ ax.axis('off')
 ax.set_title('Interictal', fontsize=ExpMetainfo.figure_settings["fontsize - title"])
 x = ax.get_xlim()[1]
 y = ax.get_ylim()[1]
-rfv.add_scale_bar(ax=ax, length=(1, 0.25), bartype='L', text=('1\nmV', '0.25 s'), loc=(x - 0.25, y - 1),
-                  text_offset=[0.035, 0.7], fs=ExpMetainfo.figure_settings["fontsize - intraplot"])
+rfv.add_scale_bar(ax=ax, length=(1, 0.25), bartype='L', text=('1\nmV', '0.25 s'), loc=(x - 0.25, y - 1.2),
+                  text_offset=[0.035, 0.7], fs=ExpMetainfo.figures.fontsize['intraplot'])
 
 # fig.show()
 
@@ -196,11 +147,11 @@ interictal_response_magnitudes_postsz = Results.photostim_responses['interictal 
 
 baseline_resposnes = []
 interictal_resposnes = []
-interictal_resposnes_szexclude = []
 for trial, responses in baseline_response_magnitudes.items():
     baseline_resposnes.extend(list(responses))
 for trial, responses in interictal_response_magnitudes.items():
     interictal_resposnes.extend(list(responses))
+interictal_resposnes_szexclude = []
 for trial, responses in interictal_response_magnitudes_szexclude.items():
     interictal_resposnes_szexclude.extend(list(responses))
 
@@ -236,9 +187,10 @@ print(f"Mean response magnitude (interictal): {np.mean(interictal_resposnes_szex
 
 # fig, ax = plt.subplots(figsize=[2, 3], dpi = 100)
 plot_bar_with_points(data=[baseline_resposnes, interictal_resposnes_szexclude],
-                     x_tick_labels=['Baseline', 'Interictal'], fontsize=ExpMetainfo.figure_settings["fontsize - extraplot"],
-                     points=False, bar=True, colors=[ExpMetainfo.figure_settings['colors']['baseline'], ExpMetainfo.figure_settings['colors']['interictal']], fig=fig, ax=axes['D-E'][0], show=False, s=10,
-                     x_label='', y_label='Avg. dFF', alpha=0.7, lw=0.75, ylims=[0, 1.25])
+                     x_tick_labels=['Baseline', 'Interictal'], fontsize=fontsize_extraplot,
+                     points=False, bar=True, colors=[baseline_color, interictal_color], fig=fig, ax=ax, show=False, s=10,
+                     x_label='', y_label='Avg. dFF', alpha=0.7, lw=0.75, ylims=[0, 1])
+ax.set_yticks([0, 0.2, 0.4, 0.6, 0.8, 1.0])
 # fig.tight_layout(pad=0.2)
 
 
@@ -287,9 +239,10 @@ print(f"Mean decay constant (interictal): {np.mean(interictal_decays_szexclude):
 
 # fig, ax = plt.subplots(figsize=[2, 3], dpi = 100)
 plot_bar_with_points(data=[baseline_decays, interictal_decays_szexclude],
-                     x_tick_labels=['Baseline', 'Interictal'], fontsize=ExpMetainfo.figure_settings["fontsize - extraplot"],
+                     x_tick_labels=['Baseline', 'Interictal'], fontsize=fontsize_extraplot,
                      points=False, bar=True, colors=[ExpMetainfo.figure_settings['colors']['baseline'], ExpMetainfo.figure_settings['colors']['interictal']], fig=fig, ax=ax, show=False, s=10,
                      x_label='', y_label=r'Decay ($\tau$, secs)', alpha=1, lw=0.75, ylims=[0, 1.0])
+ax.set_yticks([0, 0.2, 0.4, 0.6, 0.8, 1.0])
 # fig.show()
 # fig.tight_layout(pad=0.2)
 
@@ -362,6 +315,56 @@ rfv.add_scale_bar(ax=axes['B'][1, 1], length=(500, 10 * expobj.fps), bartype='L'
 
 
 
+# %% F) Radial plot of Mean FOV for photostimulation trials, with period equal to that of photostimulation timing period
+
+# run data analysis
+exp_sz_occurrence, total_sz_occurrence = OnePhotonStimAnalysisFuncs.collectSzOccurrenceRelativeStim(Results=Results,
+                                                                                                    rerun=0)
+
+expobj = import_expobj(prep='PS11', trial='t-012', date=date)  # post4ap trial
+
+# make plot
+bin_width = int(1 * expobj.fps)
+period = len(np.arange(0, (expobj.stim_interval_fr // bin_width)))
+theta = (2 * np.pi) * np.arange(0, (expobj.stim_interval_fr // bin_width)) / period
+
+bbox = Bbox.from_extents(0.70, 0.60, 0.84, 0.74)
+# _axes = np.empty(shape=(1, 1), dtype=object)
+ax = fig.add_subplot(projection='polar')
+ax.set_position(pos=bbox)
+rfv.add_label_axes(text='F', ax=ax, y_adjust=0.035)
+
+# fig, ax = plt.subplots(subplot_kw={'projection': 'polar'}, dpi=300, figsize=(3, 3))
+
+
+# by experiment
+# for exp, values in exp_sz_occurrence.items():
+#     plot = values
+#     ax.bar(theta, plot, width=(2 * np.pi) / period, bottom=0.0, alpha=0.5)
+
+# across all seizures
+total_sz = np.sum(np.sum(total_sz_occurrence, axis=0))
+sz_prob = np.sum(total_sz_occurrence, axis=0) / total_sz
+
+pval, z = vtest(alpha=theta, mu=0, w=np.sum(total_sz_occurrence, axis=0))
+print(f'pval for oneP stim seizure incidence is: {pval}')
+
+
+ax.bar(theta, sz_prob, width=(2 * np.pi) / period, bottom=0.0, alpha=1, color=ExpMetainfo.figures.colors['general'], lw=0.3, edgecolor='black')
+
+ax.set_rmax(1.1)
+ax.set_rticks([0.25, 0.5, 0.75, 1])  # radial ticks
+ax.set_yticklabels(['', '0.5', '', '1.0'], fontsize=ExpMetainfo.figure_settings['fontsize - intraplot'])  # radial ticks
+ax.set_rlabel_position(-60)
+ax.grid(True)
+# ax.set_xticks((2 * np.pi) * np.arange(0, (expobj.stim_interval_fr / bin_width)) / period)
+ax.set_xticks([0, (2 * np.pi) / 4, (2 * np.pi) / 2, (6 * np.pi) / 4])
+ax.set_xticklabels([r'$\it{\Theta}$ = 0', '', '', ''], fontsize=ExpMetainfo.figure_settings['fontsize - extraplot'])
+# ax.set_title("sz probability occurrence (binned every 1s)", va='bottom')
+ax.spines['polar'].set_visible(False)
+ax.set_title(label='Seizure probability', fontsize=10, va='bottom')
+
+# fig.show()
 
 
 

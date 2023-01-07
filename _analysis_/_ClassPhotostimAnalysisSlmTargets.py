@@ -484,7 +484,7 @@ class PhotostimAnalysisSlmTargets(Quantification):
                 # transform x
                 x_new = [(i + 1) / 2 * (x_range[-1]) for i in x]
                 # axs[a,b].scatter(x_new, responses_, s=10, alpha=0.4, color='yellowgreen', zorder=1)
-                axs[a, b].scatter(x_new, responses_, s=3, alpha=1, c=[cv] * len(responses_), zorder=5,
+                axs[a, b].scatter(x_new, responses_, s=6, alpha=0.5, c=[cv] * len(responses_), zorder=5, lw=0,
                                        cmap='viridis', vmin=0, vmax=3)
                 axs[a, b].set_xlim([-1.5, x_range[-1] + 1.5])
 
@@ -493,9 +493,9 @@ class PhotostimAnalysisSlmTargets(Quantification):
                 avg = np.nanmean(trace_snippets[cell], axis=0)
                 x_range_trace_snippet = np.linspace(0, trace_snippets.shape[2] / pre4ap_exp.fps,
                                       len(pj.smoothen_signal(avg, 5)))
-                ax.plot(x_range_trace_snippet, pj.smoothen_signal(avg, 5), color='black', linewidth=2, zorder=9)
+                ax.plot(x_range_trace_snippet, pj.smoothen_signal(avg, 5), color='black', linewidth=1.5, zorder=9)
                 # ax.plot(x_range[:-4], pj.smoothen_signal(avg, 5), color='black', linewidth=1.5, zorder=5)
-                ax.set_ylim([-50, 200])
+                ax.set_ylim([-70, 200])
 
 
                 rfv.despine(ax, remove=['top', 'right', 'bottom', 'left'])
@@ -510,7 +510,7 @@ class PhotostimAnalysisSlmTargets(Quantification):
                 else:
                     rfv.despine(ax, remove=['top', 'left', 'right', 'bottom'])
                     if row == 1 and i == total_plot - 1:
-                        rfv.add_scale_bar(ax=ax, length=(50, 1), bartype='L', text=(f'50%\ndFF', '1$\it{sec}$'), loc=(9, -40), text_offset=[0.18, 45], fs=10, lw=1.5)
+                        rfv.add_scale_bar(ax=ax, length=(50, 1), bartype='L', text=(f'50%\ndFF', '1$\it{sec}$'), loc=(9, -40), text_offset=[0.18, 45], fs=10, lw=1)
                         # ax.set_xlim([-1.5, x_range[-1] + 1.5])
 
 
@@ -1323,11 +1323,11 @@ class PhotostimAnalysisSlmTargets(Quantification):
 
         ax.scatter(pj.flattenOnce(results.meanresponses_vs_variance['baseline - mean responses']),
                    np.abs(pj.flattenOnce(results.meanresponses_vs_variance['baseline - var responses'])),
-                   facecolors='royalblue', s=3, alpha=0.3)
+                   facecolors='royalblue', s=6, alpha=0.3, lw=0)
 
         ax.scatter(pj.flattenOnce(results.meanresponses_vs_variance['interictal - mean responses']),
                    np.abs(pj.flattenOnce(results.meanresponses_vs_variance['interictal - var responses'])),
-                   facecolors='forestgreen', s=3, alpha=0.3)
+                   facecolors='forestgreen', s=6, alpha=0.3, lw=0)
         ax.set_xlim([-30, 100])
         ax.set_ylim([-10, 50])
         ax.set_xlabel('Mean Responses (% dFF)')
@@ -1644,11 +1644,11 @@ class PhotostimAnalysisSlmTargets(Quantification):
 
         # add scalebar
         from _utils_.rfv_funcs import add_scale_bar
-        add_scale_bar(ax=ax_cat[0][1], loc=(end_crop + 14, -5 + 1), length=(1, 10), bartype='L', lw=1.25,
-                      text=('1 mV', '10 $\it{s}$'), text_offset=(11, 1.5), fs=ExpMetainfo.figure_settings['fontsize - extraplot'], fig=fig)
+        add_scale_bar(ax=ax_cat[0][1], loc=(end_crop + 14, -5 + 1), length=(1, 10), bartype='L',
+                      text=('1 mV', '10 $\it{s}$'), text_offset=(9, 1.25), fs=ExpMetainfo.figures.fontsize['intraplot'], fig=fig)
 
-        add_scale_bar(ax=ax_cat[1][1], loc=(end_crop + 14, ylim_pre4ap[0] + 150), length=(100, 10), bartype='L', lw=1.25,
-                      text=('1 dFF', '10 $\it{s}$'), text_offset=(11, 190), fs=ExpMetainfo.figure_settings['fontsize - extraplot'], fig=fig)
+        add_scale_bar(ax=ax_cat[1][1], loc=(end_crop + 14, ylim_pre4ap[0] + 150), length=(100, 10), bartype='L',
+                      text=('1 dFF', '10 $\it{s}$'), text_offset=(9, 180), fs = ExpMetainfo.figures.fontsize['intraplot'], fig=fig)
 
         # fig.show()
 
