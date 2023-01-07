@@ -29,8 +29,8 @@ save_fig = True
 RESULTS = PhotostimResponsesSLMtargetsResults.load()
 
 # %% MAKE FIGURE LAYOUT
-fs = 10
-rfv.set_fontsize(ExpMetainfo.figure_settings['fontsize - extraplot'])
+fs = ExpMetainfo.figures.fontsize['extraplot']
+rfv.set_fontsize(fs)
 
 stim_color = ExpMetainfo.figure_settings['colors']["stim span"]
 

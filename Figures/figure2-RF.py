@@ -45,14 +45,14 @@ layout = {
           'bound': (0.45, 0.80, 0.95, 0.95),
           'hspace': 0.2},
     'C': {'panel_shape': (2, 2),
-          'bound': (0.05, 0.58, 0.27, 0.75),
+          'bound': (0.33, 0.58, 0.55, 0.75),
           'hspace': 0.1},
     'D-E': {'panel_shape': (2, 1),
-            'bound': (0.39, 0.62, 0.64, 0.75),
+            'bound': (0.66, 0.62, 0.91, 0.75),
             'wspace': 1.4}
 }
 
-test = 0
+test = 1
 save_fig = True if not test else False
 dpi = 150 if test else 300
 
@@ -66,9 +66,6 @@ rfv.add_label_axes(text='B', ax=axes['B'][0, 0], y_adjust=0)
 
 # rfv.show_test_figure_layout(fig, axes=axes, show=True)  # test what layout looks like quickly, but can also skip and moveon to plotting data.
 print('\n\n')
-
-
-
 
 
 # %% C) avg LFP trace 1p stim plots
@@ -311,7 +308,8 @@ plotMeanRawFluTrace(expobj, stim_span_color=stim_color, x_axis='Time (secs)',
 axes['B'][1, 1].set_title('')
 axes['B'][1, 1].axis('off')
 rfv.add_scale_bar(ax=axes['B'][1, 1], length=(500, 10 * expobj.fps), bartype='L', text=('500\na.u.', '10 s'),
-                  loc=(170 * expobj.fps, 0), text_offset=[2 * expobj.fps, 350], fs=ExpMetainfo.figure_settings["fontsize - intraplot"])
+                  loc=(170 * expobj.fps, 0), text_offset=[2 * expobj.fps, 440], fs=ExpMetainfo.figure_settings["fontsize - intraplot"])
+
 
 
 
@@ -328,11 +326,10 @@ bin_width = int(1 * expobj.fps)
 period = len(np.arange(0, (expobj.stim_interval_fr // bin_width)))
 theta = (2 * np.pi) * np.arange(0, (expobj.stim_interval_fr // bin_width)) / period
 
-bbox = Bbox.from_extents(0.70, 0.60, 0.84, 0.74)
+# bbox = Bbox.from_extents(0.70, 0.60, 0.84, 0.74)
+bbox = Bbox.from_extents(0.0, 0.60, 0.24, 0.74)
 # _axes = np.empty(shape=(1, 1), dtype=object)
 ax = fig.add_subplot(projection='polar')
-ax.set_position(pos=bbox)
-rfv.add_label_axes(text='F', ax=ax, y_adjust=0.035)
 
 # fig, ax = plt.subplots(subplot_kw={'projection': 'polar'}, dpi=300, figsize=(3, 3))
 
@@ -363,8 +360,9 @@ ax.set_xticklabels([r'$\it{\Theta}$ = 0', '', '', ''], fontsize=ExpMetainfo.figu
 # ax.set_title("sz probability occurrence (binned every 1s)", va='bottom')
 ax.spines['polar'].set_visible(False)
 ax.set_title(label='Seizure probability', fontsize=10, va='bottom')
+ax.set_position(pos=bbox)
+rfv.add_label_axes(text='F', ax=ax, y_adjust=0.02, x_adjust=0.00005)
 
-# fig.show()
 
 
 

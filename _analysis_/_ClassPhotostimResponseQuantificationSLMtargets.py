@@ -1494,7 +1494,7 @@ class PhotostimResponsesQuantificationSLMtargets(Quantification):
         [rfv.despine(ax=ax, remove=['top', 'right', 'left']) for ax in axs[1:]]
 
         axs[0].set_xlabel(f"Target surround\nfluorescence (a.u.)", fontsize=ExpMetainfo.figures.fontsize['extraplot'])
-        axs[0].set_ylabel(f"Photostimulation\nResponse (% dFF)", fontsize=ExpMetainfo.figures.fontsize['extraplot'])
+        axs[0].set_ylabel(f"Photostimulation\nresponse (% dFF)", fontsize=ExpMetainfo.figures.fontsize['extraplot'])
 
 
         # ax.legend(handles_, labels_, loc='center left', bbox_to_anchor=(1.04, 0.5))
