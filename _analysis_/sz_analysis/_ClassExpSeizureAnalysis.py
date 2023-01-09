@@ -1113,6 +1113,21 @@ class ExpSeizureAnalysis(Quantification):
         ax.set_xticks([])
 
 
+    # 11)
+    @staticmethod
+    def calcNumSzWvStimFrames():
+        @Utils.run_for_loop_across_exps(run_pre4ap_trials=False, run_post4ap_trials=True, allow_rerun=True)
+        def _calc(**kwargs):
+            expobj: Post4ap = kwargs['expobj']
+            return len(expobj.stimsWithSzWavefront)
+
+        stims = _calc()
+
+        print(f"total stims with sz wavefront across all experiments: {np.sum(stims)}")
+
+
+
+
 # %%
 if __name__ == '__main__':
     # DATA INSPECTION
@@ -1142,8 +1157,9 @@ if __name__ == '__main__':
     # ExpSeizureAnalysis.downsample_all_sz()
     # ExpSeizureAnalysis.print_downsampled_sz_paths()
     # ExpSeizureAnalysis.print_expobj_analysis_path()
-    ExpSeizureAnalysis.load_and_calc_propagation(results=results, rerun=False)
-    ExpSeizureAnalysis.plot__sz_propagation_speed(results=results)
+    # ExpSeizureAnalysis.load_and_calc_propagation(results=results, rerun=False)
+    # ExpSeizureAnalysis.plot__sz_propagation_speed(results=results)
 
+    ExpSeizureAnalysis.calcNumSzWvStimFrames()
 
 

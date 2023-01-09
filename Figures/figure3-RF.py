@@ -114,6 +114,7 @@ sch_path = f'{fig_items}alloptical-interrogation-schematic.png'
 img = mpimg.imread(sch_path)
 ax.imshow(img, interpolation='none')
 # ax.text(s='All-optical \ninterrogation', x = 12, y=85, fontsize=10, fontweight='semibold', ha='center', va='center')
+rfv.naked(ax)
 
 
 # %% C) GRAND AVERAGE PHOTOSTIM TRACES AND AVERAGE ACROSS EXPERIMENTS

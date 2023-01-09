@@ -33,6 +33,19 @@ save_fig = True
 stim_color = ExpMetainfo.figures.colors['1p stim span']
 # stim_color = 'powderblue'
 
+# %%
+from cycler import cycler
+import seaborn as sns
+from matplotlib import rcParams
+rcParams['pdf.fonttype'] = 42
+rcParams['axes.prop_cycle'] = cycler(color=sns.color_palette('colorblind'))
+rcParams['font.family'] = 'sans-serif'
+rcParams['font.sans-serif'] = ['Arial']
+rcParams['font.size'] = 14
+
+plt.plot(range(10))
+plt.show()
+
 # %% MAKE FIGURE LAYOUT
 fs = 10
 rfv.set_fontsize(fontsize_extraplot)
@@ -44,10 +57,10 @@ layout = {
     'B': {'panel_shape': (2, 2),
           'bound': (0.45, 0.80, 0.95, 0.95),
           'hspace': 0.2},
-    'C': {'panel_shape': (2, 2),
+    'D': {'panel_shape': (2, 2),
           'bound': (0.33, 0.58, 0.55, 0.75),
           'hspace': 0.1},
-    'D-E': {'panel_shape': (2, 1),
+    'E-F': {'panel_shape': (2, 1),
             'bound': (0.66, 0.62, 0.91, 0.75),
             'wspace': 1.4}
 }
@@ -60,31 +73,31 @@ fig, axes, grid = rfv.make_fig_layout(layout=layout, dpi=dpi)
 
 rfv.naked(axes['A'][0])
 rfv.add_label_axes(text='A', ax=axes['A'][0], y_adjust=0)
-rfv.add_label_axes(text='D', ax=axes['D-E'][0], y_adjust=0.01, x_adjust=0.08)
-rfv.add_label_axes(text='E', ax=axes['D-E'][1], y_adjust=0.01, x_adjust=0.1)
+rfv.add_label_axes(text='E', ax=axes['E-F'][0], y_adjust=0.01, x_adjust=0.08)
+rfv.add_label_axes(text='F', ax=axes['E-F'][1], y_adjust=0.01, x_adjust=0.1)
 rfv.add_label_axes(text='B', ax=axes['B'][0, 0], y_adjust=0)
 
 # rfv.show_test_figure_layout(fig, axes=axes, show=True)  # test what layout looks like quickly, but can also skip and moveon to plotting data.
 print('\n\n')
 
 
-# %% C) avg LFP trace 1p stim plots
+# %% D) avg LFP trace 1p stim plots
 
-rfv.add_label_axes(text='C', ax=axes['C'][0, 0], y_adjust=0.01)
+rfv.add_label_axes(text='D', ax=axes['D'][0, 0], y_adjust=0.01)
 
 # pre4ap
 pre4ap = import_expobj(prep='PS11', trial='t-009', date=date)  # pre4ap trial
 
 assert 'pre' in pre4ap.exptype
 fig, ax = plot_lfp_1pstim_avg_trace(pre4ap, x_axis='time', individual_traces=False, pre_stim=0.15, post_stim=0.85,
-                                    fig=fig, ax=axes['C'][0, 0], show=False, write_full_text=False, optoloopback=True, stims_to_analyze=pre4ap.stim_start_frames,
+                                    fig=fig, ax=axes['D'][0, 0], show=False, write_full_text=False, optoloopback=True, stims_to_analyze=pre4ap.stim_start_frames,
                                     title='Baseline', fillcolor=ExpMetainfo.figure_settings['colors']['baseline'], spancolor=stim_color)
 ax.axis('off')
 ax.text(s='LFP', x=-0.17, y=-1.65, ha='center', rotation=90, fontsize=8)
 ax.set_title('Baseline', fontsize=ExpMetainfo.figure_settings["fontsize - title"])
 
 fig, ax = plot_flu_1pstim_avg_trace(pre4ap, x_axis='time', individual_traces=False, stim_span_color=stim_color, fig=fig,
-                                    ax=axes['C'][0, 1], show=False, y_axis='dff', quantify=False, title='Baseline', pre_stim=0.85, post_stim=3.60,
+                                    ax=axes['D'][0, 1], show=False, y_axis='dff', quantify=False, title='Baseline', pre_stim=0.85, post_stim=3.60,
                                     ylims=[-0.5, 2.0], fillcolor=ExpMetainfo.figure_settings['colors']['baseline'])
 ax.axis('off')
 ax.text(s=r'FOV Ca$^{2+}$', x=-0.9, y=0.25, ha='center', rotation=90, fontsize=8)
@@ -94,7 +107,7 @@ post4ap = import_expobj(prep='PS11', trial='t-012', date=date)  # post4ap trial
 
 assert 'post' in post4ap.exptype
 fig, ax = plot_flu_1pstim_avg_trace(post4ap, x_axis='time', individual_traces=False, stim_span_color=stim_color, fig=fig, pre_stim=0.85, post_stim=3.60,
-                                    ax=axes['C'][1, 1], show=False, stims_to_analyze=post4ap.stims_out_sz, y_axis='dff', quantify=False,
+                                    ax=axes['D'][1, 1], show=False, stims_to_analyze=post4ap.stims_out_sz, y_axis='dff', quantify=False,
                                     title='Interictal', ylims=[-0.5, 2.0], fillcolor=ExpMetainfo.figure_settings['colors']['interictal'])
 ax.axis('off')
 x = ax.get_xlim()[1]
@@ -105,7 +118,7 @@ rfv.add_scale_bar(ax=ax, length=(0.5, 1), bartype='L', text=(f'0.5\ndFF', '1 s')
 
 
 fig, ax = plot_lfp_1pstim_avg_trace(post4ap, x_axis='time', individual_traces=False, pre_stim=0.15, post_stim=0.85,
-                                    fig=fig, ax=axes['C'][1, 0], show=False, write_full_text=False, optoloopback=True, stims_to_analyze=post4ap.stims_out_sz,
+                                    fig=fig, ax=axes['D'][1, 0], show=False, write_full_text=False, optoloopback=True, stims_to_analyze=post4ap.stims_out_sz,
                                     title='Interictal', fillcolor=ExpMetainfo.figure_settings['colors']['interictal'], spancolor=stim_color)
 ax.axis('off')
 ax.set_title('Interictal', fontsize=ExpMetainfo.figure_settings["fontsize - title"])
@@ -117,12 +130,12 @@ rfv.add_scale_bar(ax=ax, length=(1, 0.25), bartype='L', text=('1\nmV', '0.25 s')
 # fig.show()
 
 # fig, ax = plot_flu_1pstim_avg_trace(post4ap, x_axis='time', individual_traces=False, stim_span_color='skyblue', fig=fig,
-#                                     ax=axes['C'][2, 1], show=False, stims_to_analyze=post4ap.stims_in_sz, y_axis='dff', quantify=False, title='Ictal',
+#                                     ax=axes['D'][2, 1], show=False, stims_to_analyze=post4ap.stims_in_sz, y_axis='dff', quantify=False, title='Ictal',
 #                                     ylims=[-0.5, 2.0])
 # ax.axis('off')
 
 # fig, ax = plot_lfp_1pstim_avg_trace(post4ap, x_axis='time', individual_traces=False, pre_stim=0.25, post_stim=0.75,
-#                                     fig=fig, ax=axes['C'][2, 0], show=False,
+#                                     fig=fig, ax=axes['D'][2, 0], show=False,
 #                                     write_full_text=False, optoloopback=True, stims_to_analyze=post4ap.stims_in_sz,
 #                                     title='Ictal')
 # ax.axis('off')
@@ -133,7 +146,7 @@ rfv.add_scale_bar(ax=ax, length=(1, 0.25), bartype='L', text=('1\nmV', '0.25 s')
 
 
 # %% D) BAR PLOT OF RESPONSE MAGNITUDE FOR 1P STIM EXPERIMENTS - BY INDIVIDUAL STIMS
-ax=axes['D-E'][0]
+ax=axes['E-F'][0]
 
 # individual trials photostim responses
 baseline_response_magnitudes = Results.photostim_responses['baseline']
@@ -153,7 +166,7 @@ for trial, responses in interictal_response_magnitudes_szexclude.items():
     interictal_resposnes_szexclude.extend(list(responses))
 
 # import seaborn as sns
-# sns.violinplot(data=[baseline_resposnes, interictal_resposnes], ax=axes['D-E'][0])
+# sns.violinplot(data=[baseline_resposnes, interictal_resposnes], ax=axes['E-F'][0])
 
 # experimental average photostim responses
 baseline_response_magnitudes_exp = [np.mean(x) for x in list(Results.baseline_response_magnitude.values())]
@@ -194,7 +207,7 @@ ax.set_yticks([0, 0.2, 0.4, 0.6, 0.8, 1.0])
 
 
 # %% E) BAR PLOT OF RESPONSE DECAY FOR 1P STIM EXPERIMENTS - changing to individual stims - '22 dec 19
-ax = axes['D-E'][1]
+ax = axes['E-F'][1]
 
 # individual trials photostim decays
 baseline_decay_magnitudes = Results.decay_constants['baseline']
@@ -248,7 +261,7 @@ ax.set_yticks([0, 0.2, 0.4, 0.6, 0.8, 1.0])
 
 
 # ### archiving below '22 dec 19
-# ax=axes['D-E'][1]
+# ax=axes['E-F'][1]
 # baseline_decay_constant_plot = [np.mean(items) for items in Results.baseline_decay_constant.values()]
 # interictal_decay_constant_plot = [np.mean(items) for items in Results.interictal_decay_constant.values()]
 #
@@ -313,7 +326,7 @@ rfv.add_scale_bar(ax=axes['B'][1, 1], length=(500, 10 * expobj.fps), bartype='L'
 
 
 
-# %% F) Radial plot of Mean FOV for photostimulation trials, with period equal to that of photostimulation timing period
+# %% C) Radial plot of Mean FOV for photostimulation trials, with period equal to that of photostimulation timing period
 
 # run data analysis
 exp_sz_occurrence, total_sz_occurrence = OnePhotonStimAnalysisFuncs.collectSzOccurrenceRelativeStim(Results=Results,
@@ -361,7 +374,7 @@ ax.set_xticklabels([r'$\it{\Theta}$ = 0', '', '', ''], fontsize=ExpMetainfo.figu
 ax.spines['polar'].set_visible(False)
 ax.set_title(label='Seizure probability', fontsize=10, va='bottom')
 ax.set_position(pos=bbox)
-rfv.add_label_axes(text='F', ax=ax, y_adjust=0.02, x_adjust=0.00005)
+rfv.add_label_axes(text='C', ax=ax, y_adjust=0.02, x_adjust=0.00005)
 
 
 

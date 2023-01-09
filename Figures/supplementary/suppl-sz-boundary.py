@@ -36,7 +36,7 @@ stim_color = ExpMetainfo.figure_settings['colors']["stim span"]
 
 layout = {
     'A': {'panel_shape': (1, 1),
-          'bound': (0.15, 0.80, 0.80, 0.95)},
+          'bound': (0.15, 0.80, 0.80, 0.93)},
     'B': {'panel_shape': (4, 1),
           'bound': (0.15, 0.55, 0.85, 0.70),
           'wspace': 0.2},

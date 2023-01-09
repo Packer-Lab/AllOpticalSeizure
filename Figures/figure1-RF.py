@@ -30,6 +30,22 @@ results_seizure: ExpSeizureResults = ExpSeizureResults.load()
 expobj: Post4ap = import_expobj(exp_prep='RL108 t-013')
 
 
+# %%
+import matplotlib as mpl
+import matplotlib.font_manager as fm
+
+fe = fm.FontEntry(
+    fname='/home/pshah/Documents/code/FontsFree-Net-arial-bold.ttf',
+    name='arial-bold')
+fm.fontManager.ttflist.insert(0, fe) # or append is fine
+mpl.rcParams['font.family'] = fe.name # = 'your custom ttf font name'
+
+
+# %%
+plt.plot([1, 2, 3])
+plt.suptitle('a plot with custom font')
+plt.show()
+
 # %% MAKE FIGURE LAYOUT
 rfv.set_fontsize(fontsize_extraplot)
 

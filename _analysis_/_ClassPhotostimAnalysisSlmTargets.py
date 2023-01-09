@@ -1823,12 +1823,12 @@ if __name__ == '__main__':
     # main.correlation_matrix_responses()
     # main.pca_responses()
 
-    main.collect_all_targets_all_exps(run_midinterictal=False)
+    # main.collect_all_targets_all_exps(run_midinterictal=False)
     # main.classify_stims(run_post4ap_trials=True)
     # main.correlation_matrix_all_targets()
-    main.correlation_magnitude_exps(rerun=1)
+    # main.correlation_magnitude_exps(rerun=1)
     # main.pca_responses_all_targets()
-    # main.plot__variability()
+    main.plot__variability()
     # main.plot__mean_response_vs_variability()
     # plot__avg_photostim_dff_allexps()
 

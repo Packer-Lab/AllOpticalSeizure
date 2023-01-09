@@ -121,7 +121,7 @@ class TargetsSzInvasionSpatial_codereview(SLMTargets):
         expobj.sz_locations_stims() if not hasattr(expobj, 'stimsSzLocations') else None
         distance_to_sz_df = expobj.calcMinDistanceToSz_newer(analyse_cells='SLM Targets',
                                                              show_debug_plot=False) if not hasattr(expobj,
-                                                                                                   'distance_to_sz') or force_redo else None  ## <<-- TODO main code line to code review and confirm. try to confirm correct calculation of distances using some plots??
+                                                                                                   'distance_to_sz') or force_redo else None  ## <<--
         # expobj.save()
 
         # distance_to_sz_arr = np.array(distance_to_sz_df)

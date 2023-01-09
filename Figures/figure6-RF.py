@@ -25,6 +25,7 @@ import sys
 
 from _analysis_.nontargets_analysis._ClassNonTargetsSzInvasionSpatial import NonTargetsSzInvasionSpatialResults, \
     NonTargetsSzInvasionSpatial
+from _analysis_.sz_analysis._ClassExpSeizureAnalysis import ExpSeizureAnalysis
 from _exp_metainfo_.exp_metainfo import ExpMetainfo
 
 sys.path.extend(['/home/pshah/Documents/code/reproducible_figures-main'])
@@ -131,7 +132,7 @@ main_spatial.collect__binned__distance_v_responses_rolling_bins(results=results_
 results_spatial = TargetsSzInvasionSpatialResults_codereview.load()
 main_spatial.plot__responses_v_distance_no_normalization_rolling_bins(results=results_spatial, axes=[ax_b, ], fig=fig)
 
-
+ExpSeizureAnalysis.calcNumSzWvStimFrames()
 
 # adding neuropil signal
 results = NonTargetsSzInvasionSpatialResults.load()
