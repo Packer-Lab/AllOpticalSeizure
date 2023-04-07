@@ -33,21 +33,8 @@ save_fig = True
 stim_color = ExpMetainfo.figures.colors['1p stim span']
 # stim_color = 'powderblue'
 
-# %%
-from cycler import cycler
-import seaborn as sns
-from matplotlib import rcParams
-rcParams['pdf.fonttype'] = 42
-rcParams['axes.prop_cycle'] = cycler(color=sns.color_palette('colorblind'))
-rcParams['font.family'] = 'sans-serif'
-rcParams['font.sans-serif'] = ['Arial']
-rcParams['font.size'] = 14
-
-plt.plot(range(10))
-plt.show()
-
 # %% MAKE FIGURE LAYOUT
-fs = 10
+fs = fontsize_extraplot
 rfv.set_fontsize(fontsize_extraplot)
 
 
@@ -55,7 +42,7 @@ layout = {
     'A': {'panel_shape': (1, 1),
           'bound': (0.05, 0.80, 0.40, 0.95)},
     'B': {'panel_shape': (2, 2),
-          'bound': (0.45, 0.80, 0.95, 0.95),
+          'bound': (0.43, 0.80, 0.93, 0.95),
           'hspace': 0.2},
     'D': {'panel_shape': (2, 2),
           'bound': (0.33, 0.58, 0.55, 0.75),
@@ -65,11 +52,11 @@ layout = {
             'wspace': 1.4}
 }
 
-test = 1
-save_fig = True if not test else False
-dpi = 150 if test else 300
-
+test = 0
+save_fig = True if not test > 0 else False
+dpi = 100 if test > 0 else 300
 fig, axes, grid = rfv.make_fig_layout(layout=layout, dpi=dpi)
+rfv.show_test_figure_layout(fig, axes=axes, show=True) if test == 2 else None  # test what layout looks like quickly, but can also skip and moveon to plotting data.
 
 rfv.naked(axes['A'][0])
 rfv.add_label_axes(text='A', ax=axes['A'][0], y_adjust=0)
@@ -77,8 +64,50 @@ rfv.add_label_axes(text='E', ax=axes['E-F'][0], y_adjust=0.01, x_adjust=0.08)
 rfv.add_label_axes(text='F', ax=axes['E-F'][1], y_adjust=0.01, x_adjust=0.1)
 rfv.add_label_axes(text='B', ax=axes['B'][0, 0], y_adjust=0)
 
-# rfv.show_test_figure_layout(fig, axes=axes, show=True)  # test what layout looks like quickly, but can also skip and moveon to plotting data.
 print('\n\n')
+
+
+# %% B) representative plot of onePhoton experiment
+
+
+# pre4ap
+expobj: OnePhotonStim = import_expobj(prep='PS11', trial='t-009', date=date)  # pre4ap trial
+plotLfpSignal(expobj, x_axis='time', linewidth=ExpMetainfo.figure_settings['lfp - lw'], downsample=True, stim_span_color=stim_color,
+              sz_markings=False, color='black', fig=fig, ax=axes['B'][0, 0], show=False, title='',
+              ylims=[-4, 1], xlims=[105, 205])
+axes['B'][0, 0].set_title('')
+axes['B'][0, 0].axis('off')
+
+# pre4ap
+expobj = import_expobj(prep='PS11', trial='t-009', date=date)  # pre4ap trial
+plotMeanRawFluTrace(expobj, stim_span_color=stim_color, x_axis='Time (secs)', linewidth = ExpMetainfo.figure_settings["gcamp - FOV - lw"],
+                    xlims=[105 * expobj.fps, 205 * expobj.fps], stim_lines=False, fig=fig, ax=axes['B'][0, 1],
+                    show=False)
+axes['B'][0, 1].set_title('')
+axes['B'][0, 1].axis('off')
+
+# post4ap
+expobj: OnePhotonStim = import_expobj(prep='PS11', trial='t-012', date=date)  # post4ap trial
+plotLfpSignal(expobj, x_axis='time', linewidth=ExpMetainfo.figure_settings['lfp - lw'], downsample=True, sz_markings=False, color='black', fig=fig, stim_span_color=stim_color,
+              ax=axes['B'][1, 0], show=False, ylims=[0, 5], xlims=[10, 160])
+axes['B'][1, 0].set_title('')
+axes['B'][1, 0].axis('off')
+rfv.add_scale_bar(ax=axes['B'][1, 0], length=(1, 10), bartype='L', text=('1\nmV', '10 s'), loc=(180, 0),
+                  text_offset=[2, 0.8], fs=ExpMetainfo.figure_settings["fontsize - intraplot"])
+
+# Avg Flu signal with optogenetic stims
+offset = expobj.frame_start_time_actual / expobj.paq_rate
+
+# post4ap
+expobj = import_expobj(prep='PS11', trial='t-012', date=date)  # post4ap trial
+plotMeanRawFluTrace(expobj, stim_span_color=stim_color, x_axis='Time (secs)',
+                    xlims=[10 * expobj.fps, 160 * expobj.fps], linewidth=ExpMetainfo.figure_settings["gcamp - FOV - lw"],
+                    stim_lines=False, fig=fig, ax=axes['B'][1, 1], show=False)
+axes['B'][1, 1].set_title('')
+axes['B'][1, 1].axis('off')
+rfv.add_scale_bar(ax=axes['B'][1, 1], length=(500, 10 * expobj.fps), bartype='L', text=('500\na.u.', '10 s'),
+                  loc=(180 * expobj.fps, 0), text_offset=[2 * expobj.fps, 440], fs=ExpMetainfo.figure_settings["fontsize - intraplot"])
+
 
 
 # %% D) avg LFP trace 1p stim plots
@@ -145,7 +174,7 @@ rfv.add_scale_bar(ax=ax, length=(1, 0.25), bartype='L', text=('1\nmV', '0.25 s')
 
 
 
-# %% D) BAR PLOT OF RESPONSE MAGNITUDE FOR 1P STIM EXPERIMENTS - BY INDIVIDUAL STIMS
+# %% E) BAR PLOT OF RESPONSE MAGNITUDE FOR 1P STIM EXPERIMENTS - BY INDIVIDUAL STIMS
 ax=axes['E-F'][0]
 
 # individual trials photostim responses
@@ -206,7 +235,7 @@ ax.set_yticks([0, 0.2, 0.4, 0.6, 0.8, 1.0])
 
 
 
-# %% E) BAR PLOT OF RESPONSE DECAY FOR 1P STIM EXPERIMENTS - changing to individual stims - '22 dec 19
+# %% F) BAR PLOT OF RESPONSE DECAY FOR 1P STIM EXPERIMENTS - changing to individual stims - '22 dec 19
 ax = axes['E-F'][1]
 
 # individual trials photostim decays
@@ -282,49 +311,6 @@ ax.set_yticks([0, 0.2, 0.4, 0.6, 0.8, 1.0])
 
 
 
-# %% B) representative plot of onePhoton experiment
-
-
-# pre4ap
-expobj: OnePhotonStim = import_expobj(prep='PS11', trial='t-009', date=date)  # pre4ap trial
-plotLfpSignal(expobj, x_axis='time', linewidth=ExpMetainfo.figure_settings['lfp - lw'], downsample=True, stim_span_color=stim_color,
-              sz_markings=False, color='black', fig=fig, ax=axes['B'][0, 0], show=False, title='',
-              ylims=[-4, 1], xlims=[105, 205])
-axes['B'][0, 0].set_title('')
-axes['B'][0, 0].axis('off')
-
-# pre4ap
-expobj = import_expobj(prep='PS11', trial='t-009', date=date)  # pre4ap trial
-plotMeanRawFluTrace(expobj, stim_span_color=stim_color, x_axis='Time (secs)', linewidth = ExpMetainfo.figure_settings["gcamp - FOV - lw"],
-                    xlims=[105 * expobj.fps, 205 * expobj.fps], stim_lines=False, fig=fig, ax=axes['B'][0, 1],
-                    show=False)
-axes['B'][0, 1].set_title('')
-axes['B'][0, 1].axis('off')
-
-# post4ap
-expobj: OnePhotonStim = import_expobj(prep='PS11', trial='t-012', date=date)  # post4ap trial
-plotLfpSignal(expobj, x_axis='time', linewidth=ExpMetainfo.figure_settings['lfp - lw'], downsample=True, sz_markings=False, color='black', fig=fig, stim_span_color=stim_color,
-              ax=axes['B'][1, 0], show=False, ylims=[0, 5], xlims=[10, 160])
-axes['B'][1, 0].set_title('')
-axes['B'][1, 0].axis('off')
-rfv.add_scale_bar(ax=axes['B'][1, 0], length=(1, 10), bartype='L', text=('1\nmV', '10 s'), loc=(170, 0),
-                  text_offset=[2, 0.8], fs=ExpMetainfo.figure_settings["fontsize - intraplot"])
-
-# Avg Flu signal with optogenetic stims
-offset = expobj.frame_start_time_actual / expobj.paq_rate
-
-# post4ap
-expobj = import_expobj(prep='PS11', trial='t-012', date=date)  # post4ap trial
-plotMeanRawFluTrace(expobj, stim_span_color=stim_color, x_axis='Time (secs)',
-                    xlims=[10 * expobj.fps, 160 * expobj.fps], linewidth=ExpMetainfo.figure_settings["gcamp - FOV - lw"],
-                    stim_lines=False, fig=fig, ax=axes['B'][1, 1], show=False)
-axes['B'][1, 1].set_title('')
-axes['B'][1, 1].axis('off')
-rfv.add_scale_bar(ax=axes['B'][1, 1], length=(500, 10 * expobj.fps), bartype='L', text=('500\na.u.', '10 s'),
-                  loc=(170 * expobj.fps, 0), text_offset=[2 * expobj.fps, 440], fs=ExpMetainfo.figure_settings["fontsize - intraplot"])
-
-
-
 
 # %% C) Radial plot of Mean FOV for photostimulation trials, with period equal to that of photostimulation timing period
 
@@ -374,8 +360,7 @@ ax.set_xticklabels([r'$\it{\Theta}$ = 0', '', '', ''], fontsize=ExpMetainfo.figu
 ax.spines['polar'].set_visible(False)
 ax.set_title(label='Seizure probability', fontsize=10, va='bottom')
 ax.set_position(pos=bbox)
-rfv.add_label_axes(text='C', ax=ax, y_adjust=0.02, x_adjust=0.00005)
-
+rfv.add_label_axes(text='C', ax=ax, y_adjust=0.02, x_adjust=0.025)
 
 
 

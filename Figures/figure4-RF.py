@@ -91,7 +91,7 @@ layout = {
                           'wspace': 0.2},
 }
 
-test = 0
+test = 1
 save_fig = True if not test > 0 else False
 dpi = 150 if test > 0 else 300
 fig, axes, grid = rfv.make_fig_layout(layout=layout, dpi=dpi)
