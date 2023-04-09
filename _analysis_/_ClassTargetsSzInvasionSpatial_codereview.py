@@ -19,6 +19,7 @@ from matplotlib import pyplot as plt
 import seaborn as sns
 import _alloptical_utils as Utils
 import funcsforprajay.funcs as pj
+import funcsforprajay.math as psmath
 
 from _analysis_._utils import Quantification, Results
 from _main_.Post4apMain import Post4ap
@@ -651,13 +652,14 @@ class TargetsSzInvasionSpatial_codereview(SLMTargets):
 
     # 3.1) distnace vs. photostim responses - no percentile normalization of distances - ROLLING BINS
     @staticmethod
-    def collect__binned__distance_v_responses_rolling_bins(results, rerun=0):
+    def collect__binned__distance_v_responses_rolling_bins(results, rerun=0, save=True):
         """collect distance vs. respnses for rolling distance bins"""
 
+        save = False
+
         if rerun or not hasattr(results, 'rolling_binned__distance_vs_photostimresponses'):
-            bin_width = 20  # um
-            rolling_bins = [(i, i + 20) for i in range(0, 500)]
-            # bins = np.arange(0, 500, bin_width)  # 0 --> 500 um, split in XXum bins
+            bin_width = 40  # um
+            rolling_bins = [(i, i + bin_width) for i in range(0, 500)]
             num = [0 for _ in range(len(rolling_bins))]  # num of datapoints in binned distances
             y = [0 for _ in range(len(rolling_bins))]  # avg responses at distance bin
             responses = [[] for _ in range(len(rolling_bins))]  # collect all responses at distance bin
@@ -670,7 +672,7 @@ class TargetsSzInvasionSpatial_codereview(SLMTargets):
                 for _, row in szinvspatial.responses_vs_distance_to_seizure_SLMTargets.iterrows():
                     dist = row['distance_to_sz_um']
                     response = row[szinvspatial.response_type]
-                    for i, bin in enumerate(rolling_bins[:-20]):
+                    for i, bin in enumerate(rolling_bins[:-bin_width]):
                         if bin[0] < dist < bin[1]:
                             num[i] += 1
                             y[i] += response
@@ -692,19 +694,137 @@ class TargetsSzInvasionSpatial_codereview(SLMTargets):
                                   scale=stats.sem(responses_))
                  for responses_ in responses])
 
-            # RUN STATS: 1-WAY ANOVA and KRUSKAL-WALLIS - responses across distance
-            kruskal_r = stats.kruskal(*responses[:-1])
-            oneway_r = stats.f_oneway(*responses[:-1])
 
             results.rolling_binned__distance_vs_photostimresponses = {'bin_width_um': bin_width,
                                                                       'distance_bins': distances,
                                                                       'num_points_in_bin': num,
                                                                       'avg_photostim_response_in_bin': avg_responses,
                                                                       '95conf_int': conf_int,
-                                                                      'all responses (per bin)': responses[:-20],
-                                                                      'kruskal - binned responses': kruskal_r,
-                                                                      'anova oneway - binned responses': oneway_r}
-            results.save_results()
+                                                                      'all responses (per bin)': responses
+                                                                      }
+        bin_width = results.rolling_binned__distance_vs_photostimresponses['bin_width_um']
+        avg_responses = results.rolling_binned__distance_vs_photostimresponses['avg_photostim_response_in_bin'][:-bin_width]
+        responses = results.rolling_binned__distance_vs_photostimresponses['all responses (per bin)'][:-bin_width]
+        distances = results.rolling_binned__distance_vs_photostimresponses['distance_bins'][:-bin_width]
+
+        assert len(avg_responses) == len(responses) == len(distances), print('incorrect lengths of variables')
+
+        # RUN STATS: 1-WAY ANOVA and KRUSKAL-WALLIS - responses across distance
+        kruskal_r = stats.kruskal(*responses)
+        oneway_r = stats.f_oneway(*responses)
+
+        results.rolling_binned__distance_vs_photostimresponses['kruskal - binned responses'] = kruskal_r
+        results.rolling_binned__distance_vs_photostimresponses['anova oneway - binned responses'] = oneway_r
+
+
+        def logarithmic_regression_fit(x, y, **kwargs):
+            """
+            Fit a logarithmic regression function to the data
+            :param x: x data
+            :param y: y data
+            :return: a, b
+            """
+
+            ## CURVE FITTING USING NUMPY POLYFIT
+            z = np.polyfit(x, y, 3)
+            p = np.poly1d(z)
+            y_pred = p(x)
+            ## TEST PLOT OF y_pred
+            if 'ax' in kwargs:
+                kwargs['ax'].plot(x, y_pred, lw=1, color='blue', ls='--', label='poly-3')
+
+            # Check the accuracy :
+            from sklearn.metrics import r2_score
+            Accuracy = r2_score(y, y_pred)
+            print(f'R**2 (polyfit func): {Accuracy}')
+
+
+            ## CURVE_FITING USING SCIPY - for LINEAR and LOG FIT
+            def log_func(x, a, b):
+                return a + b * np.log(x)
+
+            def lin_func(x, a, b):
+                return a + b * x
+
+            # Finding the optimal parameters: LOG FUNCTION
+            # change first value to 0.1 to avoid log(0) error
+            __filter = np.where(np.array(x) == 0)[0][-1] + 1
+            x_forlog = x[__filter:]
+            y_forlog = y[__filter:]
+
+            from scipy.optimize import curve_fit
+            popt, pcov = curve_fit(log_func, x_forlog, y_forlog)
+            print("a  = ", popt[0])
+            print("b  = ", popt[1])
+
+            # Predicting values:
+            y_pred = log_func(x_forlog, popt[0], popt[1])
+
+            ## TEST PLOT OF y_pred
+            if 'ax' in kwargs:
+                kwargs['ax'].plot(x_forlog, y_pred, lw=1, color='r', ls='--', label='log')
+
+            # Check the accuracy :
+            Accuracy = r2_score(y_forlog, y_pred)
+            print(f'R**2 (log func): {Accuracy}')
+
+
+            # Finding the optimal parameters: LINEAR FUNCTION
+            # change first value to 0.1 to avoid log(0) error
+            from scipy.optimize import curve_fit
+            popt, pcov = curve_fit(lin_func, x, y)
+            print("a  = ", popt[0])
+            print("b  = ", popt[1])
+
+            # Predicting values:
+            y_pred = lin_func(np.array(x, dtype=np.float64), popt[0], popt[1])
+
+            ## TEST PLOT OF y_pred
+            if 'ax' in kwargs:
+                kwargs['ax'].plot(x, y_pred, lw=1, color='g', ls='--', label='linear')
+
+            # Check the accuracy :
+            Accuracy = r2_score(y, y_pred)
+            print(f'R**2 (lin func): {Accuracy}')
+
+            # add legend
+            kwargs['ax'].legend()
+            kwargs['ax'].axhline(0)
+            kwargs['fig'].show()
+
+
+            return popt[0], popt[1], y_pred
+
+
+        # plot distances vs. all stim responses as scatter plot using matplotlib
+        fig, ax = plt.subplots(figsize=[10,5])
+        x = []
+        y = []
+        for i, dist in enumerate(distances):
+            ax.scatter([dist for _ in responses[i]], responses[i], s=3, alpha=0.1, color='k')
+            x.append([dist for _ in responses[i]])
+            y.append(responses[i])
+        ax.set_ylim([-2, 2.25])
+
+        # RUN LOGARITHMIC CURVE FIT
+        logarithmic_regression_fit(pj.flattenOnce(x), pj.flattenOnce(y), ax=ax, fig=fig)
+
+
+        # plot distances vs. avg responses as scatter plot using matplotlib
+        fig, ax = plt.subplots(figsize=[10,5])
+        for i, dist in enumerate(distances):
+            ax.scatter(dist, avg_responses[i], s=3, alpha=0.2, color='k')
+        # ax.set_ylim([-2, 2.25])
+
+        # RUN LOGARITHMIC CURVE FIT
+        logarithmic_regression_fit(distances, avg_responses, ax=ax, fig=fig)
+
+        fig.show()
+
+
+
+
+        results.save_results() if save else None
 
         # return bin_width, distances, num, avg_responses, conf_int
 
@@ -813,6 +933,23 @@ class TargetsSzInvasionSpatial_codereview(SLMTargets):
             save_path_full = f'{SAVE_FIG}/responses_sz_distance_binned_line_plot.png'
             # Utils.save_figure(fig, save_path_full=save_path_full) if save_path_full is not None else None
             # Utils.save_figure(fig, save_path_full=save_path_full[:-4] + '.svg') if save_path_full is not None else None
+
+
+    @staticmethod
+    def DEPRECATE_calc__logarithmic_fit_responses_v_distance_no_normalization_rolling_bins(results, save_path_full=None, **kwargs):
+        """calculate binned responses over distance as a step function, with heatmap showing # of datapoints"""
+
+        print(f'Photostim responses anova: {results.rolling_binned__distance_vs_photostimresponses["anova oneway - binned responses"]}')
+
+        # distances_bins = results.rolling_binned__distance_vs_photostimresponses['distance_bins']
+        distances = results.rolling_binned__distance_vs_photostimresponses['distance_bins']
+        avg_responses = results.rolling_binned__distance_vs_photostimresponses['avg_photostim_response_in_bin']
+        conf_int = results.rolling_binned__distance_vs_photostimresponses['95conf_int']
+        num2 = results.rolling_binned__distance_vs_photostimresponses['num_points_in_bin']
+
+        conf_int_distances = pj.flattenOnce([[distances[i], distances[i + 1]] for i in range(len(distances) - 1)])
+        conf_int_values_neg = pj.flattenOnce([[val, val] for val in conf_int[1:, 0]])
+        conf_int_values_pos = pj.flattenOnce([[val, val] for val in conf_int[1:, 1]])
 
 
 # %% RESULTS SAVING CLASS
@@ -942,4 +1079,7 @@ results = TargetsSzInvasionSpatialResults_codereview.load()
 # main.plot__responses_v_distance_no_normalization(results=results, save_path_full=f'{SAVE_FIG}/responses_sz_distance_binned_line_plot.png')
 
 if __name__ == '__main__':
-    run__calc_meanGCaMP_in_out_szwavefront()
+    # run__calc_meanGCaMP_in_out_szwavefront()
+    main.collect__binned__distance_v_responses_rolling_bins(results=results, rerun=1, save=False)
+
+

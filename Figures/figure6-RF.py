@@ -92,7 +92,7 @@ layout = {
 }
 
 
-test = 0
+test = 1
 save_fig = True if not test > 0 else False
 dpi = 150 if test > 0 else 300
 fig, axes, grid = rfv.make_fig_layout(layout=layout, dpi=dpi)
@@ -100,24 +100,6 @@ rfv.show_test_figure_layout(fig, axes=axes, show=True) if test == 2 else None  #
 
 
 # ADD PLOTS TO AXES  ##################################################################################################################
-
-# %% C - photostim responses of nontargets classed to interictal or seizure distance
-ax_c = axes['main-left-mid'][0]
-z_score_response_proximal_distal(fig=fig, ax=ax_c, results=results)
-ax_c.set_title(f'Response magnitude\nNon-targets', fontsize=10)
-ax_c.set_ylabel(f'{rfv.italic("Z")}-score\n(to baseline)', fontsize=10)
-ax_c.set_ylim([-0.075, 0.25])
-
-
-# %% A - schematic of sz distance to target
-ax_a = axes['main-left-top'][0]
-# rfv.add_label_axes(text='A', ax=ax, x_adjust=x_adj - 0.06)
-sch_path = '/home/pshah/Documents/figures/alloptical_seizures_draft/figure-items/schematic-targets-distance-to-sz.png'
-img = mpimg.imread(sch_path)
-ax_a.imshow(img, interpolation='none')
-ax_a.axis('off')
-# axes['main-left-top'][0].set_title('Distance to seizure boundary')
-
 
 # %% B - photostim responses relative to distance to seizure
 ax_b = axes['main-right'][0]
@@ -137,6 +119,26 @@ ExpSeizureAnalysis.calcNumSzWvStimFrames()
 # adding neuropil signal
 results = NonTargetsSzInvasionSpatialResults.load()
 NonTargetsSzInvasionSpatial.plot__firingrate_v_distance_no_normalization_rolling_bins(results=results, axes=ax_b1, fig=fig)
+
+
+# %% C - photostim responses of nontargets classed to interictal or seizure distance
+ax_c = axes['main-left-mid'][0]
+z_score_response_proximal_distal(fig=fig, ax=ax_c, results=results)
+ax_c.set_title(f'Response magnitude\nNon-targets', fontsize=10)
+ax_c.set_ylabel(f'{rfv.italic("Z")}-score\n(to baseline)', fontsize=10)
+ax_c.set_ylim([-0.075, 0.25])
+
+
+# %% A - schematic of sz distance to target
+ax_a = axes['main-left-top'][0]
+# rfv.add_label_axes(text='A', ax=ax, x_adjust=x_adj - 0.06)
+sch_path = '/home/pshah/Documents/figures/alloptical_seizures_draft/figure-items/schematic-targets-distance-to-sz.png'
+img = mpimg.imread(sch_path)
+ax_a.imshow(img, interpolation='none')
+ax_a.axis('off')
+# axes['main-left-top'][0].set_title('Distance to seizure boundary')
+
+
 
 
 
