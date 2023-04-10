@@ -41,7 +41,8 @@ class NonTargetsSzInvasionSpatialResults(Results):
         self.lin_reg_summed_responses = None  #: dictionary of baseline and interictal linear regression metrics for relating total targets responses and nontargets responses across experiments
         self.avg_responders_num = None  #: average num responders, for pairedmatched experiments between baseline pre4ap and interictal
         self.avg_responders_magnitude = None  #: average response magnitude, for pairedmatched experiments between baseline pre4ap and interictal
-        self.rolling_binned__distance_vs_photostimresponses = None  #: distance to seizure boundary vs. firing rates for rolling distance bins for nontargets
+        self.rolling_binned__distance_vs_photostimresponses = None  #: distance to seizure boundary vs. firing rates for rolling distance bins for nontargets - zscored excitability version
+        self.rolling_binned__distance_vs_photostimresponses_dFF = None  #: distance to seizure boundary vs. firing rates for rolling distance bins for nontargets - dFF version
 
 REMAKE = False
 if not os.path.exists(NonTargetsSzInvasionSpatialResults.SAVE_PATH) or REMAKE:
