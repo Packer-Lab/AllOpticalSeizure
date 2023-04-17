@@ -23,6 +23,8 @@ suppl figure: write up RF code
 
 import sys
 
+import _utils_.alloptical_plotting
+import alloptical_plotting
 from _analysis_.nontargets_analysis._ClassNonTargetsSzInvasionSpatial import NonTargetsSzInvasionSpatialResults, \
     NonTargetsSzInvasionSpatial
 from _analysis_.sz_analysis._ClassExpSeizureAnalysis import ExpSeizureAnalysis
@@ -170,8 +172,8 @@ rfv.add_label_axes(text='D', ax=ax_d[0], x_adjust=x_adj)
 
 # %%
 if save_fig and dpi >= 250:
-    Utils.save_figure(fig=fig, save_path_full=f"{SAVE_FOLDER}/figure6combo-RF.png")
-    Utils.save_figure(fig=fig, save_path_full=f"{SAVE_FOLDER}/figure6combo-RF.pdf")
+    _utils_.alloptical_plotting.save_figure(fig=fig, save_path_full=f"{SAVE_FOLDER}/figure6combo-RF.png")
+    _utils_.alloptical_plotting.save_figure(fig=fig, save_path_full=f"{SAVE_FOLDER}/figure6combo-RF.pdf")
 
 fig.show()
 

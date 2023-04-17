@@ -17,6 +17,8 @@ suppl figure: write up RF code
 # %%
 import sys
 
+import _utils_.alloptical_plotting
+import alloptical_plotting
 from _analysis_._ClassTargetsSzInvasionTemporal import TargetsSzInvasionTemporal, TargetsSzInvasionTemporalResults
 from _analysis_.nontargets_analysis._ClassNonTargetsSzInvasionSpatial import NonTargetsSzInvasionSpatialResults, \
     NonTargetsSzInvasionSpatial
@@ -126,9 +128,9 @@ main_spatial.plot__responses_v_distance_no_normalization_rolling_bins(results=re
 
 # %%
 if save_fig and dpi >= 250:
-    Utils.save_figure(fig=fig, save_path_full=f"{SAVE_FOLDER}/figure6-RF.png")
-    Utils.save_figure(fig=fig, save_path_full=f"{SAVE_FOLDER}/figure6-RF.svg")
-    Utils.save_figure(fig=fig, save_path_full=f"{SAVE_FOLDER}/figure6-RF.pdf")
+    _utils_.alloptical_plotting.save_figure(fig=fig, save_path_full=f"{SAVE_FOLDER}/figure6-RF.png")
+    _utils_.alloptical_plotting.save_figure(fig=fig, save_path_full=f"{SAVE_FOLDER}/figure6-RF.svg")
+    _utils_.alloptical_plotting.save_figure(fig=fig, save_path_full=f"{SAVE_FOLDER}/figure6-RF.pdf")
 
 fig.show()
 

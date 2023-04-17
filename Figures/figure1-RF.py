@@ -14,7 +14,7 @@ from _analysis_.sz_analysis._ClassExpSeizureAnalysis import ExpSeizureResults
 
 
 from _utils_.io import import_expobj
-from alloptical_utils_pj import save_figure
+from _utils_.alloptical_plotting import save_figure
 import numpy as np
 
 from _main_.Post4apMain import Post4ap

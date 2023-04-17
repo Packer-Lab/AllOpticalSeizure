@@ -6,6 +6,9 @@
 # %%
 import sys
 import matplotlib.pyplot as plt
+import pandas as pd
+from funcsforprajay.funcs import flattenOnce
+
 plt.style.use(['alloptical', 'use_mathtext'])
 
 from funcsforprajay.plotting.plotting import plot_bar_with_points
@@ -21,7 +24,7 @@ from _analysis_._ClassPhotostimResponseQuantificationSLMtargets import Photostim
 from _analysis_.sz_analysis._ClassExpSeizureAnalysis import ExpSeizureAnalysis, ExpSeizureResults
 from _main_.Post4apMain import Post4ap
 from _utils_.io import import_expobj
-from alloptical_utils_pj import save_figure
+from _utils_.alloptical_plotting import save_figure
 
 sys.path.extend(['/home/pshah/Documents/code/reproducible_figures-main'])
 
@@ -32,6 +35,7 @@ import rep_fig_vis as rfv
 from pycircstat.tests import vtest
 
 results: PhotostimResponsesSLMtargetsResults = PhotostimResponsesSLMtargetsResults.load()
+main = PhotostimAnalysisSlmTargets
 
 sz_results: ExpSeizureResults = ExpSeizureResults.load()
 
@@ -40,21 +44,10 @@ fig_items = f'/home/pshah/Documents/figures/alloptical_seizures_draft/figure-ite
 
 
 # %%
-import matplotlib.pyplot as plt
-
-fig, ax = plt.subplots()
-
-
-
-# %%
 
 ## Set general plotting parameters
 fs = ExpMetainfo.figures.fontsize['extraplot']
 rfv.set_fontsize(fs)
-
-test = 0
-save_fig = True if not test > 0 else False
-dpi = 150 if test > 0 else 300
 
 colour_list = ['#101820', '#1b362c', '#2f553d', '#4f7553', '#79936f', '#aeae92']
 colours_misc_dict = {xx: colour_list[xx] for xx in range(len(colour_list))}
@@ -77,12 +70,15 @@ layout = {
                  'bound': (0.05, 0.47, 0.38, 0.60),
                  'wspace': 0.8},
     'bottom-D': {'panel_shape': (1, 1),
-                 'bound': (0.52, 0.47, 0.64, 0.60),
-                 'wspace': 0.4}
-}
+                 'bound': (0.47, 0.47, 0.59, 0.60),
+                 'wspace': 0.4},
+    'bottom-right-F': {'panel_shape': (1,1),
+                        'bound': (0.85, 0.47, 0.95, 0.60)
+                       }
+    }
 
 
-test = 0
+test = 1
 save_fig = True if not test > 0 else False
 dpi = 150 if test > 0 else 300
 fig, axes, grid = rfv.make_fig_layout(layout=layout, dpi=dpi)
@@ -92,6 +88,58 @@ rfv.show_test_figure_layout(fig, axes=axes, show=True) if test == 2 else None  #
 rfv.add_label_axes(text="D", ax=axes['bottom-D'][0], y_adjust=0, x_adjust=0.11)
 rfv.add_label_axes(text="C'", ax=axes['bottom-C'][1], y_adjust=0, x_adjust=0.07)
 rfv.add_label_axes(text="C", ax=axes['bottom-C'][0], y_adjust=0.0)
+
+
+
+# %% F - splitting responses during interictal phases
+main.collect__interictal_responses_split(rerun=1)
+results: PhotostimResponsesSLMtargetsResults = PhotostimResponsesSLMtargetsResults.load()
+ax = axes['bottom-right-F'][0]  #: interictal split - z scores
+
+# 1-WAY ANOVA
+stats.f_oneway(results.interictal_responses['preictal_responses'],
+               results.interictal_responses['very_interictal_responses'],
+               results.interictal_responses['postictal_responses'])
+
+# create DataFrame to hold data
+data_nums = []
+num_pre = len(results.interictal_responses['preictal_responses'])
+num_mid = len(results.interictal_responses['very_interictal_responses'])
+num_post = len(results.interictal_responses['postictal_responses'])
+data_nums.extend(['pre'] * num_pre)
+data_nums.extend(['mid'] * num_mid)
+data_nums.extend(['post'] * num_post)
+
+df = pd.DataFrame({'score': flattenOnce([results.interictal_responses['preictal_responses'],
+                                         results.interictal_responses['very_interictal_responses'],
+                                         results.interictal_responses['postictal_responses']]),
+                   'group': data_nums})
+
+# perform Tukey's test
+tukey = pairwise_tukeyhsd(endog=df['score'], groups=df['group'],
+                          alpha=0.05)
+
+print(tukey)
+
+
+# fig, ax = plt.subplots(figsize=(3,4))
+data = [results.interictal_responses['preictal_responses'],
+        results.interictal_responses['very_interictal_responses'],
+        results.interictal_responses['postictal_responses']]
+
+# run paired t test on preictal and postictal
+t, p = stats.ttest_rel(results.interictal_responses['very_interictal_responses'],
+                          results.interictal_responses['postictal_responses'])
+print(f"t = {t}, p = {p}")
+
+plot_bar_with_points(data=data, bar=True, title='', fontsize=10,points_lw=0.5,
+                     x_tick_labels=['Pre', 'interictal', 'Post'], colors=['lightseagreen', 'red', 'lightcoral'],
+                     y_label='Response magnitude\n(z-scored)', show=False, ylims=[-0.5, 0.8],
+                     alpha=1, fig=fig, ax=ax, s=15)
+
+rfv.add_label_axes(text='F', ax=ax, x_adjust=0.12)
+
+
 
 # %% B + B')
 ax = axes['toprighttop'][0]

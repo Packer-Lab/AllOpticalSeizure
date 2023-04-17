@@ -27,7 +27,7 @@ import matplotlib.pyplot as plt
 sys.path.extend(['/home/pshah/Documents/code/reproducible_figures-main'])
 import rep_fig_vis as rfv
 
-from alloptical_utils_pj import save_figure
+from _utils_.alloptical_plotting import save_figure
 
 SAVE_FOLDER = f'/home/pshah/Documents/figures/alloptical_seizures_draft/'
 fig_items = f'/home/pshah/Documents/figures/alloptical_seizures_draft/figure-items/'

@@ -8,7 +8,6 @@
 import functools
 import re
 import glob
-from datetime import datetime
 
 import itertools
 
@@ -17,6 +16,8 @@ import sys
 from typing import Union
 
 from matplotlib.colors import ColorConverter
+
+from _utils_.alloptical_plotting import save_figure
 
 sys.path.append('/home/pshah/Documents/code/')
 from Vape.utils.utils_funcs import s2p_loader
@@ -5923,19 +5924,6 @@ def working_on(expobj):
 def end_working_on(expobj):
     print(
         f"FINISHED on: {expobj.metainfo['exptype']} {expobj.metainfo['animal prep.']} {expobj.metainfo['trial']} \** \n")
-
-
-def save_figure(fig, save_path_suffix: str = None, save_path_full: str = None):
-    if not save_path_full and save_path_suffix:
-        ## SET DEFAULT FIGURE SAVE DIRECTORY
-        today_date = datetime.today().strftime('%Y-%m-%d')
-        save_path_prefix = f"/home/pshah/mnt/qnap/Analysis/Results_figs/{today_date}/"
-        os.makedirs(save_path_prefix) if not os.path.exists(save_path_prefix) else None
-        save_path_full = save_path_prefix + save_path_suffix
-    else:
-        ValueError('not able to determine where to save figure to!')
-    print(f'\nsaving figure to: {save_path_full}')
-    fig.savefig(save_path_full)
 
 
 ## DECORATORS

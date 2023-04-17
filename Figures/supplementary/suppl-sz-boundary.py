@@ -14,7 +14,7 @@ from _analysis_._ClassPhotostimResponseQuantificationSLMtargets import Photostim
 from _exp_metainfo_.exp_metainfo import ExpMetainfo
 
 sys.path.extend(['/home/pshah/Documents/code/reproducible_figures-main'])
-from alloptical_utils_pj import save_figure
+from _utils_.alloptical_plotting import save_figure
 
 import numpy as np
 import rep_fig_vis as rfv

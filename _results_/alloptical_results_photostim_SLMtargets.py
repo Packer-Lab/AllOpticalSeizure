@@ -1,6 +1,9 @@
 # %% DATA ANALYSIS + PLOTTING FOR ALL-OPTICAL TWO-P PHOTOSTIM EXPERIMENTS - FOCUS ON SLM TARGETS!
 import numpy as np
 import matplotlib.pyplot as plt
+
+import _utils_.alloptical_plotting
+import alloptical_plotting
 import alloptical_utils_pj as aoutils
 from _utils_ import alloptical_plotting as aoplot
 from funcsforprajay import funcs as pj
@@ -820,7 +823,7 @@ for expprep in list(allopticalResults.stim_responses_tracedFF.keys()):
             print(f"|- finished on expobj: {expprep} {pre4ap_trial}, counter @ {counter}\n")
 
 fig.suptitle(f"Photostim responses - pre-4ap", y=0.99)
-aoutils.save_figure(fig, save_path_suffix="SLM-targets_pre4ap-indivtrial-responses_delta(trace_dFF)).png")
+_utils_.alloptical_plotting.save_figure(fig, save_path_suffix="SLM-targets_pre4ap-indivtrial-responses_delta(trace_dFF)).png")
 fig.show()
 
 print(f"---------------------------------------------------------")
@@ -877,7 +880,7 @@ for expprep in list(allopticalResults.stim_responses_tracedFF.keys()):
             print(f"|- finished on expobj: {expprep} {post4ap_trial}, counter @ {counter}\n")
 
 fig.suptitle(f"Photostim responses - post-4ap", y=0.99)
-aoutils.save_figure(fig, save_path_suffix="SLM-targets_post4ap-indivtrial-responses_delta(trace_dFF)).png")
+_utils_.alloptical_plotting.save_figure(fig, save_path_suffix="SLM-targets_post4ap-indivtrial-responses_delta(trace_dFF)).png")
 fig.show()
 
 
@@ -976,7 +979,7 @@ for expprep in list(allopticalResults.stim_responses_zscores['dfprestimf'].keys(
             print(f"|- finished on expobj: {expprep} {pre4ap_trial}, counter @ {counter}\n")
 
 fig.suptitle(f"Photostim responses - pre-4ap", y=0.99)
-aoutils.save_figure(fig, save_path_suffix="SLM-targets_pre4ap-indivtrial-zscore-responses_dfprestimf.png")
+_utils_.alloptical_plotting.save_figure(fig, save_path_suffix="SLM-targets_pre4ap-indivtrial-zscore-responses_dfprestimf.png")
 fig.show()
 
 ### POST 4AP
@@ -1047,7 +1050,7 @@ for expprep in post4ap_trials_stimresponses_zscores:
                 print(f"|- finished on expobj: {expprep} {post4ap_trial}, counter @ {counter}\n")
 
 fig.suptitle(f"Photostim responses - post-4ap", y=0.99)
-aoutils.save_figure(fig, save_path_suffix="SLM-targets_post4ap-indivtrial-zscore-responses_dfprestimf.png")
+_utils_.alloptical_plotting.save_figure(fig, save_path_suffix="SLM-targets_post4ap-indivtrial-zscore-responses_dfprestimf.png")
 fig.show()
 
 
@@ -1106,7 +1109,7 @@ for expprep in list(allopticalResults.stim_responses_zscores['delta(trace_dFF)']
             print(f"|- finished on expobj: {expprep} {pre4ap_trial}, counter @ {counter}\n")
 
 fig.suptitle(f"Photostim responses - pre-4ap", y=0.99)
-aoutils.save_figure(fig, save_path_suffix="SLM-targets_pre4ap-indivtrial-zscore-responses_delta(trace_dFF)).png")
+_utils_.alloptical_plotting.save_figure(fig, save_path_suffix="SLM-targets_pre4ap-indivtrial-zscore-responses_delta(trace_dFF)).png")
 fig.show()
 
 ### POST 4AP
@@ -1177,7 +1180,7 @@ for expprep in post4ap_trials_stimresponses_zscores:
                 print(f"|- finished on expobj: {expprep} {post4ap_trial}, counter @ {counter}\n")
 
 fig.suptitle(f"Photostim responses - post-4ap", y=0.99)
-aoutils.save_figure(fig, save_path_suffix="SLM-targets_post4ap-indivtrial-zscore-responses_delta(trace_dFF)).png")
+_utils_.alloptical_plotting.save_figure(fig, save_path_suffix="SLM-targets_post4ap-indivtrial-zscore-responses_delta(trace_dFF)).png")
 fig.show()
 
 
@@ -1278,7 +1281,7 @@ fig.tight_layout(pad=1.8)
 # save_path_full = f"{save_path_prefix}/responsescore-dFF-vs-szonset_time_allexps.png"
 # print(f'\nsaving figure to {save_path_full}')
 # fig.savefig(save_path_full)
-aoutils.save_figure(fig, save_path_suffix="responsescore-dFF-vs-szonset_time_allexps.png")
+_utils_.alloptical_plotting.save_figure(fig, save_path_suffix="responsescore-dFF-vs-szonset_time_allexps.png")
 fig.show()
 
 fig2.suptitle(f"all exps. individual")
@@ -1286,7 +1289,7 @@ fig2.tight_layout(pad=1.8)
 # save_path_full = f"{save_path_prefix}/responsescore-dFF-vs-szonset_time_individualexps.png"
 # print(f'\nsaving figure2 to {save_path_full}')
 # fig2.savefig(save_path_full)
-aoutils.save_figure(fig, save_path_suffix="responsescore-dFF-vs-szonset_time_individualexps.png")
+_utils_.alloptical_plotting.save_figure(fig, save_path_suffix="responsescore-dFF-vs-szonset_time_individualexps.png")
 # fig2.show()
 
 
@@ -1348,7 +1351,7 @@ fig.tight_layout(pad=1.2)
 # save_path_full = f"{save_path_prefix}/zscore-vs-szonset_time_allexps.png"
 # print(f'\nsaving figure to {save_path_full}')
 # fig.savefig(save_path_full)
-aoutils.save_figure(fig, save_path_suffix='zscore-vs-szonset_time_allexps.png')
+_utils_.alloptical_plotting.save_figure(fig, save_path_suffix='zscore-vs-szonset_time_allexps.png')
 fig.show()
 
 fig2.suptitle(f"all exps. individual")
@@ -1356,7 +1359,7 @@ fig2.tight_layout(pad=1.8)
 # save_path_full = f"{save_path_prefix}/zscore-vs-szonset_time_individualexps.png"
 # print(f'\nsaving figure2 to {save_path_full}')
 # fig2.savefig(save_path_full)
-aoutils.save_figure(fig2, save_path_suffix='zscore-vs-szonset_time_individualexps.png')
+_utils_.alloptical_plotting.save_figure(fig2, save_path_suffix='zscore-vs-szonset_time_individualexps.png')
 # fig2.show()
 
 # %% 7.1.1) PLOT - absolute stim responses vs. TIME to seizure onset
@@ -1421,7 +1424,7 @@ fig.tight_layout(pad=1.8)
 # save_path_full = f"{save_path_prefix}/responsescore-vs-szonset_time_allexps.png"
 # print(f'\nsaving figure to {save_path_full}')
 # fig.savefig(save_path_full)
-aoutils.save_figure(fig, save_path_suffix='responsescore-vs-szonset_time_allexps.png')
+_utils_.alloptical_plotting.save_figure(fig, save_path_suffix='responsescore-vs-szonset_time_allexps.png')
 fig.show()
 
 fig2.suptitle(f"all exps. individual")
@@ -1429,7 +1432,7 @@ fig2.tight_layout(pad=1.8)
 # save_path_full = f"{save_path_prefix}/responsescore-vs-szonset_time_individualexps.png"
 # print(f'\nsaving figure2 to {save_path_full}')
 # fig2.savefig(save_path_full)
-aoutils.save_figure(fig2, save_path_suffix='responsescore-vs-szonset_time_individualexps.png')
+_utils_.alloptical_plotting.save_figure(fig2, save_path_suffix='responsescore-vs-szonset_time_individualexps.png')
 fig2.show()
 
 

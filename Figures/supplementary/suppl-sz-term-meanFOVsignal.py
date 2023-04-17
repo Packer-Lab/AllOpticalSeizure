@@ -26,9 +26,8 @@ from _alloptical_utils import run_for_loop_across_exps
 from _analysis_.sz_analysis._ClassExpSeizureAnalysis import ExpSeizureResults
 from _exp_metainfo_.exp_metainfo import ExpMetainfo
 from _main_.Post4apMain import Post4ap
-from _utils_.alloptical_plotting import plot_settings, inspectExperimentMeanFOVandLFP
+from _utils_.alloptical_plotting import plot_settings, inspectExperimentMeanFOVandLFP, save_figure
 from _utils_.io import import_expobj
-from alloptical_utils_pj import save_figure
 
 sys.path.extend(['/home/pshah/Documents/code/reproducible_figures-main'])
 import rep_fig_vis as rfv

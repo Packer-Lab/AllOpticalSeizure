@@ -3,6 +3,8 @@
 
 # imports
 import os
+from datetime import datetime
+
 import numpy as np
 import matplotlib as mpl
 import seaborn as sns
@@ -68,6 +70,18 @@ def plot_settings():
         'figure.subplot.wspace': .01,
         'figure.subplot.hspace': .01,
     })
+
+def save_figure(fig, save_path_suffix: str = None, save_path_full: str = None):
+    if not save_path_full and save_path_suffix:
+        ## SET DEFAULT FIGURE SAVE DIRECTORY
+        today_date = datetime.today().strftime('%Y-%m-%d')
+        save_path_prefix = f"/home/pshah/mnt/qnap/Analysis/Results_figs/{today_date}/"
+        os.makedirs(save_path_prefix) if not os.path.exists(save_path_prefix) else None
+        save_path_full = save_path_prefix + save_path_suffix
+    else:
+        ValueError('not able to determine where to save figure to!')
+    print(f'\nsaving figure to: {save_path_full}')
+    fig.savefig(save_path_full)
 
 
 def add_scalebar(expobj: TwoPhotonImaging, ax: mpl.axes.Axes, scale_bar_um: float = 100, **kwargs):
@@ -1584,8 +1598,5 @@ def plot_lfp_1pstim_avg_trace(expobj, individual_traces=False, optoloopback: boo
     ax2.spines['right'].set_visible(False)
     ax2.spines['bottom'].set_visible(False)
     ax2.spines['left'].set_visible(False)
-
-
-
 
 

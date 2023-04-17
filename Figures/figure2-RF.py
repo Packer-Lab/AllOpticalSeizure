@@ -7,9 +7,9 @@ from matplotlib.transforms import Bbox
 from scipy import stats
 
 from _exp_metainfo_.exp_metainfo import ExpMetainfo, baseline_color, interictal_color, fontsize_extraplot
-from _utils_.alloptical_plotting import plot_settings, plotLfpSignal, plotMeanRawFluTrace, plot_flu_1pstim_avg_trace, plot_lfp_1pstim_avg_trace
+from _utils_.alloptical_plotting import plot_settings, plotLfpSignal, plotMeanRawFluTrace, plot_flu_1pstim_avg_trace, \
+    plot_lfp_1pstim_avg_trace, save_figure
 from _utils_.io import import_expobj
-from alloptical_utils_pj import save_figure
 
 from onePexperiment.OnePhotonStimAnalysis_main import OnePhotonStimAnalysisFuncs, OnePhotonStimResults
 from onePexperiment.OnePhotonStimMain import OnePhotonStim, onePresults

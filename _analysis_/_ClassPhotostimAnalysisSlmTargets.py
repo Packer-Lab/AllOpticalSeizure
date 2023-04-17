@@ -1391,9 +1391,10 @@ class PhotostimAnalysisSlmTargets(Quantification):
     @staticmethod
     def collect__interictal_responses_split(rerun=0, RESULTS=results):
         data_label = 'z scored to baseline'
+        # data_label = 'dFF responses'
 
-        @Utils.run_for_loop_across_exps(run_post4ap_trials=True, allow_rerun=1)
-        def collect_avg_photostim_response_preictal(**kwargs):
+        @Utils.run_for_loop_across_exps(run_post4ap_trials=True, allow_rerun=1, skip_trials=['PS06 t-013'])
+        def collect_avg_photostim_response_preictal(mean=True, **kwargs):
             expobj: Post4ap = kwargs['expobj']
 
             # sz_onset_times = expobj.seizure_lfp_onsets
@@ -1418,10 +1419,10 @@ class PhotostimAnalysisSlmTargets(Quantification):
 
             if len(expobj.preictal_stim_idx) > 0:
                 avg_response = np.mean(data_[:, expobj.preictal_stim_idx], axis=1)
-                return np.mean(avg_response)
+                return np.mean(avg_response) if mean else avg_response
 
         @Utils.run_for_loop_across_exps(run_post4ap_trials=True, allow_rerun=1)
-        def collect_avg_photostim_response_postictal(**kwargs):
+        def collect_avg_photostim_response_postictal(mean=True, **kwargs):
             expobj: Post4ap = kwargs['expobj']
 
             # sz_offset_times = expobj.seizure_lfp_offsets
@@ -1444,12 +1445,13 @@ class PhotostimAnalysisSlmTargets(Quantification):
 
             if len(expobj.postictal_stim_idx) > 0:
                 avg_response = np.mean(data_[:, expobj.postictal_stim_idx], axis=1)
-                return np.mean(avg_response)
+                return np.mean(avg_response) if mean else avg_response
             else:
                 print(f'****** WARNING: no postictal stims for {expobj.t_series_name} ****** ')
 
-        @Utils.run_for_loop_across_exps(run_post4ap_trials=True, allow_rerun=1)
-        def collect_avg_photostim_response_very_interictal(**kwargs):
+        @Utils.run_for_loop_across_exps(run_post4ap_trials=True, allow_rerun=1, skip_trials=['PS06 t-013'])
+        def collect_avg_photostim_response_very_interictal(mean=True, **kwargs):
+            """NOTE: collecting all interictal stims!"""
             expobj: Post4ap = kwargs['expobj']
 
             # take mean of response across preictal stims
@@ -1463,17 +1465,26 @@ class PhotostimAnalysisSlmTargets(Quantification):
                 data_ = dff_responses
 
             if len(expobj.veryinterictal_stim_idx) > 0:
-                avg_response = np.mean(data_[:, expobj.veryinterictal_stim_idx], axis=1)
-                return np.mean(avg_response)
+                # avg_response = np.mean(data_[:, expobj.veryinterictal_stim_idx], axis=1)
+                avg_response = np.mean(data_[:, expobj.stim_idx_outsz], axis=1)
+                return np.mean(avg_response) if mean else avg_response
             else:
                 print(f'****** WARNING: no postictal stims for {expobj.t_series_name} ****** ')
 
         if not hasattr(RESULTS, 'interictal_responses') or rerun:
             RESULTS.interictal_responses = {}
             RESULTS.interictal_responses['data_label'] = data_label
-            RESULTS.interictal_responses['preictal_responses'] = collect_avg_photostim_response_preictal()
-            RESULTS.interictal_responses['postictal_responses'] = collect_avg_photostim_response_postictal()
-            RESULTS.interictal_responses['very_interictal_responses'] = collect_avg_photostim_response_very_interictal()
+            RESULTS.interictal_responses['preictal_responses'] = collect_avg_photostim_response_preictal(mean=False)
+            RESULTS.interictal_responses['postictal_responses'] = collect_avg_photostim_response_postictal(mean=False)
+            RESULTS.interictal_responses['very_interictal_responses'] = collect_avg_photostim_response_very_interictal(mean=False)
+
+            # plot quickly
+            # plot_bar_with_points(data=[RESULTS.interictal_responses['preictal_responses'],
+            #                            RESULTS.interictal_responses['postictal_responses']], bar=False, title='', fontsize=10, points_lw=0.5,
+            #                      x_tick_labels=['Pre', 'Post'], colors=['lightseagreen', 'lightcoral'], paired=True,
+            #                      y_label='Response magnitude', show=True,
+            #                      alpha=1, s=15)
+
             RESULTS.save_results()
 
     # 4)

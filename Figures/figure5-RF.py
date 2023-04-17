@@ -15,6 +15,8 @@ import sys
 import matplotlib.pyplot as plt
 from matplotlib.ticker import ScalarFormatter
 
+import _utils_.alloptical_plotting
+import alloptical_plotting
 from _exp_metainfo_.exp_metainfo import ExpMetainfo, baseline_color, interictal_color
 
 sys.path.extend(['/home/pshah/Documents/code/reproducible_figures-main'])
@@ -252,8 +254,8 @@ ax.set_xlabel('Distance to target ($\mu$$\it{m}$)', fontsize=fs)
 
 # %%
 if save_fig and dpi > 250:
-    Utils.save_figure(fig=fig, save_path_full=f"{SAVE_FOLDER}/figure5-RF.png")
-    Utils.save_figure(fig=fig, save_path_full=f"{SAVE_FOLDER}/figure5-RF.pdf")
+    _utils_.alloptical_plotting.save_figure(fig=fig, save_path_full=f"{SAVE_FOLDER}/figure5-RF.png")
+    _utils_.alloptical_plotting.save_figure(fig=fig, save_path_full=f"{SAVE_FOLDER}/figure5-RF.pdf")
 
 fig.show()
 

@@ -24,8 +24,7 @@ from _analysis_._ClassPhotostimAnalysisSlmTargets import PhotostimAnalysisSlmTar
 from _analysis_._ClassPhotostimResponseQuantificationSLMtargets import PhotostimResponsesSLMtargetsResults, \
     PhotostimResponsesQuantificationSLMtargets
 from _exp_metainfo_.exp_metainfo import ExpMetainfo
-from _utils_.alloptical_plotting import plot_settings
-from alloptical_utils_pj import save_figure
+from _utils_.alloptical_plotting import plot_settings, save_figure
 
 import statsmodels.api as sm
 from statsmodels.formula.api import ols
@@ -165,45 +164,6 @@ rfv.add_label_axes(text='B', ax=ax, x_adjust = 0.09)
 
 
 
-# %% D - splitting responses during interictal phases
-ax = axes['main-middle-right'][0]  #: interictal split - z scores
-
-# 1-WAY ANOVA
-stats.f_oneway(RESULTS.interictal_responses['preictal_responses'],
-               RESULTS.interictal_responses['very_interictal_responses'],
-               RESULTS.interictal_responses['postictal_responses'])
-
-# create DataFrame to hold data
-data_nums = []
-num_pre = len(RESULTS.interictal_responses['preictal_responses'])
-num_mid = len(RESULTS.interictal_responses['very_interictal_responses'])
-num_post = len(RESULTS.interictal_responses['postictal_responses'])
-data_nums.extend(['pre'] * num_pre)
-data_nums.extend(['mid'] * num_mid)
-data_nums.extend(['post'] * num_post)
-
-df = pd.DataFrame({'score': flattenOnce([RESULTS.interictal_responses['preictal_responses'],
-                                         RESULTS.interictal_responses['very_interictal_responses'],
-                                         RESULTS.interictal_responses['postictal_responses']]),
-                   'group': data_nums})
-
-# perform Tukey's test
-tukey = pairwise_tukeyhsd(endog=df['score'], groups=df['group'],
-                          alpha=0.05)
-
-print(tukey)
-
-
-# fig, ax = plt.subplots(figsize=(3,4))
-data = [RESULTS.interictal_responses['preictal_responses'],
-        RESULTS.interictal_responses['very_interictal_responses'],
-        RESULTS.interictal_responses['postictal_responses']]
-plot_bar_with_points(data=data, bar=False, title='', fontsize=10,points_lw=0.5,
-                     x_tick_labels=['Pre', 'Mid', 'Post'], colors=['lightseagreen', 'gold', 'lightcoral'],
-                     y_label='Response magnitude\n(z-scored)', show=False, ylims=[-0.5, 0.8],
-                     alpha=1, fig=fig, ax=ax, s=15, sig_compare_lines={'*': [1, 2]})
-
-rfv.add_label_axes(text='D', ax=ax, x_adjust=0.12)
 
 
 # %%

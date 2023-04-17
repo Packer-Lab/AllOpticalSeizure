@@ -15,9 +15,8 @@ from _alloptical_utils import run_for_loop_across_exps
 from _utils_.paq_utils import paq_read
 from _main_.AllOpticalMain import alloptical
 from _main_.Post4apMain import Post4ap
-from _utils_.alloptical_plotting import plot_settings
+from _utils_.alloptical_plotting import plot_settings, save_figure
 from _utils_.io import import_expobj
-from alloptical_utils_pj import save_figure
 
 from _analysis_._ClassPhotostimAnalysisSlmTargets import plot_peristim_avg_fakestims
 

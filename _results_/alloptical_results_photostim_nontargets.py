@@ -2,6 +2,9 @@
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
+
+import _utils_.alloptical_plotting
+import alloptical_plotting
 import alloptical_utils_pj as aoutils
 from _utils_ import alloptical_plotting as aoplot
 from funcsforprajay import funcs as pj
@@ -145,7 +148,7 @@ for i in ls:
     axs[0, 0].set_ylabel('Avg. mag (dF/stdF)')
     fig.suptitle(f'All exps. prestim std F vs. response mag (dF/stdF) distribution - {i}4ap', y = 0.98)
     fig.tight_layout(pad=1.3)
-    aoutils.save_figure(fig, save_path_suffix=f"scatter prestim std F vs. plot response magnitude - {i}4ap.png")
+    _utils_.alloptical_plotting.save_figure(fig, save_path_suffix=f"scatter prestim std F vs. plot response magnitude - {i}4ap.png")
     # plt.savefig(save_path)
     fig.show()
 
@@ -190,7 +193,7 @@ for i in ls:
     axs[0, 0].set_ylabel('Avg. mag (dF/stdF)')
     fig.suptitle(f'All exps. prestim mean F vs. response mag (dF/stdF) distribution - {i}4ap')
     fig.tight_layout(pad=1.3)
-    aoutils.save_figure(fig, save_path_suffix=f"scatter plot prestim mean F vs. response magnitude - {i}4ap.png")
+    _utils_.alloptical_plotting.save_figure(fig, save_path_suffix=f"scatter plot prestim mean F vs. response magnitude - {i}4ap.png")
     # plt.savefig(save_path)
     fig.show()
 
@@ -225,7 +228,7 @@ axs[0, 0].set_ylabel('density')
 axs[0, 0].set_xlabel('Avg. prestim std F')
 fig.suptitle('All exps. prestim std F distribution - pre vs. run_post4ap_trials')
 fig.tight_layout(pad=1.3)
-aoutils.save_figure(fig, f"All exps. prestim std F distribution - pre vs. run_post4ap_trials.png")
+_utils_.alloptical_plotting.save_figure(fig, f"All exps. prestim std F distribution - pre vs. run_post4ap_trials.png")
 # plt.savefig(save_path)
 fig.show()
 
@@ -269,7 +272,7 @@ axs[0, 0].set_xlabel('prestim std F')
 title = 'All exps. prestim std F distribution - run_pre4ap_trials only'
 fig.suptitle(title)
 fig.tight_layout(pad=1.3)
-aoutils.save_figure(fig, save_path_suffix=f"{title}.png")
+_utils_.alloptical_plotting.save_figure(fig, save_path_suffix=f"{title}.png")
 # plt.savefig(save_path)
 fig.show()
 
@@ -316,7 +319,7 @@ axs[0, 0].set_xlabel('prestim std F')
 title = 'All exps. prestim std F distribution - run_post4ap_trials only'
 fig.suptitle(title)
 fig.tight_layout(pad=1.3)
-aoutils.save_figure(fig, save_path_suffix=f"{title}.png")
+_utils_.alloptical_plotting.save_figure(fig, save_path_suffix=f"{title}.png")
 # plt.savefig(save_path)
 fig.show()
 
@@ -354,7 +357,7 @@ axs[0, 0].set_xlabel('Avg. prestim F')
 title = 'All exps. prestim mean F distribution - pre vs. run_post4ap_trials'
 fig.suptitle(title)
 fig.tight_layout(pad=1.3)
-aoutils.save_figure(fig, save_path_suffix=f"{title}.png")
+_utils_.alloptical_plotting.save_figure(fig, save_path_suffix=f"{title}.png")
 # plt.savefig(save_path)
 fig.show()
 
@@ -405,7 +408,7 @@ pj.plot_bar_with_points(data, x_tick_labels=['pre4ap_neg', 'post4ap_neg'], color
 title = 'number of pos and neg responders pre vs. run_post4ap_trials'
 fig.suptitle(title)
 fig.tight_layout(pad=1.3)
-aoutils.save_figure(fig, save_path_suffix=f"{title}.png")
+_utils_.alloptical_plotting.save_figure(fig, save_path_suffix=f"{title}.png")
 # plt.savefig(save_path)
 fig.show()
 
@@ -459,7 +462,7 @@ axs[0, 0].set_xlabel('Time post stim (secs)')
 title = 'Avg. periphotostim positive responders'
 fig.suptitle(title)
 fig.tight_layout(pad=1.3)
-aoutils.save_figure(fig, save_path_suffix=f"{title}.png")
+_utils_.alloptical_plotting.save_figure(fig, save_path_suffix=f"{title}.png")
 # plt.savefig(save_path)
 fig.show()
 
@@ -504,7 +507,7 @@ axs[0, 0].set_xlabel('Time post stim (secs)')
 title = 'Avg. periphotostim negative responders'
 fig.suptitle(title)
 fig.tight_layout(pad=1.3)
-aoutils.save_figure(fig, save_path_suffix=f"{title}.png")
+_utils_.alloptical_plotting.save_figure(fig, save_path_suffix=f"{title}.png")
 # plt.savefig(save_path)
 fig.show()
 
@@ -566,7 +569,7 @@ axs[0, 0].set_xlabel('Time post stim (secs)')
 title = 'Summed response of positive responders'
 fig.suptitle(title)
 fig.tight_layout(pad=1.3)
-aoutils.save_figure(fig, save_path_suffix=f"{title}.png")
+_utils_.alloptical_plotting.save_figure(fig, save_path_suffix=f"{title}.png")
 # plt.savefig(save_path)
 fig.show()
 
@@ -619,7 +622,7 @@ axs[0, 0].set_xlabel('Time post stim (secs)')
 title = 'Summed response of negative responders'
 fig.suptitle(title)
 fig.tight_layout(pad=1.3)
-aoutils.save_figure(fig, save_path_suffix=f"{title}.png")
+_utils_.alloptical_plotting.save_figure(fig, save_path_suffix=f"{title}.png")
 # plt.savefig(save_path)
 fig.show()
 
@@ -676,7 +679,7 @@ pj.plot_bar_with_points(data, x_tick_labels=['run_pre4ap_trials', 'run_post4ap_t
 title = 'network evoked photostim activity - nontargets - pre vs. run_post4ap_trials'
 fig.suptitle(title, fontsize=8.5)
 fig.tight_layout(pad=1.3)
-aoutils.save_figure(fig, save_path_suffix=f"{title}.png")
+_utils_.alloptical_plotting.save_figure(fig, save_path_suffix=f"{title}.png")
 # plt.savefig(save_path)
 fig.show()
 
