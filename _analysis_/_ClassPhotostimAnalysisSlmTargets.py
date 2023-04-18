@@ -1,5 +1,6 @@
 import sys
 
+import scipy.stats
 from funcsforprajay.plotting.plotting import plot_bar_with_points
 from statsmodels.formula.api import ols
 from statsmodels.stats.anova import anova_lm
@@ -1311,8 +1312,6 @@ class PhotostimAnalysisSlmTargets(Quantification):
         baseline_cvs = responses_cv_df[responses_cv_df['group'] == 'baseline']['CV']
         interictal_cvs = responses_cv_df[responses_cv_df['group'] == 'interictal']['CV']
 
-        baseline_mean_cv = np.mean(responses_cv_df[responses_cv_df['group'] == 'baseline']['CV'])
-        interictal_mean_cv = np.mean(responses_cv_df[responses_cv_df['group'] == 'interictal']['CV'])
 
         mwu_score = mannwhitneyu(baseline_cvs, interictal_cvs)
 
@@ -1339,8 +1338,28 @@ class PhotostimAnalysisSlmTargets(Quantification):
         ax.scatter(pj.flattenOnce(results.meanresponses_vs_variance['interictal - mean responses']),
                    np.abs(pj.flattenOnce(results.meanresponses_vs_variance['interictal - var responses'])),
                    facecolors='forestgreen', s=6, alpha=0.3, lw=0)
+
+        # TODO: add mean +/- SEM for baseline and interictal groups as a scatter point and errorbar
+        from scipy.stats import sem
+        baseline_mean_response = np.mean(pj.flattenOnce(results.meanresponses_vs_variance['baseline - mean responses']))
+        # baseline_sem_response = sem(pj.flattenOnce(results.meanresponses_vs_variance['baseline - mean responses']))
+        baseline_mean_cv = np.mean(responses_cv_df[responses_cv_df['group'] == 'baseline']['CV'])
+        baseline_sem_cv = sem(responses_cv_df[responses_cv_df['group'] == 'baseline']['CV'])
+        ax.scatter(baseline_mean_response, baseline_mean_cv, facecolors='white', edgecolors='royalblue', s=20, lw=2, zorder=3)
+        ax.plot([baseline_mean_response, baseline_mean_response], [baseline_mean_cv - baseline_sem_cv, baseline_mean_cv + baseline_sem_cv], lw=1.5, c='black')
+
+        interictal_mean_response = np.mean(pj.flattenOnce(results.meanresponses_vs_variance['interictal - mean responses']))
+        # interictal_sem_response = sem(pj.flattenOnce(results.meanresponses_vs_variance['interictal - mean responses']))
+        interictal_mean_cv = np.mean(responses_cv_df[responses_cv_df['group'] == 'interictal']['CV'])
+        interictal_sem_cv = sem(responses_cv_df[responses_cv_df['group'] == 'interictal']['CV'])
+        ax.scatter(interictal_mean_response, interictal_mean_cv, facecolors='white', edgecolors='forestgreen', s=20, lw=2, zorder=3)
+        ax.plot([interictal_mean_response, interictal_mean_response], [interictal_mean_cv - interictal_sem_cv, interictal_mean_cv + interictal_sem_cv], lw=1.5, c='black')
+
+        # convert y axis to log scale
+        ax.set_yscale('log')
+
         ax.set_xlim([-30, 100])
-        ax.set_ylim([-10, 50])
+        ax.set_ylim([-10, 300])
         ax.set_xlabel('Mean Responses (% dFF)')
         ax.set_ylabel('Coefficient of Variation (CV)')
 
@@ -1618,7 +1637,7 @@ class PhotostimAnalysisSlmTargets(Quantification):
         ylim_pre4ap = ax.get_ylim()
 
         ax.set_xticklabels([tick - start_crop for tick in ax.get_xticks()])
-        ax.set_ylabel('Targetted neurons')
+        ax.set_ylabel('Ca2+ signal of Targetted neurons')
 
         # synced LFP signal
         fig, ax = plotLfpSignal(expobj=expobj, xlims=[start_crop, end_crop], ylims=[-5, 5],
