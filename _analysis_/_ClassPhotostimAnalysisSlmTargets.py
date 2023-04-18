@@ -4,6 +4,8 @@ from funcsforprajay.plotting.plotting import plot_bar_with_points
 from statsmodels.formula.api import ols
 from statsmodels.stats.anova import anova_lm
 
+from _utils_.funcs_pj import flattenOnce
+
 sys.path.extend(['/home/pshah/Documents/code/reproducible_figures-main'])
 from typing import Union, List, Dict
 
@@ -579,6 +581,9 @@ class PhotostimAnalysisSlmTargets(Quantification):
         ax = axs[0][0]
         ax.set_xticks([])
         ax.set_yticks([])
+        ax.spines['left'].set_visible(False)
+        ax.spines['bottom'].set_visible(False)
+        ax.set_ylabel('Targets', labelpad=-2)
         # print(ax.get_position())
         targets_corr_mat = np.corrcoef(z_scored_responses)
         mesh = ax.imshow(targets_corr_mat, cmap='bwr')
@@ -635,6 +640,10 @@ class PhotostimAnalysisSlmTargets(Quantification):
         # fig, ax = plt.subplots(figsize=(3, 3), dpi=400)
         ax.set_xticks([])
         ax.set_yticks([])
+        ax.spines['left'].set_visible(False)
+        ax.spines['bottom'].set_visible(False)
+        ax.set_ylabel('Targets', labelpad=-2)
+        ax.set_xlabel('Targets', labelpad=-2)
         # print(ax.get_position())
         targets_corr_mat = np.corrcoef(z_scored_responses)
         # targets_corr_mat = z_scored_responses.T.corr()
@@ -678,17 +687,19 @@ class PhotostimAnalysisSlmTargets(Quantification):
         #### CREATE COLORBAR for all axes - located beside the top right correlation matrix plot
         from matplotlib.transforms import Bbox
         bbox = np.array(axs[0][1].get_position())
-        bbox = Bbox.from_extents(bbox[1, 0] + 0.015, bbox[0, 1], bbox[1, 0] + 0.025, bbox[1, 1])
+        bbox = Bbox.from_extents(bbox[1, 0] - 0.09, bbox[0, 1] - 0.025, bbox[1, 0], bbox[1, 1] - 0.105)
         # bbox = Bbox.from_extents(bbox[1, 0], bbox[0, 0], bbox[0, 1] + 0.00, bbox[0, 1] - 0.02)
         # ax2 = fig.add_subplot(position = bbox)
+        # bbox = Bbox.from_extents(bbox[1, 0], bbox[0, 1] - 0.015, bbox[1, 0], bbox[1, 1] - 0.025)
         ax_cmap = fig.add_subplot()
         ax_cmap.set_position(pos=bbox)
         # rfv.despine(ax_cmap, remove=['top', 'bottom', 'left'])
-        ax_cmap.tick_params(length=1.5)
-        cbar = fig.colorbar(mesh, cax=ax_cmap, ticks=[-1, 0, 1])
+        ax_cmap.tick_params(length=10)
+        cbar = fig.colorbar(mesh, cax=ax_cmap, ticks=[-1, 0, 1], orientation='horizontal')
+        # cbar = fig.colorbar(mesh, ax=axs[0][1], ticks=[-1, 0, 1], ='bottom')
         cbar.set_ticklabels(['-0.5', '0', '0.5'])
         # ax_cmap.axis('off')
-        # fig.show()
+        fig.show()
         # pass
         # cmap = plt.cm.get_cmap('bwr')
         # colors = cmap(np.arange(cmap.N))
@@ -1389,11 +1400,13 @@ class PhotostimAnalysisSlmTargets(Quantification):
         expobj.save()
 
     @staticmethod
-    def collect__interictal_responses_split(rerun=0, RESULTS=results):
-        data_label = 'z scored to baseline'
-        # data_label = 'dFF responses'
+    def collect__interictal_responses_split(rerun=0, RESULTS=results, analysis_type='z scored to baseline'):
+        data_label = analysis_type
+        data_types = ['z scored to baseline', 'dFF responses']
+        assert analysis_type in data_types, print("analysis_type must be: 'z scored to baseline', 'dFF responses'")
 
-        @Utils.run_for_loop_across_exps(run_post4ap_trials=True, allow_rerun=1, skip_trials=['PS06 t-013'])
+
+        @Utils.run_for_loop_across_exps(run_post4ap_trials=True, allow_rerun=1, skip_trials=['PS06 t-013'], set_cache=False)
         def collect_avg_photostim_response_preictal(mean=True, **kwargs):
             expobj: Post4ap = kwargs['expobj']
 
@@ -1421,7 +1434,7 @@ class PhotostimAnalysisSlmTargets(Quantification):
                 avg_response = np.mean(data_[:, expobj.preictal_stim_idx], axis=1)
                 return np.mean(avg_response) if mean else avg_response
 
-        @Utils.run_for_loop_across_exps(run_post4ap_trials=True, allow_rerun=1)
+        @Utils.run_for_loop_across_exps(run_post4ap_trials=True, allow_rerun=1, set_cache=False)
         def collect_avg_photostim_response_postictal(mean=True, **kwargs):
             expobj: Post4ap = kwargs['expobj']
 
@@ -1449,9 +1462,9 @@ class PhotostimAnalysisSlmTargets(Quantification):
             else:
                 print(f'****** WARNING: no postictal stims for {expobj.t_series_name} ****** ')
 
-        @Utils.run_for_loop_across_exps(run_post4ap_trials=True, allow_rerun=1, skip_trials=['PS06 t-013'])
+        @Utils.run_for_loop_across_exps(run_post4ap_trials=True, allow_rerun=1, skip_trials=['PS06 t-013'], set_cache=False)
         def collect_avg_photostim_response_very_interictal(mean=True, **kwargs):
-            """NOTE: collecting all interictal stims!"""
+            """NOTE: collecting the "very"- i.e. excluding pre and post ictal- interictal stims!"""
             expobj: Post4ap = kwargs['expobj']
 
             # take mean of response across preictal stims
@@ -1485,7 +1498,34 @@ class PhotostimAnalysisSlmTargets(Quantification):
             #                      y_label='Response magnitude', show=True,
             #                      alpha=1, s=15)
 
+            # stats tests:
+            interictal_responses = flattenOnce(RESULTS.interictal_responses['very_interictal_responses'])
+            preictal_responses = flattenOnce(RESULTS.interictal_responses['preictal_responses'])
+            postictal_responses = flattenOnce(RESULTS.interictal_responses['postictal_responses'])
+
+            # 1-WAY ANOVA
+            stats.f_oneway(interictal_responses, preictal_responses, postictal_responses)
+
+            # # create DataFrame to hold data
+            # data_nums = []
+            # num_mid = len(interictal_responses)
+            # num_pre = len(preictal_responses)
+            # num_post = len(postictal_responses)
+            # data_nums.extend(['interictal'] * num_mid)
+            # data_nums.extend(['preictal'] * num_pre)
+            # data_nums.extend(['postictal'] * num_post)
+
+            # df = pd.DataFrame({'score': interictal_responses + preictal_responses + postictal_responses,
+            #                 'group': data_nums})
+
+            # # perform Tukey's test
+            # tukey = pairwise_tukeyhsd(endog=df['score'], groups=df['group'],
+            #                         alpha=0.05)
+
+            # print(tukey)
+
             RESULTS.save_results()
+        return RESULTS
 
     # 4)
     @staticmethod

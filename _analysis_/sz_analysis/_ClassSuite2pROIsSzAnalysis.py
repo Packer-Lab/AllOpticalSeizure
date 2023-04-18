@@ -198,9 +198,10 @@ class Suite2pROIsSz(Quantification):
                 cumulative = np.cumsum(values) / len(spks_per_sec)
 
                 # plot the cumulative function
-                plt.plot(base[:-1], cumulative, c='blue')
-                plt.title(f'Raw dff normalized - {expobj.t_series_name} - {expobj.exptype}')
-                # plt.show()
+                # fig, ax = plt.subplots(figsize=[3,3], dpi=100)
+                # ax.plot(base[:-1], cumulative, c='blue')
+                # ax.set_title(f'Raw dff normalized - {expobj.t_series_name} - {expobj.exptype}')
+                # fig.show()
 
                 return avg_spks_per_sec, spks_per_sec, neural_activity_rate
 
@@ -221,8 +222,8 @@ class Suite2pROIsSz(Quantification):
                 spks_smooth_ = np.asarray([gaussian_filter(a, sigma=frames2sigma(frames=int(expobj.fps))) for a in
                                            expobj.Suite2pROIsSz.adata.layers['s2p_spks'][:, interictal_idx]])  # TODO this is Matthias's suggested metric for calculating sigma, need to confirm
 
-                spks_smooth_ = np.asarray([gaussian_filter(a, sigma=frames2sigma(frames=int(expobj.fps))) for a in
-                                           expobj.Suite2pROIsSz.adata.layers['raw_dFF_normalized'][:, interictal_idx]])  # TODO this is Matthias's suggested metric for calculating sigma, need to confirm
+                # spks_smooth_ = np.asarray([gaussian_filter(a, sigma=frames2sigma(frames=int(expobj.fps))) for a in
+                #                            expobj.Suite2pROIsSz.adata.layers['raw_dFF_normalized'][:, interictal_idx]])  # TODO this is Matthias's suggested metric for calculating sigma, need to confirm
 
                 # # rebinning of spks data
                 # bin = 4 if int(expobj.fps) == 15 else 8
@@ -238,15 +239,19 @@ class Suite2pROIsSz(Quantification):
                 neural_activity_rate = np.array(area) / imaging_len_secs
 
                 # test plot cumsum plot
-                values, base = np.histogram(interictal_spks_per_sec, bins=100)
+                # values, base = np.histogram(interictal_spks_per_sec, bins=100)
+                values, base = np.histogram(neural_activity_rate, bins=100)
 
                 # evaluate the cumulative function
-                cumulative = np.cumsum(values) / len(interictal_spks_per_sec)
+                # cumulative = np.cumsum(values) / len(interictal_spks_per_sec)
+                cumulative = np.cumsum(values) / len(neural_activity_rate)
 
                 # plot the cumulative function
-                plt.plot(base[:-1], cumulative, c='blue')
-                plt.title(f'Raw dff normalized - {expobj.t_series_name} - {expobj.exptype}')
-                # plt.show()
+                # fig, ax = plt.subplots(figsize=[3,3], dpi=100)
+                # ax.plot(base[:-1], cumulative, c='forestgreen')
+                # ax.set_title(f'Raw dff normalized - {expobj.t_series_name} - {expobj.exptype}')
+                # ax.set_xlim([0, 2e3])
+                # fig.show()
 
                 return avg_interictal_spks_per_sec, interictal_spks_per_sec, neural_activity_rate
 
@@ -280,17 +285,14 @@ class Suite2pROIsSz(Quantification):
 
                 return avg_ictal_spks_per_sec, ictal_spks_per_sec, neural_activity_rate
 
-            pre4ap_spk_rate = np.asarray(collect__pre4ap_spk_rate())[:, 1]
-            interictal_spk_rate = np.asarray(collect__interictal_spk_rate())[:, 1]
-            ictal_spk_rate = np.asarray(collect__ictal_spk_rate())[:, 1]
+            interictal_results = np.asarray(collect__interictal_spk_rate())
+            pre4ap_results = np.asarray(collect__pre4ap_spk_rate())
+            ictal_results = np.asarray(collect__ictal_spk_rate())
 
-            avg_pre4ap_spk_rate = np.asarray(collect__pre4ap_spk_rate())[:, 0]
-            avg_interictal_spk_rate = np.asarray(collect__interictal_spk_rate())[:, 0]
-            avg_ictal_spk_rate = np.asarray(collect__ictal_spk_rate())[:, 0]
 
-            neural_activity_rate_pre4ap = np.asarray(collect__pre4ap_spk_rate())[:, 2]
-            neural_activity_rate_interictal = np.asarray(collect__interictal_spk_rate())[:, 2]
-            neural_activity_rate_ictal = np.asarray(collect__ictal_spk_rate())[:, 2]
+            pre4ap_spk_rate, avg_pre4ap_spk_rate, neural_activity_rate_pre4ap = pre4ap_results[:, 1], pre4ap_results[:, 0], pre4ap_results[:, 2]
+            interictal_spk_rate, avg_interictal_spk_rate, neural_activity_rate_interictal = interictal_results[:, 1], interictal_results[:, 0], interictal_results[:, 2]
+            ictal_spk_rate, avg_ictal_spk_rate, neural_activity_rate_ictal = ictal_results[:, 1], ictal_results[:, 0], ictal_results[:, 2]
 
             Suite2pROIsSzResults.spk_rates = {'baseline': pre4ap_spk_rate,
                                               'interictal': interictal_spk_rate,

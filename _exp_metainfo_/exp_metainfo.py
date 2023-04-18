@@ -247,8 +247,8 @@ class FigureSettings:
     fontsize = {
             "title": 9,
             "label": 12,
-            "extraplot": 9,
-            "intraplot": 7
+            "extraplot": 10,
+            "intraplot": 8
         }
 
 class ExpMetainfo:
@@ -316,7 +316,7 @@ outsz_color = ExpMetainfo.figures.colors['ictal - outsz']
 general_color = ExpMetainfo.figures.colors['general']
 
 fontsize_extraplot = ExpMetainfo.figures.fontsize['extraplot']
-
+fontsize_intraplot = ExpMetainfo.figures.fontsize['intraplot']
 
 # # ARCHIVE
 # def __resultsmeta_to_csv():

@@ -439,9 +439,6 @@ class PhotostimResponsesQuantificationSLMtargets(Quantification):
         return fake_stims
 
 
-
-
-
     # 1) collect various photostimulation success rates, matrix of hits/failures, responses sizes and photostim stims trace snippets of SLM targets
     def collect_photostim_responses_exp(self, expobj: Union[alloptical, Post4ap]):
         """
@@ -558,9 +555,6 @@ class PhotostimResponsesQuantificationSLMtargets(Quantification):
         ax.set_title(f"{expobj.t_series_name} - fakestims avg responses", wrap = True)
         f.tight_layout(pad=2)
         f.show()
-
-
-
 
     # 2) create anndata SLM targets to store photostim responses for each experiment
     def create_anndata_SLMtargets(self, expobj: Union[alloptical, Post4ap]):

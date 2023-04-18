@@ -376,7 +376,7 @@ class TargetsSzInvasionSpatial_codereview(SLMTargets):
                                                                                      'distance_to_sz']]
 
     @staticmethod
-    @Utils.run_for_loop_across_exps(run_pre4ap_trials=0, run_post4ap_trials=1, allow_rerun=0)
+    @Utils.run_for_loop_across_exps(run_pre4ap_trials=0, run_post4ap_trials=1, allow_rerun=1)
     def run__collect_responses_vs_distance_to_seizure_SLMTargets(**kwargs):
         "code review - looks good to go .22/03/15"
         expobj = kwargs['expobj']
@@ -756,7 +756,7 @@ class TargetsSzInvasionSpatial_codereview(SLMTargets):
         results.rolling_binned__distance_vs_photostimresponses['anova oneway - binned responses'] = oneway_r
 
 
-        def logarithmic_regression_fit(x, y, **kwargs):
+        def regression_fit(x, y, **kwargs):
             """
             Fit a logarithmic regression function to the data
             :param x: x data
@@ -836,20 +836,20 @@ class TargetsSzInvasionSpatial_codereview(SLMTargets):
 
 
         # plot distances vs. avg responses as scatter plot using matplotlib
-        fig, ax = plt.subplots(figsize=[10,5])
+        fig, ax = plt.subplots(figsize=[5,3])
         for i, dist in enumerate(distances):
             ax.scatter(dist, avg_responses[i], s=3, alpha=0.2, color='k')
         # ax.set_ylim([-2, 2.25])
 
         # RUN LOGARITHMIC CURVE FIT
-        logarithmic_regression_fit(distances, avg_responses, ax=ax, fig=fig)
+        regression_fit(distances, avg_responses, ax=ax, fig=fig)
 
         fig.show()
 
 
 
         # plot distances vs. all stim responses as scatter plot using matplotlib
-        fig, ax = plt.subplots(figsize=[10,5])
+        fig, ax = plt.subplots(figsize=[5,3])
         x = []
         y = []
         for i, dist in enumerate(distances):
@@ -859,9 +859,7 @@ class TargetsSzInvasionSpatial_codereview(SLMTargets):
         # ax.set_ylim([-2, 2.25])
 
         # RUN LOGARITHMIC CURVE FIT
-        logarithmic_regression_fit(pj.flattenOnce(x), pj.flattenOnce(y), ax=ax, fig=fig)
-
-
+        regression_fit(pj.flattenOnce(x), pj.flattenOnce(y), ax=ax, fig=fig)
 
 
 
@@ -938,113 +936,28 @@ class TargetsSzInvasionSpatial_codereview(SLMTargets):
         results.rolling_binned__distance_vs_photostimresponses_dFF['kruskal - binned responses'] = kruskal_r
         results.rolling_binned__distance_vs_photostimresponses_dFF['anova oneway - binned responses'] = oneway_r
 
+        # results.save_results() if save else None
+        
+        
+        # COLLECT ALL BASELINE RESPONSES DF/PRESTIMF OF ALL TARGETS TO USE FOR PLOTTING
+        if rerun or not hasattr(results, 'baseline_responses'):
+            @Utils.run_for_loop_across_exps(run_pre4ap_trials=1, run_post4ap_trials=0, set_cache=False, skip_trials=['PS04 t-017'])
+            def collect_avg_baseline_responses(**kwargs):
+                expobj: alloptical = kwargs['expobj']
+                targets_responses = expobj.PhotostimResponsesSLMTargets
 
-        def logarithmic_regression_fit(x, y, **kwargs):
-            """
-            Fit a logarithmic regression function to the data
-            :param x: x data
-            :param y: y data
-            :return: a, b
-            """
-
-            ## CURVE FITTING USING NUMPY POLYFIT
-            z = np.polyfit(x, y, 3)
-            p = np.poly1d(z)
-            y_pred = p(x)
-            ## TEST PLOT OF y_pred
-            if 'ax' in kwargs:
-                kwargs['ax'].plot(x, y_pred, lw=1, color='blue', ls='--', label='poly-3')
-
-            # Check the accuracy :
-            from sklearn.metrics import r2_score
-            Accuracy = r2_score(y, y_pred)
-            print(f'R**2 (polyfit func): {Accuracy}')
+                response_type = kwargs['response_type'] if 'response_type' in kwargs else main.response_type
+                responses = np.mean(targets_responses.adata.layers[response_type], axis=1)
 
 
-            ## CURVE_FITING USING SCIPY - for LINEAR and LOG FIT
-            def log_func(x, a, b):
-                return a + b * np.log(x)
+                return responses
 
-            def lin_func(x, a, b):
-                return a + b * x
+            func_collector = collect_avg_baseline_responses()
 
-            # Finding the optimal parameters: LOG FUNCTION
-            # change first value to 0.1 to avoid log(0) error
-            __filter = np.where(np.array(x) == 0)[0][-1] + 1
-            x_forlog = x[__filter:]
-            y_forlog = y[__filter:]
-
-            from scipy.optimize import curve_fit
-            popt, pcov = curve_fit(log_func, x_forlog, y_forlog)
-            print("a  = ", popt[0])
-            print("b  = ", popt[1])
-
-            # Predicting values:
-            y_pred = log_func(x_forlog, popt[0], popt[1])
-
-            ## TEST PLOT OF y_pred
-            if 'ax' in kwargs:
-                kwargs['ax'].plot(x_forlog, y_pred, lw=1, color='r', ls='--', label='log')
-
-            # Check the accuracy :
-            Accuracy = r2_score(y_forlog, y_pred)
-            print(f'R**2 (log func): {Accuracy}')
-
-
-            # Finding the optimal parameters: LINEAR FUNCTION
-            # change first value to 0.1 to avoid log(0) error
-            from scipy.optimize import curve_fit
-            popt, pcov = curve_fit(lin_func, x, y)
-            print("a  = ", popt[0])
-            print("b  = ", popt[1])
-
-            # Predicting values:
-            y_pred = lin_func(np.array(x, dtype=np.float64), popt[0], popt[1])
-
-            ## TEST PLOT OF y_pred
-            if 'ax' in kwargs:
-                kwargs['ax'].plot(x, y_pred, lw=1, color='g', ls='--', label='linear')
-
-            # Check the accuracy :
-            Accuracy = r2_score(y, y_pred)
-            print(f'R**2 (lin func): {Accuracy}')
-
-            # add legend
-            kwargs['ax'].legend()
-            kwargs['ax'].axhline(0)
-            kwargs['fig'].show()
-
-
-            return popt[0], popt[1], y_pred
-
-
-        # plot distances vs. avg responses as scatter plot using matplotlib
-        # fig, ax = plt.subplots(figsize=[10,5])
-        # for i, dist in enumerate(distances):
-        #     ax.scatter(dist, avg_responses[i], s=3, alpha=0.2, color='k')
-        # ax.set_ylim([-2, 2.25])
-
-        # RUN LOGARITHMIC CURVE FIT
-        # logarithmic_regression_fit(distances, avg_responses, ax=ax, fig=fig)
-
-        # fig.show()
-
-
-
-        # plot distances vs. all stim responses as scatter plot using matplotlib
-        # fig, ax = plt.subplots(figsize=[10,5])
-        # x = []
-        # y = []
-        # for i, dist in enumerate(distances):
-        #     ax.scatter([dist for _ in responses[i]], responses[i], s=3, alpha=0.1, color='k')
-        #     x.append([dist for _ in responses[i]])
-        #     y.append(responses[i])
-        # ax.set_ylim([-2, 2.25])
-
-        # RUN LOGARITHMIC CURVE FIT
-        # logarithmic_regression_fit(pj.flattenOnce(x), pj.flattenOnce(y), ax=ax, fig=fig)
-
+            results.baseline_responses = func_collector
         results.save_results() if save else None
+        
+
         return results
 
         # return bin_width, distances, num, avg_responses, conf_int
@@ -1131,17 +1044,18 @@ class TargetsSzInvasionSpatial_codereview(SLMTargets):
         ax.fill_between(x=conf_int_distances, y1=conf_int_values_neg, y2=conf_int_values_pos, color='lightgray', zorder=2, alpha=1)
         ax.step(distances, avg_responses, c='forestgreen', zorder=3)
         # ax.scatter(distances[:-1], avg_responses, c='orange', zorder=4)
-        if TargetsSzInvasionSpatial_codereview.response_type == 'dFF (zscored) (baseline)':
-            ax.set_ylim([-1.5, 2.25])
-            ax.set_yticks([-1, 0, 1, 2], [-1, 0, 1, 2], fontsize=10)
-            ax.set_ylabel(f'{rfv.italic("Z")}-score\n(to baseline)',fontsize=10)
-        ax.set_xticks([0, 100, 200, 300, 400], [0, 100, 200, 300, 400], fontsize=10)
-        ax.set_xlabel('')
         # ax.set_title(
         #     f'photostim responses vs. distance to sz wavefront (binned every {results.rolling_binned__distance_vs_photostimresponses["bin_width_um"]}um)',
         #     wrap=True)
         # ax.set_xlabel(r'Distance to seizure wavefront ($\mu$$\it{m}$)')
-        # ax.set_ylabel(TargetsSzInvasionSpatial_codereview.response_type)
+        ax.set_xticks([0, 100, 200, 300, 400], [0, 100, 200, 300, 400], fontsize=10)
+        ax.set_xlabel('')
+        if TargetsSzInvasionSpatial_codereview.response_type == 'dFF (zscored) (baseline)':
+            ax.set_ylim([-1.5, 2.25])
+            ax.set_yticks([-1, 0, 1, 2], [-1, 0, 1, 2], fontsize=10)
+            ax.set_ylabel(f'{rfv.italic("Z")}-score\n(to baseline)',fontsize=10)
+        else:
+            ax.set_ylabel(r'Responses (dF/F)') if TargetsSzInvasionSpatial_codereview.response_type == r'SLM Targets photostim responses (dF/prestimF)' else None
         # ax.set_ylabel(f'Photostimulation response\n' + r'($\it{z}$-scored)')
         ax.set_title(f'Response magnitude\nTargets', fontsize=10)
         ax.margins(0)
@@ -1154,28 +1068,25 @@ class TargetsSzInvasionSpatial_codereview(SLMTargets):
         # ax2.set_xticks([])
         # ax2.set_yticks([])
         # ax2.axis('off')
+
+
+
+        # ADD AVG BASELINE RESPONSES FOR THE DF/PRESTIMF PLOT
+        if TargetsSzInvasionSpatial_codereview.response_type == 'SLM Targets photostim responses (dF/prestimF)':
+            mean = np.mean(pj.flattenOnce(results.baseline_responses))
+            ax.axhline(y=mean, ls='--', lw=2, zorder=0, c='cornflowerblue')
+            # std = np.std(pj.flattenOnce(results.baseline_responses))
+            # ax.scatter(x=20,y=mean, s=50, c='cornflowerblue')
+            # ax.plot([20,20], [mean-std, mean+std], lw=4, c='gray', zorder=0)
+            # ax.set_ylim([0, 40])
+
+
+
         if not 'fig' in kwargs and not 'axes' in kwargs:  # fig.tight_layout(pad=1)
-            # fig.show()
+            fig.show()
             save_path_full = f'{SAVE_FIG}/responses_sz_distance_binned_line_plot.png'
             # Utils.save_figure(fig, save_path_full=save_path_full) if save_path_full is not None else None
             # Utils.save_figure(fig, save_path_full=save_path_full[:-4] + '.svg') if save_path_full is not None else None
-
-
-    @staticmethod
-    def DEPRECATE_calc__logarithmic_fit_responses_v_distance_no_normalization_rolling_bins(results, save_path_full=None, **kwargs):
-        """calculate binned responses over distance as a step function, with heatmap showing # of datapoints"""
-
-        print(f'Photostim responses anova: {results.rolling_binned__distance_vs_photostimresponses["anova oneway - binned responses"]}')
-
-        # distances_bins = results.rolling_binned__distance_vs_photostimresponses['distance_bins']
-        distances = results.rolling_binned__distance_vs_photostimresponses['distance_bins']
-        avg_responses = results.rolling_binned__distance_vs_photostimresponses['avg_photostim_response_in_bin']
-        conf_int = results.rolling_binned__distance_vs_photostimresponses['95conf_int']
-        num2 = results.rolling_binned__distance_vs_photostimresponses['num_points_in_bin']
-
-        conf_int_distances = pj.flattenOnce([[distances[i], distances[i + 1]] for i in range(len(distances) - 1)])
-        conf_int_values_neg = pj.flattenOnce([[val, val] for val in conf_int[1:, 0]])
-        conf_int_values_pos = pj.flattenOnce([[val, val] for val in conf_int[1:, 1]])
 
 
 # %% RESULTS SAVING CLASS
@@ -1200,6 +1111,7 @@ class TargetsSzInvasionSpatialResults_codereview(Results):
                                                        '95conf_int': None
                                                        # confidence interval around the avg photostim responses at each bin
                                                        }  #: photostim responses averaged over binned distances --> used to create step function plot.
+        self.baseline_responses = None  # average responses of all targets from baseline stims
         self.data_all = None
         self.percentiles = None
         self.responses_sorted = None
@@ -1260,7 +1172,8 @@ results = TargetsSzInvasionSpatialResults_codereview.load()
 
 if __name__ == '__main__':
 
-    for response_type in ['dFF', 'SLM Targets photostim responses (dF/prestimF)', 'SLM Targets photostim responses (dF/stdF)']:
+    # for response_type in ['dFF', 'SLM Targets photostim responses (dF/prestimF)', 'SLM Targets photostim responses (dF/stdF)']:  # <-- for trying out different variations of non-zscored normalized response quantification methods
+    for response_type in ['SLM Targets photostim responses (dF/prestimF)']:
         main.response_type = response_type
 
         "Running updated code pipeline for just one experiment all the way thru."
@@ -1268,7 +1181,7 @@ if __name__ == '__main__':
         #
         # main.run__add__min_distance_to_seizure()  # <- code review done
         #
-        main.run__collect_responses_vs_distance_to_seizure_SLMTargets()  # <- code review done
+        # main.run__collect_responses_vs_distance_to_seizure_SLMTargets()  # <- code review done
 
         # collect distance vs. respnses for distance bins
         # bin_width, distances, num, avg_responses, conf_int =  main.collect__binned__distance_v_responses()
@@ -1310,27 +1223,10 @@ if __name__ == '__main__':
         #                                             scale_percentile_distances=results.scale_percentile_distances)
 
         # results = main.collect__binned__distance_v_responses_rolling_bins(results=results, rerun=1, save=False)
-        results = main.collect__binned__distance_v_responses_rolling_bins_dFF(results=results, rerun=0, save=False)
-
-        # main.plot__responses_v_distance_no_normalization_rolling_bins(results=results)
+        results = main.collect__binned__distance_v_responses_rolling_bins_dFF(results=results, rerun=0, save=True)
+        main.plot__responses_v_distance_no_normalization_rolling_bins(results=results)
 
         # run__calc_meanGCaMP_in_out_szwavefront()
-
-
-        # quick figure of responses vs distance, for dF/prestimF
-        fig, ax = plt.subplots(figsize=(6,3), dpi=200)
-        main.plot__responses_v_distance_no_normalization_rolling_bins(results=results, fig=fig, axes=[ax])
-        ax.axhline(0, ls='--', lw=1, color='black', zorder=0)
-        # ax.set_ylabel('dF/prestimF\n(norm. to baseline)')
-        # ax.set_ylabel('dF/stdF\n(norm. to baseline)')
-        # ax.set_ylabel('dFF\n(norm. to baseline)')
-        ax.set_title(f'{response_type} (not normalized)')
-        ax.set_ylabel('Response magnitude')
-        ax.set_xlabel(r'Distance to seizure wavefront ($\mu$$\it{m}$)')
-        fig.tight_layout()
-        fig.show()
-        # aoplot.save_figure(fig=fig, save_path_full=f'{SAVE_FIG}/responses_v_distance_{response_type}.png')
-
 
 
 

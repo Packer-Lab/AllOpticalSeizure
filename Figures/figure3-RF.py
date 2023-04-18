@@ -4,14 +4,15 @@
 
 
 # %%
-import sys
+import sys; sys.path.extend(['/home/pshah/Documents/code/AllOpticalSeizure'])
+
 import matplotlib.pyplot as plt
 import pandas as pd
-from funcsforprajay.funcs import flattenOnce
 
 plt.style.use(['alloptical', 'use_mathtext'])
 
 from funcsforprajay.plotting.plotting import plot_bar_with_points
+from funcsforprajay.funcs import flattenOnce
 from matplotlib.transforms import Bbox
 from scipy import stats
 from statsmodels.stats.multicomp import pairwise_tukeyhsd
@@ -37,9 +38,11 @@ from pycircstat.tests import vtest
 results: PhotostimResponsesSLMtargetsResults = PhotostimResponsesSLMtargetsResults.load()
 main = PhotostimAnalysisSlmTargets
 
+
+
 sz_results: ExpSeizureResults = ExpSeizureResults.load()
 
-SAVE_FOLDER = f'/home/pshah/Documents/figures/alloptical_seizures_draft/'
+SAVE_FOLDER = f'/home/pshah/Documents/figures/alloptical_seizures_draft_Apr2023/'
 fig_items = f'/home/pshah/Documents/figures/alloptical_seizures_draft/figure-items/'
 
 
@@ -92,27 +95,42 @@ rfv.add_label_axes(text="C", ax=axes['bottom-C'][0], y_adjust=0.0)
 
 
 # %% F - splitting responses during interictal phases
-main.collect__interictal_responses_split(rerun=1)
-results: PhotostimResponsesSLMtargetsResults = PhotostimResponsesSLMtargetsResults.load()
+results = main.collect__interictal_responses_split(rerun=0)
+
+
+# %%
+
 ax = axes['bottom-right-F'][0]  #: interictal split - z scores
 
+
+# figure for individual targets pooled across exps:
+preictal_responses = flattenOnce(results.interictal_responses['preictal_responses'])
+postictal_responses = flattenOnce(results.interictal_responses['postictal_responses'])
+interictal_responses = flattenOnce(results.interictal_responses['very_interictal_responses'])
+
+to_plot = [interictal_responses, preictal_responses, postictal_responses]
+
+plot_bar_with_points(data=to_plot, bar=True, title='', fontsize=10,points_lw=0.5,
+                     x_tick_labels=['All', 'Pre-ictal', 'Post-ictal'], colors=['gold', 'lightseagreen', 'lightcoral'],
+                     y_label='Response magnitude\n(z-scored)', show=False, ylims=[-0.5, 0.8],
+                     alpha=1, fig=fig, ax=ax, s=15)
+
+
+
+# %%
 # 1-WAY ANOVA
-stats.f_oneway(results.interictal_responses['preictal_responses'],
-               results.interictal_responses['very_interictal_responses'],
-               results.interictal_responses['postictal_responses'])
+stats.f_oneway(preictal_responses, interictal_responses, postictal_responses)
 
 # create DataFrame to hold data
 data_nums = []
-num_pre = len(results.interictal_responses['preictal_responses'])
-num_mid = len(results.interictal_responses['very_interictal_responses'])
-num_post = len(results.interictal_responses['postictal_responses'])
+num_pre = len(preictal_responses)
+num_mid = len(interictal_responses)
+num_post = len(postictal_responses)
 data_nums.extend(['pre'] * num_pre)
 data_nums.extend(['mid'] * num_mid)
 data_nums.extend(['post'] * num_post)
 
-df = pd.DataFrame({'score': flattenOnce([results.interictal_responses['preictal_responses'],
-                                         results.interictal_responses['very_interictal_responses'],
-                                         results.interictal_responses['postictal_responses']]),
+df = pd.DataFrame({'score': preictal_responses + interictal_responses + postictal_responses,
                    'group': data_nums})
 
 # perform Tukey's test
@@ -128,14 +146,13 @@ data = [results.interictal_responses['preictal_responses'],
         results.interictal_responses['postictal_responses']]
 
 # run paired t test on preictal and postictal
-t, p = stats.ttest_rel(results.interictal_responses['very_interictal_responses'],
-                          results.interictal_responses['postictal_responses'])
+t, p = stats.ttest_rel(interictal_responses, postictal_responses)
 print(f"t = {t}, p = {p}")
 
-plot_bar_with_points(data=data, bar=True, title='', fontsize=10,points_lw=0.5,
-                     x_tick_labels=['Pre', 'interictal', 'Post'], colors=['lightseagreen', 'red', 'lightcoral'],
-                     y_label='Response magnitude\n(z-scored)', show=False, ylims=[-0.5, 0.8],
-                     alpha=1, fig=fig, ax=ax, s=15)
+# plot_bar_with_points(data=data, bar=False, title='', fontsize=10,points_lw=0.5,
+#                      x_tick_labels=['Pre', 'interictal', 'Post'], colors=['lightseagreen', 'red', 'lightcoral'],
+#                      y_label='Response magnitude\n(z-scored)', show=False, ylims=[-0.5, 0.8],
+#                      alpha=1, fig=fig, ax=ax, s=15)
 
 rfv.add_label_axes(text='F', ax=ax, x_adjust=0.12)
 
