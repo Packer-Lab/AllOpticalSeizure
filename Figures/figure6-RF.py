@@ -69,7 +69,7 @@ distance_lims = [19, 400]  # limit of analysis
 fs = ExpMetainfo.figures.fontsize['extraplot']
 rfv.set_fontsize(fs)
 
-test = 0
+test = 1
 save_fig = True if not test else False
 dpi = 100 if test else 300
 
@@ -85,16 +85,16 @@ layout = {
                       'bound': (0.05, 0.77, 0.27, 0.92)},
     'main-right': {'panel_shape': (2, 1),
                    'bound': (0.40, 0.77, 0.95, 0.92),
-                   'wspace': 0.2},
+                   'wspace': 0.4},
     'main-left-mid': {'panel_shape': (1, 1),
                       'bound': (0.11, 0.50, 0.23, 0.65)},
     'main-right-mid': {'panel_shape': (2, 1),
                        'bound': (0.40, 0.50, 0.95, 0.65),
-                       'wspace': 0.2}
+                       'wspace': 0.4}
 }
 
 
-test = 1
+test = 0
 save_fig = True if not test > 0 else False
 dpi = 150 if test > 0 else 300
 fig, axes, grid = rfv.make_fig_layout(layout=layout, dpi=dpi)
@@ -108,7 +108,7 @@ ax_b = axes['main-right'][0]
 ax_b1 = axes['main-right'][1]
 
 # rfv.add_label_axes(text="A'", ax=ax, x_adjust=x_adj + 0.03)
-main_spatial.collect__binned__distance_v_responses(results=results_spatial, rerun=0)
+# main_spatial.collect__binned__distance_v_responses(results=results_spatial, rerun=0)
 
 # ROLLING BINS:
 main_spatial.collect__binned__distance_v_responses_rolling_bins(results=results_spatial, rerun=0)
@@ -116,7 +116,7 @@ main_spatial.collect__binned__distance_v_responses_rolling_bins(results=results_
 results_spatial = TargetsSzInvasionSpatialResults_codereview.load()
 main_spatial.plot__responses_v_distance_no_normalization_rolling_bins(results=results_spatial, axes=[ax_b, ], fig=fig)
 
-ExpSeizureAnalysis.calcNumSzWvStimFrames()
+# ExpSeizureAnalysis.calcNumSzWvStimFrames()
 
 # adding neuropil signal
 results = NonTargetsSzInvasionSpatialResults.load()

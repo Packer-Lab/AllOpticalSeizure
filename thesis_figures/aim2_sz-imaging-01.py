@@ -10,10 +10,10 @@ sys.path.extend(['/home/pshah/Documents/code/reproducible_figures-main'])
 import numpy as np
 import matplotlib.pyplot as plt
 
-from _exp_metainfo_.exp_metainfo import fontsize_extraplot, fontsize_intraplot
+from _exp_metainfo_.exp_metainfo import fontsize_intraplot
 
 
-from _analysis_.sz_analysis._ClassSuite2pROIsSzAnalysis import Suite2pROIsSz, Suite2pROIsSzResults
+from _analysis_.sz_analysis._ClassSuite2pROIsSzAnalysis import Suite2pROIsSzResults
 from _results_.sz4ap_results import plotHeatMapSzAllCells
 from _analysis_.sz_analysis._ClassExpSeizureAnalysis import ExpSeizureResults
 
@@ -93,9 +93,9 @@ from _analysis_.sz_analysis._ClassExpSeizureAnalysis import ExpSeizureAnalysis a
 
 ax, ax2, ax3, ax4 = axes['D'][0], axes['D'][1], axes['D'][2], axes['D'][3]
 
+main.plot__sz_propagation_speed(results=results_seizure, fig=fig, ax=ax3, show=False)
 main.plot__sz_incidence(fig=fig, ax=ax, show=False)
 main.plot__sz_lengths(fig=fig, ax=ax2, show=False)
-main.plot__sz_propagation_speed(results=results_seizure, fig=fig, ax=ax3, show=False)
 
 
 

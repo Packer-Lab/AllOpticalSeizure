@@ -139,7 +139,7 @@ ax.set_rlabel_position(-60)  # Move radial labels away from plotted line
 ax.grid(True)
 # ax.set_xticks((2 * np.pi) * np.arange(0, (expobj.stim_interval_fr / bin_width)) / period)
 ax.set_xticks([0, (2 * np.pi) / 4, (2 * np.pi) / 2, (6 * np.pi) / 4])
-# ax.set_xticklabels([r'$\it{\Theta}$ = 0', '', '', ''], fontsize=10)
+ax.set_xticklabels([r'$\it{\Theta}$ = 0', '', '', ''], fontsize=10)
 ax.spines['polar'].set_visible(False)
 
 ax.set_title(label='Seizure probability', fontsize=fs, va='bottom')

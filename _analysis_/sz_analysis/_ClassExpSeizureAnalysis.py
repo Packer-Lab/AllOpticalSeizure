@@ -1116,7 +1116,7 @@ class ExpSeizureAnalysis(Quantification):
     # 11)
     @staticmethod
     def calcNumSzWvStimFrames():
-        @Utils.run_for_loop_across_exps(run_pre4ap_trials=False, run_post4ap_trials=True, allow_rerun=True)
+        @Utils.run_for_loop_across_exps(run_pre4ap_trials=False, run_post4ap_trials=True, allow_rerun=False)
         def _calc(**kwargs):
             expobj: Post4ap = kwargs['expobj']
             return len(expobj.stimsWithSzWavefront)

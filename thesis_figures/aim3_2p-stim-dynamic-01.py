@@ -64,7 +64,7 @@ layout = {
     'main-middle-left': {'panel_shape': (1, 1),
                          'bound': (0.07, 0.55, 0.15, 0.70)},
     'main-middle-middle': {'panel_shape': (1, 1),
-                           'bound': (0.23, 0.55, 0.47, 0.70),
+                           'bound': (0.26, 0.55, 0.47, 0.70),
                            'wspace': 0.2},
     'main-middle-corr-left': {'panel_shape': (1, 2),
                          'bound': (0.53, 0.55, 0.63, 0.70),
@@ -84,7 +84,7 @@ rfv.show_test_figure_layout(fig, axes=axes, show=True) if test == 2 else None  #
 # %% C - mean response vs. variability
 axs = axes['main-middle-middle']
 main.plot__mean_response_vs_variability(fig, axs=axs, rerun=0, fontsize=ExpMetainfo.figures.fontsize['extraplot'])
-rfv.add_label_axes(text='C', ax=axs[0], x_adjust=0.1)
+rfv.add_label_axes(text='C', ax=axs[0], x_adjust=0.08)
 
 
 
@@ -99,7 +99,7 @@ axes['main-top'][0, 1].text(s='Interictal', x = -4, y=0, rotation=90, fontsize=1
 
 ax = axes['main-middle-left'][0]  #: CV quantification bar plot
 main.plot__variability(fig=fig, ax=ax, fontsize=ExpMetainfo.figures.fontsize['extraplot'])
-rfv.add_label_axes(text='B', ax=ax, x_adjust = 0.09)
+rfv.add_label_axes(text='B', ax=ax, x_adjust = 0.06)
 
 
 
@@ -134,7 +134,7 @@ axs = ax
 fig, axs = plt.subplots(ncols=1, nrows=1, figsize=(3, 4)) if fig is None and axs is None else (fig, axs)
 plot_bar_with_points(data=[baseline, midinterictal], paired=True, fontsize=10, bar=False,
                      x_tick_labels=['Baseline', 'Interictal'], colors=['royalblue', 'forestgreen'],
-                     y_label='Correlation (R)', show=False, alpha=1, fig=fig, ax=axs, s=15, ylims=[0, 1.0],
+                     y_label='Inter-target correlation (R)', show=False, alpha=1, fig=fig, ax=axs, s=15, ylims=[0, 1.0],
                      sig_compare_lines={'*': [0, 1]}, points_lw=0.5)
 # axs.text(x=2.5, y=0.025, s=f't-test rel.: {stats_score[1]:.2e}', fontsize=3)
 

@@ -193,7 +193,7 @@ def influence_response_proximal_and_distal(axs, fig, results=results):
     # pj.lineplot_frame_options(fig=fig, ax=ax, x_label='Distance to target ' + '($\mu$$\it{m}$)', y_label='Photostimulation influence')
 
 
-    ax_d.set_title(f'Distal\n' + r'(<100 $\mu$$\it{m}$ to seizure)', fontsize=10)
+    ax_d.set_title(f'Distal\n' + r'(>200 $\mu$$\it{m}$ to seizure)', fontsize=10)
     # fig.tight_layout()
     # fig.show()
 

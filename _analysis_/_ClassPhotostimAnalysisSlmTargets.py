@@ -1361,7 +1361,7 @@ class PhotostimAnalysisSlmTargets(Quantification):
         ax.set_xlim([-30, 100])
         ax.set_ylim([-10, 300])
         ax.set_xlabel('Mean Responses (% dFF)')
-        ax.set_ylabel('Coefficient of Variation (CV)')
+        ax.set_ylabel('CV')
 
         ax.text(x=-15, y=-5,
                 s=f'2way: response: {twoway.loc["C(binned_response)", "PR(>F)"]:.2e}, group:respons): {twoway.loc["C(group):C(binned_response)", "PR(>F)"]:.2e}',
