@@ -52,7 +52,7 @@ layout = {
     'D': {'panel_shape': (3, 1),
           'bound': (0.43, 0.57, 0.73, 0.67),
           'wspace': 1.8},
-    # 'F': {'panel_shape': (1, 1),
+    # 'E': {'panel_shape': (1, 1),
     #       'bound': (0.90, 0.70, 0.95, 0.78)
     #       }
 }

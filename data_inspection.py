@@ -11,6 +11,7 @@ from _utils_.io import import_expobj
 sys.path.append('/home/pshah/Documents/code/PackerLab_pycharm/')
 sys.path.append('/home/pshah/Documents/code/')
 from _utils_ import alloptical_plotting as aoplot
+from _main_.AllOpticalMain import alloptical
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -20,10 +21,19 @@ results_object_path = '/home/pshah/mnt/qnap/Analysis/alloptical_results_superobj
 allopticalResults = import_resultsobj(pkl_path=results_object_path)
 
 
+# %% list all dates of all experiments
+dates = []
+@run_for_loop_across_exps(run_pre4ap_trials=True, run_post4ap_trials=True, set_cache=False, supress_print=True, allow_rerun=True)
+def list_all_dates(**kwargs):
+    expobj = kwargs['expobj']
+    dates.append(expobj.date) if expobj.date not in dates else None
+
+list_all_dates()
+print(dates)
 
 # %% IMPORT expobj
 # expobj, experiment = aoutils.import_expobj(aoresults_map_id='pre h.0')
-expobj = import_expobj(prep='RL109', trial='t-017')
+expobj: alloptical = import_expobj(prep='PS06', trial='t-011')
 fig, axs = plt.subplots(2, 1, figsize=(20, 6))
 fig, ax = aoplot.plotMeanRawFluTrace(expobj=expobj, stim_span_color=None, x_axis='frames', fig=fig, ax=axs[0], show=False)
 fig, ax = aoplot.plotLfpSignal(expobj=expobj, stim_span_color='', x_axis='time', fig=fig, ax=axs[1], show=False)
