@@ -1,14 +1,10 @@
-# %% FIGURE 1 - LIVE IMAGING OF SEIZURES IN AWAKE ANIMALS
-figname = 'aim2_sz-imaging-01'
+# %% FIGURE 1 - LIVE IMAGING OF SEIZURES IN AWAKE ANIMALS (to be combined with Fig 1 from Inh serving as the bottom half)
 
 import sys
 
 import pandas as pd
 sys.path.extend(['/home/pshah/Documents/code/AllOpticalSeizure', '/home/pshah/Documents/code/AllOpticalSeizure'])
 sys.path.extend(['/home/pshah/Documents/code/reproducible_figures-main'])
-
-import numpy as np
-import matplotlib.pyplot as plt
 
 from _exp_metainfo_.exp_metainfo import fontsize_intraplot
 
@@ -28,7 +24,10 @@ from _main_.Post4apMain import Post4ap
 
 import rep_fig_vis as rfv
 
-SAVE_FOLDER = f'/home/pshah/Documents/figures/thesis_figures/'
+fig_title = f'fig1_szimgA-E'
+SAVE_FOLDER = f'/home/pshah/Documents/figures/alloptical_seizures_draft/3fig/'
+fig_items = f'/home/pshah/Documents/figures/alloptical_seizures_draft/figure-items/'
+
 
 results = Suite2pROIsSzResults.load()
 results_seizure: ExpSeizureResults = ExpSeizureResults.load()
@@ -38,32 +37,40 @@ expobj: Post4ap = import_expobj(exp_prep='RL108 t-013')
 
 
 # %% MAKE FIGURE LAYOUT
-rfv.set_fontsize(11)
 
 # set layout of the figure
 layout = {
     'A': {'panel_shape': (1, 1),
           'bound': (0.05, 0.80, 0.33, 0.95)},
-    # 'B': {'panel_shape': (1, 1),
-    #       'bound': (0.05, 0.70, 0.33, 0.76)},
     'B': {'panel_shape': (1, 1),
           'bound': (0.43, 0.86, 0.95, 0.95)},
     'C top': {'panel_shape': (1, 1),
           'bound': (0.07, 0.67, 0.30, 0.72)},
     'C bottom': {'panel_shape': (1, 1),
           'bound': (0.07, 0.57, 0.30, 0.67)},
-    'D': {'panel_shape': (4, 1),
-          'bound': (0.40, 0.57, 0.90, 0.67),
-          'wspace': 1.5},
-    # 'F': {'panel_shape': (1, 1),
-    #       'bound': (0.90, 0.70, 0.95, 0.78)
-    #       }
+    'D': {'panel_shape': (3, 1),
+          'bound': (0.40, 0.57, 0.65, 0.67),
+          'wspace': 2},
+    'E': {'panel_shape': (1, 1),
+          'bound': (0.73, 0.57, 0.80, 0.67),
+          'wspace': 1},
+    ## F to I below are for the INH part of the figure
+    'F': {'panel_shape': (1, 1),
+          'bound': (0.05, 0.25, 0.15, 0.50)},
+    'Gtop': {'panel_shape': (1, 1),
+             'bound': (0.35, 0.25, 0.53, 0.48)},
+    'Gbottom': {'panel_shape': (1, 1),
+                'bound': (0.35, 0.20, 0.53, 0.25)},
+    'H': {'panel_shape': (1, 1),
+          'bound': (0.67, 0.38, 0.80, 0.48)},
+    'I': {'panel_shape': (1, 1),  # for LFP signal for seizure - removed for now
+          'bound': (0.67, 0.20, 0.80, 0.30)},
 }
 
 
-test = 1
+test = 0
 save_fig = True if not test > 0 else False
-dpi = 100 if test > 0 else 300
+dpi = 80 if test > 0 else 300
 fig, axes, grid = rfv.make_fig_layout(layout=layout, dpi=dpi)
 rfv.show_test_figure_layout(fig, axes=axes, show=True) if test == 2 else None  # test what layout looks like quickly, but can also skip and moveon to plotting data.
 
@@ -73,10 +80,10 @@ rfv.naked(axes['A'][0])
 rfv.naked(axes['B'][0])
 rfv.naked(axes['C bottom'][0])
 rfv.naked(axes['C top'][0])
-rfv.add_label_axes(text='A', ax=axes['A'][0], y_adjust=0, x_adjust=0.04)
+# rfv.add_label_axes(text='A', ax=axes['A'][0], y_adjust=0, x_adjust=0.04)
 # rfv.add_label_axes(text='B', ax=axes['B'][0], y_adjust=0)
-rfv.add_label_axes(text='B', ax=axes['B'][0], y_adjust=0, x_adjust=0.07)
-rfv.add_label_axes(text='C', ax=axes['C top'][0], x_adjust=0.06, y_adjust=-0.02)
+# rfv.add_label_axes(text='B', ax=axes['B'][0], y_adjust=0, x_adjust=0.07)
+# rfv.add_label_axes(text='C', ax=axes['C top'][0], x_adjust=0.06, y_adjust=-0.02)
 
 print('\n\n')
 
@@ -91,7 +98,7 @@ from _analysis_.sz_analysis._ClassExpSeizureAnalysis import ExpSeizureAnalysis a
 # main.calc__szInvasionTime()
 # main.plot__sz_invasion()
 
-ax, ax2, ax3, ax4 = axes['D'][0], axes['D'][1], axes['D'][2], axes['D'][3]
+ax, ax2, ax3 = axes['D'][0], axes['D'][1], axes['D'][2]
 
 main.plot__sz_propagation_speed(results=results_seizure, fig=fig, ax=ax3, show=False)
 main.plot__sz_incidence(fig=fig, ax=ax, show=False)
@@ -109,9 +116,11 @@ ax2.set_ylim([0, 120])
 ax3.set_ylabel('Speed ($\mu$$\it{m}$/sec)', fontsize=fontsize_intraplot, labelpad=0)
 ax3.set_yticks([0, 40], [0, 40], fontsize=fontsize_intraplot)
 ax3.set_ylim([0, 40])
-rfv.add_label_axes(text='D', ax=axes['D'][0], x_adjust=0.07, y_adjust=0.03)
+# rfv.add_label_axes(text='D', ax=ax, x_adjust=0.07, y_adjust=0.03)
 
 
+# %% E) Activity rates across seizure imaging
+ax4 = axes['E'][0]
 results = Suite2pROIsSzResults.load()
 
 
@@ -124,11 +133,11 @@ activity_rates = [baseline_rates, interictal_rates, ictal_rates]
 pplot.plot_bar_with_points(
     data=[baseline_rates, interictal_rates, ictal_rates],
     bar=True, x_tick_labels=['Baseline', 'Interictal', 'Ictal'], points=False,
-    colors=['cornflowerblue', 'forestgreen', 'purple'], lw=0.75, title='', y_label='Neural activity rate', alpha=0.7,
+    colors=['cornflowerblue', 'forestgreen', 'purple'], lw=0.75, title='', y_label='Actvity rate', alpha=0.7,
     ylims=[0, 200], show=False, capsize=1.5, fontsize=fontsize_intraplot, width_factor=1.15,
     ax=ax4)
 
-ax4.set_ylabel('Actvity rate', fontsize=fontsize_intraplot)
+# rfv.add_label_axes(text='E', ax=ax4, x_adjust=0.07, y_adjust=0.03)
 
 # fig.show(); print('a')
 oneway_r = stats.f_oneway(*activity_rates)
@@ -184,8 +193,8 @@ x = ax2.get_xlim()[1]
 # %%
 
 if save_fig and dpi > 250:
-    save_figure(fig=fig, save_path_full=f"{SAVE_FOLDER}/{figname}.png")
-    save_figure(fig=fig, save_path_full=f"{SAVE_FOLDER}/{figname}.pdf")
+    save_figure(fig=fig, save_path_full=f"{SAVE_FOLDER}/{fig_title}.png")
+    save_figure(fig=fig, save_path_full=f"{SAVE_FOLDER}/{fig_title}.pdf")
 
 
 fig.show()

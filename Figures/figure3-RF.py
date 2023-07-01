@@ -1,5 +1,5 @@
 """
-
+two photon stim - interictal
 """
 
 
@@ -324,7 +324,7 @@ plot_bar_with_points(data=[baseline_prestimf, interictal_prestimf],
                      bar=False, title='', show=False, fig=fig, ax=ax,
                      x_tick_labels=['Baseline', 'Interictal'], fontsize=ExpMetainfo.figures.fontsize['extraplot'],
                      colors=['royalblue', 'forestgreen'],
-                     y_label='Fluorescence (a.u.)', lw=1.3, points_lw=0.8,
+                     y_label='Pre-stim\nFluorescence (a.u.)', lw=1.3, points_lw=0.8,
                      ylims=[0, 1900], alpha=1, s=25, sig_compare_lines={'n.s.': [0, 1]})
 
 

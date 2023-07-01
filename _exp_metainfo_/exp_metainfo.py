@@ -248,7 +248,7 @@ class FigureSettings:
             "title": 9,
             "label": 12,
             "extraplot": 10,
-            "intraplot": 8
+            "intraplot": 10
         }
 
 class ExpMetainfo:
