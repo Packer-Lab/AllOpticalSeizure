@@ -1637,7 +1637,7 @@ class PhotostimAnalysisSlmTargets(Quantification):
         ylim_pre4ap = ax.get_ylim()
 
         ax.set_xticklabels([tick - start_crop for tick in ax.get_xticks()])
-        ax.set_ylabel('Ca2+ signal of Targetted neurons')
+        ax.set_ylabel('Ca2+ signal of Targetted neurons', fontsize=ExpMetainfo.figures.fontsize['extraplot'])
 
         # synced LFP signal
         fig, ax = plotLfpSignal(expobj=expobj, xlims=[start_crop, end_crop], ylims=[-5, 5],
@@ -1647,7 +1647,7 @@ class PhotostimAnalysisSlmTargets(Quantification):
         rfv.naked(ax)
 
         # ax.axis('off')
-        ax.set_ylabel('LFP signal')
+        ax.set_ylabel('LFP signal', fontsize=ExpMetainfo.figures.fontsize['extraplot'])
 
         # fig.tight_layout(pad=0.4)
         # fig.show()

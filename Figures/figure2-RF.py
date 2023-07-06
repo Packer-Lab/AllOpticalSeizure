@@ -1,11 +1,17 @@
 # %%
 import sys
 
-from funcsforprajay.plotting.plotting import plot_bar_with_points
 from matplotlib import pyplot as plt
 from matplotlib.transforms import Bbox
 from scipy import stats
+import numpy as np
+import rep_fig_vis as rfv
+sys.path.extend(['/home/pshah/Documents/code/reproducible_figures-main'])
+SAVE_FOLDER = f'/home/pshah/Documents/figures/alloptical_seizures_draft/'
+fig_items = f'/home/pshah/Documents/figures/alloptical_seizures_draft/figure-items/'
 
+
+from funcsforprajay.plotting.plotting import plot_bar_with_points
 from _exp_metainfo_.exp_metainfo import ExpMetainfo, baseline_color, interictal_color, fontsize_extraplot
 from _utils_.alloptical_plotting import plot_settings, plotLfpSignal, plotMeanRawFluTrace, plot_flu_1pstim_avg_trace, \
     plot_lfp_1pstim_avg_trace, save_figure
@@ -14,17 +20,10 @@ from _utils_.io import import_expobj
 from onePexperiment.OnePhotonStimAnalysis_main import OnePhotonStimAnalysisFuncs, OnePhotonStimResults
 from onePexperiment.OnePhotonStimMain import OnePhotonStim, onePresults
 
-sys.path.extend(['/home/pshah/Documents/code/reproducible_figures-main'])
-
-import numpy as np
-import rep_fig_vis as rfv
 
 from pycircstat.tests import vtest
 
 Results: OnePhotonStimResults = OnePhotonStimResults.load()
-
-SAVE_FOLDER = f'/home/pshah/Documents/figures/alloptical_seizures_draft/'
-fig_items = f'/home/pshah/Documents/figures/alloptical_seizures_draft/figure-items/'
 
 date = '2021-01-24'
 

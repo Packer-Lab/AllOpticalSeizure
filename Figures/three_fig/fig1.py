@@ -1,11 +1,25 @@
 # %% FIGURE 1 - LIVE IMAGING OF SEIZURES IN AWAKE ANIMALS (to be combined with Fig 1 from Inh serving as the bottom half)
 
+"""
+Figure 1: Activity of inhibitory and excitatory neurons during acute, focal-onset seizure propagation in cortex
+"""
+
 import sys
 
 import pandas as pd
+import numpy as np
+from scipy import stats
+
 sys.path.extend(['/home/pshah/Documents/code/AllOpticalSeizure', '/home/pshah/Documents/code/AllOpticalSeizure'])
 sys.path.extend(['/home/pshah/Documents/code/reproducible_figures-main'])
+fig_title = f'fig1_szimgA-E'
+SAVE_FOLDER = f'/home/pshah/Documents/figures/alloptical_seizures_draft/3fig/'
+fig_items = f'/home/pshah/Documents/figures/alloptical_seizures_draft/figure-items/'
 
+import rep_fig_vis as rfv
+from _utils_.io import import_expobj
+from _utils_.alloptical_plotting import save_figure
+import funcsforprajay.plotting as pplot
 from _exp_metainfo_.exp_metainfo import fontsize_intraplot
 
 
@@ -13,21 +27,7 @@ from _analysis_.sz_analysis._ClassSuite2pROIsSzAnalysis import Suite2pROIsSzResu
 from _results_.sz4ap_results import plotHeatMapSzAllCells
 from _analysis_.sz_analysis._ClassExpSeizureAnalysis import ExpSeizureResults
 
-
-from _utils_.io import import_expobj
-from _utils_.alloptical_plotting import save_figure
-import funcsforprajay.plotting as pplot
-import numpy as np
-from scipy import stats
-
 from _main_.Post4apMain import Post4ap
-
-import rep_fig_vis as rfv
-
-fig_title = f'fig1_szimgA-E'
-SAVE_FOLDER = f'/home/pshah/Documents/figures/alloptical_seizures_draft/3fig/'
-fig_items = f'/home/pshah/Documents/figures/alloptical_seizures_draft/figure-items/'
-
 
 results = Suite2pROIsSzResults.load()
 results_seizure: ExpSeizureResults = ExpSeizureResults.load()

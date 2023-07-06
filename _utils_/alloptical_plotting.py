@@ -1404,11 +1404,9 @@ def plotLfpSignal(expobj: TwoPhotonImaging, stim_span_color='powderblue', downsa
 
 @print_start_end_plot
 @plot_piping_decorator(figsize=(4,5))
-def plot_flu_1pstim_avg_trace(expobj, individual_traces=False, x_axis='time', stim_span_color='white',
-                              y_axis: str = 'raw', quantify: bool = False, stims_to_analyze: list = None, write_full_text: bool = True,
-                              **kwargs):
+def plot_flu_1pstim_avg_trace(expobj, individual_traces=False, x_axis='time', stim_span_color='white', y_axis: str = 'raw',
+                              quantify: bool = False, stims_to_analyze: list = None, write_full_text: bool = True, **kwargs):
 
-    fig = kwargs['fig']
     ax = kwargs['ax']
 
     shrink_text = 1 if not 'shrink_text' in kwargs else 1 / kwargs['shrink_text']
@@ -1507,8 +1505,6 @@ def plot_flu_1pstim_avg_trace(expobj, individual_traces=False, x_axis='time', st
     ax.spines['right'].set_visible(False)
     ax.spines['bottom'].set_visible(True)
     ax.spines['left'].set_visible(False)
-
-    fig.tight_layout(pad=1.3)
 
     if quantify:
         return flu_list, round(response, 4), decay_constant
