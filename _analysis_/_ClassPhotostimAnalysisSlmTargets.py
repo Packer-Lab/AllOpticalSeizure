@@ -1548,11 +1548,12 @@ class PhotostimAnalysisSlmTargets(Quantification):
 
     # 4)
     @staticmethod
-    def plot_photostim_traces_stacked_LFP_pre4ap_post4ap(cells_to_plot='median20', y_spacing_factor=3, start_crop=None,
+    def plot_photostim_traces_stacked_LFP_pre4ap_post4ap(cells_to_plot='median10', y_spacing_factor=3, start_crop=None,
                                                          fig=None, ax_cat=None, **kwargs):
         """
         Plotting SLM targets traces with photostimulation timing and cell traces stacked over eachother.
 
+        :param cells_to_plot: 'median10' or 'all', refers to selecting the 10 cells around the median when ordered by response size magnitude
         :param expobj:
         :param spacing: a multiplication factor that will be used when setting the spacing between each trace in the final plot
         :param title:
@@ -1606,8 +1607,8 @@ class PhotostimAnalysisSlmTargets(Quantification):
 
         # Stacked Ca traces
         responses = np.mean(expobj.PhotostimAnalysisSlmTargets.adata.X, axis=1)
-        if cells_to_plot == 'median20':
-            slice_ = np.s_[len(responses) // 2 - 10: len(responses) // 2 + 10]
+        if cells_to_plot == 'median10':
+            slice_ = np.s_[len(responses) // 2 - 5: len(responses) // 2 + 5]
             cells_to_plot = tuple(np.argsort(responses)[slice_])
         elif cells_to_plot == 'all':
             slice_ = np.s_[0: len(responses) // 2 + 7]
@@ -1637,7 +1638,7 @@ class PhotostimAnalysisSlmTargets(Quantification):
         ylim_pre4ap = ax.get_ylim()
 
         ax.set_xticklabels([tick - start_crop for tick in ax.get_xticks()])
-        ax.set_ylabel('Ca2+ signal of Targetted neurons', fontsize=ExpMetainfo.figures.fontsize['extraplot'])
+        ax.set_ylabel('Targetted neurons', fontsize=ExpMetainfo.figures.fontsize['extraplot'])
 
         # synced LFP signal
         fig, ax = plotLfpSignal(expobj=expobj, xlims=[start_crop, end_crop], ylims=[-5, 5],

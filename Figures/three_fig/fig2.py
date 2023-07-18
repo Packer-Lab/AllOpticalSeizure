@@ -20,19 +20,17 @@ SAVE_FOLDER = f'/home/pshah/Documents/figures/alloptical_seizures_draft/3fig/'
 fig_items = f'/home/pshah/Documents/figures/alloptical_seizures_draft/figure-items/'
 
 import rep_fig_vis as rfv
-from _utils_.io import import_expobj
-from _utils_.alloptical_plotting import save_figure
-import funcsforprajay.plotting as pplot
 from matplotlib.transforms import Bbox
 from funcsforprajay.plotting.plotting import plot_bar_with_points
 
 from _exp_metainfo_.exp_metainfo import ExpMetainfo, baseline_color, interictal_color
-from _utils_.alloptical_plotting import plot_settings, plotLfpSignal, plotMeanRawFluTrace, plot_flu_1pstim_avg_trace, \
-    plot_lfp_1pstim_avg_trace, save_figure
+from _utils_.alloptical_plotting import plotLfpSignal, plotMeanRawFluTrace, plot_flu_1pstim_avg_trace, \
+    plot_lfp_1pstim_avg_trace
 from _utils_.io import import_expobj
+from _utils_.alloptical_plotting import save_figure
 
 from onePexperiment.OnePhotonStimAnalysis_main import OnePhotonStimAnalysisFuncs, OnePhotonStimResults
-from onePexperiment.OnePhotonStimMain import OnePhotonStim, onePresults
+from onePexperiment.OnePhotonStimMain import OnePhotonStim
 
 from pycircstat.tests import vtest
 
@@ -57,19 +55,19 @@ layout = {
           'bound': (0.43, 0.80, 0.93, 0.95),
           'hspace': 0.2},
     'D': {'panel_shape': (2, 2),
-          'bound': (0.33, 0.58, 0.55, 0.75),
+          'bound': (0.30, 0.58, 0.56, 0.75),
           'hspace': 0.1},
     'E-F': {'panel_shape': (2, 1),
-            'bound': (0.66, 0.62, 0.91, 0.75),
+            'bound': (0.68, 0.62, 0.95, 0.75),
             'wspace': 1.4},
     'G': {'panel_shape': (1, 1),
           'bound': (0.03, 0.23, 0.26, 0.57)},
     'Htop': {'panel_shape': (2, 1),
-             'bound': (0.29, 0.45, 0.94, 0.54)},
+             'bound': (0.30, 0.45, 0.94, 0.54)},
     'Hbottom': {'panel_shape': (2, 1),
-                'bound': (0.29, 0.23, 0.94, 0.44)},
+                'bound': (0.30, 0.23, 0.94, 0.44)},
     'J': {'panel_shape': (2, 1),
-          'bound': (0.31, 0.07, 0.56, 0.20),
+          'bound': (0.30, 0.07, 0.56, 0.20),
           'wspace': 1.0},
     'K': {'panel_shape': (1, 1),
           'bound': (0.68, 0.07, 0.76, 0.20)},
@@ -78,9 +76,9 @@ layout = {
           }
 }
 
-test = 1
+test = 0
 save_fig = True if not test > 0 else False
-dpi = 80 if test > 0 else 300
+dpi = 100 if test > 0 else 300
 fig, axes, grid = rfv.make_fig_layout(layout=layout, dpi=dpi)
 rfv.show_test_figure_layout(fig, axes=axes,
                             show=True) if test == 2 else None  # test what layout looks like quickly, but can also skip and moveon to plotting data.
@@ -112,7 +110,7 @@ fig, ax = plot_lfp_1pstim_avg_trace(pre4ap, x_axis='time', individual_traces=Fal
                                     title='Baseline', fillcolor=ExpMetainfo.figure_settings['colors']['baseline'],
                                     spancolor=stim_color)
 ax.axis('off')
-ax.text(s='LFP', x=-0.17, y=-1.65, ha='center', rotation=90, fontsize=fs_intra)
+ax.text(s='LFP', x=-0.17, y=-1.65, ha='center', rotation=90, fontsize=fs_extra)
 ax.set_title('Baseline', fontsize=fs_extra)
 
 ##
@@ -136,7 +134,7 @@ fig, ax = plot_flu_1pstim_avg_trace(pre4ap, x_axis='time', individual_traces=Fal
                                     post_stim=3.60, ylims=[-0.5, 2.0],
                                     fillcolor=ExpMetainfo.figure_settings['colors']['baseline'])
 ax.axis('off')
-ax.text(s=r'FOV Ca$^{2+}$', x=-0.9, y=0.25, ha='center', rotation=90, fontsize=fs_intra)
+ax.text(s=r'FOV Ca$^{2+}$', x=-0.9, y=0.25, ha='center', rotation=90, fontsize=fs_extra)
 
 ##
 # post4ap
@@ -255,10 +253,9 @@ print(
 
 # fig, ax = plt.subplots(figsize=[2, 3], dpi = 100)
 plot_bar_with_points(data=[baseline_resposnes, interictal_resposnes_szexclude],
-                     x_tick_labels=['Baseline', 'Interictal'], fs=fs_extra,
+                     x_tick_labels=['Baseline', 'Interictal'], fontsize=fs_extra,
                      points=False, bar=True, colors=[baseline_color, interictal_color], fig=fig, ax=ax, show=False,
-                     s=10,
-                     x_label='', y_label='Avg. dFF', alpha=0.7, lw=0.75, ylims=[0, 1])
+                     s=10, x_label='', y_label='Avg. dFF', alpha=0.7, lw=0.75, ylims=[0, 1])
 ax.set_yticks([0, 0.2, 0.4, 0.6, 0.8, 1.0])
 # fig.tight_layout(pad=0.2)
 
@@ -329,7 +326,8 @@ bin_width = int(1 * expobj.fps)
 period = len(np.arange(0, (expobj.stim_interval_fr // bin_width)))
 theta = (2 * np.pi) * np.arange(0, (expobj.stim_interval_fr // bin_width)) / period
 
-bbox = Bbox.from_extents(0.0, 0.60, 0.24, 0.74)
+# bbox = Bbox.from_extents(0.0, 0.60, 0.24, 0.74)
+bbox = Bbox.from_extents(0.03, 0.63, 0.21, 0.71)
 # _axes = np.empty(shape=(1, 1), dtype=object)
 ax = fig.add_subplot(projection='polar')
 
@@ -349,12 +347,10 @@ pval, z = vtest(alpha=theta, mu=0, w=np.sum(total_sz_occurrence, axis=0))
 print(f'pval for oneP stim seizure incidence is: {pval}')
 
 ax.bar(theta, sz_prob, width=(2 * np.pi) / period, bottom=0.0, alpha=1, color=ExpMetainfo.figures.colors['general'],
-       lw=0.3, edgecolor='black')
+       lw=0.7, edgecolor='black')
 
 ax.set_rmax(1.1)
-ax.set_rticks([0.25, 0.5, 0.75, 1])  # radial ticks
-ax.set_yticklabels(['', '0.5', '', '1.0'], fontsize=fs_intra)  # radial ticks
-ax.set_rlabel_position(-60)
+ax.set_rlabel_position(-76)
 ax.grid(True)
 # ax.set_xticks((2 * np.pi) * np.arange(0, (expobj.stim_interval_fr / bin_width)) / period)
 ax.set_xticks([0, (2 * np.pi) / 4, (2 * np.pi) / 2, (6 * np.pi) / 4])
@@ -363,6 +359,8 @@ ax.set_xticklabels([r'$\it{\Theta}$ = 0', '', '', ''], fontsize=fs_extra)
 ax.spines['polar'].set_visible(False)
 ax.set_title(label='Seizure probability\n(widefield stim.)', fontsize=fs_extra, va='bottom')
 ax.set_position(pos=bbox)
+ax.set_rticks([0.5, 1.0])  # radial ticks
+ax.set_yticklabels(['0.5', '1.0'], fontsize=fs_intra, zorder=9)  # radial ticks
 
 print('\n\n')
 
@@ -373,7 +371,7 @@ from _analysis_._ClassPhotostimResponseQuantificationSLMtargets import Photostim
 from _analysis_.sz_analysis._ClassExpSeizureAnalysis import ExpSeizureAnalysis, ExpSeizureResults
 from _main_.Post4apMain import Post4ap
 from _utils_.io import import_expobj
-from _utils_.alloptical_plotting import save_figure
+
 
 from pycircstat.tests import vtest
 
@@ -398,7 +396,7 @@ to_plot = [interictal_responses, preictal_responses, postictal_responses]
 
 plot_bar_with_points(data=to_plot, bar=True, title='', fontsize=10, points_lw=0.5, points=False,
                      x_tick_labels=['All', 'Pre-ictal', 'Post-ictal'], colors=['gold', 'lightseagreen', 'lightcoral'],
-                     y_label='Response magnitude\n(z-scored)', show=False, ylims=[-0.13, 0.43],
+                     y_label='Response magnitude\n(z-scored)', show=False, ylims=[-0.13, 0.43], lw=1,
                      alpha=1, fig=fig, ax=ax, s=15, capsize=2)
 
 # 1-WAY ANOVA
@@ -442,7 +440,8 @@ print(f"t = {t}, p = {p}")
 ################################################
 
 main = PhotostimAnalysisSlmTargets
-main.plot_photostim_traces_stacked_LFP_pre4ap_post4ap(ax_cat=(axes['Htop'], axes['Hbottom']), fig=fig)
+main.plot_photostim_traces_stacked_LFP_pre4ap_post4ap(cells_to_plot='median10', y_spacing_factor=6,
+                                                      fig=fig, ax_cat=(axes['Htop'], axes['Hbottom']))
 
 ################################################
 # G) alloptical interrogation + experimental prep ################################################
@@ -488,8 +487,9 @@ ax.set_ylim([-1.5, 30])
 rfv.add_scale_bar(ax=ax, length=(5, 1), bartype='L', text=('5%\ndFF', '1$\it{sec}$'), loc=(2.5, 20),
                   text_offset=[0.2, 3], fs=fs_intra)
 
-ax.text(s='All neuron targets', x=-2, y=1.5, rotation=90, fontsize=fs_extra)
-ax.text(s='Photostimulation', x=0.058, y=0, rotation=90, fontsize=fs_intra, fontweight='bold', color='white', zorder=9)
+ax.set_ylabel('All neuron targets', fontsize=fs_extra)
+# ax.text(s='All neuron targets', x=-5, y=1.5, rotation=90, fontsize=fs_extra)
+# ax.text(s='Photostimulation', x=0.058, y=0, rotation=90, fontsize=fs_intra, fontweight='bold', color='white', zorder=9)
 
 ################################################
 # J') BAR PLOT OF AVG PHOTOSTIMULATION RESPONSE OF TARGETS ACROSS CONDITIONS ################################################
@@ -595,8 +595,8 @@ print('\n\n')
 ################################################
 # I) Radial plot of Mean FOV for photostimulation trials, with period equal to that of photostimulation timing period ################################################
 ################################################
-# bbox = Bbox.from_extents(0.0, 0.60, 0.24, 0.74)
-bbox = Bbox.from_extents(0.0, 0.05, 0.24, 0.19)
+# bbox = Bbox.from_extents(0.0, 0.05, 0.24, 0.19)
+bbox = Bbox.from_extents(0.03, 0.08, 0.21, 0.16)
 _axes = np.empty(shape=(1, 1), dtype=object)
 ax = fig.add_subplot(projection='polar')
 ax.set_position(pos=bbox)
@@ -634,10 +634,10 @@ print(f'pval for twoP stim seizure incidence is: {pval}')
 ax.bar(theta, sz_prob, width=(2 * np.pi) / period, bottom=0.0, alpha=1, color=ExpMetainfo.figures.colors['general'],
        edgecolor='black', lw=0.7)
 
-ax.set_rmax(0.31)
-ax.set_rticks([0.1, 0.2, 0.3])  # Less radial ticks
-ax.set_yticklabels(['0.1', '0.2', '0.3'], fontsize=fs_intra)  # Less radial ticks
-ax.set_rlabel_position(-60)  # Move radial labels away from plotted line
+ax.set_rmax(0.33)
+ax.set_rticks([0.15, 0.3])  # Less radial ticks
+ax.set_yticklabels(['0.15', '0.3'], fontsize=fs_intra)  # Less radial ticks
+ax.set_rlabel_position(-55)  # Move radial labels away from plotted line
 ax.grid(True)
 # ax.set_xticks((2 * np.pi) * np.arange(0, (expobj.stim_interval_fr / bin_width)) / period)
 ax.set_xticks([0, (2 * np.pi) / 4, (2 * np.pi) / 2, (6 * np.pi) / 4])

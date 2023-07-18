@@ -35,7 +35,6 @@ results_seizure: ExpSeizureResults = ExpSeizureResults.load()
 expobj: Post4ap = import_expobj(exp_prep='RL108 t-013')
 
 
-
 # %% MAKE FIGURE LAYOUT
 
 # set layout of the figure
@@ -49,10 +48,10 @@ layout = {
     'C bottom': {'panel_shape': (1, 1),
           'bound': (0.07, 0.57, 0.30, 0.67)},
     'D': {'panel_shape': (3, 1),
-          'bound': (0.40, 0.57, 0.65, 0.67),
+          'bound': (0.40, 0.57, 0.66, 0.67),
           'wspace': 2},
     'E': {'panel_shape': (1, 1),
-          'bound': (0.73, 0.57, 0.80, 0.67),
+          'bound': (0.74, 0.60, 0.80, 0.67),
           'wspace': 1},
     ## F to I below are for the INH part of the figure
     'F': {'panel_shape': (1, 1),
@@ -68,9 +67,10 @@ layout = {
 }
 
 
+
 test = 0
 save_fig = True if not test > 0 else False
-dpi = 80 if test > 0 else 300
+dpi = 100 if test > 0 else 300
 fig, axes, grid = rfv.make_fig_layout(layout=layout, dpi=dpi)
 rfv.show_test_figure_layout(fig, axes=axes, show=True) if test == 2 else None  # test what layout looks like quickly, but can also skip and moveon to plotting data.
 
@@ -92,7 +92,7 @@ print('\n\n')
 
 # %% D) seizure stats
 
-from _analysis_.sz_analysis._ClassExpSeizureAnalysis import ExpSeizureAnalysis as main, ExpSeizureResults
+from _analysis_.sz_analysis._ClassExpSeizureAnalysis import ExpSeizureAnalysis as main
 
 # main.FOVszInvasionTime()
 # main.calc__szInvasionTime()
@@ -195,7 +195,6 @@ x = ax2.get_xlim()[1]
 if save_fig and dpi > 250:
     save_figure(fig=fig, save_path_full=f"{SAVE_FOLDER}/{fig_title}.png")
     save_figure(fig=fig, save_path_full=f"{SAVE_FOLDER}/{fig_title}.pdf")
-
 
 fig.show()
 

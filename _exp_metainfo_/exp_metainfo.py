@@ -258,16 +258,16 @@ class ExpMetainfo:
     figures: FigureSettings = FigureSettings()
 
     figure_settings = {
-        "fontsize": {
-            "title": 10,
-            "label": 12,
-            "extraplot": 10,
-            "intraplot": 8
-        },
-        'lw': {
-            "gcamp - single cell": 0.5,
-            "gcamp - FOV": 0.5,
-            "lfp": 0.15},
+        # "fontsize": {
+        #     "title": 10,
+        #     "label": 12,
+        #     "extraplot": 10,
+        #     "intraplot": 8
+        # },
+        # 'lw': {
+        #     "gcamp - single cell": 0.5,
+        #     "gcamp - FOV": 0.5,
+        #     "lfp": 0.15},
         'colors': {'baseline': '#5777c6',  # light matte blue
                     'interictal': '#77c65a',  # like forest green
                     'ictal': 'slateblue',  # like a light matte purple

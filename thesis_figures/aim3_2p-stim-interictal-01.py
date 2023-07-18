@@ -305,7 +305,7 @@ rfv.add_label_axes(text='B', ax=ax, y_adjust=0.01)
 # rfv.add_label_axes(text="B'", ax=ax, y_adjust=-0.01)
 
 main = PhotostimAnalysisSlmTargets
-main.plot_photostim_traces_stacked_LFP_pre4ap_post4ap(ax_cat=(axes['toprighttop'], axes['toprightbottom']), fig=fig)
+main.plot_photostim_traces_stacked_LFP_pre4ap_post4ap(fig=fig, ax_cat=(axes['toprighttop'], axes['toprightbottom']))
 
 
 

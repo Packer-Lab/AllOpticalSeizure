@@ -3,25 +3,24 @@ Figure 3: Neuronal and local-circuit excitability during seizure propagation
 """
 
 import sys
-
-import _utils_.alloptical_plotting
-import alloptical_plotting
-from _analysis_.nontargets_analysis._ClassNonTargetsSzInvasionSpatial import NonTargetsSzInvasionSpatialResults, \
-    NonTargetsSzInvasionSpatial
-from _analysis_.sz_analysis._ClassExpSeizureAnalysis import ExpSeizureAnalysis
-from _exp_metainfo_.exp_metainfo import ExpMetainfo
-
-sys.path.extend(['/home/pshah/Documents/code/reproducible_figures-main'])
-import rep_fig_vis as rfv
-import alloptical_utils_pj as Utils
-
 import numpy as np
 import matplotlib.image as mpimg
 
+
+sys.path.extend(['/home/pshah/Documents/code/AllOpticalSeizure', '/home/pshah/Documents/code/AllOpticalSeizure'])
+sys.path.extend(['/home/pshah/Documents/code/reproducible_figures-main']); import rep_fig_vis as rfv
+fig_title = f'fig3_excitability_sz'
+SAVE_FOLDER = f'/home/pshah/Documents/figures/alloptical_seizures_draft/3fig/'
+fig_items = f'/home/pshah/Documents/figures/alloptical_seizures_draft/figure-items/'
+
+import _utils_.alloptical_plotting
+from _utils_.alloptical_plotting import save_figure
+from _analysis_.nontargets_analysis._ClassNonTargetsSzInvasionSpatial import NonTargetsSzInvasionSpatialResults, \
+    NonTargetsSzInvasionSpatial
+from _exp_metainfo_.exp_metainfo import ExpMetainfo
+
 from _analysis_._ClassTargetsSzInvasionSpatial_codereview import TargetsSzInvasionSpatial_codereview, \
     TargetsSzInvasionSpatialResults_codereview
-
-SAVE_FIG = "/home/pshah/Documents/figures/alloptical-photostim-responses-sz-distance/"
 
 main_spatial = TargetsSzInvasionSpatial_codereview
 results_spatial = TargetsSzInvasionSpatialResults_codereview.load()
@@ -29,7 +28,10 @@ results_spatial = TargetsSzInvasionSpatialResults_codereview.load()
 from _utils_.alloptical_plotting import plot_settings
 
 plot_settings()
-SAVE_FOLDER = f'/home/pshah/Documents/figures/alloptical_seizures_draft/'
+np.random.seed(2)  # fix seed
+
+fs = ExpMetainfo.figures.fontsize['extraplot']
+rfv.set_fontsize(fs)
 
 from _utils_.nontargets_responses_ictal_plots import z_score_response_proximal_distal, influence_response_proximal_and_distal
 
@@ -45,21 +47,10 @@ results: PhotostimResponsesNonTargetsResults = PhotostimResponsesNonTargetsResul
 distance_lims = [19, 400]  # limit of analysis
 
 # %% SETUP
-## Set general plotting parameters
-
-fs = ExpMetainfo.figures.fontsize['extraplot']
-rfv.set_fontsize(fs)
-
-test = 1
-save_fig = True if not test else False
-dpi = 100 if test else 300
-
-np.random.seed(2)  # fix seed
-
-# %% MAKING LAYOUT:
+# MAKING LAYOUT:
 
 # panel_shape = ncols x nrows
-# bound = l, b, r, t
+# bound = left, below, right, top
 
 layout = {
     'main-left-top': {'panel_shape': (1, 1),
@@ -77,14 +68,16 @@ layout = {
 
 test = 0
 save_fig = True if not test > 0 else False
-dpi = 150 if test > 0 else 300
+dpi = 100 if test > 0 else 300
 fig, axes, grid = rfv.make_fig_layout(layout=layout, dpi=dpi)
 rfv.show_test_figure_layout(fig, axes=axes, show=True) if test == 2 else None  # test what layout looks like quickly, but can also skip and moveon to plotting data.
 
 
-# ADD PLOTS TO AXES  ##################################################################################################################
+# %% ADD PLOTS TO AXES  ##################################################################################################################
+################################################
+# B - photostim responses relative to distance to seizure
+################################################
 
-# %% B - photostim responses relative to distance to seizure
 ax_b = axes['main-right'][0]
 ax_b1 = axes['main-right'][1]
 
@@ -103,16 +96,18 @@ main_spatial.plot__responses_v_distance_no_normalization_rolling_bins(results=re
 results = NonTargetsSzInvasionSpatialResults.load()
 NonTargetsSzInvasionSpatial.plot__firingrate_v_distance_no_normalization_rolling_bins(results=results, axes=ax_b1, fig=fig)
 
-
-# %% C - photostim responses of nontargets classed to interictal or seizure distance
+################################################
+# C - photostim responses of nontargets classed to interictal or seizure distance ################################################
+################################################
 ax_c = axes['main-left-mid'][0]
 z_score_response_proximal_distal(fig=fig, ax=ax_c, results=results)
 ax_c.set_title(f'Response magnitude\nNon-targets', fontsize=10)
 ax_c.set_ylabel(f'{rfv.italic("Z")}-score\n(to baseline)', fontsize=10)
 ax_c.set_ylim([-0.075, 0.25])
 
-
-# %% A - schematic of sz distance to target
+################################################
+# A - schematic of sz distance to target ################################################
+################################################
 ax_a = axes['main-left-top'][0]
 # rfv.add_label_axes(text='A', ax=ax, x_adjust=x_adj - 0.06)
 sch_path = '/home/pshah/Documents/figures/alloptical_seizures_draft/figure-items/schematic-targets-distance-to-sz.png'
@@ -126,8 +121,9 @@ ax_a.axis('off')
 
 
 
-
-# %% D - photostim influence of nontargets classed to seizure distance
+################################################
+# D - photostim influence of nontargets classed to seizure distance ################################################
+################################################
 ax_d = axes['main-right-mid']
 influence_response_proximal_and_distal(fig=fig, axs=ax_d, results=results)
 # ax_d[0].set_xticks([0, 200, 400], fontsize=10)
@@ -136,25 +132,25 @@ ax_d[0].set_yticks([-0.2, 0, 0.2, 0.4], [-0.2, 0, 0.2, 0.4], fontsize=10)
 ax_d[1].set_yticks([-0.2, 0, 0.2, 0.4], [-0.2, 0, 0.2, 0.4], fontsize=10)
 
 
-# %% ADD PANEL LABELS
-
-rfv.add_label_axes(text='A', ax=ax_a, x_adjust=0.03)
-
-x_adj = 0.11
-rfv.add_label_axes(text='B', ax=ax_b, x_adjust=x_adj)
-# rfv.add_label_axes(text="B'", ax=ax_b1, x_adjust=x_adj + 0.02)
-
-rfv.add_label_axes(text='C', ax=ax_c, x_adjust=x_adj - 0.02)
-
-rfv.add_label_axes(text='D', ax=ax_d[0], x_adjust=x_adj)
-
-# rfv.add_label_axes(text="D'", ax=ax_d[1], x_adjust=x_adj + 0.02)
-
+# # %% ADD PANEL LABELS
+#
+# rfv.add_label_axes(text='A', ax=ax_a, x_adjust=0.03)
+#
+# x_adj = 0.11
+# rfv.add_label_axes(text='B', ax=ax_b, x_adjust=x_adj)
+# # rfv.add_label_axes(text="B'", ax=ax_b1, x_adjust=x_adj + 0.02)
+#
+# rfv.add_label_axes(text='C', ax=ax_c, x_adjust=x_adj - 0.02)
+#
+# rfv.add_label_axes(text='D', ax=ax_d[0], x_adjust=x_adj)
+#
+# # rfv.add_label_axes(text="D'", ax=ax_d[1], x_adjust=x_adj + 0.02)
+#
 
 # %%
-if save_fig and dpi >= 250:
-    _utils_.alloptical_plotting.save_figure(fig=fig, save_path_full=f"{SAVE_FOLDER}/figure6combo-RF.png")
-    _utils_.alloptical_plotting.save_figure(fig=fig, save_path_full=f"{SAVE_FOLDER}/figure6combo-RF.pdf")
+if save_fig and dpi > 250:
+    save_figure(fig=fig, save_path_full=f"{SAVE_FOLDER}/{fig_title}.png")
+    save_figure(fig=fig, save_path_full=f"{SAVE_FOLDER}/{fig_title}.pdf")
 
 fig.show()
 
