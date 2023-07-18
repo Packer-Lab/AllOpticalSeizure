@@ -58,7 +58,7 @@ layout = {
           'bound': (0.30, 0.58, 0.56, 0.75),
           'hspace': 0.1},
     'E-F': {'panel_shape': (2, 1),
-            'bound': (0.68, 0.62, 0.95, 0.75),
+            'bound': (0.68, 0.635, 0.95, 0.75),
             'wspace': 1.4},
     'G': {'panel_shape': (1, 1),
           'bound': (0.03, 0.23, 0.26, 0.57)},
@@ -327,7 +327,7 @@ period = len(np.arange(0, (expobj.stim_interval_fr // bin_width)))
 theta = (2 * np.pi) * np.arange(0, (expobj.stim_interval_fr // bin_width)) / period
 
 # bbox = Bbox.from_extents(0.0, 0.60, 0.24, 0.74)
-bbox = Bbox.from_extents(0.03, 0.63, 0.21, 0.71)
+bbox = Bbox.from_extents(0.02, 0.63, 0.20, 0.71)
 # _axes = np.empty(shape=(1, 1), dtype=object)
 ax = fig.add_subplot(projection='polar')
 
@@ -596,7 +596,7 @@ print('\n\n')
 # I) Radial plot of Mean FOV for photostimulation trials, with period equal to that of photostimulation timing period ################################################
 ################################################
 # bbox = Bbox.from_extents(0.0, 0.05, 0.24, 0.19)
-bbox = Bbox.from_extents(0.03, 0.08, 0.21, 0.16)
+bbox = Bbox.from_extents(0.02, 0.08, 0.20, 0.16)
 _axes = np.empty(shape=(1, 1), dtype=object)
 ax = fig.add_subplot(projection='polar')
 ax.set_position(pos=bbox)
