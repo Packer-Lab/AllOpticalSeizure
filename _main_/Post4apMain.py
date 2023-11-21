@@ -56,6 +56,8 @@ class Post4ap(alloptical):
         ##
         self.slmtargets_szboundary_stim = None  # dictionary of cells classification either inside or outside of boundary - SLM targets
         self.nontargets_szboundary_stim = None  # dictionary of cells classification either inside or outside of boundary - suite2p nontargets
+        self.stimsSzLocations = None  # dataframe stims inside ictal period and wavefront coordinates and seizure number
+
 
         ## PHOTOSTIM SLM TARGETS
 

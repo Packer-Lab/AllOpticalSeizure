@@ -223,7 +223,7 @@ def influence_response_proximal_and_distal(axs, fig, results=results):
     ax_p.set_xticks([0, 100, 200, 300, 400], [0, 100, 200, 300, 400], fontsize=10)
     ax_p.set_yticks([-0.2, 0, 0.2, 0.4], [-0.2, 0, 0.2, 0.4], fontsize=10)
     ax_p.set_ylim([-0.3, 0.5])
-    ax_p.set_ylabel(f'Photostimulation\ninfluence')
+    ax_p.set_ylabel(f'Photostimulation\ninfluence', fontsize=10)
     ax_p.margins(0.02)
     # pj.lineplot_frame_options(fig=fig, ax=ax, x_label='Distance to target ' + '($\mu$$\it{m}$)', y_label='')
 

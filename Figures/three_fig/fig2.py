@@ -20,6 +20,7 @@ SAVE_FOLDER = f'/home/pshah/Documents/figures/alloptical_seizures_draft/3fig/'
 fig_items = f'/home/pshah/Documents/figures/alloptical_seizures_draft/figure-items/'
 
 import rep_fig_vis as rfv
+from _utils_.rfv_funcs import add_scale_bar
 from matplotlib.transforms import Bbox
 from funcsforprajay.plotting.plotting import plot_bar_with_points
 
@@ -180,8 +181,8 @@ plotLfpSignal(expobj, x_axis='time', linewidth=ExpMetainfo.figure_settings['lfp 
               ax=axes['B'][1, 0], show=False, ylims=[0, 5], xlims=[10, 160])
 axes['B'][1, 0].set_title('')
 axes['B'][1, 0].axis('off')
-rfv.add_scale_bar(ax=axes['B'][1, 0], length=(1, 10), bartype='L', text=('1\nmV', '10 s'), loc=(180, 0),
-                  text_offset=[2, 0.8], fontsize=fs_intra)
+add_scale_bar(ax=axes['B'][1, 0], length=(1, 10), bartype='L', text=('1 mV', '10 s'), loc=(180, 0),
+              text_offset=[10, 1], fontsize=fs_intra)
 
 # Avg Flu signal with optogenetic stims
 offset = expobj.frame_start_time_actual / expobj.paq_rate
@@ -194,8 +195,8 @@ plotMeanRawFluTrace(expobj, stim_span_color=stim_color, x_axis='Time (secs)',
                     stim_lines=False, fig=fig, ax=axes['B'][1, 1], show=False)
 axes['B'][1, 1].set_title('')
 axes['B'][1, 1].axis('off')
-rfv.add_scale_bar(ax=axes['B'][1, 1], length=(500, 10 * expobj.fps), bartype='L', text=('500\na.u.', '10 s'),
-                  loc=(180 * expobj.fps, 0), text_offset=[2 * expobj.fps, 440], fontsize=fs_intra)
+add_scale_bar(ax=axes['B'][1, 1], length=(500, 10 * expobj.fps), bartype='L', text=('500 a.u.', '10 s'),
+              loc=(180 * expobj.fps, 0), text_offset=[10 * expobj.fps, 420], fontsize=fs_intra)
 
 ################################################
 # E) BAR PLOT OF RESPONSE MAGNITUDE FOR 1P STIM EXPERIMENTS - BY INDIVIDUAL STIMS ################################################
@@ -372,7 +373,6 @@ from _analysis_.sz_analysis._ClassExpSeizureAnalysis import ExpSeizureAnalysis, 
 from _main_.Post4apMain import Post4ap
 from _utils_.io import import_expobj
 
-
 from pycircstat.tests import vtest
 
 results: PhotostimResponsesSLMtargetsResults = PhotostimResponsesSLMtargetsResults.load()
@@ -381,7 +381,7 @@ main = PhotostimAnalysisSlmTargets
 sz_results: ExpSeizureResults = ExpSeizureResults.load()
 
 ################################################
-# L) splitting responses during interictal phases ################################################
+# M) splitting responses during interictal phases ################################################
 ################################################
 results = main.collect__interictal_responses_split(rerun=0)
 
@@ -396,8 +396,8 @@ to_plot = [interictal_responses, preictal_responses, postictal_responses]
 
 plot_bar_with_points(data=to_plot, bar=True, title='', fontsize=10, points_lw=0.5, points=False,
                      x_tick_labels=['All', 'Pre-ictal', 'Post-ictal'], colors=['gold', 'lightseagreen', 'lightcoral'],
-                     y_label='Response magnitude\n(z-scored)', show=False, ylims=[-0.13, 0.43], lw=1,
-                     alpha=1, fig=fig, ax=ax, s=15, capsize=2)
+                     y_label='Response magnitude\n(z-scored)', show=False, ylims=[-0.13, 0.43], lw=0.75,
+                     alpha=1, fig=fig, ax=ax, s=15, capsize=4)
 
 # 1-WAY ANOVA
 stats.f_oneway(preictal_responses, interictal_responses, postictal_responses)
@@ -484,7 +484,7 @@ ax.axvspan(results.grand_avg_traces['time_arr'][stim_[0] - 1], results.grand_avg
 rfv.naked(ax)
 ax.set_ylim([-1.5, 30])
 
-rfv.add_scale_bar(ax=ax, length=(5, 1), bartype='L', text=('5%\ndFF', '1$\it{sec}$'), loc=(2.5, 20),
+rfv.add_scale_bar(ax=ax, length=(5, 1), bartype='L', text=('5%\ndFF', '1 s'), loc=(2.5, 20),
                   text_offset=[0.2, 3], fs=fs_intra)
 
 ax.set_ylabel('All neuron targets', fontsize=fs_extra)
@@ -492,7 +492,7 @@ ax.set_ylabel('All neuron targets', fontsize=fs_extra)
 # ax.text(s='Photostimulation', x=0.058, y=0, rotation=90, fontsize=fs_intra, fontweight='bold', color='white', zorder=9)
 
 ################################################
-# J') BAR PLOT OF AVG PHOTOSTIMULATION RESPONSE OF TARGETS ACROSS CONDITIONS ################################################
+# K) BAR PLOT OF AVG PHOTOSTIMULATION RESPONSE OF TARGETS ACROSS CONDITIONS ################################################
 ################################################
 
 ax = axes['J'][1]
@@ -533,14 +533,14 @@ print(f"ttest paired - p(Baseline vs. interictal): {ttest[1]}")
 
 
 fig, ax = plot_bar_with_points(data=[baseline_responses, interictal_responses],
-                               bar=False, title='', x_tick_labels=['Baseline', 'Interictal'], points_lw=0.8,
+                               bar=False, title='', x_tick_labels=['Baseline', 'Interictal'], points_lw=0.75,
                                colors=['royalblue', 'forestgreen'], figsize=(4, 4), y_label='% dFF', fontsize=fs_extra,
-                               lw=1.3,
+                               lw=1.3, capsize=4,
                                s=25, alpha=1, ylims=[-19, 90], show=False, fig=fig, ax=ax,
                                sig_compare_lines={'n.s.': [0, 1]})
 
 ################################################
-# K) BAR PLOT OF AVG PHOTOSTIMULATION FOV RAW FLU ACROSS CONDITIONS ################################################
+# L) BAR PLOT OF AVG PHOTOSTIMULATION FOV RAW FLU ACROSS CONDITIONS ################################################
 ################################################
 
 

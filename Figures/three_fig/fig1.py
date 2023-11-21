@@ -2,6 +2,9 @@
 
 """
 Figure 1: Activity of inhibitory and excitatory neurons during acute, focal-onset seizure propagation in cortex
+    Note: this code creates panels A - E
+    Note: F to I below are for the INH part of the figure (separate pycharm project folder)
+
 """
 
 import sys

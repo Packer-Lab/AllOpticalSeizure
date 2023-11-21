@@ -7,6 +7,7 @@ sys.path.append('/home/pshah/Documents/code/')
 import alloptical_utils_pj as aoutils
 from _utils_ import alloptical_plotting as aoplot
 from funcsforprajay import funcs as pj
+from _main_.Post4apMain import Post4ap
 import numpy as np
 import matplotlib.pyplot as plt
 import _alloptical_utils as Utils
@@ -57,6 +58,7 @@ ls2 = [
 
 trials_without_flip_stims = []
 
+expsave = False
 # expobj, _ = aoutils.import_expobj(trial='t-020', prep='RL109')
 # expobj.sz_locations_stims()
 
@@ -72,6 +74,7 @@ for i in ls2:
         trial = i[j][-5:]
         print('\nWorking on @ ', prep, trial)
         expobj, experiment = aoutils.import_expobj(trial=trial, prep=prep, verbose=False)
+        expobj: Post4ap
         # aoplot.plot_lfp_stims(expobj)
 
         # matlab_pairedmeasurements_path = '%s/paired_measurements/%s_%s_%s.mat' % (expobj.analysis_save_path[:-23], expobj.metainfo['date'], expobj.metainfo['animal prep.'], trial[2:])  # choose matlab path if need to use or use None for no additional bad frames
@@ -107,7 +110,6 @@ for i in ls2:
         ##### import the CSV file in and classify cells by their location in or out of seizure
 
         if not hasattr(expobj, 'not_flip_stims'):
-            # if hasattr(expobj, 'not_flip_stims'):
             print(
                 f"|-- expobj {prep} {trial} DOES NOT have previous not_flip_stims attr, so making a new empty list attr")
             expobj.not_flip_stims = []  # specify here the stims where the flip=False leads to incorrect assignment
@@ -171,7 +173,7 @@ for i in ls2:
         fig.savefig(save_path_full)
         # fig.show()
 
-        expobj.save()
+        expobj.save() if expsave else None
 print('end end end.')
 
 sys.exit()

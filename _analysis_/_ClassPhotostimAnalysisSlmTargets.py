@@ -1716,10 +1716,10 @@ class PhotostimAnalysisSlmTargets(Quantification):
         # add scalebar
         from _utils_.rfv_funcs import add_scale_bar
         add_scale_bar(ax=ax_cat[0][1], loc=(end_crop + 14, -5 + 1), length=(1, 10), bartype='L',
-                      text=('1 mV', '10 $\it{s}$'), text_offset=(9, 1.25), fs=ExpMetainfo.figures.fontsize['intraplot'], fig=fig)
+                      text=('1 mV', '10 s'), text_offset=(10, 1.8), fs=ExpMetainfo.figures.fontsize['intraplot'], fig=fig)
 
         add_scale_bar(ax=ax_cat[1][1], loc=(end_crop + 14, ylim_pre4ap[0] + 150), length=(100, 10), bartype='L',
-                      text=('1 dFF', '10 $\it{s}$'), text_offset=(9, 180), fs = ExpMetainfo.figures.fontsize['intraplot'], fig=fig)
+                      text=('1 dFF', '10 s'), text_offset=(10, 185), fs = ExpMetainfo.figures.fontsize['intraplot'], fig=fig)
 
         # fig.show()
 
