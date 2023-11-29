@@ -487,7 +487,7 @@ class TargetsSzInvasionSpatial_codereview(SLMTargets):
         self.responses_vs_distance_to_seizure_SLMTargets_lastsz = last_sz_df
 
     @staticmethod
-    @Utils.run_for_loop_across_exps(run_pre4ap_trials=0, run_post4ap_trials=1, allow_rerun=1)
+    @Utils.run_for_loop_across_exps(run_pre4ap_trials=0, run_post4ap_trials=1, allow_rerun=0)
     def run__collect_responses_vs_distance_to_seizure_SLMTargets(**kwargs):
         "code review - looks good to go .22/03/15"
         expobj = kwargs['expobj']
@@ -807,19 +807,18 @@ class TargetsSzInvasionSpatial_codereview(SLMTargets):
 
     # 3.1) distnace vs. photostim responses - no percentile normalization of distances - ROLLING BINS
     @staticmethod
-    def collect__binned__distance_v_responses_rolling_bins(results, rerun=0, save=True):
+    def collect__binned__distance_v_responses_rolling_bins(results, rerun=0, analyse_responses = 'all seizures', save=True):
         """collect distance vs. respnses for rolling distance bins - with zscored results"""
         results: TargetsSzInvasionSpatialResults_codereview
-        save = False
 
-        if rerun or not hasattr(results, 'rolling_binned__distance_vs_photostimresponses'):
+        # if rerun or not hasattr(results, 'rolling_binned__distance_vs_photostimresponses'):
+        if rerun:
             bin_width = 40  # um
             rolling_bins = [(i, i + bin_width) for i in range(0, 500)]
             num = [0 for _ in range(len(rolling_bins))]  # num of datapoints in binned distances
             y = [0 for _ in range(len(rolling_bins))]  # avg responses at distance bin
             responses = [[] for _ in range(len(rolling_bins))]  # collect all responses at distance bin
 
-            analyse_responses = 'all seizures'
             assert analyse_responses in ['all seizures', 'first seizures', 'last seizures']
 
             @Utils.run_for_loop_across_exps(run_pre4ap_trials=0, run_post4ap_trials=1, set_cache=False)
@@ -827,7 +826,7 @@ class TargetsSzInvasionSpatial_codereview(SLMTargets):
                 expobj = kwargs['expobj']
                 szinvspatial: TargetsSzInvasionSpatial_codereview = expobj.TargetsSzInvasionSpatial_codereview
                 if analyse_responses == 'all seizures':
-                    df_responses = szinvspatial.responses_vs_distance_to_seizure_SLMTargets_dFFstdF
+                    df_responses = szinvspatial.responses_vs_distance_to_seizure_SLMTargets
                 elif analyse_responses == 'first seizures':
                     df_responses = szinvspatial.responses_vs_distance_to_seizure_SLMTargets_firstsz
                 elif analyse_responses == 'last seizures':
@@ -865,34 +864,34 @@ class TargetsSzInvasionSpatial_codereview(SLMTargets):
                                                                       '95conf_int': conf_int,
                                                                       'all responses (per bin)': responses
                                                                       }
-        bin_width = results_df['bin_width_um']
-        avg_responses = results_df['avg_photostim_response_in_bin'][
-                        :-bin_width]
-        responses = results_df['all responses (per bin)'][:-bin_width]
-        distances = results_df['distance_bins'][:-bin_width]
+            bin_width = results_df['bin_width_um']
+            avg_responses = results_df['avg_photostim_response_in_bin'][
+                            :-bin_width]
+            responses = results_df['all responses (per bin)'][:-bin_width]
+            distances = results_df['distance_bins'][:-bin_width]
 
-        assert len(avg_responses) == len(responses) == len(distances), print('incorrect lengths of variables')
+            assert len(avg_responses) == len(responses) == len(distances), print('incorrect lengths of variables')
 
-        # RUN STATS: 1-WAY ANOVA and KRUSKAL-WALLIS - responses across distance
-        kruskal_r = stats.kruskal(*responses)
-        oneway_r = stats.f_oneway(*responses)
+            # RUN STATS: 1-WAY ANOVA and KRUSKAL-WALLIS - responses across distance
+            kruskal_r = stats.kruskal(*responses)
+            oneway_r = stats.f_oneway(*responses)
 
-        results_df['kruskal - binned responses'] = kruskal_r
-        results_df['anova oneway - binned responses'] = oneway_r
+            results_df['kruskal - binned responses'] = kruskal_r
+            results_df['anova oneway - binned responses'] = oneway_r
 
 
-        if analyse_responses == 'all seizures':
-            results.rolling_binned__distance_vs_photostimresponses = results_df
-        elif analyse_responses == 'first seizures':
-            results.rolling_binned__distance_vs_photostimresponses_firstsz = results_df
-        elif analyse_responses == 'last seizures':
-            results.rolling_binned__distance_vs_photostimresponses_firstsz = results_df
+            if analyse_responses == 'all seizures':
+                results.rolling_binned__distance_vs_photostimresponses = results_df
+            elif analyse_responses == 'first seizures':
+                results.rolling_binned__distance_vs_photostimresponses_firstsz = None
+                results.rolling_binned__distance_vs_photostimresponses_firstsz = results_df
+            elif analyse_responses == 'last seizures':
+                results.rolling_binned__distance_vs_photostimresponses_lastsz = None
+                results.rolling_binned__distance_vs_photostimresponses_lastsz = results_df
 
-        results.save_results() if save else None
+            results.save_results() if save else None
 
-        return results
-
-        # return bin_width, distances, num, avg_responses, conf_int
+            return results
 
     @staticmethod
     def collect__binned__distance_v_responses_rolling_bins_dFF(results, rerun=0, save=True):
@@ -1098,8 +1097,9 @@ class TargetsSzInvasionSpatial_codereview(SLMTargets):
         # ax.set_xlabel(r'Distance to seizure wavefront ($\mu$$\it{m}$)')
         ax.set_xticks([0, 100, 200, 300, 400], [0, 100, 200, 300, 400], fontsize=10)
         ax.set_xlabel('')
-        if response_type in ['dFF (zscored) (baseline)', 'early seizure', 'last seizure']:
+        if response_type in ['dFF (zscored) (baseline)', 'early seizure', 'late seizure']:
             ax.set_ylim([-1.5, 2.25])
+            ax.set_xlim([0, 300])
             ax.set_yticks([-1, 0, 1, 2], [-1, 0, 1, 2], fontsize=10)
             # ax.set_ylabel(f'{rfv.italic("Z")}-score\n(to baseline)',fontsize=10)
             ax.set_ylabel(f'Photostimulation responses \n (z-score)', fontsize=10)
@@ -1273,8 +1273,10 @@ if __name__ == '__main__':
         # main.plot_lineplot_responses_pctszdistances(results.percentiles, results.responses_sorted, response_type=results.response_type,
         #                                             scale_percentile_distances=results.scale_percentile_distances)
 
-        results = main.collect__binned__distance_v_responses_rolling_bins(results=results, rerun=1, save=True)
+        results = main.collect__binned__distance_v_responses_rolling_bins(results=results, rerun=1, save=True, analyse_responses = 'first seizures')
+        results = main.collect__binned__distance_v_responses_rolling_bins(results=results, rerun=1, save=True, analyse_responses = 'last seizures')
         # results = main.collect__binned__distance_v_responses_rolling_bins_dFF(results=results, rerun=1, save=True)
-        main.plot__responses_v_distance_no_normalization_rolling_bins(results=results)
+        main.plot__responses_v_distance_no_normalization_rolling_bins(results=results, response_type = 'early seizure')
+        main.plot__responses_v_distance_no_normalization_rolling_bins(results=results, response_type = 'late seizure')
 
         # run__calc_meanGCaMP_in_out_szwavefront()

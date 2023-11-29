@@ -2,6 +2,7 @@
 
 """
 Figure 2: Widescale and single-neuronal excitability after focal 4-AP injection
+Figure 3: figure 2 code here is split into Figure 2 and 3 later manually
 """
 
 import sys
@@ -16,7 +17,7 @@ from statsmodels.stats.multicomp import pairwise_tukeyhsd
 sys.path.extend(['/home/pshah/Documents/code/AllOpticalSeizure', '/home/pshah/Documents/code/AllOpticalSeizure'])
 sys.path.extend(['/home/pshah/Documents/code/reproducible_figures-main'])
 fig_title = f'fig2_widefieldstim_alloptical'
-SAVE_FOLDER = f'/home/pshah/Documents/figures/alloptical_seizures_draft/3fig/'
+SAVE_FOLDER = f'/home/pshah/Documents/figures/alloptical_seizures_draft/4fig/'
 fig_items = f'/home/pshah/Documents/figures/alloptical_seizures_draft/figure-items/'
 
 import rep_fig_vis as rfv

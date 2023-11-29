@@ -1,5 +1,5 @@
 """
-Figure 3: Neuronal and local-circuit excitability during seizure propagation
+Figure 4: Neuronal and local-circuit excitability during seizure propagation
 """
 
 import sys
@@ -9,8 +9,9 @@ import matplotlib.image as mpimg
 
 sys.path.extend(['/home/pshah/Documents/code/AllOpticalSeizure', '/home/pshah/Documents/code/AllOpticalSeizure'])
 sys.path.extend(['/home/pshah/Documents/code/reproducible_figures-main']); import rep_fig_vis as rfv
-fig_title = f'fig3_excitability_sz'
-SAVE_FOLDER = f'/home/pshah/Documents/figures/alloptical_seizures_draft/3fig/'
+
+fig_title = f'fig4_excitability_sz'
+SAVE_FOLDER = f'/home/pshah/Documents/figures/alloptical_seizures_draft/4fig/'
 fig_items = f'/home/pshah/Documents/figures/alloptical_seizures_draft/figure-items/'
 
 import _utils_.alloptical_plotting
