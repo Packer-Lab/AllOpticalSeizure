@@ -569,7 +569,7 @@ class ExpSeizureAnalysis(Quantification):
         plot_bar_with_points(data=[cls.twop_trials_sz_incidence + cls.onep_trials_sz_incidence], s=20,
                              x_tick_labels=['Experiments'], colors=[general_color], y_label='Avg. seizure incidence \n(events/min)',
                              alpha=1, bar=False, title='rate of seizures during exp', expand_size_x=2, expand_size_y=1, ylims=[0, 1],
-                             fig=fig, ax=ax, show=False, lw=1.2, capsize=0.1)
+                             fig=fig, ax=ax, show=False, lw=1.2, capsize=3)
         ax.spines['bottom'].set_visible(False)
         ax.set_xticks([])
         # if 'ax' not in kwargs:
@@ -654,7 +654,7 @@ class ExpSeizureAnalysis(Quantification):
                                 x_tick_labels=['Experiments'], fig=fig, ax=ax, show=False, s=20,
                                 colors=[general_color], y_label='Seizure length \n(secs)', alpha=1, bar=False,
                                 title='Avg sz length', expand_size_x=0.7, expand_size_y=1, ylims=[0, 120],
-                                lw=1.2, capsize=0.1)
+                                lw=1.2, capsize=3)
         ax.spines['bottom'].set_visible(False)
         ax.set_xticks([])
 
@@ -1108,7 +1108,7 @@ class ExpSeizureAnalysis(Quantification):
         plot_bar_with_points(data=[list(results.propagation_speeds.values())],
                              x_tick_labels=['Experiments'], colors=[general_color], y_label='Avg. propagation \nspeed ($\mu$$\it{m}$/sec)',
                              alpha=1, bar=False, title='', expand_size_x=2, expand_size_y=1, ylims=[0, 50], s=20,
-                             fig=fig, ax=ax, show=False, lw=1.2, capsize=0.1)
+                             fig=fig, ax=ax, show=False, lw=1.2, capsize=3)
         ax.spines['bottom'].set_visible(False)
         ax.set_xticks([])
 

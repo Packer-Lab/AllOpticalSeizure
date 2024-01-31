@@ -14,12 +14,13 @@ import numpy as np
 from scipy import stats
 
 sys.path.extend(['/home/pshah/Documents/code/AllOpticalSeizure', '/home/pshah/Documents/code/AllOpticalSeizure'])
-sys.path.extend(['/home/pshah/Documents/code/reproducible_figures-main'])
+# sys.path.extend(['/home/pshah/Documents/code/reproducible_figures-main'])
 fig_title = f'fig1_szimgA-E'
-SAVE_FOLDER = f'/home/pshah/Documents/figures/alloptical_seizures_draft/4fig/'
+SAVE_FOLDER = f'/home/pshah/Documents/figures/alloptical_seizures_draft/4fig/2024-01'
 fig_items = f'/home/pshah/Documents/figures/alloptical_seizures_draft/figure-items/'
 
-import rep_fig_vis as rfv
+# import rep_fig_vis as rfv
+import reproducible_figures as rfv
 from _utils_.io import import_expobj
 from _utils_.alloptical_plotting import save_figure
 import funcsforprajay.plotting as pplot
@@ -39,6 +40,7 @@ expobj: Post4ap = import_expobj(exp_prep='RL108 t-013')
 
 
 # %% MAKE FIGURE LAYOUT
+test = 0
 
 # set layout of the figure
 layout = {
@@ -47,14 +49,14 @@ layout = {
     'B': {'panel_shape': (1, 1),
           'bound': (0.43, 0.86, 0.95, 0.95)},
     'C top': {'panel_shape': (1, 1),
-          'bound': (0.07, 0.67, 0.30, 0.72)},
+          'bound': (0.07, 0.68, 0.30, 0.74)},
     'C bottom': {'panel_shape': (1, 1),
-          'bound': (0.07, 0.57, 0.30, 0.67)},
+          'bound': (0.07, 0.57, 0.30, 0.68)},
     'D': {'panel_shape': (3, 1),
-          'bound': (0.40, 0.57, 0.66, 0.67),
+          'bound': (0.40, 0.57, 0.66, 0.70),
           'wspace': 2},
     'E': {'panel_shape': (1, 1),
-          'bound': (0.74, 0.60, 0.80, 0.67),
+          'bound': (0.74, 0.60, 0.80, 0.70),
           'wspace': 1},
     ## F to I below are for the INH part of the figure
     'F': {'panel_shape': (1, 1),
@@ -71,7 +73,6 @@ layout = {
 
 
 
-test = 0
 save_fig = True if not test > 0 else False
 dpi = 100 if test > 0 else 300
 fig, axes, grid = rfv.make_fig_layout(layout=layout, dpi=dpi)
@@ -103,20 +104,20 @@ from _analysis_.sz_analysis._ClassExpSeizureAnalysis import ExpSeizureAnalysis a
 
 ax, ax2, ax3 = axes['D'][0], axes['D'][1], axes['D'][2]
 
-main.plot__sz_propagation_speed(results=results_seizure, fig=fig, ax=ax3, show=False)
 main.plot__sz_incidence(fig=fig, ax=ax, show=False)
+main.plot__sz_propagation_speed(results=results_seizure, fig=fig, ax=ax3, show=False)
 main.plot__sz_lengths(fig=fig, ax=ax2, show=False)
 
 
 
-ax.set_ylabel(f'Ictal events / min', fontsize=fontsize_intraplot, labelpad=0)
+ax.set_ylabel(f'Ictal events / min', fontsize=fontsize_intraplot, labelpad=-4.0)
 ax.set_yticks([0, 1], [0, 1], fontsize=fontsize_intraplot)
 ax.set_title('')
 ax2.set_title('')
-ax2.set_ylabel('Length (secs)', fontsize=fontsize_intraplot, labelpad=0)
+ax2.set_ylabel('Length (secs)', fontsize=fontsize_intraplot, labelpad=-4.0)
 ax2.set_yticks([0, 120], [0, 120], fontsize=fontsize_intraplot)
 ax2.set_ylim([0, 120])
-ax3.set_ylabel('Speed ($\mu$$\it{m}$/sec)', fontsize=fontsize_intraplot, labelpad=0)
+ax3.set_ylabel('Speed ($\mu$$\it{m}$/sec)', fontsize=fontsize_intraplot, labelpad=-4.0)
 ax3.set_yticks([0, 40], [0, 40], fontsize=fontsize_intraplot)
 ax3.set_ylim([0, 40])
 # rfv.add_label_axes(text='D', ax=ax, x_adjust=0.07, y_adjust=0.03)
@@ -131,14 +132,22 @@ baseline_rates = [np.mean(i) for i in results.neural_activity_rate['baseline']]
 interictal_rates = [np.mean(i) for i in results.neural_activity_rate['interictal']]
 ictal_rates = [np.mean(i) for i in results.neural_activity_rate['ictal']]
 
+## normalize all rates to baseline - given that the actual unit value is uninterpretable - the more important point is comparison to baseline levels
+norm_baseline_rates = [x / np.mean(baseline_rates) for x in baseline_rates]
+norm_interictal_rates = [x / np.mean(baseline_rates) for x in interictal_rates]
+norm_ictal_rates = [x / np.mean(baseline_rates) for x in ictal_rates]
+
 activity_rates = [baseline_rates, interictal_rates, ictal_rates]
+norm_activity_rates = [norm_baseline_rates, norm_interictal_rates, norm_ictal_rates]
+
 
 pplot.plot_bar_with_points(
-    data=[baseline_rates, interictal_rates, ictal_rates],
-    bar=True, x_tick_labels=['Baseline', 'Interictal', 'Ictal'], points=False,
-    colors=['cornflowerblue', 'forestgreen', 'purple'], lw=0.75, title='', y_label='Actvity rate', alpha=0.7,
-    ylims=[0, 200], show=False, capsize=1.5, fontsize=fontsize_intraplot, width_factor=1.15,
-    ax=ax4)
+    data=[norm_baseline_rates, norm_interictal_rates, norm_ictal_rates],
+    bar=True, x_tick_labels=[' ', ' ', ' '], points=False,
+    colors=['cornflowerblue', 'forestgreen', 'purple'], lw=0.75, title='', y_label='Deconvolved activity', alpha=0.7,
+    show=False, capsize=1.5, fontsize=fontsize_intraplot, width_factor=1.15, y_labelpad=2.0, ax=ax4,
+    ylims=[0, 4],
+    )
 
 # rfv.add_label_axes(text='E', ax=ax4, x_adjust=0.07, y_adjust=0.03)
 

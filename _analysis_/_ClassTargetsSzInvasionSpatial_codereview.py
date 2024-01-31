@@ -891,7 +891,7 @@ class TargetsSzInvasionSpatial_codereview(SLMTargets):
 
             results.save_results() if save else None
 
-            return results
+            # return results
 
     @staticmethod
     def collect__binned__distance_v_responses_rolling_bins_dFF(results, rerun=0, save=True):
@@ -1228,11 +1228,11 @@ if __name__ == '__main__':
         main.response_type = response_type
 
         "Running updated code pipeline for just one experiment all the way thru."
-        # run__initTargetsSzInvasionSpatial()  # <- code review done
+        # run__initTargetsSzInvasionSpatial()
         #
-        # main.run__add__min_distance_to_seizure()  # <- code review done
+        # main.run__add__min_distance_to_seizure()
         #
-        main.run__collect_responses_vs_distance_to_seizure_SLMTargets(save=True)  # <- code review done
+        main.run__collect_responses_vs_distance_to_seizure_SLMTargets(save=True)
 
         # collect distance vs. respnses for distance bins
         # bin_width, distances, num, avg_responses, conf_int =  main.collect__binned__distance_v_responses()
@@ -1273,10 +1273,11 @@ if __name__ == '__main__':
         # main.plot_lineplot_responses_pctszdistances(results.percentiles, results.responses_sorted, response_type=results.response_type,
         #                                             scale_percentile_distances=results.scale_percentile_distances)
 
-        results = main.collect__binned__distance_v_responses_rolling_bins(results=results, rerun=1, save=True, analyse_responses = 'first seizures')
-        results = main.collect__binned__distance_v_responses_rolling_bins(results=results, rerun=1, save=True, analyse_responses = 'last seizures')
         # results = main.collect__binned__distance_v_responses_rolling_bins_dFF(results=results, rerun=1, save=True)
+        main.collect__binned__distance_v_responses_rolling_bins(results=results, rerun=0, save=True, analyse_responses = 'first seizures')
+        main.collect__binned__distance_v_responses_rolling_bins(results=results, rerun=0, save=True, analyse_responses = 'last seizures')
         main.plot__responses_v_distance_no_normalization_rolling_bins(results=results, response_type = 'early seizure')
         main.plot__responses_v_distance_no_normalization_rolling_bins(results=results, response_type = 'late seizure')
 
         # run__calc_meanGCaMP_in_out_szwavefront()
+

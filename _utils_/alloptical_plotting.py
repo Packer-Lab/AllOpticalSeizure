@@ -81,6 +81,7 @@ def save_figure(fig, save_path_suffix: str = None, save_path_full: str = None):
     else:
         ValueError('not able to determine where to save figure to!')
     print(f'\nsaving figure to: {save_path_full}')
+    os.makedirs(save_path_full) if not os.path.exists(save_path_full) else None
     fig.savefig(save_path_full)
 
 
