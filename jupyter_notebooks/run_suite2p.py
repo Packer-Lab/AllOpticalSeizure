@@ -6,17 +6,6 @@
 import sys
 
 sys.path.append('/home/pshah/Documents/code/PackerLab_pycharm/')
-import alloptical_utils_pj as aoutils
-import alloptical_plotting as aoplot
-
-import pickle
-import numpy as np
-import pandas as pd
-import matplotlib.pyplot as plt
-import seaborn as sns
-
-from numba import njit
-from skimage import draw
 
 date = '2021-01-10'
 
@@ -24,7 +13,6 @@ date = '2021-01-10'
 import sys
 sys.path.append('/home/pshah/Documents/code/PackerLab_pycharm/')
 import os
-import numpy as np
 from suite2p.run_s2p import run_s2p
 
 

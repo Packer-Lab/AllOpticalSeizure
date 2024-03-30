@@ -11,7 +11,6 @@ from _results_.sz4ap_results import plotHeatMapSzAllCells
 
 from _utils_.io import import_expobj
 
-import _alloptical_utils as Utils
 from _utils_ import alloptical_plotting as aoplot
 
 import numpy as np

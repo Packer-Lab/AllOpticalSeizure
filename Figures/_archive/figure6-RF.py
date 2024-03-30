@@ -18,16 +18,13 @@ suppl figure: write up RF code
 import sys
 
 import _utils_.alloptical_plotting
-import alloptical_plotting
 from _analysis_._ClassTargetsSzInvasionTemporal import TargetsSzInvasionTemporal, TargetsSzInvasionTemporalResults
 from _analysis_.nontargets_analysis._ClassNonTargetsSzInvasionSpatial import NonTargetsSzInvasionSpatialResults, \
     NonTargetsSzInvasionSpatial
-from _analysis_.run__TargetsSzInvasionTemporal import plot__targets_sz_invasion_meantraces
 
 sys.path.extend(['/home/pshah/Documents/code/reproducible_figures-main'])
 
 import rep_fig_vis as rfv
-import alloptical_utils_pj as Utils
 
 import numpy as np
 import matplotlib.image as mpimg

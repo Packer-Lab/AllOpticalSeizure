@@ -1,16 +1,12 @@
-import os
-import sys
-
 import numpy as np
 import pandas as pd
 from matplotlib import pyplot as plt
 
-import _alloptical_utils as Utils
+from _utils_ import _alloptical_utils as Utils
 import funcsforprajay.funcs as pj
 
 from _analysis_._utils import Quantification, Results
 from _main_.Post4apMain import Post4ap
-from _utils_.io import import_expobj
 
 SAVE_LOC = "/home/pshah/mnt/qnap/Analysis/analysis_export/analysis_quantification_classes/"
 SAVE_PATH = SAVE_LOC + 'TargetsPhotostimResponsesInterictal.pkl'

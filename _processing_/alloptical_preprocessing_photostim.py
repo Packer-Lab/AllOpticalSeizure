@@ -1,5 +1,4 @@
-import alloptical_utils_pj as aoutils
-
+from archive import alloptical_utils_pj as aoutils
 
 # Step #1) in all optical experiment analysis - preprocessing the data to prep for suite2p analysis and creating some starter experiment objects
 

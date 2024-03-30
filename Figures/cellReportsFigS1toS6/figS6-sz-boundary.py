@@ -16,13 +16,13 @@ from _exp_metainfo_.exp_metainfo import ExpMetainfo
 sys.path.extend(['/home/pshah/Documents/code/reproducible_figures-main'])
 from _utils_.alloptical_plotting import save_figure
 
-import numpy as np
-import rep_fig_vis as rfv
+import reproducible_figures as rfv
 
 
-SAVE_FOLDER = f'/home/pshah/Documents/figures/alloptical_seizures_draft/'
-fig_items = f'/home/pshah/Documents/figures/alloptical_seizures_draft/figure-items/'
-save_path_full=f"{SAVE_FOLDER}/suppl-sz-boundary-RF"
+SAVE_FOLDER = f'/home/pshah/Documents/figures/alloptical_seizures_draft/4fig/'
+fig_items = f'/home/pshah/Documents/figures/alloptical_seizures_draft/figure-items/4fig'
+title = "figS6_2p-sz-boundary-RF"
+save_path_full=f"{SAVE_FOLDER}/{title}"
 
 save_fig = True
 
@@ -70,7 +70,7 @@ if save_fig and dpi > 250:
     save_figure(fig=fig, save_path_full=f"{save_path_full}.png")
     save_figure(fig=fig, save_path_full=f"{save_path_full}.pdf")
 
-fig.show()
+# fig.show()
 
 
 

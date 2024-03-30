@@ -1,2 +1,0 @@
-python alloptical_analysis_photostim.py
-python alloptical_results_photostim_SLMtargets.py

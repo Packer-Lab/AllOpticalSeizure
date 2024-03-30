@@ -7,7 +7,6 @@ import sys;
 import _utils_.funcs_pj
 
 sys.path.append('/home/pshah/Documents/code/Vape/_utils_')
-import alloptical_utils_pj as ao
 from _utils_ import funcs_pj as pjf
 import numpy as np
 import matplotlib.pyplot as plt

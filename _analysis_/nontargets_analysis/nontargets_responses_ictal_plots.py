@@ -1,7 +1,6 @@
 import matplotlib.pyplot as plt
 
 from scipy import stats
-from statsmodels.stats.multicomp import pairwise_tukeyhsd
 
 from _analysis_.nontargets_analysis._ClassPhotostimResponsesAnalysisNonTargets import \
     PhotostimResponsesAnalysisNonTargets
@@ -13,16 +12,10 @@ import numpy as np
 import pingouin as pg
 
 from _analysis_.nontargets_analysis._ClassResultsNontargetPhotostim import PhotostimResponsesNonTargetsResults
-from _main_.AllOpticalMain import alloptical
 
-import statsmodels.api as sm
-from statsmodels.formula.api import ols
-
-import _alloptical_utils as Utils
 from _utils_.alloptical_plotting import plot_settings
 import sys
 sys.path.extend(['/home/pshah/Documents/code/reproducible_figures-main'])
-import rep_fig_vis as rfv
 
 plot_settings()
 

@@ -1,10 +1,5 @@
 #%% import stuff
-import alloptical_utils_pj as ao
-import numpy as np
-import pandas as pd
 import _utils_.utils_funcs as uf #from Vape
-import matplotlib.pyplot as plt
-
 
 #%% count number of ROIs detected by suite2p before and after 4AP
 

@@ -22,11 +22,11 @@ from funcsforprajay.funcs import decay_constant_logfit_method, convert_to_positi
 from scipy import signal
 from scipy.stats import sem
 
-from _alloptical_utils import run_for_loop_across_exps
+from _utils_._alloptical_utils import run_for_loop_across_exps
 from _analysis_.sz_analysis._ClassExpSeizureAnalysis import ExpSeizureResults
 from _exp_metainfo_.exp_metainfo import ExpMetainfo
 from _main_.Post4apMain import Post4ap
-from _utils_.alloptical_plotting import plot_settings, inspectExperimentMeanFOVandLFP, save_figure
+from _utils_.alloptical_plotting import plot_settings, save_figure
 from _utils_.io import import_expobj
 
 sys.path.extend(['/home/pshah/Documents/code/reproducible_figures-main'])

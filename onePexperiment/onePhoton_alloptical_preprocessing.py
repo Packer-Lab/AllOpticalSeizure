@@ -1,6 +1,6 @@
 ### code for analysis of one photon photostim experiments
 
-import alloptical_utils_pj as aoutils
+from archive import alloptical_utils_pj as aoutils
 
 animal_prep = 'PS07'
 data_path_base = '/home/pshah/mnt/qnap/Data/2021-01-19/'

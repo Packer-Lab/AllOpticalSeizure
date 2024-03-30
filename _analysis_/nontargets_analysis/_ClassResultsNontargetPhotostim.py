@@ -5,22 +5,17 @@ from _exp_metainfo_.exp_metainfo import AllOpticalExpsToAnalyze
 sys.path.extend(['/home/pshah/Documents/code/AllOpticalSeizure', '/home/pshah/Documents/code/AllOpticalSeizure'])
 
 import os
-from typing import Union, List
 
 import numpy as np
 import pandas as pd
 from scipy import stats
 
-from matplotlib import pyplot as plt
-
-import _alloptical_utils as Utils
-from _analysis_._utils import Quantification, Results
+from _utils_ import _alloptical_utils as Utils
+from _analysis_._utils import Results
 from _main_.AllOpticalMain import alloptical
 from _main_.Post4apMain import Post4ap
-from funcsforprajay import plotting as pplot
 
 # SAVE_LOC = "/Users/prajayshah/OneDrive/UTPhD/2022/OXFORD/export/"
-from _utils_._anndata import AnnotatedData2
 
 SAVE_LOC = "/home/pshah/mnt/qnap/Analysis/analysis_export/analysis_quantification_classes/"
 

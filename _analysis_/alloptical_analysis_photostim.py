@@ -6,7 +6,7 @@ sys.path.append('/home/pshah/Documents/code/')
 import numpy as np
 import matplotlib.pyplot as plt
 
-import alloptical_utils_pj as aoutils
+from archive import alloptical_utils_pj as aoutils
 
 # # import results superobject that will collect analyses from various individual experiments
 results_object_path = '/home/pshah/mnt/qnap/Analysis/alloptical_results_superobject.pkl'

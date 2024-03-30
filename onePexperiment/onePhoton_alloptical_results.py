@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from scipy import stats
 
-import alloptical_utils_pj as aoutils
+from archive import alloptical_utils_pj as aoutils
 from _utils_ import alloptical_plotting as aoplot
 from funcsforprajay import funcs as pj
 

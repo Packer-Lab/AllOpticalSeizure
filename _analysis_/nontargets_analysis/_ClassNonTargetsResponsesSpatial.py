@@ -14,7 +14,7 @@ sys.path.extend(['/home/pshah/Documents/code/AllOpticalSeizure', '/home/pshah/Do
 import os
 from typing import Union
 
-import _alloptical_utils as Utils
+from _utils_ import _alloptical_utils as Utils
 from _main_.AllOpticalMain import alloptical
 from _main_.Post4apMain import Post4ap
 

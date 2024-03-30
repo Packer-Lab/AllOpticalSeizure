@@ -400,6 +400,7 @@ plot_bar_with_points(data=to_plot, bar=True, title='', fontsize=10, points_lw=0.
                      y_label='Response magnitude\n(z-scored)', show=False, ylims=[-0.13, 0.43], lw=0.75,
                      alpha=1, fig=fig, ax=ax, s=15, capsize=4)
 
+
 # 1-WAY ANOVA
 stats.f_oneway(preictal_responses, interictal_responses, postictal_responses)
 
@@ -414,6 +415,7 @@ data_nums.extend(['post'] * num_post)
 
 df = pd.DataFrame({'score': preictal_responses + interictal_responses + postictal_responses,
                    'group': data_nums})
+
 
 # perform Tukey's test
 tukey = pairwise_tukeyhsd(endog=df['score'], groups=df['group'],
@@ -499,8 +501,9 @@ ax.set_ylabel('All neuron targets', fontsize=fs_extra)
 ax = axes['J'][1]
 
 results.collect_avg_photostim_responses_states(rerun=0)
-baseline_responses = results.avg_photostim_responses_all('baseline')
-interictal_responses = results.avg_photostim_responses_all('interictal')
+baseline_responses = results.avg_photostim_responses_all('baseline'); print(f'Mean +/- SEM +/- stdev baseline: {np.mean(baseline_responses)} +/- {stats.sem(baseline_responses)} +/- {np.std(baseline_responses)}')
+interictal_responses = results.avg_photostim_responses_all('interictal'); print(f'Mean +/- SEM +/- stdev interictal: {np.mean(interictal_responses)} +/- {stats.sem(interictal_responses)} +/- {np.std(interictal_responses)}')
+
 # ictal_responses = results.avg_photostim_responses['ictal']
 
 # ttest of independence

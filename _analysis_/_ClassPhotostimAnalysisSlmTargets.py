@@ -1,30 +1,25 @@
 import sys
 
-import scipy.stats
 from funcsforprajay.plotting.plotting import plot_bar_with_points
-from statsmodels.formula.api import ols
-from statsmodels.stats.anova import anova_lm
 
 from _utils_.funcs_pj import flattenOnce
 
 sys.path.extend(['/home/pshah/Documents/code/reproducible_figures-main'])
-from typing import Union, List, Dict
+from typing import Union
 
-import seaborn as sns
 import numpy as np
 import os
 import pandas as pd
 from funcsforprajay.wrappers import plot_piping_decorator
-import funcsforprajay.plotting as pplot
 from matplotlib import pyplot as plt
-from scipy.stats import variation, mannwhitneyu, ttest_rel, wilcoxon, zscore, ttest_ind
+from scipy.stats import variation, mannwhitneyu, ttest_rel, zscore
 from sklearn.cluster import KMeans
 from sklearn.decomposition import PCA
 
-import _alloptical_utils as Utils
+from _utils_ import _alloptical_utils as Utils
 from _analysis_._ClassPhotostimResponseQuantificationSLMtargets import PhotostimResponsesQuantificationSLMtargets, \
     PhotostimResponsesSLMtargetsResults
-from _analysis_._utils import Quantification, Results
+from _analysis_._utils import Quantification
 from _exp_metainfo_.exp_metainfo import AllOpticalExpsToAnalyze, ExpMetainfo
 from _main_.AllOpticalMain import alloptical
 from _main_.Post4apMain import Post4ap
@@ -32,7 +27,7 @@ from funcsforprajay import plotting as pplot
 import funcsforprajay.funcs as pj
 
 from _utils_._anndata import AnnotatedData2
-from _utils_.alloptical_plotting import plot_settings, plotLfpSignal, plot_periphotostim_avg, plot_periphotostim_avg2
+from _utils_.alloptical_plotting import plotLfpSignal
 from _utils_.io import import_expobj
 import rep_fig_vis as rfv
 
@@ -183,7 +178,7 @@ class PhotostimAnalysisSlmTargets(Quantification):
     def collect_all_targets_all_exps(run_pre4ap_trials=False, run_interictal=False, run_midinterictal=False):
         @Utils.run_for_loop_across_exps(run_pre4ap_trials=run_pre4ap_trials, allow_rerun=0)
         def baseline_targets_responses(**kwargs):
-            expobj = kwargs['expobj']
+            expobj: alloptical = kwargs['expobj']
             if np.nanmean(expobj.PhotostimAnalysisSlmTargets.adata.X) > 0:
                 # print(np.nanmean(expobj.PhotostimAnalysisSlmTargets.adata.X))
                 return expobj.PhotostimAnalysisSlmTargets.adata.X, expobj.t_series_name
@@ -545,7 +540,6 @@ class PhotostimAnalysisSlmTargets(Quantification):
         ax_cmap.set_position(pos=bbox)
         # fig.show()
 
-        import matplotlib as mpl
         cmap = plt.cm.get_cmap('viridis')
         # cmap = plt.cm.get_cmap(cmap)
         colors = cmap(np.arange(cmap.N))

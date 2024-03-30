@@ -8,7 +8,7 @@ sys.path.append('/home/pshah/Documents/code/')
 import numpy as np
 import pandas as pd
 
-import alloptical_utils_pj as aoutils
+from archive import alloptical_utils_pj as aoutils
 from _utils_ import alloptical_plotting as aoplot
 
 # # import results superobject that will collect analyses from various individual experiments

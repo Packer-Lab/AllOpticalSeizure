@@ -18,15 +18,14 @@
 # trial = 't-017'
 
 #%% start on local machine
-import alloptical_utils_pj as ao
+from archive import alloptical_utils_pj as ao
 import numpy as np
 import pandas as pd
 import _utils_.utils_funcs as uf #from Vape
 import matplotlib.pyplot as plt
 import pickle
 import sys; sys.path.append('/Users/prajayshah/OneDrive - University of Toronto/PycharmProjects/Vape')
-import math
-from numba import jit, njit
+from numba import njit
 
 trial = 't-017'
 experiment = 'J063: find_resp-4ap-t017'

@@ -26,13 +26,7 @@ import sys;
 
 sys.path.extend(['/home/pshah/Documents/code/AllOpticalSeizure'])
 
-from matplotlib import pyplot as plt
-
 import _utils_.alloptical_plotting
-import alloptical_plotting
-from _analysis_.nontargets_analysis._ClassNonTargetsSzInvasionSpatial import NonTargetsSzInvasionSpatialResults, \
-    NonTargetsSzInvasionSpatial
-from _analysis_.sz_analysis._ClassExpSeizureAnalysis import ExpSeizureAnalysis
 from _exp_metainfo_.exp_metainfo import ExpMetainfo
 
 sys.path.extend(['/home/pshah/Documents/code/reproducible_figures-main'])
@@ -49,9 +43,6 @@ main_spatial = TargetsSzInvasionSpatial_codereview
 results_spatial = TargetsSzInvasionSpatialResults_codereview.load()
 
 SAVE_FOLDER = f'/home/pshah/Documents/figures/thesis_figures/'
-
-from _utils_.nontargets_responses_ictal_plots import z_score_response_proximal_distal, \
-    influence_response_proximal_and_distal
 
 distance_lims = [19, 400]  # limit of analysis
 

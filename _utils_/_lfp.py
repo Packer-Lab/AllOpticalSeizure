@@ -2,7 +2,7 @@
 import os.path
 from typing import Union
 
-import _alloptical_utils as Utils
+from _utils_ import _alloptical_utils as Utils
 from _main_.AllOpticalMain import alloptical
 from _main_.Post4apMain import Post4ap
 from _main_.TwoPhotonImagingMain import TwoPhotonImaging

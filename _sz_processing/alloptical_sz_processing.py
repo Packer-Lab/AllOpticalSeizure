@@ -4,13 +4,11 @@ import os
 
 sys.path.append('/home/pshah/Documents/code/PackerLab_pycharm/')
 sys.path.append('/home/pshah/Documents/code/')
-import alloptical_utils_pj as aoutils
+from archive import alloptical_utils_pj as aoutils
 from _utils_ import alloptical_plotting as aoplot
-from funcsforprajay import funcs as pj
 from _main_.Post4apMain import Post4ap
 import numpy as np
 import matplotlib.pyplot as plt
-import _alloptical_utils as Utils
 import tifffile as tf
 
 # import results superobject that will collect analyses from various individual experiments

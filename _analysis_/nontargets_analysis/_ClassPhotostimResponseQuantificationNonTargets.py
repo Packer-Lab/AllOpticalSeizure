@@ -2,7 +2,6 @@ import sys
 
 sys.path.extend(['/home/pshah/Documents/code/AllOpticalSeizure', '/home/pshah/Documents/code/AllOpticalSeizure'])
 
-import os
 from typing import Union, List
 
 import numpy as np
@@ -11,8 +10,8 @@ from scipy import stats
 
 from matplotlib import pyplot as plt
 
-import _alloptical_utils as Utils
-from _analysis_._utils import Quantification, Results
+from _utils_ import _alloptical_utils as Utils
+from _analysis_._utils import Quantification
 from _main_.AllOpticalMain import alloptical
 from _main_.Post4apMain import Post4ap
 from funcsforprajay import plotting as pplot

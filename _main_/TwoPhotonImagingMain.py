@@ -617,11 +617,11 @@ class TwoPhotonImaging:
             if np.mean(raw) > 1:  # exclude all negative raw traces and very small mean raw traces
                 raw_ = np.delete(raw, photostim_frames)
                 # raw_dff = normalize_dff_jit(raw_)  # note that this function is defined in this file a little further down
-                from _alloptical_utils import normalize_dff
+                from _utils_._alloptical_utils import normalize_dff
                 raw_dff = normalize_dff(raw_)  # note that this function is defined in this file a little further down
                 std_ = raw_dff.std()
 
-                from _alloptical_utils import moving_average
+                from _utils_._alloptical_utils import moving_average
                 raw_dff_ = moving_average(raw_dff, n=4)
 
                 thr = np.mean(raw_dff) + std_thresh * std_
@@ -799,7 +799,7 @@ class TwoPhotonImaging:
         return mean_img
 
     def dfof(self):
-        from _alloptical_utils import normalize_dff
+        from _utils_._alloptical_utils import normalize_dff
         dFF = normalize_dff(self.raw)
         return dFF
 

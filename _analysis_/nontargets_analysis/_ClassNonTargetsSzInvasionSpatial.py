@@ -1,23 +1,21 @@
 import sys
 
-from funcsforprajay.funcs import calc_distance_2points
 from matplotlib import pyplot as plt
 
 sys.path.extend(['/home/pshah/Documents/code/AllOpticalSeizure', '/home/pshah/Documents/code/AllOpticalSeizure'])
 sys.path.extend(['/home/pshah/Documents/code/reproducible_figures-main'])
 
 import os
-from typing import Union, List
+from typing import Union
 
 import numpy as np
 import pandas as pd
 from scipy import stats
 
-import _alloptical_utils as Utils
+from _utils_ import _alloptical_utils as Utils
 from _analysis_._utils import Quantification, Results
 from _main_.AllOpticalMain import alloptical
 from _main_.Post4apMain import Post4ap
-from funcsforprajay import plotting as pplot
 from funcsforprajay import funcs as pj
 import rep_fig_vis as rfv
 

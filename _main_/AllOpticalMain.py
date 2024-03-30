@@ -20,7 +20,7 @@ from funcsforprajay import funcs as pj
 from funcsforprajay.wrappers import plot_piping_decorator
 from _utils_.paq_utils import paq_read
 
-import _alloptical_utils as Utils
+from _utils_ import _alloptical_utils as Utils
 from _main_.TwoPhotonImagingMain import TwoPhotonImaging
 
 

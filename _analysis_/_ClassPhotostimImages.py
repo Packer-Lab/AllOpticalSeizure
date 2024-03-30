@@ -5,18 +5,14 @@ import numpy as np
 from _utils_.alloptical_plotting import plot_SLMtargets_Locs, get_ax_for_multi_plot, multi_plot_subplots
 
 sys.path.extend(['/home/pshah/Documents/code/reproducible_figures-main'])
-from typing import Union, List, Dict
+from typing import Union
 
-import _alloptical_utils as Utils
-from _analysis_._ClassPhotostimResponseQuantificationSLMtargets import PhotostimResponsesQuantificationSLMtargets, \
-    PhotostimResponsesSLMtargetsResults
-from _analysis_._utils import Quantification, Results
+from _utils_ import _alloptical_utils as Utils
+from _analysis_._ClassPhotostimResponseQuantificationSLMtargets import PhotostimResponsesSLMtargetsResults
+from _analysis_._utils import Quantification
 from _main_.AllOpticalMain import alloptical
 from _main_.Post4apMain import Post4ap
 import funcsforprajay.funcs as pj
-import funcsforprajay.plotting as pjplot
-
-import rep_fig_vis as rfv
 
 SAVE_LOC = "/home/pshah/mnt/qnap/Analysis/analysis_export/analysis_quantification_classes/"
 SAVE_FIG = "/home/pshah/Documents/figures/alloptical-photostim-responses-traces/"

@@ -17,8 +17,7 @@ import bisect
 from funcsforprajay import funcs as pj
 from funcsforprajay import pnt2line
 from _utils_.paq_utils import paq_read, frames_discard
-# from _utils_ import alloptical_plotting as aoplot
-import _alloptical_utils as Utils
+from _utils_ import _alloptical_utils as Utils
 
 
 class Post4ap(alloptical):

@@ -1,5 +1,5 @@
 import sys
-from typing import Union, List, Dict
+from typing import Union, List
 
 import numpy as np
 import os
@@ -8,7 +8,7 @@ from funcsforprajay.wrappers import plot_piping_decorator
 from matplotlib import pyplot as plt
 from scipy import stats
 
-import _alloptical_utils as Utils
+from _utils_ import _alloptical_utils as Utils
 from _analysis_._utils import Quantification, Results
 from _exp_metainfo_.exp_metainfo import AllOpticalExpsToAnalyze, current_loc, ExpMetainfo, baseline_color, interictal_color, insz_color, outsz_color
 from _main_.AllOpticalMain import alloptical

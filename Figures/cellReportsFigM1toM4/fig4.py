@@ -14,7 +14,6 @@ fig_title = f'fig4_excitability_sz'
 SAVE_FOLDER = f'/home/pshah/Documents/figures/alloptical_seizures_draft/4fig/'
 fig_items = f'/home/pshah/Documents/figures/alloptical_seizures_draft/figure-items/'
 
-import _utils_.alloptical_plotting
 from _utils_.alloptical_plotting import save_figure
 from _analysis_.nontargets_analysis._ClassNonTargetsSzInvasionSpatial import NonTargetsSzInvasionSpatialResults, \
     NonTargetsSzInvasionSpatial
@@ -34,7 +33,7 @@ np.random.seed(2)  # fix seed
 fs = ExpMetainfo.figures.fontsize['extraplot']
 rfv.set_fontsize(fs)
 
-from _utils_.nontargets_responses_ictal_plots import z_score_response_proximal_distal, influence_response_proximal_and_distal
+from _analysis_.nontargets_analysis.nontargets_responses_ictal_plots import z_score_response_proximal_distal, influence_response_proximal_and_distal
 
 from _analysis_.nontargets_analysis._ClassPhotostimResponsesAnalysisNonTargets import \
     PhotostimResponsesAnalysisNonTargets

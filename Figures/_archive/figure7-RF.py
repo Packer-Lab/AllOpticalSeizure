@@ -9,7 +9,7 @@ todo:
 
 import sys
 
-from _utils_.nontargets_responses_ictal_plots import z_score_response_proximal_distal, influence_response_proximal_and_distal
+from _analysis_.nontargets_analysis.nontargets_responses_ictal_plots import z_score_response_proximal_distal, influence_response_proximal_and_distal
 
 sys.path.extend(['/home/pshah/Documents/code/reproducible_figures-main'])
 import rep_fig_vis as rfv
@@ -21,7 +21,7 @@ import numpy as np
 
 from _analysis_.nontargets_analysis._ClassResultsNontargetPhotostim import PhotostimResponsesNonTargetsResults
 
-import _alloptical_utils as Utils
+from _utils_ import _alloptical_utils as Utils
 from _utils_.alloptical_plotting import plot_settings
 
 plot_settings()

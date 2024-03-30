@@ -7,22 +7,16 @@ A: Timing signal of experimental photostimulation trial during a single experime
 import sys
 
 import numpy as np
-from funcsforprajay.plotting.plotting import plot_bar_with_points
-from matplotlib.transforms import Bbox
-from scipy import stats
 
-from _alloptical_utils import run_for_loop_across_exps
 from _utils_.paq_utils import paq_read
-from _main_.AllOpticalMain import alloptical
 from _main_.Post4apMain import Post4ap
-from _utils_.alloptical_plotting import plot_settings, save_figure
+from _utils_.alloptical_plotting import save_figure
 from _utils_.io import import_expobj
 
 from _analysis_._ClassPhotostimAnalysisSlmTargets import plot_peristim_avg_fakestims
 
 sys.path.extend(['/home/pshah/Documents/code/reproducible_figures-main'])
 
-import matplotlib.pyplot as plt
 import rep_fig_vis as rfv
 
 SAVE_FOLDER = f'/home/pshah/Documents/figures/alloptical_seizures_draft/'

@@ -1,7 +1,7 @@
 # turn this all into one .py file that you can run across all photostim. trials
 
 import sys; sys.path.append('/home/pshah/Documents/code/Vape/_utils_/')
-import alloptical_utils_pj as ao
+from archive import alloptical_utils_pj as ao
 import numpy as np
 import pickle
 

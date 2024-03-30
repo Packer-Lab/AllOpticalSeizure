@@ -3,8 +3,7 @@ from typing import Union
 import numpy as np
 from matplotlib import pyplot as plt
 import funcsforprajay.funcs as pj
-import _alloptical_utils as Utils
-from _analysis_._ClassPhotostimAnalysisSlmTargets import plot_peristim_avg_fakestims, plot_peristim_avg_photostims
+from _utils_ import _alloptical_utils as Utils
 
 from _analysis_._ClassPhotostimResponseQuantificationSLMtargets import \
     PhotostimResponsesQuantificationSLMtargets as main, PhotostimResponsesSLMtargetsResults

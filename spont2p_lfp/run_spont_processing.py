@@ -1,6 +1,5 @@
-import os
 import sys; sys.path.append('/home/pshah/Documents/code/Vape/_utils_/')
-import alloptical_utils_pj as aoutils
+from archive import alloptical_utils_pj as aoutils
 import numpy as np
 import pickle
 from _utils_.paq_utils import frames_discard, paq_read

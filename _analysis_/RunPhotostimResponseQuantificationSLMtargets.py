@@ -2,7 +2,7 @@ from typing import Union
 
 import numpy as np
 
-import _alloptical_utils as Utils
+from _utils_ import _alloptical_utils as Utils
 from _utils_.io import import_cls
 
 try:

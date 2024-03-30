@@ -1,4 +1,3 @@
-import alloptical_utils_pj as ao
 import numpy as np
 import matplotlib.pyplot as plt
 from sklearn.decomposition import PCA
@@ -6,8 +5,6 @@ import pandas as pd
 import pickle
 import sys;
 sys.path.append('/Users/prajayshah/OneDrive - University of Toronto/PycharmProjects/Vape')
-import _utils_.utils_funcs as uf #from Vape
-from numba import njit
 
 # save_path = '/Users/prajayshah/Documents/data-to-process/2020-03-18/2020-03-18_t-019_t-020.pkl'
 pkl_path_1 = "/Volumes/Extreme SSD/oxford-data/2020-03-03/2020-03-03_spont-baseline.pkl"

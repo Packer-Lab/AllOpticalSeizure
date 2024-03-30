@@ -22,9 +22,8 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import numpy as np
 import pandas as pd
-import scipy.stats as stats
 
-import _alloptical_utils as Utils
+from _utils_ import _alloptical_utils as Utils
 from _analysis_._ClassTargetsSzInvasionTemporal import TargetsSzInvasionTemporal as main, \
     TargetsSzInvasionTemporalResults
 from _main_.Post4apMain import Post4ap

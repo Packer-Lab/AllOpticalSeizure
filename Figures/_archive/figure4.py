@@ -1,15 +1,10 @@
-import os
-
 import numpy as np
 from funcsforprajay.plotting.plotting import plot_bar_with_points
 from scipy.stats import mannwhitneyu
 
-from _alloptical_utils import run_for_loop_across_exps
-from _analysis_._ClassPhotostimAnalysisSlmTargets import PhotostimAnalysisSlmTargets, plot__avg_photostim_dff_allexps
+from _analysis_._ClassPhotostimAnalysisSlmTargets import PhotostimAnalysisSlmTargets
 from _analysis_._ClassPhotostimResponseQuantificationSLMtargets import PhotostimResponsesSLMtargetsResults, \
     PhotostimResponsesQuantificationSLMtargets
-from _main_.AllOpticalMain import alloptical
-from _main_.Post4apMain import Post4ap
 
 main = PhotostimAnalysisSlmTargets
 RESULTS = PhotostimResponsesSLMtargetsResults.load()

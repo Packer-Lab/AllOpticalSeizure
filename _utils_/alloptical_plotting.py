@@ -9,18 +9,15 @@ import numpy as np
 import matplotlib as mpl
 import seaborn as sns
 import matplotlib.pyplot as plt
-import matplotlib.ticker as mticker
 from mpl_point_clicker import clicker
 from scipy.stats import stats
 
-from _utils_.paq_utils import paq_read, frames_discard
+from _utils_.paq_utils import paq_read
 from funcsforprajay import funcs as pj
-import _alloptical_utils as Utils
-import tifffile as tf
+from _utils_ import _alloptical_utils as Utils
 from _main_.TwoPhotonImagingMain import TwoPhotonImaging
 from _main_.AllOpticalMain import alloptical
 from _main_.Post4apMain import Post4ap
-import scipy.stats
 
 from typing import List, Union
 

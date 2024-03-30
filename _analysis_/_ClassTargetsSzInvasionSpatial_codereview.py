@@ -2,8 +2,7 @@
 import sys;
 
 from scipy import stats
-from scipy.stats import linregress
-from skimage.draw import line, polygon
+from skimage.draw import polygon
 
 from _exp_metainfo_.exp_metainfo import AllOpticalExpsToAnalyze
 from _main_.AllOpticalMain import alloptical
@@ -12,17 +11,14 @@ print('Python %s on %s' % (sys.version, sys.platform))
 sys.path.extend(['/home/pshah/Documents/code/AllOpticalSeizure', '/home/pshah/Documents/code/AllOpticalSeizure'])
 sys.path.extend(['/home/pshah/Documents/code/reproducible_figures-main'])
 
-import rep_fig_vis as rfv
-
 from typing import List
 
 import numpy as np
 import pandas as pd
 from matplotlib import pyplot as plt
 import seaborn as sns
-import _alloptical_utils as Utils
+from _utils_ import _alloptical_utils as Utils
 import funcsforprajay.funcs as pj
-import funcsforprajay.math as psmath
 
 from _analysis_._utils import Quantification, Results
 from _main_.Post4apMain import Post4ap

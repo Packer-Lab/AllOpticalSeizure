@@ -1,11 +1,6 @@
 ## script dedicated to code that focuses on analysis re: SLM targets data
 # %% IMPORT MODULES AND TRIAL expobj OBJECT
 import sys
-from typing import Union
-
-from _analysis_._ClassPhotostimResponseQuantificationSLMtargets import PhotostimResponsesQuantificationSLMtargets
-from _main_.AllOpticalMain import alloptical
-from _main_.Post4apMain import Post4ap
 
 sys.path.append('/home/pshah/Documents/code/PackerLab_pycharm/')
 sys.path.append('/home/pshah/Documents/code/')
@@ -16,7 +11,7 @@ import seaborn as sns
 import tifffile as tf
 from funcsforprajay import funcs as pj
 
-import alloptical_utils_pj as aoutils
+from archive import alloptical_utils_pj as aoutils
 from _utils_ import alloptical_plotting as aoplot
 
 # # import results superobject that will collect analyses from various individual experiments

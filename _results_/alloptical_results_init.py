@@ -10,7 +10,8 @@ import pandas as pd
 import pickle
 
 from _main_.TwoPhotonImagingMain import TwoPhotonImaging
-import _alloptical_utils as aoutils
+from _utils_ import _alloptical_utils as aoutils
+
 
 # %% RESULTS OBJECTS
 class OnePhotonResults:

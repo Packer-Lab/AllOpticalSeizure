@@ -5,7 +5,7 @@ import os
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
-import alloptical_utils_pj as aoutils
+from archive import alloptical_utils_pj as aoutils
 from _utils_ import alloptical_plotting as aoplot
 import _utils_.funcs_pj as pj
 import tifffile as tf

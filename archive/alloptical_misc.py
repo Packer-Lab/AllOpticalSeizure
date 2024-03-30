@@ -8,7 +8,7 @@ from _main_.AllOpticalMain import alloptical
 from _main_.Post4apMain import Post4ap
 from _main_.TwoPhotonImagingMain import TwoPhotonImaging
 from _processing_.alloptical_processing import run_alloptical_processing_photostim
-from _utils_ import alloptical_plotting as aoplot
+from _utils_ import alloptical_plotting as aoplot, _alloptical_utils as Utils
 import matplotlib.pyplot as plt
 import numpy as np
 from funcsforprajay import funcs as pj
@@ -21,8 +21,6 @@ results_object_path = '/home/pshah/mnt/qnap/Analysis/alloptical_results_superobj
 allopticalResults = aoutils.import_resultsobj(pkl_path=results_object_path)
 
 import tifffile as tf
-
-import _alloptical_utils as Utils
 
 
 # %%

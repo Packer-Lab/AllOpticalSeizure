@@ -7,13 +7,12 @@ from funcsforprajay.wrappers import plot_piping_decorator
 from matplotlib import pyplot as plt
 import seaborn as sns
 
-import _alloptical_utils as Utils
+from _utils_ import _alloptical_utils as Utils
 import funcsforprajay.funcs as pj
 import funcsforprajay.plotting as pplot
 
 from _analysis_._utils import Quantification, Results
 from _main_.Post4apMain import Post4ap
-from _sz_processing.temporal_delay_to_sz_invasion import convert_timedel2frames
 
 SAVE_LOC = "/home/pshah/mnt/qnap/Analysis/analysis_export/analysis_quantification_classes/"
 SAVE_PATH = SAVE_LOC + 'TargetsSzInvasionTemporal.pkl'

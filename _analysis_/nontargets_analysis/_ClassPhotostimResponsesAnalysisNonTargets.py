@@ -6,7 +6,6 @@ from _exp_metainfo_.exp_metainfo import ExpMetainfo
 
 sys.path.extend(['/home/pshah/Documents/code/AllOpticalSeizure', '/home/pshah/Documents/code/AllOpticalSeizure'])
 
-import os
 from typing import Union
 
 import numpy as np
@@ -15,7 +14,7 @@ from scipy import stats
 
 from matplotlib import pyplot as plt
 
-import _alloptical_utils as Utils
+from _utils_ import _alloptical_utils as Utils
 from _main_.AllOpticalMain import alloptical
 from _main_.Post4apMain import Post4ap
 from funcsforprajay import plotting as pplot

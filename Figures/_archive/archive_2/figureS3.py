@@ -6,17 +6,12 @@ Supplemental Figure 3 - Local circuit excitability in baseline and interictal st
 # %%
 import sys
 
-import matplotlib.pyplot as plt
-from matplotlib.ticker import ScalarFormatter
-
 import _utils_.alloptical_plotting
-import alloptical_plotting
 from _exp_metainfo_.exp_metainfo import ExpMetainfo, baseline_color, interictal_color
 
 sys.path.extend(['/home/pshah/Documents/code/reproducible_figures-main'])
 
 import rep_fig_vis as rfv
-import alloptical_utils_pj as Utils
 import numpy as np
 
 import funcsforprajay.funcs as pj
@@ -24,8 +19,6 @@ import funcsforprajay.funcs as pj
 from _analysis_.nontargets_analysis._ClassPhotostimResponsesAnalysisNonTargets import \
     PhotostimResponsesAnalysisNonTargets
 from _analysis_.nontargets_analysis._ClassResultsNontargetPhotostim import PhotostimResponsesNonTargetsResults
-from _utils_.alloptical_plotting import plot_settings
-
 
 main = PhotostimResponsesAnalysisNonTargets
 

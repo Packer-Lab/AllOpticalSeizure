@@ -24,15 +24,12 @@ suppl figure: write up RF code
 import sys
 
 import _utils_.alloptical_plotting
-import alloptical_plotting
 from _analysis_.nontargets_analysis._ClassNonTargetsSzInvasionSpatial import NonTargetsSzInvasionSpatialResults, \
     NonTargetsSzInvasionSpatial
-from _analysis_.sz_analysis._ClassExpSeizureAnalysis import ExpSeizureAnalysis
 from _exp_metainfo_.exp_metainfo import ExpMetainfo
 
 sys.path.extend(['/home/pshah/Documents/code/reproducible_figures-main'])
 import rep_fig_vis as rfv
-import alloptical_utils_pj as Utils
 
 import numpy as np
 import matplotlib.image as mpimg
@@ -50,7 +47,7 @@ from _utils_.alloptical_plotting import plot_settings
 plot_settings()
 SAVE_FOLDER = f'/home/pshah/Documents/figures/alloptical_seizures_draft/'
 
-from _utils_.nontargets_responses_ictal_plots import z_score_response_proximal_distal, influence_response_proximal_and_distal
+from _analysis_.nontargets_analysis.nontargets_responses_ictal_plots import z_score_response_proximal_distal, influence_response_proximal_and_distal
 
 from _analysis_.nontargets_analysis._ClassPhotostimResponsesAnalysisNonTargets import \
     PhotostimResponsesAnalysisNonTargets

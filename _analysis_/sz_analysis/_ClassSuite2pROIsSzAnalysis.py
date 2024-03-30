@@ -3,9 +3,8 @@ from typing import Union
 
 import numpy as np
 import pandas as pd
-from matplotlib import pyplot as plt
 
-import _alloptical_utils as Utils
+from _utils_ import _alloptical_utils as Utils
 from funcsforprajay import plotting as pplot
 
 from _analysis_._utils import Quantification, Results
@@ -13,7 +12,6 @@ from _exp_metainfo_.exp_metainfo import baseline_color, interictal_color
 from _main_.AllOpticalMain import alloptical
 from _main_.Post4apMain import Post4ap
 from _utils_._anndata import AnnotatedData2
-from _utils_.io import import_expobj
 
 SAVE_LOC = "/home/pshah/mnt/qnap/Analysis/analysis_export/analysis_quantification_classes/"
 

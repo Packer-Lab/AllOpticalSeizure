@@ -5,9 +5,8 @@ import sys
 
 import pandas as pd
 
-from _utils_.io import import_expobj, import_1pexobj
-from alloptical_utils_pj import import_resultsobj
-import _alloptical_utils as Utils
+from _utils_.io import import_1pexobj
+from archive.alloptical_utils_pj import import_resultsobj
 
 sys.path.append('/home/pshah/Documents/code/')
 import time
@@ -16,7 +15,7 @@ import numpy as np
 from funcsforprajay import funcs as pj
 
 from _utils_.paq_utils import paq_read, frames_discard
-from _utils_ import alloptical_plotting as aoplot
+from _utils_ import alloptical_plotting as aoplot, _alloptical_utils as Utils
 
 from _main_.TwoPhotonImagingMain import TwoPhotonImaging
 

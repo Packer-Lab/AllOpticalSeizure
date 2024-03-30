@@ -23,7 +23,7 @@ from scipy import stats
 
 from matplotlib import pyplot as plt
 
-import _alloptical_utils as Utils
+from _utils_ import _alloptical_utils as Utils
 from _main_.Post4apMain import Post4ap
 from funcsforprajay import plotting as pplot
 

@@ -13,7 +13,7 @@ import os
 from matplotlib import pyplot as plt
 from funcsforprajay.funcs import decay_constant_logfit_method, convert_to_positive, decay_timescale
 
-import _alloptical_utils as Utils
+from _utils_ import _alloptical_utils as Utils
 import _utils_.alloptical_plotting as aoplot
 import funcsforprajay.funcs as pj
 import tifffile as tf

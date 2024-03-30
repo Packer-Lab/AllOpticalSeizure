@@ -5,7 +5,7 @@ from _analysis_._ClassTargetsSzInvasionSpatial_codereview import TargetsSzInvasi
 print('Python %s on %s' % (sys.version, sys.platform))
 sys.path.extend(['/home/pshah/Documents/code/AllOpticalSeizure', '/home/pshah/Documents/code/AllOpticalSeizure'])
 
-import _alloptical_utils as Utils
+from _utils_ import _alloptical_utils as Utils
 
 results: TargetsSzInvasionSpatialResults_codereview = TargetsSzInvasionSpatialResults_codereview.load()
 
