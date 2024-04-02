@@ -27,9 +27,9 @@ from funcsforprajay import plotting as pplot
 import funcsforprajay.funcs as pj
 
 from _utils_._anndata import AnnotatedData2
-from _utils_.alloptical_plotting import plotLfpSignal
+from _utils_.alloptical_plotting import plotLfpSignal, save_figure
 from _utils_.io import import_expobj
-import rep_fig_vis as rfv
+import reproducible_figures as rfv
 
 SAVE_LOC = "/home/pshah/mnt/qnap/Analysis/analysis_export/analysis_quantification_classes/"
 SAVE_FIG = "/home/pshah/Documents/figures/alloptical-photostim-responses-traces/"
@@ -559,39 +559,54 @@ class PhotostimAnalysisSlmTargets(Quantification):
     @staticmethod
     def correlation_matrix_all_targets(fig=None, axs=None):
         if fig is None and axs is None:
-            fig, axs = plt.subplots(1, 2, figsize=(3, 6), dpi=300)
+            fig, axs = plt.subplots(1, 2, figsize=(6, 3), dpi=300)
             axs = [axs]
 
         results = PhotostimResponsesSLMtargetsResults.load()
 
         # BASELINE ###########################################################################
-        # responses = results.baseline_adata.X
 
-        # select only one experiment:
-        responses = results.baseline_adata.X[results.baseline_adata.obs['exp'] == 'RL108 t-009']
+        ### select all experiments
+        # filter out PS04 (only 30stims, not the same # of stims as rest of exps)
+        excl_ps04 = [idx for idx, exp in enumerate(results.baseline_adata.obs['exp']) if 'PS04' not in exp]
+        results_baseline = results.baseline_adata[excl_ps04, :]
+        responses = np.array(results_baseline.X)
+        # responses = results.baseline_adata[excl_ps04, :]
+        # responses = np.concatenate((_responses[:ps04[0]], _responses[ps04[-1]+1:]))
+        assert np.sum(np.isnan(responses)) == 0
+
+        ### select only one experiment
+        # responses = results.baseline_adata.X[results.baseline_adata.obs['exp'] == 'RL108 t-009']
 
         z_scored_responses = zscore(responses, axis=1)  # z scoring of targets responses to their own distribution
 
         # correlation of targets ###########################################################################
         ax = axs[0][0]
+        fig, ax = plt.subplots(figsize=(3,3), dpi = 300); fig.tight_layout()
         ax.set_xticks([])
         ax.set_yticks([])
         ax.spines['left'].set_visible(False)
         ax.spines['bottom'].set_visible(False)
         ax.set_ylabel('Targets', labelpad=-2)
-        # print(ax.get_position())
+        ax.set_xlabel('Targets', labelpad=-2)
         targets_corr_mat = np.corrcoef(z_scored_responses)
         mesh = ax.imshow(targets_corr_mat, cmap='bwr')
         mesh.set_clim(-1, 1)
-        # cbar = fig.colorbar(mesh, boundaries=np.linspace(-0.5, 0.5, 1000), ticks=[-0.5, 0, 0.5], fraction=0.045)
+        from mpl_toolkits.axes_grid1 import make_axes_locatable
+        divider = make_axes_locatable(fig.gca())
+        cax = divider.append_axes("bottom", size="4%", pad=0.05)
+        cbar = fig.colorbar(mesh, boundaries=np.linspace(-0.5, 0.5, 1000), ticks=[-0.5, 0, 0.5], fraction=0.045, orientation='horizontal',
+                            cax=cax)
 
         # add lines for exps:
-        # colors = pj.make_random_color_array(len(np.unique(results.baseline_adata.obs['exp'])))
-        # for i, exp in enumerate(np.unique(results.baseline_adata.obs['exp'])):
-        #     sameexp = np.where(results.baseline_adata.obs['exp'] == exp)[0]
-        #     ax.plot(sameexp, [-10] * len(sameexp), lw=2, color=colors[i], solid_capstyle='projecting')
-        #     # plt.plot(sameexp, [-10] * len(sameexp), lw=2, color = colors[i], solid_capstyle = 'projecting')
-        # ax.axis('off')
+        colors = pj.make_random_color_array(len(np.unique(results_baseline.obs['exp'])))
+        for i, exp in enumerate(np.unique(results_baseline.obs['exp'])):
+            sameexp = np.where(results_baseline.obs['exp'] == exp)[0]
+            ax.plot(sameexp, [-10] * len(sameexp), lw=5, color=colors[i], solid_capstyle='butt')
+            # plt.plot(sameexp, [-10] * len(sameexp), lw=2, color = colors[i], solid_capstyle = 'projecting')
+        ax.axis('off')
+        save_figure(fig=fig, save_path_full='/home/pshah/Documents/figures/misc_plots/baseline_photostim_targets_correlation.png', transparent=True)
+        # fig.show()
 
         # fig.suptitle(f'baseline - correlation across - targets', wrap=True)
         # ax.set_title(f'baseline - correlation across - targets', wrap=True)
@@ -621,12 +636,14 @@ class PhotostimAnalysisSlmTargets(Quantification):
         # os.makedirs(os.path.dirname(save_path_full), exist_ok=True)
         # fig.savefig(save_path_full)
 
-        # INTERICTAL ######################################################################################################################################################
-        # z_scored_responses = results.interictal_adata.X
-        # z_scored_responses = results.interictal_adata.X[results.interictal_adata.obs['exp'] == 'RL108 t-013']
+        # // BASELINE ###########################################################################
 
-        z_scored_responses = results.midinterictal_adata.X[results.midinterictal_adata.obs['exp'] == 'RL108 t-013']
-        z_scored_responses = pd.DataFrame(z_scored_responses).iloc[:, :74]
+
+        # INTERICTAL ############################################################################################
+        z_scored_responses = results.interictal_adata.X
+        # z_scored_responses = results.interictal_adata.X[results.interictal_adata.obs['exp'] == 'RL108 t-013']
+        # z_scored_responses = results.midinterictal_adata.X[results.midinterictal_adata.obs['exp'] == 'RL108 t-013']
+        # z_scored_responses = pd.DataFrame(z_scored_responses).iloc[:, :74]
 
         # z_scored_responses = pd.DataFrame(z_scored_responses).iloc[:, :43]
 
@@ -677,21 +694,25 @@ class PhotostimAnalysisSlmTargets(Quantification):
         # save_path_full = f'{SAVE_FIG}/correlation_matrix_all_stims_all_exps_interictal.png'
         # os.makedirs(os.path.dirname(save_path_full), exist_ok=True)
         # fig.savefig(save_path_full)
-        # fig.show()
+
+        # // INTERICTAL ############################################################################################
+
+
+        fig.show()
 
         #### CREATE COLORBAR for all axes - located beside the top right correlation matrix plot
         from matplotlib.transforms import Bbox
-        bbox = np.array(axs[0][1].get_position())
+        # ax = axs[0][1]
+        bbox = np.array(ax.get_position())
         bbox = Bbox.from_extents(bbox[1, 0] - 0.09, bbox[0, 1] - 0.025, bbox[1, 0], bbox[1, 1] - 0.105)
-        # bbox = Bbox.from_extents(bbox[1, 0], bbox[0, 0], bbox[0, 1] + 0.00, bbox[0, 1] - 0.02)
+        # bbox = Bbox.from_extents(bbox[1, 0], bbox[0, 0], bbox[0, 1] + 0.00, bbox[0, 1])
         # ax2 = fig.add_subplot(position = bbox)
         # bbox = Bbox.from_extents(bbox[1, 0], bbox[0, 1] - 0.015, bbox[1, 0], bbox[1, 1] - 0.025)
         ax_cmap = fig.add_subplot()
         ax_cmap.set_position(pos=bbox)
         # rfv.despine(ax_cmap, remove=['top', 'bottom', 'left'])
         ax_cmap.tick_params(length=10)
-        cbar = fig.colorbar(mesh, cax=ax_cmap, ticks=[-1, 0, 1], orientation='horizontal')
-        # cbar = fig.colorbar(mesh, ax=axs[0][1], ticks=[-1, 0, 1], ='bottom')
+        cbar = fig.colorbar(mesh, cax=ax_cmap, ticks=[-1, 0, 1], orientation='vertical')
         cbar.set_ticklabels(['-0.5', '0', '0.5'])
         # ax_cmap.axis('off')
         fig.show()

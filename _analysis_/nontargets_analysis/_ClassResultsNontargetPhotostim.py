@@ -28,9 +28,10 @@ class PhotostimResponsesNonTargetsResults(Results):
     def __init__(self):
         super().__init__()
 
+        self.z_scores_nontargets = None  #: array of z scores of nontargets responses
         self.summed_responses = {}  #: dictionary of baseline and interictal summed responses of targets and nontargets across experiments
         self.lin_reg_summed_responses = {}  #: dictionary of baseline and interictal linear regression metrics for relating total targets responses and nontargets responses across experiments
-        self.avg_responders_num = None  #: average num responders, for pairedmatched experiments between baseline pre4ap and interictal
+        self.avg_responders_num = None  #: average num responders, for paired matched experiments between baseline pre4ap and interictal
         self.avg_baseline_responders_magnitude = None  #: average response magnitude, for pairedmatched experiments between baseline pre4ap and interictal - collected for cell ids that were sig responders in baseline
         self.avg_responders_magnitude = None  #: average response magnitude, for pairedmatched experiments between baseline pre4ap and interictal
         self.sig_units_baseline = {}  #: dictionary of sig responder units for each baseline exp trial
@@ -88,7 +89,6 @@ class PhotostimResponsesNonTargetsResults(Results):
                                         skip_trials=PhotostimResponsesQuantificationNonTargets.EXCLUDE_TRIALS)
         def _collect_responses_distancetarget(**kwargs):
             expobj: alloptical = kwargs['expobj']
-            # exp_df_ = pd.DataFrame(columns=['expID_cell', 'stim_idx','z score response', 'distance target', 'distance sz'])
 
             z_scored_response = expobj.PhotostimResponsesNonTargets.adata.layers['nontargets responses z scored']
             photostim_response = expobj.PhotostimResponsesNonTargets.adata.X

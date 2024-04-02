@@ -20,7 +20,7 @@ from _utils_._anndata import AnnotatedData2
 from _utils_.io import import_expobj
 
 sys.path.extend(['/home/pshah/Documents/code/reproducible_figures-main'])
-import rep_fig_vis as rfv
+import reproducible_figures as rfv
 
 
 

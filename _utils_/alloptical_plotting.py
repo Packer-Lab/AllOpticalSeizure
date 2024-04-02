@@ -9,6 +9,7 @@ import numpy as np
 import matplotlib as mpl
 import seaborn as sns
 import matplotlib.pyplot as plt
+from funcsforprajay.funcs import return_parent_dir
 from mpl_point_clicker import clicker
 from scipy.stats import stats
 
@@ -68,7 +69,7 @@ def plot_settings():
         'figure.subplot.hspace': .01,
     })
 
-def save_figure(fig, save_path_suffix: str = None, save_path_full: str = None):
+def save_figure(fig, save_path_suffix: str = None, save_path_full: str = None, transparent = False):
     if not save_path_full and save_path_suffix:
         ## SET DEFAULT FIGURE SAVE DIRECTORY
         today_date = datetime.today().strftime('%Y-%m-%d')
@@ -78,8 +79,8 @@ def save_figure(fig, save_path_suffix: str = None, save_path_full: str = None):
     else:
         ValueError('not able to determine where to save figure to!')
     print(f'\nsaving figure to: {save_path_full}')
-    os.makedirs(save_path_full) if not os.path.exists(save_path_full) else None
-    fig.savefig(save_path_full)
+    os.makedirs(return_parent_dir(save_path_full)) if not os.path.exists(return_parent_dir(save_path_full)) else None
+    fig.savefig(save_path_full, transparent=transparent)
 
 
 def add_scalebar(expobj: TwoPhotonImaging, ax: mpl.axes.Axes, scale_bar_um: float = 100, **kwargs):
