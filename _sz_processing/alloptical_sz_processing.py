@@ -2,6 +2,8 @@
 import sys
 import os
 
+from _exp_metainfo_.data_paths import results_object_path, onePresults_object_path
+
 sys.path.append('/home/pshah/Documents/code/PackerLab_pycharm/')
 sys.path.append('/home/pshah/Documents/code/')
 from archive import alloptical_utils_pj as aoutils
@@ -12,11 +14,9 @@ import matplotlib.pyplot as plt
 import tifffile as tf
 
 # import results superobject that will collect analyses from various individual experiments
-results_object_path = '/home/pshah/mnt/qnap/Analysis/alloptical_results_superobject.pkl'
 allopticalResults = aoutils.import_resultsobj(pkl_path=results_object_path)
 
-results_object_path = '/home/pshah/mnt/qnap/Analysis/onePstim_results_superobject.pkl'
-onePresults = aoutils.import_resultsobj(pkl_path=results_object_path)
+onePresults = aoutils.import_resultsobj(pkl_path=onePresults_object_path)
 
 save_path_prefix = '/home/pshah/mnt/qnap/Analysis/Procesing_figs/sz_processing_boundaries_2022-01-06/'
 os.makedirs(save_path_prefix) if not os.path.exists(save_path_prefix) else None
@@ -57,8 +57,6 @@ ls2 = [
 trials_without_flip_stims = []
 
 expsave = False
-# expobj, _ = aoutils.import_expobj(trial='t-020', prep='RL109')
-# expobj.sz_locations_stims()
 
 # using run_post4ap_trials experiments from allopticalResults attr. in for loop for processing:
 

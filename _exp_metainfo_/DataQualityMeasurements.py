@@ -1,5 +1,4 @@
 #%% import stuff
-import _utils_.utils_funcs as uf #from Vape
 
 #%% count number of ROIs detected by suite2p before and after 4AP
 

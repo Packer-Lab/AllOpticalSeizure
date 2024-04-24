@@ -129,7 +129,7 @@ def plot_slmtargets_flu_lfp(expobj: Post4ap, rg: Tuple[int] = None, title='', **
     return axs
 
 def evaluate_clicks_sz(expobj: Post4ap, klicker, slmtargets_time_delay_sz: pd.DataFrame = None):
-    "note that this code is run directly on local machine as part of local analysis pipeline"
+    "note that this code is run directly on local_data_path machine as part of local_data_path analysis pipeline"
     try:
         fps = expobj.fps
     except FileNotFoundError:

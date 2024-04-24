@@ -8,9 +8,10 @@ from funcsforprajay.wrappers import plot_piping_decorator
 from matplotlib import pyplot as plt
 from scipy import stats
 
+from _exp_metainfo_.data_paths import current_loc
 from _utils_ import _alloptical_utils as Utils
 from _analysis_._utils import Quantification, Results
-from _exp_metainfo_.exp_metainfo import AllOpticalExpsToAnalyze, current_loc, ExpMetainfo, baseline_color, interictal_color, insz_color, outsz_color
+from _exp_metainfo_.exp_metainfo import AllOpticalExpsToAnalyze, ExpMetainfo, baseline_color, interictal_color, insz_color, outsz_color
 from _main_.AllOpticalMain import alloptical
 from _main_.Post4apMain import Post4ap
 from funcsforprajay import plotting as pplot

@@ -2,11 +2,12 @@ import os
 import re
 import pickle
 from funcsforprajay import funcs as pj
+
+from _exp_metainfo_.data_paths import remote_base, local_data_path
 from _exp_metainfo_.exp_metainfo import ExpMetainfo
 
 # %% HANDLING PICKLING ERRORS
 from _main_.TwoPhotonImagingMain import TwoPhotonImaging
-
 
 def load_from_backup(prep, trial, date, original_path, backup_path=None):
     ImportWarning(f"\n** FAILED IMPORT OF * {prep} {trial} * from {original_path}\n")
@@ -116,6 +117,10 @@ class CustomUnpicklerAttributeError(pickle.Unpickler):
             print(f'\t for: PhotostimImages')
             from _analysis_._ClassPhotostimImages import PhotostimImages
             return PhotostimImages
+        elif name == 'OnePhotonResults':
+            print(f'\t for: PhotostimImages')
+            from _results_.alloptical_results_init import OnePhotonResults
+            return OnePhotonResults
 
 
         return super().find_class(module, name)
@@ -155,6 +160,9 @@ class CustomUnpicklerModuleNotFoundError(pickle.Unpickler):
 
         elif module == '_analysis_._ClassNonTargetsResponsesSpatial':
             renamed_module = "_analysis_.nontargets_analysis._ClassNonTargetsResponsesSpatial"
+
+        elif module == 'alloptical_utils_pj':
+            renamed_module = "_main_.AllOpticalMain"
 
         else:
             renamed_module = module
@@ -273,8 +281,8 @@ def import_expobj(aoresults_map_id: str = None, trial: str = None, prep: str = N
             except KeyError:
                 raise KeyError('not able to find date in ExpMetainfo.alloptical.metainfo')
 
-        pkl_path = f"/home/pshah/mnt/qnap/Analysis/{date}/{prep}/{date}_{trial}/{date}_{trial}.pkl"
-        pkl_path_local = f"/Users/prajayshah/OneDrive/UTPhD/2022/OXFORD/expobj/{date}_{trial}.pkl"
+        pkl_path = f"{remote_base}{date}/{prep}/{date}_{trial}/{date}_{trial}.pkl"
+        pkl_path_local = f"{local_data_path}/{date}_{trial}.pkl"
 
         for path in [pkl_path, pkl_path_local]:
             if os.path.exists(path):
@@ -350,6 +358,10 @@ def import_1pexobj(prep=None, trial=None, date=None, pkl_path=None, verbose=Fals
         pkl_path = load_backup_path
         print(f"**** loading from backup path! ****")
 
+    if prep is None or trial is None and exp_prep:
+        prep = exp_prep[:-6]
+        trial = exp_prep[-5:]
+
     if pkl_path is None:
         if date is None:
             try:
@@ -359,10 +371,6 @@ def import_1pexobj(prep=None, trial=None, date=None, pkl_path=None, verbose=Fals
             except ValueError:
                 raise ValueError('not able to find date in allopticalResults.metainfo')
         pkl_path = f"/home/pshah/mnt/qnap/Analysis/{date}/{prep}/{date}_{trial}/{date}_{trial}.pkl"
-
-    if prep is None or trial is None and exp_prep:
-        prep = exp_prep[:-6]
-        trial = exp_prep[-5:]
 
     if not os.path.exists(pkl_path):
         raise Exception('pkl path NOT found: ' + pkl_path)
@@ -391,29 +399,7 @@ def import_1pexobj(prep=None, trial=None, date=None, pkl_path=None, verbose=Fals
         expobj._parsePVMetadata()
         expobj.save()
 
-    return expobj, experiment
+    return expobj
 
 
 
-# # import results superobject that will collect analyses from various individual experiments
-# results_object_path = '/home/pshah/mnt/qnap/Analysis/alloptical_results_superobject.pkl'
-# local_results_object_path = '/Users/prajayshah/OneDrive/UTPhD/2022/OXFORD/expobj/alloptical_results_superobject.pkl'
-#
-# for path in [results_object_path, local_results_object_path]:
-#     if os.path.exists(path):
-#         results_path = path
-#         try:
-#             allopticalResults = import_resultsobj(
-#                 pkl_path=results_path)  # this needs to be run AFTER defining the AllOpticalResults class
-#         except FileNotFoundError:
-#             print(f'not able to get allopticalResults object from {results_object_path}')
-#         break
-
-#
-# # %%
-# import pickle
-#
-# pkl_path = '/Users/prajayshah/OneDrive/UTPhD/2022/OXFORD/expobj/2020-12-18_t-013.pkl'
-# with open(pkl_path, 'rb') as f:
-#     print(f"\nimporting resultsobj from: {pkl_path} ... ")
-#     resultsobj = pickle.load(f)

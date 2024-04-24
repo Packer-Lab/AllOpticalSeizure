@@ -3,12 +3,12 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 import _utils_.alloptical_plotting
+from _exp_metainfo_.data_paths import results_object_path
 from archive import alloptical_utils_pj as aoutils
 from _utils_ import alloptical_plotting as aoplot
 from funcsforprajay import funcs as pj
 
 # import results superobject that will collect analyses from various individual experiments
-results_object_path = '/home/pshah/mnt/qnap/Analysis/alloptical_results_superobject.pkl'
 allopticalResults = aoutils.import_resultsobj(pkl_path=results_object_path)
 
 # PLACEHOLDER IMPORT OF EXPOBJ TO during code development

@@ -1,24 +1,18 @@
 import os
-from typing import Dict, Union, Any
+from typing import Any
 
 import numpy as np
 import pandas as pd
 from funcsforprajay import funcs as pj
-from funcsforprajay.funcs import flattenOnce
 from funcsforprajay.stats import tukey_hsd
 from funcsforprajay.plotting.plotting import plot_bar_with_points
-from matplotlib import pyplot as plt
 from scipy import stats
-from statsmodels.stats.multicomp import pairwise_tukeyhsd
 
 from _analysis_._utils import Results
+from _exp_metainfo_.data_paths import SAVE_LOC
 from _exp_metainfo_.exp_metainfo import fontsize_extraplot, interictal_color, baseline_color
 from onePexperiment.OnePhotonStimMain import OnePhotonStim, onePresults
 
-LOCAL_LOC = f'/Users/prajayshah/data/oxford-data/export/'
-
-REMOTE_LOC = "/home/pshah/mnt/qnap/Analysis/analysis_export/analysis_quantification_classes/"
-SAVE_LOC = REMOTE_LOC
 
 
 # %% ANALYSIS FUNCTIONS

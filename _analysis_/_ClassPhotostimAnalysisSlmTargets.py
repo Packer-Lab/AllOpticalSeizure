@@ -2,9 +2,9 @@ import sys
 
 from funcsforprajay.plotting.plotting import plot_bar_with_points
 
+from _exp_metainfo_.data_paths import SAVE_LOC, SAVE_FIG
 from _utils_.funcs_pj import flattenOnce
 
-sys.path.extend(['/home/pshah/Documents/code/reproducible_figures-main'])
 from typing import Union
 
 import numpy as np
@@ -12,7 +12,7 @@ import os
 import pandas as pd
 from funcsforprajay.wrappers import plot_piping_decorator
 from matplotlib import pyplot as plt
-from scipy.stats import variation, mannwhitneyu, ttest_rel, zscore
+from scipy.stats import variation, mannwhitneyu, ttest_rel, zscore, stats
 from sklearn.cluster import KMeans
 from sklearn.decomposition import PCA
 
@@ -31,8 +31,6 @@ from _utils_.alloptical_plotting import plotLfpSignal, save_figure
 from _utils_.io import import_expobj
 import reproducible_figures as rfv
 
-SAVE_LOC = "/home/pshah/mnt/qnap/Analysis/analysis_export/analysis_quantification_classes/"
-SAVE_FIG = "/home/pshah/Documents/figures/alloptical-photostim-responses-traces/"
 
 results = PhotostimResponsesSLMtargetsResults.load()
 
@@ -591,7 +589,7 @@ class PhotostimAnalysisSlmTargets(Quantification):
         ax.set_xlabel('Targets', labelpad=-2)
         targets_corr_mat = np.corrcoef(z_scored_responses)
         mesh = ax.imshow(targets_corr_mat, cmap='bwr')
-        mesh.set_clim(-1, 1)
+        mesh.set_clim(-0.5, 0.5)
         from mpl_toolkits.axes_grid1 import make_axes_locatable
         divider = make_axes_locatable(fig.gca())
         cax = divider.append_axes("bottom", size="4%", pad=0.05)
@@ -605,8 +603,8 @@ class PhotostimAnalysisSlmTargets(Quantification):
             ax.plot(sameexp, [-10] * len(sameexp), lw=5, color=colors[i], solid_capstyle='butt')
             # plt.plot(sameexp, [-10] * len(sameexp), lw=2, color = colors[i], solid_capstyle = 'projecting')
         ax.axis('off')
-        save_figure(fig=fig, save_path_full='/home/pshah/Documents/figures/misc_plots/baseline_photostim_targets_correlation.png', transparent=True)
-        # fig.show()
+        fig.show()
+        save_figure(fig=fig, save_path_full='/home/pshah/Documents/figures/misc_plots/baseline_photostim_targets_correlation.svg', transparent=True)
 
         # fig.suptitle(f'baseline - correlation across - targets', wrap=True)
         # ax.set_title(f'baseline - correlation across - targets', wrap=True)

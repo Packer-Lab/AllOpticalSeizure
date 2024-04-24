@@ -41,6 +41,7 @@ fig, ax = plot_bar_with_points(data=[baseline], fontsize=10, bar=False,
 fig.show()
 # fig.savefig('/home/pshah/Documents/figures/misc_plots/baseline_photostim_targets_correlation_bar.png', transparent=True)
 save_figure(fig, save_path_full="/home/pshah/Documents/figures/misc_plots/baseline_photostim_targets_correlation_bar.png", transparent=True)
+save_figure(fig, save_path_full="/home/pshah/Documents/figures/misc_plots/baseline_photostim_targets_correlation_bar.svg", transparent=True)
 # axs.text(x=2.5, y=0.025, s=f't-test rel.: {stats_score[1]:.2e}', fontsize=3)
 
 

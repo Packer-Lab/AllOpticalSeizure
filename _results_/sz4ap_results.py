@@ -4,6 +4,8 @@ import sys
 
 import numpy as np
 import matplotlib.pyplot as plt
+
+from _exp_metainfo_.data_paths import results_object_path
 from archive import alloptical_utils_pj as aoutils
 from _utils_ import alloptical_plotting as aoplot
 from funcsforprajay import funcs as pj
@@ -15,7 +17,6 @@ sys.path.extend(['/home/pshah/Documents/code/reproducible_figures-main'])
 # import results superobject that will collect analyses from various individual experiments
 from _utils_.io import import_expobj
 
-results_object_path = '/home/pshah/mnt/qnap/Analysis/alloptical_results_superobject.pkl'
 allopticalResults = aoutils.import_resultsobj(pkl_path=results_object_path)
 
 save_path_prefix = '/home/pshah/mnt/qnap/Analysis/Results_figs/Nontargets_responses_2021-11-11'

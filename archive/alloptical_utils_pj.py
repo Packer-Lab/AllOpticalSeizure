@@ -17,6 +17,7 @@ from typing import Union
 
 from matplotlib.colors import ColorConverter
 
+from _exp_metainfo_.data_paths import results_object_path, local_results_object_path
 from _utils_.alloptical_plotting import save_figure
 
 sys.path.append('/home/pshah/Documents/code/')
@@ -5867,8 +5868,6 @@ def import_resultsobj(pkl_path: str):
         print(f"|-DONE IMPORT of {(type(resultsobj))} resultsobj \n\n")
     return resultsobj
 
-results_object_path = '/home/pshah/mnt/qnap/Analysis/alloptical_results_superobject.pkl'
-local_results_object_path = '/Users/prajayshah/OneDrive/UTPhD/2022/OXFORD/expobj/alloptical_results_superobject.pkl'
 
 for path in [results_object_path, local_results_object_path]:
     if os.path.exists(path):

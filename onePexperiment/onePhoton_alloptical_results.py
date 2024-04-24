@@ -3,6 +3,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from scipy import stats
 
+from _exp_metainfo_.data_paths import onePresults_object_path
 from archive import alloptical_utils_pj as aoutils
 from _utils_ import alloptical_plotting as aoplot
 from funcsforprajay import funcs as pj
@@ -15,9 +16,7 @@ Results: OnePhotonStimResults = OnePhotonStimResults.load()
 from funcsforprajay.plotting.plotting import plot_bar_with_points
 
 # import onePstim superobject that will collect analyses from various individual experiments
-results_object_path = '/home/pshah/mnt/qnap/Analysis/onePstim_results_superobject.pkl'
-onePresults = aoutils.import_resultsobj(pkl_path=results_object_path)
-
+onePresults = aoutils.import_resultsobj(pkl_path=onePresults_object_path)
 
 # %% 3.0) PLOT OF PHOTOSTIM RESPONSES <30SEC PRE SZ ONSET AND <30SEC POST SZ OFFSET
 

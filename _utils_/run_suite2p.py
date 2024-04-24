@@ -72,7 +72,7 @@ ops = {
     'neucoeff': .7,  # neuropil coefficient
 }
 
-# make the local suite2p binaries file if it does not already exist
+# make the local_data_path suite2p binaries file if it does not already exist
 if not os.path.exists(ops['fast_disk']):
     os.mkdir(ops['fast_disk'])
 

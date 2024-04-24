@@ -2,7 +2,8 @@
 import os
 import sys
 
-from _utils_.io import import_resultsobj
+from _exp_metainfo_.data_paths import results_object_path
+from _exp_metainfo_.exp_metainfo import import_resultsobj
 
 sys.path.append('/home/pshah/Documents/code/')
 import time
@@ -92,8 +93,6 @@ class AllOpticalResults:  ## initiated in allOptical-results.ipynb
 if __name__ == '__main__':
     # %%
     # import results superobject that will collect analyses from various individual experiments
-    results_object_path = '/home/pshah/mnt/qnap/Analysis/alloptical_results_superobject.pkl'
-
     force_remake = False
 
     if not os.path.exists(results_object_path) or force_remake:

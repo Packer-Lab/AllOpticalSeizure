@@ -302,7 +302,7 @@ def frames_discard(frame_times: list, input_array, total_frames, paq: dict = Non
 # # path to paq file
 # input_path = "/home/pshah/mnt/qnap/Data/2020-12-18/2020-12-18_RL108_001.paq"  # server path
 #
-# # input_path = '/Users/prajayshah/Documents/data-to-process/2020-12-18/2020-12-18_RL108_001.paq'  # local path
+# # input_path = '/Users/prajayshah/Documents/data-to-process/2020-12-18/2020-12-18_RL108_001.paq'  # local_data_path path
 # paq, paq_df = paq_read(input_path, plot=False)
 #
 #

@@ -1,9 +1,6 @@
-#
 import pickle
 import time
-
 import os
-
 from _main_.AllOpticalMain import alloptical
 
 
@@ -26,13 +23,12 @@ class CustomUnpicklerModuleNotFoundError(pickle.Unpickler):
     def find_class(self, module, name):
         if module == '_analysis_.ClassPhotostimResponseQuantificationSLMtargets':
             renamed_module = "_analysis_._ClassPhotostimResponseQuantificationSLMtargets"
-
         elif module == '_analysis_._ClassPhotostimResponseQuantificationNonTargets':
             renamed_module = "_analysis_.nontargets_analysis._ClassPhotostimResponseQuantificationNonTargets"
-
         elif module == '_analysis_._ClassExpSeizureAnalysis':
             renamed_module = "_analysis_.sz_analysis._ClassSuite2pROIsSzAnalysis"
-
+        elif module == 'alloptical_utils_pj':
+            renamed_module = "_main_/AllOpticalMain.py"
         else:
             renamed_module = module
 

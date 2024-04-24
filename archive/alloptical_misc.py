@@ -3,6 +3,7 @@ import pickle
 import pandas as pd
 
 import alloptical_utils_pj as aoutils
+from _exp_metainfo_.data_paths import results_object_path
 from _exp_metainfo_.exp_metainfo import AllOpticalExpsToAnalyze
 from _main_.AllOpticalMain import alloptical
 from _main_.Post4apMain import Post4ap
@@ -17,7 +18,6 @@ from funcsforprajay import plotting as pplot
 # import results superobject that will collect analyses from various individual experiments
 from _utils_.io import import_expobj
 
-results_object_path = '/home/pshah/mnt/qnap/Analysis/alloptical_results_superobject.pkl'
 allopticalResults = aoutils.import_resultsobj(pkl_path=results_object_path)
 
 import tifffile as tf

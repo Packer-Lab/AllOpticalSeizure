@@ -5,8 +5,10 @@ import sys
 
 import pandas as pd
 
+from _exp_metainfo_.data_paths import onePresults_object_path
 from _utils_.io import import_1pexobj
-from archive.alloptical_utils_pj import import_resultsobj
+from _exp_metainfo_.exp_metainfo import import_resultsobj
+# from archive.alloptical_utils_pj import import_resultsobj
 
 sys.path.append('/home/pshah/Documents/code/')
 import time
@@ -233,7 +235,7 @@ class OnePhotonStim(TwoPhotonImaging):
                     date = onePresults.mean_stim_responses.loc[(onePresults.mean_stim_responses.Prep == f"{prep}") & (
                                 onePresults.mean_stim_responses.Trial == f'{trial}'), 'pkl_list'].values[0][30:40]
                 except ValueError:
-                    raise ValueError('not able to find date in allopticalResults.metainfo')
+                    raise ValueError('not able to find date in onePresults')
             pkl_path = f"/home/pshah/mnt/qnap/Analysis/{date}/{prep}/{date}_{trial}/{date}_{trial}.pkl"
 
         if not os.path.exists(pkl_path):
@@ -617,13 +619,6 @@ class OnePhotonStim(TwoPhotonImaging):
         self.save()
 
 
-results_object_path = '/home/pshah/mnt/qnap/Analysis/onePstim_results_superobject.pkl'
-
-onePresults = import_resultsobj(pkl_path=results_object_path)
-
-
-
-
 # %%
 class OnePhotonStimPlots:
     @staticmethod
@@ -788,8 +783,9 @@ def checkAttr(attr: str):
     if 'Failed' not in _checkAttr():
         print('ALL CHECKS PASSED')
 
-
 # checkAttr(attr='pre_stim_flu_list')
 
 
+# %%
+onePresults = import_resultsobj(pkl_path=onePresults_object_path)
 

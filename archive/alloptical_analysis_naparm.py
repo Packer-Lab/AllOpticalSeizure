@@ -17,7 +17,7 @@
 #
 # trial = 't-017'
 
-#%% start on local machine
+#%% start on local_data_path machine
 from archive import alloptical_utils_pj as ao
 import numpy as np
 import pandas as pd

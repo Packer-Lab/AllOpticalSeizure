@@ -1,5 +1,5 @@
 """
-Figure 4: Neuronal and local-circuit excitability during seizure propagation
+Figure 4: Neuronal and local_data_path-circuit excitability during seizure propagation
 """
 
 import sys

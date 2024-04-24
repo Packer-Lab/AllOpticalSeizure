@@ -1,6 +1,8 @@
 # %% IMPORT MODULES AND TRIAL expobj OBJECT
 import sys;
 
+from _exp_metainfo_.data_paths import results_object_path
+
 sys.path.append('/home/pshah/Documents/code/PackerLab_pycharm/')
 sys.path.append('/home/pshah/Documents/code/')
 import numpy as np
@@ -9,7 +11,6 @@ import matplotlib.pyplot as plt
 from archive import alloptical_utils_pj as aoutils
 
 # # import results superobject that will collect analyses from various individual experiments
-results_object_path = '/home/pshah/mnt/qnap/Analysis/alloptical_results_superobject.pkl'
 allopticalResults = aoutils.import_resultsobj(pkl_path=results_object_path)
 
 

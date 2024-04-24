@@ -1,6 +1,8 @@
 # %% IMPORT MODULES AND TRIAL expobj OBJECT
 import os; import sys
 
+from _exp_metainfo_.data_paths import results_object_path
+
 sys.path.append('/home/pshah/Documents/code/PackerLab_pycharm/')
 sys.path.append('/home/pshah/Documents/code/')
 from archive import alloptical_utils_pj as aoutils
@@ -16,7 +18,6 @@ save_path_prefix = '/home/pshah/mnt/qnap/Analysis/Results_figs/Nontargets_respon
 os.makedirs(save_path_prefix) if not os.path.exists(save_path_prefix) else None
 
 # import results superobject
-results_object_path = '/home/pshah/mnt/qnap/Analysis/alloptical_results_superobject.pkl'
 allopticalResults = aoutils.import_resultsobj(pkl_path=results_object_path)
 
 

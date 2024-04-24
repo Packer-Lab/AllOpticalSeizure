@@ -2,6 +2,7 @@
 
 import sys
 
+from _exp_metainfo_.data_paths import results_object_path
 from _utils_._alloptical_utils import run_for_loop_across_exps
 from _exp_metainfo_.exp_metainfo import import_resultsobj
 from _utils_.io import import_expobj
@@ -15,7 +16,6 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 # # import results superobject that will collect analyses from various individual experiments
-results_object_path = '/home/pshah/mnt/qnap/Analysis/alloptical_results_superobject.pkl'
 allopticalResults = import_resultsobj(pkl_path=results_object_path)
 
 

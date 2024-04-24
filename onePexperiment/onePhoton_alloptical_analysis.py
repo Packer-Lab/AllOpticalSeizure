@@ -38,6 +38,9 @@ date = '2021-01-24'
 
 # self = expobj
 
+# %% 0)
+
+
 # %% 1.0) ## measuring PRE-STIM CA2+ AVG FLU vs. DFF RESPONSE MAGNITUDE, DECAY CONSTANT of the fov
 
 # seizure excluded responses collection

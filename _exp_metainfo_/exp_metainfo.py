@@ -10,13 +10,8 @@ import funcsforprajay.funcs as pj
 import numpy as np
 import pandas as pd
 
-local = "/Users/prajayshah/data/oxford-data/export/"
-remote_base = "/home/pshah/mnt/qnap/Analysis/"
-remote = "/home/pshah/mnt/qnap/Analysis/analysis_export/analysis_quantification_classes/"
-current_loc = remote
-EXPMETA_path = '/home/pshah/mnt/qnap/Analysis/allopticalseizuresexpmeta.pkl'
-CSV_PATH_ao = f'{remote_base}allopticalexpmeta.csv'
-CSV_PATH_1p = f'{remote_base}onephotonexpmeta.csv'
+from _exp_metainfo_.data_paths import CSV_PATH_ao, EXPMETA_path, CSV_PATH_1p
+
 
 # UTILS
 def import_meta_from_csv(csv_path=CSV_PATH_ao):
@@ -27,11 +22,28 @@ def import_resultsobj(pkl_path: str):
     assert os.path.exists(pkl_path)
     with open(pkl_path, 'rb') as f:
         print(f"\nimporting resultsobj from: {pkl_path} ... ")
-        resultsobj = pickle.load(f)
+        try:
+            resultsobj = pickle.load(f)
+        # except ModuleNotFoundError:
+        #     print(f"WARNING: needing to try using CustomUnpickler!")
+        #     return CustomUnpicklerModuleNotFoundError(open(pkl_path, 'rb')).load()
+        except ModuleNotFoundError:
+            from _utils_.io import CustomUnpicklerModuleNotFoundError, CustomUnpicklerAttributeError
+            print(f"WARNING: needing to try using CustomUnpicklerModuleNotFoundError!")
+            try:
+                resultsobj = CustomUnpicklerModuleNotFoundError(open(pkl_path, 'rb')).load()
+            except AttributeError:
+                print(f"WARNING: needing to try using CustomUnpicklerAttributeError! <- from ModuleNotFoundError")
+                try:
+                    resultsobj = CustomUnpicklerAttributeError(open(pkl_path, 'rb')).load()
+                except ModuleNotFoundError:
+                    print(
+                        f"WARNING: needing to try using CustomUnpicklerModuleNotFoundError! <- from AttributeError from ModuleNotFoundError")
+                    resultsobj = CustomUnpicklerModuleNotFoundError(open(pkl_path, 'rb')).load()
+
         print(f"|-DONE IMPORT of {(type(resultsobj))} resultsobj \n\n")
     return resultsobj
 
-#
 
 @dataclass
 class AllOpticalExpsToAnalyze:
@@ -167,9 +179,9 @@ class AllOpticalExpsToAnalyze:
     def find_matched_trial(cls, pre4ap_trial_name = None, post4ap_trial_name = None):
         """
         Returns the matched trial ID depending on whether the pre4ap trial or post4ap trial was given as input.
-        
-        :param pre4ap_trial_name: 
-        :param post4ap_trial_name: 
+
+        :param pre4ap_trial_name:
+        :param post4ap_trial_name:
         """
         # return the pre4ap matched trial
         if post4ap_trial_name:
@@ -304,10 +316,26 @@ class ExpMetainfo:
     def load():
         return load_pkl(EXPMETA_path)
 
-try:
-    ExpMetainfo = ExpMetainfo.load()
-except Exception:
-    ExpMetainfo.save(ExpMetainfo)
+    def return_exp_paths(self, exps: list = None, exptype: str = 'All optical'):
+        from _utils_.io import import_expobj
+        from _utils_.io import import_1pexobj
+
+        if exps is None and exptype == 'All optical':
+            exps = pj.flattenOnce(self.alloptical.pre_4ap_trials + self.alloptical.post_4ap_trials)
+        elif exptype == 'One P stim':
+            exps = self.onephotonstim.pre_4ap_trials + self.onephotonstim.post_4ap_trials
+        else:
+            AttributeError('exptype is unclear.')
+        paths = []
+        for exp in exps:
+            expobj = import_expobj(exp_prep=exp) if exptype == 'All optical' else import_1pexobj(exp_prep=exp, verbose=False)
+            paths.append(expobj.pkl_path)
+        print(f'\nPaths of `exps` requested for {exptype} experiments: \n')
+        for path in paths: print(f"{path}")
+        return paths
+
+
+# %%
 
 baseline_color = ExpMetainfo.figures.colors['baseline']
 interictal_color = ExpMetainfo.figures.colors['interictal']
@@ -318,4 +346,12 @@ general_color = ExpMetainfo.figures.colors['general']
 fontsize_extraplot = ExpMetainfo.figures.fontsize['extraplot']
 fontsize_intraplot = ExpMetainfo.figures.fontsize['intraplot']
 
+# %%
+if __name__ == '__main__':
+    try:
+        expmeta = ExpMetainfo.load()
+    except Exception:
+        expmeta = ExpMetainfo()
+        expmeta.save()
 
+    expmeta.return_exp_paths(exptype='One P stim')
